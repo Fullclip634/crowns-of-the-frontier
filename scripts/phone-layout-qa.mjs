@@ -71,6 +71,9 @@ try{
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       const header=await page.evaluate(()=>{const h=document.querySelector('.game-header').getBoundingClientRect();return {height:h.height,buttons:[...document.querySelectorAll('.time-controls button')].map(button=>button.getBoundingClientRect()).filter(rect=>rect.width).every(rect=>rect.bottom<=h.bottom+1)};});
       assert.equal(header.height,44);assert.ok(header.buttons,'portrait header controls stay in one row');
+      const resources=await page.evaluate(()=>{const bar=document.querySelector('#resource-bar').getBoundingClientRect();return {width:bar.width,counts:[...document.querySelectorAll('#resource-bar strong')].map(node=>{const rect=node.getBoundingClientRect();return {text:node.textContent,width:rect.width,visible:rect.left>=bar.left-1&&rect.right<=bar.right+1};})};});
+      assert.ok(resources.width>150);assert.equal(resources.counts.length,5);assert.ok(resources.counts.every(count=>count.visible&&count.width>8),'all five resource counts remain visible beside the header controls');
+      (report.portraitHeaders??=[]).push({viewport,header,resources});
       await page.locator('.selection-details').tap();await page.locator('.selection-details').tap();
       await page.screenshot({path:`artifacts/phone-${phase}-${viewport.width}-portrait.png`});
     }

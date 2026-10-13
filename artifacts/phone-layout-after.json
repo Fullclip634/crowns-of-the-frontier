@@ -1685,5 +1685,87 @@
     "New matches reset compact panels; desktop retains the full controls"
   ],
   "errors": [],
-  "passed": true
+  "passed": true,
+  "portraitHeaders": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "header": {
+        "height": 44,
+        "buttons": true
+      },
+      "resources": {
+        "width": 206,
+        "counts": [
+          {
+            "text": "380",
+            "width": 17.5625,
+            "visible": true
+          },
+          {
+            "text": "570",
+            "width": 16.71875,
+            "visible": true
+          },
+          {
+            "text": "250",
+            "width": 17.28125,
+            "visible": true
+          },
+          {
+            "text": "300",
+            "width": 18.265625,
+            "visible": true
+          },
+          {
+            "text": "10/35",
+            "width": 22.953125,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "header": {
+        "height": 44,
+        "buttons": true
+      },
+      "resources": {
+        "width": 276,
+        "counts": [
+          {
+            "text": "380",
+            "width": 20.265625,
+            "visible": true
+          },
+          {
+            "text": "570",
+            "width": 19.28125,
+            "visible": true
+          },
+          {
+            "text": "250",
+            "width": 19.9375,
+            "visible": true
+          },
+          {
+            "text": "300",
+            "width": 21.0625,
+            "visible": true
+          },
+          {
+            "text": "10/35",
+            "width": 24.40625,
+            "visible": true
+          }
+        ]
+      }
+    }
+  ]
 }

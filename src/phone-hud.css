@@ -6,13 +6,13 @@
        (pointer:coarse) and (max-width:600px) and (orientation:portrait){
   #hud .game-header{height:44px;min-height:44px;max-height:44px;padding:0 8px;gap:8px;border-bottom:0;flex-wrap:nowrap}
   #hud .game-brand,#hud #age-label,#hud #game-time,#hud #speed-button{display:none}
-  #hud #resource-bar{display:flex;flex:1;min-width:0;gap:6px;justify-content:space-between}
+  #hud #resource-bar{display:flex;flex:1;min-width:0;width:auto;gap:6px;justify-content:space-between}
   #hud .resource{display:flex;align-items:center;min-width:0;gap:4px}
   #hud .resource small{display:none}
   #hud .resource-icon{font-size:15px;line-height:1;width:auto}
   #hud .resource strong{font-size:12px;line-height:1.2;white-space:nowrap}
   #hud .resource i{font-size:9px}
-  #hud .time-controls{gap:2px;height:44px}
+  #hud .time-controls{gap:2px;height:44px;width:auto;flex:0 0 auto}
   #hud .game-header button{width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0}
 
   #hud .bottom-hud{left:8px;right:8px;bottom:calc(8px + var(--safe));gap:6px;align-items:flex-end;justify-content:space-between;pointer-events:none}
