@@ -1,0 +1,850 @@
+{
+  "checks": [
+    {
+      "quality": "high",
+      "models": 126,
+      "before": {
+        "draws": 184,
+        "triangles": 1260791,
+        "memory": {
+          "geometries": 247,
+          "textures": 29
+        },
+        "units": {
+          "drawn": 21,
+          "allocated": 21,
+          "activeBatches": 12,
+          "matrixUploadBytes": 14080,
+          "ownerUploadBytes": 228,
+          "capacityMatrixBytes": 4096000,
+          "rigParts": 0,
+          "rigUploadBytes": 0,
+          "rigUsedBytes": 0
+        }
+      },
+      "after": {
+        "draws": 71,
+        "triangles": 1260791,
+        "memory": {
+          "geometries": 134,
+          "textures": 41
+        },
+        "units": {
+          "drawn": 21,
+          "allocated": 21,
+          "activeBatches": 12,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 24,
+          "capacityMatrixBytes": 393216,
+          "rigParts": 12,
+          "rigUploadBytes": 128000,
+          "rigUsedBytes": 14080
+        }
+      },
+      "image": {
+        "pixels": 737280,
+        "changed": 11122,
+        "max": 152,
+        "average": 0.31669379340277776,
+        "p95": 0,
+        "p99": 7,
+        "bounds": {
+          "minX": 339,
+          "minY": 249,
+          "maxX": 974,
+          "maxY": 531
+        },
+        "topTiles": [
+          [
+            "10,4",
+            1070
+          ],
+          [
+            "8,5",
+            1003
+          ],
+          [
+            "9,5",
+            936
+          ],
+          [
+            "11,5",
+            861
+          ],
+          [
+            "7,7",
+            861
+          ],
+          [
+            "9,4",
+            796
+          ],
+          [
+            "7,5",
+            609
+          ],
+          [
+            "7,6",
+            551
+          ],
+          [
+            "10,5",
+            502
+          ],
+          [
+            "6,6",
+            488
+          ],
+          [
+            "8,7",
+            395
+          ],
+          [
+            "10,6",
+            385
+          ]
+        ]
+      },
+      "beforePicks": [
+        {
+          "type": "villager",
+          "id": 286,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 286
+            },
+            {
+              "height": 1.7,
+              "hit": 286
+            },
+            {
+              "height": 2.1,
+              "hit": 286
+            },
+            {
+              "height": 2.6,
+              "hit": 286
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "spearman",
+          "id": 287,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 287
+            },
+            {
+              "height": 1.7,
+              "hit": 287
+            },
+            {
+              "height": 2.1,
+              "hit": 287
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "swordsman",
+          "id": 288,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 288
+            },
+            {
+              "height": 1.7,
+              "hit": 288
+            },
+            {
+              "height": 2.1,
+              "hit": 288
+            },
+            {
+              "height": 2.6,
+              "hit": 7
+            },
+            {
+              "height": 3.1,
+              "hit": 7
+            }
+          ]
+        },
+        {
+          "type": "archer",
+          "id": 289,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 296
+            },
+            {
+              "height": 1.3,
+              "hit": 289
+            },
+            {
+              "height": 1.7,
+              "hit": 289
+            },
+            {
+              "height": 2.1,
+              "hit": 289
+            },
+            {
+              "height": 2.6,
+              "hit": 289
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "scout",
+          "id": 290,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 290
+            },
+            {
+              "height": 1.3,
+              "hit": 290
+            },
+            {
+              "height": 1.7,
+              "hit": 290
+            },
+            {
+              "height": 2.1,
+              "hit": 290
+            },
+            {
+              "height": 2.6,
+              "hit": 290
+            },
+            {
+              "height": 3.1,
+              "hit": 290
+            }
+          ]
+        },
+        {
+          "type": "knight",
+          "id": 291,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 291
+            },
+            {
+              "height": 1.3,
+              "hit": 291
+            },
+            {
+              "height": 1.7,
+              "hit": 291
+            },
+            {
+              "height": 2.1,
+              "hit": 291
+            },
+            {
+              "height": 2.6,
+              "hit": 291
+            },
+            {
+              "height": 3.1,
+              "hit": 291
+            }
+          ]
+        },
+        {
+          "type": "sentinel",
+          "id": 292,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 292
+            },
+            {
+              "height": 1.3,
+              "hit": 292
+            },
+            {
+              "height": 1.7,
+              "hit": 292
+            },
+            {
+              "height": 2.1,
+              "hit": 292
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "marksman",
+          "id": 293,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 293
+            },
+            {
+              "height": 1.3,
+              "hit": 293
+            },
+            {
+              "height": 1.7,
+              "hit": 293
+            },
+            {
+              "height": 2.1,
+              "hit": 293
+            },
+            {
+              "height": 2.6,
+              "hit": 293
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "outrider",
+          "id": 294,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 294
+            },
+            {
+              "height": 1.3,
+              "hit": 294
+            },
+            {
+              "height": 1.7,
+              "hit": 294
+            },
+            {
+              "height": 2.1,
+              "hit": 294
+            },
+            {
+              "height": 2.6,
+              "hit": 294
+            },
+            {
+              "height": 3.1,
+              "hit": 294
+            }
+          ]
+        },
+        {
+          "type": "ram",
+          "id": 295,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 295
+            },
+            {
+              "height": 1.3,
+              "hit": 295
+            },
+            {
+              "height": 1.7,
+              "hit": 295
+            },
+            {
+              "height": 2.1,
+              "hit": 295
+            },
+            {
+              "height": 2.6,
+              "hit": 295
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "catapult",
+          "id": 296,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 296
+            },
+            {
+              "height": 1.3,
+              "hit": 296
+            },
+            {
+              "height": 1.7,
+              "hit": 296
+            },
+            {
+              "height": 2.1,
+              "hit": 296
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": 289
+            }
+          ]
+        },
+        {
+          "type": "cart",
+          "id": 297,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 297
+            },
+            {
+              "height": 1.3,
+              "hit": 297
+            },
+            {
+              "height": 1.7,
+              "hit": 297
+            },
+            {
+              "height": 2.1,
+              "hit": 297
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "picks": [
+        {
+          "type": "villager",
+          "id": 286,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 286
+            },
+            {
+              "height": 1.7,
+              "hit": 286
+            },
+            {
+              "height": 2.1,
+              "hit": 286
+            },
+            {
+              "height": 2.6,
+              "hit": 286
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "spearman",
+          "id": 287,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 287
+            },
+            {
+              "height": 1.7,
+              "hit": 287
+            },
+            {
+              "height": 2.1,
+              "hit": 287
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "swordsman",
+          "id": 288,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": null
+            },
+            {
+              "height": 1.3,
+              "hit": 288
+            },
+            {
+              "height": 1.7,
+              "hit": 288
+            },
+            {
+              "height": 2.1,
+              "hit": 288
+            },
+            {
+              "height": 2.6,
+              "hit": 7
+            },
+            {
+              "height": 3.1,
+              "hit": 7
+            }
+          ]
+        },
+        {
+          "type": "archer",
+          "id": 289,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 296
+            },
+            {
+              "height": 1.3,
+              "hit": 289
+            },
+            {
+              "height": 1.7,
+              "hit": 289
+            },
+            {
+              "height": 2.1,
+              "hit": 289
+            },
+            {
+              "height": 2.6,
+              "hit": 289
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "scout",
+          "id": 290,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 290
+            },
+            {
+              "height": 1.3,
+              "hit": 290
+            },
+            {
+              "height": 1.7,
+              "hit": 290
+            },
+            {
+              "height": 2.1,
+              "hit": 290
+            },
+            {
+              "height": 2.6,
+              "hit": 290
+            },
+            {
+              "height": 3.1,
+              "hit": 290
+            }
+          ]
+        },
+        {
+          "type": "knight",
+          "id": 291,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 291
+            },
+            {
+              "height": 1.3,
+              "hit": 291
+            },
+            {
+              "height": 1.7,
+              "hit": 291
+            },
+            {
+              "height": 2.1,
+              "hit": 291
+            },
+            {
+              "height": 2.6,
+              "hit": 291
+            },
+            {
+              "height": 3.1,
+              "hit": 291
+            }
+          ]
+        },
+        {
+          "type": "sentinel",
+          "id": 292,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 292
+            },
+            {
+              "height": 1.3,
+              "hit": 292
+            },
+            {
+              "height": 1.7,
+              "hit": 292
+            },
+            {
+              "height": 2.1,
+              "hit": 292
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "marksman",
+          "id": 293,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 293
+            },
+            {
+              "height": 1.3,
+              "hit": 293
+            },
+            {
+              "height": 1.7,
+              "hit": 293
+            },
+            {
+              "height": 2.1,
+              "hit": 293
+            },
+            {
+              "height": 2.6,
+              "hit": 293
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "outrider",
+          "id": 294,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 294
+            },
+            {
+              "height": 1.3,
+              "hit": 294
+            },
+            {
+              "height": 1.7,
+              "hit": 294
+            },
+            {
+              "height": 2.1,
+              "hit": 294
+            },
+            {
+              "height": 2.6,
+              "hit": 294
+            },
+            {
+              "height": 3.1,
+              "hit": 294
+            }
+          ]
+        },
+        {
+          "type": "ram",
+          "id": 295,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 295
+            },
+            {
+              "height": 1.3,
+              "hit": 295
+            },
+            {
+              "height": 1.7,
+              "hit": 295
+            },
+            {
+              "height": 2.1,
+              "hit": 295
+            },
+            {
+              "height": 2.6,
+              "hit": 295
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "type": "catapult",
+          "id": 296,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 296
+            },
+            {
+              "height": 1.3,
+              "hit": 296
+            },
+            {
+              "height": 1.7,
+              "hit": 296
+            },
+            {
+              "height": 2.1,
+              "hit": 296
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": 289
+            }
+          ]
+        },
+        {
+          "type": "cart",
+          "id": 297,
+          "probes": [
+            {
+              "height": 0.9,
+              "hit": 297
+            },
+            {
+              "height": 1.3,
+              "hit": 297
+            },
+            {
+              "height": 1.7,
+              "hit": 297
+            },
+            {
+              "height": 2.1,
+              "hit": 297
+            },
+            {
+              "height": 2.6,
+              "hit": null
+            },
+            {
+              "height": 3.1,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "textures": [
+        {
+          "geometries": 134,
+          "textures": 41
+        },
+        {
+          "geometries": 134,
+          "textures": 41
+        },
+        {
+          "geometries": 134,
+          "textures": 41
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "passed": false
+}

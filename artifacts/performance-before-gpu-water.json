@@ -1,0 +1,133 @@
+{
+  "samples": [
+    {
+      "quality": "low",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 337,
+      "renderedFPS": 0.188795906904735,
+      "renderSubmitMilliseconds": {
+        "samples": 4,
+        "median": 200.80000000074506,
+        "p95": 241.59999999962747,
+        "max": 241.59999999962747
+      },
+      "simulationTickMilliseconds": {
+        "samples": 4,
+        "median": 1158.4000000003725,
+        "p95": 14168.5,
+        "max": 14168.5
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 21,
+        "calls": 304,
+        "triangles": 400320,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 254,
+        "textures": 11
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 331,
+        "activeBatches": 10,
+        "matrixUploadBytes": 103424,
+        "ownerUploadBytes": 320,
+        "capacityMatrixBytes": 5939200
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 3639276
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 4
+      },
+      "cover": {
+        "visible": 228,
+        "seeded": 1246,
+        "triangles": 19152,
+        "drawCalls": 1
+      },
+      "profile": "Development laptop, current civic and figure assets",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false
+    },
+    {
+      "quality": "high",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 13.476554758415922,
+      "renderSubmitMilliseconds": {
+        "samples": 68,
+        "median": 33,
+        "p95": 45.59999999962747,
+        "max": 53.09999999962747
+      },
+      "simulationTickMilliseconds": {
+        "samples": 42,
+        "median": 28.59999999962747,
+        "p95": 56.29999999888241,
+        "max": 94.19999999925494
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 90,
+        "calls": 305,
+        "triangles": 1958126,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 272,
+        "textures": 19
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 324,
+        "activeBatches": 9,
+        "matrixUploadBytes": 103424,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 5939200
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 15554824
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 12
+      },
+      "cover": {
+        "visible": 596,
+        "seeded": 3292,
+        "triangles": 50064,
+        "drawCalls": 1
+      },
+      "profile": "Development laptop, current civic and figure assets",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false
+    }
+  ],
+  "errors": []
+}

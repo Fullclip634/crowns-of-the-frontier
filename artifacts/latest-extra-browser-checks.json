@@ -1,0 +1,44 @@
+{
+  "version": "2.5.0",
+  "started": "2026-10-11T03:47:32.401Z",
+  "checks": [
+    {
+      "name": "edge-scroll-qa.mjs",
+      "passed": true,
+      "seconds": 41.517,
+      "output": "{\n  \"reports\": [\n    {\n      \"direction\": \"right\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"left\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"top\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"bottom\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"top-right\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"top-left\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"bottom-right\",\n      \"moved\": true\n    },\n    {\n      \"direction\": \"bottom-left\",\n      \"moved\": true\n    },\n    {\n      \"rotation\": true,\n      \"centerStops\": true,\n      \"viewportExitStops\": true,\n      \"pauseStops\": true,\n      \"controlsDoNotScroll\": true,\n      \"middleDragProtected\": true,\n      \"keyboardPriority\": true,\n      \"constructionPreviewFollows\": true,\n      \"settingsPersist\": true\n    },\n    {\n      \"touchDoesNotTriggerEdgeScrolling\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "map-qa.mjs",
+      "passed": true,
+      "seconds": 35.049,
+      "output": "{\n  \"reports\": [\n    {\n      \"desktopSquare\": true,\n      \"corners\": true,\n      \"drag\": true\n    },\n    {\n      \"viewPresets\": 3,\n      \"rectangleAtEdges\": true,\n      \"rotation\": true\n    },\n    {\n      \"outsideOrdersBlocked\": true,\n      \"edgeOrdersReachable\": true\n    },\n    {\n      \"shipsVisibleOnRadar\": true\n    },\n    {\n      \"viewport\": {\n        \"width\": 1100,\n        \"height\": 768\n      },\n      \"square\": true,\n      \"touchTap\": true,\n      \"touchDrag\": true,\n      \"noOverflow\": true\n    },\n    {\n      \"viewport\": {\n        \"width\": 844,\n        \"height\": 390\n      },\n      \"square\": true,\n      \"touchTap\": true,\n      \"touchDrag\": true,\n      \"noOverflow\": true\n    },\n    {\n      \"viewport\": {\n        \"width\": 390,\n        \"height\": 844\n      },\n      \"square\": true,\n      \"touchTap\": true,\n      \"touchDrag\": true,\n      \"noOverflow\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "production-qa.mjs",
+      "passed": true,
+      "seconds": 30.609,
+      "output": "{\n  \"reports\": [\n    {\n      \"desktop\": true,\n      \"balancedBatches\": true,\n      \"shiftBatch\": true,\n      \"overview\": true,\n      \"queueCount\": true,\n      \"refund\": true,\n      \"buildingSelection\": true,\n      \"escape\": true,\n      \"researchVisible\": true,\n      \"stableButtonsDuringLiveUpdates\": true,\n      \"liveHealthAndQueueProgress\": true\n    },\n    {\n      \"landscapePhone\": true,\n      \"touchBatch\": true,\n      \"touchOverview\": true,\n      \"touchSelect\": true,\n      \"touchCancel\": true,\n      \"scrollPreserved\": true,\n      \"noOverflow\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "campaign-qa.mjs",
+      "passed": true,
+      "seconds": 54.486,
+      "output": "{\n  \"reports\": [\n    {\n      \"desktop\": true,\n      \"escort\": true,\n      \"journal\": true,\n      \"goalNavigation\": true,\n      \"cartModel\": true,\n      \"checkpointRecovery\": true,\n      \"saveResume\": true\n    },\n    {\n      \"phone\": true,\n      \"escortControls\": true,\n      \"journal\": true,\n      \"checkpoint\": true,\n      \"noHorizontalOverflow\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "realm-qa.mjs",
+      "passed": true,
+      "seconds": 35.82,
+      "output": "{\n  \"reports\": [\n    {\n      \"kingdom\": {\n        \"buildings\": 28,\n        \"units\": 39,\n        \"calls\": 218,\n        \"triangles\": 192232,\n        \"heightRange\": 31.39465594291687,\n        \"packedTrees\": 61\n      }\n    },\n    {\n      \"inspect\": true,\n      \"livePortrait\": true,\n      \"surfaceAligned\": true\n    },\n    {\n      \"biomes\": 7,\n      \"naval\": true\n    },\n    {\n      \"phone\": true,\n      \"inspect\": true,\n      \"panelsToggle\": true,\n      \"portrait\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "offline-qa.mjs",
+      "passed": true,
+      "seconds": 21.922,
+      "output": "Offline cache includes both Blender catalogues and all nine surface maps.\n{\n  \"production\": true,\n  \"offlineReload\": true,\n  \"offlineGameplay\": true,\n  \"errors\": []\n}\n"
+    }
+  ],
+  "finished": "2026-10-11T03:51:11.877Z",
+  "passed": true
+}

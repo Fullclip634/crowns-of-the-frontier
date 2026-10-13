@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {WorldInteractions} from '../src/world-interactions.js';
+import {prepareViewport} from '../src/render-batches.js';
+
+test('harvested remains reuse stationary poses while fog, removal and movement repack correct instances',()=>{
+  const first={id:1,type:'wood',hp:0,x:1,z:2},second={id:2,type:'wood',hp:0,x:8,z:3},worker={id:3,kind:'unit',type:'villager',hp:10,x:4,z:5,carry:18,carryType:'wood',owner:0};
+  let reveal=false,samples=0;
+  const view={camera:new THREE.PerspectiveCamera(45,1,.1,1000),scene:new THREE.Scene(),geo:{box:new THREE.BoxGeometry(),cylinder:new THREE.CylinderGeometry(),rock3d:new THREE.DodecahedronGeometry(),capsule:new THREE.CapsuleGeometry()},materials:Object.fromEntries(['wood','canvas','gold','stone','trunk'].map(role=>[role,new THREE.MeshStandardMaterial()])),nodes:new Map(),clock:0,
+    groundHeight:()=>{samples++;return 1;},entityHeight:()=>1,sim:{entities:[first,second,worker],time:0,isVisible:()=>true,isExplored:x=>x<5||reveal}};
+  const interactions=new WorldInteractions(view);interactions.update(.016,false);const initial=interactions.stumps.instanceMatrix.version,terrainSamples=samples;
+  assert.equal(interactions.stumps.count,1);assert.equal(view.interactionDiagnostics.matrixUploadBytes,128);
+  assert.deepEqual(interactions.cargo.wood.instanceMatrix.updateRanges,[{start:0,count:16}]);
+  view.clock=.1;interactions.update(.016,false);assert.equal(interactions.stumps.instanceMatrix.version,initial);assert.equal(samples,terrainSamples,'idle remains do not resample the same terrain');assert.equal(view.interactionDiagnostics.matrixUploadBytes,64);
+  reveal=true;view.clock=.2;interactions.update(.016,false);assert.equal(interactions.stumps.count,2);assert.ok(interactions.stumps.instanceMatrix.version>initial);assert.deepEqual(interactions.stumps.instanceMatrix.updateRanges,[{start:0,count:32}]);
+  view.sim.entities=[second,worker];view.clock=3;interactions.update(.016,false);const matrix=new THREE.Matrix4();interactions.stumps.getMatrixAt(0,matrix);assert.equal(matrix.elements[12],second.x);assert.equal(matrix.elements[14],second.z);assert.equal(view.interactionDiagnostics.cachedStumps,1,'removed entities leave no retained pose');
+  second.x=9;view.clock=3.1;interactions.update(.016,false);interactions.stumps.getMatrixAt(0,matrix);assert.equal(matrix.elements[12],9,'changed positions invalidate the cached matrix');
+  view.camera.position.set(0,30,40);view.camera.lookAt(0,0,0);prepareViewport(view);worker.x=500;interactions.update(.016,false);assert.equal(interactions.cargo.wood.count,0);assert.equal(view.interactionDiagnostics.culledCargo,1);assert.equal(view.interactionDiagnostics.matrixUploadBytes,0);
+  view.camera.position.set(500,30,40);view.camera.lookAt(500,0,0);prepareViewport(view);interactions.update(.016,false);assert.equal(interactions.cargo.wood.count,1);interactions.cargo.wood.getMatrixAt(0,matrix);assert.equal(matrix.elements[12],500);assert.equal(view.interactionDiagnostics.culledCargo,0);
+  worker.carry=0;view.sim.entities=[];view.clock=6;interactions.update(.016,false);assert.equal(view.interactionDiagnostics.matrixUploadBytes,0);assert.equal(view.interactionDiagnostics.cachedStumps,0);assert.equal(interactions.stumps.count,0);
+  interactions.dispose();for(const geometry of Object.values(view.geo))geometry.dispose();for(const material of Object.values(view.materials))material.dispose();
+});

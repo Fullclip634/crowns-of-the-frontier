@@ -1,0 +1,357 @@
+{
+  "checks": [
+    {
+      "biome": {
+        "map": "highlands",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -2.4166767597198486,
+            "max": 30.15761375427246
+          },
+          "rockyVertices": 10723,
+          "pathVertices": 64
+        },
+        "details": {
+          "visible": 103,
+          "seeded": 219,
+          "capacity": 360,
+          "triangles": 8240,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 121,
+        "triangles": 1386155,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "winter",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -1.773341417312622,
+            "max": 29.65164566040039
+          },
+          "rockyVertices": 10474,
+          "pathVertices": 64
+        },
+        "details": {
+          "visible": 108,
+          "seeded": 224,
+          "capacity": 360,
+          "triangles": 8640,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 121,
+        "triangles": 2076435,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "desert",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -0.7725975513458252,
+            "max": 28.864587783813477
+          },
+          "rockyVertices": 10201,
+          "pathVertices": 64
+        },
+        "details": {
+          "visible": 127,
+          "seeded": 269,
+          "capacity": 360,
+          "triangles": 10160,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 121,
+        "triangles": 2249319,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "canyon",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -3.7033474445343018,
+            "max": 31.16954803466797
+          },
+          "rockyVertices": 11347,
+          "pathVertices": 64
+        },
+        "details": {
+          "visible": 102,
+          "seeded": 204,
+          "capacity": 360,
+          "triangles": 8160,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 121,
+        "triangles": 2254601,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "valley",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -1.5588963031768799,
+            "max": 29.482990264892578
+          },
+          "rockyVertices": 10508,
+          "pathVertices": 115
+        },
+        "details": {
+          "visible": 100,
+          "seeded": 212,
+          "capacity": 360,
+          "triangles": 8000,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 126,
+        "triangles": 2245109,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "rivers",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -1.3444511890411377,
+            "max": 29.314334869384766
+          },
+          "rockyVertices": 10438,
+          "pathVertices": 183
+        },
+        "details": {
+          "visible": 113,
+          "seeded": 226,
+          "capacity": 360,
+          "triangles": 9040,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 120,
+        "triangles": 2082645,
+        "finite": true
+      }
+    },
+    {
+      "biome": {
+        "map": "coast",
+        "land": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -1.3444511890411377,
+            "max": 29.314334869384766
+          },
+          "rockyVertices": 10480,
+          "pathVertices": 87
+        },
+        "details": {
+          "visible": 98,
+          "seeded": 196,
+          "capacity": 360,
+          "triangles": 7840,
+          "drawCalls": 1
+        },
+        "surfaces": {
+          "source": "Poly Haven CC0",
+          "loaded": 18
+        },
+        "uniforms": [
+          "grass",
+          "soil",
+          "rock",
+          "grassNormal",
+          "soilNormal",
+          "rockNormal",
+          "grassArm",
+          "soilArm",
+          "rockArm",
+          "scale",
+          "amount",
+          "tint",
+          "roads"
+        ],
+        "calls": 140,
+        "triangles": 1926395,
+        "finite": true
+      }
+    },
+    {
+      "sceneMemory": {
+        "records": [
+          {
+            "geometries": 146,
+            "textures": 25
+          },
+          {
+            "geometries": 146,
+            "textures": 25
+          },
+          {
+            "geometries": 146,
+            "textures": 25
+          },
+          {
+            "geometries": 146,
+            "textures": 25
+          }
+        ],
+        "disposed": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "low": {
+        "land": {
+          "vertices": 12769,
+          "heightRange": {
+            "min": -2.403851270675659,
+            "max": 30.1343936920166
+          },
+          "rockyVertices": 5268,
+          "pathVertices": 46
+        },
+        "details": {
+          "visible": 17,
+          "seeded": 64,
+          "capacity": 120,
+          "triangles": 1360,
+          "drawCalls": 1
+        },
+        "normal": false,
+        "models": 126
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

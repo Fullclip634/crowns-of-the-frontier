@@ -1,0 +1,266 @@
+{
+  "checks": [
+    {
+      "boot": {
+        "art": {
+          "source": "Blender",
+          "detail": "high",
+          "models": 126,
+          "bytes": 15554824
+        },
+        "quality": "high"
+      },
+      "elapsedMs": 10627
+    },
+    {
+      "savedFrameRateTarget": 60
+    },
+    {
+      "kingdom": {
+        "authoredBuildings": 28,
+        "authoredUnits": 45,
+        "calls": 218,
+        "triangles": 1131379,
+        "memory": {
+          "geometries": 232,
+          "textures": 18
+        },
+        "packedUnits": {
+          "drawn": 45,
+          "allocated": 45,
+          "activeBatches": 8,
+          "matrixUploadBytes": 27968,
+          "ownerUploadBytes": 0,
+          "capacityMatrixBytes": 3342336
+        },
+        "groundCover": {
+          "visible": 336,
+          "seeded": 1305,
+          "triangles": 28224,
+          "drawCalls": 1
+        }
+      }
+    },
+    {
+      "workers": {
+        "changes": [
+          {
+            "variant": "wood",
+            "expected": "wood",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "mine",
+            "expected": "mine",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "food",
+            "expected": "food",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "build",
+            "expected": "build",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "wood",
+            "expected": "wood",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "mine",
+            "expected": "mine",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "food",
+            "expected": "food",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "build",
+            "expected": "build",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "wood",
+            "expected": "wood",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "mine",
+            "expected": "mine",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "food",
+            "expected": "food",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          },
+          {
+            "variant": "build",
+            "expected": "build",
+            "alive": 1,
+            "oldCleared": true,
+            "selected": true,
+            "figure": "adult"
+          }
+        ],
+        "capacity": [
+          {
+            "slots": 2,
+            "free": 2
+          },
+          {
+            "slots": 8,
+            "free": 1
+          },
+          {
+            "slots": 3,
+            "free": 3
+          },
+          {
+            "slots": 1,
+            "free": 0
+          }
+        ]
+      }
+    },
+    {
+      "packedPicking": {
+        "expected": 345,
+        "picked": 345,
+        "packed": true
+      }
+    },
+    {
+      "sharedTeamBatches": {
+        "shared": true,
+        "owners": [
+          0,
+          1
+        ],
+        "teamMask": true
+      }
+    },
+    {
+      "remains": {
+        "diagnostics": {
+          "bodies": 7,
+          "rubble": 12,
+          "retained": 8,
+          "limit": 24,
+          "drawCalls": 5
+        },
+        "solid": true,
+        "finite": true
+      }
+    },
+    {
+      "qualitySwitch": {
+        "art": {
+          "source": "Blender",
+          "detail": "low",
+          "models": 126,
+          "bytes": 3639276
+        },
+        "target": [
+          -43,
+          1.6426210701465607,
+          43
+        ],
+        "zoom": 16,
+        "selected": [
+          6
+        ]
+      }
+    },
+    {
+      "biomes": 7,
+      "naval": true
+    },
+    {
+      "landscapeTouch": true,
+      "authoredPortrait": true,
+      "lowDetail": true,
+      "hud": {
+        "selectionHeight": 110,
+        "buttons": [
+          {
+            "width": 176.78125,
+            "height": 44
+          },
+          {
+            "width": 176.78125,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 46
+          },
+          {
+            "width": 44,
+            "height": 46
+          },
+          {
+            "width": 44,
+            "height": 46
+          },
+          {
+            "width": 44,
+            "height": 46
+          },
+          {
+            "width": 44,
+            "height": 46
+          },
+          {
+            "width": 44,
+            "height": 46
+          }
+        ],
+        "radar": {
+          "width": 96,
+          "height": 96
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

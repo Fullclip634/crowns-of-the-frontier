@@ -1,0 +1,21 @@
+{
+  "reports": [
+    {
+      "desktop": true,
+      "escort": true,
+      "journal": true,
+      "goalNavigation": true,
+      "cartModel": true,
+      "checkpointRecovery": true,
+      "saveResume": true
+    },
+    {
+      "phone": true,
+      "escortControls": true,
+      "journal": true,
+      "checkpoint": true,
+      "noHorizontalOverflow": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,30 @@
+{
+  "checkpoints": [
+    {
+      "ticks": 100,
+      "state": "a51e196b8150367ac0ab2acdac8938689239c32d2eaf770b79afbc429b1c844a",
+      "events": "12d6af27d5b6a21d483d8e17d71761ea0432ae9f2b6e6c5f39eafbcf189062f6"
+    },
+    {
+      "ticks": 200,
+      "state": "f438f6df356dca22eed2c94f70bf61ec7f8d65ea5de29fd92e7c42e012c2e0b9",
+      "events": "08dff89f4fc8eed83630253f59ad5d94a258c2bc13868d8ed267889aef6670ae"
+    },
+    {
+      "ticks": 300,
+      "state": "91f0c98e710248ca4ca957f3f7c8797e56a3eedbf9a219a5c3a8338dcc220051",
+      "events": "094d9d15b62622c8b86a2573c452b60835f794608ab6ee955c688948192ab104"
+    },
+    {
+      "ticks": 400,
+      "state": "e1587eaca328ab370ce2ab51dd8ccbcea6e3b226983f94587b76cc2d00e30894",
+      "events": "ac4b00b3bd2d41820f8ca56ec1e3b3b8b2a2e9b5efb50540196106fb77619291"
+    }
+  ],
+  "ended": {
+    "won": true,
+    "reason": "Your alliance has eliminated every opposing kingdom."
+  },
+  "time": 823.6000000001187,
+  "matchesBefore": true
+}

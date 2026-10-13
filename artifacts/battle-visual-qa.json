@@ -1,0 +1,78 @@
+{
+  "checks": [
+    {
+      "foliage": {
+        "map": "highlands",
+        "art": {
+          "source": "Blender",
+          "detail": "high",
+          "models": 126,
+          "bytes": 15554824
+        },
+        "draws": 99,
+        "tree": 266
+      }
+    },
+    {
+      "foliage": {
+        "map": "winter",
+        "art": {
+          "source": "Blender",
+          "detail": "high",
+          "models": 126,
+          "bytes": 15554824
+        },
+        "draws": 99,
+        "tree": 266
+      }
+    },
+    {
+      "pooledCombat": {
+        "origin": [
+          -40.48,
+          2.5431541323661806,
+          60.65
+        ],
+        "source": [
+          -40,
+          60
+        ],
+        "rotated": 0.09485177765296211,
+        "flightHeight": 2.752141439319959,
+        "siegeArc": 3.0357865537616444,
+        "reused": true,
+        "memory": [
+          {
+            "geometries": 146,
+            "textures": 18
+          },
+          {
+            "geometries": 146,
+            "textures": 18
+          },
+          {
+            "geometries": 146,
+            "textures": 18
+          },
+          {
+            "geometries": 146,
+            "textures": 18
+          }
+        ],
+        "retained": 26,
+        "limit": 96,
+        "geometrySurvivesSceneSwitch": true,
+        "activeBeforeSwitch": 1,
+        "activeAfterSwitch": 0,
+        "freeAfterSwitch": 13,
+        "art": {
+          "source": "Blender",
+          "detail": "high",
+          "models": 126,
+          "bytes": 15554824
+        }
+      }
+    }
+  ],
+  "errors": []
+}

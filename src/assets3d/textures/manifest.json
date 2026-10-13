@@ -1,0 +1,254 @@
+[
+  {
+    "id": "leafy_grass",
+    "name": "Leafy Grass",
+    "authors": {
+      "Charlotte Baglioni": "All"
+    },
+    "dimensionsMM": [
+      2000,
+      2000
+    ],
+    "source": "https://polyhaven.com/a/leafy_grass",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "leafy_grass_color.jpg",
+        "bytes": 1195394,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/leafy_grass/leafy_grass_diff_1k.jpg",
+        "md5": "0dbc071e91d6905edfcfbe8eb785a1ab"
+      },
+      {
+        "kind": "normal",
+        "file": "leafy_grass_normal.jpg",
+        "bytes": 1466049,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/leafy_grass/leafy_grass_nor_gl_1k.jpg",
+        "md5": "8279e096e204ea326d57a318869f99df"
+      },
+      {
+        "kind": "arm",
+        "file": "leafy_grass_arm.jpg",
+        "bytes": 1010081,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/leafy_grass/leafy_grass_arm_1k.jpg",
+        "md5": "44fb4e40ef0f3425a7d1a14bc328e4d8"
+      }
+    ]
+  },
+  {
+    "id": "medieval_blocks_05",
+    "name": "Medieval Blocks 05",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      2000,
+      2000
+    ],
+    "source": "https://polyhaven.com/a/medieval_blocks_05",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "medieval_blocks_05_color.jpg",
+        "bytes": 653290,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/medieval_blocks_05/medieval_blocks_05_diff_1k.jpg",
+        "md5": "7fc360bf68834292488994c0b67a4fcc"
+      },
+      {
+        "kind": "normal",
+        "file": "medieval_blocks_05_normal.jpg",
+        "bytes": 1167772,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/medieval_blocks_05/medieval_blocks_05_nor_gl_1k.jpg",
+        "md5": "008033853b58b22d7ebcb7346af9b22e"
+      },
+      {
+        "kind": "arm",
+        "file": "medieval_blocks_05_arm.jpg",
+        "bytes": 188538,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/medieval_blocks_05/medieval_blocks_05_arm_1k.jpg",
+        "md5": "5fbb4ffda93237d07a96468815768e48"
+      }
+    ]
+  },
+  {
+    "id": "old_wood_floor",
+    "name": "Old Wood Floor",
+    "authors": {
+      "Guillaume Monsergent": "All"
+    },
+    "dimensionsMM": [
+      3000,
+      3000
+    ],
+    "source": "https://polyhaven.com/a/old_wood_floor",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "old_wood_floor_color.jpg",
+        "bytes": 755937,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_wood_floor/old_wood_floor_diff_1k.jpg",
+        "md5": "ffaa68add0544811b30459e58cc9b4fd"
+      },
+      {
+        "kind": "normal",
+        "file": "old_wood_floor_normal.jpg",
+        "bytes": 714487,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_wood_floor/old_wood_floor_nor_gl_1k.jpg",
+        "md5": "2ec0f5e82232d1e9348fc48923f427a4"
+      },
+      {
+        "kind": "arm",
+        "file": "old_wood_floor_arm.jpg",
+        "bytes": 646103,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_wood_floor/old_wood_floor_arm_1k.jpg",
+        "md5": "353f4a16bcb77a77c7513e6404816619"
+      }
+    ]
+  },
+  {
+    "id": "painted_plaster_wall",
+    "name": "Painted Plaster Wall",
+    "authors": {
+      "Amal Kumar": "All"
+    },
+    "dimensionsMM": [
+      2000,
+      2000
+    ],
+    "source": "https://polyhaven.com/a/painted_plaster_wall",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "painted_plaster_wall_color.jpg",
+        "bytes": 686726,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_diff_1k.jpg",
+        "md5": "15ba8c1f63a5ab412b1eabe31728540a"
+      },
+      {
+        "kind": "normal",
+        "file": "painted_plaster_wall_normal.jpg",
+        "bytes": 900461,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_nor_gl_1k.jpg",
+        "md5": "43fff290583dbdfc9bfa088a2750e840"
+      },
+      {
+        "kind": "arm",
+        "file": "painted_plaster_wall_arm.jpg",
+        "bytes": 511105,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_arm_1k.jpg",
+        "md5": "a4c1ff7470669daec9e274d915471246"
+      }
+    ]
+  },
+  {
+    "id": "brown_mud",
+    "name": "Brown Mud",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      1299.996018409729,
+      1299.996018409729
+    ],
+    "source": "https://polyhaven.com/a/brown_mud",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "brown_mud_color.jpg",
+        "bytes": 501955,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_diff_1k.jpg",
+        "md5": "b141af27b413db140818d0a4998c394c"
+      },
+      {
+        "kind": "normal",
+        "file": "brown_mud_normal.jpg",
+        "bytes": 1011780,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_nor_gl_1k.jpg",
+        "md5": "62df05266fa5a0adc7733a7184a15dea"
+      },
+      {
+        "kind": "arm",
+        "file": "brown_mud_arm.jpg",
+        "bytes": 224431,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_arm_1k.jpg",
+        "md5": "4f528864a1edbe9fff8c9b52a0922b9f"
+      }
+    ]
+  },
+  {
+    "id": "rocky_terrain_02",
+    "name": "Rocky Terrain 02",
+    "authors": {
+      "Amal Kumar": "All"
+    },
+    "dimensionsMM": [
+      90000,
+      90000
+    ],
+    "source": "https://polyhaven.com/a/rocky_terrain_02",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "rocky_terrain_02_color.jpg",
+        "bytes": 843188,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_diff_1k.jpg",
+        "md5": "cf604d3868398a6a996cb5ba330dd3ab"
+      },
+      {
+        "kind": "normal",
+        "file": "rocky_terrain_02_normal.jpg",
+        "bytes": 993692,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_nor_gl_1k.jpg",
+        "md5": "c1636176f0fa8eb9b924ebdecd47ddfd"
+      },
+      {
+        "kind": "arm",
+        "file": "rocky_terrain_02_arm.jpg",
+        "bytes": 524868,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_arm_1k.jpg",
+        "md5": "04ce14025d95d31da8367f265dcf66b4"
+      }
+    ]
+  },
+  {
+    "id": "rock_01",
+    "name": "Rock 01",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      1500,
+      1500
+    ],
+    "source": "https://polyhaven.com/a/rock_01",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "rock_01_color.jpg",
+        "bytes": 688083,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_01/rock_01_diff_1k.jpg",
+        "md5": "5897cd4496982b03cad0c3e2358486c0"
+      },
+      {
+        "kind": "normal",
+        "file": "rock_01_normal.jpg",
+        "bytes": 798807,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_01/rock_01_nor_gl_1k.jpg",
+        "md5": "d5a1d0797aaeb1ac3520504911058903"
+      },
+      {
+        "kind": "arm",
+        "file": "rock_01_arm.jpg",
+        "bytes": 201562,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_01/rock_01_arm_1k.jpg",
+        "md5": "bcf75b16af394d77466ac8e4d695ad12"
+      }
+    ]
+  }
+]

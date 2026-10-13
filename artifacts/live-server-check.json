@@ -1,0 +1,9 @@
+{
+  "buildId": "1791703431778",
+  "version": "2.5.0",
+  "url": "http://localhost:4173/",
+  "http": true,
+  "websocket": true,
+  "health": true,
+  "checked": "2026-10-11T07:29:09.555Z"
+}

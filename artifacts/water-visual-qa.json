@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "high": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1
+        },
+        "uniformTime": 1.7,
+        "changedPixels": 3915,
+        "strongChangedPixels": 2838,
+        "colorDifference": 25035,
+        "objectsExcludedFromPixelProbe": true,
+        "unchangedGeometry": true,
+        "boundHeight": 0.10999999999999999,
+        "calls": 70,
+        "art": {
+          "source": "Blender",
+          "detail": "high",
+          "models": 126,
+          "bytes": 15554824
+        }
+      }
+    },
+    {
+      "low": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1
+        },
+        "time": 2.8,
+        "finite": true
+      }
+    },
+    {
+      "sceneCleanup": {
+        "disposed": true,
+        "waterMeshes": 0
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

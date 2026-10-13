@@ -1,0 +1,158 @@
+{
+  "reports": [
+    {
+      "harvesting": {
+        "diagnostics": {
+          "cargo": {
+            "wood": 1,
+            "food": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "culledCargo": 0,
+          "stumps": 1,
+          "fallingTrees": 1,
+          "drawCalls": 2,
+          "matrixUploadBytes": 64,
+          "cachedStumps": 1
+        },
+        "treeDead": true,
+        "fallPacked": true,
+        "workerCarries": true
+      },
+      "stumpPersists": true
+    },
+    {
+      "cargo": {
+        "diagnostics": {
+          "cargo": {
+            "wood": 1,
+            "food": 1,
+            "gold": 1,
+            "stone": 1
+          },
+          "culledCargo": 0,
+          "stumps": 1,
+          "fallingTrees": 0,
+          "drawCalls": 5,
+          "matrixUploadBytes": 256,
+          "cachedStumps": 1
+        },
+        "oreScale": 0.61,
+        "alignment": [
+          {
+            "type": "wood",
+            "distance": 0.41999967780955244,
+            "position": [
+              -34.68050765991211,
+              1.8899999856948853,
+              33.27262496948242
+            ],
+            "worker": [
+              -35,
+              33
+            ]
+          },
+          {
+            "type": "food",
+            "distance": 0.41999816894808434,
+            "position": [
+              -32.599998474121094,
+              1.8899999856948853,
+              32.58000183105469
+            ],
+            "worker": [
+              -32.6,
+              33
+            ]
+          },
+          {
+            "type": "gold",
+            "distance": 0.4199981689460054,
+            "position": [
+              -30.200000762939453,
+              1.8899999856948853,
+              32.58000183105469
+            ],
+            "worker": [
+              -30.2,
+              33
+            ]
+          },
+          {
+            "type": "stone",
+            "distance": 0.4199981689460054,
+            "position": [
+              -27.799999237060547,
+              1.8899999856948853,
+              32.58000183105469
+            ],
+            "worker": [
+              -27.8,
+              33
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "smoothCargo": {
+        "distance": 0.41999830431264834,
+        "visible": [
+          -34.75,
+          33.15
+        ],
+        "authoritative": [
+          -34,
+          33.6
+        ],
+        "jointPoses": {
+          "computed": 94,
+          "reused": 81,
+          "cachedDefinitions": 24
+        }
+      }
+    },
+    {
+      "ageArchitectureRefreshOnce": true
+    },
+    {
+      "large": {
+        "world": 400,
+        "fogMin": -400,
+        "fogMax": 400,
+        "grassMin": -195.14561566058546,
+        "grassMax": 196.95989985158667,
+        "solidGrass": true,
+        "sprites": 0,
+        "interactionsGroups": 1
+      },
+      "memory": [
+        {
+          "geometries": 142,
+          "textures": 14
+        },
+        {
+          "geometries": 142,
+          "textures": 14
+        },
+        {
+          "geometries": 142,
+          "textures": 14
+        },
+        {
+          "geometries": 142,
+          "textures": 14
+        }
+      ],
+      "repeatedMatchMemoryPlateau": true
+    },
+    {
+      "phoneLandscape": true,
+      "solidCargo": true,
+      "orbitControls": true,
+      "noOverflow": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,54 @@
+{
+  "cpuOnly": true,
+  "renderedFPS": false,
+  "fixture": "artifacts/blender-custom-battle-save.json",
+  "baseline": "artifacts/perf-baseline/src/simulation.js",
+  "alternatingOrder": true,
+  "deterministicStateMatches": true,
+  "before": {
+    "runs": 6,
+    "ticks": 1200,
+    "medianTickMilliseconds": 4.136000000000422,
+    "p95TickMilliseconds": 11.43369999999959,
+    "totalMillisecondsByRun": [
+      1057.6693999999998,
+      1056.875300000007,
+      1021.4868999999926,
+      1044.3565999999882,
+      1007.5105000000021,
+      1115.8605999999854
+    ],
+    "predicateCallsPerRun": [
+      2448091,
+      2448091,
+      2448091,
+      2448091,
+      2448091,
+      2448091
+    ],
+    "state": "f438f6df356dca22eed2c94f70bf61ec7f8d65ea5de29fd92e7c42e012c2e0b9"
+  },
+  "after": {
+    "runs": 6,
+    "ticks": 1200,
+    "medianTickMilliseconds": 3.7731000000003405,
+    "p95TickMilliseconds": 11.099500000000262,
+    "totalMillisecondsByRun": [
+      1001.5112999999947,
+      975.4681999999975,
+      996.056499999997,
+      1022.3738999999878,
+      994.7613999999921,
+      966.0082000000039
+    ],
+    "predicateCallsPerRun": [
+      2074775,
+      2074775,
+      2074775,
+      2074775,
+      2074775,
+      2074775
+    ],
+    "state": "f438f6df356dca22eed2c94f70bf61ec7f8d65ea5de29fd92e7c42e012c2e0b9"
+  }
+}

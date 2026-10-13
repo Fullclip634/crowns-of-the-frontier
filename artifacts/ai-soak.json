@@ -1,0 +1,81 @@
+{
+  "note": "Passive-player simulation checks; CPU timings are not rendering FPS or real-device benchmarks.",
+  "reports": [
+    {
+      "map": "highlands",
+      "difficulty": "normal",
+      "seed": 512,
+      "simulatedSeconds": 285,
+      "result": {
+        "won": false,
+        "reason": "Your last town center has fallen."
+      },
+      "aiAge": 2,
+      "aiWorkers": 19,
+      "aiArmy": 27,
+      "aiPhase": "attack",
+      "peakPopulation": 50,
+      "blockedOrders": 2,
+      "landings": 0,
+      "simulationTickP95ms": 1.267,
+      "simulationTickMaxMs": 11.622
+    },
+    {
+      "map": "valley",
+      "difficulty": "hard",
+      "seed": 4302,
+      "simulatedSeconds": 301,
+      "result": {
+        "won": false,
+        "reason": "Your last town center has fallen."
+      },
+      "aiAge": 2,
+      "aiWorkers": 19,
+      "aiArmy": 27,
+      "aiPhase": "attack",
+      "peakPopulation": 51,
+      "blockedOrders": 6,
+      "landings": 0,
+      "simulationTickP95ms": 1.64,
+      "simulationTickMaxMs": 37.721
+    },
+    {
+      "map": "rivers",
+      "difficulty": "normal",
+      "seed": 8642,
+      "simulatedSeconds": 296,
+      "result": {
+        "won": false,
+        "reason": "Your last town center has fallen."
+      },
+      "aiAge": 2,
+      "aiWorkers": 18,
+      "aiArmy": 28,
+      "aiPhase": "attack",
+      "peakPopulation": 51,
+      "blockedOrders": 34,
+      "landings": 0,
+      "simulationTickP95ms": 3.04,
+      "simulationTickMaxMs": 97.722
+    },
+    {
+      "map": "coast",
+      "difficulty": "hard",
+      "seed": 4306,
+      "simulatedSeconds": 199,
+      "result": {
+        "won": false,
+        "reason": "Your last town center has fallen."
+      },
+      "aiAge": 2,
+      "aiWorkers": 16,
+      "aiArmy": 25,
+      "aiPhase": "attack",
+      "peakPopulation": 53,
+      "blockedOrders": 4,
+      "landings": 5,
+      "simulationTickP95ms": 2.146,
+      "simulationTickMaxMs": 35.002
+    }
+  ]
+}

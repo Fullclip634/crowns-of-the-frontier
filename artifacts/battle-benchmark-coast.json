@@ -1,0 +1,1226 @@
+{
+  "seed": 512,
+  "map": "coast",
+  "aiPace": "balanced",
+  "simulatedSeconds": 1276.2999999999347,
+  "ended": {
+    "won": true,
+    "reason": "Your alliance has eliminated every opposing kingdom."
+  },
+  "elapsedSeconds": 75.77872629999999,
+  "tickMilliseconds": {
+    "median": 4.6754000000073574,
+    "p95": 14.241399999998976,
+    "p99": 20.364400000005844,
+    "max": 60.05670000000009
+  },
+  "firstOffensives": [
+    {
+      "owner": 0,
+      "land": 205.19999999999263
+    },
+    {
+      "owner": 1,
+      "land": 216.299999999992
+    },
+    {
+      "owner": 2,
+      "land": 214.3999999999921,
+      "naval": 363.40000000001413
+    },
+    {
+      "owner": 3,
+      "land": 169.29999999999467,
+      "naval": 169.29999999999467
+    },
+    {
+      "owner": 4,
+      "land": 169.49999999999466
+    },
+    {
+      "owner": 5,
+      "land": 178.39999999999415
+    },
+    {
+      "owner": 6,
+      "land": 230.4999999999912,
+      "naval": 712.2000000000934
+    },
+    {
+      "owner": 7,
+      "land": 213.49999999999216,
+      "naval": 168.09999999999474
+    }
+  ],
+  "support": [
+    {
+      "time": 27.50000000000012,
+      "owner": 6,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 27.700000000000124,
+      "owner": 7,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 29.100000000000144,
+      "owner": 4,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 34.200000000000216,
+      "owner": 7,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 53.100000000000485,
+      "owner": 5,
+      "ally": 6,
+      "count": 4
+    },
+    {
+      "time": 53.40000000000049,
+      "owner": 6,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 55.80000000000052,
+      "owner": 7,
+      "ally": 6,
+      "count": 4
+    },
+    {
+      "time": 61.500000000000604,
+      "owner": 4,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 64.40000000000062,
+      "owner": 7,
+      "ally": 6,
+      "count": 1
+    },
+    {
+      "time": 67.00000000000047,
+      "owner": 0,
+      "ally": 2,
+      "count": 5
+    },
+    {
+      "time": 67.30000000000045,
+      "owner": 1,
+      "ally": 2,
+      "count": 5
+    },
+    {
+      "time": 67.80000000000042,
+      "owner": 3,
+      "ally": 2,
+      "count": 5
+    },
+    {
+      "time": 67.80000000000042,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 80.4999999999997,
+      "owner": 2,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 87.39999999999931,
+      "owner": 4,
+      "ally": 6,
+      "count": 5
+    },
+    {
+      "time": 87.89999999999928,
+      "owner": 6,
+      "ally": 4,
+      "count": 5
+    },
+    {
+      "time": 94.6999999999989,
+      "owner": 7,
+      "ally": 6,
+      "count": 1
+    },
+    {
+      "time": 97.9999999999987,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 98.49999999999868,
+      "owner": 5,
+      "ally": 6,
+      "count": 5
+    },
+    {
+      "time": 98.99999999999865,
+      "owner": 7,
+      "ally": 6,
+      "count": 5
+    },
+    {
+      "time": 104.49999999999834,
+      "owner": 3,
+      "ally": 2,
+      "count": 6
+    },
+    {
+      "time": 112.59999999999788,
+      "owner": 1,
+      "ally": 0,
+      "count": 5
+    },
+    {
+      "time": 116.69999999999764,
+      "owner": 0,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 124.3999999999972,
+      "owner": 5,
+      "ally": 4,
+      "count": 6
+    },
+    {
+      "time": 124.89999999999718,
+      "owner": 7,
+      "ally": 4,
+      "count": 6
+    },
+    {
+      "time": 124.89999999999718,
+      "owner": 7,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 128.199999999997,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 130.39999999999688,
+      "owner": 3,
+      "ally": 1,
+      "count": 7
+    },
+    {
+      "time": 155.19999999999547,
+      "owner": 7,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 158.49999999999528,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 183.59999999999386,
+      "owner": 0,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 184.09999999999383,
+      "owner": 2,
+      "ally": 1,
+      "count": 7
+    },
+    {
+      "time": 184.3999999999938,
+      "owner": 3,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 185.39999999999375,
+      "owner": 7,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 188.69999999999357,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 211.69999999999226,
+      "owner": 0,
+      "ally": 1,
+      "count": 9
+    },
+    {
+      "time": 212.19999999999223,
+      "owner": 2,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 212.4999999999922,
+      "owner": 3,
+      "ally": 1,
+      "count": 10
+    },
+    {
+      "time": 215.59999999999204,
+      "owner": 7,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 218.99999999999184,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 238.09999999999076,
+      "owner": 2,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 238.39999999999074,
+      "owner": 3,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 244.09999999999042,
+      "owner": 0,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 245.8999999999903,
+      "owner": 7,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 249.19999999999013,
+      "owner": 3,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 255.89999999998975,
+      "owner": 4,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 264.09999999999155,
+      "owner": 2,
+      "ally": 0,
+      "count": 9
+    },
+    {
+      "time": 264.2999999999916,
+      "owner": 3,
+      "ally": 0,
+      "count": 6
+    },
+    {
+      "time": 272.6999999999935,
+      "owner": 2,
+      "ally": 0,
+      "count": 1
+    },
+    {
+      "time": 276.0999999999943,
+      "owner": 7,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 279.39999999999503,
+      "owner": 3,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 295.29999999999865,
+      "owner": 6,
+      "ally": 4,
+      "count": 1
+    },
+    {
+      "time": 301.3,
+      "owner": 4,
+      "ally": 5,
+      "count": 7
+    },
+    {
+      "time": 301.50000000000006,
+      "owner": 5,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 301.8000000000001,
+      "owner": 6,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 302.00000000000017,
+      "owner": 7,
+      "ally": 5,
+      "count": 5
+    },
+    {
+      "time": 302.9000000000004,
+      "owner": 2,
+      "ally": 0,
+      "count": 1
+    },
+    {
+      "time": 306.40000000000117,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 309.7000000000019,
+      "owner": 3,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 325.5000000000055,
+      "owner": 6,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 327.50000000000597,
+      "owner": 5,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 333.20000000000726,
+      "owner": 2,
+      "ally": 0,
+      "count": 1
+    },
+    {
+      "time": 336.60000000000804,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 339.9000000000088,
+      "owner": 3,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 355.3000000000123,
+      "owner": 4,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 363.40000000001413,
+      "owner": 2,
+      "ally": 0,
+      "count": 1
+    },
+    {
+      "time": 366.8000000000149,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 370.2000000000157,
+      "owner": 3,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 386.00000000001927,
+      "owner": 6,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 393.700000000021,
+      "owner": 2,
+      "ally": 0,
+      "count": 1
+    },
+    {
+      "time": 397.1000000000218,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 400.40000000002254,
+      "owner": 3,
+      "ally": 0,
+      "count": 3
+    },
+    {
+      "time": 407.6000000000242,
+      "owner": 6,
+      "ally": 4,
+      "count": 13
+    },
+    {
+      "time": 407.90000000002425,
+      "owner": 7,
+      "ally": 4,
+      "count": 8
+    },
+    {
+      "time": 409.30000000002457,
+      "owner": 4,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 416.30000000002616,
+      "owner": 6,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 423.9000000000279,
+      "owner": 2,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 427.30000000002866,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 430.6000000000294,
+      "owner": 3,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 433.50000000003007,
+      "owner": 6,
+      "ally": 5,
+      "count": 13
+    },
+    {
+      "time": 441.70000000003193,
+      "owner": 4,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 443.10000000003225,
+      "owner": 1,
+      "ally": 0,
+      "count": 13
+    },
+    {
+      "time": 443.60000000003237,
+      "owner": 3,
+      "ally": 1,
+      "count": 9
+    },
+    {
+      "time": 451.1000000000341,
+      "owner": 7,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 454.10000000003475,
+      "owner": 2,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 457.60000000003555,
+      "owner": 7,
+      "ally": 5,
+      "count": 2
+    },
+    {
+      "time": 459.500000000036,
+      "owner": 6,
+      "ally": 5,
+      "count": 13
+    },
+    {
+      "time": 460.9000000000363,
+      "owner": 3,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 471.20000000003864,
+      "owner": 1,
+      "ally": 0,
+      "count": 13
+    },
+    {
+      "time": 471.4000000000387,
+      "owner": 2,
+      "ally": 0,
+      "count": 6
+    },
+    {
+      "time": 476.7000000000399,
+      "owner": 6,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 485.40000000004187,
+      "owner": 6,
+      "ally": 5,
+      "count": 13
+    },
+    {
+      "time": 487.8000000000424,
+      "owner": 7,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 491.40000000004324,
+      "owner": 4,
+      "ally": 5,
+      "count": 9
+    },
+    {
+      "time": 493.0000000000436,
+      "owner": 2,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 494.3000000000439,
+      "owner": 7,
+      "ally": 4,
+      "count": 9
+    },
+    {
+      "time": 497.3000000000446,
+      "owner": 2,
+      "ally": 1,
+      "count": 10
+    },
+    {
+      "time": 510.6000000000476,
+      "owner": 3,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 511.30000000004776,
+      "owner": 6,
+      "ally": 4,
+      "count": 13
+    },
+    {
+      "time": 514.4000000000484,
+      "owner": 1,
+      "ally": 0,
+      "count": 12
+    },
+    {
+      "time": 529.7000000000519,
+      "owner": 2,
+      "ally": 0,
+      "count": 3
+    },
+    {
+      "time": 537.2000000000536,
+      "owner": 6,
+      "ally": 4,
+      "count": 13
+    },
+    {
+      "time": 540.3000000000543,
+      "owner": 1,
+      "ally": 0,
+      "count": 11
+    },
+    {
+      "time": 546.1000000000556,
+      "owner": 7,
+      "ally": 4,
+      "count": 11
+    },
+    {
+      "time": 553.5000000000573,
+      "owner": 2,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 553.8000000000574,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 555.7000000000578,
+      "owner": 2,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 581.6000000000637,
+      "owner": 2,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 583.7000000000642,
+      "owner": 2,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 584.0000000000642,
+      "owner": 3,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 591.0000000000658,
+      "owner": 5,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 591.2000000000659,
+      "owner": 6,
+      "ally": 4,
+      "count": 13
+    },
+    {
+      "time": 592.6000000000662,
+      "owner": 3,
+      "ally": 1,
+      "count": 4
+    },
+    {
+      "time": 607.5000000000696,
+      "owner": 2,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 616.9000000000717,
+      "owner": 5,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 617.1000000000718,
+      "owner": 6,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 631.500000000075,
+      "owner": 3,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 655.0000000000804,
+      "owner": 2,
+      "ally": 1,
+      "count": 9
+    },
+    {
+      "time": 655.3000000000804,
+      "owner": 3,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 662.8000000000822,
+      "owner": 7,
+      "ally": 4,
+      "count": 3
+    },
+    {
+      "time": 668.7000000000835,
+      "owner": 5,
+      "ally": 4,
+      "count": 12
+    },
+    {
+      "time": 669.0000000000836,
+      "owner": 6,
+      "ally": 4,
+      "count": 11
+    },
+    {
+      "time": 693.000000000089,
+      "owner": 7,
+      "ally": 5,
+      "count": 3
+    },
+    {
+      "time": 693.9000000000892,
+      "owner": 2,
+      "ally": 1,
+      "count": 10
+    },
+    {
+      "time": 694.7000000000894,
+      "owner": 5,
+      "ally": 4,
+      "count": 10
+    },
+    {
+      "time": 694.9000000000894,
+      "owner": 6,
+      "ally": 5,
+      "count": 8
+    },
+    {
+      "time": 720.8000000000953,
+      "owner": 6,
+      "ally": 5,
+      "count": 4
+    },
+    {
+      "time": 721.1000000000954,
+      "owner": 7,
+      "ally": 5,
+      "count": 3
+    },
+    {
+      "time": 728.7000000000971,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 730.4000000000975,
+      "owner": 1,
+      "ally": 2,
+      "count": 10
+    },
+    {
+      "time": 737.4000000000991,
+      "owner": 3,
+      "ally": 2,
+      "count": 4
+    },
+    {
+      "time": 739.3000000000995,
+      "owner": 2,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 759.000000000104,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 760.6000000001044,
+      "owner": 1,
+      "ally": 2,
+      "count": 11
+    },
+    {
+      "time": 763.300000000105,
+      "owner": 3,
+      "ally": 2,
+      "count": 4
+    },
+    {
+      "time": 776.0000000001079,
+      "owner": 2,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 787.8000000001106,
+      "owner": 6,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 788.0000000001106,
+      "owner": 7,
+      "ally": 5,
+      "count": 1
+    },
+    {
+      "time": 789.2000000001109,
+      "owner": 3,
+      "ally": 1,
+      "count": 6
+    },
+    {
+      "time": 791.1000000001113,
+      "owner": 2,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 795.7000000001124,
+      "owner": 3,
+      "ally": 1,
+      "count": 2
+    },
+    {
+      "time": 796.4000000001125,
+      "owner": 6,
+      "ally": 5,
+      "count": 7
+    },
+    {
+      "time": 798.8000000001131,
+      "owner": 7,
+      "ally": 5,
+      "count": 6
+    },
+    {
+      "time": 817.0000000001172,
+      "owner": 2,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 824.800000000119,
+      "owner": 7,
+      "ally": 5,
+      "count": 3
+    },
+    {
+      "time": 842.9000000001231,
+      "owner": 2,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 850.4000000001248,
+      "owner": 6,
+      "ally": 7,
+      "count": 5
+    },
+    {
+      "time": 850.7000000001249,
+      "owner": 7,
+      "ally": 6,
+      "count": 6
+    },
+    {
+      "time": 876.6000000001308,
+      "owner": 7,
+      "ally": 6,
+      "count": 8
+    },
+    {
+      "time": 890.5000000001339,
+      "owner": 2,
+      "ally": 1,
+      "count": 1
+    },
+    {
+      "time": 933.9000000001438,
+      "owner": 3,
+      "ally": 2,
+      "count": 5
+    },
+    {
+      "time": 947.900000000147,
+      "owner": 7,
+      "ally": 6,
+      "count": 10
+    },
+    {
+      "time": 957.7000000001492,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 959.8000000001497,
+      "owner": 3,
+      "ally": 2,
+      "count": 4
+    },
+    {
+      "time": 985.8000000001556,
+      "owner": 3,
+      "ally": 2,
+      "count": 5
+    },
+    {
+      "time": 987.9000000001561,
+      "owner": 3,
+      "ally": 2,
+      "count": 1
+    },
+    {
+      "time": 991.1000000001568,
+      "owner": 7,
+      "ally": 6,
+      "count": 1
+    },
+    {
+      "time": 1011.7000000001615,
+      "owner": 3,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 1054.6000000001363,
+      "owner": 2,
+      "ally": 1,
+      "count": 8
+    },
+    {
+      "time": 1054.900000000136,
+      "owner": 3,
+      "ally": 1,
+      "count": 5
+    },
+    {
+      "time": 1106.5000000000891,
+      "owner": 2,
+      "ally": 1,
+      "count": 7
+    },
+    {
+      "time": 1106.700000000089,
+      "owner": 3,
+      "ally": 1,
+      "count": 4
+    },
+    {
+      "time": 1132.6000000000654,
+      "owner": 3,
+      "ally": 2,
+      "count": 4
+    },
+    {
+      "time": 1136.7000000000617,
+      "owner": 2,
+      "ally": 1,
+      "count": 7
+    },
+    {
+      "time": 1162.600000000038,
+      "owner": 2,
+      "ally": 1,
+      "count": 7
+    }
+  ],
+  "blocked": {
+    "0": 20,
+    "1": 52,
+    "2": 139,
+    "3": 108,
+    "5": 35,
+    "6": 61,
+    "7": 132
+  },
+  "kingdoms": [
+    {
+      "owner": 0,
+      "age": 2,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 6213,
+        "wood": 31,
+        "gold": 1647,
+        "stone": 1610
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 25177.41499999992,
+        "kills": 26,
+        "lost": 102,
+        "built": 15,
+        "trained": 52
+      }
+    },
+    {
+      "owner": 1,
+      "age": 3,
+      "defeated": false,
+      "units": 2,
+      "buildings": 6,
+      "resources": {
+        "food": 26262,
+        "wood": 156,
+        "gold": 701,
+        "stone": 5772
+      },
+      "phase": "muster",
+      "stats": {
+        "gathered": 84196.35495000033,
+        "kills": 118,
+        "lost": 323,
+        "built": 35,
+        "trained": 133
+      }
+    },
+    {
+      "owner": 2,
+      "age": 3,
+      "defeated": false,
+      "units": 78,
+      "buildings": 39,
+      "resources": {
+        "food": 58604,
+        "wood": 6530,
+        "gold": 9423,
+        "stone": 4080
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 114487.53960000048,
+        "kills": 382,
+        "lost": 115,
+        "built": 43,
+        "trained": 163
+      }
+    },
+    {
+      "owner": 3,
+      "age": 3,
+      "defeated": false,
+      "units": 80,
+      "buildings": 48,
+      "resources": {
+        "food": 28566,
+        "wood": 11229,
+        "gold": 11061,
+        "stone": 6212
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 93873.34250000144,
+        "kills": 348,
+        "lost": 114,
+        "built": 39,
+        "trained": 176
+      }
+    },
+    {
+      "owner": 4,
+      "age": 2,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 243,
+        "wood": 89,
+        "gold": 852,
+        "stone": 2488
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 23870.21590000067,
+        "kills": 38,
+        "lost": 190,
+        "built": 32,
+        "trained": 93
+      }
+    },
+    {
+      "owner": 5,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 6973,
+        "wood": 16,
+        "gold": 237,
+        "stone": 3779
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 50057.34499999983,
+        "kills": 71,
+        "lost": 221,
+        "built": 32,
+        "trained": 99
+      }
+    },
+    {
+      "owner": 6,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 29958,
+        "wood": 7,
+        "gold": 1489,
+        "stone": 3378
+      },
+      "phase": "regroup",
+      "stats": {
+        "gathered": 68577.94370000032,
+        "kills": 98,
+        "lost": 222,
+        "built": 25,
+        "trained": 114
+      }
+    },
+    {
+      "owner": 7,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 44386,
+        "wood": 119,
+        "gold": 7315,
+        "stone": 4618
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 103134.12095000055,
+        "kills": 435,
+        "lost": 276,
+        "built": 35,
+        "trained": 170
+      }
+    }
+  ]
+}

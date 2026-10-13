@@ -1,0 +1,420 @@
+{
+  "scope": "small-phone-diagnostic",
+  "checks": [
+    {
+      "phone": {
+        "width": 320,
+        "height": 568,
+        "layoutWidth": 320,
+        "canvas": {
+          "width": 320,
+          "height": 568
+        },
+        "overflow": false,
+        "scrollWidth": 320,
+        "boxes": [
+          {
+            "selector": ".camera-controls",
+            "x": 24,
+            "y": 96,
+            "width": 287,
+            "height": 52
+          },
+          {
+            "selector": "#minimap",
+            "x": 14,
+            "y": 421,
+            "width": 104,
+            "height": 104
+          },
+          {
+            "selector": "#selection-panel",
+            "x": 8,
+            "y": 280,
+            "width": 304,
+            "height": 104
+          },
+          {
+            "selector": ".command-panel",
+            "x": 130,
+            "y": 420,
+            "width": 182,
+            "height": 125
+          },
+          {
+            "selector": ".game-header",
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 87
+          }
+        ],
+        "buttons": [
+          {
+            "action": "production",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "objectives-expand",
+            "width": 182,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-left",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-right",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-closer",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-farther",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-panels",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-options",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "build",
+            "width": 61.6875,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "auto-work",
+            "width": 98.75,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "army",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "idle",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "build",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "attackmove",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "stop",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "help",
+            "width": 53.328125,
+            "height": 46,
+            "reachable": true
+          }
+        ],
+        "models": 126,
+        "touchTraining": true,
+        "groundTap": {
+          "x": 240,
+          "y": 184,
+          "id": 6,
+          "point": {
+            "x": -112.29976509768146,
+            "z": 79.83134442734186
+          },
+          "paused": false
+        },
+        "moveResult": {
+          "order": {
+            "type": "move",
+            "x": -112.29976509768146,
+            "z": 79.83134442734186
+          },
+          "paused": false,
+          "trace": [
+            {
+              "type": "pointerdown",
+              "target": "CANVAS",
+              "pointerType": "touch",
+              "x": 240,
+              "y": 184,
+              "paused": false,
+              "selection": [
+                6
+              ],
+              "ended": null
+            },
+            {
+              "order": {
+                "type": "move",
+                "x": -112.29976509768146,
+                "z": 79.83134442734186
+              }
+            },
+            {
+              "type": "pointerup",
+              "target": "CANVAS",
+              "pointerType": "touch",
+              "x": 240,
+              "y": 184,
+              "paused": false,
+              "selection": [
+                6
+              ],
+              "ended": null
+            }
+          ],
+          "position": {
+            "x": -103.25503196095846,
+            "z": 110.1139659760874
+          }
+        },
+        "touchMove": true
+      }
+    },
+    {
+      "phone": {
+        "width": 360,
+        "height": 640,
+        "layoutWidth": 360,
+        "canvas": {
+          "width": 360,
+          "height": 640
+        },
+        "overflow": false,
+        "scrollWidth": 360,
+        "boxes": [
+          {
+            "selector": ".camera-controls",
+            "x": 64,
+            "y": 96,
+            "width": 287,
+            "height": 52
+          },
+          {
+            "selector": "#minimap",
+            "x": 14,
+            "y": 493,
+            "width": 104,
+            "height": 104
+          },
+          {
+            "selector": "#selection-panel",
+            "x": 8,
+            "y": 352,
+            "width": 344,
+            "height": 104
+          },
+          {
+            "selector": ".command-panel",
+            "x": 130,
+            "y": 492,
+            "width": 222,
+            "height": 125
+          },
+          {
+            "selector": ".game-header",
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 87
+          }
+        ],
+        "buttons": [
+          {
+            "action": "production",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "objectives-expand",
+            "width": 182,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-left",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-right",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-closer",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-farther",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-panels",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "camera-options",
+            "width": 44,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "build",
+            "width": 61.6875,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "auto-work",
+            "width": 98.75,
+            "height": 44,
+            "reachable": true
+          },
+          {
+            "action": "army",
+            "width": 66.65625,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "idle",
+            "width": 66.671875,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "build",
+            "width": 66.65625,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "attackmove",
+            "width": 66.65625,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "stop",
+            "width": 66.671875,
+            "height": 46,
+            "reachable": true
+          },
+          {
+            "action": "help",
+            "width": 66.65625,
+            "height": 46,
+            "reachable": true
+          }
+        ],
+        "models": 126,
+        "touchTraining": true,
+        "groundTap": {
+          "x": 24,
+          "y": 112,
+          "id": 6,
+          "point": {
+            "x": -145.20167859140412,
+            "z": 96.81803695113754
+          },
+          "paused": false
+        },
+        "moveResult": {
+          "order": {
+            "type": "move",
+            "x": -145.20167859140412,
+            "z": 96.81803695113754
+          },
+          "paused": false,
+          "trace": [
+            {
+              "type": "pointerdown",
+              "target": "CANVAS",
+              "pointerType": "touch",
+              "x": 24,
+              "y": 112,
+              "paused": false,
+              "selection": [
+                6
+              ],
+              "ended": null
+            },
+            {
+              "order": {
+                "type": "move",
+                "x": -145.20167859140412,
+                "z": 96.81803695113754
+              }
+            },
+            {
+              "type": "pointerup",
+              "target": "CANVAS",
+              "pointerType": "touch",
+              "x": 24,
+              "y": 112,
+              "paused": false,
+              "selection": [
+                6
+              ],
+              "ended": null
+            }
+          ],
+          "position": {
+            "x": -102.95319429028696,
+            "z": 110.39792467751472
+          }
+        },
+        "touchMove": true
+      }
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "passed": true
+}

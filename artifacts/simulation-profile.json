@@ -1,0 +1,93 @@
+{
+  "ticks": 200,
+  "units": 316,
+  "totalMilliseconds": 1610.8731999999993,
+  "median": 5.787499999999909,
+  "p95": 20.536699999999996,
+  "inclusiveMethods": [
+    [
+      "tickUnit",
+      {
+        "calls": 64501,
+        "milliseconds": 1024.072
+      }
+    ],
+    [
+      "move",
+      {
+        "calls": 33668,
+        "milliseconds": 474.95550000001265
+      }
+    ],
+    [
+      "nearest",
+      {
+        "calls": 33342,
+        "milliseconds": 408.62270000000075
+      }
+    ],
+    [
+      "pathTo",
+      {
+        "calls": 1349,
+        "milliseconds": 264.4007000000039
+      }
+    ],
+    [
+      "tickBuilding",
+      {
+        "calls": 29913,
+        "milliseconds": 157.84360000000012
+      }
+    ],
+    [
+      "updateFog",
+      {
+        "calls": 34,
+        "milliseconds": 50.552399999999835
+      }
+    ],
+    [
+      "grid",
+      {
+        "calls": 40353,
+        "milliseconds": 40.627799999990856
+      }
+    ],
+    [
+      "checkVictory",
+      {
+        "calls": 200,
+        "milliseconds": 27.820600000000013
+      }
+    ],
+    [
+      "canSee",
+      {
+        "calls": 1800,
+        "milliseconds": 23.07170000000238
+      }
+    ],
+    [
+      "get",
+      {
+        "calls": 33506,
+        "milliseconds": 14.474800000011754
+      }
+    ],
+    [
+      "assignWorker",
+      {
+        "calls": 13,
+        "milliseconds": 9.136600000000044
+      }
+    ],
+    [
+      "tickAI",
+      {
+        "calls": 0,
+        "milliseconds": 0
+      }
+    ]
+  ]
+}

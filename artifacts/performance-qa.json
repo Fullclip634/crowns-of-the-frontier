@@ -1,0 +1,103 @@
+{
+  "samples": [
+    {
+      "quality": "low",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 16.112348822402527,
+      "sampleWindow": {
+        "requestedMilliseconds": 5000,
+        "elapsedMilliseconds": 5027.200000001118,
+        "frames": 81,
+        "prolongedStall": false
+      },
+      "renderSubmitMilliseconds": {
+        "samples": 81,
+        "median": 22,
+        "p95": 33.90000000037253,
+        "max": 42.09999999962747
+      },
+      "simulationTickMilliseconds": {
+        "samples": 37,
+        "median": 23.800000000745058,
+        "p95": 64.79999999888241,
+        "max": 177
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 115,
+        "calls": 292,
+        "triangles": 389482,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 252,
+        "textures": 14
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 324,
+        "activeBatches": 9,
+        "matrixUploadBytes": 103424,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 5939200
+      },
+      "jointPoses": {
+        "computed": 1597,
+        "reused": 1373,
+        "cachedDefinitions": 29
+      },
+      "interactions": {
+        "cargo": {
+          "wood": 16,
+          "food": 36,
+          "gold": 16,
+          "stone": 6
+        },
+        "culledCargo": 44,
+        "stumps": 237,
+        "fallingTrees": 2,
+        "drawCalls": 5,
+        "matrixUploadBytes": 4736,
+        "cachedStumps": 237
+      },
+      "contacts": {
+        "visible": 388,
+        "culled": 640,
+        "computed": 56,
+        "reused": 332,
+        "cached": 389,
+        "matrixUploadBytes": 24832
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 3928668
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 7
+      },
+      "cover": {
+        "visible": 205,
+        "seeded": 1159,
+        "triangles": 17220,
+        "drawCalls": 1
+      },
+      "profile": "Isolated production 2.6.1 / integrated development laptop",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false,
+      "offlineCacheReady": true
+    }
+  ],
+  "errors": []
+}

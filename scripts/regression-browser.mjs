@@ -1,0 +1,10 @@
+import {spawn} from 'node:child_process';
+import fs from 'node:fs';
+const reportPath=process.env.QA_REPORT||'artifacts/release-browser-checks.json',names=process.argv.slice(2),retry=names.length===1&&names[0]==='--failed',previous=retry?JSON.parse(fs.readFileSync(reportPath,'utf8')):null,checks=retry?previous.checks.filter(check=>!check.passed).map(check=>check.name):names.length?names:['edge-scroll-qa.mjs','map-qa.mjs','production-qa.mjs','commander-qa.mjs','campaign-qa.mjs','realm-qa.mjs','interactions-qa.mjs','custom-battle-qa.mjs','offline-qa.mjs','custom-multiplayer-qa.mjs'];
+const report=previous||{version:JSON.parse(fs.readFileSync('package.json','utf8')).version,started:new Date().toISOString(),checks:[]};fs.mkdirSync('artifacts',{recursive:true});
+for(const name of checks){
+  if(!/^[a-z-]+\.mjs$/.test(name))throw new Error('Invalid check filename');const start=Date.now();let output='';console.log(`Checking ${name}`);
+  const child=spawn(process.execPath,['scripts/'+name],{env:{...process.env,QA_URL:process.env.QA_URL||'http://localhost:4173/'},stdio:['ignore','pipe','pipe']});child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',chunk=>output+=chunk);const code=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve);});
+  const result={name,passed:code===0,seconds:(Date.now()-start)/1000,output},index=report.checks.findIndex(check=>check.name===name);if(retry&&index>=0){const old=report.checks[index];result.previousAttempts=[...(old.previousAttempts||[]),{passed:old.passed,seconds:old.seconds,output:old.output}];report.checks[index]=result;}else report.checks.push(result);fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(`${code===0?'PASS':'FAIL'} ${name} (${Math.round((Date.now()-start)/1000)}s)`);if(code!==0)console.log(output.slice(-2500));
+}
+report.finished=new Date().toISOString();report.passed=report.checks.every(check=>check.passed);fs.writeFileSync(reportPath,JSON.stringify(report,null,2));if(!report.passed)process.exitCode=1;

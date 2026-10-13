@@ -1,0 +1,31 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const base=process.env.QA_URL||'http://localhost:4174/',report={screens:[],errors:[],passed:false};
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+try{
+  for(const [name,width,height,mobile]of [['desktop',1440,900,false],['phone-landscape',568,320,true],['phone-portrait',320,568,true]]){
+    if(process.env.UI_QA_PROFILE&&process.env.UI_QA_PROFILE!==name)continue;
+    const page=await browser.newPage({viewport:{width,height},isMobile:mobile,hasTouch:mobile});page.setDefaultTimeout(90000);page.on('pageerror',error=>report.errors.push(error.message));
+    await page.addInitScript(()=>localStorage.setItem('crowns-settings',JSON.stringify({quality:'low',autoQuality:false,music:false,volume:0,weather:'clear'})));
+    await page.goto(base,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view);await page.evaluate(()=>document.fonts.ready);
+    const click=locator=>mobile?locator.tap():locator.click();
+    for(const action of process.env.UI_QA_STOCK_ONLY==='true'?[]:['campaign','custom-battle','settings','codex','tech-tree','lan']){
+      const opener=page.locator(`#landing [data-action="${action==='tech-tree'?'codex':action}"]`).first();await click(opener);if(action==='tech-tree')await click(page.locator('[data-action=tech-tree]'));await page.evaluate(()=>document.fonts.ready);
+      const layout=await page.evaluate(()=>{const d=document.querySelector('[role=dialog]'),r=d.getBoundingClientRect(),close=d.querySelector('.modal-close').getBoundingClientRect();return {name:d.querySelector('h2')?.textContent,named:d.getAttribute('aria-labelledby')===d.querySelector('h2')?.id,width:innerWidth,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,dialogOverflow:d.scrollWidth>d.clientWidth,rect:{x:r.x,y:r.y,width:r.width,height:r.height},close:{x:close.x,y:close.y,width:close.width,height:close.height},controls:[...d.querySelectorAll('button,select,input:not([type=checkbox]):not([type=range])')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return {name:e.getAttribute('aria-label')||e.textContent.trim().slice(0,32),width:r.width,height:r.height,font:parseFloat(getComputedStyle(e).fontSize)};})};});
+      report.screens.push({profile:name,action,layout});assert.equal(layout.width,width);assert.equal(layout.overflow,false,`${name} ${action} document overflow`);assert.equal(layout.dialogOverflow,false,`${name} ${action} content overflow`);assert.ok(layout.named);assert.ok(layout.rect.x>=0&&layout.rect.y>=0&&layout.rect.x+layout.rect.width<=width+1&&layout.rect.y+layout.rect.height<=height+1);assert.ok(layout.close.width>=44&&layout.close.height>=44);
+      if(mobile)assert.ok(layout.controls.every(e=>e.height>=44&&e.width>=44),`${name} ${action} touch targets`);
+      const focusable=await page.evaluate(()=>{const buttons=[...document.querySelectorAll('[role=dialog] button:not(:disabled),[role=dialog] input:not(:disabled),[role=dialog] select:not(:disabled)')].filter(e=>e.getClientRects().length);window.firstControl=buttons[0];window.lastControl=buttons.at(-1);lastControl.focus();return true;});assert.ok(focusable);await page.keyboard.press('Tab');assert.ok(await page.evaluate(()=>document.activeElement===firstControl));await page.keyboard.press('Shift+Tab');assert.ok(await page.evaluate(()=>document.activeElement===lastControl));
+      if(action==='settings'){const binding=page.locator('[data-keybind]').first(),key=await binding.getAttribute('data-key');await binding.focus();await page.keyboard.press('Tab');assert.equal(await binding.getAttribute('data-key'),key);assert.ok(await binding.evaluate(e=>document.activeElement!==e));await binding.focus();await page.keyboard.press('Escape');assert.equal(await page.locator('[role=dialog]').count(),1);await page.locator('#volume').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('[role=dialog]').count(),0);assert.ok(await opener.evaluate(e=>document.activeElement===e));await click(opener);}
+      await page.locator('.modal').evaluate(e=>e.scrollTop=0);await page.screenshot({path:`artifacts/interface-${name}-${action}.png`});await click(page.locator('.modal-close'));assert.ok(await opener.evaluate(e=>document.activeElement===e));
+    }
+    await page.evaluate(()=>{frontier.start({mode:'sandbox',map:'highlands',seed:512});frontier.action('help');});if(mobile&&width<height&&await page.locator('[data-action=dismiss-rotate]').isVisible())await page.locator('[data-action=dismiss-rotate]').tap();await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>frontier.paused),false);
+    await page.evaluate(()=>{frontier.sim.stop(frontier.sim.owned(0,'unit').map(e=>e.id));Object.assign(frontier.sim.players[0].resources,{food:987654321,wood:123456789,gold:456789123,stone:765432198});});await page.waitForFunction(()=>document.querySelector('#resource-bar strong').textContent.includes('M'));await page.evaluate(()=>document.fonts.ready);
+    const balances=await page.evaluate(()=>{const bar=document.querySelector('#resource-bar'),food=bar.querySelector('.resource');return {inner:innerWidth,client:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,barWidth:bar.clientWidth,barScroll:bar.scrollWidth,label:food.getAttribute('aria-label'),title:food.title,display:food.querySelector('strong').textContent};});report.screens.push({profile:name,lateEconomy:balances});
+    assert.ok(balances.scroll===balances.client&&balances.barScroll<=balances.barWidth&&balances.label.includes('987654321')&&balances.title.includes('987654321'),'late economy balances fit and preserve exact accessible values');
+    await page.screenshot({path:`artifacts/interface-${name}-late-economy.png`});
+    await page.close();
+  }
+  assert.deepEqual(report.errors,[]);report.passed=true;console.log(JSON.stringify({passed:true,screens:report.screens.length,errors:report.errors}));
+}catch(error){report.failure=error.message;console.log(JSON.stringify(report));throw error;}
+finally{fs.writeFileSync('artifacts/interface-qa.json',JSON.stringify(report,null,2));await browser.close();}

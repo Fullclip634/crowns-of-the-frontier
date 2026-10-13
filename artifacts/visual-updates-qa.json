@@ -1,0 +1,71 @@
+{
+  "checks": [
+    {
+      "missingArtworkBlocksPlay": true,
+      "retryLoadsFullCatalogue": true
+    },
+    {
+      "currentArtwork": {
+        "building": {
+          "kind": "building",
+          "type": "towncenter",
+          "volumetric": true,
+          "architectureAge": 3,
+          "artRevision": "civic-arcades",
+          "authored": true,
+          "detail": "low"
+        },
+        "unit": {
+          "kind": "unit",
+          "type": "villager",
+          "articulated": true,
+          "figure": "adult",
+          "variant": "wood",
+          "artRevision": "field-gear",
+          "authored": true,
+          "detail": "low"
+        },
+        "art": {
+          "source": "Blender",
+          "detail": "low",
+          "models": 126,
+          "bytes": 3639276
+        },
+        "plasterVertices": 72,
+        "roofVertices": 141,
+        "plasterMap": true,
+        "roofMap": true,
+        "draws": 99
+      }
+    },
+    {
+      "interpolatedMovement": {
+        "from": {
+          "x": -27,
+          "z": 33
+        },
+        "authoritative": {
+          "x": -26.6,
+          "z": 33
+        },
+        "after": {
+          "x": -26.6,
+          "z": 33
+        },
+        "quarter": -26.9,
+        "threeQuarter": -26.700000000000003,
+        "finite": true
+      }
+    },
+    {
+      "productionVersionMatchesPage": true,
+      "updateSavesSoloMatch": true,
+      "refreshUsesNewBuildURL": true
+    },
+    {
+      "liveMultiplayerRefreshBlocked": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

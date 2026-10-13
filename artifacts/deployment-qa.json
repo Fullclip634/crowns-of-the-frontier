@@ -1,0 +1,19 @@
+{
+  "reports": [
+    {
+      "staticBuild": true,
+      "soloCustomBattle": true,
+      "clearMultiplayerNotice": true,
+      "customHostNotice": true,
+      "noBrokenSocketAttempt": true,
+      "offlineReload": true
+    },
+    {
+      "separateFrontendBackend": true,
+      "configuredEndpoint": true,
+      "allowedOrigin": true,
+      "realWebSocketRoomCreated": true
+    }
+  ],
+  "errors": []
+}

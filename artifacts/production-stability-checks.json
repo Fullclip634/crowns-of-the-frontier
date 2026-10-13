@@ -1,0 +1,20 @@
+{
+  "version": "2.4.0",
+  "started": "2026-10-10T01:11:09.502Z",
+  "checks": [
+    {
+      "name": "production-qa.mjs",
+      "passed": true,
+      "seconds": 57.874,
+      "output": "{\n  \"reports\": [\n    {\n      \"desktop\": true,\n      \"balancedBatches\": true,\n      \"shiftBatch\": true,\n      \"overview\": true,\n      \"queueCount\": true,\n      \"refund\": true,\n      \"buildingSelection\": true,\n      \"escape\": true,\n      \"researchVisible\": true,\n      \"stableButtonsDuringLiveUpdates\": true,\n      \"liveHealthAndQueueProgress\": true\n    },\n    {\n      \"landscapePhone\": true,\n      \"touchBatch\": true,\n      \"touchOverview\": true,\n      \"touchSelect\": true,\n      \"touchCancel\": true,\n      \"scrollPreserved\": true,\n      \"noOverflow\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "custom-multiplayer-qa.mjs",
+      "passed": true,
+      "seconds": 51.946,
+      "output": "Host room created; checking guest slot selection.\nDesktop and phone browsers started; checking private economies, training and reconnect.\nPhone rejoined; checking continued play after the host is defeated.\n{\n  \"reports\": [\n    {\n      \"name\": \"Your kingdom\",\n      \"team\": 1,\n      \"size\": 400,\n      \"private\": true,\n      \"controller\": \"human\",\n      \"home\": [\n        -96.16652224137046,\n        0.6499999761581421,\n        96.16652224137047\n      ],\n      \"start\": {\n        \"x\": -96.16652224137046,\n        \"z\": 96.16652224137047\n      }\n    },\n    {\n      \"name\": \"Phone ally\",\n      \"team\": 1,\n      \"size\": 400,\n      \"private\": true,\n      \"controller\": \"human\",\n      \"home\": [\n        -96.16652224137049,\n        0.6499999761581421,\n        -96.16652224137046\n      ],\n      \"start\": {\n        \"x\": -96.16652224137049,\n        \"z\": -96.16652224137046\n      }\n    },\n    {\n      \"twoHumanBrowsers\": true,\n      \"backgroundHostRenderingSuspended\": true,\n      \"threeHumanConnections\": true,\n      \"oneIndependentAI\": true,\n      \"guestSlotSelection\": true,\n      \"readyGate\": true,\n      \"ownership\": true,\n      \"phoneProduction\": true,\n      \"phoneReconnect\": true,\n      \"hostDefeatContinues\": true,\n      \"correctTeamResults\": true\n    }\n  ],\n  \"errors\": []\n}\n"
+    }
+  ],
+  "finished": "2026-10-10T01:12:59.622Z",
+  "passed": true
+}

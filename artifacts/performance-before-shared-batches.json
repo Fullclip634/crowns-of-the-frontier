@@ -1,0 +1,113 @@
+{
+  "samples": [
+    {
+      "quality": "low",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 13.686945827465644,
+      "renderSubmitMilliseconds": {
+        "samples": 69,
+        "median": 35.5,
+        "p95": 50.39999999990687,
+        "max": 52.60000000009313
+      },
+      "simulationTickMilliseconds": {
+        "samples": 44,
+        "median": 38.6999999997206,
+        "p95": 62.799999999813735,
+        "max": 122.10000000009313
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 88,
+        "calls": 942,
+        "triangles": 332764,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 949,
+        "textures": 12
+      },
+      "packedUnits": {
+        "drawn": 149,
+        "allocated": 324,
+        "activeBatches": 23
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 2560684
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 3
+      },
+      "cover": {
+        "visible": 206,
+        "seeded": 1246,
+        "triangles": 17304,
+        "drawCalls": 1
+      }
+    },
+    {
+      "quality": "high",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 337,
+      "renderedFPS": 0.2822964818800946,
+      "renderSubmitMilliseconds": {
+        "samples": 4,
+        "median": 131.39999999990687,
+        "p95": 165.29999999981374,
+        "max": 165.29999999981374
+      },
+      "simulationTickMilliseconds": {
+        "samples": 3,
+        "median": 43.1999999997206,
+        "p95": 10795.299999999814,
+        "max": 10795.299999999814
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 22,
+        "calls": 952,
+        "triangles": 1182020,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 965,
+        "textures": 18
+      },
+      "packedUnits": {
+        "drawn": 146,
+        "allocated": 331,
+        "activeBatches": 23
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 12509724
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 9
+      },
+      "cover": {
+        "visible": 539,
+        "seeded": 3292,
+        "triangles": 45276,
+        "drawCalls": 1
+      }
+    }
+  ],
+  "errors": []
+}

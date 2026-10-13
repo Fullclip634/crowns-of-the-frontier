@@ -1,0 +1,49 @@
+{
+  "start": 780.3000000001089,
+  "end": 823.6000000001187,
+  "ended": {
+    "won": true,
+    "reason": "Your alliance has eliminated every opposing kingdom."
+  },
+  "counts": {
+    "spearman:move": 1
+  },
+  "records": [
+    {
+      "time": 782.1000000001093,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430907064,
+        "z": -100.82692304157301
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.93183575513409,
+      "carry": 0,
+      "carryType": null
+    }
+  ]
+}

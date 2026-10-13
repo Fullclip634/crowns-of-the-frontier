@@ -1,0 +1,127 @@
+{
+  "samples": [
+    {
+      "quality": "low",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 14.458594941471333,
+      "renderSubmitMilliseconds": {
+        "samples": 73,
+        "median": 26.399999999441206,
+        "p95": 38.60000000055879,
+        "max": 69.8999999994412
+      },
+      "simulationTickMilliseconds": {
+        "samples": 37,
+        "median": 31.700000000186265,
+        "p95": 63.799999999813735,
+        "max": 90.59999999962747
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 90,
+        "calls": 294,
+        "triangles": 383026,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 254,
+        "textures": 9
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 324,
+        "activeBatches": 9
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 3093656
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 3
+      },
+      "cover": {
+        "visible": 228,
+        "seeded": 1246,
+        "triangles": 19152,
+        "drawCalls": 1
+      },
+      "profile": "Development laptop Intel UHD, 1280x720 headless stress",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false
+    },
+    {
+      "quality": "high",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 13.971152521693618,
+      "renderSubmitMilliseconds": {
+        "samples": 71,
+        "median": 32.5,
+        "p95": 53.90000000037253,
+        "max": 69.59999999962747
+      },
+      "simulationTickMilliseconds": {
+        "samples": 43,
+        "median": 30.09999999962747,
+        "p95": 54.89999999944121,
+        "max": 96.6000000005588
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 88,
+        "calls": 306,
+        "triangles": 1632102,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 273,
+        "textures": 15
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 324,
+        "activeBatches": 9
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 13753532
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 9
+      },
+      "cover": {
+        "visible": 596,
+        "seeded": 3292,
+        "triangles": 50064,
+        "drawCalls": 1
+      },
+      "profile": "Development laptop Intel UHD, 1280x720 headless stress",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false
+    }
+  ],
+  "errors": []
+}

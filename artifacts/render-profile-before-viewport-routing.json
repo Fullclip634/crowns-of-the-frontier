@@ -1,0 +1,223 @@
+{
+  "quality": "low",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "sampleMilliseconds": 4500.368,
+  "headless": true,
+  "physicalPhone": false,
+  "self": [
+    {
+      "function": "(program)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 664.7700000000001
+    },
+    {
+      "function": "render",
+      "url": "http://localhost:4174/src/world.js?t=1791867666663",
+      "line": 161,
+      "milliseconds": 190.077
+    },
+    {
+      "function": "(idle)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 171.74599999999998
+    },
+    {
+      "function": "tick",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 332,
+      "milliseconds": 135.633
+    },
+    {
+      "function": "tickUnit",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 225,
+      "milliseconds": 134.371
+    },
+    {
+      "function": "(anonymous)",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 42,
+      "milliseconds": 134.346
+    },
+    {
+      "function": "update",
+      "url": "http://localhost:4174/src/world-interactions.js?t=1791867666663",
+      "line": 22,
+      "milliseconds": 129.69400000000002
+    },
+    {
+      "function": "move",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 177,
+      "milliseconds": 90.38
+    },
+    {
+      "function": "p.render",
+      "url": "http://localhost:4174/src/world-polish.js?t=1791867666663",
+      "line": 71,
+      "milliseconds": 88.277
+    },
+    {
+      "function": "animatePart",
+      "url": "http://localhost:4174/src/world-polish.js?t=1791867666663",
+      "line": 105,
+      "milliseconds": 73.258
+    },
+    {
+      "function": "getX",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 10531,
+      "milliseconds": 67.139
+    },
+    {
+      "function": "p.tickUnit",
+      "url": "http://localhost:4174/src/frontiers.js?t=1791867354387",
+      "line": 61,
+      "milliseconds": 66.469
+    },
+    {
+      "function": "nearest",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 200,
+      "milliseconds": 64.29199999999999
+    },
+    {
+      "function": "p.render",
+      "url": "http://localhost:4174/src/world-interactions.js?t=1791867666663",
+      "line": 50,
+      "milliseconds": 63.723
+    },
+    {
+      "function": "(anonymous)",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 232,
+      "milliseconds": 59.71500000000001
+    },
+    {
+      "function": "updateContacts",
+      "url": "http://localhost:4174/src/visual-depth.js?t=1791867666663",
+      "line": 67,
+      "milliseconds": 56.096
+    },
+    {
+      "function": "(garbage collector)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 54.053
+    },
+    {
+      "function": "p.render",
+      "url": "http://localhost:4174/src/realm-3d.js?t=1791867666663",
+      "line": 138,
+      "milliseconds": 52.025999999999996
+    },
+    {
+      "function": "regionsFor",
+      "url": "http://localhost:4174/src/navigation.js",
+      "line": 23,
+      "milliseconds": 46.929
+    },
+    {
+      "function": "nearestDrop",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 202,
+      "milliseconds": 42.902
+    },
+    {
+      "function": "updateFog",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 314,
+      "milliseconds": 42.196
+    },
+    {
+      "function": "consider",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 200,
+      "milliseconds": 41.355999999999995
+    },
+    {
+      "function": "p.canSee",
+      "url": "http://localhost:4174/src/frontiers.js?t=1791867354387",
+      "line": 84,
+      "milliseconds": 40.361000000000004
+    },
+    {
+      "function": "sample",
+      "url": "http://localhost:4174/src/motion-smoothing.js?t=1791867354387",
+      "line": 17,
+      "milliseconds": 38.71000000000001
+    },
+    {
+      "function": "contactPose",
+      "url": "http://localhost:4174/src/visual-depth.js?t=1791867666663",
+      "line": 56,
+      "milliseconds": 36.864000000000004
+    },
+    {
+      "function": "projectObject",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 40593,
+      "milliseconds": 36.629
+    },
+    {
+      "function": "getBoundingClientRect",
+      "url": "",
+      "line": 0,
+      "milliseconds": 36.052
+    },
+    {
+      "function": "setValueM4",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 34237,
+      "milliseconds": 34.48
+    },
+    {
+      "function": "drawMinimap",
+      "url": "http://localhost:4174/src/minimap.js?t=1791867354387",
+      "line": 5,
+      "milliseconds": 34.244
+    },
+    {
+      "function": "findPath",
+      "url": "http://localhost:4174/src/navigation.js",
+      "line": 30,
+      "milliseconds": 31.673000000000002
+    },
+    {
+      "function": "isVisible",
+      "url": "http://localhost:4174/src/simulation.js?t=1791867354387",
+      "line": 312,
+      "milliseconds": 31.121
+    },
+    {
+      "function": "uniformMatrix4fv",
+      "url": "",
+      "line": 0,
+      "milliseconds": 30.933000000000003
+    },
+    {
+      "function": "bufferSubData",
+      "url": "",
+      "line": 0,
+      "milliseconds": 30.517999999999997
+    },
+    {
+      "function": "smoothHeading",
+      "url": "http://localhost:4174/src/motion-smoothing.js?t=1791867354387",
+      "line": 25,
+      "milliseconds": 30.310000000000006
+    },
+    {
+      "function": "updateFog",
+      "url": "http://localhost:4174/src/world.js?t=1791867666663",
+      "line": 129,
+      "milliseconds": 29.113999999999997
+    }
+  ],
+  "errors": []
+}

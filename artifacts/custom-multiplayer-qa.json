@@ -1,0 +1,50 @@
+{
+  "reports": [
+    {
+      "name": "Your kingdom",
+      "team": 1,
+      "size": 400,
+      "private": true,
+      "controller": "human",
+      "home": [
+        -96.16652224137046,
+        0.6499999761581421,
+        96.16652224137047
+      ],
+      "start": {
+        "x": -96.16652224137046,
+        "z": 96.16652224137047
+      }
+    },
+    {
+      "name": "Phone ally",
+      "team": 1,
+      "size": 400,
+      "private": true,
+      "controller": "human",
+      "home": [
+        -96.16652224137049,
+        0.6499999761581421,
+        -96.16652224137046
+      ],
+      "start": {
+        "x": -96.16652224137049,
+        "z": -96.16652224137046
+      }
+    },
+    {
+      "twoHumanBrowsers": true,
+      "backgroundHostRenderingSuspended": true,
+      "threeHumanConnections": true,
+      "oneIndependentAI": true,
+      "guestSlotSelection": true,
+      "readyGate": true,
+      "ownership": true,
+      "phoneProduction": true,
+      "phoneReconnect": true,
+      "hostDefeatContinues": true,
+      "correctTeamResults": true
+    }
+  ],
+  "errors": []
+}

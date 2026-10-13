@@ -1,0 +1,26 @@
+{
+  "reports": [
+    {
+      "desktop": true,
+      "remapping": true,
+      "conflicts": true,
+      "persistence": true,
+      "patrol": true,
+      "guard": true,
+      "movementLinesRemoved": true,
+      "saves": true,
+      "technologyTree": true,
+      "uniqueTraining": true,
+      "uniqueResearch": true,
+      "signatureModels": 3
+    },
+    {
+      "phone": true,
+      "settings": true,
+      "patrol": true,
+      "technologyTree": true,
+      "noHorizontalOverflow": true
+    }
+  ],
+  "errors": []
+}

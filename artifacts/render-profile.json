@@ -1,0 +1,223 @@
+{
+  "quality": "low",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "sampleMilliseconds": 4638.89,
+  "headless": true,
+  "physicalPhone": false,
+  "self": [
+    {
+      "function": "(program)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 791.2499999999997
+    },
+    {
+      "function": "(idle)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 439.712
+    },
+    {
+      "function": "render",
+      "url": "http://localhost:4174/src/world.js?t=1791871748724",
+      "line": 161,
+      "milliseconds": 202.957
+    },
+    {
+      "function": "move",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 177,
+      "milliseconds": 139.28799999999995
+    },
+    {
+      "function": "tickUnit",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 228,
+      "milliseconds": 102.91000000000003
+    },
+    {
+      "function": "p.render",
+      "url": "http://localhost:4174/src/realm-3d.js?t=1791871748724",
+      "line": 138,
+      "milliseconds": 102.46300000000001
+    },
+    {
+      "function": "consider",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 203,
+      "milliseconds": 100.812
+    },
+    {
+      "function": "updateContacts",
+      "url": "http://localhost:4174/src/visual-depth.js?t=1791871632490",
+      "line": 69,
+      "milliseconds": 93.12400000000001
+    },
+    {
+      "function": "tick",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 335,
+      "milliseconds": 88.44299999999998
+    },
+    {
+      "function": "update",
+      "url": "http://localhost:4174/src/world-interactions.js?t=1791871632490",
+      "line": 22,
+      "milliseconds": 85.85900000000002
+    },
+    {
+      "function": "animatePart",
+      "url": "http://localhost:4174/src/world-polish.js?t=1791871632490",
+      "line": 105,
+      "milliseconds": 67.763
+    },
+    {
+      "function": "p.render",
+      "url": "http://localhost:4174/src/world-polish.js?t=1791871632490",
+      "line": 71,
+      "milliseconds": 65.44699999999999
+    },
+    {
+      "function": "owned",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 30,
+      "milliseconds": 58.764999999999986
+    },
+    {
+      "function": "jointAngle",
+      "url": "http://localhost:4174/src/world-polish.js?t=1791871632490",
+      "line": 74,
+      "milliseconds": 55.71499999999999
+    },
+    {
+      "function": "(anonymous)",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 235,
+      "milliseconds": 52.882
+    },
+    {
+      "function": "nearest",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 203,
+      "milliseconds": 49.760999999999996
+    },
+    {
+      "function": "writeUnitPose",
+      "url": "http://localhost:4174/src/render-batches.js?t=1791871632490",
+      "line": 35,
+      "milliseconds": 45.52599999999999
+    },
+    {
+      "function": "sample",
+      "url": "http://localhost:4174/src/motion-smoothing.js?t=1791867354387",
+      "line": 17,
+      "milliseconds": 45.443
+    },
+    {
+      "function": "(garbage collector)",
+      "url": "",
+      "line": 0,
+      "milliseconds": 45.289
+    },
+    {
+      "function": "nearestDrop",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 205,
+      "milliseconds": 44.893
+    },
+    {
+      "function": "capture",
+      "url": "http://localhost:4174/src/motion-smoothing.js?t=1791867354387",
+      "line": 8,
+      "milliseconds": 40.265
+    },
+    {
+      "function": "WebGLRenderer.renderBufferDirect",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 40314,
+      "milliseconds": 38.46
+    },
+    {
+      "function": "frame",
+      "url": "http://localhost:4174/src/main.js?t=1791871748724",
+      "line": 303,
+      "milliseconds": 37.96
+    },
+    {
+      "function": "needsUpdate",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 32470,
+      "milliseconds": 36.623999999999995
+    },
+    {
+      "function": "setProgram",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 40855,
+      "milliseconds": 35.488
+    },
+    {
+      "function": "findPath",
+      "url": "http://localhost:4174/src/navigation.js?t=1791871161494",
+      "line": 32,
+      "milliseconds": 34.851000000000006
+    },
+    {
+      "function": "p.tickUnit",
+      "url": "http://localhost:4174/src/frontiers.js?t=1791867354387",
+      "line": 61,
+      "milliseconds": 34.68300000000001
+    },
+    {
+      "function": "updateMatrixWorld",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 8325,
+      "milliseconds": 31.418
+    },
+    {
+      "function": "multiplyMatrices",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 6652,
+      "milliseconds": 29.592999999999996
+    },
+    {
+      "function": "sort",
+      "url": "http://localhost:4174/node_modules/.vite/deps/chunk-IT3TP6RZ.js?v=b770773f",
+      "line": 36041,
+      "milliseconds": 29.19
+    },
+    {
+      "function": "p.get",
+      "url": "http://localhost:4174/src/frontiers.js?t=1791867354387",
+      "line": 9,
+      "milliseconds": 26.242
+    },
+    {
+      "function": "updateFog",
+      "url": "http://localhost:4174/src/simulation.js?t=1791871479142",
+      "line": 317,
+      "milliseconds": 26.174999999999997
+    },
+    {
+      "function": "getBoundingClientRect",
+      "url": "",
+      "line": 0,
+      "milliseconds": 23.221000000000004
+    },
+    {
+      "function": "bufferSubData",
+      "url": "",
+      "line": 0,
+      "milliseconds": 22.878000000000007
+    },
+    {
+      "function": "useProgram",
+      "url": "",
+      "line": 0,
+      "milliseconds": 22.79
+    }
+  ],
+  "errors": []
+}

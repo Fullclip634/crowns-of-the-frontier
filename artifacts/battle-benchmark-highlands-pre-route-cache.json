@@ -1,0 +1,195 @@
+{
+  "seed": 512,
+  "map": "highlands",
+  "simulatedSeconds": 1721.4999999995298,
+  "ended": {
+    "won": false,
+    "reason": "Every kingdom in your alliance has been eliminated."
+  },
+  "elapsedSeconds": 854.7262635999999,
+  "tickMilliseconds": {
+    "median": 24.4658000000054,
+    "p95": 133.0962999999756,
+    "p99": 255.85459999996237,
+    "max": 6389.0527
+  },
+  "blocked": {
+    "1": 50,
+    "2": 729,
+    "3": 413,
+    "4": 14,
+    "5": 61,
+    "6": 9,
+    "7": 313
+  },
+  "kingdoms": [
+    {
+      "owner": 0,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 295,
+        "wood": 138,
+        "gold": 2512,
+        "stone": 1962
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 19252.529999999748,
+        "kills": 58,
+        "lost": 134,
+        "built": 24,
+        "trained": 77
+      }
+    },
+    {
+      "owner": 1,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 20896,
+        "wood": 212,
+        "gold": 12,
+        "stone": 10615
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 83318.62285000023,
+        "kills": 178,
+        "lost": 433,
+        "built": 56,
+        "trained": 293
+      }
+    },
+    {
+      "owner": 2,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 42142,
+        "wood": 34,
+        "gold": 3656,
+        "stone": 7894
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 102407.64000000083,
+        "kills": 238,
+        "lost": 417,
+        "built": 49,
+        "trained": 236
+      }
+    },
+    {
+      "owner": 3,
+      "age": 3,
+      "defeated": true,
+      "units": 0,
+      "buildings": 0,
+      "resources": {
+        "food": 14881,
+        "wood": 0,
+        "gold": 7354,
+        "stone": 10070
+      },
+      "phase": "defend",
+      "stats": {
+        "gathered": 80292.63750000052,
+        "kills": 323,
+        "lost": 409,
+        "built": 52,
+        "trained": 267
+      }
+    },
+    {
+      "owner": 4,
+      "age": 3,
+      "defeated": false,
+      "units": 80,
+      "buildings": 37,
+      "resources": {
+        "food": 14955,
+        "wood": 2910,
+        "gold": 4265,
+        "stone": 8089
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 74465.19015000053,
+        "kills": 171,
+        "lost": 245,
+        "built": 65,
+        "trained": 260
+      }
+    },
+    {
+      "owner": 5,
+      "age": 3,
+      "defeated": false,
+      "units": 80,
+      "buildings": 66,
+      "resources": {
+        "food": 33982,
+        "wood": 10203,
+        "gold": 13154,
+        "stone": 14852
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 115347.9463000011,
+        "kills": 369,
+        "lost": 208,
+        "built": 60,
+        "trained": 262
+      }
+    },
+    {
+      "owner": 6,
+      "age": 3,
+      "defeated": false,
+      "units": 80,
+      "buildings": 65,
+      "resources": {
+        "food": 28535,
+        "wood": 19584,
+        "gold": 22484,
+        "stone": 11135
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 117603.62755000083,
+        "kills": 405,
+        "lost": 136,
+        "built": 60,
+        "trained": 207
+      }
+    },
+    {
+      "owner": 7,
+      "age": 3,
+      "defeated": false,
+      "units": 80,
+      "buildings": 71,
+      "resources": {
+        "food": 58224,
+        "wood": 15544,
+        "gold": 10793,
+        "stone": 9960
+      },
+      "phase": "attack",
+      "stats": {
+        "gathered": 136627.80510000102,
+        "kills": 447,
+        "lost": 208,
+        "built": 69,
+        "trained": 245
+      }
+    }
+  ]
+}

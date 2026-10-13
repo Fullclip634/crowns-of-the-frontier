@@ -1,0 +1,147 @@
+{
+  "checks": [
+    {
+      "quality": "high",
+      "models": 126,
+      "surfaces": 21,
+      "deposits": [
+        {
+          "type": "stone",
+          "materials": [
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": true,
+              "roughness": true
+            }
+          ],
+          "solid": true
+        },
+        {
+          "type": "gold",
+          "materials": [
+            {
+              "natural": false,
+              "metal": true,
+              "map": false,
+              "normal": false,
+              "roughness": false
+            },
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": true,
+              "roughness": true
+            }
+          ],
+          "solid": true
+        }
+      ],
+      "pebbles": {
+        "map": true,
+        "normal": true,
+        "shared": true,
+        "missingColor": false
+      },
+      "calls": 103
+    },
+    {
+      "quality": "medium",
+      "models": 126,
+      "surfaces": 21,
+      "deposits": [
+        {
+          "type": "stone",
+          "materials": [
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": true,
+              "roughness": false
+            }
+          ],
+          "solid": true
+        },
+        {
+          "type": "gold",
+          "materials": [
+            {
+              "natural": false,
+              "metal": true,
+              "map": false,
+              "normal": false,
+              "roughness": false
+            },
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": true,
+              "roughness": false
+            }
+          ],
+          "solid": true
+        }
+      ],
+      "pebbles": {
+        "map": true,
+        "normal": true,
+        "shared": true,
+        "missingColor": false
+      },
+      "calls": 115
+    },
+    {
+      "quality": "low",
+      "models": 126,
+      "surfaces": 21,
+      "deposits": [
+        {
+          "type": "stone",
+          "materials": [
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": false,
+              "roughness": false
+            }
+          ],
+          "solid": true
+        },
+        {
+          "type": "gold",
+          "materials": [
+            {
+              "natural": false,
+              "metal": true,
+              "map": false,
+              "normal": false,
+              "roughness": false
+            },
+            {
+              "natural": true,
+              "metal": false,
+              "map": true,
+              "normal": false,
+              "roughness": false
+            }
+          ],
+          "solid": true
+        }
+      ],
+      "pebbles": {
+        "map": true,
+        "normal": false,
+        "shared": true,
+        "missingColor": false
+      },
+      "calls": 115
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

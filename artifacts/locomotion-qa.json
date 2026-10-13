@@ -1,0 +1,34 @@
+{
+  "checks": [
+    {
+      "models": 126,
+      "travelled": 4.099999999999966,
+      "frames": 40,
+      "visible": [
+        {
+          "type": "villager",
+          "packed": true
+        },
+        {
+          "type": "scout",
+          "packed": true
+        },
+        {
+          "type": "ram",
+          "packed": true
+        }
+      ],
+      "stopped": {
+        "phaseBefore": 4.1999999999998945,
+        "phaseAfter": 4.1999999999998945,
+        "blend": 7.582554122795113e-10,
+        "wheelBefore": 5.098140055194961,
+        "wheelAfter": 5.098140055194961
+      },
+      "authoritativePositionPreserved": true,
+      "saveHasNoGaitHistory": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

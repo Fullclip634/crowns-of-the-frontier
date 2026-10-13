@@ -1,0 +1,17 @@
+# One free service serves the game and the authoritative WebSocket rooms.
+services:
+  - type: web
+    name: crowns-of-the-frontier
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.20.0
+      - key: NODE_ENV
+        value: production
+      - key: MAX_ROOMS
+        value: "1"

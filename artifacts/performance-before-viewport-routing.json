@@ -1,0 +1,81 @@
+{
+  "samples": [
+    {
+      "quality": "low",
+      "headless": true,
+      "physicalPhone": false,
+      "world": 400,
+      "players": 8,
+      "units": 330,
+      "renderedFPS": 19.541659264524444,
+      "sampleWindow": {
+        "requestedMilliseconds": 5000,
+        "elapsedMilliseconds": 5066.0999999996275,
+        "frames": 99,
+        "prolongedStall": false
+      },
+      "renderSubmitMilliseconds": {
+        "samples": 99,
+        "median": 24.5,
+        "p95": 34.09999999962747,
+        "max": 43.30000000074506
+      },
+      "simulationTickMilliseconds": {
+        "samples": 42,
+        "median": 23.5,
+        "p95": 42.40000000037253,
+        "max": 88.29999999981374
+      },
+      "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "render": {
+        "frame": 142,
+        "calls": 291,
+        "triangles": 392580,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 251,
+        "textures": 14
+      },
+      "packedUnits": {
+        "drawn": 153,
+        "allocated": 324,
+        "activeBatches": 9,
+        "matrixUploadBytes": 103424,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 5939200
+      },
+      "jointPoses": {
+        "computed": 1597,
+        "reused": 1373,
+        "cachedDefinitions": 29
+      },
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 3928668
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 7
+      },
+      "cover": {
+        "visible": 205,
+        "seeded": 1159,
+        "triangles": 17220,
+        "drawCalls": 1
+      },
+      "profile": "Development laptop headless stress 2.6 isolated",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "targetFPS": 60,
+      "targetMet": false,
+      "offlineCacheReady": true
+    }
+  ],
+  "errors": []
+}

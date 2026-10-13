@@ -1,0 +1,864 @@
+{
+  "start": 780.3000000001089,
+  "end": 825.000000000119,
+  "ended": {
+    "won": true,
+    "reason": "Your alliance has eliminated every opposing kingdom."
+  },
+  "counts": {
+    "spearman:move": 9,
+    "swordsman:attackmove": 1,
+    "swordsman:move": 7,
+    "archer:move": 6
+  },
+  "records": [
+    {
+      "time": 782.1000000001093,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430907064,
+        "z": -100.82692304157301
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.93183575513409,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 784.0000000001097,
+      "id": 2343,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "attackmove",
+        "x": 99,
+        "z": 103
+      },
+      "position": {
+        "x": -128.30576953950518,
+        "z": -5.381632228184473
+      },
+      "target": null,
+      "dest": {
+        "x": 99,
+        "z": 103
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -127,
+          "z": -5
+        },
+        {
+          "x": -125,
+          "z": -3
+        },
+        {
+          "x": -123,
+          "z": -3
+        },
+        {
+          "x": -121,
+          "z": -3
+        },
+        {
+          "x": -119,
+          "z": -3
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 114,
+      "routeEnd": {
+        "x": 99,
+        "z": 103
+      },
+      "destinationDistance": 251.8223402925008,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 786.2000000001102,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189465615,
+        "z": -4.542796753018391
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570730225033,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 786.4000000001103,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328788442,
+        "z": -101.58637285096307
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296254836,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 788.6000000001108,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430893474,
+        "z": -100.82692304170249
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9318357551422254,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 792.6000000001117,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245649,
+        "z": -4.542796754409902
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648292,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 792.9000000001117,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328787102,
+        "z": -101.58637285101271
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296232299,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 795.0000000001122,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430892594,
+        "z": -100.82692304171086
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.931835755142759,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 799.1000000001131,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245615,
+        "z": -4.542796754410122
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648474,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 799.4000000001132,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328787026,
+        "z": -101.58637285101547
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296231133,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 801.5000000001137,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430892556,
+        "z": -100.82692304171121
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9318357551427894,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 805.6000000001146,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245615,
+        "z": -4.542796754410122
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648474,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 805.8000000001147,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328787026,
+        "z": -101.58637285101547
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296231133,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 808.0000000001152,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430892556,
+        "z": -100.82692304171121
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9318357551427894,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 812.1000000001161,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245615,
+        "z": -4.542796754410122
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648474,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 812.3000000001161,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328787026,
+        "z": -101.58637285101547
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296231133,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 812.7000000001162,
+      "id": 2270,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -89.10054124180009,
+        "z": -100.48478305801966
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -89,
+          "z": -101
+        },
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9237042844421088,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 814.5000000001166,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430892556,
+        "z": -100.82692304171121
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9318357551427894,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 818.6000000001176,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245615,
+        "z": -4.542796754410122
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648474,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 818.8000000001176,
+      "id": 2007,
+      "owner": 2,
+      "type": "archer",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.33988328787026,
+        "z": -101.58637285101547
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9165550296231133,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 820.0000000001179,
+      "id": 2270,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -88.25382469107187,
+        "z": -100.45853680699226
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.7102151799618541,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 821.0000000001181,
+      "id": 1723,
+      "owner": 2,
+      "type": "spearman",
+      "order": {
+        "type": "move",
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "position": {
+        "x": -86.77459430892556,
+        "z": -100.82692304171121
+      },
+      "target": null,
+      "dest": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -88.16652224137049,
+          "z": -102.16652224137046
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -88.16652224137049,
+        "z": -102.16652224137046
+      },
+      "destinationDistance": 1.9318357551427894,
+      "carry": 0,
+      "carryType": null
+    },
+    {
+      "time": 825.000000000119,
+      "id": 1669,
+      "owner": 1,
+      "type": "swordsman",
+      "order": {
+        "type": "move",
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "position": {
+        "x": -126.96242189245615,
+        "z": -4.542796754410122
+      },
+      "target": null,
+      "dest": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "pathStatus": "ready",
+      "path": [
+        {
+          "x": -128,
+          "z": -5.999999999999983
+        }
+      ],
+      "freshStatus": "ready",
+      "routeLength": 1,
+      "routeEnd": {
+        "x": -128,
+        "z": -5.999999999999983
+      },
+      "destinationDistance": 1.7888570731648474,
+      "carry": 0,
+      "carryType": null
+    }
+  ]
+}

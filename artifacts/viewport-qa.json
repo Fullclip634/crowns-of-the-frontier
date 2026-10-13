@@ -1,0 +1,111 @@
+{
+  "checks": [
+    {
+      "quality": "low",
+      "locations": [
+        {
+          "x": -80,
+          "immediateForest": 136,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 139,
+            "culled": 757,
+            "computed": 139,
+            "reused": 0,
+            "cached": 139,
+            "matrixUploadBytes": 8896
+          }
+        },
+        {
+          "x": 80,
+          "immediateForest": 101,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 89,
+            "culled": 807,
+            "computed": 89,
+            "reused": 0,
+            "cached": 228,
+            "matrixUploadBytes": 5696
+          }
+        },
+        {
+          "x": -80,
+          "immediateForest": 136,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 139,
+            "culled": 757,
+            "computed": 0,
+            "reused": 139,
+            "cached": 228,
+            "matrixUploadBytes": 8896
+          }
+        }
+      ],
+      "sameFrameForest": true
+    },
+    {
+      "quality": "high",
+      "locations": [
+        {
+          "x": -80,
+          "immediateForest": 136,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 139,
+            "culled": 757,
+            "computed": 139,
+            "reused": 0,
+            "cached": 139,
+            "matrixUploadBytes": 8896
+          }
+        },
+        {
+          "x": 80,
+          "immediateForest": 101,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 88,
+            "culled": 808,
+            "computed": 88,
+            "reused": 0,
+            "cached": 227,
+            "matrixUploadBytes": 5632
+          }
+        },
+        {
+          "x": -80,
+          "immediateForest": 136,
+          "visibleWorkers": 1,
+          "cargo": 1,
+          "contacts": {
+            "visible": 139,
+            "culled": 757,
+            "computed": 0,
+            "reused": 139,
+            "cached": 227,
+            "matrixUploadBytes": 8896
+          }
+        }
+      ],
+      "sameFrameForest": true
+    },
+    {
+      "landscapeResize": {
+        "cameraAspect": 1.775,
+        "forestAspect": 1.775,
+        "height": 320,
+        "canvasWidth": 568,
+        "canvasHeight": 320
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

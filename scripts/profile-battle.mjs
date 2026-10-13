@@ -1,0 +1,5 @@
+import fs from 'node:fs';
+import {Simulation} from '../src/simulation.js';
+const sim=Simulation.restore(JSON.parse(fs.readFileSync(process.env.PROFILE_SAVE||'artifacts/battle-benchmark-save.json','utf8'))),methods=['pathTo','grid','nearest','canSee','tickUnit','tickCustomAI','updateFog','checkVictory'],report={};
+const paths={};for(const name of methods){const original=sim[name].bind(sim);report[name]={calls:0,ms:0};sim[name]=(...args)=>{const before=performance.now();try{return original(...args);}finally{const elapsed=performance.now()-before;report[name].calls++;report[name].ms+=elapsed;if(name==='pathTo'){const key=args[0].type+':'+(args[1].kind||'point')+':'+args[0].pathStatus;paths[key]??={calls:0,ms:0};paths[key].calls++;paths[key].ms+=elapsed;}}};}
+const start=performance.now();for(let i=0;i<50;i++)sim.tick(.1);for(const value of [...Object.values(report),...Object.values(paths)])value.ms=Math.round(value.ms);console.log(JSON.stringify({time:sim.time,elapsed:performance.now()-start,report,paths},null,2));

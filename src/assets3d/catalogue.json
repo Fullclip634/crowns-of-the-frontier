@@ -1,0 +1,521 @@
+{
+  "models": [
+    {
+      "key": "building:towncenter:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:alder:1",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:alder:2",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:alder:3",
+      "kind": "building"
+    },
+    {
+      "key": "building:house:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:farm:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mill:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:camp:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mine:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:barracks:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:range:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:stable:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:workshop:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:blacksmith:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:market:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:tower:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:keep:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wall:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:gate:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:monastery:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wonder:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:dock:alder:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:sun:1",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:sun:2",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:sun:3",
+      "kind": "building"
+    },
+    {
+      "key": "building:house:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:farm:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mill:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:camp:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mine:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:barracks:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:range:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:stable:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:workshop:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:blacksmith:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:market:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:tower:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:keep:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wall:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:gate:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:monastery:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wonder:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:dock:sun:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:raven:1",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:raven:2",
+      "kind": "building"
+    },
+    {
+      "key": "building:towncenter:raven:3",
+      "kind": "building"
+    },
+    {
+      "key": "building:house:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:farm:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mill:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:camp:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:mine:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:barracks:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:range:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:stable:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:workshop:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:blacksmith:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:market:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:tower:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:keep:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wall:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:gate:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:monastery:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:wonder:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "building:dock:raven:0",
+      "kind": "building"
+    },
+    {
+      "key": "unit:villager",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:scout",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:spearman",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:archer",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:swordsman",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:knight",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:ram",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:catapult",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:monk",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:king",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:sentinel",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:marksman",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:outrider",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:cart",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:fishingboat",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:galley",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:warship",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:transport",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:villager:wood",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:villager:mine",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:villager:food",
+      "kind": "unit"
+    },
+    {
+      "key": "unit:villager:build",
+      "kind": "unit"
+    },
+    {
+      "key": "tree:highlands:0:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:0:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:1:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:1:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:2:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:2:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:3:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:highlands:3:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:0:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:0:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:1:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:1:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:2:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:2:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:3:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:winter:3:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:0:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:0:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:1:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:1:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:2:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:2:far",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:3:near",
+      "kind": "resource"
+    },
+    {
+      "key": "tree:desert:3:far",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:food:0",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:food:1",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:food:2",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:food:3",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:gold:0",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:gold:1",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:gold:2",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:gold:3",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:stone:0",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:stone:1",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:stone:2",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:stone:3",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:fish",
+      "kind": "resource"
+    },
+    {
+      "key": "resource:shrine",
+      "kind": "shrine"
+    }
+  ],
+  "sizes": {
+    "near": 16237168,
+    "low": 3928668
+  },
+  "source": "Original Crowns of the Frontier assets authored/refined in Blender.",
+  "stage": "full",
+  "completeCatalogue": true,
+  "resourceRevision": "field-resources-v1",
+  "resourcePatchHashes": {
+    "near": "1f0ed0780388af00a36b91ce0199e866350cdd572a600e4157d8f1ef41d565e7",
+    "low": "ca0408934c0a9e0366bab7cba85ab3b6da65b63d5e6cfdb7759de43eb8e8bba5"
+  },
+  "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced."
+}

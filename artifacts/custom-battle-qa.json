@@ -1,0 +1,47 @@
+{
+  "reports": [
+    {
+      "players": 8,
+      "world": 400,
+      "materials": 8,
+      "fog": 200,
+      "roster": 8,
+      "home": [
+        -96.16652224137046,
+        0.6499999761581421,
+        96.16652224137047
+      ],
+      "savedDifficulty": "brutal",
+      "aiPace": "patient"
+    },
+    {
+      "diagnostics": {
+        "type": "rain",
+        "rain": 35,
+        "snow": 0,
+        "ripples": 1,
+        "clouds": 10,
+        "drawCalls": 3
+      },
+      "solid": true,
+      "drawCalls": 3,
+      "rng": 239699508
+    },
+    {
+      "largeMapPicking": true,
+      "hiddenMeshAllocationDeferred": true,
+      "rosterScrolling": true,
+      "rulesStayOpen": true,
+      "customSaveResume": true,
+      "aiPacePreserved": true
+    },
+    {
+      "phone": true,
+      "eightKingdoms": true,
+      "largeRadarNavigation": true,
+      "snow3d": true,
+      "noOverflow": true
+    }
+  ],
+  "errors": []
+}

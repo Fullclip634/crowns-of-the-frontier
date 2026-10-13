@@ -1,0 +1,65 @@
+/* Shared interface rules for menus, dialogs and battlefield controls. */
+:root{--control-height:44px;--focus-color:#f4d58f;--text-secondary:#c5d2bb}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--focus-color);outline-offset:2px}
+.landing{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.modal{border-radius:6px;border-color:#8f9c6b66;background:linear-gradient(140deg,#213a30,#142a23);scroll-padding:16px;overscroll-behavior:contain}
+.modal h2{text-wrap:balance;max-width:calc(100% - 26px)}
+.modal-close{width:44px;height:44px;display:grid;place-items:center;top:8px;right:8px;border-radius:3px}
+.modal .modal-intro,.modal .help-grid p,.modal .strategy-tip p,.modal .mission-brief p,.modal .keyboard-settings p,.modal .tree-card p{font-size:14px;line-height:1.6;color:var(--text-secondary)}
+.modal .field-label,.battle-slot label{font-size:10px;line-height:1.4;letter-spacing:1px}
+.modal select,.modal input[type=number],.modal input[type=text],.modal input:not([type]){min-height:44px;font-size:13px;min-width:0}
+#modal-root #lan-name{min-height:44px;font-size:13px}
+.modal .toggle{font-size:14px;line-height:1.5;min-height:52px}.modal .toggle small{font-size:11px}
+.modal .setup-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.modal .faction-description,.modal .settings-note,.modal .custom-validation,.modal .custom-launch small,.modal #battle-rule,.modal .tree-note{font-size:12px;line-height:1.5}
+.battle-presets button{min-height:44px;font-size:12px}.battle-slot input,.battle-slot select{min-height:44px;font-size:12px}
+.battle-human{font-size:13px}.battle-preview #battle-summary{font-size:12px}.battle-preview canvas{max-width:100%}
+.room-grid article{border-radius:3px}.room-grid strong{font-size:15px}.room-grid small,.room-grid span{font-size:12px}
+.modal .chapter small,.modal .codex-item p{font-size:12px;line-height:1.6}.modal .codex-item h3 small{font-size:10px}
+.modal .cost,.modal .tree-cost,.modal .tree-prerequisite,.modal .tree-card small{font-size:11px;line-height:1.5}
+.modal .keybind-grid label{font-size:12px}.modal .keybind-grid input{min-height:44px}
+.modal .primary,.modal .secondary,.modal .text-button{min-height:44px;font-size:12px}
+.floating-heading{position:sticky;top:0;z-index:1;background:var(--panel)}
+.production-panel{border-radius:3px;scroll-padding:12px}
+@media(pointer:coarse){
+  #modal-root button{min-height:44px;min-width:44px;font-size:12px}
+  #modal-root .modal-close{font-size:26px}
+  #modal-root input[type=checkbox]{width:20px;height:20px;flex-shrink:0}
+  .landing .header-links button,.network-entry,.custom-entry{min-height:44px;display:inline-flex;align-items:center}
+  .mode-card{min-height:44px}.mode-card:focus-visible{outline-offset:-3px}
+  .selection-title small{font-size:10px}.selection-title .eyebrow{font-size:8px;letter-spacing:.4px}
+  .production-actions strong,.group-production strong{font-size:11px}.production-actions small,.group-production small{font-size:10px}
+  .worker-actions button{font-size:11px;line-height:1.3}
+  .selection-desc,.order-summary{font-size:11px;line-height:1.4}
+  .floating-heading{font-size:10px;min-height:44px}
+  .build-option{min-height:84px}.build-option strong{font-size:11px;line-height:1.25}.build-option small{font-size:10px;line-height:1.25}
+  .build-footnote{font-size:11px;line-height:1.4}
+  .production-site strong,.production-current,.production-choice strong{font-size:11px}
+  .production-site small,.production-note,.production-choice small{font-size:10px}
+  .production-groups button{font-size:11px}
+  .custom-dialog .modal-intro{font-size:12px;line-height:1.45;margin-bottom:12px}
+  .custom-dialog .battle-presets{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#9eaa78 #183329}
+  .custom-dialog .battle-presets button{flex-shrink:0;scroll-snap-align:start}
+  .custom-dialog .custom-launch{gap:4px;padding:8px 0}
+  .custom-dialog .custom-launch .primary,.custom-dialog .custom-launch .secondary{min-height:44px;height:44px;padding:8px 10px;line-height:1.3}
+}
+@media(pointer:coarse) and (max-height:520px) and (orientation:landscape){
+  .modal{padding:18px 20px}.modal h2{font-size:34px}
+  .modal .modal-intro,.modal .mission-brief p,.modal .help-grid p{font-size:12px;line-height:1.5}
+  .selection-title h3{font-size:18px}.selection-title .eyebrow{font-size:7px}
+  .main-actions .primary,.main-actions .secondary{min-height:44px;font-size:12px}
+  .network-entry,.custom-entry{font-size:11px;margin-top:4px}
+}
+@media(pointer:coarse) and (max-width:600px) and (orientation:portrait){
+  #resource-bar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
+  .resource{min-width:0;grid-template-columns:16px minmax(0,1fr);column-gap:3px}
+  .resource-icon{font-size:16px}.resource strong{font-size:12px;letter-spacing:-.3px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .resource small{font-size:5px;letter-spacing:.5px}.resource.population strong{font-size:11px}.resource i{font-size:10px}
+  .landing-main,.mode-strip,.landing-footer{flex-shrink:0}
+  .mode-strip,.landing-footer{margin-top:20px}
+  .selection-title .eyebrow{display:none}.selection-panel .selection-title h3{font-size:16px;line-height:1.1}
+  .selection-title small{font-size:10px;line-height:1.3}.health-track{margin-bottom:3px}
+  .modal .battle-preview{grid-template-columns:90px minmax(0,1fr)}
+  .keybind-grid{grid-template-columns:1fr}
+  .lan-join{flex-wrap:wrap}.lan-join input{flex-basis:100%}.lan-join button{width:100%;justify-content:center}
+}

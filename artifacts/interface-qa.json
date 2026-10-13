@@ -1,0 +1,2709 @@
+{
+  "screens": [
+    {
+      "profile": "desktop",
+      "action": "campaign",
+      "layout": {
+        "name": "A kingdom in the making.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 305,
+          "y": 25,
+          "width": 830,
+          "height": 850
+        },
+        "close": {
+          "x": 1082,
+          "y": 34,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "Create your own custom battle",
+            "width": 748,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "IA foothold in the wildAlder sco",
+            "width": 748,
+            "height": 104.375,
+            "font": 16
+          },
+          {
+            "name": "IIThe broken crossingAn enemy ga",
+            "width": 748,
+            "height": 104.375,
+            "font": 16
+          },
+          {
+            "name": "IIIA crown of stoneA border fort",
+            "width": 748,
+            "height": 85.1875,
+            "font": 16
+          },
+          {
+            "name": "IVKeepers of the valleyThree for",
+            "width": 748,
+            "height": 85.1875,
+            "font": 16
+          },
+          {
+            "name": "VThe final siegeThe enemy capita",
+            "width": 748,
+            "height": 85.1875,
+            "font": 16
+          },
+          {
+            "name": "VIBeyond the horizonThe frontier",
+            "width": 748,
+            "height": 104.375,
+            "font": 16
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "action": "custom-battle",
+      "layout": {
+        "name": "Custom battle.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 195,
+          "y": 25,
+          "width": 1050,
+          "height": 850
+        },
+        "close": {
+          "x": 1192,
+          "y": 34,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "2 vs 2",
+            "width": 58.25,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "3 vs 3",
+            "width": 58.609375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4 vs 4",
+            "width": 59,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "1 vs 3",
+            "width": 55.265625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4-way free-for-all",
+            "width": 127.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "8-way free-for-all",
+            "width": 127.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Spacious · 2.25× standard areaLa",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Frontier AgeFeudal AgeCastle Age",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "StandardAbundant",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "80 · recommended for phones12016",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 333,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Balanced · build up, then battle",
+            "width": 684,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Destroy all buildingsCapital con",
+            "width": 684,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 209.84375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 134.3125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 235.03125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 125.921875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 167.890625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Play solo battle ➜",
+            "width": 968,
+            "height": 57,
+            "font": 12
+          },
+          {
+            "name": "Host multiplayer battle",
+            "width": 968,
+            "height": 48,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "action": "settings",
+      "layout": {
+        "name": "Settings.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 420,
+          "y": 25,
+          "width": 600,
+          "height": 850
+        },
+        "close": {
+          "x": 967,
+          "y": 34,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "High · full shadows & sharp rend",
+            "width": 518,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "30 FPS · lower power use60 FPS ·",
+            "width": 518,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "PerspectiveClose viewOverview",
+            "width": 518,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Automatic weatherClear skiesClou",
+            "width": 518,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan forward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan backward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Production overview key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Inspect model key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Camera angle key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Center town key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Select army key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Construction key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Attack move key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Patrol key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Guard an ally key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Stop / hold key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Idle villagers key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Focus selection key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Help key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Restore default controls",
+            "width": 185.171875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Apply settings ✓",
+            "width": 518,
+            "height": 57,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "action": "codex",
+      "layout": {
+        "name": "Field guide.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 305,
+          "y": 45.53125,
+          "width": 830,
+          "height": 808.921875
+        },
+        "close": {
+          "x": 1082,
+          "y": 54.53125,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "Explore the technology tree",
+            "width": 206.46875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Units",
+            "width": 26,
+            "height": 36,
+            "font": 11
+          },
+          {
+            "name": "Buildings",
+            "width": 45.546875,
+            "height": 36,
+            "font": 11
+          },
+          {
+            "name": "Technologies",
+            "width": 66.1875,
+            "height": 36,
+            "font": 11
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "action": "tech-tree",
+      "layout": {
+        "name": "Technology tree.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 305,
+          "y": 25,
+          "width": 830,
+          "height": 850
+        },
+        "close": {
+          "x": 1082,
+          "y": 34,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "The Alder Kingdom",
+            "width": 122.09375,
+            "height": 40,
+            "font": 11
+          },
+          {
+            "name": "The Sunward Sultanate",
+            "width": 142.515625,
+            "height": 40,
+            "font": 11
+          },
+          {
+            "name": "The Raven Clans",
+            "width": 109,
+            "height": 40,
+            "font": 11
+          },
+          {
+            "name": "Frontier Age · Town center",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Frontier Age · Town center / Sta",
+            "width": 154,
+            "height": 42,
+            "font": 10
+          },
+          {
+            "name": "Frontier Age · Barracks",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Frontier Age · Town center / Mar",
+            "width": 154,
+            "height": 55,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Archery range",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Barracks",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Blacksmith / Archer",
+            "width": 154,
+            "height": 42,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Town center / Castl",
+            "width": 154,
+            "height": 42,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Stable",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Castle Age · Stable",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Castle Age · Siege workshop",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Castle Age · Monastery",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Castle Age · Barracks",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Castle Age · Blacksmith",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Imperial Age · Siege workshop",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          },
+          {
+            "name": "Imperial Age · Harbor",
+            "width": 154,
+            "height": 36,
+            "font": 10
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "action": "lan",
+      "layout": {
+        "name": "Meet on the battlefield.",
+        "named": true,
+        "width": 1440,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 305,
+          "y": 79.03125,
+          "width": 830,
+          "height": 741.921875
+        },
+        "close": {
+          "x": 1082,
+          "y": 88.03125,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 27
+          },
+          {
+            "name": "Create custom multiplayer battle",
+            "width": 748,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 365,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 365,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Clash of crownsCrownfallThe sacr",
+            "width": 365,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 365,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Create a room ➜",
+            "width": 748,
+            "height": 57,
+            "font": 12
+          },
+          {
+            "name": "Automatic assignmentSlot 2Slot 3",
+            "width": 748,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Room code",
+            "width": 613.234375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Join a room ↗",
+            "width": 124.765625,
+            "height": 49,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "desktop",
+      "lateEconomy": {
+        "inner": 1440,
+        "client": 1440,
+        "scroll": 1440,
+        "barWidth": 501,
+        "barScroll": 501,
+        "label": "food: 987654321",
+        "title": "food: 987654321",
+        "display": "988M"
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "campaign",
+      "layout": {
+        "name": "A kingdom in the making.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 500,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Create your own custom battle",
+            "width": 496,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "IA foothold in the wildAlder sco",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          },
+          {
+            "name": "IIThe broken crossingAn enemy ga",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          },
+          {
+            "name": "IIIA crown of stoneA border fort",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          },
+          {
+            "name": "IVKeepers of the valleyThree for",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          },
+          {
+            "name": "VThe final siegeThe enemy capita",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          },
+          {
+            "name": "VIBeyond the horizonThe frontier",
+            "width": 496,
+            "height": 88.375,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "custom-battle",
+      "layout": {
+        "name": "Custom battle.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 500,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "2 vs 2",
+            "width": 52.25,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "3 vs 3",
+            "width": 52.609375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4 vs 4",
+            "width": 53,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "1 vs 3",
+            "width": 49.265625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4-way free-for-all",
+            "width": 121.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "8-way free-for-all",
+            "width": 121.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Spacious · 2.25× standard areaLa",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Frontier AgeFeudal AgeCastle Age",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "StandardAbundant",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "80 · recommended for phones12016",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Balanced · build up, then battle",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Destroy all buildingsCapital con",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 238.359375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 268.359375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 473.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 238.359375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 268.359375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 473.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 238.359375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 268.359375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 473.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 238.359375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 268.359375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 198.625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 473.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 241.625,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 201.375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 241.625,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 201.375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 241.625,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 201.375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 241.625,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 201.375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Play solo battle ➜",
+            "width": 496,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Host multiplayer battle",
+            "width": 496,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "settings",
+      "layout": {
+        "name": "Settings.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 500,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "High · full shadows & sharp rend",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "30 FPS · lower power use60 FPS ·",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "PerspectiveClose viewOverview",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Automatic weatherClear skiesClou",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan forward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan backward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Production overview key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Inspect model key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Camera angle key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Center town key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Select army key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Construction key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Attack move key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Patrol key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Guard an ally key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Stop / hold key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Idle villagers key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Focus selection key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Help key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Restore default controls",
+            "width": 185.171875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Apply settings ✓",
+            "width": 496,
+            "height": 57,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "codex",
+      "layout": {
+        "name": "Field guide.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 500,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Explore the technology tree",
+            "width": 206.46875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Units",
+            "width": 44,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Buildings",
+            "width": 49.6875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Technologies",
+            "width": 72.203125,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "tech-tree",
+      "layout": {
+        "name": "Technology tree.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 502,
+          "y": 22,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "The Alder Kingdom",
+            "width": 130.828125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Sunward Sultanate",
+            "width": 153.109375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Raven Clans",
+            "width": 116.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center / Sta",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Barracks",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center / Mar",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Archery range",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Barracks",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith / Archer",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Town center / Castl",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Stable",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Stable",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Siege workshop",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Monastery",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Barracks",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Blacksmith",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Imperial Age · Siege workshop",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Imperial Age · Harbor",
+            "width": 472,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "action": "lan",
+      "layout": {
+        "name": "Meet on the battlefield.",
+        "named": true,
+        "width": 568,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 15,
+          "y": 15,
+          "width": 538,
+          "height": 290
+        },
+        "close": {
+          "x": 500,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Create custom multiplayer battle",
+            "width": 496,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Clash of crownsCrownfallThe sacr",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 240,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Create a room ➜",
+            "width": 496,
+            "height": 57,
+            "font": 12
+          },
+          {
+            "name": "Automatic assignmentSlot 2Slot 3",
+            "width": 496,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Room code",
+            "width": 361.234375,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Join a room ↗",
+            "width": 124.765625,
+            "height": 49,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-landscape",
+      "lateEconomy": {
+        "inner": 568,
+        "client": 568,
+        "scroll": 568,
+        "barWidth": 374,
+        "barScroll": 374,
+        "label": "food: 987654321",
+        "title": "food: 987654321",
+        "display": "988M"
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "campaign",
+      "layout": {
+        "name": "A kingdom in the making.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Create your own custom battle",
+            "width": 250,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "IA foothold in the wildAlder sco",
+            "width": 250,
+            "height": 175.9375,
+            "font": 12
+          },
+          {
+            "name": "IIThe broken crossingAn enemy ga",
+            "width": 250,
+            "height": 151.9375,
+            "font": 12
+          },
+          {
+            "name": "IIIA crown of stoneA border fort",
+            "width": 250,
+            "height": 151.9375,
+            "font": 12
+          },
+          {
+            "name": "IVKeepers of the valleyThree for",
+            "width": 250,
+            "height": 156.75,
+            "font": 12
+          },
+          {
+            "name": "VThe final siegeThe enemy capita",
+            "width": 250,
+            "height": 151.9375,
+            "font": 12
+          },
+          {
+            "name": "VIBeyond the horizonThe frontier",
+            "width": 250,
+            "height": 151.9375,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "custom-battle",
+      "layout": {
+        "name": "Custom battle.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "2 vs 2",
+            "width": 58.25,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "3 vs 3",
+            "width": 58.609375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4 vs 4",
+            "width": 59,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "1 vs 3",
+            "width": 55.265625,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "4-way free-for-all",
+            "width": 127.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "8-way free-for-all",
+            "width": 127.125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Spacious · 2.25× standard areaLa",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Frontier AgeFeudal AgeCastle Age",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "StandardAbundant",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "80 · recommended for phones12016",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Balanced · build up, then battle",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Destroy all buildingsCapital con",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "",
+            "width": 104.171875,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 134.171875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 227.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 104.171875,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 134.171875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 227.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 104.171875,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 134.171875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 227.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 104.171875,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 134.171875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Team 1Team 2Team 3Team 4Team 5Te",
+            "width": 86.8125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "ExplorerCommanderConquerorLegend",
+            "width": 227.984375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 107.453125,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 89.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 107.453125,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 89.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 107.453125,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 89.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 107.453125,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "AI commanderHuman slotClosed",
+            "width": 89.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Play solo battle ➜",
+            "width": 250,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Host multiplayer battle",
+            "width": 250,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "settings",
+      "layout": {
+        "name": "Settings.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "High · full shadows & sharp rend",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "30 FPS · lower power use60 FPS ·",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "PerspectiveClose viewOverview",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Automatic weatherClear skiesClou",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan forward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan backward key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Pan right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate left key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Rotate right key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Production overview key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Inspect model key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Camera angle key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Center town key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Select army key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Construction key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Attack move key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Patrol key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Guard an ally key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Stop / hold key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Idle villagers key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Focus selection key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Help key",
+            "width": 80,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Restore default controls",
+            "width": 185.171875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Apply settings ✓",
+            "width": 250,
+            "height": 57,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "codex",
+      "layout": {
+        "name": "Field guide.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Explore the technology tree",
+            "width": 206.46875,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Units",
+            "width": 44,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Buildings",
+            "width": 49.6875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Technologies",
+            "width": 72.203125,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "tech-tree",
+      "layout": {
+        "name": "Technology tree.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "The Alder Kingdom",
+            "width": 130.828125,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Sunward Sultanate",
+            "width": 153.109375,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "The Raven Clans",
+            "width": 116.546875,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center / Sta",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Barracks",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Frontier Age · Town center / Mar",
+            "width": 226,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Archery range",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Barracks",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Blacksmith / Archer",
+            "width": 226,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Town center / Castl",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Stable",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Feudal Age · Harbor",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Stable",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Siege workshop",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Monastery",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Barracks",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Castle Age · Blacksmith",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Imperial Age · Siege workshop",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          },
+          {
+            "name": "Imperial Age · Harbor",
+            "width": 226,
+            "height": 44,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "action": "lan",
+      "layout": {
+        "name": "Meet on the battlefield.",
+        "named": true,
+        "width": 320,
+        "overflow": false,
+        "dialogOverflow": false,
+        "rect": {
+          "x": 12,
+          "y": 15,
+          "width": 296,
+          "height": 538
+        },
+        "close": {
+          "x": 255,
+          "y": 24,
+          "width": 44,
+          "height": 44
+        },
+        "controls": [
+          {
+            "name": "Close dialog",
+            "width": 44,
+            "height": 44,
+            "font": 26
+          },
+          {
+            "name": "Create custom multiplayer battle",
+            "width": 250,
+            "height": 48,
+            "font": 12
+          },
+          {
+            "name": "",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "The Alder KingdomThe Sunward Sul",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Clash of crownsCrownfallThe sacr",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Emerald highlandsThe river cross",
+            "width": 119,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Create a room ➜",
+            "width": 250,
+            "height": 57,
+            "font": 12
+          },
+          {
+            "name": "Automatic assignmentSlot 2Slot 3",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Room code",
+            "width": 250,
+            "height": 44,
+            "font": 13
+          },
+          {
+            "name": "Join a room ↗",
+            "width": 250,
+            "height": 49,
+            "font": 12
+          }
+        ]
+      }
+    },
+    {
+      "profile": "phone-portrait",
+      "lateEconomy": {
+        "inner": 320,
+        "client": 320,
+        "scroll": 320,
+        "barWidth": 304,
+        "barScroll": 304,
+        "label": "food: 987654321",
+        "title": "food: 987654321",
+        "display": "988M"
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}
