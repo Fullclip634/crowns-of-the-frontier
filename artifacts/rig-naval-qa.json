@@ -1,0 +1,1060 @@
+{
+  "checks": [
+    {
+      "quality": "low",
+      "models": 126,
+      "before": {
+        "draws": 225,
+        "triangles": 215556,
+        "units": {
+          "drawn": 18,
+          "allocated": 18,
+          "activeBatches": 8,
+          "matrixUploadBytes": 9216,
+          "ownerUploadBytes": 140,
+          "capacityMatrixBytes": 1998848,
+          "rigParts": 0,
+          "rigUploadBytes": 0,
+          "rigUsedBytes": 0
+        }
+      },
+      "after": {
+        "draws": 172,
+        "triangles": 215556,
+        "units": {
+          "drawn": 18,
+          "allocated": 18,
+          "activeBatches": 8,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 20,
+          "capacityMatrixBytes": 262144,
+          "rigParts": 8,
+          "rigUploadBytes": 62464,
+          "rigUsedBytes": 9216
+        }
+      },
+      "image": {
+        "changed": 3,
+        "pixels": 921600,
+        "average": 0.00010199652777777778,
+        "max": 39,
+        "p99": 0
+      },
+      "oldPicks": [
+        {
+          "id": 258,
+          "type": "fishingboat",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 258
+            },
+            {
+              "height": 0.8,
+              "hit": 258
+            },
+            {
+              "height": 1.2,
+              "hit": 258
+            },
+            {
+              "height": 1.8,
+              "hit": 258
+            },
+            {
+              "height": 2.5,
+              "hit": null
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 259,
+          "type": "galley",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 259
+            },
+            {
+              "height": 0.8,
+              "hit": 259
+            },
+            {
+              "height": 1.2,
+              "hit": 259
+            },
+            {
+              "height": 1.8,
+              "hit": 259
+            },
+            {
+              "height": 2.5,
+              "hit": 259
+            },
+            {
+              "height": 3.4,
+              "hit": 259
+            },
+            {
+              "height": 4.5,
+              "hit": 259
+            },
+            {
+              "height": 6,
+              "hit": 259
+            }
+          ]
+        },
+        {
+          "id": 260,
+          "type": "warship",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 260
+            },
+            {
+              "height": 0.8,
+              "hit": 260
+            },
+            {
+              "height": 1.2,
+              "hit": 260
+            },
+            {
+              "height": 1.8,
+              "hit": 260
+            },
+            {
+              "height": 2.5,
+              "hit": 260
+            },
+            {
+              "height": 3.4,
+              "hit": 260
+            },
+            {
+              "height": 4.5,
+              "hit": 260
+            },
+            {
+              "height": 6,
+              "hit": 260
+            }
+          ]
+        },
+        {
+          "id": 261,
+          "type": "transport",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 261
+            },
+            {
+              "height": 0.8,
+              "hit": 261
+            },
+            {
+              "height": 1.2,
+              "hit": 261
+            },
+            {
+              "height": 1.8,
+              "hit": 261
+            },
+            {
+              "height": 2.5,
+              "hit": 261
+            },
+            {
+              "height": 3.4,
+              "hit": 261
+            },
+            {
+              "height": 4.5,
+              "hit": 261
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 262,
+          "type": "monk",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 262
+            },
+            {
+              "height": 0.8,
+              "hit": 262
+            },
+            {
+              "height": 1.2,
+              "hit": 262
+            },
+            {
+              "height": 1.8,
+              "hit": 262
+            },
+            {
+              "height": 2.5,
+              "hit": 262
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": 5
+            }
+          ]
+        },
+        {
+          "id": 263,
+          "type": "king",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": null
+            },
+            {
+              "height": 0.8,
+              "hit": null
+            },
+            {
+              "height": 1.2,
+              "hit": 263
+            },
+            {
+              "height": 1.8,
+              "hit": 263
+            },
+            {
+              "height": 2.5,
+              "hit": 263
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "picks": [
+        {
+          "id": 258,
+          "type": "fishingboat",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 258
+            },
+            {
+              "height": 0.8,
+              "hit": 258
+            },
+            {
+              "height": 1.2,
+              "hit": 258
+            },
+            {
+              "height": 1.8,
+              "hit": 258
+            },
+            {
+              "height": 2.5,
+              "hit": null
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 259,
+          "type": "galley",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 259
+            },
+            {
+              "height": 0.8,
+              "hit": 259
+            },
+            {
+              "height": 1.2,
+              "hit": 259
+            },
+            {
+              "height": 1.8,
+              "hit": 259
+            },
+            {
+              "height": 2.5,
+              "hit": 259
+            },
+            {
+              "height": 3.4,
+              "hit": 259
+            },
+            {
+              "height": 4.5,
+              "hit": 259
+            },
+            {
+              "height": 6,
+              "hit": 259
+            }
+          ]
+        },
+        {
+          "id": 260,
+          "type": "warship",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 260
+            },
+            {
+              "height": 0.8,
+              "hit": 260
+            },
+            {
+              "height": 1.2,
+              "hit": 260
+            },
+            {
+              "height": 1.8,
+              "hit": 260
+            },
+            {
+              "height": 2.5,
+              "hit": 260
+            },
+            {
+              "height": 3.4,
+              "hit": 260
+            },
+            {
+              "height": 4.5,
+              "hit": 260
+            },
+            {
+              "height": 6,
+              "hit": 260
+            }
+          ]
+        },
+        {
+          "id": 261,
+          "type": "transport",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 261
+            },
+            {
+              "height": 0.8,
+              "hit": 261
+            },
+            {
+              "height": 1.2,
+              "hit": 261
+            },
+            {
+              "height": 1.8,
+              "hit": 261
+            },
+            {
+              "height": 2.5,
+              "hit": 261
+            },
+            {
+              "height": 3.4,
+              "hit": 261
+            },
+            {
+              "height": 4.5,
+              "hit": 261
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 262,
+          "type": "monk",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 262
+            },
+            {
+              "height": 0.8,
+              "hit": 262
+            },
+            {
+              "height": 1.2,
+              "hit": 262
+            },
+            {
+              "height": 1.8,
+              "hit": 262
+            },
+            {
+              "height": 2.5,
+              "hit": 262
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": 5
+            }
+          ]
+        },
+        {
+          "id": 263,
+          "type": "king",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": null
+            },
+            {
+              "height": 0.8,
+              "hit": null
+            },
+            {
+              "height": 1.2,
+              "hit": 263
+            },
+            {
+              "height": 1.8,
+              "hit": 263
+            },
+            {
+              "height": 2.5,
+              "hit": 263
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "memory": [
+        {
+          "geometries": 190,
+          "textures": 22
+        },
+        {
+          "geometries": 190,
+          "textures": 22
+        },
+        {
+          "geometries": 190,
+          "textures": 22
+        }
+      ]
+    },
+    {
+      "quality": "high",
+      "models": 126,
+      "before": {
+        "draws": 237,
+        "triangles": 1371340,
+        "units": {
+          "drawn": 18,
+          "allocated": 18,
+          "activeBatches": 8,
+          "matrixUploadBytes": 9216,
+          "ownerUploadBytes": 140,
+          "capacityMatrixBytes": 1998848,
+          "rigParts": 0,
+          "rigUploadBytes": 0,
+          "rigUsedBytes": 0
+        }
+      },
+      "after": {
+        "draws": 184,
+        "triangles": 1371340,
+        "units": {
+          "drawn": 18,
+          "allocated": 18,
+          "activeBatches": 8,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 20,
+          "capacityMatrixBytes": 262144,
+          "rigParts": 8,
+          "rigUploadBytes": 62464,
+          "rigUsedBytes": 9216
+        }
+      },
+      "image": {
+        "changed": 3,
+        "pixels": 921600,
+        "average": 0.00007486979166666666,
+        "max": 27,
+        "p99": 0
+      },
+      "oldPicks": [
+        {
+          "id": 258,
+          "type": "fishingboat",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 258
+            },
+            {
+              "height": 0.8,
+              "hit": 258
+            },
+            {
+              "height": 1.2,
+              "hit": 258
+            },
+            {
+              "height": 1.8,
+              "hit": 258
+            },
+            {
+              "height": 2.5,
+              "hit": null
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 259,
+          "type": "galley",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 259
+            },
+            {
+              "height": 0.8,
+              "hit": 259
+            },
+            {
+              "height": 1.2,
+              "hit": 259
+            },
+            {
+              "height": 1.8,
+              "hit": 259
+            },
+            {
+              "height": 2.5,
+              "hit": 259
+            },
+            {
+              "height": 3.4,
+              "hit": 259
+            },
+            {
+              "height": 4.5,
+              "hit": 259
+            },
+            {
+              "height": 6,
+              "hit": 259
+            }
+          ]
+        },
+        {
+          "id": 260,
+          "type": "warship",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 260
+            },
+            {
+              "height": 0.8,
+              "hit": 260
+            },
+            {
+              "height": 1.2,
+              "hit": 260
+            },
+            {
+              "height": 1.8,
+              "hit": 260
+            },
+            {
+              "height": 2.5,
+              "hit": 260
+            },
+            {
+              "height": 3.4,
+              "hit": 260
+            },
+            {
+              "height": 4.5,
+              "hit": 260
+            },
+            {
+              "height": 6,
+              "hit": 260
+            }
+          ]
+        },
+        {
+          "id": 261,
+          "type": "transport",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 261
+            },
+            {
+              "height": 0.8,
+              "hit": 261
+            },
+            {
+              "height": 1.2,
+              "hit": 261
+            },
+            {
+              "height": 1.8,
+              "hit": 261
+            },
+            {
+              "height": 2.5,
+              "hit": 261
+            },
+            {
+              "height": 3.4,
+              "hit": 261
+            },
+            {
+              "height": 4.5,
+              "hit": 261
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 262,
+          "type": "monk",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 262
+            },
+            {
+              "height": 0.8,
+              "hit": 262
+            },
+            {
+              "height": 1.2,
+              "hit": 262
+            },
+            {
+              "height": 1.8,
+              "hit": 262
+            },
+            {
+              "height": 2.5,
+              "hit": 262
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": 5
+            }
+          ]
+        },
+        {
+          "id": 263,
+          "type": "king",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": null
+            },
+            {
+              "height": 0.8,
+              "hit": null
+            },
+            {
+              "height": 1.2,
+              "hit": 263
+            },
+            {
+              "height": 1.8,
+              "hit": 263
+            },
+            {
+              "height": 2.5,
+              "hit": 263
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "picks": [
+        {
+          "id": 258,
+          "type": "fishingboat",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 258
+            },
+            {
+              "height": 0.8,
+              "hit": 258
+            },
+            {
+              "height": 1.2,
+              "hit": 258
+            },
+            {
+              "height": 1.8,
+              "hit": 258
+            },
+            {
+              "height": 2.5,
+              "hit": null
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 259,
+          "type": "galley",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 259
+            },
+            {
+              "height": 0.8,
+              "hit": 259
+            },
+            {
+              "height": 1.2,
+              "hit": 259
+            },
+            {
+              "height": 1.8,
+              "hit": 259
+            },
+            {
+              "height": 2.5,
+              "hit": 259
+            },
+            {
+              "height": 3.4,
+              "hit": 259
+            },
+            {
+              "height": 4.5,
+              "hit": 259
+            },
+            {
+              "height": 6,
+              "hit": 259
+            }
+          ]
+        },
+        {
+          "id": 260,
+          "type": "warship",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 260
+            },
+            {
+              "height": 0.8,
+              "hit": 260
+            },
+            {
+              "height": 1.2,
+              "hit": 260
+            },
+            {
+              "height": 1.8,
+              "hit": 260
+            },
+            {
+              "height": 2.5,
+              "hit": 260
+            },
+            {
+              "height": 3.4,
+              "hit": 260
+            },
+            {
+              "height": 4.5,
+              "hit": 260
+            },
+            {
+              "height": 6,
+              "hit": 260
+            }
+          ]
+        },
+        {
+          "id": 261,
+          "type": "transport",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 261
+            },
+            {
+              "height": 0.8,
+              "hit": 261
+            },
+            {
+              "height": 1.2,
+              "hit": 261
+            },
+            {
+              "height": 1.8,
+              "hit": 261
+            },
+            {
+              "height": 2.5,
+              "hit": 261
+            },
+            {
+              "height": 3.4,
+              "hit": 261
+            },
+            {
+              "height": 4.5,
+              "hit": 261
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        },
+        {
+          "id": 262,
+          "type": "monk",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": 262
+            },
+            {
+              "height": 0.8,
+              "hit": 262
+            },
+            {
+              "height": 1.2,
+              "hit": 262
+            },
+            {
+              "height": 1.8,
+              "hit": 262
+            },
+            {
+              "height": 2.5,
+              "hit": 262
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": 5
+            }
+          ]
+        },
+        {
+          "id": 263,
+          "type": "king",
+          "packed": true,
+          "probes": [
+            {
+              "height": 0.4,
+              "hit": null
+            },
+            {
+              "height": 0.8,
+              "hit": null
+            },
+            {
+              "height": 1.2,
+              "hit": 263
+            },
+            {
+              "height": 1.8,
+              "hit": 263
+            },
+            {
+              "height": 2.5,
+              "hit": 263
+            },
+            {
+              "height": 3.4,
+              "hit": null
+            },
+            {
+              "height": 4.5,
+              "hit": null
+            },
+            {
+              "height": 6,
+              "hit": null
+            }
+          ]
+        }
+      ],
+      "memory": [
+        {
+          "geometries": 195,
+          "textures": 37
+        },
+        {
+          "geometries": 195,
+          "textures": 37
+        },
+        {
+          "geometries": 195,
+          "textures": 37
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

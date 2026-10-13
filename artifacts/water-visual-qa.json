@@ -8,18 +8,18 @@
           "meshes": 1
         },
         "uniformTime": 1.7,
-        "changedPixels": 3915,
-        "strongChangedPixels": 2838,
-        "colorDifference": 25035,
+        "changedPixels": 3998,
+        "strongChangedPixels": 3177,
+        "colorDifference": 29313,
         "objectsExcludedFromPixelProbe": true,
         "unchangedGeometry": true,
         "boundHeight": 0.10999999999999999,
-        "calls": 70,
+        "calls": 50,
         "art": {
           "source": "Blender",
           "detail": "high",
           "models": 126,
-          "bytes": 15554824
+          "bytes": 16237168
         }
       }
     },

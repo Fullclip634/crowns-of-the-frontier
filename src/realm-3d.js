@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {treeDetail} from './tree-lod.js';
 import {UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
@@ -46,7 +47,7 @@ export function installRealm3D(WorldView){
   const p=WorldView.prototype,attach=p.attach,render=p.render,effect=p.effect,burst=p.burst;
   p.attach=function(sim){
     this.hideGhost();this.ghost.userData.type=null;
-    this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions);this.foundationHeights=new Map();this.forest=[];this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;
+    this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions);this.foundationHeights=new Map();this.forest=[];this.forestLodState=new Map();this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
@@ -67,14 +68,14 @@ export function installRealm3D(WorldView){
     // prominent tree into its coarsest mesh merely because the camera is high.
     const pixels=this.container?.clientHeight||globalThis.innerHeight||720;
     const projection=pixels/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov)*.5));
-    const threshold=this.settings.quality==='high'?34:this.settings.quality==='medium'?70:125;
+    const lod=this.forestLodState??=new Map();
     this.fallSlots=new Map();for(const batch of this.forest||[]){for(const set of batch.sets)set.ids.length=0;batch.entries.forEach((e,i)=>{
       const current=this.sim.get(e.id);
       const fall=this.treeFalls?.get(e.id);
       const along=((e.x-this.target.x)*dx+(e.z-this.target.z)*dz)/length2,side=Math.hypot(e.x-this.target.x-along*dx,e.z-this.target.z-along*dz),lineHeight=this.target.y+(this.camera.position.y-this.target.y)*along;
       const obstructs=!menu&&this.tilt<.61&&along>.12&&along<1&&side<3.2&&lineHeight<this.groundHeight(e.x,e.z)+8;
       const shown=(current?.hp>0||fall)&&!obstructs&&nearViewport(this,e.x,this.groundHeight(e.x,e.z)+3,e.z,14)&&(menu||this.settings.fog===false||this.sim.isExplored(e.x,e.z));
-      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),near=screenHeight>=threshold,set=batch.sets[near?0:1],index=set.ids.length;set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,batch.matrices[i],e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base:batch.matrices[i]});}
+      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,this.settings.quality,lod.get(e.id)),set=batch.sets[detail.near?0:1],index=set.ids.length;lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,batch.matrices[i],e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base:batch.matrices[i]});}
     });for(const set of batch.sets)for(const part of set.parts){part.count=set.ids.length;markInstancePrefix(part);part.boundingSphere=null;}}
   };
   p.foliageFog=function(menu){this.forestFog(menu);};

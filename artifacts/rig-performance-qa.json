@@ -1,0 +1,145 @@
+{
+  "profile": "Frozen crowded battle, alternating render paths, development laptop",
+  "headless": true,
+  "physicalPhone": false,
+  "errors": [],
+  "samples": [
+    {
+      "rigid": false,
+      "frames": 63,
+      "elapsed": 3008.399999999907,
+      "renderedFPS": 20.94136418029582,
+      "submit": {
+        "median": 27.59999999962747,
+        "p95": 38.799999999813735,
+        "max": 48.799999999813735
+      },
+      "draws": 302,
+      "triangles": 389336,
+      "units": {
+        "drawn": 152,
+        "allocated": 332,
+        "activeBatches": 10,
+        "matrixUploadBytes": 102400,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 5939200,
+        "rigParts": 0,
+        "rigUploadBytes": 0,
+        "rigUsedBytes": 0
+      },
+      "memory": {
+        "geometries": 252,
+        "textures": 14
+      },
+      "models": 126,
+      "simulationTime": 780.3000000001089,
+      "unitsAlive": 338
+    },
+    {
+      "rigid": true,
+      "frames": 104,
+      "elapsed": 3032.4000000000015,
+      "renderedFPS": 34.29626698324758,
+      "submit": {
+        "median": 25.90000000037253,
+        "p95": 29.100000000093132,
+        "max": 31.40000000037253
+      },
+      "draws": 205,
+      "triangles": 389336,
+      "units": {
+        "drawn": 152,
+        "allocated": 332,
+        "activeBatches": 10,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 573440,
+        "rigParts": 14,
+        "rigUploadBytes": 181248,
+        "rigUsedBytes": 102400
+      },
+      "memory": {
+        "geometries": 155,
+        "textures": 24
+      },
+      "models": 126,
+      "simulationTime": 780.3000000001089,
+      "unitsAlive": 338
+    },
+    {
+      "rigid": true,
+      "frames": 105,
+      "elapsed": 3024.7000000000917,
+      "renderedFPS": 34.71418653089457,
+      "submit": {
+        "median": 25.399999999906868,
+        "p95": 31.299999999813735,
+        "max": 38.10000000009313
+      },
+      "draws": 205,
+      "triangles": 389336,
+      "units": {
+        "drawn": 152,
+        "allocated": 332,
+        "activeBatches": 10,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 573440,
+        "rigParts": 14,
+        "rigUploadBytes": 181248,
+        "rigUsedBytes": 102400
+      },
+      "memory": {
+        "geometries": 155,
+        "textures": 24
+      },
+      "models": 126,
+      "simulationTime": 780.3000000001089,
+      "unitsAlive": 338
+    },
+    {
+      "rigid": false,
+      "frames": 99,
+      "elapsed": 3015.2999999999083,
+      "renderedFPS": 32.83255397472988,
+      "submit": {
+        "median": 24.799999999813735,
+        "p95": 34.299999999813735,
+        "max": 38.10000000009313
+      },
+      "draws": 302,
+      "triangles": 389336,
+      "units": {
+        "drawn": 152,
+        "allocated": 332,
+        "activeBatches": 10,
+        "matrixUploadBytes": 102400,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 5939200,
+        "rigParts": 0,
+        "rigUploadBytes": 0,
+        "rigUsedBytes": 0
+      },
+      "memory": {
+        "geometries": 252,
+        "textures": 14
+      },
+      "models": 126,
+      "simulationTime": 780.3000000001089,
+      "unitsAlive": 338
+    }
+  ],
+  "passed": true,
+  "comparison": {
+    "legacy": {
+      "fps": 26.886959077512852,
+      "submitMedian": 26.199999999720603,
+      "draws": 302
+    },
+    "rigid": {
+      "fps": 34.50522675707107,
+      "submitMedian": 25.6500000001397,
+      "draws": 205
+    }
+  }
+}

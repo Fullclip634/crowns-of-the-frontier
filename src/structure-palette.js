@@ -5,13 +5,13 @@ function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
     const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9});
-    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},detail:{value:0}};
+    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0}};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
     material.onBeforeCompile=shader=>{
       for(const [key,uniform] of Object.entries(uniforms))shader.uniforms['frontierStructure'+key]=uniform;
-      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\n'+shader.vertexShader;
-      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;');
+      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;');
       shader.fragmentShader=`uniform sampler2D frontierStructurewood;
         uniform sampler2D frontierStructurestone;
         uniform sampler2D frontierStructureplaster;
@@ -24,6 +24,7 @@ function paletteMaterial(view){
         uniform sampler2D frontierStructureplasterArm;
         uniform vec3 frontierStructurenormalAvailable;
         uniform float frontierStructuredetail;
+        uniform float frontierStructurenight;
         varying vec3 vStructureSurface;
         varying vec3 vStructureEmission;\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
@@ -40,7 +41,8 @@ function paletteMaterial(view){
         }
         roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vStructureSurface.y, 0.0, 1.0);');
-      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission;');
+      shader.fragmentShader='varying float vStructureNightGlow;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.5) + vec3(0.65, 0.3, 0.07) * vStructureNightGlow * frontierStructurenight;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         bool normalReady = vStructureSurface.z > 2.5 ? frontierStructurenormalAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurenormalAvailable.y > 0.5 : frontierStructurenormalAvailable.x > 0.5;
@@ -52,7 +54,7 @@ function paletteMaterial(view){
         }
         #endif`);
     };
-    material.customProgramCacheKey=()=> 'frontier-structure-palette-v3';
+    material.customProgramCacheKey=()=> 'frontier-structure-palette-v4';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
@@ -75,7 +77,7 @@ function bakeSurface(view,part,matrix){
   for(const name of Object.keys(geometry.attributes))if(!['position','normal','uv','color'].includes(name))geometry.deleteAttribute(name);
   if(!geometry.attributes.normal)geometry.computeVertexNormals();
   if(!geometry.attributes.uv)geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(count*2),2));
-  const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3);
+  const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,color=material.color.toArray(),emissive=material.emissive?.toArray()||[0,0,0];
   const mode=[m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
@@ -86,6 +88,8 @@ function bakeSurface(view,part,matrix){
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
   geometry.setAttribute('structureSurface',new THREE.BufferAttribute(surface,3));
   geometry.setAttribute('structureEmission',new THREE.BufferAttribute(emission,3));
+  if(material===m.glass)nightGlow.fill(1);
+  geometry.setAttribute('structureNightGlow',new THREE.BufferAttribute(nightGlow,1));
   geometry.clearGroups();return geometry;
 }
 

@@ -18,7 +18,6 @@ export function applyRigShader(shader,uniform){
   shader.vertexShader=rigShader+'\n'+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('void main() {','void main() {\nmat4 frontierPose = frontierRigMatrix();');
   // Match Three.js defaultnormal_vertex's per-instance inverse-scale step.
-  // Its omission changes shadowed surface lighting on the tested WebGL driver.
   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
 vec3 frontierPoseScaleSq = vec3(dot(frontierPose[0].xyz, frontierPose[0].xyz),
                                 dot(frontierPose[1].xyz, frontierPose[1].xyz),
@@ -52,10 +51,7 @@ export function createRigidUnitPart(view,model,batch){
   const rig={joints,uniform:{value:null},batch,view};allocate(rig,Math.min(16,batch.capacity));
   const material=sourceMaterial.clone(),paletteShader=sourceMaterial.onBeforeCompile;material.defines={...sourceMaterial.defines};material.onBeforeCompile=(shader,renderer)=>{
     paletteShader.call(sourceMaterial,shader,renderer);applyRigShader(shader,rig.uniform);
-    // Keep the final color write explicit for the vertex-texture + shadow
-    // variant. Without it, this WebGL driver darkens unit surfaces in High.
-    shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\ngl_FragColor = gl_FragColor;');
-  };material.customProgramCacheKey=()=>sourceMaterial.customProgramCacheKey()+':rig-v4';
+  };material.customProgramCacheKey=()=>sourceMaterial.customProgramCacheKey()+':rig-v2';
   const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});depth.onBeforeCompile=shader=>applyRigShader(shader,rig.uniform);depth.customProgramCacheKey=()=> 'frontier-rig-depth-v1';
   const mesh=new THREE.InstancedMesh(geometry,material,batch.capacity);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=mesh.receiveShadow=true;mesh.customDepthMaterial=depth;
   mesh.userData.rigidRig=rig;mesh.userData.unitIds=batch.renderIds;mesh.raycast=(raycaster,intersects)=>raycastRigidPart(mesh,raycaster,intersects);return mesh;

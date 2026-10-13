@@ -1,4 +1,20 @@
-# Version 2.6 verification
+# Version 2.6.1 verification
+
+Checked 13 October 2026. The complete quality goal remains active. These results cover the named scenarios and do not establish 100/100 quality, AAA parity or every-device readiness.
+
+- Full current automated suite: **195 passed, zero failed**. Production build succeeds. Coverage includes original catalogue geometry, strategic/economy/campaign/network behavior, graphics preference persistence, construction materials, localized combat audio, shoreline data, day/night states and stable tree detail.
+- Production night checks pass Low/High, all 126 models, actual warm window geometry, readable darker lighting, storm/rain compatibility, saved preference/reload and landscape-phone Home/command access. Report: `artifacts/night-qa.json`; screenshots show the actual built game.
+- Phone layout checks cover four landscape sizes, two portrait widths, visible resource counts, square radar/navigation, paid training/research, construction/tactics, production and camera controls. At 568 x 320, default clear battlefield area with a selection rises from about 27% to 60%; primary touch controls remain at least 44px. Reports: `artifacts/phone-layout-before.json`, `artifacts/phone-layout-after.json`.
+- Production combat audio checks verify original metallic melee, bow/structural/siege effects, fading active sources on camera jumps and silence for 100 offscreen attack events. Report: `artifacts/combat-audio-qa.json`.
+- All eighteen troop/ship types retain triangle counts and exposed body picking in Low/High comparisons. The naval fixture has only three differing pixels of 921,600 in each quality, while draw counts fall 225 -> 172 and 237 -> 184. Three scene rebuilds retain stable memory. Reports: `artifacts/rig-visual-qa.json`, `artifacts/rig-naval-qa.json`. These isolate renderer equivalence rather than establish the art's overall quality.
+- Fresh interaction/gait checks cover felling and stumps, four carried resources, interpolated cargo, ore depletion, age architecture and phone camera controls. Four Huge winter scenes plateau at 101 geometries/18 textures; forty gait frames advance by 4.1 meters of visible travel while authoritative/save state is preserved. Reports: `artifacts/interactions-qa.json`, `artifacts/locomotion-qa.json`.
+- Water visual checks pass High/Low moving waves, static CPU geometry and scene cleanup without shader errors. Depth and bank-distance attributes provide the new shoreline shading. Report: `artifacts/water-visual-qa.json`.
+- The current production mixed-multiplayer check passes two real desktop/phone browser clients, a third WebSocket human and one independent AI, including slot/readiness gates, privacy/ownership, paid phone training, rejoin, play after host defeat and team results. Its destructive checks run on an isolated server. Report: `artifacts/custom-multiplayer-qa.json`.
+- Offline cache/reload/gameplay passes on the final night production build, with both Blender catalogues and all 21 surface maps cached. Human multiplayer requires a reachable server; a laptop-hosted same-Wi-Fi server can work without internet. Render multiplayer requires internet. Source/static deployment archives are refreshed and inspected separately from this browser check.
+
+The short frozen renderer benchmark reduces draw submissions and instance capacity memory with unchanged triangles, but does not prove sustained simulation FPS or physical-phone performance. Art/animation, strategic depth, coastal routes, all-mode human playtesting, hardware/browser coverage and hosted operations remain full-goal work. The user reports an existing Render deployment; its public URL, deployed revision and auto-deploy setting have not been independently verified.
+
+## Version 2.6 verification (historical)
 
 Checked 13 October 2026. The full quality goal, including UI/UX design and style throughout the system, remains active. The game is a development beta; these checks do not establish 100/100 quality, AAA parity or universal-device readiness.
 

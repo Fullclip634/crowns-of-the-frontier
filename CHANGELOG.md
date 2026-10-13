@@ -1,3 +1,11 @@
+# Troop rendering and coastal water (version 2.6.1)
+
+- Battlefield settings offer Daylight, Moonlit Night and a gradual 18-minute Day/Night Cycle. Moonlight, ambient light, atmospheric fog and warm 3D building windows follow the lighting mode while rain, storms and lightning continue working. The choice is saved and survives reload; visibility and AI rules are unchanged.
+- Tree detail uses a hold range, keeping the richer silhouette longer as the camera moves away and preventing repeated detail swaps under small camera movements. Distant trees still use lighter meshes to bound rendering work.
+- Opaque Blender troop parts share one articulated draw per type/variant, preserving their geometry, materials, shadows and body picking. Pose textures grow with visible units; transparent parts retain their existing rendering path. All eighteen troop/ship types pass Low/High appearance and selection checks, with unchanged triangle counts and stable repeated-scene memory.
+- Water uses the terrain depth and distance to its bank to distinguish deep water from shallows and add subtle animated shoreline foam. Waves settle at the bank and remain on the GPU; geometry is not rewritten every frame. Navigation and bridge terrain are unchanged.
+- Fresh checks cover forty walking/cavalry/siege pose frames, felling and stumps, all four carried resources, interpolated cargo, depleted ore, age architecture, and phone camera interaction. Short frozen render comparisons reduce draw submissions; sustained frame rate and physical-device validation remain open.
+
 # Phone battlefield space and combat audio (version 2.6.1)
 
 - Short landscape phones use a compact resource bar, square minimap, selection strip and expandable command/camera controls. Empty selection panels disappear; training stays directly available, with research, queues and tactics in selection options. Construction and tactical orders close extra information for battlefield placement. Desktop keeps its full controls.

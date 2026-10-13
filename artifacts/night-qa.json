@@ -1,0 +1,62 @@
+{
+  "checks": [
+    {
+      "quality": "low",
+      "models": 126,
+      "state": {
+        "mode": "night",
+        "night": 1,
+        "twilight": 0,
+        "label": "Night"
+      },
+      "dayBrightness": 72.36618041992497,
+      "nightBrightness": 29.85837809244645,
+      "glowingVertices": 1464,
+      "moonIntensity": 0.621,
+      "ambientIntensity": 0.558,
+      "windowUniform": 1
+    },
+    {
+      "nightWeather": {
+        "mode": "night",
+        "night": 1,
+        "weather": "storm",
+        "rain": 225
+      }
+    },
+    {
+      "quality": "high",
+      "models": 126,
+      "state": {
+        "mode": "night",
+        "night": 1,
+        "twilight": 0,
+        "label": "Night"
+      },
+      "dayBrightness": 61.09546915690228,
+      "nightBrightness": 27.028167724608814,
+      "glowingVertices": 5856,
+      "moonIntensity": 0.621,
+      "ambientIntensity": 0.558,
+      "windowUniform": 1
+    },
+    {
+      "nightWeather": {
+        "mode": "night",
+        "night": 1,
+        "weather": "storm",
+        "rain": 1314
+      }
+    },
+    {
+      "savedNightSurvivesReload": true
+    },
+    {
+      "landscapePhoneNight": true,
+      "homeCommand": true,
+      "noHorizontalOverflow": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

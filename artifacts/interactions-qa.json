@@ -42,11 +42,11 @@
         "alignment": [
           {
             "type": "wood",
-            "distance": 0.41999967780955244,
+            "distance": 0.41999899454408135,
             "position": [
-              -34.68050765991211,
+              -34.58116149902344,
               1.8899999856948853,
-              33.27262496948242
+              33.03120040893555
             ],
             "worker": [
               -35,
@@ -97,7 +97,7 @@
     },
     {
       "smoothCargo": {
-        "distance": 0.41999830431264834,
+        "distance": 0.420001154327869,
         "visible": [
           -34.75,
           33.15
@@ -129,20 +129,20 @@
       },
       "memory": [
         {
-          "geometries": 142,
-          "textures": 14
+          "geometries": 101,
+          "textures": 18
         },
         {
-          "geometries": 142,
-          "textures": 14
+          "geometries": 101,
+          "textures": 18
         },
         {
-          "geometries": 142,
-          "textures": 14
+          "geometries": 101,
+          "textures": 18
         },
         {
-          "geometries": 142,
-          "textures": 14
+          "geometries": 101,
+          "textures": 18
         }
       ],
       "repeatedMatchMemoryPlateau": true

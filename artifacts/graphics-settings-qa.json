@@ -1,0 +1,23 @@
+{
+  "checks": [
+    {
+      "name": "Manual High survives forced frame pressure and is saved",
+      "quality": "high",
+      "automatic": false
+    },
+    {
+      "name": "Landscape settings fit 640 x 360",
+      "horizontalOverflow": false,
+      "selectHeight": 44,
+      "description": "Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality."
+    },
+    {
+      "name": "Manual High persists after reload"
+    },
+    {
+      "name": "Automatic adjustment is a separate explicit choice"
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

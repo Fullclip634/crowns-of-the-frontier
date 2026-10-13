@@ -1,6 +1,6 @@
 # Crowns of the Frontier: quality roadmap
 
-Reviewed 13 October 2026 against the version 2.6 source and current verification scripts. The user's quality goal explicitly includes design, style and UI/UX throughout the system.
+Reviewed 13 October 2026 against the version 2.6.1 source and current verification scripts. The user's quality goal explicitly includes design, style and UI/UX throughout the system. Recent implemented work includes compact phone panels, original camera-local combat audio, saved moonlit/day-cycle lighting, stable tree detail, shoreline shading and articulated troop draw reduction. The complete goal is still open.
 
 This is an ordered development proposal, not a claim that its milestones have been implemented. The current game is a playable beta. A world-class assessment needs independent player feedback, reliable performance, strong content, and sustained quality across complete matches.
 
@@ -13,7 +13,7 @@ This is an ordered development proposal, not a claim that its milestones have be
 - Classic two-player and custom mixed human/AI Wi-Fi rooms with authoritative commands, team perspectives, readiness and reconnection. Rooms are held in server memory; they are not a public matchmaking service.
 - Seeded volumetric weather, pooled effects, optional audio/lightning and quality budgets.
 - Rooted and wind-animated trees, winter snowcaps, harvested tree falls/stumps, batched carried supplies, ore depletion, and age-specific town-center architecture. Huge-map fog and grass cover the full playable area.
-- Free Render deployment configuration for one game/multiplayer service, plus optional Netlify static hosting and a separate secure multiplayer endpoint. Hosting variants have local browser coverage; no public deployment is active.
+- Render deployment configuration for one game/multiplayer service, plus optional Netlify static hosting and a separate secure multiplayer endpoint. Hosting variants have local browser coverage. The user reports a Render deployment; public deployed-version and operational checks remain unverified.
 - Mouse edge scrolling, corner scrolling, cursor arrows, keyboard controls, camera inspection, and landscape touch input.
 - Square radar with a rectangular camera locator and mouse/touch dragging. Global production overview, selection across completed production buildings, balanced training batches, and cancel/refund controls.
 - Existing automated simulation/graphics/network checks and browser verification. Physical-device performance, balance, and extensive human playtesting remain unverified.

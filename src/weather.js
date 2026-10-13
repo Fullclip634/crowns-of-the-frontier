@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
+import {DayNightLighting} from './day-night.js';
 
 export const WEATHER_NAMES={clear:'Clear skies',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snowfall'};
 const clamp=n=>Math.max(0,Math.min(1,n));
@@ -28,6 +29,7 @@ export class WeatherRenderer {
     this.clouds=this.instances(new THREE.IcosahedronGeometry(1,2),new THREE.MeshStandardMaterial({color:0xb6c3ca,transparent:true,opacity:.38,depthWrite:false,roughness:1}),36);
     const rng=seededRandom(this.seed+55131);this.particles=Array.from({length:1400},()=>({x:rng(),z:rng(),phase:rng(),speed:.8+rng()*.4,scale:.7+rng()*.6}));
     this.cloudSeeds=Array.from({length:36},()=>({x:(rng()-.5)*210,z:(rng()-.5)*210,y:48+rng()*24,scale:9+rng()*12}));
+    this.daylight=new DayNightLighting(view);
   }
   instances(geometry,material,capacity){const mesh=new THREE.InstancedMesh(geometry,material,capacity);mesh.count=0;mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.userData.weather3d=true;this.group.add(mesh);return mesh;}
   updateRoofs(){
@@ -44,6 +46,7 @@ export class WeatherRenderer {
     v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=this.base.near-this.cloudiness*20;v.scene.fog.far=this.base.far-this.cloudiness*45;
     v.sun.color.copy(this.base.sun).lerp(this.tint.setHex(0xb7cedb),dark);v.sun.intensity=2.7*(1-dark*.72)+flash*2;v.hemi.color.copy(this.base.hemi).lerp(this.tint.setHex(0x9eb4bf),dark);v.hemi.intensity=.9-dark*.22+flash*.3;
     const ground=v.groundSurface.material;ground.color.copy(this.base.ground).multiplyScalar(1-this.strength*.08);ground.roughness=1-this.strength*.2;
+    this.daylight.update(dt);
     this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?240:quality==='medium'?700:1400;
     const count=v.settings.reducedMotion?Math.min(100,Math.floor(budget*this.strength)):Math.floor(budget*this.strength*scale),snow=state.type==='snow';this.rain.count=snow?0:count;this.snow.count=snow?Math.min(1000,count):0;
     if(count){
@@ -62,7 +65,7 @@ export class WeatherRenderer {
     }this.clouds.instanceMatrix.needsUpdate=true;
     v.weatherDiagnostics={type:state.type,rain:this.rain.count,snow:this.snow.count,ripples:this.ripples.count,clouds:this.clouds.count,drawCalls:[this.rain,this.snow,this.ripples,this.clouds].filter(mesh=>mesh.count>0).length};
   }
-  dispose(){const v=this.view;v.scene.background.copy(this.base.background);v.scene.fog.color.copy(this.base.fog);v.scene.fog.near=this.base.near;v.scene.fog.far=this.base.far;v.sun.color.copy(this.base.sun);v.sun.intensity=2.7;v.hemi.color.copy(this.base.hemi);v.hemi.intensity=.9;for(const mesh of this.group.children){mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();}this.group.removeFromParent();}
+  dispose(){const v=this.view;this.daylight.dispose();v.scene.background.copy(this.base.background);v.scene.fog.color.copy(this.base.fog);v.scene.fog.near=this.base.near;v.scene.fog.far=this.base.far;v.sun.color.copy(this.base.sun);v.sun.intensity=2.7;v.hemi.color.copy(this.base.hemi);v.hemi.intensity=.9;for(const mesh of this.group.children){mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();}this.group.removeFromParent();}
 }
 
 export function installWeather(WorldView){const p=WorldView.prototype,attach=p.attach,render=p.render;
