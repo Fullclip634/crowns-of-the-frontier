@@ -20,6 +20,7 @@ import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
 import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
+import {setShadowEnabled} from './render-quality.js';
 
 const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:1,...extra});
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
@@ -149,7 +150,7 @@ export class WorldView {
     }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);}
     else if(event.type==='heal'){const object=new THREE.Mesh(new THREE.RingGeometry(.65,1,24),new THREE.MeshBasicMaterial({color:0x91e0b4,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false}));object.rotation.x=-Math.PI/2;object.position.set(event.target.x,.3,event.target.z);this.scene.add(object);this.fx.push({object,time:0,duration:.65,heal:true});}
   }
-  quality(value){this.settings.quality=value;this.dynamicScale=1;this.renderer.shadowMap.enabled=value!=='low';const size=value==='high'?2048:1024;if(this.sun.shadow.mapSize.x!==size){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(size,size);}this.renderer.setPixelRatio(Math.min(devicePixelRatio,value==='high'?2:value==='low'?1:1.25));this.performanceClock=0;this.frameAverage=.016;
+  quality(value){this.settings.quality=value;this.dynamicScale=1;setShadowEnabled(this,value!=='low');const size=value==='high'?2048:1024;if(this.sun.shadow.mapSize.x!==size){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(size,size);}this.renderer.setPixelRatio(Math.min(devicePixelRatio,value==='high'?2:value==='low'?1:1.25));this.performanceClock=0;this.frameAverage=.016;
     const detail=value==='high'?'high':'low';if(authoredAssetState()?.detail!==detail||this.surfaceQuality!==value)Promise.all([loadAuthoredAssets(value),loadSurfaceAssets(value).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]).then(()=>{
       if(this.settings.quality!==value||!this.sim)return;const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt;
       this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
@@ -160,7 +161,7 @@ export class WorldView {
     if(this.frameAverage>budget*1.35&&this.settings.quality==='high'){this.quality('medium');return;}
     if(this.frameAverage>budget*1.6&&this.settings.quality==='medium'){this.quality('low');return;}
     if(this.frameAverage>budget*1.2&&this.dynamicScale>.62){this.dynamicScale=Math.max(.62,this.dynamicScale-.12);this.renderer.setPixelRatio(base*this.dynamicScale);}
-    else if(this.frameAverage>budget*1.8)this.renderer.shadowMap.enabled=false;
+    else if(this.frameAverage>budget*1.8)setShadowEnabled(this,false);
     else if(this.frameAverage<budget*1.05&&this.dynamicScale<1){this.dynamicScale=Math.min(1,this.dynamicScale+.08);this.renderer.setPixelRatio(base*this.dynamicScale);}
   }
   render(dt,menu=false){if(!this.sim)return;this.clock+=dt;this.fogMesh.visible=!menu&&this.settings.fog!==false;
