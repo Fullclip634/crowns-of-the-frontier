@@ -24,6 +24,14 @@ function solidBounds(group){
   group.traverse(mesh=>{if(!mesh.isMesh)return;for(const value of mesh.geometry.getAttribute('position').array)assert.ok(Number.isFinite(value),'all vertices are finite');assert.ok(mesh.geometry.getAttribute('normal'),'model has surface normals');assert.ok(mesh.geometry.getAttribute('uv'),'model supports textured surfaces');});return bounds;
 }
 
+test('construction clipping retains custom palette shader defines and restores the finished surface',()=>{
+  const v=viewFixture(),original=new THREE.MeshStandardMaterial();original.defines={USE_UV:'',FRONTIER_STRUCTURE_ARM:''};original.onBeforeCompile=()=>{};original.customProgramCacheKey=()=> 'construction-palette';
+  v.renderer={localClippingEnabled:false};const node=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),original);node.add(mesh);node.position.y=2;
+  const building={kind:'building',type:'house',r:2,progress:.4};v.updateConstruction(building,node);const clipped=mesh.material;let disposals=0;clipped.addEventListener('dispose',()=>disposals++);
+  assert.notEqual(clipped,original);assert.deepEqual(clipped.defines,original.defines);assert.notEqual(clipped.defines,original.defines);assert.equal(clipped.onBeforeCompile,original.onBeforeCompile);assert.equal(clipped.customProgramCacheKey(),original.customProgramCacheKey());assert.equal(clipped.clipShadows,true);
+  building.progress=1;v.updateConstruction(building,node);assert.equal(mesh.material,original);assert.equal(disposals,1);assert.equal(node.userData.construction,undefined);mesh.geometry.dispose();original.dispose();
+});
+
 test('all maps have seeded elevated meshes and picking follows their triangulated surface',()=>{
   for(const map of Object.keys(MAPS)){
     const a=new Landscape(512,map),b=new Landscape(512,map),geometry=a.geometry(320,112),copy=b.geometry(320,112);

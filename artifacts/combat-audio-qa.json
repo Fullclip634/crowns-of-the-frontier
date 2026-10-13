@@ -1,0 +1,71 @@
+{
+  "checks": [
+    {
+      "name": "A visible melee attack starts the metallic effect",
+      "played": true,
+      "kind": "metal",
+      "level": 0.4000000059604645,
+      "voices": 1
+    },
+    {
+      "name": "Panning to quiet terrain fades old voices and rejects 100 offscreen attacks",
+      "retiring": true,
+      "newSound": false,
+      "played": 0,
+      "voices": 0
+    },
+    {
+      "name": "archer uses arrow",
+      "played": true,
+      "kind": "arrow"
+    },
+    {
+      "name": "ram uses wood",
+      "played": true,
+      "kind": "wood"
+    },
+    {
+      "name": "catapult uses siege",
+      "played": true,
+      "kind": "siege"
+    },
+    {
+      "name": "Commander menu mutes battle effects"
+    },
+    {
+      "name": "Real Web Audio buffers have a finite, bounded signal",
+      "buffers": [
+        {
+          "key": "metal:1",
+          "seconds": 0.42,
+          "peak": 0.8200000524520874,
+          "rms": 0.09499346790482498,
+          "finite": true
+        },
+        {
+          "key": "arrow:2",
+          "seconds": 0.2,
+          "peak": 0.8199999928474426,
+          "rms": 0.1329194055109586,
+          "finite": true
+        },
+        {
+          "key": "wood:3",
+          "seconds": 0.28002083333333333,
+          "peak": 0.8199999928474426,
+          "rms": 0.11231785288726702,
+          "finite": true
+        },
+        {
+          "key": "siege:0",
+          "seconds": 0.7,
+          "peak": 0.8199999928474426,
+          "rms": 0.10894324015784843,
+          "finite": true
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

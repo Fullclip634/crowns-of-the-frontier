@@ -1,0 +1,1689 @@
+{
+  "phase": "after",
+  "checks": [
+    {
+      "state": "empty",
+      "width": 568,
+      "height": 320,
+      "freeAreaPercent": 68.24823943661971,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 568,
+          "height": 44,
+          "right": 568,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 228,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 312
+        },
+        {
+          "selector": ".command-panel",
+          "x": 368,
+          "y": 258,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 312
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 368,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 232,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 308
+      }
+    },
+    {
+      "state": "worker",
+      "width": 568,
+      "height": 320,
+      "freeAreaPercent": 60.11443661971831,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 568,
+          "height": 44,
+          "right": 568,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 228,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 312
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 98,
+          "y": 258,
+          "width": 264,
+          "height": 54,
+          "right": 362,
+          "bottom": 312
+        },
+        {
+          "selector": ".command-panel",
+          "x": 368,
+          "y": 258,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 312
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 368,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "auto-work",
+          "width": 72,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 232,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 308
+      }
+    },
+    {
+      "state": "town",
+      "width": 568,
+      "height": 320,
+      "freeAreaPercent": 60.11443661971831,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 568,
+          "height": 44,
+          "right": 568,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 228,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 312
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 98,
+          "y": 258,
+          "width": 264,
+          "height": 54,
+          "right": 362,
+          "bottom": 312
+        },
+        {
+          "selector": ".command-panel",
+          "x": 368,
+          "y": 258,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 312
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 368,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 560,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "villager",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "scout",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "age",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "economy",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "fortification",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 232,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 308
+      }
+    },
+    {
+      "state": "empty",
+      "width": 640,
+      "height": 360,
+      "freeAreaPercent": 73.57638888888889,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 640,
+          "height": 44,
+          "right": 640,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 268,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 352
+        },
+        {
+          "selector": ".command-panel",
+          "x": 440,
+          "y": 298,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 352
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 440,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 272,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 348
+      }
+    },
+    {
+      "state": "worker",
+      "width": 640,
+      "height": 360,
+      "freeAreaPercent": 65.40972222222223,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 640,
+          "height": 44,
+          "right": 640,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 268,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 352
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 98,
+          "y": 298,
+          "width": 336,
+          "height": 54,
+          "right": 434,
+          "bottom": 352
+        },
+        {
+          "selector": ".command-panel",
+          "x": 440,
+          "y": 298,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 352
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 440,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "auto-work",
+          "width": 72,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 272,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 348
+      }
+    },
+    {
+      "state": "town",
+      "width": 640,
+      "height": 360,
+      "freeAreaPercent": 65.40972222222223,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 640,
+          "height": 44,
+          "right": 640,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 268,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 352
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 98,
+          "y": 298,
+          "width": 336,
+          "height": 54,
+          "right": 434,
+          "bottom": 352
+        },
+        {
+          "selector": ".command-panel",
+          "x": 440,
+          "y": 298,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 352
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 440,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 632,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "villager",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "scout",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "age",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "economy",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "fortification",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 272,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 348
+      }
+    },
+    {
+      "state": "empty",
+      "width": 844,
+      "height": 390,
+      "freeAreaPercent": 78.90262373576977,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 844,
+          "height": 44,
+          "right": 844,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 298,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 382
+        },
+        {
+          "selector": ".command-panel",
+          "x": 644,
+          "y": 328,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 382
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 644,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 302,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 378
+      }
+    },
+    {
+      "state": "worker",
+      "width": 844,
+      "height": 390,
+      "freeAreaPercent": 72.233351248351,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 844,
+          "height": 44,
+          "right": 844,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 298,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 382
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 158,
+          "y": 328,
+          "width": 420,
+          "height": 54,
+          "right": 578,
+          "bottom": 382
+        },
+        {
+          "selector": ".command-panel",
+          "x": 644,
+          "y": 328,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 382
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 644,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "auto-work",
+          "width": 72,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 302,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 378
+      }
+    },
+    {
+      "state": "town",
+      "width": 844,
+      "height": 390,
+      "freeAreaPercent": 72.233351248351,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 844,
+          "height": 44,
+          "right": 844,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 298,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 382
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 158,
+          "y": 328,
+          "width": 420,
+          "height": 54,
+          "right": 578,
+          "bottom": 382
+        },
+        {
+          "selector": ".command-panel",
+          "x": 644,
+          "y": 328,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 382
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 644,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 836,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "villager",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "scout",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "age",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "economy",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "fortification",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 302,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 378
+      }
+    },
+    {
+      "state": "empty",
+      "width": 915,
+      "height": 412,
+      "freeAreaPercent": 80.65035824818756,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 915,
+          "height": 44,
+          "right": 915,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 320,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 404
+        },
+        {
+          "selector": ".command-panel",
+          "x": 715,
+          "y": 350,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 404
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 715,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 324,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 400
+      }
+    },
+    {
+      "state": "worker",
+      "width": 915,
+      "height": 412,
+      "freeAreaPercent": 74.41811167168355,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 915,
+          "height": 44,
+          "right": 915,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 320,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 404
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 193.5,
+          "y": 350,
+          "width": 420,
+          "height": 54,
+          "right": 613.5,
+          "bottom": 404
+        },
+        {
+          "selector": ".command-panel",
+          "x": 715,
+          "y": 350,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 404
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 715,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "auto-work",
+          "width": 72,
+          "height": 44
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 324,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 400
+      }
+    },
+    {
+      "state": "town",
+      "width": 915,
+      "height": 412,
+      "freeAreaPercent": 74.41811167168355,
+      "panels": [
+        {
+          "selector": ".game-header",
+          "x": 0,
+          "y": 0,
+          "width": 915,
+          "height": 44,
+          "right": 915,
+          "bottom": 44
+        },
+        {
+          "selector": ".map-panel",
+          "x": 8,
+          "y": 320,
+          "width": 84,
+          "height": 84,
+          "right": 92,
+          "bottom": 404
+        },
+        {
+          "selector": "#selection-panel",
+          "x": 193.5,
+          "y": 350,
+          "width": 420,
+          "height": 54,
+          "right": 613.5,
+          "bottom": 404
+        },
+        {
+          "selector": ".command-panel",
+          "x": 715,
+          "y": 350,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 404
+        },
+        {
+          "selector": ".camera-controls",
+          "x": 715,
+          "y": 52,
+          "width": 192,
+          "height": 54,
+          "right": 907,
+          "bottom": 106
+        },
+        {
+          "selector": "#objectives",
+          "x": 8,
+          "y": 52,
+          "width": 112,
+          "height": 46,
+          "right": 120,
+          "bottom": 98
+        }
+      ],
+      "touchTargets": [
+        {
+          "action": "production",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "pause",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "objectives-expand",
+          "width": 110,
+          "height": 44
+        },
+        {
+          "action": "camera-closer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-farther",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-panels",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "camera-options",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "selection-details",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "villager",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "scout",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "age",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "economy",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "fortification",
+          "width": 84,
+          "height": 47
+        },
+        {
+          "action": "army",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "idle",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "build",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "action": "command-options",
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "horizontalOverflow": false,
+      "minimap": {
+        "selector": "#minimap",
+        "x": 12,
+        "y": 324,
+        "width": 76,
+        "height": 76,
+        "right": 88,
+        "bottom": 400
+      }
+    }
+  ],
+  "interactions": [
+    "Unfinished building textures compile in the real phone renderer",
+    "Train a worker and research from expanded options",
+    "Expand, tap and shrink the square minimap",
+    "Construction closes extra selection information for placement",
+    "Tactical orders and Stop remain reachable",
+    "Camera options, production and battlefield touch access",
+    "Portrait fallback fits 320px and 390px widths",
+    "New matches reset compact panels; desktop retains the full controls"
+  ],
+  "errors": [],
+  "passed": true
+}

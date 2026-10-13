@@ -1,3 +1,10 @@
+# Phone battlefield space and combat audio (version 2.6.1)
+
+- Short landscape phones use a compact resource bar, square minimap, selection strip and expandable command/camera controls. Empty selection panels disappear; training stays directly available, with research, queues and tactics in selection options. Construction and tactical orders close extra information for battlefield placement. Desktop keeps its full controls.
+- Original metallic melee clashes replace the generic combat noise. Bows, structural blows and siege use separate effects. Combat audibility follows the current camera, zoom and fog; active clashes fade when the camera moves away. Cached effects and bounded overlap limit audio work in large battles.
+- Buildings under construction retain the shader definitions required by their textured surfaces, fixing the compilation error found during production phone gameplay. Completed buildings restore their original materials.
+- Browser checks cover four landscape sizes, two portrait widths, paid training/research, construction, tactics, production, camera controls and square minimap navigation. The smallest 568 × 320 view increases its clear battlefield area from about 27% to 60% with a selection; primary touch controls remain at least 44 pixels. Audio checks verify visible melee and ranged/siege attacks, fading on camera jumps, and silence for 100 offscreen attacks.
+
 # Camera consistency and crowded-battle work (version 2.6.1)
 
 - Camera frustums are ready before visual extensions run. Forests, grass and terrain details update before the GPU submission, including immediate pans and screen resizing.

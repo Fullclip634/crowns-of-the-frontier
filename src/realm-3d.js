@@ -103,7 +103,7 @@ export function installRealm3D(WorldView){
     if(e.progress<1){
       if(!node.userData.construction){
         const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0),materials=[],restore=[];
-        node.traverse(mesh=>{if(!mesh.isMesh||mesh===node.userData.ring)return;const original=mesh.material,clipped=original.clone();clipped.onBeforeCompile=original.onBeforeCompile;clipped.customProgramCacheKey=original.customProgramCacheKey;clipped.clippingPlanes=[plane];clipped.clipShadows=true;mesh.material=clipped;materials.push(clipped);restore.push([mesh,original]);});
+        node.traverse(mesh=>{if(!mesh.isMesh||mesh===node.userData.ring)return;const original=mesh.material,clipped=original.clone();clipped.defines={...original.defines};clipped.onBeforeCompile=original.onBeforeCompile;clipped.customProgramCacheKey=original.customProgramCacheKey;clipped.clippingPlanes=[plane];clipped.clipShadows=true;mesh.material=clipped;materials.push(clipped);restore.push([mesh,original]);});
         const frame=scaffold(this,e);node.add(frame);node.userData.construction={plane,materials,restore,frame};this.renderer.localClippingEnabled=true;
       }
       node.userData.construction.plane.constant=node.position.y+Math.max(.18,e.progress*13);
