@@ -1,3 +1,7 @@
+# Prevent accidental game text selection (version 2.6.1)
+
+- Game labels, menus, dialogs, tooltips and battlefield controls disable native text selection and phone long-press callouts. Editable name, chat and room-code fields retain normal editing, selection and paste behavior. Keyboard focus, buttons, scrolling and gameplay gestures keep their existing controls.
+
 # Dense starting forests (version 2.6.1)
 
 - New matches place connected, harvestable 3D woodlines around starting settlements. Open front and flank entrances let players join forests with shorter defensive wall runs while retaining room for buildings, farms and armies. Coastal starts keep their harbor approach; trees respect water, map edges, nearby settlements, troops and buildings.

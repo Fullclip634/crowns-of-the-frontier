@@ -1,4 +1,7 @@
 /* Shared interface rules for menus, dialogs and battlefield controls. */
+/* Dragging or holding game labels must not start the browser's text selection. */
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input:not([readonly]):not([disabled]),textarea:not([readonly]):not([disabled]),[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 :root{--control-height:44px;--focus-color:#f4d58f;--text-secondary:#c5d2bb}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--focus-color);outline-offset:2px}
 .landing{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}

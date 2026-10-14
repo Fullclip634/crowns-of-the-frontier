@@ -1,0 +1,34 @@
+{
+    "compiledSelectionGuardPresent":  true,
+    "productionBuild":  {
+                            "buildId":  "1791972450107",
+                            "version":  "2.6.1"
+                        },
+    "graphicsWorkInProgressPublished":  false,
+    "staticDirectoryVerified":  true,
+    "archives":  [
+                     {
+                         "sha256":  "D540B809616B0447FBB1F1E02F7CD83D69AB9E62666556CEEE9F07EB73E0E022",
+                         "bytes":  32855247,
+                         "kind":  "source"
+                     },
+                     {
+                         "sha256":  "94CF0A1F649A254F9F75CFEF8B25A9472B24FC57498BDCEB5467B3053CBE50BE",
+                         "bytes":  32659574,
+                         "kind":  "static"
+                     }
+                 ],
+    "browserValidation":  "Pending; prior Chrome launch timed out before loading any page",
+    "physicalPhoneValidated":  false,
+    "scope":  "Prevent accidental selection of game text and phone long-press callouts; preserve editable form fields",
+    "baseline":  "2f392be464f9f7dbcbb57f1e83465d9b994255d5",
+    "staticBuild":  {
+                        "buildId":  "1791972531143",
+                        "version":  "2.6.1"
+                    },
+    "gameplayRegression":  {
+                               "newGameplayTestsRun":  false,
+                               "baselinePassed":  230,
+                               "unchangedFromBaseline":  true
+                           }
+}
