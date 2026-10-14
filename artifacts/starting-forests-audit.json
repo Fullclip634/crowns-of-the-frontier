@@ -1,0 +1,2018 @@
+[
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 101,
+    "neighbors": 101,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 100,
+    "neighbors": 100,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "highlands",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 157,
+    "neighbors": 157,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 101,
+    "neighbors": 101,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 100,
+    "neighbors": 100,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "desert",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 157,
+    "neighbors": 157,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 101,
+    "neighbors": 101,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 100,
+    "neighbors": 100,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "winter",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 157,
+    "neighbors": 157,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 101,
+    "neighbors": 101,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 100,
+    "neighbors": 100,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "canyon",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 157,
+    "neighbors": 157,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 101,
+    "neighbors": 101,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 100,
+    "neighbors": 100,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 111,
+    "neighbors": 111,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "valley",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 157,
+    "neighbors": 157,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 143,
+    "neighbors": 142,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 83,
+    "neighbors": 83,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 87,
+    "neighbors": 87,
+    "entrances": [
+      "water",
+      "ready",
+      "water"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 85,
+    "neighbors": 85,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 87,
+    "neighbors": 87,
+    "entrances": [
+      "water",
+      "ready",
+      "water"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 141,
+    "neighbors": 141,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 116,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 95,
+    "neighbors": 95,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 144,
+    "neighbors": 144,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 117,
+    "neighbors": 116,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 94,
+    "neighbors": 94,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 153,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 135,
+    "neighbors": 135,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 155,
+    "neighbors": 155,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 153,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 152,
+    "neighbors": 152,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "rivers",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 137,
+    "neighbors": 137,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 0,
+    "trees": 150,
+    "neighbors": 150,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 1,
+    "trees": 124,
+    "neighbors": 123,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 2,
+    "trees": 98,
+    "neighbors": 97,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 3,
+    "trees": 54,
+    "neighbors": 54,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 4,
+    "trees": 150,
+    "neighbors": 150,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 5,
+    "trees": 125,
+    "neighbors": 125,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 6,
+    "trees": 99,
+    "neighbors": 99,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "spacious",
+    "owner": 7,
+    "trees": 54,
+    "neighbors": 54,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 0,
+    "trees": 145,
+    "neighbors": 145,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 1,
+    "trees": 145,
+    "neighbors": 145,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 2,
+    "trees": 115,
+    "neighbors": 115,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 3,
+    "trees": 86,
+    "neighbors": 85,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 4,
+    "trees": 148,
+    "neighbors": 148,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 5,
+    "trees": 149,
+    "neighbors": 149,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 6,
+    "trees": 119,
+    "neighbors": 119,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "large",
+    "owner": 7,
+    "trees": 86,
+    "neighbors": 85,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 0,
+    "trees": 152,
+    "neighbors": 151,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 1,
+    "trees": 154,
+    "neighbors": 153,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 2,
+    "trees": 152,
+    "neighbors": 151,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 3,
+    "trees": 131,
+    "neighbors": 130,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 4,
+    "trees": 154,
+    "neighbors": 154,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 5,
+    "trees": 156,
+    "neighbors": 156,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 6,
+    "trees": 154,
+    "neighbors": 154,
+    "entrances": [
+      "ready",
+      "ready",
+      "ready"
+    ]
+  },
+  {
+    "map": "coast",
+    "mapSize": "huge",
+    "owner": 7,
+    "trees": 133,
+    "neighbors": 133,
+    "entrances": [
+      "water",
+      "ready",
+      "ready"
+    ]
+  }
+]

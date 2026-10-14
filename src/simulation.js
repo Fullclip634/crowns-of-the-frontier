@@ -6,6 +6,7 @@ import {installCampaigns} from './campaigns.js';
 import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle.js';
 import {SpatialBuckets} from './spatial-buckets.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
+import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -85,13 +86,15 @@ export class Simulation {
     const clusters=[[-57,15,'wood',20],[-13,49,'wood',22],[-53,51,'food',7],[-24,15,'gold',5],[-57,30,'stone',5],[-58,-32,'wood',25],[-25,-40,'gold',7],[-16,-16,'stone',6],[-14,13,'food',7],[-65,64,'wood',18]];
     for(const [x,z,type,count]of clusters)for(const sign of [1,-1])for(let i=0;i<count;i++){
       const nx=clamp(x*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75),nz=clamp(z*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75);
+      if(type==='wood'&&reservedStartingLand(this,nx,nz))continue;
       if(this.entities.some(e=>e.kind==='building'&&distance(e,{x:nx,z:nz})<e.r+3)||this.isWater(nx,nz)||this.startClearing(nx,nz))continue;
       this.addResource(type,nx,nz,type==='wood'?220:type==='food'?350:1800);
     }
-    for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addResource('wood',x,z,240);}
-    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addResource('wood',x,z,260);}
+    for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addResource('wood',x,z,240);}
+    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addResource('wood',x,z,260);}
     if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addResource(i%2?'stone':'gold',x,z,2200);}
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26,-23],[3,1],[28,25]])this.addShrine(x,z);}
+    plantStartingForests(this);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
   addResource(type,x,z,amount){const e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;return e;}

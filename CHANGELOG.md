@@ -1,3 +1,10 @@
+# Dense starting forests (version 2.6.1)
+
+- New matches place connected, harvestable 3D woodlines around starting settlements. Open front and flank entrances let players join forests with shorter defensive wall runs while retaining room for buildings, farms and armies. Coastal starts keep their harbor approach; trees respect water, map edges, nearby settlements, troops and buildings.
+- Custom battles place every kingdom's buildings before distributing resources. Food, gold and stone patches try alternative clear positions instead of disappearing when their first location is obstructed. The same rules apply to allied AI and human multiplayer starts.
+- Chopping trees creates real navigation breaches. Existing saved games retain their original layout. The forests use the existing original Blender models, instanced rendering and graphics detail settings; no new asset download is required.
+- All 230 release regression tests pass and the production build succeeds. Forest checks cover seven maps, all three custom sizes, eight player slots, multiple seeds, advanced ages, campaign starts, construction space, harvesting, navigation, deterministic human multiplayer generation and save restoration. The design follows nearby-resource and defensive-wall principles described in the [official Age of Empires learning guide](https://www.ageofempires.com/learn-to-play/defending-your-empires-aoe2/). The separate browser check timed out during Chrome launch before loading the game; fresh visual checks, device frame rate and match balance still require playtesting.
+
 # Graphics presets (version 2.6.1)
 
 - Wall builders now continue through all owned, reachable unfinished wall sites, including different lines and individual placements. Canceling their current wall lets them continue the remaining sites. Explicit Stop/new commands and queued player orders retain priority; foreign walls are excluded. Save/restore, shared builders, refunds and real multiplayer commands have coverage.

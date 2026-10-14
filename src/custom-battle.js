@@ -1,5 +1,6 @@
 import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.js';
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
+import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 
 export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'}};
 export const PLAYER_COLORS=[0x48abc2,0xe07566,0xe6c064,0x73b67b,0xb98ed2,0x66cec0,0xe69b58,0xc3cdd5];
@@ -25,8 +26,28 @@ export function battleSpawns(slots,worldSize){
 }
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
 
+function startingDeposits(sim,base,owner){
+  const rng=seededRandom(sim.options.seed+1337),clusters=[[-16,18,'food',7],[15,-18,'gold',5],[-23,2,'stone',5]];
+  for(const [dx,dz,type,count]of clusters){
+    const spread=type==='food'?7:5,offsets=Array.from({length:count},()=>({x:(rng()-.5)*spread,z:(rng()-.5)*spread}));
+    const initial=Math.atan2(dz,sim.options.map==='coast'?Math.sign(base.x)*Math.abs(dx):dx);
+    for(let attempt=0;attempt<96;attempt++){
+      const angle=initial+(attempt%24)*Math.PI/12,radius=[23,26,20,28][Math.floor(attempt/24)];
+      const points=offsets.map(offset=>({x:base.x+Math.cos(angle)*radius+offset.x,z:base.z+Math.sin(angle)*radius+offset.z}));
+      if(points.some(point=>Math.abs(point.x)>sim.halfWorld-5||Math.abs(point.z)>sim.halfWorld-5||sim.isWater(point.x,point.z)||sim.entities.some(e=>e.hp>0&&(
+        e.kind==='building'&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+3 ||
+        type!=='food'&&e.kind==='unit'&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+2 ||
+        e.kind==='resource'&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+2
+      ))))continue;
+      for(const point of points){const deposit=sim.addResource(type,point.x,point.z,type==='food'?500:2200);deposit.startDeposit=owner;}
+      break;
+    }
+  }
+}
+
 function initializeBattle(sim){
   sim.aiStates={};sim.spawnPositions=battleSpawns(sim.options.slots,sim.worldSize);sim.revealedOwners=[];
+  sim.players.forEach((player,owner)=>{player.start=sim.spawnPositions[owner];});
   sim.players.forEach((player,owner)=>{
     player.start=sim.spawnPositions[owner];player.battleStats=emptyStats();player.age=sim.options.startAge;player.aiClock=-owner*.25;player.defeated=false;
     player.resources=sim.options.resourceLevel==='rich'?{food:1600,wood:1600,gold:900,stone:900}:{food:550,wood:650,gold:250,stone:300};
@@ -37,25 +58,22 @@ function initializeBattle(sim){
     if(player.age>=1)for(let i=0;i<6;i++)sim.addUnit(i%3?'spearman':'archer',owner,x+20+i%3*2,z+4+Math.floor(i/3)*2);
     if(player.age>=1)sim.addBuilding('range',owner,x+1,z-14,true);
     if(player.age>=2){sim.addBuilding('stable',owner,x-15,z-1,true);sim.addBuilding('blacksmith',owner,x+19,z+15,true);}
+  });
+  if(sim.options.map==='coast')sim.players.forEach((player,owner)=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
+    sim.addBuilding('dock',owner,mid+sign*20,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
+  });
+  sim.players.forEach((player,owner)=>{
     // Each settlement receives the same seeded local deposits, independent of difficulty.
-    const rng=seededRandom(sim.options.seed+1337);
-    const clusters=sim.options.map==='coast'?[[-25,-20,'wood',22],[22,24,'wood',22],[10,35,'food',7],[10,-34,'gold',5],[36,2,'stone',5]]:[[-25,-20,'wood',22],[22,24,'wood',22],[-22,24,'food',7],[24,-23,'gold',5],[-25,3,'stone',5]];
-    for(const [dx,dz,type,count]of clusters)for(let i=0;i<count;i++){
-      const spread=type==='wood'?14:7,nx=x+(sim.options.map==='coast'?Math.sign(x)*Math.abs(dx):dx)+(rng()-.5)*spread,nz=z+dz+(rng()-.5)*spread;
-      if(Math.abs(nx)>sim.halfWorld-5||Math.abs(nz)>sim.halfWorld-5||sim.isWater(nx,nz)||sim.startClearing(nx,nz)||sim.entities.some(e=>e.kind==='building'&&Math.hypot(e.x-nx,e.z-nz)<e.r+3))continue;
-      sim.addResource(type,nx,nz,type==='wood'?300:type==='food'?500:2200);
-    }
+    startingDeposits(sim,player.start,owner);
   });
   const scattered=Math.round(250*sim.worldSize/WORLD)+(sim.options.map==='winter'?160:0);
   for(let i=0;i<scattered;i++){
     const x=(sim.rng()-.5)*(sim.worldSize-16),z=(sim.rng()-.5)*(sim.worldSize-16);
-    if(sim.isWater(x,z)||sim.startClearing(x,z)||sim.entities.some(e=>e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+6))continue;
+    if(sim.isWater(x,z)||reservedStartingLand(sim,x,z)||sim.startClearing(x,z)||sim.entities.some(e=>e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+6))continue;
     sim.addResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2400:300);
   }
+  plantStartingForests(sim);
   if(sim.options.map==='coast'){
-    sim.players.forEach((player,owner)=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
-      sim.addBuilding('dock',owner,mid+sign*20,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
-    });
     for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
   for(let owner=0;owner<sim.players.length;owner++)sim.assignEconomy(owner);

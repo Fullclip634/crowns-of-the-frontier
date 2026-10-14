@@ -1,0 +1,60 @@
+{
+    "graphicsWorkInProgressPublished":  false,
+    "archives":  [
+                     {
+                         "entries":  243,
+                         "surfaceJpegs":  21,
+                         "sha256":  "918C0EA7C2DE0DBF5E7D4A6753A125A7CFB49C519F400F37F98BF7AC19A7FFE2",
+                         "kind":  "source",
+                         "bytes":  32854975,
+                         "models":  3
+                     },
+                     {
+                         "entries":  38,
+                         "surfaceJpegs":  21,
+                         "sha256":  "08BCD1D2DC7B883BFB4526E6B088A06E8A8C3CBE2D3F6ACE84A6DC6FA19BC816",
+                         "kind":  "static",
+                         "bytes":  32659490,
+                         "models":  3
+                     }
+                 ],
+    "productionBuild":  {
+                            "buildId":  "1791970244233",
+                            "version":  "2.6.1"
+                        },
+    "sourceFiles":  [
+                        "src/simulation.js",
+                        "src/custom-battle.js",
+                        "src/starting-forests.js",
+                        "tests/starting-forests.test.js",
+                        "scripts/starting-forests-audit.mjs",
+                        "CHANGELOG.md"
+                    ],
+    "mapAudit":  {
+                     "maximumTrees":  157,
+                     "bases":  168,
+                     "blockedLandEntrances":  0,
+                     "minimumTrees":  54,
+                     "report":  "starting-forests-audit.json"
+                 },
+    "browser":  {
+                    "report":  "starting-forests-browser-qa.json",
+                    "failure":  "Chrome launch exceeded 20000ms before any game page loaded",
+                    "stage":  "launch",
+                    "passed":  false
+                },
+    "scope":  "Dense harvestable starting forests and safe local resource placement",
+    "baseline":  "af1d4363df83f8c72f57be292ac093263f291992",
+    "staticBuild":  {
+                        "buildId":  "1791970793883",
+                        "version":  "2.6.1"
+                    },
+    "physicalPhoneValidated":  false,
+    "tests":  {
+                  "report":  "starting-forests-regression.txt",
+                  "durationMs":  54138.2942,
+                  "failed":  0,
+                  "passed":  230
+              },
+    "staticDirectoryVerified":  true
+}
