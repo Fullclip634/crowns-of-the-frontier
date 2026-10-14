@@ -1,3 +1,9 @@
+# Farm development checkpoint — 15 October 2026
+
+The active whole-game goal remains incomplete. This milestone integrates original Blender crop fields, terrain-fitted picking/shadows/selection/preview geometry and dry-footprint placement. The final isolated release has 252 passing tests; desktop production checks cover all three graphics presets, and a separate corrected touch-phone check passes at 640 × 360. Reports and exact limitations are in RELEASE_CHECKS.md.
+
+The full local editable catalogue is .tools/art-refined/frontier-assets.blend; the prior source and GLBs remain in .tools/art-backup/farms-20261015. Complete art regeneration includes the crop patch, but a full regeneration run remains unverified. Compressed surfaces/shader preparation and measured performance work stay unpublished; ordinary foundations and wider art/gameplay quality still need work. Git main and Render/live deployment must be verified from current state. Do not treat historical service/session references below as live without rechecking.
+
 # Development checkpoint — 14 October 2026
 
 The full goal remains active. The user wants an original fully 3D RTS comparable to top games in visuals, interaction, strategic depth, challenging allied AI/human battles, missions, performance and release readiness. Their latest steering explicitly includes UI/UX design and style throughout the system. They authorize Blender, code and research work and do not want questions or premature completion. Never claim 100/100, AAA parity, universally bug-free behavior, every-device FPS or full release readiness without evidence.

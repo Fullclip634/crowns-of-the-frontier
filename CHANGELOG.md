@@ -1,3 +1,9 @@
+# Terrain-fitted original crop fields (version 2.6.1)
+
+- Three original Blender farms replace the previous fields with curved stalks, closed grain heads, thick leaves, cultivated soil, timber rails and an owner pennant. Low uses 48 stalks per field; Balanced and High use 144 with extra grain detail. Other buildings, troops, trees, resources and animated joints retain their original geometry.
+- Fields, their selection rings and moving construction previews follow the displayed terrain. Picking, bounds and shadows use those same fitted vertices. Each field owns its fitted buffers, while source models remain reusable; moving a preview does not accumulate height errors.
+- Land-building placement checks the footprint for water, while docks retain their shoreline rule. Full art regeneration includes the crop patch and updates the complete editable Blender source. The three quality catalogues remain complete, and Low remains below its 4 MiB content budget.
+
 # Reliable worker routes and work direction (version 2.6.1)
 
 - Workers finish the last short step of a route so reachable trees and deposits can be harvested. Approaches to mines, drop sites and combat targets can use another reachable cell within the existing interaction range when the nearest cell is crowded. Resources, water, connected walls and hostile gates retain their movement barriers.

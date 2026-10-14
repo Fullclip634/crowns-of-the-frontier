@@ -7,6 +7,7 @@ import {renderModelPortrait} from './portrait-3d.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {applySurfaceMaterials} from './surface-assets.js';
 import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
+import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -16,6 +17,7 @@ export function forestTransform(view,base,id,leaves=false,fall=null){
 }
 
 function foundation(view,e){
+  if(e.type==='farm')return view.landscape.surfaceHeightAt(e.x,e.z);
   const r=e.r*.65;let height=view.landscape.surfaceHeightAt(e.x,e.z);
   for(const x of [-r,r])for(const z of [-r,r])height=Math.max(height,view.landscape.surfaceHeightAt(e.x+x,e.z+z));
   return height-.12;
@@ -97,7 +99,8 @@ export function installRealm3D(WorldView){
     else node=this.mergeModel(e.kind==='building'?this.makeBuilding(e):resourceModel(this,e));
     node.position.set(e.x,this.entityHeight(e),e.z);node.userData.entity=e.id;node.userData.model3d={...node.userData.model3d,kind:e.kind,type:e.water?'fish':e.type};
     node.traverse(child=>child.userData.entity=e.id);this.objects.add(node);this.nodes.set(e.id,node);
-    if(e.owner===0){const ring=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+.45);ring.visible=false;node.add(ring);node.userData.ring=ring;}
+    if(e.owner===0){const field=e.type==='farm',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):this.geo.ring,ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.45));ring.visible=false;node.add(ring);node.userData.ring=ring;}
+    if(e.type==='farm')fitFarmTerrain(node,this.landscape);
     return node;
   };
   p.updateConstruction=function(e,node){
@@ -114,11 +117,13 @@ export function installRealm3D(WorldView){
   };
   p.showGhost=function(type,x,z,valid){
     if(this.ghost.userData.type!==type){
-      this.ghost.traverse(mesh=>{if(mesh.isMesh){if(!Object.values(this.geo).includes(mesh.geometry)&&!this.authoredGeometry?.has(mesh.geometry))mesh.geometry.dispose();if(mesh.userData.previewMaterial)mesh.material.dispose();}});this.clearGroup(this.ghost);
+      this.ghost.userData.farmGroundX=this.ghost.userData.farmGroundZ=undefined;
+      this.ghost.traverse(mesh=>{if(mesh.isMesh){if(!Object.values(this.geo).includes(mesh.geometry)&&!this.authoredGeometry?.has(mesh.geometry)&&!this.sharedModelGeometry?.has(mesh.geometry))mesh.geometry.dispose();if(mesh.userData.previewMaterial)mesh.material.dispose();}});this.clearGroup(this.ghost);
       const model=this.mergeModel(buildingModel(this,{kind:'building',type,owner:0,r:2.5,x,z}));
       model.traverse(mesh=>{if(!mesh.isMesh)return;mesh.material=mesh.material.clone();mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=type;
     }
     this.ghost.position.set(x,this.groundHeight(x,z),z);this.ghost.visible=true;
+    if(type==='farm'&&(this.ghost.userData.farmGroundX!==x||this.ghost.userData.farmGroundZ!==z)){fitFarmTerrain(this.ghost,this.landscape,true);this.ghost.userData.farmGroundX=x;this.ghost.userData.farmGroundZ=z;}
     this.ghost.traverse(mesh=>{if(mesh.isMesh)mesh.material.color.setHex(valid?0x8de3c5:0xee816a);});
   };
   p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++){const f=this.fx[i];f.object.position.y=this.groundHeight(x,z)+.4;f.object.material.dispose();f.object.material=new THREE.MeshStandardMaterial({color:color??0xe8c28b,roughness:.9,transparent:true,opacity:.8});}};

@@ -2,9 +2,21 @@
 
 The deployed game includes three GLB catalogues and texture files. Playing or deploying it requires no Blender installation and no external asset service.
 
-Balanced uses the High buildings/resources and Low troops/forests. Run `npm run art:balanced` after promoting changes to the complete High/Low catalogues; full Blender builds also generate it in their output directory. The composer copies the selected compressed hierarchy, then packs referenced vertices without simplification or another quantization pass. Packing removes only zero-area faces. Integrity checks compare all 126 decoded models' visible triangles, material regions, silhouettes and animated joints, and verify source hashes. The current Balanced file is 14,742,520 bytes; Low/High remain 3,928,668 / 16,237,168 bytes.
+Balanced uses the High buildings/resources and Low troops/forests. Run `npm run art:balanced` after promoting changes to the complete High/Low catalogues; full Blender builds also generate it in their output directory. The composer copies the selected compressed hierarchy, then packs referenced vertices without simplification or another quantization pass. Packing removes only zero-area faces. Integrity checks compare all 126 decoded models' visible triangles, material regions, silhouettes and animated joints, and verify source hashes. The current Balanced file is 16,264,796 bytes; Low/High remain 4,123,364 / 17,288,372 bytes.
 
 The catalogue contains 126 models: 66 civilization/age building variants, 18 troop/ship/caravan types plus four worker task variants, 24 forest variants and 14 resource models. The models were made for this original game. They are not Age of Empires or Warcraft assets.
+
+## Original crop fields
+
+Three independently authored Blender fields contain closed grain heads, curved stems, thick leaves, shallow cultivated soil, timber rails and a solid owner pennant. Low retains 48 stalks; Balanced/High retain 144 stalks and finer grain detail. Each complete catalogue still contains all 126 models. The patch composer fingerprints all 123 unrelated compressed hierarchies and preserves their geometry, materials, joints and transforms.
+
+The live field and its thin square selection frame follow the landscape's triangulated height. CPU geometry keeps ray picking, bounds, shadows and construction clipping at the displayed positions. Each placed field owns its fitted position/normal buffers and attribute descriptors; immutable source models remain reusable. Preview movement resamples the original positions, reuses fitted buffers and does not accumulate offsets. Land buildings check water across their footprint; docks retain the dedicated shoreline rule.
+
+Complete art:build jobs now author the crop patch, compose it into the exported catalogues, update the full editable Blender source and build Balanced sequentially. The standalone commands "node scripts/blender/build-farms.mjs", "node scripts/blender/compose-farms.mjs" and "node scripts/blender/build-balanced.mjs --directory .tools/art-candidate/farms/full" create a separate candidate. Run background Blender with scripts/blender/compose-farm-editable.py for its complete editable source. The staged default never changes live models. The --directory option on the composer targets an explicit complete project-owned catalogue during regeneration.
+
+Before promotion, set ART_CATALOGUE_DIR=.tools/art-candidate/farms/full and run the quality-catalogue, farm-art and farm-grounding tests. These decode all three quality catalogues and check source hashes, every selected visible triangle, material coverage, silhouettes, joints, solid crop volumes, actual field/preview/ring terrain fitting, picking and buffer ownership. The complete local Blender source is promoted with the GLBs; the preceding assets are retained in .tools/art-backup/farms-20261015. Full catalogue regeneration has not been rerun during this farm milestone; the new regeneration sequence still needs an end-to-end rebuild check.
+
+The farm pass improves this specific art and terrain behavior. Ordinary building foundations, wider art polish, physical-device frame rates and the complete release goal still require work.
 
 ## Edit and regenerate
 
@@ -40,7 +52,7 @@ Run background Blender with `scripts/blender/compose-editable.py` to produce the
 
 ## In-game behavior and budgets
 
-- The near GLB is 16,237,168 bytes (15.49 MiB); the lower detail GLB is 3,928,668 bytes (3.75 MiB). Both contain the full 126-model catalogue. Twenty-one photographed surface maps total 15,684,309 bytes (14.96 MiB). The declared low-catalogue content budget is 4 MiB; this is a download budget, not an FPS achievement.
+- The near GLB is 17,288,372 bytes (16.49 MiB); the lower detail GLB is 4,123,364 bytes (3.93 MiB). Both contain the full 126-model catalogue. Twenty-one photographed surface maps total 15,684,309 bytes (14.96 MiB). The declared low-catalogue content budget is 4 MiB; this is a download budget, not an FPS achievement.
 - High uses near geometry and color/normal/roughness maps. Medium uses low geometry with color/normal maps. Low uses low geometry and color maps.
 - All seven biomes have stronger rolling relief, slope/altitude/shore/road transitions and grass/soil/rock blends at their documented physical scales. A small road mask keeps paths continuous on Low geometry. Solid seeded pebbles use one instanced draw, obey exploration and clear beneath foundations; the caps are 360 on High and 120 otherwise. These cosmetic stones do not change navigation.
 - Natural rock grain and normal/roughness detail replace masonry on ore deposits. Gold retains its separate metallic inclusions. Pebbles share the rock texture; building masonry stays separate.

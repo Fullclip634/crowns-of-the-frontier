@@ -1,0 +1,44 @@
+{
+  "passed": false,
+  "stage": "phone",
+  "checks": [
+    {
+      "construction": {
+        "paid": true,
+        "completed": true,
+        "revision": 366
+      }
+    },
+    {
+      "field": {
+        "revision": "field-crops-v1",
+        "fitted": true,
+        "finite": true,
+        "maxRingError": 2.2848663572272443e-8,
+        "models": 126,
+        "drawCalls": 7
+      }
+    },
+    {
+      "quality": "high",
+      "detail": "high",
+      "revision": "field-crops-v1",
+      "fitted": true,
+      "calls": 7,
+      "shadows": true
+    },
+    {
+      "quality": "medium",
+      "detail": "medium",
+      "revision": "field-crops-v1",
+      "fitted": true,
+      "calls": 7,
+      "shadows": true
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; functional and visual check, not device FPS",
+  "browserPid": 8424,
+  "buildId": "1792013667571",
+  "failure": "page.waitForFunction: Timeout 90000ms exceeded."
+}

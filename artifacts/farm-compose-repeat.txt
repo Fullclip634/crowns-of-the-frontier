@@ -1,0 +1,1 @@
+{"passed":true,"checks":[{"detail":"low","unchangedOtherModels":123,"farms":3,"replacedFarms":0,"patchAlreadyPresent":true,"bytes":4123364},{"detail":"near","unchangedOtherModels":123,"farms":3,"replacedFarms":0,"patchAlreadyPresent":true,"bytes":17288372}],"liveCatalogueChanged":false}

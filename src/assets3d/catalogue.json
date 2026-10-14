@@ -506,11 +506,11 @@
     }
   ],
   "sizes": {
-    "near": 16237168,
-    "low": 3928668,
-    "balanced": 14742520
+    "near": 17288372,
+    "low": 4123364,
+    "balanced": 16264796
   },
-  "source": "Original Crowns of the Frontier assets authored/refined in Blender.",
+  "source": "Original Blender crop fields composed with unchanged original models.",
   "stage": "full",
   "completeCatalogue": true,
   "resourceRevision": "field-resources-v1",
@@ -521,7 +521,12 @@
   "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
   "balancedComposition": "High buildings/resources; Low troops and forests; selected geometry repacked without another simplification pass.",
   "balancedSourceHashes": {
-    "near": "445d23619cb7fe9e357d5918f0c93e16bdb49830ab37cd2a6bf35206f7b25a2c",
-    "low": "2e42ea122dace1ef0d55bbfe0f92d4fd4e71bf0111325ea5a7dd40306eb6fb02"
+    "near": "4fb1c7cdd92b21091439b263424397352c39c9ca6e505285f2ffa8680eefe965",
+    "low": "b9afde32458b19ede1d49808d25a078c8b6b8b1894c1e628a268c895b9591fae"
+  },
+  "farmRevision": "field-crops-v1",
+  "farmSourceHashes": {
+    "low": "f5d50d96386a598f53d8c429e6276f047bc050d108878393e44f6ba86a705cfe",
+    "near": "9a4c61298dfecf9522cb8d2984f4cc765d0f7444ff720581f44af1aaacbb76b6"
   }
 }

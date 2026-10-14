@@ -1,0 +1,126 @@
+{
+    "graphicsWorkInProgressPublished":  false,
+    "productionBuild":  {
+                            "buildId":  "1792013667571",
+                            "version":  "2.6.1"
+                        },
+    "staticEntries":  38,
+    "archives":  [
+                     {
+                         "sha256":  "1BB53F3382AC3EC528C231F1F2EED1776F907086492B66835FC6EE9A8E042993",
+                         "bytes":  33315339,
+                         "kind":  "source"
+                     },
+                     {
+                         "sha256":  "B53C44CC4473A03AD280B46DA1024E88E0694BA87A726EEC1698DD70B0B9A38E",
+                         "bytes":  33094188,
+                         "kind":  "static"
+                     }
+                 ],
+    "browser":  {
+                    "errors":  [
+
+                               ],
+                    "phone":  {
+                                  "passed":  true,
+                                  "stage":  "phone-select",
+                                  "phoneOnly":  true,
+                                  "checks":  [
+                                                 {
+                                                     "phone":  {
+                                                                   "width":  640,
+                                                                   "height":  360,
+                                                                   "coarse":  true,
+                                                                   "overflow":  false,
+                                                                   "fittedPreview":  true,
+                                                                   "quality":  "low",
+                                                                   "tapSelected":  true
+                                                               }
+                                                 }
+                                             ],
+                                  "errors":  [
+
+                                             ],
+                                  "renderer":  "Software SwiftShader; functional and visual check, not device FPS",
+                                  "browserPid":  18240,
+                                  "buildId":  "1792013667571",
+                                  "tapPoint":  {
+                                                   "x":  320.00000000000006,
+                                                   "y":  176.46273759909593
+                                               }
+                              },
+                    "originalCombinedFailure":  "page.waitForFunction: Timeout 90000ms exceeded.",
+                    "gpu":  "Software SwiftShader; not physical-device FPS evidence",
+                    "scope":  "Production fixture: paid construction, fitted geometry and all quality presets; separate resumed touch fixture passes at 640 x 360",
+                    "allThreeDesktopPresetsRendered":  true,
+                    "originalCombinedRunPassed":  false,
+                    "checks":  [
+                                   {
+                                       "construction":  {
+                                                            "paid":  true,
+                                                            "completed":  true,
+                                                            "revision":  366
+                                                        }
+                                   },
+                                   {
+                                       "field":  {
+                                                     "revision":  "field-crops-v1",
+                                                     "fitted":  true,
+                                                     "finite":  true,
+                                                     "maxRingError":  2.2848663572272443E-08,
+                                                     "models":  126,
+                                                     "drawCalls":  7
+                                                 }
+                                   },
+                                   {
+                                       "quality":  "high",
+                                       "detail":  "high",
+                                       "revision":  "field-crops-v1",
+                                       "fitted":  true,
+                                       "calls":  7,
+                                       "shadows":  true
+                                   },
+                                   {
+                                       "quality":  "medium",
+                                       "detail":  "medium",
+                                       "revision":  "field-crops-v1",
+                                       "fitted":  true,
+                                       "calls":  7,
+                                       "shadows":  true
+                                   }
+                               ]
+                },
+    "tests":  {
+                  "releasePassed":  252,
+                  "finalFocusedOutlinePassed":  9,
+                  "developmentBeforeOutlinePassed":  267,
+                  "stagedCataloguePassed":  11,
+                  "failed":  0
+              },
+    "baseline":  "647e875755c93805bb5f9dcb5a128847d53cdbec",
+    "staticBuild":  {
+                        "buildId":  "1792014258956",
+                        "version":  "2.6.1"
+                    },
+    "limitations":  [
+                        "Physical phone and hardware frame rates remain unverified",
+                        "Ordinary building/wall/gate foundations need further work",
+                        "Complete Blender regeneration has not been rerun end to end",
+                        "Separate graphics preset transition work remains unpublished",
+                        "Hosted deployment revision is unverified"
+                    ],
+    "sourceEntries":  253,
+    "artwork":  {
+                    "bytes":  {
+                                  "near":  17288372,
+                                  "low":  4123364,
+                                  "balanced":  16264796
+                              },
+                    "unchangedOtherModels":  123,
+                    "editableModels":  126,
+                    "replacedFarms":  3,
+                    "completeRegenerationVerified":  false,
+                    "revision":  "field-crops-v1",
+                    "models":  126
+                }
+}

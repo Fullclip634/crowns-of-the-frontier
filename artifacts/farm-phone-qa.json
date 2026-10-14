@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "stage": "phone-select",
+  "phoneOnly": true,
+  "checks": [
+    {
+      "phone": {
+        "width": 640,
+        "height": 360,
+        "coarse": true,
+        "overflow": false,
+        "fittedPreview": true,
+        "quality": "low",
+        "tapSelected": true
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; functional and visual check, not device FPS",
+  "browserPid": 18240,
+  "buildId": "1792013667571",
+  "tapPoint": {
+    "x": 320.00000000000006,
+    "y": 176.46273759909593
+  }
+}

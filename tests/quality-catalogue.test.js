@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {composeQualityCatalogue} from '../scripts/blender/quality-catalogue.mjs';
 import {readGlb,writeGlb} from '../scripts/blender/glb-catalogue.mjs';
@@ -9,6 +11,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 
 const parsed=new WeakMap();
+// Validate a complete staged catalogue without first replacing the live art.
+const catalogue=process.env.ART_CATALOGUE_DIR?pathToFileURL(path.resolve(process.env.ART_CATALOGUE_DIR)+path.sep):new URL('../src/assets3d/',import.meta.url);
+const asset=name=>new URL(name,catalogue);
 function fingerprint(bytes,key){
   if(!parsed.has(bytes)){const p=readGlb(bytes);p.views=new Map();p.roots=new Map(p.json.nodes.flatMap(n=>n.extras?.assetKey?[[n.extras.assetKey,n]]:[]));parsed.set(bytes,p);}
   const {json:j,bin,views,roots}=parsed.get(bytes),root=roots.get(key);assert.ok(root,key);
@@ -19,7 +24,7 @@ function fingerprint(bytes,key){
 }
 
 test('Balanced covers all 126 original models and its composition preserves selected compressed geometry before packing',()=>{
-  const manifest=JSON.parse(fs.readFileSync(new URL('../src/assets3d/catalogue.json',import.meta.url))),near=fs.readFileSync(new URL('../src/assets3d/frontier-near.glb',import.meta.url)),low=fs.readFileSync(new URL('../src/assets3d/frontier-low.glb',import.meta.url)),balanced=fs.readFileSync(new URL('../src/assets3d/frontier-balanced.glb',import.meta.url));
+  const manifest=JSON.parse(fs.readFileSync(asset('catalogue.json'))),near=fs.readFileSync(asset('frontier-near.glb')),low=fs.readFileSync(asset('frontier-low.glb')),balanced=fs.readFileSync(asset('frontier-balanced.glb'));
   const j=readGlb(balanced).json;assert.equal(j.scenes[0].nodes.length,126);assert.equal(j.nodes.filter(n=>n.extras?.assetKey).length,126);assert.equal(balanced.length,manifest.sizes.balanced);assert.ok(balanced.length<near.length);
   for(const [name,bytes]of [['near',near],['low',low]])assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.balancedSourceHashes[name],'Rebuild Balanced after changing a source catalogue');
   const rich=manifest.models.filter(m=>/^(building|resource):/.test(m.key)).map(m=>m.key),light=manifest.models.filter(m=>!rich.includes(m.key)).map(m=>m.key),composed=composeQualityCatalogue([{bytes:near,keys:rich},{bytes:low,keys:light}]);
@@ -29,7 +34,7 @@ test('Balanced covers all 126 original models and its composition preserves sele
 
 test('the decoded Balanced geometry keeps visible triangles, silhouettes, surface roles and animated joints',async()=>{
   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),snapshot=async name=>{
-    const bytes=fs.readFileSync(new URL(`../src/assets3d/frontier-${name}.glb`,import.meta.url)),gltf=await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+    const bytes=fs.readFileSync(asset(`frontier-${name}.glb`)),gltf=await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
     const models=new Map(),geometries=new Set(),materials=new Set();gltf.scene.updateMatrixWorld(true);
     gltf.scene.traverse(root=>{if(!root.userData.assetKey)return;const bounds=new THREE.Box3().setFromObject(root),data={triangles:0,solidTriangles:0,surfaces:{},min:bounds.min.toArray(),max:bounds.max.toArray(),semantics:[]};
       root.traverse(part=>{if(part.userData.motion||part.userData.gate||part.userData.windmill||part.userData.dockPier)data.semantics.push(JSON.stringify(part.userData));if(!part.isMesh)return;const g=part.geometry;geometries.add(g);materials.add(part.material);const count=g.index?.count??g.attributes.position.count;data.triangles+=count/3;let solid=0;const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();for(let i=0;i<count;i+=3){a.fromBufferAttribute(g.attributes.position,g.index?g.index.getX(i):i);b.fromBufferAttribute(g.attributes.position,g.index?g.index.getX(i+1):i+1);c.fromBufferAttribute(g.attributes.position,g.index?g.index.getX(i+2):i+2);if(b.sub(a).cross(c.sub(a)).lengthSq()>1e-16)solid++;}data.solidTriangles+=solid;if(solid)data.surfaces[part.userData.assetMaterial]=(data.surfaces[part.userData.assetMaterial]||0)+solid;for(let i=0;i<g.attributes.position.count;i++)assert.ok(Number.isFinite(g.attributes.position.getX(i))&&Number.isFinite(g.attributes.position.getY(i))&&Number.isFinite(g.attributes.position.getZ(i)));});
@@ -44,7 +49,7 @@ test('the decoded Balanced geometry keeps visible triangles, silhouettes, surfac
 });
 
 test('quality composition rejects missing/duplicate models and unsupported external geometry',()=>{
-  const low=fs.readFileSync(new URL('../src/assets3d/frontier-low.glb',import.meta.url)),key='unit:archer';
+  const low=fs.readFileSync(asset('frontier-low.glb')),key='unit:archer';
   assert.throws(()=>composeQualityCatalogue([{bytes:low,keys:['missing:model']}]),/Missing model/);
   assert.throws(()=>composeQualityCatalogue([{bytes:low,keys:[key,key]}]),/Duplicate model/);
   const external=readGlb(low);external.json.buffers[0].uri='external.bin';assert.throws(()=>composeQualityCatalogue([{bytes:writeGlb(external.json,external.bin),keys:[key]}]),/embedded/);

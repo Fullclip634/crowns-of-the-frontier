@@ -1,0 +1,19 @@
+✔ low exports solid original crops and fits real field, selection and preview geometry (550.8149ms)
+✔ balanced exports solid original crops and fits real field, selection and preview geometry (708.8685ms)
+✔ near exports solid original crops and fits real field, selection and preview geometry (811.9575ms)
+✔ field terrain fitting preserves authored detail and shared templates across real slopes (216.0274ms)
+✔ the displayed sloped field and its picking surface occupy the same height (29.117ms)
+✔ field height uses its centre terrain and unique fitted geometry releases with the node (29.6039ms)
+✔ a moving field preview resamples its template without accumulating terrain offsets (27.6666ms)
+✔ land buildings require a dry footprint while docks retain their shoreline placement (13.7891ms)
+✔ Balanced covers all 126 original models and its composition preserves selected compressed geometry before packing (310.204ms)
+✔ the decoded Balanced geometry keeps visible triangles, silhouettes, surface roles and animated joints (801.0139ms)
+✔ quality composition rejects missing/duplicate models and unsupported external geometry (35.5208ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3891.0598

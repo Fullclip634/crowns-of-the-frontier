@@ -36,5 +36,13 @@ for(const [name,ratio]of [['near','0.82'],['low','0.55']]){
 const source=JSON.parse(fs.readFileSync(path.join(plan.sourceDirectory,'catalogue.json'),'utf8'));
 const sizes={};for(const name of ['near','low'])sizes[name]=(await stat(path.join(plan.outputDirectory,`frontier-${name}.glb`))).size;
 await writeFile(path.join(plan.outputDirectory,'catalogue.json'),`${JSON.stringify({models:source,sizes,stage:plan.stage,completeCatalogue:!plan.resources,source:'Original Crowns of the Frontier assets authored/refined in Blender.'},null,2)}\n`);
-if(!plan.resources)await run(process.execPath,['scripts/blender/build-balanced.mjs','--directory',plan.outputDirectory]);
+if(!plan.resources){
+  // Preserve the independently authored crop fields in complete regeneration.
+  // Each stage is sequential so Blender/packing never compete for memory.
+  await run(process.execPath,['scripts/blender/build-farms.mjs']);
+  await run(process.execPath,['scripts/blender/compose-farms.mjs','--directory',plan.outputDirectory]);
+  const editable=path.join(plan.rawDirectory,'frontier-assets.blend');
+  await run(blender,['--background','--threads','1','--python-exit-code','1','--python','scripts/blender/compose-farm-editable.py','--','--source',editable,'--output',editable],path.join(plan.rawDirectory,'farm-editable-compose.log'));
+  await run(process.execPath,['scripts/blender/build-balanced.mjs','--directory',plan.outputDirectory]);
+}
 console.log(JSON.stringify({models:source.length,bytes:sizes,stage:plan.stage,completeCatalogue:!plan.resources,output:plan.outputDirectory}));

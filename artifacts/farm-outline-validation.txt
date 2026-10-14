@@ -1,0 +1,17 @@
+✔ low exports solid original crops and fits real field, selection and preview geometry (529.5033ms)
+✔ balanced exports solid original crops and fits real field, selection and preview geometry (639.4605ms)
+✔ near exports solid original crops and fits real field, selection and preview geometry (754.028ms)
+✔ the farm selection frame outlines its square footprint and leaves the crops clear (1.7524ms)
+✔ field terrain fitting preserves authored detail and shared templates across real slopes (217.6424ms)
+✔ the displayed sloped field and its picking surface occupy the same height (30.8824ms)
+✔ field height uses its centre terrain and unique fitted geometry releases with the node (29.2144ms)
+✔ a moving field preview resamples its template without accumulating terrain offsets (26.8469ms)
+✔ land buildings require a dry footprint while docks retain their shoreline placement (12.4628ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2428.0692
