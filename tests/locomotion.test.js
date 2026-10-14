@@ -3,6 +3,22 @@ import assert from 'node:assert/strict';
 import {UnitLocomotion} from '../src/locomotion.js';
 import {animatePart} from '../src/world-polish.js';
 import * as THREE from 'three';
+import {Simulation} from '../src/simulation.js';
+
+test('new idle units keep finite poses before their first simulation tick and after movement',()=>{
+  const sim=new Simulation({mode:'sandbox',map:'highlands',seed:512}),e=sim.addUnit('villager',0,0,20),gait=new UnitLocomotion();
+  assert.equal(e.moving,undefined,'new units do not receive a movement flag until tickUnit runs');
+  const part={userData:{motion:{type:'leg',pivot:[0,1,0],side:1}}},view={clock:0,locomotion:gait};
+  const check=()=>{const state=gait.update(e,e.x,e.z,1/60),root=new THREE.Matrix4().makeTranslation(e.x,state.bob,e.z);
+    assert.ok([state.phase,state.wheel,state.blend,state.bob].every(Number.isFinite));
+    assert.ok(animatePart(view,part,e,root).elements.every(Number.isFinite),'root and articulated joint poses must remain drawable');
+    return state;
+  };
+  for(let i=0;i<120;i++)assert.equal(check().bob,0);
+  e.moving=true;for(let i=0;i<60;i++){e.z+=.05;check();}assert.ok(gait.get(e.id).blend>.99);
+  e.moving=false;for(let i=0;i<120;i++)check();assert.ok(gait.get(e.id).blend<1e-10);
+  gait.clear();delete e.moving;for(let i=0;i<120;i++)assert.equal(check().bob,0);
+});
 
 test('gait cadence follows distance at different frame rates and never advances while blocked',()=>{
   const e={id:11,kind:'unit',type:'spearman',moving:true,x:0,z:0},sample=frames=>{const gait=new UnitLocomotion();gait.update(e,0,0,0);for(let i=1;i<=frames;i++)gait.update(e,0,i*4/frames,1/frames);return gait;};

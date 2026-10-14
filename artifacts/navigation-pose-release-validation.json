@@ -1,0 +1,73 @@
+{
+    "graphicsWorkInProgressPublished":  false,
+    "productionBuild":  {
+                            "buildId":  "1791981873368",
+                            "version":  "2.6.1"
+                        },
+    "coastalReplay":  {
+                          "originalBlockedOrders":  54,
+                          "seconds":  160,
+                          "boardingStallRecords":  0,
+                          "remainingBlockedOrders":  31,
+                          "boarded":  [
+                                          {
+                                              "id":  1690,
+                                              "time":  327.2000000000059,
+                                              "ship":  1199
+                                          }
+                                      ]
+                      },
+    "staticEntries":  38,
+    "archives":  [
+                     {
+                         "sha256":  "D0E8F55EAC92B8D77B8F43CD6F3EB48BB8D6931EF39EEF82D82850D297863634",
+                         "bytes":  32860092,
+                         "kind":  "source"
+                     },
+                     {
+                         "sha256":  "DB47AA745AA44B466A55F90C1F5114628BC21EAB62F0747D63F4A5B512E2E86D",
+                         "bytes":  32660224,
+                         "kind":  "static"
+                     }
+                 ],
+    "browser":  {
+                    "passed":  true,
+                    "gpu":  "Software SwiftShader; not physical-device FPS evidence",
+                    "partsPixels":  1942,
+                    "rigidPixels":  1943,
+                    "errors":  [
+
+                               ],
+                    "selection":  {
+                                      "body":  "none",
+                                      "buttons":  true,
+                                      "editable":  [
+                                                       {
+                                                           "type":  "text",
+                                                           "selection":  "text"
+                                                       },
+                                                       {
+                                                           "type":  "text",
+                                                           "selection":  "text"
+                                                       }
+                                                   ],
+                                      "fieldWorks":  true
+                                  }
+                },
+    "tests":  {
+                  "releasePassed":  237,
+                  "developmentPassed":  248,
+                  "failed":  0
+              },
+    "baseline":  "6d9cdb340cdb515279258f25ade9d1a07708c651",
+    "staticBuild":  {
+                        "buildId":  "1791981888216",
+                        "version":  "2.6.1"
+                    },
+    "limitations":  [
+                        "Physical phone and hardware frame rates remain unverified",
+                        "Congestion remains in some gather/attack/move orders",
+                        "Separate graphics preset transition work remains unpublished"
+                    ],
+    "sourceEntries":  244
+}

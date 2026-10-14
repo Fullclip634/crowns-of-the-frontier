@@ -1,5 +1,5 @@
 import {installFrontiers} from './frontiers.js';
-import {findPath,clearSegment} from './navigation.js';
+import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
 import {installTactics,formationSlot} from './tactics.js';
 import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
@@ -188,9 +188,10 @@ export class Simulation {
   unitDefinition(e){return UNITS[e.type];}
   pathTo(e,dest){return findPath(this,e,dest);}
   move(e,dest,dt,stop=0){if(distance(e,dest)<=Math.max(stop,.65)){e.stuckTime=0;return true;}e.repath-=dt;
-    if(e.path.length&&e.pathRevision!==this.revision){const grid=this.grid(e.owner,!!UNITS[e.type].naval);let previous=e,clear=true;for(const point of e.path){if(!clearSegment(this,grid,previous,point)){clear=false;break;}previous=point;}if(clear)e.pathRevision=this.revision;}
-    if(!e.path.length&&e.pathStatus==='blocked'&&e.pathRevision===this.revision&&e.repath>0){this.blockedMovement(e,dt);return false;}
-    if(!e.path.length||e.pathRevision!==this.revision||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=this.pathTo(e,dest);e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;}
+    const grid=unitNavigationGrid(this,e),navigationKey=grid.navigationKey||'';let navigationChanged=(e.pathNavigationKey||'')!==navigationKey;
+    if(e.path.length&&(e.pathRevision!==this.revision||navigationChanged)){let previous=e,clear=true;for(const point of e.path){if(!clearSegment(this,grid,previous,point)){clear=false;break;}previous=point;}if(clear){e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;navigationChanged=false;}}
+    if(!e.path.length&&e.pathStatus==='blocked'&&e.pathRevision===this.revision&&e.repath>0&&!navigationChanged){this.blockedMovement(e,dt);return false;}
+    if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=this.pathTo(e,dest);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;}
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
     if(len<.5){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
     const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);const step=Math.min(len,speed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
@@ -200,7 +201,7 @@ export class Simulation {
       const neighbors=column.get(bz+oz);if(!neighbors)continue;
       for(const other of neighbors){if(other===e||other.embarked||!!UNITS[other.type].naval!==!!d.naval)continue;const sx=nx-other.x,sz=nz-other.z,min=(e.r+other.r)*.8;if(sx*sx+sz*sz>=min*min)continue;const sep=Math.hypot(sx,sz);if(sep<min&&sep>.01){nx+=sx/sep*(min-sep)*.2;nz+=sz/sep*(min-sep)*.2;}}
     }}
-    const c=this.cell(nx,nz),current=this.cell(e.x,e.z),grid=this.grid(e.owner,!!d.naval),oldX=e.x,oldZ=e.z;
+    const c=this.cell(nx,nz),current=this.cell(e.x,e.z),oldX=e.x,oldZ=e.z;
     if(!grid[c.z*this.gridSize+c.x]||grid[current.z*this.gridSize+current.x]){e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);}else{
       const horizontal=this.cell(nx,e.z),vertical=this.cell(e.x,nz);
       if(!grid[horizontal.z*this.gridSize+horizontal.x])e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);else if(!grid[vertical.z*this.gridSize+vertical.x])e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);else{e.path=[];e.repath=0;}

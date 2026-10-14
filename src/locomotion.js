@@ -12,7 +12,7 @@ export class UnitLocomotion{
     const elapsed=Math.max(0,dt),distance=Math.hypot(x-state.x,z-state.z),teleported=distance>Math.max(3,(definition.speed||4)*elapsed*4);
     state.x=x;state.z=z;
     if(!teleported){state.phase=(state.phase+distance*Math.PI*2/period)%(Math.PI*2);state.wheel=(state.wheel+distance/.5)%(Math.PI*2);}
-    const moving=!teleported&&e.moving&&distance>.0001,blend=1-Math.exp(-elapsed*14);state.blend+=(Number(moving)-state.blend)*blend;
+    const moving=!teleported&&!!e.moving&&distance>.0001,blend=1-Math.exp(-elapsed*14);state.blend+=(Number(moving)-state.blend)*blend;
     if(teleported)state.blend=0;
     state.bob=definition.naval||definition.role==='siege'||e.type==='cart'?0:(1-Math.cos(state.phase*2))*(cavalry?.027:.018)*state.blend;
     return state;

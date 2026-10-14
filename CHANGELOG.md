@@ -1,3 +1,10 @@
+# Visible idle troops and coastal movement (version 2.6.1)
+
+- Newly spawned and restored idle troops retain finite animation poses before their first simulation tick. A missing movement flag no longer makes their 3D bodies disappear. Walking, stopping and scene reattachment retain the same gait and articulated models.
+- Units covered by an ordinary building foundation can walk out and continue their orders. The exception applies only to the containing footprint; other troops still see a solid building. Walls, hostile gates, water, resources and neighboring buildings keep their navigation barriers.
+- Stalled units can choose an uncrowded route around nearby troops without teleporting or changing those troops' orders. The recorded 160-second coastal replay produces no boarding-stall records and reduces all blocked-order events from 54 to 31; remaining congestion still needs work.
+- Regression coverage includes the recorded trapped knight, a healer behind farm workers, queued commands, save restoration, wall barriers and bounded navigation caches. A real local browser check confirms visible workers and finite poses in both troop rendering paths. Its software GPU does not establish frame rates on physical devices.
+
 # Prevent accidental game text selection (version 2.6.1)
 
 - Game labels, menus, dialogs, tooltips and battlefield controls disable native text selection and phone long-press callouts. Editable name, chat and room-code fields retain normal editing, selection and paste behavior. Keyboard focus, buttons, scrolling and gameplay gestures keep their existing controls.

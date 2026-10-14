@@ -1,4 +1,45 @@
+import {blockWallConnections} from './walls.js';
 const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+
+// A foundation can cover a unit already standing there. Let that unit leave
+// the containing ordinary buildings, without opening them for other troops.
+export function unitNavigationGrid(sim,unit){
+  const naval=!!sim.unitDefinition(unit).naval,normal=sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
+  if(naval||!normal[cell.z*size+cell.x])return normal;
+  const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
+  const containing=buildings.filter(e=>!['wall','gate'].includes(e.type)&&Math.hypot(e.x-unit.x,e.z-unit.z)<e.r+.9);
+  if(!containing.length)return normal;
+  const key=`escape:${sim.players[unit.owner].team??unit.owner}:${containing.map(e=>e.id).join(',')}`,cache=sim.unitEscapeGrids??=new Map();
+  const stored=cache.get(key);if(stored?.source===normal)return stored.data;
+  const ignored=new Set(containing),others=buildings.filter(e=>!ignored.has(e)),data=normal.slice(),base=sim.grids.landBase.data;
+  for(const building of containing){
+    const a=sim.cell(building.x-building.r-.3,building.z-building.r-.3),b=sim.cell(building.x+building.r+.3,building.z+building.r+.3);
+    for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++){
+      const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,id=z*size+x;
+      if(!normal[id]||Math.hypot(wx-building.x,wz-building.z)>=building.r+.9||base[id])continue;
+      data[id]=others.some(e=>Math.hypot(wx-e.x,wz-e.z)<e.r+.9)?1:0;
+    }
+  }
+  blockWallConnections(sim,data);data.navigationKey=key;
+  cache.delete(key);cache.set(key,{source:normal,data});while(cache.size>16)cache.delete(cache.keys().next().value);
+  return data;
+}
+
+function crowdCosts(sim,unit){
+  if((unit.stuckTime||0)<1.8)return null;
+  const costs=new Map(),naval=!!sim.unitDefinition(unit).naval,nearby=[];
+  if(sim.unitBuckets){const bx=Math.floor(unit.x/4),bz=Math.floor(unit.z/4);for(let x=bx-4;x<=bx+4;x++){const column=sim.unitBuckets.get(x);if(!column)continue;for(let z=bz-4;z<=bz+4;z++)for(const other of column.get(z)||[])nearby.push(other);}}
+  else nearby.push(...sim.entities.filter(e=>e.kind==='unit'));
+  for(const other of nearby){
+    if(other===unit||other.hp<=0||other.embarked||!!sim.unitDefinition(other).naval!==naval||Math.hypot(other.x-unit.x,other.z-unit.z)>14)continue;
+    const radius=(unit.r+other.r)*.8+.9,a=sim.cell(other.x-radius,other.z-radius),b=sim.cell(other.x+radius,other.z+radius);
+    for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++){
+      const distance=Math.hypot(x*2-sim.halfWorld+1-other.x,z*2-sim.halfWorld+1-other.z),id=z*sim.gridSize+x;
+      if(distance<radius)costs.set(id,(costs.get(id)||0)+(radius-distance)*4);
+    }
+  }
+  return costs.size?costs:null;
+}
 
 export class MinHeap {
   constructor(){this.items=[];}
@@ -30,19 +71,20 @@ function regionsFor(sim,grid){
 }
 
 export function findPath(sim,e,dest){
-  const naval=!!sim.unitDefinition(e).naval,grid=sim.grid(e.owner,naval),size=sim.gridSize||80,half=sim.halfWorld||80;
+  const grid=unitNavigationGrid(sim,e),size=sim.gridSize||80,half=sim.halfWorld||80;
   const nearest=(cell,point,labels=null,region=0)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region))return cell;let best=null,score=Infinity;
     for(let radius=1;radius<12;radius++){for(let z=Math.max(0,cell.z-radius);z<=Math.min(size-1,cell.z+radius);z++)for(let x=Math.max(0,cell.x-radius);x<=Math.min(size-1,cell.x+radius);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1,n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<radius*2)return best;}return best;};
   const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x],a=nearest(sim.cell(e.x,e.z),e);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
+  const traffic=crowdCosts(sim,e);
   const start=a.z*size+a.x;let end=b.z*size+b.x;
   if(start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
-  if(exact&&clearSegment(sim,grid,e,dest)){e.pathStatus='ready';return[{x:dest.x,z:dest.z}];}
+  if(!traffic&&exact&&clearSegment(sim,grid,e,dest)){e.pathStatus='ready';return[{x:dest.x,z:dest.z}];}
   const labels=regionsFor(sim,grid);if(labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
   const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={size,came:new Int32Array(size*size),cost:new Float32Array(size*size),closed:new Uint8Array(size*size)});
   const came=scratch.came.fill(-1),cost=scratch.cost.fill(Infinity),closed=scratch.closed.fill(0),open=new MinHeap();
   const h=id=>Math.hypot(id%size-b.x,Math.floor(id/size)-b.z);cost[start]=0;let closest=start,closestH=h(start),found=-1,iterations=0;open.push(start,closestH);
   while(open.size&&iterations++<size*size*2){const current=open.pop();if(closed[current])continue;const remaining=h(current);if(remaining<closestH){closest=current;closestH=remaining;}if(current===end){found=current;break;}closed[current]=1;const x=current%size,z=Math.floor(current/size);
-    for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||closed[id]||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1);if(n<cost[id]){cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
+    for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||closed[id]||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(n<cost[id]){cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
   }
   e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found>=0&&exact&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return result;
 }
