@@ -1,3 +1,10 @@
+# Reliable worker routes and work direction (version 2.6.1)
+
+- Workers finish the last short step of a route so reachable trees and deposits can be harvested. Approaches to mines, drop sites and combat targets can use another reachable cell within the existing interaction range when the nearest cell is crowded. Resources, water, connected walls and hostile gates retain their movement barriers.
+- Changing the target or working range invalidates the previous route. AI resource assignments preserve the correct destination metadata, and old saved blocked deliveries retry instead of abandoning carried resources. Queued player commands remain intact.
+- Gathering, building, repairing and depositing turn the worker toward the actual site, using the existing 3D model and smooth heading animation.
+- Six new regressions cover the recorded woodcutter/farmer stalls, crowded starts, saved cargo and queues, AI resource changes, barrier protection and work direction. In the same 160-second coastal replay, gathering stalls drop from 19 to zero, while total blocked orders drop from 31 to 19. Other movement congestion and wider match balance still require work.
+
 # Visible idle troops and coastal movement (version 2.6.1)
 
 - Newly spawned and restored idle troops retain finite animation poses before their first simulation tick. A missing movement flag no longer makes their 3D bodies disappear. Walking, stopping and scene reattachment retain the same gait and articulated models.

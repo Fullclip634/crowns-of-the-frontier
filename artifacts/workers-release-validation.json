@@ -1,0 +1,58 @@
+{
+    "graphicsWorkInProgressPublished":  false,
+    "productionBuild":  {
+                            "buildId":  "1791992731712",
+                            "version":  "2.6.1"
+                        },
+    "coastalReplay":  {
+                          "remainingBlockedOrders":  19,
+                          "gatheringStallsBefore":  19,
+                          "deliveredWoodPlayer7":  2429.999999999995,
+                          "deliveredFoodPlayer1":  7241.496700000016,
+                          "gatheringStallsAfter":  0,
+                          "originalBlockedOrders":  31,
+                          "seconds":  160
+                      },
+    "staticEntries":  38,
+    "archives":  [
+                     {
+                         "sha256":  "95FD78D2B6CA3E6168C8550B14DE049152E0441E481F0ADB42F052BECA153D7A",
+                         "bytes":  32864001,
+                         "kind":  "source"
+                     },
+                     {
+                         "sha256":  "B4CB4D7B29068ABC53EBD2FB56B3D910EDBFC3B7E5477390A7A8E128A83D3F03",
+                         "bytes":  32660594,
+                         "kind":  "static"
+                     }
+                 ],
+    "browser":  {
+                    "passed":  false,
+                    "scope":  "Rendered work poses remain unverified; simulation heading tests pass",
+                    "gpu":  "Software SwiftShader; not physical-device FPS evidence",
+                    "stage":  "launch",
+                    "failure":  "No loopback DevTools endpoint after 30 seconds",
+                    "errors":  [
+
+                               ],
+                    "checks":  [
+
+                               ]
+                },
+    "tests":  {
+                  "releasePassed":  243,
+                  "developmentPassed":  259,
+                  "failed":  0
+              },
+    "baseline":  "8a9e1795c457bfd0f3e62f7ec95d53aea890287c",
+    "staticBuild":  {
+                        "buildId":  "1791992814260",
+                        "version":  "2.6.1"
+                    },
+    "limitations":  [
+                        "Physical phone and hardware frame rates remain unverified",
+                        "Other movement stalls remain in the recorded battle",
+                        "Separate graphics preset transition work remains unpublished"
+                    ],
+    "sourceEntries":  245
+}

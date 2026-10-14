@@ -114,7 +114,7 @@ export function installCommanderAI(Simulation){
     for(const type of types){const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1))
       .sort((a,b)=>distance(e,a)-distance(e,b)).slice(0,5);
       for(const source of sources){const route=this.pathTo(e,source);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>source.r+e.r+1.1)continue;
-        e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;return;
+        e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=0;return;
       }
     }e.order=null;e.path=[];
   };

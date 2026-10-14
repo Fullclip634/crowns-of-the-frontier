@@ -70,21 +70,33 @@ function regionsFor(sim,grid){
   }grid.pathRegions=labels;return labels;
 }
 
-export function findPath(sim,e,dest){
+export function findPath(sim,e,dest,range=0){
   const grid=unitNavigationGrid(sim,e),size=sim.gridSize||80,half=sim.halfWorld||80;
   const nearest=(cell,point,labels=null,region=0)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region))return cell;let best=null,score=Infinity;
     for(let radius=1;radius<12;radius++){for(let z=Math.max(0,cell.z-radius);z<=Math.min(size-1,cell.z+radius);z++)for(let x=Math.max(0,cell.x-radius);x<=Math.min(size-1,cell.x+radius);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1,n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<radius*2)return best;}return best;};
   const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x],a=nearest(sim.cell(e.x,e.z),e);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
   const traffic=crowdCosts(sim,e);
-  const start=a.z*size+a.x;let end=b.z*size+b.x;
-  if(start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
+  const start=a.z*size+a.x,area=range>0&&Number.isFinite(dest.r);let end=b.z*size+b.x;
+  if(!area&&start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
   if(!traffic&&exact&&clearSegment(sim,grid,e,dest)){e.pathStatus='ready';return[{x:dest.x,z:dest.z}];}
-  const labels=regionsFor(sim,grid);if(labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
+  const labels=regionsFor(sim,grid);let goals=null;
+  // A mine, drop site or combat target can be approached from multiple sides.
+  // Choose a reachable cell within working range instead of forcing every unit
+  // through the same nearest cell. Crowd penalties remain soft traversal costs.
+  if(area){goals=new Set();const low=sim.cell(dest.x-range,dest.z-range),high=sim.cell(dest.x+range,dest.z+range);
+    for(let z=low.z;z<=high.z;z++)for(let x=low.x;x<=high.x;x++){const id=z*size+x,wx=x*2-half+1,wz=z*2-half+1;
+      if(!grid[id]&&labels[id]===labels[start]&&Math.abs(wx)<=half-3&&Math.abs(wz)<=half-3&&Math.hypot(wx-dest.x,wz-dest.z)<=range)goals.add(id);
+    }if(!goals.size)goals=null;
+  }
+  if(!goals&&start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
+  if(!goals&&labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
   const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={size,came:new Int32Array(size*size),cost:new Float32Array(size*size),closed:new Uint8Array(size*size)});
   const came=scratch.came.fill(-1),cost=scratch.cost.fill(Infinity),closed=scratch.closed.fill(0),open=new MinHeap();
-  const h=id=>Math.hypot(id%size-b.x,Math.floor(id/size)-b.z);cost[start]=0;let closest=start,closestH=h(start),found=-1,iterations=0;open.push(start,closestH);
-  while(open.size&&iterations++<size*size*2){const current=open.pop();if(closed[current])continue;const remaining=h(current);if(remaining<closestH){closest=current;closestH=remaining;}if(current===end){found=current;break;}closed[current]=1;const x=current%size,z=Math.floor(current/size);
+  const h=goals?id=>Math.max(0,Math.hypot(id%size*2-half+1-dest.x,Math.floor(id/size)*2-half+1-dest.z)-range)/2:id=>Math.hypot(id%size-b.x,Math.floor(id/size)-b.z);cost[start]=0;let closest=start,closestH=h(start),found=-1,goalCost=Infinity,iterations=0;open.push(start,closestH);
+  while(open.size&&iterations++<size*size*2){if(found>=0&&open.items[0].score>=goalCost)break;const current=open.pop();if(closed[current])continue;const remaining=h(current);if(remaining<closestH){closest=current;closestH=remaining;}
+    if(goals?goals.has(current):current===end){const score=cost[current]+(goals&&current===start?traffic?.get(start)||0:0);if(score<goalCost){found=current;goalCost=score;}if(current!==start||!traffic?.get(start))break;}
+    closed[current]=1;const x=current%size,z=Math.floor(current/size);
     for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||closed[id]||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(n<cost[id]){cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
   }
-  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found>=0&&exact&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return result;
+  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return result;
 }

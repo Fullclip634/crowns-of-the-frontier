@@ -186,14 +186,14 @@ export class Simulation {
     blockWallConnections(this,data);this.grids[owner]=this.grids[teamKey]={revision:this.revision,data};return data;
   }
   unitDefinition(e){return UNITS[e.type];}
-  pathTo(e,dest){return findPath(this,e,dest);}
+  pathTo(e,dest,range=0){return findPath(this,e,dest,range);}
   move(e,dest,dt,stop=0){if(distance(e,dest)<=Math.max(stop,.65)){e.stuckTime=0;return true;}e.repath-=dt;
-    const grid=unitNavigationGrid(this,e),navigationKey=grid.navigationKey||'';let navigationChanged=(e.pathNavigationKey||'')!==navigationKey;
+    const grid=unitNavigationGrid(this,e),navigationKey=grid.navigationKey||'',rangeChanged=(e.pathRange??0)!==stop,targetChanged=e.pathTargetId!==dest.id;let navigationChanged=(e.pathNavigationKey||'')!==navigationKey;
     if(e.path.length&&(e.pathRevision!==this.revision||navigationChanged)){let previous=e,clear=true;for(const point of e.path){if(!clearSegment(this,grid,previous,point)){clear=false;break;}previous=point;}if(clear){e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;navigationChanged=false;}}
-    if(!e.path.length&&e.pathStatus==='blocked'&&e.pathRevision===this.revision&&e.repath>0&&!navigationChanged){this.blockedMovement(e,dt);return false;}
-    if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=this.pathTo(e,dest);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;}
+    if(!e.path.length&&e.pathStatus==='blocked'&&e.pathRevision===this.revision&&e.repath>0&&!navigationChanged&&!rangeChanged&&!targetChanged){this.blockedMovement(e,dt);return false;}
+    if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||rangeChanged||targetChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=this.pathTo(e,dest,stop);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;e.pathTargetId=dest.id;e.pathRange=stop;}
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
-    if(len<.5){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
+    if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
     const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);const step=Math.min(len,speed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
     let nx=e.x+dx/len*step,nz=e.z+dz/len*step;
     const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4);
@@ -248,7 +248,7 @@ export class Simulation {
       return (sameA?(a.wallIndex||0)-(b.wallIndex||0):distance(e,a)-distance(e,b))||a.id-b.id;
     });
     for(const wall of walls){let route=[];if(distance(e,wall)>wall.r+3){route=this.pathTo(e,wall);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),wall)>wall.r+3){e.wallConstructionSkipped??=[];e.wallConstructionSkipped.push(wall.id);continue;}}
-      e.order={type:'build',target:wall.id,wallConstruction:true};e.path=route;e.pathStatus='ready';e.stuckTime=0;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=wall.x;e.pathTargetZ=wall.z;return;
+      e.order={type:'build',target:wall.id,wallConstruction:true};e.path=route;e.pathStatus='ready';e.stuckTime=0;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=wall.x;e.pathTargetZ=wall.z;e.pathTargetId=wall.id;e.pathRange=0;return;
     }
     if(!walls.length)e.pathStatus='idle';
   }
@@ -274,7 +274,7 @@ export class Simulation {
         if(this.players[e.owner].controller==='ai'||e.owner>0&&this.players[e.owner].controller!=='human'){this.assignWorker(e);return;}
         const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1)).sort((a,b)=>distance(e,a)-distance(e,b));
         for(const resource of sources){const route=this.pathTo(e,resource);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>resource.r+e.r+1.1)continue;
-          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;return;
+          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=0;return;
         }
       }
       if(order.type==='build'&&e.type==='villager'&&(order.wallConstruction||this.entities.some(wall=>wall.id===order.target&&wall.type==='wall'&&wall.owner===e.owner)))this.finishWallOrder(e,this.entities.find(wall=>wall.id===order.target));else this.finishOrder(e);return;
@@ -282,6 +282,7 @@ export class Simulation {
     if(order.type==='build'||order.type==='repair'){
       if(e.type!=='villager'||(order.type==='build'?target.owner!==e.owner:!this.allied(target.owner,e.owner))){this.finishOrder(e);return;}
       if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}
+      e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       if(target.progress<1){const delta=dt/BUILDINGS[target.type].time;target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
       else if(target.hp<target.maxHp){const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}
@@ -293,9 +294,11 @@ export class Simulation {
       const capacity=18;if(e.carryType&&e.carryType!==type&&e.carry>0)order.returning=true;
       if(e.carry>=capacity||order.returning){order.returning=true;const drop=this.nearestDrop(e,e.carryType||type);
         if(!drop)return;if(distance(e,drop)>drop.r+2.6){this.move(e,drop,dt,drop.r+2.3);return;}
+        e.heading=Math.atan2(drop.x-e.x,drop.z-e.z);
         this.players[e.owner].resources[e.carryType||type]+=e.carry;this.emit('gathered',{owner:e.owner,amount:e.carry,resource:e.carryType||type});if(e.owner===0){this.stats.gathered+=e.carry;this.tutorialFlags.gather=true;}e.carry=0;e.carryType=null;order.returning=false;e.path=[];e.repath=0;return;
       }
       if(distance(e,target)>target.r+e.r+1.1){this.move(e,target,dt,target.r+e.r+.75);return;}
+      e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*this.faction(e.owner).gather*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
       if(target.amount!==undefined){target.amount-=n;if(target.amount<=0){target.hp=0;this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}}
     }
