@@ -47,14 +47,15 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   if(duty||ownThreats.length||sim.time-(state.lastSupport||-40)<25)return new Set(duty?.units||[]);
   const candidates=Object.values(sim.teamAlarms).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&distance(tc,alarm)<240&&(sim.options.map!=='coast'||Math.sign(tc.x)===Math.sign(alarm.x))).sort((a,b)=>(distance(tc,a)-a.intensity*.08)-(distance(tc,b)-b.intensity*.08));
   const alarm=candidates[0];if(!alarm)return new Set();
-  const combat=ready.filter(u=>UNITS[u.type].damage>0&&UNITS[u.type].role!=='siege'&&!UNITS[u.type].naval&&u.order?.type!=='board');
+  const sameShore=unit=>sim.options.map!=='coast'||Math.sign(unit.x)===Math.sign(alarm.x);
+  const combat=ready.filter(u=>UNITS[u.type].damage>0&&UNITS[u.type].role!=='siege'&&!UNITS[u.type].naval&&u.order?.type!=='board'&&sameShore(u));
   const reserve=Math.max(2,Math.ceil(combat.length*.25)),count=Math.min(12,Math.max(2,Math.ceil(combat.length*.4)),combat.length-reserve);if(count<2)return new Set();
   const base=sim.get(alarm.base),d=Math.max(1,distance(tc,base)),point={x:base.x+(tc.x-base.x)/d*(base.r+6),z:base.z+(tc.z-base.z)/d*(base.r+6)};
   const group=combat.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,count);
   // Validate one leader before dispatch; the regular movement system then routes
   // every real unit, including friendly gates and bridges, without teleporting.
   const path=sim.pathTo(group[0],point);if(group[0].pathStatus==='blocked'||!path.length||distance(path.at(-1),point)>10)return new Set();
-  const healer=ready.find(u=>u.type==='monk'&&u.hp>u.maxHp*.5&&distance(u,point)<240),units=group.map(u=>u.id);
+  const healer=ready.find(u=>u.type==='monk'&&u.hp>u.maxHp*.5&&distance(u,point)<240&&sameShore(u)),units=group.map(u=>u.id);
   sim.command(units,{type:'attackmove',...point});if(healer){sim.guard([healer.id],group[0].id,false,owner);units.push(healer.id);}
   const travel=distance(group[0],point)/UNITS[group[0].type].speed;
   state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+Math.min(100,travel+25),lastOrder:sim.time};state.lastSupport=sim.time;

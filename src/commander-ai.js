@@ -22,10 +22,14 @@ function customNavy(sim,owner,visible,known,army,tc){
   const aid=!defense?Object.values(sim.teamAlarms||{}).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&sim.get(alarm.base)?.type==='dock'&&distance(home,alarm)<240).sort((a,b)=>distance(home,a)-distance(home,b))[0]:null;
   const aidCount=aid?Math.min(3,Math.floor(ships.length/2)):0;
   if(aid)ships.sort((a,b)=>distance(a,aid)-distance(b,aid));
+  const fleetOrders=new Map();
   for(const [i,ship] of ships.entries()){
     const assignment=i<aidCount?aid.base:null;
-    if(!ship.order||sim.time-(ship.navyOrderAt||0)>18||(ship.navyAid??null)!==assignment||defense&&distance(ship.order,defense)>8){ship.navyOrderAt=sim.time;ship.navyAid=assignment;sim.command([ship.id],{type:i<aidCount||launch||defense?'attackmove':'move',x:i<aidCount?mid(aid.z):defense?.x??(launch?target?.x??mid(enemy.start.z):mid(home.z)),z:i<aidCount?aid.z:defense?.z??(launch?target?.z??enemy.start.z:home.z)});}
+    if(!fleetOrders.has(assignment))fleetOrders.set(assignment,{ships:[],refresh:false,order:{type:i<aidCount||launch||defense?'attackmove':'move',x:i<aidCount?mid(aid.z):defense?.x??(launch?target?.x??mid(enemy.start.z):mid(home.z)),z:i<aidCount?aid.z:defense?.z??(launch?target?.z??enemy.start.z:home.z)}});
+    const group=fleetOrders.get(assignment);group.ships.push(ship);
+    group.refresh||=!ship.order||sim.time-(ship.navyOrderAt||0)>18||(ship.navyAid??null)!==assignment||!!defense&&distance(ship.order,defense)>8;
   }
+  for(const [assignment,group] of fleetOrders)if(group.refresh){for(const ship of group.ships){ship.navyOrderAt=sim.time;ship.navyAid=assignment;}sim.command(group.ships.map(ship=>ship.id),group.order);}
   if(aidCount&&sim.time-(state.lastNavySupport||-40)>30){state.lastNavySupport=sim.time;sim.emit('ally-support',{owner,ally:aid.owner,count:aidCount,x:aid.x,z:aid.z});}
   if(launch)state.navalFirstAttackAt??=sim.time;
   if(!launch&&!sim.owned(owner,'unit','transport').some(ship=>ship.landing||ship.passengers?.length||ship.loadingSince!==undefined))return;

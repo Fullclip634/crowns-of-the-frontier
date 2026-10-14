@@ -3,7 +3,12 @@ import {installWeatherAudio} from './weather-audio.js';
 import {installCombatAudio} from './combat-audio.js';
 export class AudioEngine {
   constructor(settings){this.settings=settings;this.context=null;this.musicTimer=0;this.note=0;}
-  unlock(){if(!this.context){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;this.context=new C();this.master=this.context.createGain();this.master.connect(this.context.destination);}if(this.context.state==='suspended')this.context.resume();this.master.gain.value=this.settings.volume*.24;}
+  unlock(){
+    if(this.settings.volume<=0){if(this.master)this.master.gain.value=0;return;}
+    if(!this.context){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{const context=new C(),master=context.createGain();master.connect(context.destination);this.context=context;this.master=master;}catch{return;}}
+    if(this.context.state==='suspended')try{this.context.resume()?.catch(()=>{});}catch{}
+    this.master.gain.value=this.settings.volume*.24;
+  }
   tone(freq,duration=.15,type='sine',gain=.15,delay=0){if(!this.context||this.settings.volume<=0)return;const t=this.context.currentTime+delay,o=this.context.createOscillator(),g=this.context.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(gain,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.master);o.start(t);o.stop(t+duration+.02);}
   play(name){if(!this.context)return;this.master.gain.value=this.settings.volume*.24;
     if(name==='select'){this.tone(350,.08,'sine',.1);this.tone(525,.1,'sine',.06,.04);}

@@ -20,7 +20,7 @@ test('moonlight stays readable, retains lightning and restores daylight resource
 
 test('tree detail does not flicker under small camera changes and resets on a quality change',()=>{
   let state=treeDetail(35,'high');assert.ok(state.near);
-  for(const height of [33,34,32,34,31]){state=treeDetail(height,'high',state);assert.ok(state.near);}
-  state=treeDetail(25,'high',state);assert.equal(state.near,false);assert.equal(treeDetail(31,'high',state).near,false);assert.equal(treeDetail(35,'high',state).near,true);
-  assert.equal(treeDetail(50,'low',state).near,false);assert.equal(treeDetail(71,'medium').near,true);
+  for(const height of [33,34,32,31,28]){state=treeDetail(height,'high',state);assert.ok(state.near);}
+  state=treeDetail(23,'high',state);assert.equal(state.near,false);assert.equal(treeDetail(29,'high',state).near,false);assert.equal(treeDetail(31,'high',state).near,true);
+  assert.equal(treeDetail(50,'low',state).near,false);assert.equal(treeDetail(57,'medium').near,true);assert.equal(treeDetail(101,'low').near,true);
 });

@@ -53,6 +53,10 @@ try{
     await page.locator('[data-build=house]').tap();assert.ok(await page.locator('#build-panel').isHidden());
     await page.evaluate(()=>frontier.action('cancel-build'));
     report.interactions.push('Construction closes extra selection information for placement');
+    const mistaken=await page.evaluate(()=>{const s=frontier.sim,tc=s.owned(0,'building','towncenter')[0],wall=s.addBuilding('wall',0,tc.x-12,tc.z+8,false);frontier.select([wall.id]);return {id:wall.id,stone:s.players[0].resources.stone,refund:Math.floor(s.cost({stone:22},0,'building').stone*.7)};});
+    await page.locator('.selection-details').tap();await page.locator(`#selection-panel [data-demolish="${mistaken.id}"]`).tap();
+    const removed=await page.evaluate(id=>({gone:!frontier.sim.get(id),stone:frontier.sim.players[0].resources.stone}),mistaken.id);assert.equal(removed.gone,true);assert.ok(removed.stone>=mistaken.stone+mistaken.refund);
+    report.interactions.push('Phone building Options exposes cancellation and its refund');
     await page.evaluate(()=>{const unit=frontier.sim.addUnit('swordsman',0,0,20);frontier.select([unit.id]);});
     await page.locator('.selection-details').tap();await page.locator('#selection-panel [data-action=patrol]').tap();
     assert.equal(await page.locator('.selection-details').getAttribute('aria-expanded'),'false');
@@ -66,6 +70,10 @@ try{
     await page.evaluate(()=>frontier.select([]));
     assert.ok(await page.evaluate(()=>document.elementFromPoint(innerWidth/2,innerHeight-70)===frontier.view.renderer.domElement),'the empty dock passes touches to the battlefield');
     report.interactions.push('Camera options, production and battlefield touch access');
+    await page.getByRole('button',{name:'Pause',exact:true}).tap();await page.getByRole('button',{name:'Controls & strategy',exact:true}).tap();
+    const touchGuide=await page.locator('#modal-root .help-grid>div').first().textContent();assert.match(touchGuide,/Phone & tablet/);assert.match(touchGuide,/Deselect/);assert.match(touchGuide,/Done building/);
+    await page.screenshot({path:'artifacts/phone-controls-guide.png'});await page.locator('#modal-root [data-action=close]').tap();
+    report.interactions.push('Pause opens touch-first controls with selection and placement exits');
     for(const viewport of [{width:320,height:568},{width:390,height:844}]){
       await page.setViewportSize(viewport);await page.evaluate(()=>frontier.action('dismiss-rotate'));await select('towncenter');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -79,9 +87,13 @@ try{
     }
     report.interactions.push('Portrait fallback fits 320px and 390px widths');
     await page.setViewportSize({width:568,height:320});await page.locator('[data-action=command-options]').tap();await page.locator('[data-action=camera-options]').tap();
+    await select('villager');await page.evaluate(()=>frontier.action('build'));await page.locator('[data-build=house]').tap();
+    assert.ok(await page.locator('#placement-controls').isVisible());
     await page.evaluate(()=>frontier.start({mode:'sandbox',seed:512}));
+    assert.ok(await page.locator('#placement-controls').isHidden());assert.equal(await page.locator('#world').evaluate(node=>node.classList.contains('placing')),false);
     assert.equal(await page.locator('[data-action=command-options]').getAttribute('aria-expanded'),'false');assert.equal(await page.locator('[data-action=camera-options]').getAttribute('aria-expanded'),'false');
-    const desktop=await browser.newPage({viewport:{width:1366,height:768}});
+    await page.close();
+    const desktop=await browser.newPage({viewport:{width:1366,height:768}});desktop.setDefaultNavigationTimeout(90000);
     desktop.on('pageerror',error=>report.errors.push(error.message));desktop.on('console',message=>{if(message.type()==='error')report.errors.push(message.text());});
     await desktop.addInitScript(()=>localStorage.setItem('crowns-settings',JSON.stringify({quality:'low',autoQuality:false,music:false,weather:'clear',volume:0})));
     await desktop.goto(process.env.QA_URL||'http://localhost:4174/',{waitUntil:'domcontentloaded'});await desktop.waitForFunction(()=>window.frontier?.view);

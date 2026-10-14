@@ -4,6 +4,10 @@ An original 3D browser RTS built with Three.js. Version 2.6.1 integrates 126 ori
 
 In **Settings → Battlefield lighting**, choose **Daylight**, **Moonlit night**, or **Day & night cycle**. Night has cooler ambient light and warm building windows, and works with rain and storms. The cycle takes 18 minutes of game time; pausing single-player also pauses it. The choice is saved on the device. Nearby trees retain richer models; distant trees use lighter versions, with a hold range to reduce repeated detail swaps while panning.
 
+Graphics presets retain their manual choice. **Performance** uses lighter models, photographed color surfaces and soft contact shadows. **Balanced** now uses the detailed buildings/resources with lighter armies and forests, normal/roughness surfaces and full-resolution shadows refreshed at 20 Hz. **High** retains the detailed full roster, stronger surface filtering and 30 Hz shadows. Camera and structural changes refresh shadows immediately. Automatic can select these presets and adjust resolution under pressure; manual choices stay fixed. Actual frame rate still depends on the device and battle load.
+
+On phones, tap **Deselect** to clear selection while units continue their orders. Tap **Done building** to leave placement; successful touch wall placement exits automatically. Wall drags keep fixed spacing and connected stone joins; destroyed sections leave a breach. Builders finish their line, then continue other reachable unfinished walls you own, including individual sections and separate lines. Stop or a new command interrupts work; queued commands take priority. To remove a mistaken wall, select it and choose **Cancel construction** or **Demolish** (under the selection's **Options** on phones).
+
 ## Play
 
 For a free online address with one service hosting the game and multiplayer, use the included Render deployment file. See [the short deployment guide](DEPLOYMENT.md). Netlify static hosting is also configured; it needs a separate running server for real-person multiplayer.

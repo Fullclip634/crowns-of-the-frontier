@@ -1,0 +1,350 @@
+{
+  "checks": [
+    {
+      "quality": "low",
+      "appliedQuality": "low",
+      "automatic": false,
+      "scale": 1,
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 3928668
+      },
+      "artCache": {
+        "catalogues": [
+          "low"
+        ],
+        "bytes": 3928668,
+        "evicted": 0
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 7,
+        "anisotropy": 4
+      },
+      "buildingTriangles": 5704,
+      "buildingSolidTriangles": 5704,
+      "finite": true,
+      "memory": {
+        "geometries": 107,
+        "textures": 18
+      },
+      "saved": {
+        "quality": "low",
+        "frameRate": "auto",
+        "cameraPreset": "balanced",
+        "edgeScroll": true,
+        "edgeScrollSpeed": 1,
+        "volume": 0,
+        "music": false,
+        "lighting": "day",
+        "weather": "clear",
+        "weatherSounds": true,
+        "lightning": true,
+        "fog": true,
+        "autoQuality": false,
+        "bindings": {
+          "panUp": "w",
+          "panDown": "s",
+          "panLeft": "a",
+          "panRight": "d",
+          "rotateLeft": "q",
+          "rotateRight": "e",
+          "production": "p",
+          "inspect": "i",
+          "camera-view": "v",
+          "home": "h",
+          "army": "m",
+          "build": "b",
+          "attackmove": "f",
+          "patrol": "r",
+          "guard": "g",
+          "stop": "x",
+          "idle": ".",
+          "focus": "space",
+          "help": "?"
+        },
+        "highContrast": false,
+        "reducedMotion": false
+      },
+      "at": 55345.300000000745,
+      "clock": 2.2821999999999965,
+      "frames": 40,
+      "shadowUpdates": 0,
+      "documentHidden": false,
+      "naturalFrames": {
+        "frames": 35,
+        "elapsed": 1572.699999999255,
+        "renderClock": 1.333299999999996
+      },
+      "shadows": {
+        "enabled": false,
+        "hasMap": false,
+        "updates": 0
+      },
+      "phone": {
+        "coarsePointer": true,
+        "overflow": false,
+        "deselect": {
+          "width": 44,
+          "height": 44
+        }
+      }
+    },
+    {
+      "quality": "medium",
+      "appliedQuality": "medium",
+      "automatic": false,
+      "scale": 1,
+      "art": {
+        "source": "Blender",
+        "detail": "medium",
+        "models": 126,
+        "bytes": 14742520
+      },
+      "artCache": {
+        "catalogues": [
+          "medium"
+        ],
+        "bytes": 14742520,
+        "evicted": 1
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "anisotropy": 8
+      },
+      "buildingTriangles": 19238,
+      "buildingSolidTriangles": 19238,
+      "finite": true,
+      "memory": {
+        "geometries": 110,
+        "textures": 29
+      },
+      "saved": {
+        "quality": "medium",
+        "frameRate": "auto",
+        "cameraPreset": "balanced",
+        "edgeScroll": true,
+        "edgeScrollSpeed": 1,
+        "volume": 0,
+        "music": false,
+        "lighting": "day",
+        "weather": "clear",
+        "weatherSounds": true,
+        "lightning": true,
+        "fog": true,
+        "autoQuality": false,
+        "bindings": {
+          "panUp": "w",
+          "panDown": "s",
+          "panLeft": "a",
+          "panRight": "d",
+          "rotateLeft": "q",
+          "rotateRight": "e",
+          "production": "p",
+          "inspect": "i",
+          "camera-view": "v",
+          "home": "h",
+          "army": "m",
+          "build": "b",
+          "attackmove": "f",
+          "patrol": "r",
+          "guard": "g",
+          "stop": "x",
+          "idle": ".",
+          "focus": "space",
+          "help": "?"
+        },
+        "highContrast": false,
+        "reducedMotion": false
+      },
+      "at": 73986,
+      "clock": 7.012599999999997,
+      "frames": 147,
+      "shadowUpdates": 2,
+      "documentHidden": false,
+      "naturalFrames": {
+        "frames": 48,
+        "elapsed": 2525.2000000029802,
+        "renderClock": 2.250100000000007
+      },
+      "shadows": {
+        "enabled": true,
+        "hasMap": true,
+        "updates": 27,
+        "diagnostics": {
+          "updates": 29,
+          "skipped": 22,
+          "refreshRate": 20,
+          "mapSize": 1024
+        }
+      },
+      "phone": {
+        "coarsePointer": true,
+        "overflow": false,
+        "deselect": {
+          "width": 44,
+          "height": 44
+        }
+      }
+    },
+    {
+      "quality": "high",
+      "appliedQuality": "high",
+      "automatic": false,
+      "scale": 1,
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 16237168
+      },
+      "artCache": {
+        "catalogues": [
+          "high"
+        ],
+        "bytes": 16237168,
+        "evicted": 1
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 21,
+        "anisotropy": 16
+      },
+      "buildingTriangles": 20954,
+      "buildingSolidTriangles": 19238,
+      "finite": true,
+      "memory": {
+        "geometries": 111,
+        "textures": 33
+      },
+      "saved": {
+        "quality": "high",
+        "frameRate": "auto",
+        "cameraPreset": "balanced",
+        "edgeScroll": true,
+        "edgeScrollSpeed": 1,
+        "volume": 0,
+        "music": false,
+        "lighting": "day",
+        "weather": "clear",
+        "weatherSounds": true,
+        "lightning": true,
+        "fog": true,
+        "autoQuality": false,
+        "bindings": {
+          "panUp": "w",
+          "panDown": "s",
+          "panLeft": "a",
+          "panRight": "d",
+          "rotateLeft": "q",
+          "rotateRight": "e",
+          "production": "p",
+          "inspect": "i",
+          "camera-view": "v",
+          "home": "h",
+          "army": "m",
+          "build": "b",
+          "attackmove": "f",
+          "patrol": "r",
+          "guard": "g",
+          "stop": "x",
+          "idle": ".",
+          "focus": "space",
+          "help": "?"
+        },
+        "highContrast": false,
+        "reducedMotion": false
+      },
+      "at": 103590.10000000149,
+      "clock": 13.211200000000007,
+      "frames": 255,
+      "shadowUpdates": 64,
+      "documentHidden": false,
+      "naturalFrames": {
+        "frames": 6,
+        "elapsed": 2048.800000000745,
+        "renderClock": 1.0664999999999818
+      },
+      "shadows": {
+        "enabled": true,
+        "hasMap": true,
+        "updates": 6,
+        "diagnostics": {
+          "updates": 70,
+          "skipped": 47,
+          "refreshRate": 30,
+          "mapSize": 2048
+        }
+      },
+      "phone": {
+        "coarsePointer": true,
+        "overflow": false,
+        "deselect": {
+          "width": 44,
+          "height": 44
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "passed": false,
+  "physicalPhone": false,
+  "touchCapableViewports": true,
+  "stageTimes": [
+    {
+      "stage": "browser launch",
+      "ms": 0
+    },
+    {
+      "stage": "browser launch",
+      "ms": 7747
+    },
+    {
+      "stage": "production navigation",
+      "ms": 35773
+    },
+    {
+      "stage": "sandbox setup",
+      "ms": 26549
+    },
+    {
+      "stage": "low settings",
+      "ms": 6285
+    },
+    {
+      "stage": "low renderer",
+      "ms": 4148
+    },
+    {
+      "stage": "medium settings",
+      "ms": 14368
+    },
+    {
+      "stage": "medium renderer",
+      "ms": 5733
+    },
+    {
+      "stage": "high settings",
+      "ms": 14742
+    },
+    {
+      "stage": "high renderer",
+      "ms": 53289
+    },
+    {
+      "stage": "manual preference reload",
+      "ms": 93817
+    }
+  ],
+  "failure": "page.reload: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for navigation until \"domcontentloaded\"\u001b[22m\n",
+  "stage": "manual preference reload",
+  "scope": [
+    "low",
+    "medium",
+    "high"
+  ]
+}

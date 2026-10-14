@@ -36,4 +36,5 @@ for(const [name,ratio]of [['near','0.82'],['low','0.55']]){
 const source=JSON.parse(fs.readFileSync(path.join(plan.sourceDirectory,'catalogue.json'),'utf8'));
 const sizes={};for(const name of ['near','low'])sizes[name]=(await stat(path.join(plan.outputDirectory,`frontier-${name}.glb`))).size;
 await writeFile(path.join(plan.outputDirectory,'catalogue.json'),`${JSON.stringify({models:source,sizes,stage:plan.stage,completeCatalogue:!plan.resources,source:'Original Crowns of the Frontier assets authored/refined in Blender.'},null,2)}\n`);
+if(!plan.resources)await run(process.execPath,['scripts/blender/build-balanced.mjs','--directory',plan.outputDirectory]);
 console.log(JSON.stringify({models:source.length,bytes:sizes,stage:plan.stage,completeCatalogue:!plan.resources,output:plan.outputDirectory}));

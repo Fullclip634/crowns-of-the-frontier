@@ -69,6 +69,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     switch(message.method){
       case 'smartCommand':{const target=s.get(args[1]);if(target&&target.owner!==owner&&!s.canSee(owner,target))return;s.smartCommand(ids(args[0]),target,args[2],args[3],!!args[4],!!args[5],owner);break;}
       case 'build':if(!s.canSee(owner,{x:args[1],z:args[2],r:0})){send(player.ws,{type:'error',message:'Construct buildings within your visible territory.'});break;}s.build(args[0],args[1],args[2],ids(args[3]),owner,!!args[5]);break;
+      case 'buildWallLine':s.buildWallLine({x:args[0],z:args[1]},{x:args[2],z:args[3]},ids(args[4]),owner,true);break;
       case 'train':if(owns(args[0]))s.train(args[0],args[1]);break;
       case 'research':if(owns(args[0]))s.research(args[0],args[1]);break;
       case 'stop':s.stop(ids(args[0]));break;

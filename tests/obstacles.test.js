@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Simulation,distance} from '../src/simulation.js';
 import {clearSegment} from '../src/navigation.js';
 import {battlePreset} from '../src/custom-battle.js';
+import {SpatialBuckets} from '../src/spatial-buckets.js';
 const advance=(sim,seconds)=>{for(let i=0;i<seconds*10;i++)sim.tick(.1);};
 
 test('trees and mineral deposits block construction and movement until harvested',()=>{
@@ -40,9 +41,28 @@ test('a new obstruction invalidates an existing route and separated shores remai
   const coast=new Simulation({mode:'sandbox',map:'coast'}),infantry=coast.addUnit('spearman',0,-25,30);assert.deepEqual(coast.pathTo(infantry,{x:25,z:30}),[]);assert.equal(infantry.pathStatus,'blocked');
 });
 
+test('a congested stale waypoint is replanned without dropping the destination',()=>{
+  const sim=new Simulation({mode:'sandbox'}),unit=sim.addUnit('archer',0,0,20),idle=Array.from({length:4},()=>sim.addUnit('spearman',0,-.65,20)),destination={type:'move',x:20,z:20};
+  unit.order=destination;unit.path=[{x:-.65,z:20},{x:20,z:20}];unit.pathStatus='ready';unit.pathRevision=sim.revision;unit.pathTargetX=20;unit.pathTargetZ=20;unit.repath=1.5;
+  const original=sim.pathTo.bind(sim);let searches=0;sim.pathTo=(...args)=>{searches++;return original(...args);};const buckets=new SpatialBuckets(4);sim.unitBuckets=buckets.columns;
+  for(let i=0;i<80&&unit.order;i++){buckets.reset();for(const e of [unit,...idle])buckets.add(e);sim.move(unit,destination,.1,1.4);sim.time+=.1;}
+  assert.ok(searches>0,'stalled movement must actually request a fresh path');assert.ok(unit.x>10,'the unit must move past the crowd toward its destination');assert.equal(unit.order,destination);assert.equal(sim.events.some(event=>event.type==='order-blocked'&&event.entity.id===unit.id),false);
+});
+
 test('a fishing boat delivers the final catch when no fish shoals remain',()=>{
   const sim=new Simulation({mode:'sandbox',map:'coast'});for(const e of sim.entities)if(e.kind==='resource')e.hp=0;sim.stop(sim.owned(0,'unit').map(e=>e.id));const boat=sim.owned(0,'unit','fishingboat')[0],fish=sim.addResource('food',boat.x,boat.z,6);fish.water=true;fish.r=2.1;
   const before=sim.players[0].resources.food;sim.command([boat.id],{type:'gather',target:fish.id});advance(sim,20);assert.equal(fish.hp,0);assert.ok(sim.players[0].resources.food>=before+5.99);assert.equal(boat.carry,0);
+});
+
+test('depleted land gathering chooses a reachable replacement and respects queued orders',()=>{
+  for(const ai of [false,true]){
+    const sim=new Simulation(ai?{mode:'custom',map:'coast',slots:battlePreset('2v2'),seed:512}:{mode:'sandbox',map:'coast'}),owner=ai?1:0;
+    for(const e of sim.entities)if(e.kind==='resource')e.hp=0;sim.revision++;
+    const worker=sim.addUnit('villager',owner,-25,30),old=sim.addResource('gold',-26,30,0),across=sim.addResource('gold',22,30,300),local=sim.addResource('gold',-68,-35,300);old.hp=0;sim.addResource('wood',-29,30,300);sim.revision++;
+    worker.gatherType='gold';worker.order={type:'gather',target:old.id};sim.tickUnit(worker,.1);
+    assert.equal(worker.order?.type,'gather');assert.notEqual(worker.order.target,across.id);assert.ok(sim.get(worker.order.target).x<0);assert.equal(worker.pathStatus,'ready');if(!ai)assert.equal(worker.order.target,local.id,'a human worker retains the chosen resource type');
+    worker.order={type:'gather',target:old.id};const queued={type:'move',x:-30,z:40};worker.orders=[queued];sim.tickUnit(worker,.1);assert.equal(worker.order,queued);assert.equal(worker.orders.length,0);
+  }
 });
 
 test('AI intelligence can locate publicly revealed final buildings without revealing hidden troops',()=>{

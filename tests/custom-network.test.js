@@ -56,3 +56,25 @@ test('custom rooms mix humans and AI, preserve assigned slots, and treat leaving
   await until(()=>room.sim.aiStates[1]?.decision>=1);assert.equal(room.sim.aiStates[4],undefined);
   guest.send({type:'leave'});await until(()=>room.sim.players[4].defeated);assert.equal(room.sim.ended,null);const before=room.sim.time;await until(()=>room.sim.time>before);
 });
+
+test('multiplayer wall drags finish the paid connected line and reject foreign workers and hidden terrain',async t=>{
+  const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[1].controller='human';const host=await connect();host.send({type:'create',name:'Wall builder',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,startAge:1,slots}});const session=await host.inbox.next('session');
+  const guest=await connect();guest.send({type:'join',name:'Ally',slot:2,code:session.code});await guest.inbox.next('session');guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await guest.inbox.next('begin');
+  const sim=service.rooms.get(session.code).sim,tick=sim.tick;sim.tick=()=>{};
+  try{const tc=sim.owned(0,'building','towncenter')[0],worker=sim.owned(0,'unit','villager')[0],foreign=sim.owned(1,'unit','villager')[0],from={x:tc.x+12,z:tc.z+14},to={x:from.x+5.7,z:from.z};worker.x=from.x;worker.z=from.z-4;sim.players[0].resources.stone=1000;
+    for(const e of sim.entities)if(e.kind==='resource'&&Math.hypot(e.x-from.x,e.z-from.z)<20)e.hp=0;sim.revision++;
+    host.send({type:'action',method:'buildWallLine',args:[from.x,from.z,to.x,to.z,[foreign.id]]});await pause(100);assert.equal(sim.owned(0,'building','wall').length,0);assert.equal(sim.players[0].resources.stone,1000);
+    host.send({type:'action',method:'buildWallLine',args:[from.x,from.z,to.x,to.z,[worker.id]]});await until(()=>sim.owned(0,'building','wall').length===3);const walls=sim.owned(0,'building','wall');assert.equal(sim.players[0].resources.stone,934);assert.deepEqual(walls[1].wallLinks.sort((a,b)=>a-b),[walls[0].id,walls[2].id]);
+    const hidden={x:sim.halfWorld-12,z:sim.halfWorld-12};host.send({type:'action',method:'buildWallLine',args:[hidden.x,hidden.z,hidden.x-6,hidden.z,[worker.id]]});await pause(100);assert.equal(sim.owned(0,'building','wall').length,3);assert.equal(sim.players[0].resources.stone,934);
+    assert.equal(worker.order.target,walls[0].id);assert.equal(worker.orders.length,2,'the server preserves every following wall assignment');
+    host.send({type:'action',method:'build',args:['wall',from.x+10,from.z,[worker.id]]});await until(()=>sim.owned(0,'building','wall').length===4);
+    host.send({type:'action',method:'buildWallLine',args:[from.x,from.z+6,to.x,from.z+6,[worker.id]]});await until(()=>sim.owned(0,'building','wall').length===7);
+    host.send({type:'action',method:'build',args:['wall',from.x+10,from.z+6,[worker.id]]});await until(()=>sim.owned(0,'building','wall').length===8);
+    const canceled=sim.get(worker.order.target),refund=sim.players[0].resources.stone;
+    host.send({type:'action',method:'demolish',args:[canceled.id]});await until(()=>canceled.hp===0);assert.equal(sim.players[0].resources.stone,refund+Math.floor(22*.7));
+    walls.splice(0,walls.length,...sim.owned(0,'building','wall'));
+    for(let step=0;step<2000&&walls.some(wall=>wall.progress<1);step++)tick.call(sim,.1);
+    assert.ok(walls.every(wall=>wall.progress===1),'all planted lines and individual sections finish after canceling the current wall, without another click');
+    tick.call(sim,.1);tick.call(sim,.1);assert.notEqual(worker.order?.type,'build');assert.equal(worker.orders.length,0);
+  }finally{sim.tick=tick;}
+});

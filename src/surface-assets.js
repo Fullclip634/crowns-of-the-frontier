@@ -21,22 +21,25 @@ async function texture(role,kind){
 export async function loadSurfaceAssets(quality){
   const kinds=quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color'];
   await Promise.all(Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind))));
+  if(quality==='medium')await Promise.all(['stone','wood','plaster'].map(role=>texture(role,'arm')));
 }
 export function surfaceAssetState(){return {source:'Poly Haven CC0',loaded:[...cache.keys()].length};}
 
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
+  const requested=quality==='high'?16:quality==='medium'?8:4,anisotropy=Math.min(requested,view.renderer?.capabilities?.getMaxAnisotropy?.()||4);
+  for(const map of new Set([...retainedSurfaceTextures(),...(view.roofMaterials||[]).flatMap(m=>[m.map,m.bumpMap]).filter(Boolean)]))if(map.anisotropy!==anisotropy){map.anisotropy=anisotropy;map.needsUpdate=true;}
   const bind=(material,role,tint)=>{
     const set=surfaces[role];if(!set?.color||!material)return;
     material.map=set.color;material.bumpMap=null;material.color.setHex(tint);
     material.normalMap=quality==='low'?null:set.normal||null;material.normalScale.setScalar(role==='stone'?.45:role==='boulder'?.55:.3);
-    material.roughnessMap=quality==='high'?set.arm||null:null;material.roughness=.95;material.needsUpdate=true;
+    material.roughnessMap=quality==='high'||quality==='medium'&&['stone','wood','plaster'].includes(role)?set.arm||null:null;material.roughness=.95;material.needsUpdate=true;
   };
   bind(m.stone,'stone',0xe5e0d4);bind(m.brick,'stone',0xb8947b);
   bind(m.plaster,'plaster',0xe5dbbf);
   bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
   bind(m.rock,'boulder',0xd8ded8);bind(m.oreRock,'boulder',0x9d9c88);
-  view.surfaceDiagnostics=surfaceAssetState();view.surfaceQuality=quality;
+  view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 
 export function applyGroundSurface(material,land,quality){

@@ -16,6 +16,6 @@ export class LanClient {
   }
   send(message){if(this.socket?.readyState===WebSocket.OPEN)this.socket.send(JSON.stringify(message));}
   action(method,args){const normalized=args.map(arg=>arg?.id!==undefined?arg.id:arg);this.send({type:'action',method,args:normalized});return true;}
-  bind(sim){for(const method of ['build','train','research','cancelQueue','trade','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign'])sim[method]=(...args)=>{if(['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return this.action(method,args);};}
+  bind(sim){for(const method of ['build','buildWallLine','train','research','cancelQueue','trade','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign'])sim[method]=(...args)=>{if(method==='buildWallLine')return this.action(method,[args[0]?.x,args[0]?.z,args[1]?.x,args[1]?.z,args[2]]);if(['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return this.action(method,args);};}
   leave(){this.leaving=true;this.active=false;clearTimeout(this.reconnectTimer);this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;try{sessionStorage.removeItem('crowns-lan');}catch{}}
 }

@@ -1,4 +1,7 @@
 .selection-details,.command-options,.phone-command,.map-size-toggle{display:none}
+#deselect-control span{display:block;font-size:10px;line-height:1.2}
+#placement-controls{position:absolute;left:16px;top:66px;z-index:24}
+#placement-controls button{min-width:104px;min-height:44px;padding:8px 12px;color:var(--gold);border:1px solid var(--line);background:var(--panel);font-size:12px;box-shadow:0 3px 12px #0004}
 
 /* Keep the battlefield open on short touch screens. Extra information opens
    only when requested; the visible command targets remain at least 44px. */
@@ -70,6 +73,9 @@
 
   #hud .camera-controls{top:52px;right:8px;display:grid;grid-template-columns:repeat(4,44px);gap:2px;width:192px;max-width:192px;padding:4px;flex-wrap:nowrap;z-index:13}
   #hud .camera-controls button{width:44px!important;min-width:44px;height:44px;min-height:44px;padding:0!important;font-size:17px}
+  #hud #deselect-control span{font-size:9px}
+  #hud .camera-controls.has-selection:not(.options-open) [data-action=camera-panels]{display:none}
+  #hud #placement-controls{left:8px;top:52px}
   #hud .camera-controls [data-action=camera-options]{display:block}
   #hud .camera-controls:not(.options-open) [data-action=camera-left],
   #hud .camera-controls:not(.options-open) [data-action=camera-right],

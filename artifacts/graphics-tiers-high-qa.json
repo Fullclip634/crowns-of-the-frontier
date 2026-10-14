@@ -1,0 +1,114 @@
+{
+  "checks": [
+    {
+      "quality": "high",
+      "automatic": false,
+      "scale": 1,
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 16237168
+      },
+      "artCache": {
+        "catalogues": [
+          "high"
+        ],
+        "bytes": 16237168,
+        "evicted": 0
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 21,
+        "anisotropy": 16
+      },
+      "buildingTriangles": 20954,
+      "buildingSolidTriangles": 19238,
+      "finite": true,
+      "memory": {
+        "geometries": 110,
+        "textures": 33
+      },
+      "saved": {
+        "quality": "high",
+        "frameRate": "auto",
+        "cameraPreset": "balanced",
+        "edgeScroll": true,
+        "edgeScrollSpeed": 1,
+        "volume": 0,
+        "music": false,
+        "lighting": "day",
+        "weather": "clear",
+        "weatherSounds": true,
+        "lightning": true,
+        "fog": true,
+        "autoQuality": false,
+        "bindings": {
+          "panUp": "w",
+          "panDown": "s",
+          "panLeft": "a",
+          "panRight": "d",
+          "rotateLeft": "q",
+          "rotateRight": "e",
+          "production": "p",
+          "inspect": "i",
+          "camera-view": "v",
+          "home": "h",
+          "army": "m",
+          "build": "b",
+          "attackmove": "f",
+          "patrol": "r",
+          "guard": "g",
+          "stop": "x",
+          "idle": ".",
+          "focus": "space",
+          "help": "?"
+        },
+        "highContrast": false,
+        "reducedMotion": false
+      },
+      "at": 482016.80000000075,
+      "clock": 28.042800000000028,
+      "frames": 259,
+      "shadowUpdates": 226,
+      "documentHidden": false,
+      "naturalFrames": {
+        "frames": 65,
+        "elapsed": 6327.5999999996275,
+        "renderClock": 2.499699999999958
+      },
+      "shadows": {
+        "enabled": true,
+        "hasMap": true,
+        "updates": 40,
+        "diagnostics": {
+          "updates": 266,
+          "skipped": 43,
+          "refreshRate": 30,
+          "mapSize": 2048
+        }
+      },
+      "phone": {
+        "coarsePointer": true,
+        "overflow": false,
+        "deselect": {
+          "width": 44,
+          "height": 44
+        }
+      }
+    }
+  ],
+  "errors": [
+    "The AudioContext encountered an error from the audio device or the WebAudio renderer."
+  ],
+  "warnings": [],
+  "passed": false,
+  "physicalPhone": false,
+  "touchCapableViewports": true,
+  "manualReload": true,
+  "automaticChoice": true,
+  "failure": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   'The AudioContext encountered an error from the audio device or the WebAudio renderer.'\n+ ]\n- []\n",
+  "scope": [
+    "high"
+  ]
+}

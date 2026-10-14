@@ -4,7 +4,8 @@ $taskProject=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $taskVersion=(Get-Content -LiteralPath (Join-Path $taskProject 'package.json') -Raw | ConvertFrom-Json).version
 if ($taskVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid package version.' }
 $taskArtifacts=Join-Path $taskProject 'artifacts'
-$taskStatic=Join-Path $taskArtifacts 'release-static'
+$taskStatic=[IO.Path]::GetFullPath((Join-Path $taskArtifacts 'release-static'))
+if (-not $taskStatic.StartsWith($taskProject+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Static build target is outside the workspace.' }
 New-Item -ItemType Directory -Path $taskArtifacts -Force | Out-Null
 
 if (-not $SkipStaticBuild) {

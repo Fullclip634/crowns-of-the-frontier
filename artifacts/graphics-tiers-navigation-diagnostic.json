@@ -1,0 +1,15 @@
+{
+  "checks": [],
+  "errors": [],
+  "warnings": [],
+  "passed": false,
+  "physicalPhone": false,
+  "touchCapableViewports": true,
+  "failure": "page.goto: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:4173/\", waiting until \"domcontentloaded\"\u001b[22m\n",
+  "stage": "production navigation",
+  "scope": [
+    "low",
+    "medium",
+    "high"
+  ]
+}

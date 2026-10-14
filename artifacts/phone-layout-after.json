@@ -209,7 +209,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -348,7 +348,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -627,7 +627,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -766,7 +766,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -1045,7 +1045,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -1184,7 +1184,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -1463,7 +1463,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -1602,7 +1602,7 @@
           "height": 44
         },
         {
-          "action": "camera-panels",
+          "action": "deselect",
           "width": 44,
           "height": 44
         },
@@ -1679,8 +1679,10 @@
     "Train a worker and research from expanded options",
     "Expand, tap and shrink the square minimap",
     "Construction closes extra selection information for placement",
+    "Phone building Options exposes cancellation and its refund",
     "Tactical orders and Stop remain reachable",
     "Camera options, production and battlefield touch access",
+    "Pause opens touch-first controls with selection and placement exits",
     "Portrait fallback fits 320px and 390px widths",
     "New matches reset compact panels; desktop retains the full controls"
   ],
@@ -1715,8 +1717,8 @@
             "visible": true
           },
           {
-            "text": "300",
-            "width": 18.265625,
+            "text": "315",
+            "width": 14.046875,
             "visible": true
           },
           {
@@ -1755,8 +1757,8 @@
             "visible": true
           },
           {
-            "text": "300",
-            "width": 21.0625,
+            "text": "315",
+            "width": 16.21875,
             "visible": true
           },
           {

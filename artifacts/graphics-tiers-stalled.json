@@ -1,0 +1,6 @@
+{
+  "passed": false,
+  "acceptedMeasurements": false,
+  "lastProgress": "Checking graphics low",
+  "reason": "The first production QA run stalled before producing a preset result and was stopped with its own process tree. The test included a synchronous sixty-render loop. The replacement observes normal animation frames and logs each stage; the stall does not establish its cause or a gameplay FPS result."
+}

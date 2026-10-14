@@ -1,0 +1,113 @@
+{
+  "checks": [
+    {
+      "quality": "low",
+      "models": 126,
+      "links": 48,
+      "samples": 240,
+      "failed": [],
+      "diagnostics": {
+        "connections": 48,
+        "visible": 48,
+        "batches": 2,
+        "stoneInstances": 136
+      },
+      "finite": true
+    },
+    {
+      "quality": "high",
+      "models": 126,
+      "links": 48,
+      "samples": 240,
+      "failed": [],
+      "diagnostics": {
+        "connections": 48,
+        "visible": 48,
+        "batches": 2,
+        "stoneInstances": 136
+      },
+      "finite": true
+    },
+    {
+      "breach": {
+        "before": 48,
+        "after": 46,
+        "removed": 295,
+        "neighbors": [
+          294,
+          306
+        ],
+        "joinedNeighbors": false
+      }
+    },
+    {
+      "phone": false,
+      "paidPointerDrag": {
+        "count": 8,
+        "stone": 824,
+        "spacing": [
+          2.85,
+          2.85,
+          2.85,
+          2.85,
+          2.85,
+          2.85,
+          2.850000000000002
+        ],
+        "connected": true,
+        "overflow": false
+      }
+    },
+    {
+      "phone": true,
+      "quality": "low",
+      "models": 126,
+      "links": 48,
+      "samples": 240,
+      "failed": [],
+      "diagnostics": {
+        "connections": 48,
+        "visible": 48,
+        "batches": 2,
+        "stoneInstances": 136
+      },
+      "finite": true
+    },
+    {
+      "phone": true,
+      "paidPointerDrag": {
+        "count": 8,
+        "stone": 824,
+        "spacing": [
+          2.8499999999999996,
+          2.8500000000000005,
+          2.8499999999999988,
+          2.8500000000000014,
+          2.8499999999999996,
+          2.849999999999998,
+          2.8500000000000014
+        ],
+        "connected": true,
+        "overflow": false
+      }
+    },
+    {
+      "phoneControls": {
+        "deselectPreservesOrder": {
+          "selection": 0,
+          "order": "move"
+        },
+        "doneBuilding": true,
+        "friendlyTouchSelect": true,
+        "targets": [
+          {
+            "width": 44,
+            "height": 44
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

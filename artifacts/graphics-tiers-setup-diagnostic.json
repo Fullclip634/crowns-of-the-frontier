@@ -1,0 +1,15 @@
+{
+  "checks": [],
+  "errors": [],
+  "warnings": [],
+  "passed": false,
+  "physicalPhone": false,
+  "touchCapableViewports": true,
+  "failure": "page.evaluate: Target page, context or browser has been closed",
+  "scope": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "stage": "sandbox setup"
+}

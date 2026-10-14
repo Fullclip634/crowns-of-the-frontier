@@ -1,3 +1,19 @@
+# Graphics presets (version 2.6.1)
+
+- Wall builders now continue through all owned, reachable unfinished wall sites, including different lines and individual placements. Canceling their current wall lets them continue the remaining sites. Explicit Stop/new commands and queued player orders retain priority; foreign walls are excluded. Save/restore, shared builders, refunds and real multiplayer commands have coverage.
+- Graphics changes prepare new artwork before increasing GPU targets; superseded requests cannot overwrite a newer choice. Navigation releases the field/portrait renderers. Phone help explains deselection, placement, camera gestures and wall cancellation.
+- Balanced now has its own complete Blender catalogue: detailed buildings/resources, lighter troops/forests and preserved source vertex precision. Every visible source triangle, material region, silhouette and animated joint passes decoded comparison; packing removes invisible zero-area faces. Its 14.74 MB download remains below High's 16.24 MB.
+- Balanced and High include architectural roughness and ambient surface shading, with sharper hardware-capped texture filtering. All three presets retain near tree detail longer with the existing hold range.
+- Directional shadows align to light-space texels for steadier camera pans. Full-resolution maps refresh at 20 Hz in Balanced and 30 Hz in High; camera/structural changes refresh immediately. Performance retains soft contacts with directional shadows disabled. Manual graphics stay fixed; Automatic uses the updated presets.
+- Unused quality catalogues release their CPU references and GPU buffers after scene changes; active scene and portrait geometry remains pinned. Evicted presets reload safely when selected again. Muted startup avoids opening an audio device; rejected resumes are handled instead of interrupting play. 224 regression tests pass with one worker and the production build succeeds. These checks do not establish sustained frame rate on every device.
+
+# Connected walls and touch selection (version 2.6.1)
+
+- Wall drags retain 2.85-meter spacing, including long and diagonal runs. Persistent neighbor links join the original Blender wall bodies with shared solid masonry; turns keep their orientation, gates retain friendly passages and destroyed sections leave breaches after saving. Paid long runs continue beyond the bounded worker order queue; Stop cancels their work.
+- Phone controls expose Deselect without stopping orders, Done building, automatic exit after successful touch wall placement and a small friendly-unit touch allowance when the actual body ray misses. Starting a new match clears placement state. Compact controls retain 44-pixel targets.
+- Multiplayer wall lines validate owned builders, visible land and real resource costs on the server. Coastal movement retries discard obsolete paths; allied reinforcements stay on the threatened shore, replacement harvesting finds reachable resources and fleets receive distinct water formation slots.
+- 207 regression tests pass. Browser wall checks cover 240 joint samples in Low, High and landscape phone rendering, real paid mouse/touch drags and the new phone controls. Coastal long-run diagnostics still identify congestion and boarding failures; the overall quality goal remains active.
+
 # Troop rendering and coastal water (version 2.6.1)
 
 - Battlefield settings offer Daylight, Moonlit Night and a gradual 18-minute Day/Night Cycle. Moonlight, ambient light, atmospheric fog and warm 3D building windows follow the lighting mode while rain, storms and lightning continue working. The choice is saved and survives reload; visibility and AI rules are unchanged.

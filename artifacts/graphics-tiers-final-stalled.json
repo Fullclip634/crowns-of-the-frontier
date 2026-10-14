@@ -1,0 +1,16 @@
+﻿{
+    "passed":  false,
+    "stage":  "sandbox setup after Production game ready",
+    "stoppedAt":  "2026-10-14T09:13:50.6859821+08:00",
+    "reason":  "No progress for over one hour; page.evaluate had no timeout",
+    "ownedProcessIds":  [
+                            18092,
+                            17560,
+                            17900,
+                            8740,
+                            17476,
+                            11320,
+                            19520
+                        ],
+    "scope":  "Final all-preset browser verification, not a performance pass"
+}

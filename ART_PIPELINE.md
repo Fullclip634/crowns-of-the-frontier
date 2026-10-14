@@ -1,6 +1,8 @@
 # Blender art and runtime rendering
 
-The deployed game includes both GLB catalogues and texture files. Playing or deploying it requires no Blender installation and no external asset service.
+The deployed game includes three GLB catalogues and texture files. Playing or deploying it requires no Blender installation and no external asset service.
+
+Balanced uses the High buildings/resources and Low troops/forests. Run `npm run art:balanced` after promoting changes to the complete High/Low catalogues; full Blender builds also generate it in their output directory. The composer copies the selected compressed hierarchy, then packs referenced vertices without simplification or another quantization pass. Packing removes only zero-area faces. Integrity checks compare all 126 decoded models' visible triangles, material regions, silhouettes and animated joints, and verify source hashes. The current Balanced file is 14,742,520 bytes; Low/High remain 3,928,668 / 16,237,168 bytes.
 
 The catalogue contains 126 models: 66 civilization/age building variants, 18 troop/ship/caravan types plus four worker task variants, 24 forest variants and 14 resource models. The models were made for this original game. They are not Age of Empires or Warcraft assets.
 

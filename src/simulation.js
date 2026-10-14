@@ -5,6 +5,7 @@ import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
 import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle.js';
 import {SpatialBuckets} from './spatial-buckets.js';
+import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -96,7 +97,7 @@ export class Simulation {
   addResource(type,x,z,amount){const e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;return e;}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
   maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];return d.hp*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
-  addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type];const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);this.revision++;this.emit('spawn',{entity:e});return e;}
+  addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type];const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);connectWall(e,this.entities);this.revision++;this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const e={id:this.nextId++,kind:'unit',type,owner,x,z,r:UNITS[type].radius??(type==='ram'?1.35:type==='catapult'?1.1:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);this.emit('spawn',{entity:e});return e;}
   population(owner){return this.owned(owner,'unit').length;}
   capacity(owner){return Math.min(this.options.populationLimit||160,this.owned(owner,'building').filter(e=>e.progress>=1).reduce((n,e)=>n+(BUILDINGS[e.type].cap||0),0));}
@@ -114,6 +115,14 @@ export class Simulation {
     if(!this.buildValid(type,x,z,owner))return this.fail('Choose open, visible land for this building.',owner);
     if(!this.spend(this.cost(d.cost,owner,'building'),owner))return this.fail('Not enough resources.',owner);
     const e=this.addBuilding(type,owner,x,z);this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
+  }
+  buildWallLine(from,to,workerIds,owner=0,requireVisibility=false){
+    if(!from||!to||![from.x,from.z,to.x,to.z].every(Number.isFinite)||[from.x,from.z,to.x,to.z].some(n=>Math.abs(n)>this.halfWorld))return[];
+    const existing=this.owned(owner,'building','wall').filter(e=>distance(e,from)<1.8).sort((a,b)=>distance(a,from)-distance(b,from))[0],start=existing||from,built=[];
+    const points=wallLinePoints(start,to);
+    for(let i=existing?1:0;i<points.length;i++){const point=points[i];if(requireVisibility&&!this.canSee(owner,point)){this.fail('Construct walls within your visible territory.',owner);break;}
+      const wall=this.build('wall',point.x,point.z,workerIds,owner,built.length>0);if(!wall)break;wall.wallRun=existing?.wallRun||built[0]?.id||wall.id;wall.wallIndex=(existing?.wallIndex||0)+built.length+1;built.push(wall);
+    }return built;
   }
   train(buildingId,type){const b=this.get(buildingId),d=UNITS[type];if(!b||b.kind!=='building'||b.progress<1||!d||!d.at.includes(b.type))return false;
     const owner=b.owner,p=this.players[owner];if(p.age<d.age)return this.fail('This troop requires a later age.',owner);
@@ -141,7 +150,7 @@ export class Simulation {
   }
   trade(resource,buy,owner=0){if(!['food','wood','stone'].includes(resource))return false;if(!this.owned(owner,'building','market').some(b=>b.progress>=1))return this.fail('Build a market to trade resources.',owner);const p=this.players[owner];const cost=buy?{gold:130}:{[resource]:100};if(!this.spend(cost,owner))return this.fail('Not enough resources for this trade.',owner);p.resources[buy?resource:'gold']+=(buy?100:70)+(p.tech.caravanLedger?(buy?10:20):0);this.emit('sound',{name:'coin',owner});return true;}
   command(ids,order,append=false){const units=ids.map(id=>this.get(id)).filter(e=>e?.kind==='unit'),reserved=new Map();units.forEach((e,i)=>{
-      const o={...order};if((o.type==='move'||o.type==='attackmove')&&units.length>1){const formation=this.players[e.owner].formation,width=formation==='line'?Math.min(12,units.length):formation==='column'?2:Math.ceil(Math.sqrt(units.length)),rows=Math.ceil(units.length/width);o.x=clamp(o.x+(i%width-(width-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);o.z=clamp(o.z+(Math.floor(i/width)-(rows-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);}
+      const o={...order};if(o.type==='build'&&e.type==='villager'&&this.get(o.target)?.type==='wall')o.wallConstruction=true;if(!append)e.wallConstructionSkipped=[];if((o.type==='move'||o.type==='attackmove')&&units.length>1){const formation=this.players[e.owner].formation,width=formation==='line'?Math.min(12,units.length):formation==='column'?2:Math.ceil(Math.sqrt(units.length)),rows=Math.ceil(units.length/width);o.x=clamp(o.x+(i%width-(width-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);o.z=clamp(o.z+(Math.floor(i/width)-(rows-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);}
       if(['move','attackmove'].includes(o.type)){const surface=e.owner+':'+!!UNITS[e.type].naval;if(!reserved.has(surface))reserved.set(surface,[]);const slots=reserved.get(surface);Object.assign(o,formationSlot(this,e,o,slots));slots.push({x:o.x,z:o.z,r:e.r});}
       if(append&&e.order){if(e.orders.length<32)e.orders.push(o);}else{e.order=o;e.orders=[];e.path=[];e.repath=0;e.stuckTime=0;e.pathStatus='pending';if(['attack','attackmove','patrol','guard'].includes(o.type))e.stance='aggressive';}
     });if(units.some(e=>e.owner===0)){if(units.some(e=>e.type!=='villager')&&['move','attackmove','attack'].includes(order.type))this.tutorialFlags.command=true;this.emit('order',{order});}
@@ -157,7 +166,7 @@ export class Simulation {
       this.command([unit.id],order,append);
     }
   }
-  stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
+  stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
   isWater(x,z){if(Math.abs(z)<=9)return false;if(this.options.map==='valley')return Math.abs(x-Math.sin(z*.045)*4)<5;if(this.options.map==='rivers')return [-19,19].some(center=>Math.abs(x-center-Math.sin(z*.045)*3)<4);return false;}
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
@@ -171,7 +180,7 @@ export class Simulation {
       const a=this.cell(e.x-e.r-.3,e.z-e.r-.3),b=this.cell(e.x+e.r+.3,e.z+e.r+.3);
       for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.9)data[z*size+x]=1;
     }
-    this.grids[owner]=this.grids[teamKey]={revision:this.revision,data};return data;
+    blockWallConnections(this,data);this.grids[owner]=this.grids[teamKey]={revision:this.revision,data};return data;
   }
   unitDefinition(e){return UNITS[e.type];}
   pathTo(e,dest){return findPath(this,e,dest);}
@@ -196,10 +205,10 @@ export class Simulation {
     e.moving=Math.hypot(e.x-oldX,e.z-oldZ)>.015;if(e.moving)e.stuckTime=0;else this.blockedMovement(e,dt);
     e.heading=Math.atan2(dx,dz);return distance(e,dest)<=Math.max(stop,1.5);
   }
-  blockedMovement(e,dt){e.stuckTime=(e.stuckTime||0)+dt;if(e.stuckTime>2&&e.pathStatus!=='blocked')e.repath=0;
+  blockedMovement(e,dt){e.stuckTime=(e.stuckTime||0)+dt;if(e.stuckTime>2&&e.pathStatus!=='blocked'){e.path=[];e.repath=0;}
     if(e.stuckTime<6)return;e.pathStatus='blocked';e.blockedAt=this.time;e.stuckTime=0;
     if(e.owner===0&&this.time-(this.lastBlockedNotice??-10)>4){this.lastBlockedNotice=this.time;this.emit('notice',{owner:0,message:'A unit cannot reach its destination. Choose another route or open the obstruction.',tone:'warning'});}
-    this.emit('order-blocked',{entity:e});this.finishOrder(e);
+    this.emit('order-blocked',{entity:e});const target=this.get(e.order?.target);if(e.order?.type==='build'&&e.type==='villager'&&target?.type==='wall')this.finishWallOrder(e,target,true);else this.finishOrder(e);
   }
   nearest(e,predicate,max=Infinity,combatOnly=false){let best=null,d=max;const consider=target=>{if(target.hp<=0||target===e||combatOnly&&target.kind!=='unit'&&target.kind!=='building'||!predicate(target))return;const len=distance(e,target)-target.r;if(len<d){d=len;best=target;}};
     if(Number.isFinite(max)&&this.entityBuckets){const range=max+(this.maxEntityRadius||8)+2;for(let x=Math.floor((e.x-range)/8);x<=Math.floor((e.x+range)/8);x++){const column=this.entityBuckets.get(x);if(!column)continue;for(let z=Math.floor((e.z-range)/8);z<=Math.floor((e.z+range)/8);z++){const bucket=column.get(z),candidates=combatOnly?bucket?.combat:bucket;if(candidates)for(const target of candidates)consider(target);}}}else for(const target of this.entities)consider(target);return best;}
@@ -226,6 +235,19 @@ export class Simulation {
     this.emit('attack',{entity:e,target,damage:amount});
   }
   finishOrder(e){e.order=e.orders.shift()||null;e.path=[];e.repath=0;}
+  finishWallOrder(e,previous,blocked=false){
+    if(blocked){e.wallConstructionSkipped??=[];if(!e.wallConstructionSkipped.includes(previous.id))e.wallConstructionSkipped.push(previous.id);}
+    this.finishOrder(e);if(e.order)return;
+    const skipped=new Set(e.wallConstructionSkipped||[]),run=previous?.wallRun;
+    const walls=this.owned(e.owner,'building','wall').filter(wall=>wall.progress<1&&!skipped.has(wall.id)).sort((a,b)=>{
+      const sameA=!!run&&a.wallRun===run,sameB=!!run&&b.wallRun===run;if(sameA!==sameB)return sameA?-1:1;
+      return (sameA?(a.wallIndex||0)-(b.wallIndex||0):distance(e,a)-distance(e,b))||a.id-b.id;
+    });
+    for(const wall of walls){let route=[];if(distance(e,wall)>wall.r+3){route=this.pathTo(e,wall);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),wall)>wall.r+3){e.wallConstructionSkipped??=[];e.wallConstructionSkipped.push(wall.id);continue;}}
+      e.order={type:'build',target:wall.id,wallConstruction:true};e.path=route;e.pathStatus='ready';e.stuckTime=0;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=wall.x;e.pathTargetZ=wall.z;return;
+    }
+    if(!walls.length)e.pathStatus='idle';
+  }
   tickUnit(e,dt){e.moving=false;e.cooldown=Math.max(0,e.cooldown-dt);const d=UNITS[e.type],order=e.order;if(order?.type==='attack'&&!d.damage){this.finishOrder(e);return;}
     if(d.role==='healer'){
       const target=order?.type==='heal'?this.get(order.target):this.nearest(e,t=>this.allied(t.owner,e.owner)&&t.kind==='unit'&&t.hp<t.maxHp,12,true);
@@ -243,8 +265,15 @@ export class Simulation {
     if(order.type==='patrol'){if(this.move(e,order,dt,1.4)){if(e.orders.length)this.finishOrder(e);else{[order.x,order.originX]=[order.originX,order.x];[order.z,order.originZ]=[order.originZ,order.z];e.path=[];e.repath=0;}}return;}
     if(order.type==='guard'){const ally=this.get(order.target);if(!ally||!this.allied(ally.owner,e.owner)){this.finishOrder(e);return;}const point=formationSlot(this,e,{x:ally.x+(order.offsetX||0),z:ally.z+(order.offsetZ||0)});if(distance(e,point)>3)this.move(e,point,dt,2);return;}
     let target=this.get(order.target);if(!target&&order.type==='gather'&&e.carry>0){order.returning=true;target={kind:'resource',type:e.carryType};}if(!target){
-      if(order.type==='gather'){const resource=this.nearest(e,t=>(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0)||(t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1));if(resource){e.order={type:'gather',target:resource.id};e.path=[];return;}}
-      this.finishOrder(e);return;
+      if(order.type==='gather'){
+        if(e.orders.length){this.finishOrder(e);return;}
+        if(this.players[e.owner].controller==='ai'||e.owner>0&&this.players[e.owner].controller!=='human'){this.assignWorker(e);return;}
+        const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1)).sort((a,b)=>distance(e,a)-distance(e,b));
+        for(const resource of sources){const route=this.pathTo(e,resource);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>resource.r+e.r+1.1)continue;
+          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;return;
+        }
+      }
+      if(order.type==='build'&&e.type==='villager'&&(order.wallConstruction||this.entities.some(wall=>wall.id===order.target&&wall.type==='wall'&&wall.owner===e.owner)))this.finishWallOrder(e,this.entities.find(wall=>wall.id===order.target));else this.finishOrder(e);return;
     }
     if(order.type==='build'||order.type==='repair'){
       if(e.type!=='villager'||(order.type==='build'?target.owner!==e.owner:!this.allied(target.owner,e.owner))){this.finishOrder(e);return;}
@@ -252,7 +281,8 @@ export class Simulation {
       if(target.progress<1){const delta=dt/BUILDINGS[target.type].time;target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
       else if(target.hp<target.maxHp){const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}
-      else{this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};}return;
+      else{if(order.type==='build'&&target.type==='wall')this.finishWallOrder(e,target);else this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};
+      }return;
     }
     if(order.type==='gather'){
       if(e.type!=='villager')return this.finishOrder(e);const type=target.kind==='resource'?target.type:target.type==='farm'?'food':null;if(!type)return this.finishOrder(e);e.gatherType=type;
@@ -346,7 +376,7 @@ export class Simulation {
     if(this.events.length>200)this.events.splice(0,100);
   }
   serialize(){return {version:1,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
-  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};s.updateFog();return s;}
+  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};s.updateFog();return s;}
 }
 
 installFrontiers(Simulation);

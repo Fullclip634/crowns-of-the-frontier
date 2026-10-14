@@ -1,0 +1,46 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const report={checks:[],errors:[],passed:false},base=process.env.QA_URL||'http://localhost:4174/';
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+async function open(options){const page=await browser.newPage(options);page.setDefaultTimeout(90000);page.on('pageerror',e=>report.errors.push(e.message));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+  await page.addInitScript(()=>localStorage.setItem('crowns-settings',JSON.stringify({quality:'low',autoQuality:false,weather:'clear',lighting:'day',music:false,volume:0})));await page.goto(base,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view);return page;
+}
+async function scene(page,quality){await page.evaluate(quality=>frontier.view.quality(quality),quality);await page.waitForFunction(quality=>frontier.view.artDiagnostics.detail===quality&&frontier.view.surfaceQuality===quality,quality);
+  await page.evaluate(()=>{frontier.start({mode:'sandbox',map:'highlands',seed:512});frontier.action('pause');document.querySelector('#modal-root').style.visibility='hidden';const s=frontier.sim,v=frontier.view;for(const e of s.entities)if(e.kind==='resource')e.hp=0;s.revision++;s.visible.fill(1);s.explored.fill(1);
+    for(let x=-18;x<=18;x+=3)if(Math.abs(x)>3)s.addBuilding('wall',0,x,10,true);s.addBuilding('gate',0,0,10,true);
+    for(const x of [-18,18])for(let z=13;z<=37;z+=3)s.addBuilding('wall',0,x,z,true);for(let x=-15;x<=15;x+=3)s.addBuilding('wall',0,x,37,true);
+    for(let i=0;i<9;i++)s.addBuilding('wall',0,24+i*2.85/Math.SQRT2,15+i*2.85/Math.SQRT2,true);
+    v.focus(10,23);v.zoom=54;v.tilt=.62;v.updateCamera();v.render(.016,false);document.querySelector('#toasts').innerHTML='';window.wallFixture={angles:s.owned(0,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>[e.id,e.wallAngle])};
+  });await page.waitForTimeout(300);
+}
+async function coverage(page){return page.evaluate(()=>{const v=frontier.view,s=frontier.sim,links=v.wallVisuals.links,failed=[];let samples=0;
+    for(const link of links){const dx=link.b.x-link.a.x,dz=link.b.z-link.a.z,d=Math.hypot(dx,dz),nx=-dz/d,nz=dx/d,objects=[v.nodes.get(link.a.id),v.nodes.get(link.b.id),v.wallVisuals.group].filter(Boolean);
+      for(const t of [.1,.3,.5,.7,.9]){const x=link.start.x+(link.end.x-link.start.x)*t,z=link.start.z+(link.end.z-link.start.z)*t,y=v.entityHeight(link.a)*(1-t)+v.entityHeight(link.b)*t+1.5;v.raycaster.ray.origin.set(x+nx*8,y,z+nz*8);v.raycaster.ray.direction.set(-nx,0,-nz);const hits=v.raycaster.intersectObjects(objects,true);samples++;if(!hits.some(hit=>hit.distance<9&&hit.distance>6))failed.push({a:link.a.id,b:link.b.id,t,x,z,y});}
+    }
+    return {quality:v.settings.quality,models:v.artDiagnostics.models,links:links.length,samples,failed,diagnostics:v.wallDiagnostics,finite:v.wallVisuals.meshes.every(mesh=>mesh.instanceMatrix.array.every(Number.isFinite))};
+  });}
+async function drag(page,phone){await page.evaluate(()=>{document.querySelector('#modal-root').style.visibility='';frontier.start({mode:'sandbox',map:'highlands',seed:512});const s=frontier.sim,v=frontier.view;for(const e of s.entities)if(e.kind==='resource')e.hp=0;s.revision++;s.players[0].age=3;s.players[0].resources.stone=1000;s.updateFog=()=>{s.visible.fill(1);s.explored.fill(1);};s.updateFog();const worker=s.owned(0,'unit','villager')[0];s.stop([worker.id]);worker.x=-10;worker.z=17;frontier.select([worker.id]);v.focus(0,20);v.zoom=34;v.tilt=.65;v.updateCamera();frontier.action('build');});
+  await page.locator('[data-build="wall"]').click();const points=await page.evaluate(()=>{const v=frontier.view,rect=v.renderer.domElement.getBoundingClientRect(),screen=(x,z)=>{const p=v.camera.position.clone().set(x,v.groundHeight(x,z),z).project(v.camera);return {x:rect.left+(p.x+1)*rect.width/2,y:rect.top+(1-p.y)*rect.height/2};};return [screen(-10,20),screen(10,20)];});
+  if(phone){const cdp=await page.context().newCDPSession(page);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...points[0],id:1}]});for(let i=1;i<=12;i++){const t=i/12;await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:points[0].x+(points[1].x-points[0].x)*t,y:points[0].y+(points[1].y-points[0].y)*t,id:1}]});}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();}
+  else{await page.mouse.move(points[0].x,points[0].y);await page.mouse.down();await page.mouse.move(points[1].x,points[1].y,{steps:12});await page.mouse.up();}
+  await page.waitForFunction(()=>frontier.sim.owned(0,'building','wall').length>=7);const check=await page.evaluate(()=>{const s=frontier.sim,walls=s.owned(0,'building','wall');return {count:walls.length,stone:s.players[0].resources.stone,spacing:walls.slice(1).map((e,i)=>Math.hypot(e.x-walls[i].x,e.z-walls[i].z)),connected:walls.every(e=>e.wallLinks.length>0),overflow:document.documentElement.scrollWidth>innerWidth};});
+  assert.ok(check.spacing.every(d=>Math.abs(d-2.85)<.001));assert.equal(check.stone,1000-check.count*22);assert.ok(check.connected);assert.equal(check.overflow,false);if(phone)assert.ok(await page.evaluate(()=>!document.querySelector('#world').classList.contains('placing')&&!frontier.view.ghost.visible));report.checks.push({phone,paidPointerDrag:check});
+}
+async function phoneControls(page){
+  const moving=await page.evaluate(()=>{const s=frontier.sim,e=s.addUnit('spearman',0,-3,15);s.command([e.id],{type:'move',x:30,z:15});frontier.select([e.id]);return e.id;});await page.getByRole('button',{name:'Deselect units and buildings',exact:true}).tap();
+  const cleared=await page.evaluate(id=>({selection:frontier.view.selection.size,order:frontier.sim.get(id).order?.type}),moving);assert.equal(cleared.selection,0);assert.equal(cleared.order,'move');
+  await page.evaluate(()=>{const e=frontier.sim.owned(0,'unit','villager')[0];frontier.select([e.id]);frontier.action('build');});await page.locator('[data-build="wall"]').tap();await page.getByRole('button',{name:'Done building',exact:true}).tap();assert.ok(await page.evaluate(()=>!document.querySelector('#world').classList.contains('placing')&&!frontier.view.ghost.visible));
+  const target=await page.evaluate(()=>{const v=frontier.view,s=frontier.sim,e=s.addUnit('spearman',0,5,15);s.stop([e.id]);v.render(.016,false);const rect=v.renderer.domElement.getBoundingClientRect(),p=v.camera.position.clone().set(e.x,v.entityHeight(e)+1.2,e.z).project(v.camera);return {id:e.id,x:rect.left+(p.x+1)*rect.width/2,y:rect.top+(1-p.y)*rect.height/2};});await page.touchscreen.tap(target.x,target.y);assert.ok(await page.evaluate(id=>frontier.view.selection.has(id),target.id));
+  const boxes=await page.evaluate(()=>['#deselect-control'].map(selector=>{const b=document.querySelector(selector).getBoundingClientRect();return {width:b.width,height:b.height};}));assert.ok(boxes.every(b=>b.width>=44&&b.height>=44));await page.screenshot({path:'artifacts/phone-deselect.png'});report.checks.push({phoneControls:{deselectPreservesOrder:cleared,doneBuilding:true,friendlyTouchSelect:true,targets:boxes}});
+}
+try{const page=await open({viewport:{width:1440,height:900}});await scene(page,'low');
+  await page.evaluate(()=>{const s=frontier.sim,v=frontier.view;for(const [id]of wallFixture.angles)s.get(id).wallAngle=0;v.wallVisuals.group.visible=false;v.render(.016,false);});await page.screenshot({path:'artifacts/walls-before.png'});
+  await page.evaluate(()=>{const s=frontier.sim,v=frontier.view;for(const [id,angle]of wallFixture.angles)s.get(id).wallAngle=angle;s.revision++;v.wallVisuals.group.visible=true;v.render(.016,false);});
+  for(const quality of ['low','high']){if(quality==='high')await scene(page,quality);const check=await coverage(page);assert.ok(check.links>30);assert.ok(check.finite);assert.deepEqual(check.failed,[]);report.checks.push(check);await page.screenshot({path:`artifacts/walls-${quality}.png`});}
+  const breach=await page.evaluate(()=>{const s=frontier.sim,v=frontier.view,corner=s.owned(0,'building','wall').find(e=>Math.abs(e.x-18)<.1&&Math.abs(e.z-10)<.1),before=v.wallVisuals.links.length,neighbors=[...corner.wallLinks];s.hurt(corner,corner.hp+1,null);v.render(.016,false);return {before,after:v.wallVisuals.links.length,removed:corner.id,neighbors,joinedNeighbors:v.wallVisuals.links.some(link=>neighbors.includes(link.a.id)&&neighbors.includes(link.b.id))};});assert.equal(breach.joinedNeighbors,false);assert.ok(breach.after<breach.before);report.checks.push({breach});await drag(page,false);await page.close();
+  const phone=await open({viewport:{width:640,height:360},isMobile:true,hasTouch:true});await scene(phone,'low');const check=await coverage(phone);assert.deepEqual(check.failed,[]);report.checks.push({phone:true,...check});await phone.screenshot({path:'artifacts/walls-phone.png'});await drag(phone,true);await phoneControls(phone);await phone.close();
+  assert.deepEqual(report.errors,[]);report.passed=true;
+}finally{await browser.close();fs.writeFileSync('artifacts/wall-qa.json',JSON.stringify(report,null,2));}
+console.log(JSON.stringify(report,null,2));

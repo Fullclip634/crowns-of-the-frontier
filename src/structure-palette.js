@@ -5,7 +5,7 @@ function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
     const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9});
-    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0}};
+    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0}};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
     material.onBeforeCompile=shader=>{
@@ -23,6 +23,7 @@ function paletteMaterial(view){
         uniform sampler2D frontierStructurestoneArm;
         uniform sampler2D frontierStructureplasterArm;
         uniform vec3 frontierStructurenormalAvailable;
+        uniform vec3 frontierStructurearmAvailable;
         uniform float frontierStructuredetail;
         uniform float frontierStructurenight;
         varying vec3 vStructureSurface;
@@ -34,12 +35,15 @@ function paletteMaterial(view){
         else if(vStructureSurface.z > 0.5) diffuseColor.rgb *= texture2D(frontierStructurewood, vUv).rgb;`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vStructureSurface.x;
-        if(frontierStructuredetail > 1.5 && vStructureSurface.z < 3.5) {
-          if(vStructureSurface.z > 2.5) roughnessFactor *= texture2D(frontierStructureplasterArm, vUv).g;
-          else if(vStructureSurface.z > 1.5) roughnessFactor *= texture2D(frontierStructurestoneArm, vUv).g;
-          else if(vStructureSurface.z > 0.5) roughnessFactor *= texture2D(frontierStructurewoodArm, vUv).g;
+        float structureOcclusion = 1.0;
+        bool armReady = vStructureSurface.z > 2.5 ? frontierStructurearmAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurearmAvailable.y > 0.5 : frontierStructurearmAvailable.x > 0.5;
+        if(frontierStructuredetail > 0.5 && vStructureSurface.z > 0.5 && vStructureSurface.z < 3.5 && armReady) {
+          vec2 structureArm = vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterArm, vUv).rg : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneArm, vUv).rg : texture2D(frontierStructurewoodArm, vUv).rg;
+          roughnessFactor *= structureArm.g;
+          structureOcclusion = mix(1.0, structureArm.r, 0.65);
         }
         roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= structureOcclusion;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vStructureSurface.y, 0.0, 1.0);');
       shader.fragmentShader='varying float vStructureNightGlow;\n'+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.5) + vec3(0.65, 0.3, 0.07) * vStructureNightGlow * frontierStructurenight;');
@@ -54,7 +58,7 @@ function paletteMaterial(view){
         }
         #endif`);
     };
-    material.customProgramCacheKey=()=> 'frontier-structure-palette-v4';
+    material.customProgramCacheKey=()=> 'frontier-structure-palette-v5';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
@@ -64,6 +68,7 @@ function paletteMaterial(view){
   u.plasterNormal.value=m.plaster.normalMap||null;u.normalAvailable.value.set(u.woodNormal.value?1:0,u.stoneNormal.value?1:0,u.plasterNormal.value?1:0);
   u.woodArm.value=m.wood.roughnessMap||null;u.stoneArm.value=m.stone.roughnessMap||null;
   u.plasterArm.value=m.plaster.roughnessMap||null;
+  u.armAvailable.value.set(u.woodArm.value?1:0,u.stoneArm.value?1:0,u.plasterArm.value?1:0);
   u.detail.value=view.settings?.quality==='high'?2:view.settings?.quality==='medium'?1:0;
   const normal=u.stoneNormal.value||u.woodNormal.value||u.plasterNormal.value||null;
   if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}

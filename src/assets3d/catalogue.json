@@ -507,7 +507,8 @@
   ],
   "sizes": {
     "near": 16237168,
-    "low": 3928668
+    "low": 3928668,
+    "balanced": 14742520
   },
   "source": "Original Crowns of the Frontier assets authored/refined in Blender.",
   "stage": "full",
@@ -517,5 +518,10 @@
     "near": "1f0ed0780388af00a36b91ce0199e866350cdd572a600e4157d8f1ef41d565e7",
     "low": "ca0408934c0a9e0366bab7cba85ab3b6da65b63d5e6cfdb7759de43eb8e8bba5"
   },
-  "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced."
+  "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
+  "balancedComposition": "High buildings/resources; Low troops and forests; selected geometry repacked without another simplification pass.",
+  "balancedSourceHashes": {
+    "near": "445d23619cb7fe9e357d5918f0c93e16bdb49830ab37cd2a6bf35206f7b25a2c",
+    "low": "2e42ea122dace1ef0d55bbfe0f92d4fd4e71bf0111325ea5a7dd40306eb6fb02"
+  }
 }

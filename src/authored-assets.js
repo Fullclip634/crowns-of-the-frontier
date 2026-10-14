@@ -5,9 +5,11 @@ import manifest from './assets3d/catalogue.json' with {type:'json'};
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
+  medium:new URL('./assets3d/frontier-balanced.glb',import.meta.url).href,
   high:new URL('./assets3d/frontier-near.glb',import.meta.url).href,
 };
 const pending=new Map();
+const loaded=new Map();
 let active=null;
 let loadSerial=0;
 
@@ -49,20 +51,35 @@ export function registerAuthoredAssets(gltf,detail='high',bytes=0,activate=true)
 
 export async function loadAuthoredAssets(quality='high'){
   const serial=++loadSerial;
-  const detail=quality==='high'?'high':'low';
+  const detail=['high','medium'].includes(quality)?quality:'low';
   if(!pending.has(detail))pending.set(detail,(async()=>{
     const response=await fetch(sources[detail]);
     if(!response.ok)throw new Error(`3D asset request failed (${response.status}).`);
     const buffer=await response.arrayBuffer();
     const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const gltf=await loader.parseAsync(buffer,'');
-    return registerAuthoredAssets(gltf,detail,buffer.byteLength,false);
+    const catalogue=registerAuthoredAssets(gltf,detail,buffer.byteLength,false);loaded.set(detail,catalogue);return catalogue;
   })());
   try{const catalogue=await pending.get(detail);if(serial===loadSerial)active=catalogue;return catalogue;}
   catch(error){pending.delete(detail);throw error;}
 }
 
 export function authoredAssetState(){return active?{source:active.source,detail:active.detail,models:active.templates.size,bytes:active.bytes}:null;}
+
+// Keep the active catalogue and anything still used by a scene during a switch.
+// Old quality catalogues otherwise retain both CPU arrays and GPU buffers.
+export function trimAuthoredAssets(view){
+  const pinned=new Set();for(const scene of [view.scene,view.modelPortrait?.scene])scene?.traverse(node=>{if(node.geometry)pinned.add(node.geometry);});
+  let evicted=0;
+  for(const [detail,catalogue]of loaded){
+    if(catalogue===active||[...catalogue.geometries].some(geometry=>pinned.has(geometry)))continue;
+    for(const geometry of catalogue.geometries)geometry.dispose();
+    const materials=new Set();for(const root of catalogue.templates.values())root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});for(const material of materials)material.dispose();
+    loaded.delete(detail);pending.delete(detail);evicted++;
+  }
+  view.authoredGeometry=new Set([...(active?.geometries||[]),...[...loaded.values()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,0),evicted};return view.artCacheDiagnostics;
+}
 export function clearAuthoredAssets(){active=null;}
 
 function cloneAsset(view,key,owner=0){
