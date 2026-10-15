@@ -1,0 +1,21 @@
+#chat-toggle[hidden],#battle-chat[hidden],#chat-unread[hidden]{display:none!important}
+#chat-toggle{position:fixed;right:20px;bottom:220px;z-index:34;pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:5px;min-width:52px;min-height:44px;padding:8px;color:var(--gold);background:var(--panel);border:1px solid var(--line);font-size:12px;box-shadow:0 3px 12px #0004}
+#chat-unread{display:grid;place-items:center;min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:#14291f;font-size:10px;font-weight:700}
+#battle-chat{position:fixed;right:20px;bottom:var(--chat-bottom,220px);z-index:35;pointer-events:auto;display:grid;grid-template-rows:44px minmax(0,1fr) 44px auto;width:min(360px,calc(100vw - 16px));height:min(280px,var(--chat-height,calc(100dvh - 124px)));background:#142a23f5;border:1px solid #8f9c6b80;border-radius:4px;box-shadow:0 8px 24px #0006;color:#e5e9da;overflow:hidden}
+#battle-chat header{display:flex;align-items:center;justify-content:space-between;padding-left:10px;border-bottom:1px solid var(--line)}
+#battle-chat header strong{font-size:13px;font-weight:500;color:var(--gold)}
+#chat-close{width:44px;height:44px;font-size:24px;color:var(--gold)}
+#chat-messages{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:6px 10px}
+.chat-message{margin:0 0 10px;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.chat-meta{display:block;font-size:10px;color:#b9c8ac;margin-bottom:2px}.chat-message.team .chat-meta{color:#b5d6f4}
+#chat-form{display:flex;gap:4px;padding:0 6px;min-width:0;align-items:stretch}
+#chat-channel,#chat-input,#chat-send{min-height:44px;border:1px solid var(--line);border-radius:2px;color:#eef0e5;background:#213a30}
+#chat-channel{flex:0 0 66px;min-width:0;padding:0 4px;font-size:12px}
+#chat-input{flex:1;min-width:0;width:0;padding:0 7px;font-size:16px;line-height:1.3}
+#chat-send{flex:0 0 48px;padding:0 4px;font-size:11px;color:var(--gold)}#chat-send:disabled{opacity:.45}
+#chat-status{margin:0;padding:5px 8px;font-size:10px;line-height:1.3;color:#c5d2bb}
+.chat-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-height:520px),(pointer:coarse){
+  #chat-toggle{right:8px;bottom:calc(72px + var(--safe,0px));width:52px;padding:4px;font-size:11px}
+  #battle-chat{right:8px;bottom:var(--chat-bottom,calc(72px + var(--safe,0px)));width:min(340px,calc(100vw - 16px));height:min(260px,var(--chat-height,calc(100dvh - 124px)))}
+}

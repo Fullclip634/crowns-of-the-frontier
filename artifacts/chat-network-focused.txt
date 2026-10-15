@@ -1,0 +1,17 @@
+✔ custom battle chat enforces identity, team and room boundaries, including reconnect history (740.1007ms)
+✔ chat rejects invalid payloads and flooding while preserving the live connection (486.6185ms)
+✔ room memory is bounded, expires flood counts and never serializes chat into gameplay saves (1.7686ms)
+✔ valid application heartbeats keep a connection alive even when control pong replies are delayed (890.7814ms)
+✔ snapshot backpressure preserves chat delivery and bounds an overloaded socket (207.6623ms)
+✔ eight human commanders ready, receive private team perspectives, reconnect, and win as an alliance (1839.6353ms)
+✔ custom rooms mix humans and AI, preserve assigned slots, and treat leaving as a concession (2230.0092ms)
+✔ multiplayer wall drags finish the paid connected line and reject foreign workers and hidden terrain (2695.925ms)
+✔ Wi-Fi rooms synchronize both players, enforce ownership, and reconnect (910.733ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10197.4253

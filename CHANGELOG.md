@@ -1,3 +1,10 @@
+# Custom multiplayer battle chat and phone pinch zoom (version 2.6.1)
+
+- Human players can chat during a multiplayer battle with All and Team channels. The server supplies each sender's identity, isolates rooms and team audiences, limits bursts and message size, and holds only the latest 100 messages in room memory. Rejoining restores only authorized room history. There is no database or disk chat log.
+- Chat stays behind a small unread-count button until opened. Touch controls are at least 44 pixels high; the message field uses a 16-pixel font, and the panel responds to the visible viewport when the phone keyboard opens. Enter opens/sends chat on a keyboard; Escape closes it. Typed game keys cannot issue orders. AI-only battles hide the chat controls.
+- Delayed confirmations remain matchable, retries reuse their identifier and the server avoids duplicate broadcasts while the original message remains in room history. Valid application traffic keeps an active connection alive; snapshots yield to control messages under backpressure, with a 4 MB socket backlog cap.
+- Pinching with two fingers zooms without twisting the battlefield. Explicit camera rotation buttons and desktop rotation keys remain available.
+
 # Terrain-fitted original crop fields (version 2.6.1)
 
 - Three original Blender farms replace the previous fields with curved stalks, closed grain heads, thick leaves, cultivated soil, timber rails and an owner pennant. Low uses 48 stalks per field; Balanced and High use 144 with extra grain detail. Other buildings, troops, trees, resources and animated joints retain their original geometry.

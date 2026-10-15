@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "lateAcknowledgmentClearsDraft": true
+    },
+    {
+      "retryReusesIdentifier": true,
+      "duplicateAcknowledgmentDoesNotRepeatRow": true
+    },
+    {
+      "reconnectHistoryAcknowledgesPendingMessage": true
+    },
+    {
+      "ackPreservesEditedDraft": true,
+      "compositionDoesNotSendEarly": true
+    },
+    {
+      "shortLandscapeLayoutFits": true
+    }
+  ],
+  "errors": [],
+  "scope": "Actual chat component in a DOM fixture, with simulated delayed confirmations; no gameplay FPS or native keyboard claim"
+}

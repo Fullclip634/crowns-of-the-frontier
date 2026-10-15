@@ -1,0 +1,39 @@
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 83 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                            0.81 kB │ gzip:   0.47 kB
+dist/assets/medieval_blocks_05_arm-BU44WXcj.jpg          188.54 kB
+dist/assets/rock_01_arm-fXUUj8_O.jpg                     201.56 kB
+dist/assets/brown_mud_arm-Z8kNFMTF.jpg                   224.43 kB
+dist/assets/brown_mud_color-BbWfHDjQ.jpg                 501.96 kB
+dist/assets/painted_plaster_wall_arm-i5moMyFO.jpg        511.11 kB
+dist/assets/rocky_terrain_02_arm-dgF_mb8C.jpg            524.87 kB
+dist/assets/old_wood_floor_arm-SQU0J2mh.jpg              646.10 kB
+dist/assets/medieval_blocks_05_color-CUaDZYtZ.jpg        653.29 kB
+dist/assets/painted_plaster_wall_color-Cd9DjhAQ.jpg      686.73 kB
+dist/assets/rock_01_color-CZTjHcC4.jpg                   688.08 kB
+dist/assets/old_wood_floor_normal-3sFZj2Ca.jpg           714.49 kB
+dist/assets/old_wood_floor_color-Cda7KFIT.jpg            755.94 kB
+dist/assets/rock_01_normal-Z4CE2v_p.jpg                  798.81 kB
+dist/assets/rocky_terrain_02_color-CemMALHM.jpg          843.19 kB
+dist/assets/painted_plaster_wall_normal-48uy-TVR.jpg     900.46 kB
+dist/assets/rocky_terrain_02_normal-DX7AM3nD.jpg         993.69 kB
+dist/assets/leafy_grass_arm-CDt3Zw7v.jpg               1,010.08 kB
+dist/assets/brown_mud_normal-C3h-u0Ls.jpg              1,011.78 kB
+dist/assets/medieval_blocks_05_normal-MXY7VBwo.jpg     1,167.77 kB
+dist/assets/leafy_grass_color-vig3bC4b.jpg             1,195.39 kB
+dist/assets/leafy_grass_normal-Cp8RKkAj.jpg            1,466.05 kB
+dist/assets/frontier-low-CjDsYc10.glb                  4,123.36 kB
+dist/assets/frontier-balanced-mojJiy8v.glb            16,264.80 kB
+dist/assets/frontier-near-HzhWPTPK.glb                17,288.37 kB
+dist/assets/index-Dg8t7-G4.css                            75.62 kB │ gzip:  15.16 kB
+dist/assets/index-C-ZzF31Z.js                            484.97 kB │ gzip: 158.47 kB
+dist/assets/three-BZTCyBBM.js                            569.23 kB │ gzip: 145.83 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.78s

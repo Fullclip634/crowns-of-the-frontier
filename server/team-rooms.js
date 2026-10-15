@@ -4,13 +4,14 @@ import {Simulation} from '../src/simulation.js';
 import {FACTIONS,MAPS} from '../src/data.js';
 import {normalizeBattle,visibilityFor} from '../src/custom-battle.js';
 import {originAllowed} from './origins.js';
+import {BattleChat} from './battle-chat.js';
 
 const code=()=>randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
-export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS||'').split(',').map(value=>value.trim()).filter(Boolean),maxRooms=Math.max(1,Math.min(8,Number(process.env.MAX_ROOMS)||8))}={}){
+export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS||'').split(',').map(value=>value.trim()).filter(Boolean),maxRooms=Math.max(1,Math.min(8,Number(process.env.MAX_ROOMS)||8)),heartbeatInterval=20000}={}){
   const wss=new WebSocketServer({noServer:true,maxPayload:24000,perMessageDeflate:{threshold:1024,serverNoContextTakeover:true,zlibDeflateOptions:{level:1}}}),rooms=new Map();
   server.on('upgrade',(req,socket,head)=>{if(req.url!=='/socket'||!originAllowed(req.headers.origin,req.headers.host,allowedOrigins)){socket.destroy();return;}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
-  const send=(ws,message)=>{if(ws?.readyState===1&&ws.bufferedAmount<1000000)ws.send(JSON.stringify(message));};
+  const send=(ws,message)=>{if(ws?.readyState!==1)return;if(ws.bufferedAmount>=4000000){ws.terminate();return;}if(message.type==='state'&&ws.bufferedAmount>=1000000)return;ws.send(JSON.stringify(message));};
   const custom=room=>room.options.mode==='custom';
   const humanSlots=room=>custom(room)?room.options.slots.map((slot,i)=>slot.controller==='human'?i:-1).filter(i=>i>=0):[0,1];
   const connected=player=>player.ws?.readyState===1;
@@ -45,6 +46,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     return JSON.parse(JSON.stringify(data));
   }
   function start(room){
+    room.chat=new BattleChat();
     room.sim=new Simulation({...room.options,multiplayer:true,faction:room.players[0].faction});
     if(!custom(room)){
       room.sim.players[1].faction=room.players[1].faction;
@@ -61,7 +63,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
       if(['attack','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
-    for(const player of room.players)send(player.ws,{type:'begin',state:perspective(room,player.side),code:room.code});
+    for(const player of room.players)send(player.ws,{type:'begin',state:perspective(room,player.side),code:room.code,chat:room.chat.session(room,player)});
   }
   function action(player,room,message){
     const s=room.sim;if(!s||s.ended||s.players[player.side]?.defeated||waiting(room))return;
@@ -93,6 +95,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   wss.on('connection',ws=>{let player=null,room=null,count=0,windowTime=Date.now();ws.alive=true;ws.on('pong',()=>ws.alive=true);
     ws.on('message',raw=>{try{
       const now=Date.now();if(now-windowTime>1000){windowTime=now;count=0;}if(++count>80)return;const message=JSON.parse(raw);if(!message||typeof message!=='object')return;
+      ws.alive=true; // Valid application traffic also proves this link is alive.
       if(message.type==='ping'){send(ws,{type:'pong',stamp:message.stamp});return;}
       if(message.type==='create'&&!player){
         if(rooms.size>=maxRooms)return send(ws,{type:'error',message:'All match slots are busy. Try again after a match finishes.'});
@@ -114,9 +117,16 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       }
       if(message.type==='resume'&&!player){
         room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',message:'That network session has ended.'});
-        player.ws?.close();player.ws=ws;delete player.disconnected;if(room.sim)send(ws,{type:'begin',state:perspective(room,player.side),code:room.code});else lobby(room);return;
+        player.ws?.close();player.ws=ws;delete player.disconnected;if(room.sim)send(ws,{type:'begin',state:perspective(room,player.side),code:room.code,chat:room.chat.session(room,player)});else lobby(room);return;
       }
       if(!player||!room)return;
+      if(message.type==='chat'){
+        if(!room.sim||player.ws!==ws||!rooms.has(room.code))return;
+        const result=room.chat.accept(room,player,message);
+        if(result.error)send(ws,{type:'chat-error',message:result.error});
+        else for(const recipient of room.players)if((!result.duplicate||recipient===player)&&room.chat.allowed(room,recipient.side,result.message))send(recipient.ws,{type:'chat',message:room.chat.packet(result.message)});
+        return;
+      }
       if(message.type==='ready'&&!room.sim){player.ready=!!message.ready;lobby(room);}
       if(message.type==='slot'&&!room.sim&&custom(room)&&!player.host){const side=room.options.slots.findIndex(slot=>slot.slotNumber===Number(message.slot));if(humanSlots(room).includes(side)&&!room.players.some(p=>p!==player&&p.side===side)){player.side=side;player.ready=false;room.options.slots[side].name=player.name;room.options.slots[side].faction=player.faction;lobby(room);}}
       if(message.type==='start'&&player.host&&!room.sim){if(canStart(room))start(room);else send(ws,{type:'error',message:'Every human slot must be connected and ready before starting.'});}
@@ -140,6 +150,6 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);
   }},100);
-  const heartbeat=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},20000);
+  const heartbeat=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},Math.max(50,Number(heartbeatInterval)||20000));
   return {rooms,close(){clearInterval(timer);clearInterval(heartbeat);wss.close();}};
 }

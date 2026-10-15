@@ -1,3 +1,13 @@
+# Chat and phone camera release checks — 15 October 2026
+
+- [Release regression](artifacts/regression-chat-release.txt): 257 passing tests, zero failures in the exact isolated source snapshot.
+- [Focused network regression](artifacts/chat-network-focused.txt): nine passing tests covering team/room isolation, server identity, input limits, flood limits, bounded history, rejoining and existing multiplayer commands.
+- [Browser QA](scripts/battle-chat-qa.mjs) / [recorded result](artifacts/battle-chat-qa.json): production browser checks pass. This uses software SwiftShader on this machine; desktop rendering is throttled only in the test fixture. It is functional evidence, not hardware FPS or an actual phone keyboard test.
+- [Chat component browser checks](artifacts/battle-chat-panel-qa.json) pass for delayed confirmations, safe retries, reconnect history, edited drafts and composition.
+- Chat is room memory only, capped at 100 messages, 240 Unicode characters per message and five messages per 10 seconds per participant. Team history remains private on rejoining. The room lifecycle and server restart discard it.
+- Phone layout targets landscape with collapsed chat and minimum 44-pixel control heights; input is 16 pixels to avoid focus zoom. [VisualViewport documentation](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport) informs keyboard-aware panel placement. The existing [ws transport](https://github.com/websockets/ws/blob/master/doc/ws.md) carries chat separately from authoritative gameplay snapshots and saves.
+- Full end-to-end Blender regeneration, unpublished graphics transitions/building foundations, hosted deployment verification, wider balance tests and physical device testing remain outstanding. No 100/100, universal FPS or AAA parity claim.
+
 # Original crop fields and terrain verification — 15 October 2026
 
 - Final isolated release suite: 252 passed, zero failed (59.43 seconds). The development suite passed 267 cases before the final outline change; nine focused real-art/terrain/outline checks then passed. Staged catalogue checks passed all eleven cases before promotion. The exact release source excludes the separate compressed-surface and shader-preparation work in progress.

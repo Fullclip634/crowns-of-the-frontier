@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "buildId": "1792022420831",
+  "errors": [],
+  "renderer": "Software SwiftShader; functional and visual check, not physical-device FPS",
+  "desktopSoftwareRenderThrottled": true,
+  "physicalPhoneOrNativeKeyboardVerified": false,
+  "scope": "Desktop Enter-to-send, Escape, layout and AI-only chat visibility pass in the final production run",
+  "checks": [
+    {
+      "desktopEnterSendEscape": true,
+      "desktopLayout": {
+        "width": 1100,
+        "height": 720,
+        "overflow": false,
+        "rects": {
+          "chat-toggle": {
+            "left": 1028,
+            "top": 456,
+            "right": 1080,
+            "bottom": 500,
+            "width": 52,
+            "height": 44,
+            "visible": true
+          },
+          "battle-chat": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0,
+            "visible": false
+          },
+          "chat-input": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0,
+            "visible": false
+          },
+          "chat-send": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0,
+            "visible": false
+          },
+          "chat-channel": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0,
+            "visible": false
+          },
+          "chat-close": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0,
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "chatHiddenInAiOnlyBattles": true
+    }
+  ]
+}

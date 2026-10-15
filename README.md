@@ -180,6 +180,8 @@ The browser QA scripts use a locally installed Microsoft Edge. `regression-brows
 - `server/index.js`: local game hosting and WebSocket server.
 - `vite.config.js`: build splitting and offline cache generation.
 
+In multiplayer battles, open **Chat** to send to **All** players or only your **Team**. On a keyboard, Enter opens chat and sends a message; Escape closes the panel. The phone panel stays collapsed until opened and has an unread badge. Pinching zooms without rotating; use the camera rotation buttons to turn the view. Chat uses the existing WebSocket server and room memory only: its latest 100 messages disappear when the room is removed or the server restarts. AI-only matches have no player chat.
+
 ## Research and scope
 
 The design draws on the genre's established exploration → resource collection → construction → army → age progression loop and varied victory conditions described in the [official Age of Empires IV quickstart](https://www.ageofempires.com/news/quickstart-guide-age-of-empires-iv/) and [official strategy introduction](https://www.ageofempires.com/news/age-of-empires-iv-tips-to-help-you-get-started/). Picking and repeated-model rendering follow the [Three.js Raycaster](https://threejs.org/docs/pages/Raycaster.html) and [InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html) documentation.

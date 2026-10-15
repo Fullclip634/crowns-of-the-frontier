@@ -1,3 +1,9 @@
+# Chat and phone camera checkpoint — 15 October 2026
+
+The whole-game goal remains active and incomplete. This isolated release adds database-free human multiplayer battle chat and zoom-only phone pinching. All 257 release regressions and nine focused chat/existing-room checks pass. Production browser status: passed; see artifacts/battle-chat-qa.json. Physical phone keyboard behavior and hardware frame rates still need device validation.
+
+Unfinished graphics and building foundation/gate art changes remain in the working tree. They are excluded from this chat release, which retains the verified Blender farm catalogue. Do not mark the full RTS goal complete or infer the hosted Render revision from a Git push.
+
 # Farm development checkpoint — 15 October 2026
 
 The active whole-game goal remains incomplete. This milestone integrates original Blender crop fields, terrain-fitted picking/shadows/selection/preview geometry and dry-footprint placement. The final isolated release has 252 passing tests; desktop production checks cover all three graphics presets, and a separate corrected touch-phone check passes at 640 × 360. Reports and exact limitations are in RELEASE_CHECKS.md.
