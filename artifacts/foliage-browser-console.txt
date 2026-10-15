@@ -1,0 +1,9 @@
+candidate-load
+highlands
+desert
+winter
+profile-return
+candidate-comparison
+phone-touch-landscape
+baseline-comparison
+{"passed":true,"checks":6,"buildId":"1792064666043","baselineCompared":true}

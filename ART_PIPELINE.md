@@ -1,3 +1,11 @@
+# Intermediate Blender foliage and compact Balanced encoding
+
+Run node scripts/blender/build-balanced-foliage.mjs --source <complete project-owned .blend> --directory <complete staged catalogue>, then node scripts/blender/build-balanced.mjs --directory <same directory>. The authoring step preserves the complete source and saves a separate eight-model editable leaf patch. It retains whole manifold leaves, their baked vertex color, and the source extrema. Balanced combines High architecture/resources and near broadleaf canopies, sparse leaf tips, and Low troops/evergreen/distant forests. The browser does not fetch the source-only frontier-foliage.glb separately.
+
+Balanced packing uses -vpf -vp 16 -vtf -vn 16 -vc 8 without triangle simplification. The builder also creates a private -noq reference, then validates all visible oriented triangles, exact Float32 positions, UV/color data, motion metadata and no more than 0.05 degrees of additional normal error. The manifest binds the report to the candidate SHA-256. The current file is 12.98 MB, smaller than the prior 16.28 MB catalogue. This is an encoding/content improvement, not a claim of universally smooth FPS. Precision controls are described by the packer's primary documentation: https://meshoptimizer.org/gltf/ .
+
+Low and High files are unchanged. Complete generation now invokes this stage after farms and gates; the complete generation command has not yet been rerun end to end. Keep .tools/art-refined/frontier-assets.blend and the existing art backups. See RELEASE_CHECKS.md for exact validation and remaining work.
+
 # Original gate footings and terrain integration — 15 October 2026
 
 Three original Blender gates now use separate closed side footings, a lintel-mounted banner and the existing animated portcullis. The complete editable source keeps all 126 models. The gate author supports a complete project-owned --source and can repeat without duplicating footings. Full builds compose farms, author/compose gates, update the full editable source, then regenerate Balanced. The full regeneration command has not been rerun end to end.

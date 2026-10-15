@@ -1,0 +1,1 @@
+{"passed":true,"models":126,"meshes":1289,"visibleTriangles":649405,"exactTrianglePositionsAndWinding":true,"normalLimitDegrees":1,"maxNormalDegrees":0.6246765544057447,"maxUVError":0,"maxColorError":0,"referenceBytes":35260100,"candidateBytes":17362376,"referenceDecodedBufferBytes":91682592,"candidateDecodedBufferBytes":36845152}

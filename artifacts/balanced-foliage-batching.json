@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "trees": [
+    {
+      "key": "tree:highlands:0:near",
+      "meshes": 3,
+      "triangles": 6698
+    },
+    {
+      "key": "tree:highlands:1:near",
+      "meshes": 3,
+      "triangles": 6613
+    },
+    {
+      "key": "tree:highlands:2:near",
+      "meshes": 3,
+      "triangles": 6748
+    },
+    {
+      "key": "tree:highlands:3:near",
+      "meshes": 3,
+      "triangles": 6741
+    },
+    {
+      "key": "tree:desert:0:near",
+      "meshes": 3,
+      "triangles": 6596
+    },
+    {
+      "key": "tree:desert:1:near",
+      "meshes": 3,
+      "triangles": 6533
+    },
+    {
+      "key": "tree:desert:2:near",
+      "meshes": 3,
+      "triangles": 6686
+    },
+    {
+      "key": "tree:desert:3:near",
+      "meshes": 3,
+      "triangles": 6672
+    }
+  ]
+}

@@ -508,7 +508,7 @@
   "sizes": {
     "near": 17507608,
     "low": 4156076,
-    "balanced": 16280868
+    "balanced": 12979076
   },
   "source": "Original Blender crop fields composed with unchanged original models.",
   "stage": "full",
@@ -519,10 +519,11 @@
     "low": "ca0408934c0a9e0366bab7cba85ab3b6da65b63d5e6cfdb7759de43eb8e8bba5"
   },
   "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
-  "balancedComposition": "High buildings/resources; Low troops and forests; selected geometry repacked without another simplification pass.",
+  "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedSourceHashes": {
     "near": "24ac673842af134f968e6578e104548b36df0a3787fbd0902260d14d283ce51d",
-    "low": "4aeebd49c565c216f5db4924f36350374939c30c80da232dbc8878a03c8f1c3c"
+    "low": "4aeebd49c565c216f5db4924f36350374939c30c80da232dbc8878a03c8f1c3c",
+    "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "farmRevision": "field-crops-v1",
   "farmSourceHashes": {
@@ -533,5 +534,24 @@
   "gateSourceHashes": {
     "low": "f2f932cb34b7ffc21079fe9b4b41e4795624c31939cc26caa64cc3733eff5ebb",
     "near": "f960e26cf9d2578222c50785f33b3f02aec0ce0a926c06ae48f175d6e2a965c8"
+  },
+  "balancedFoliage": "volumetric-tips-v1",
+  "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
+  "balancedPrecision": {
+    "passed": true,
+    "models": 126,
+    "meshes": 1289,
+    "visibleTriangles": 649405,
+    "exactTrianglePositionsAndWinding": true,
+    "normalLimitDegrees": 0.05,
+    "maxNormalDegrees": 0.0038601816402106938,
+    "maxUVError": 0,
+    "maxColorError": 0,
+    "referenceBytes": 17362376,
+    "candidateBytes": 12979076,
+    "referenceDecodedBufferBytes": 36845152,
+    "candidateDecodedBufferBytes": 33108644,
+    "referenceSHA256": "0ee2ce87422575de07d7db7e1e3eea4f45d224e2b74134f447354ffc80b37815",
+    "candidateSHA256": "fd9a3fa3f20e3422a3fdf17be5f02328c55d479e588cbb3878000813756a17ba"
   }
 }

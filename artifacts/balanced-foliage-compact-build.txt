@@ -1,0 +1,3 @@
+Warning: file uses quantized geometry; repacking may result in increased quantization error
+Warning: file uses quantized geometry; repacking may result in increased quantization error
+{"models":126,"richer":80,"lighter":46,"foliageModels":8,"bytes":12979076}

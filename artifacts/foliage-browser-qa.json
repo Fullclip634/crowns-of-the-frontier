@@ -1,0 +1,515 @@
+{
+  "passed": true,
+  "stage": "baseline-comparison",
+  "checks": [
+    {
+      "harvest": {
+        "map": "highlands",
+        "harvested": 3.480000000000075,
+        "carried": 3.48,
+        "trees": 8
+      },
+      "quality": "medium",
+      "art": {
+        "source": "Blender",
+        "detail": "medium",
+        "models": 126,
+        "bytes": 12979076
+      },
+      "frame": 26,
+      "drawCalls": 18,
+      "forest": [
+        {
+          "variant": 0,
+          "nearParts": 3,
+          "nearTriangles": 6698,
+          "nearVisible": 1,
+          "farVisible": 0
+        },
+        {
+          "variant": 1,
+          "nearParts": 3,
+          "nearTriangles": 6613,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 2,
+          "nearParts": 3,
+          "nearTriangles": 6748,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 3,
+          "nearParts": 3,
+          "nearTriangles": 6741,
+          "nearVisible": 2,
+          "farVisible": 0
+        }
+      ],
+      "ui": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+      },
+      "units": {
+        "drawn": 1,
+        "allocated": 1,
+        "activeBatches": 1,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 32768,
+        "rigParts": 1,
+        "rigUploadBytes": 10240,
+        "rigUsedBytes": 640
+      }
+    },
+    {
+      "harvest": {
+        "map": "desert",
+        "harvested": 3.480000000000075,
+        "carried": 3.48,
+        "trees": 8
+      },
+      "quality": "medium",
+      "art": {
+        "source": "Blender",
+        "detail": "medium",
+        "models": 126,
+        "bytes": 12979076
+      },
+      "frame": 40,
+      "drawCalls": 18,
+      "forest": [
+        {
+          "variant": 0,
+          "nearParts": 3,
+          "nearTriangles": 6596,
+          "nearVisible": 1,
+          "farVisible": 0
+        },
+        {
+          "variant": 1,
+          "nearParts": 3,
+          "nearTriangles": 6533,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 2,
+          "nearParts": 3,
+          "nearTriangles": 6686,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 3,
+          "nearParts": 3,
+          "nearTriangles": 6672,
+          "nearVisible": 2,
+          "farVisible": 0
+        }
+      ],
+      "ui": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+      },
+      "units": {
+        "drawn": 1,
+        "allocated": 1,
+        "activeBatches": 1,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 32768,
+        "rigParts": 1,
+        "rigUploadBytes": 10240,
+        "rigUsedBytes": 640
+      }
+    },
+    {
+      "harvest": {
+        "map": "winter",
+        "harvested": 3.480000000000075,
+        "carried": 3.48,
+        "trees": 8
+      },
+      "quality": "medium",
+      "art": {
+        "source": "Blender",
+        "detail": "medium",
+        "models": 126,
+        "bytes": 12979076
+      },
+      "frame": 54,
+      "drawCalls": 18,
+      "forest": [
+        {
+          "variant": 0,
+          "nearParts": 3,
+          "nearTriangles": 3252,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 1,
+          "nearParts": 3,
+          "nearTriangles": 3244,
+          "nearVisible": 1,
+          "farVisible": 0
+        },
+        {
+          "variant": 2,
+          "nearParts": 3,
+          "nearTriangles": 3240,
+          "nearVisible": 2,
+          "farVisible": 0
+        },
+        {
+          "variant": 3,
+          "nearParts": 3,
+          "nearTriangles": 3260,
+          "nearVisible": 2,
+          "farVisible": 0
+        }
+      ],
+      "ui": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+      },
+      "units": {
+        "drawn": 1,
+        "allocated": 1,
+        "activeBatches": 1,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 32768,
+        "rigParts": 1,
+        "rigUploadBytes": 10240,
+        "rigUsedBytes": 640
+      }
+    },
+    {
+      "profileReturn": {
+        "quality": "low",
+        "art": {
+          "source": "Blender",
+          "detail": "low",
+          "models": 126,
+          "bytes": 4156076
+        },
+        "frame": 74,
+        "drawCalls": 21,
+        "forest": [
+          {
+            "variant": 0,
+            "nearParts": 3,
+            "nearTriangles": 1936,
+            "nearVisible": 1,
+            "farVisible": 0
+          },
+          {
+            "variant": 1,
+            "nearParts": 3,
+            "nearTriangles": 1848,
+            "nearVisible": 2,
+            "farVisible": 0
+          },
+          {
+            "variant": 2,
+            "nearParts": 3,
+            "nearTriangles": 1980,
+            "nearVisible": 1,
+            "farVisible": 1
+          },
+          {
+            "variant": 3,
+            "nearParts": 3,
+            "nearTriangles": 1972,
+            "nearVisible": 2,
+            "farVisible": 0
+          }
+        ],
+        "ui": {
+          "width": 960,
+          "height": 640,
+          "coarse": false,
+          "touchPoints": 0,
+          "overflow": false,
+          "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+        },
+        "units": {
+          "drawn": 1,
+          "allocated": 1,
+          "activeBatches": 1,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 0,
+          "capacityMatrixBytes": 32768,
+          "rigParts": 1,
+          "rigUploadBytes": 10240,
+          "rigUsedBytes": 640
+        }
+      }
+    },
+    {
+      "profileReturn": {
+        "quality": "medium",
+        "art": {
+          "source": "Blender",
+          "detail": "medium",
+          "models": 126,
+          "bytes": 12979076
+        },
+        "frame": 88,
+        "drawCalls": 18,
+        "forest": [
+          {
+            "variant": 0,
+            "nearParts": 3,
+            "nearTriangles": 6698,
+            "nearVisible": 1,
+            "farVisible": 0
+          },
+          {
+            "variant": 1,
+            "nearParts": 3,
+            "nearTriangles": 6613,
+            "nearVisible": 2,
+            "farVisible": 0
+          },
+          {
+            "variant": 2,
+            "nearParts": 3,
+            "nearTriangles": 6748,
+            "nearVisible": 2,
+            "farVisible": 0
+          },
+          {
+            "variant": 3,
+            "nearParts": 3,
+            "nearTriangles": 6741,
+            "nearVisible": 2,
+            "farVisible": 0
+          }
+        ],
+        "ui": {
+          "width": 960,
+          "height": 640,
+          "coarse": false,
+          "touchPoints": 0,
+          "overflow": false,
+          "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+        },
+        "units": {
+          "drawn": 1,
+          "allocated": 1,
+          "activeBatches": 1,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 0,
+          "capacityMatrixBytes": 32768,
+          "rigParts": 1,
+          "rigUploadBytes": 10240,
+          "rigUsedBytes": 640
+        }
+      }
+    },
+    {
+      "phone": {
+        "quality": "medium",
+        "art": {
+          "source": "Blender",
+          "detail": "medium",
+          "models": 126,
+          "bytes": 12979076
+        },
+        "frame": 20,
+        "drawCalls": 18,
+        "forest": [
+          {
+            "variant": 0,
+            "nearParts": 3,
+            "nearTriangles": 6698,
+            "nearVisible": 1,
+            "farVisible": 0
+          },
+          {
+            "variant": 1,
+            "nearParts": 3,
+            "nearTriangles": 6613,
+            "nearVisible": 2,
+            "farVisible": 0
+          },
+          {
+            "variant": 2,
+            "nearParts": 3,
+            "nearTriangles": 6748,
+            "nearVisible": 2,
+            "farVisible": 0
+          },
+          {
+            "variant": 3,
+            "nearParts": 3,
+            "nearTriangles": 6741,
+            "nearVisible": 2,
+            "farVisible": 0
+          }
+        ],
+        "ui": {
+          "width": 640,
+          "height": 360,
+          "coarse": true,
+          "touchPoints": 1,
+          "overflow": false,
+          "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+        },
+        "units": {
+          "drawn": 1,
+          "allocated": 1,
+          "activeBatches": 1,
+          "matrixUploadBytes": 0,
+          "ownerUploadBytes": 0,
+          "capacityMatrixBytes": 32768,
+          "rigParts": 1,
+          "rigUploadBytes": 10240,
+          "rigUsedBytes": 640
+        }
+      },
+      "emulatedTouchDeselectPreservesHarvestOrder": true,
+      "physicalDevice": false
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; staged art/interaction and viewport checks, not physical-device FPS",
+  "buildId": "1792064666043",
+  "candidate": {
+    "quality": "medium",
+    "art": {
+      "source": "Blender",
+      "detail": "medium",
+      "models": 126,
+      "bytes": 12979076
+    },
+    "frame": 93,
+    "drawCalls": 18,
+    "forest": [
+      {
+        "variant": 0,
+        "nearParts": 3,
+        "nearTriangles": 6698,
+        "nearVisible": 1,
+        "farVisible": 0
+      },
+      {
+        "variant": 1,
+        "nearParts": 3,
+        "nearTriangles": 6613,
+        "nearVisible": 2,
+        "farVisible": 0
+      },
+      {
+        "variant": 2,
+        "nearParts": 3,
+        "nearTriangles": 6748,
+        "nearVisible": 2,
+        "farVisible": 0
+      },
+      {
+        "variant": 3,
+        "nearParts": 3,
+        "nearTriangles": 6741,
+        "nearVisible": 2,
+        "farVisible": 0
+      }
+    ],
+    "ui": {
+      "width": 960,
+      "height": 640,
+      "coarse": false,
+      "touchPoints": 0,
+      "overflow": false,
+      "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+    },
+    "units": {
+      "drawn": 1,
+      "allocated": 1,
+      "activeBatches": 1,
+      "matrixUploadBytes": 0,
+      "ownerUploadBytes": 0,
+      "capacityMatrixBytes": 32768,
+      "rigParts": 1,
+      "rigUploadBytes": 10240,
+      "rigUsedBytes": 640
+    }
+  },
+  "baseline": {
+    "quality": "medium",
+    "art": {
+      "source": "Blender",
+      "detail": "medium",
+      "models": 126,
+      "bytes": 16280868
+    },
+    "frame": 20,
+    "drawCalls": 18,
+    "forest": [
+      {
+        "variant": 0,
+        "nearParts": 3,
+        "nearTriangles": 1936,
+        "nearVisible": 1,
+        "farVisible": 0
+      },
+      {
+        "variant": 1,
+        "nearParts": 3,
+        "nearTriangles": 1848,
+        "nearVisible": 2,
+        "farVisible": 0
+      },
+      {
+        "variant": 2,
+        "nearParts": 3,
+        "nearTriangles": 1980,
+        "nearVisible": 2,
+        "farVisible": 0
+      },
+      {
+        "variant": 3,
+        "nearParts": 3,
+        "nearTriangles": 1972,
+        "nearVisible": 2,
+        "farVisible": 0
+      }
+    ],
+    "ui": {
+      "width": 960,
+      "height": 640,
+      "coarse": false,
+      "touchPoints": 0,
+      "overflow": false,
+      "resources": "◒︎6000FOOD♣︎6000TIMBER◆︎6000GOLD⬟︎6000STONE♟9/35POPULATION"
+    },
+    "units": {
+      "drawn": 1,
+      "allocated": 1,
+      "activeBatches": 1,
+      "matrixUploadBytes": 0,
+      "ownerUploadBytes": 0,
+      "capacityMatrixBytes": 32768,
+      "rigParts": 1,
+      "rigUploadBytes": 10240,
+      "rigUsedBytes": 640
+    }
+  }
+}

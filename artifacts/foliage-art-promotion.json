@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "baseline": "ee25ae1176b1baea5aee6b78f73e6342b3a60377",
+  "productionBuild": "1792064666043",
+  "models": 126,
+  "originalEditableSHA256": "7f251d7370e692bf78ddd6dbe218274ad6d62d9d8313624dd61419bf01babe3a",
+  "originalEditableChanged": false,
+  "lowAndHighUnchanged": true,
+  "oldBalancedBytes": 16280868,
+  "balancedBytes": 12979076,
+  "downloadReduction": 0.20280196362994896,
+  "leafPatchBytes": 443688,
+  "precision": {
+    "passed": true,
+    "models": 126,
+    "meshes": 1289,
+    "visibleTriangles": 649405,
+    "exactTrianglePositionsAndWinding": true,
+    "normalLimitDegrees": 0.05,
+    "maxNormalDegrees": 0.0038601816402106938,
+    "maxUVError": 0,
+    "maxColorError": 0,
+    "referenceBytes": 17362376,
+    "candidateBytes": 12979076,
+    "referenceDecodedBufferBytes": 36845152,
+    "candidateDecodedBufferBytes": 33108644,
+    "referenceSHA256": "0ee2ce87422575de07d7db7e1e3eea4f45d224e2b74134f447354ffc80b37815",
+    "candidateSHA256": "fd9a3fa3f20e3422a3fdf17be5f02328c55d479e588cbb3878000813756a17ba"
+  },
+  "backup": ".tools/art-backup/balanced-foliage-20261015-ee25",
+  "editableLeafPatch": ".tools/art-candidate/balanced-foliage/raw/frontier-foliage.blend",
+  "unfinishedGraphicsPublished": false
+}

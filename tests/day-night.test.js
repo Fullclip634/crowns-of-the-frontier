@@ -23,4 +23,5 @@ test('tree detail does not flicker under small camera changes and resets on a qu
   for(const height of [33,34,32,31,28]){state=treeDetail(height,'high',state);assert.ok(state.near);}
   state=treeDetail(23,'high',state);assert.equal(state.near,false);assert.equal(treeDetail(29,'high',state).near,false);assert.equal(treeDetail(31,'high',state).near,true);
   assert.equal(treeDetail(50,'low',state).near,false);assert.equal(treeDetail(57,'medium').near,true);assert.equal(treeDetail(101,'low').near,true);
+  let balanced=treeDetail(41,'medium');assert.ok(balanced.near);assert.ok(treeDetail(34,'medium',balanced).near);balanced=treeDetail(32,'medium',balanced);assert.equal(balanced.near,false);assert.equal(treeDetail(39,'medium',balanced).near,false);assert.equal(treeDetail(40,'medium',balanced).near,true);
 });

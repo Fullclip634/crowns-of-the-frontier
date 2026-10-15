@@ -1,5 +1,11 @@
 # Terrain-fitted foundations and clear gate passages (version 2.6.1)
 
+## 15 October 2026 — Richer Balanced trees with a smaller catalogue
+
+- Add sparse, closed Blender leaf tips and fuller near broadleaf canopies, retain cheap distant trees and three forest material batches, and improve projected-size selection with hysteresis.
+- Reduce Balanced from 16.28 MB to 12.98 MB. Validate every visible triangle and strict additional shading precision during packing; preserve Low and High catalogues and the complete editable source.
+- Verify 279 release regressions, 13 focused checks, three biomes with harvesting, quality return, paired screenshots and touch-emulated landscape controls. Hardware FPS and full game completion remain unverified.
+
 ## 15 October 2026 — Preserve local kingdoms when leaving multiplayer
 
 - Prevent private multiplayer snapshots from overwriting a local save, including after disconnect/leave. Hide legacy network snapshots from local resume without deleting them.

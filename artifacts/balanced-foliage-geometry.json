@@ -1,0 +1,77 @@
+{
+  "passed": true,
+  "trees": [
+    {
+      "key": "tree:highlands:0:near",
+      "leaves": 392,
+      "volume": 0.40511479864168637,
+      "oldTriangles": 1936,
+      "middleTriangles": 6698,
+      "highTriangles": 10358,
+      "ratio": 0.646649932419386
+    },
+    {
+      "key": "tree:highlands:1:near",
+      "leaves": 392,
+      "volume": 0.4081533737686801,
+      "oldTriangles": 1848,
+      "middleTriangles": 6613,
+      "highTriangles": 10272,
+      "ratio": 0.6437889408099688
+    },
+    {
+      "key": "tree:highlands:2:near",
+      "leaves": 392,
+      "volume": 0.40522708457137935,
+      "oldTriangles": 1980,
+      "middleTriangles": 6748,
+      "highTriangles": 10402,
+      "ratio": 0.648721399730821
+    },
+    {
+      "key": "tree:highlands:3:near",
+      "leaves": 393,
+      "volume": 0.40286023183822756,
+      "oldTriangles": 1972,
+      "middleTriangles": 6741,
+      "highTriangles": 10394,
+      "ratio": 0.6485472387916106
+    },
+    {
+      "key": "tree:desert:0:near",
+      "leaves": 392,
+      "volume": 0.4053114163301268,
+      "oldTriangles": 1834,
+      "middleTriangles": 6596,
+      "highTriangles": 10254,
+      "ratio": 0.6432611663740979
+    },
+    {
+      "key": "tree:desert:1:near",
+      "leaves": 392,
+      "volume": 0.40815218721642565,
+      "oldTriangles": 1706,
+      "middleTriangles": 6533,
+      "highTriangles": 10200,
+      "ratio": 0.6404901960784314
+    },
+    {
+      "key": "tree:desert:2:near",
+      "leaves": 393,
+      "volume": 0.40619092859075545,
+      "oldTriangles": 1910,
+      "middleTriangles": 6686,
+      "highTriangles": 10328,
+      "ratio": 0.6473663826491092
+    },
+    {
+      "key": "tree:desert:3:near",
+      "leaves": 393,
+      "volume": 0.4028046956082103,
+      "oldTriangles": 1914,
+      "middleTriangles": 6672,
+      "highTriangles": 10334,
+      "ratio": 0.6456357654344881
+    }
+  ]
+}

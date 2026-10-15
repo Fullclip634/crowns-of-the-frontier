@@ -1,0 +1,153 @@
+{
+  "passed": true,
+  "models": 8,
+  "sourceSHA256": "7f251d7370e692bf78ddd6dbe218274ad6d62d9d8313624dd61419bf01babe3a",
+  "sourceUnchanged": true,
+  "revision": "volumetric-tips-v1",
+  "parts": [
+    {
+      "key": "tree:desert:0:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.2004938972388388,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:0:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.2048194450878517,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:1:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20456810088023655,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:1:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.2035319079998461,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:2:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 197,
+      "triangles": 1576,
+      "closedVolume": 0.2076156912533559,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:2:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.1985743920292925,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:3:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20151218411719873,
+      "watertight": true
+    },
+    {
+      "key": "tree:desert:3:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 197,
+      "triangles": 1576,
+      "closedVolume": 0.2013484889607104,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:0:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20049391204752298,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:0:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20481945674537844,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:1:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20456809418904204,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:1:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20353190629213594,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:2:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.2065632761010929,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:2:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.19857442325412947,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:3:near",
+      "role": "leaf",
+      "originalLeaves": 512,
+      "retainedLeaves": 196,
+      "triangles": 1568,
+      "closedVolume": 0.20151217739407587,
+      "watertight": true
+    },
+    {
+      "key": "tree:highlands:3:near",
+      "role": "leafDark",
+      "originalLeaves": 512,
+      "retainedLeaves": 197,
+      "triangles": 1576,
+      "closedVolume": 0.20136948404936286,
+      "watertight": true
+    }
+  ]
+}

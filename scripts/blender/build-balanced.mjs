@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {composeQualityCatalogue} from './quality-catalogue.mjs';
+import {composeBalancedCatalogue} from './balanced-foliage.mjs';
+import {validateMeshPrecision} from './validate-mesh-precision.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawn} from 'node:child_process';
@@ -12,17 +13,23 @@ assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative),'Cata
 const base=pathToFileURL(directory+path.sep),manifest=JSON.parse(await fs.readFile(new URL('catalogue.json',base),'utf8'));
 assert.equal(manifest.completeCatalogue,true,'Partial catalogues cannot replace Balanced');
 const near=await fs.readFile(new URL('frontier-near.glb',base)),low=await fs.readFile(new URL('frontier-low.glb',base));
-const richer=manifest.models.filter(m=>/^(building|resource):/.test(m.key)).map(m=>m.key),lighter=manifest.models.filter(m=>!richer.includes(m.key)).map(m=>m.key);
-assert.equal(richer.length+lighter.length,126);
-const bytes=composeQualityCatalogue([{bytes:near,keys:richer},{bytes:low,keys:lighter}]);
+const foliage=await fs.readFile(new URL('frontier-foliage.glb',base));
+const {bytes,richer,lighter}=composeBalancedCatalogue({near,low,foliage,models:manifest.models});
 const scratch=path.join(project,'.tools','art-candidate','balanced'),optimizer=process.env.GLTFPACK_BIN||path.join(project,'.tools','gltfpack','gltfpack.exe');
 await fs.mkdir(scratch,{recursive:true});const input=path.join(scratch,'frontier-composed.glb'),output=path.join(scratch,'frontier-balanced.glb');await fs.writeFile(input,bytes);
 // Source catalogues share whole-roster vertex buffers. Repack the selected
 // accessor ranges without another simplification pass or losing joint extras.
-await new Promise((resolve,reject)=>{const child=spawn(optimizer,['-i',input,'-o',output,'-cc','-kn','-km','-ke','-kv','-noq'],{windowsHide:true,stdio:'inherit'});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(new Error('Balanced mesh packing failed: '+code)));});
+const reference=path.join(scratch,'frontier-precision-reference.glb');
+const pack=(target,precision)=>new Promise((resolve,reject)=>{const child=spawn(optimizer,['-i',input,'-o',target,'-cc','-kn','-km','-ke','-kv',...precision],{windowsHide:true,stdio:'inherit'});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(new Error('Balanced mesh packing failed: '+code)));});
+await pack(reference,['-noq']);
+await pack(output,['-vpf','-vp','16','-vtf','-vn','16','-vc','8']);
 const packed=await fs.readFile(output);assert.ok(packed.length<near.length,'Balanced must download less than High');
+const referenceBytes=await fs.readFile(reference),precision=await validateMeshPrecision(referenceBytes,packed);
 await fs.writeFile(new URL('frontier-balanced.glb',base),packed);
-manifest.sizes.balanced=packed.length;manifest.balancedComposition='High buildings/resources; Low troops and forests; selected geometry repacked without another simplification pass.';
-manifest.balancedSourceHashes={near:createHash('sha256').update(near).digest('hex'),low:createHash('sha256').update(low).digest('hex')};
+manifest.sizes.balanced=packed.length;manifest.balancedComposition='High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.';
+manifest.balancedFoliage='volumetric-tips-v1';
+manifest.balancedEncoding='Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.';
+manifest.balancedPrecision={...precision,referenceSHA256:createHash('sha256').update(referenceBytes).digest('hex'),candidateSHA256:createHash('sha256').update(packed).digest('hex')};
+manifest.balancedSourceHashes=Object.fromEntries(Object.entries({near,low,foliage}).map(([key,value])=>[key,createHash('sha256').update(value).digest('hex')]));
 await fs.writeFile(new URL('catalogue.json',base),JSON.stringify(manifest,null,2)+'\n');
-console.log(JSON.stringify({models:126,richer:richer.length,lighter:lighter.length,bytes:packed.length}));
+console.log(JSON.stringify({models:126,richer,lighter,foliageModels:8,bytes:packed.length}));
