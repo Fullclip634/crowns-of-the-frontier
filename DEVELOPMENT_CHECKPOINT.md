@@ -1,3 +1,11 @@
+# Local kingdom save protection — 15 October 2026
+
+Leaving a multiplayer room previously cleared the connection flag before saving the player's partial perspective over the local kingdom. The unchanged foundation release reproduced this through real WebSockets and the production menu. Save eligibility now checks the simulation's multiplayer provenance as well as the connection, even after leaving. Existing network snapshots are not offered as local saves and are preserved in storage for diagnosis. Local allied AI/campaign saves remain available. Multiplayer menus remove the local-save button and label leaving accurately; a server-closed room exits safely.
+
+The isolated release passes all 272 regression tests, including four new storage/Simulation regressions. Production build 1792060823341 passes six browser checks: actual private room state, unchanged local save on leave, allied AI restore, refusal to resume legacy network snapshots, server-closed room handling, and the local menu at 640 × 360. The browser uses software SwiftShader with fixture rendering throttled; this is functional evidence, not phone hardware, native keyboard or FPS validation. See artifacts/local-save-before.json, artifacts/local-save-browser-qa.json and artifacts/regression-local-save-release.txt.
+
+The full RTS goal remains active and incomplete. Compressed surfaces and graphics-transition work remain excluded from this release. Their previous High-to-Balanced runtime check stalled; broader visuals, balance, physical devices and hosted deployment still need validation.
+
 # Foundations and gates checkpoint — 15 October 2026
 
 The whole-game goal remains active and incomplete. The isolated foundation release passes 268 regressions. Forty-two focused tests passed before the final thin-marker refinement; the final complete suite includes that refinement. Production build 1792059726497 passes six browser checks covering paid Wonder construction, fitted geometry/selection, actual friendly gate opening, Low/High/Balanced rendering, and a 640 × 360 layout. This is software SwiftShader evidence, not hardware FPS or a native touch-device pass.

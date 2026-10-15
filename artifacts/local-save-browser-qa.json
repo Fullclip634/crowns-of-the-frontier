@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "baseline": false,
+  "stage": "phone-local-menu",
+  "checks": [
+    {
+      "partial": {
+        "multiplayer": true,
+        "otherGold": 0,
+        "saveRefused": true
+      }
+    },
+    {
+      "localSavePreserved": true,
+      "playing": false
+    },
+    {
+      "restored": {
+        "multiplayer": false,
+        "time": 73,
+        "gold": 1234,
+        "aiStates": true,
+        "save": true
+      }
+    },
+    {
+      "legacyNetworkSaveHiddenAndNotResumed": true
+    },
+    {
+      "closedRoomReturnsToMenuWithoutSaving": true
+    },
+    {
+      "localSaveControlsRetained": true,
+      "phoneLayout": "640x360; viewport check only"
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; save/menu checks, not physical-device performance",
+  "buildId": "1792060823341",
+  "networkMenu": {
+    "hasLocalSave": false,
+    "hasSaveAndReturn": false
+  }
+}

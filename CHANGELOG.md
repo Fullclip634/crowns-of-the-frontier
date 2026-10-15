@@ -1,5 +1,11 @@
 # Terrain-fitted foundations and clear gate passages (version 2.6.1)
 
+## 15 October 2026 — Preserve local kingdoms when leaving multiplayer
+
+- Prevent private multiplayer snapshots from overwriting a local save, including after disconnect/leave. Hide legacy network snapshots from local resume without deleting them.
+- Remove unavailable local-save controls from multiplayer menus, preserve ordinary AI/campaign saving, and return safely when the server closes a room.
+- Verified with 272 release regressions and six production browser checks; software rendering and viewport checks do not establish physical-device performance or full game completion.
+
 - Existing building plinths extend into the displayed terrain instead of leaving daylight underneath on slopes. Roofs and architecture retain their authored positions and normals; stone courses keep a consistent texture scale. This adds no meshes or texture loads. Wall joints retain their two instance batches.
 - Three original Blender gates use two solid side footings and a banner mounted on the lintel. Their 2.5 m entrance stays clear when the portcullis opens. Grounded bars retract inside the masonry housing, with matching CPU picking and bounds, and stationary gates avoid repeated buffer uploads.
 - Thin building selection contours follow terrain; connected wall rotations preserve that contour. Farms retain their fitted crop beds and square selection frames, and docks retain their separate shoreline behavior.

@@ -10,7 +10,7 @@ export class LanClient {
       if(data.type==='chat-error')this.callbacks.chatError?.(data.message);
       if(data.type==='state')this.callbacks.state(data.state,data.effects,data.waiting);
       if(data.type==='error'){if(!this.active&&this.intent?.type==='resume'){this.session=null;try{sessionStorage.removeItem('crowns-lan');}catch{}}this.callbacks.notice(data.message);}
-      if(data.type==='closed'){this.leave();this.callbacks.notice(data.message);}
+      if(data.type==='closed'){this.leave();this.callbacks.closed?.();this.callbacks.notice(data.message);}
       if(data.type==='pong')this.ping=Date.now()-data.stamp;
     });
     socket.addEventListener('close',()=>{if(this.socket!==socket)return;clearInterval(this.pinger);this.callbacks.connection?.(false);if(this.leaving)return;this.callbacks.notice(this.active?'Connection interrupted. The match waits while you reconnect.':'Could not connect to multiplayer. The server may be waking up; try again shortly.');if(this.session&&this.retry++<8)this.reconnectTimer=setTimeout(()=>this.connect({type:'resume',...this.session}),2000);});

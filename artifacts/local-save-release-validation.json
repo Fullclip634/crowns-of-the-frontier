@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "baseline": "636b16f30ee32a05ffb89c3d242b040704fcf3e7",
+  "production": {
+    "buildId": "1792060823341",
+    "version": "2.6.1"
+  },
+  "staticBuild": {
+    "buildId": "1792061267143",
+    "version": "2.6.1"
+  },
+  "regressions": 272,
+  "browser": {
+    "passed": true,
+    "baseline": false,
+    "stage": "phone-local-menu",
+    "checks": [
+      {
+        "partial": {
+          "multiplayer": true,
+          "otherGold": 0,
+          "saveRefused": true
+        }
+      },
+      {
+        "localSavePreserved": true,
+        "playing": false
+      },
+      {
+        "restored": {
+          "multiplayer": false,
+          "time": 73,
+          "gold": 1234,
+          "aiStates": true,
+          "save": true
+        }
+      },
+      {
+        "legacyNetworkSaveHiddenAndNotResumed": true
+      },
+      {
+        "closedRoomReturnsToMenuWithoutSaving": true
+      },
+      {
+        "localSaveControlsRetained": true,
+        "phoneLayout": "640x360; viewport check only"
+      }
+    ],
+    "errors": [],
+    "renderer": "Software SwiftShader; save/menu checks, not physical-device performance",
+    "buildId": "1792060823341",
+    "networkMenu": {
+      "hasLocalSave": false,
+      "hasSaveAndReturn": false
+    }
+  },
+  "staticEntries": 38,
+  "archives": [
+    {
+      "kind": "source",
+      "bytes": 33459041,
+      "sha256": "319b2fb0b967b74447290467394a364f781c2bd686666cc023d033bcf912c305"
+    },
+    {
+      "kind": "static",
+      "bytes": 33196707,
+      "sha256": "bca0fd1eb45a6276770e8b0b0710ad199ec7ddd4e2e17283dcf5b37e97829387"
+    }
+  ],
+  "unfinishedGraphicsPublished": false,
+  "limitations": [
+    "Software SwiftShader browser fixture; no hardware FPS or native touch/keyboard validation",
+    "Compressed graphics transition work remains unverified and excluded",
+    "Whole-game visual quality, balance and hosted deployment remain incomplete"
+  ]
+}

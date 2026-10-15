@@ -1,0 +1,30 @@
+{
+  "passed": false,
+  "baseline": true,
+  "stage": "leave-room",
+  "checks": [
+    {
+      "partial": {
+        "multiplayer": true,
+        "otherGold": 0,
+        "saveRefused": true
+      }
+    },
+    {
+      "localSavePreserved": false,
+      "playing": false
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; save/menu checks, not physical-device performance",
+  "buildId": "1792059726497",
+  "networkMenu": {
+    "hasLocalSave": true,
+    "hasSaveAndReturn": true
+  },
+  "reproduced": true,
+  "corruptedSave": {
+    "multiplayer": true,
+    "otherGold": 0
+  }
+}
