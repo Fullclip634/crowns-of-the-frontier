@@ -1,0 +1,6 @@
+{"passed": true, "models": 126, "unchangedOtherModels": 123, "liveSourceSHA256": "4a687ce22e9bb46f016120632d0aa2838764c683a964fd41db4b5660ece6e341", "candidateSHA256": "7f251d7370e692bf78ddd6dbe218274ad6d62d9d8313624dd61419bf01babe3a"}
+Blender 4.5.14 LTS (hash 62c1db4208e8 built 2026-09-15 01:33:49)
+Read blend: "C:\New\Age_Of_Emprire\.tools\art-refined\frontier-assets.blend"
+Read blend: "C:\New\Age_Of_Emprire\.tools\art-candidate\gate-footings\raw\frontier-assets.blend"
+
+Blender quit

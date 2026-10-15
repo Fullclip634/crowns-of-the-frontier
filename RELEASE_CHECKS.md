@@ -1,3 +1,12 @@
+# Foundations and gates release checks — 15 October 2026
+
+- [Complete isolated regression](artifacts/regression-foundations-release.txt): 268 passes, zero failures. The final marker refinement is included.
+- [Focused geometry/gameplay tests](artifacts/gate-foundation-focused.txt): 42 passes before the final marker refinement. Three decoded graphics catalogues cover 60 nonfarm/non-dock building variants, seven maps and 2,283 valid sampled placements per catalogue. The source architecture and authored normals stay unchanged above the plinth. This does not prove every possible map position.
+- Gate tests check open/closed bars, clear entrance rays at multiple positions and four angles, source-buffer preservation, restored closing geometry and stable-pose uploads. Existing wall, farm and ownership behavior remains covered.
+- [Production browser report](artifacts/foundations-browser-qa.json): six checks pass on build 1792059726497. Screenshots cover Low, High, Balanced, closed/open gates and a short landscape viewport. Software SwiftShader and a paused fixture support visual/functional conclusions only. Physical-device FPS and native touch behavior are not established here.
+- [Blender editable comparison](artifacts/gate-editable-validation.json): 126 complete models, 123 unrelated models unchanged including UVs/colors/metadata/transforms. Repeat authoring reuses the two gate footings. Repeating composition with the same patch is safe; re-exporting Blender data may change compressed bytes, and Balanced must be regenerated afterward.
+- Live art promotion retains a source/GLB backup and checks the validated editable SHA-256 before writing. Full Blender regeneration, broader performance, real-device play and hosted revision verification remain outstanding.
+
 # Chat and phone camera release checks — 15 October 2026
 
 - [Release regression](artifacts/regression-chat-release.txt): 257 passing tests, zero failures in the exact isolated source snapshot.

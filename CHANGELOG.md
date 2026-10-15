@@ -1,3 +1,9 @@
+# Terrain-fitted foundations and clear gate passages (version 2.6.1)
+
+- Existing building plinths extend into the displayed terrain instead of leaving daylight underneath on slopes. Roofs and architecture retain their authored positions and normals; stone courses keep a consistent texture scale. This adds no meshes or texture loads. Wall joints retain their two instance batches.
+- Three original Blender gates use two solid side footings and a banner mounted on the lintel. Their 2.5 m entrance stays clear when the portcullis opens. Grounded bars retract inside the masonry housing, with matching CPU picking and bounds, and stationary gates avoid repeated buffer uploads.
+- Thin building selection contours follow terrain; connected wall rotations preserve that contour. Farms retain their fitted crop beds and square selection frames, and docks retain their separate shoreline behavior.
+
 # Custom multiplayer battle chat and phone pinch zoom (version 2.6.1)
 
 - Human players can chat during a multiplayer battle with All and Team channels. The server supplies each sender's identity, isolates rooms and team audiences, limits bursts and message size, and holds only the latest 100 messages in room memory. Rejoining restores only authorized room history. There is no database or disk chat log.

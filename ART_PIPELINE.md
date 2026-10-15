@@ -1,3 +1,9 @@
+# Original gate footings and terrain integration — 15 October 2026
+
+Three original Blender gates now use separate closed side footings, a lintel-mounted banner and the existing animated portcullis. The complete editable source keeps all 126 models. The gate author supports a complete project-owned --source and can repeat without duplicating footings. Full builds compose farms, author/compose gates, update the full editable source, then regenerate Balanced. The full regeneration command has not been rerun end to end.
+
+Runtime fitting changes only existing plinth undersides, preserves authored normals above the plinth and keeps masonry texture scale. Moving gate bars use matching CPU geometry for picking/bounds and retract into the housing. Thin building selection contours follow terrain. No extra terrain-support meshes or texture fetches are added.
+
 # Blender art and runtime rendering
 
 The deployed game includes three GLB catalogues and texture files. Playing or deploying it requires no Blender installation and no external asset service.

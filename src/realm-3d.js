@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {treeDetail} from './tree-lod.js';
-import {UNITS,seededRandom} from './data.js';
+import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
 import {renderModelPortrait} from './portrait-3d.js';
@@ -8,6 +8,7 @@ import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {applySurfaceMaterials} from './surface-assets.js';
 import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
+import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -53,7 +54,7 @@ export function installRealm3D(WorldView){
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
-  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);this.materials.leaf.color.setHex(this.sim.options.map==='winter'?0x74836e:0x5c743d);this.materials.leafDark.color.setHex(this.sim.options.map==='winter'?0x364d40:0x3e5732);buildLandscape(this);};
+  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);this.materials.leaf.color.setHex(this.sim.options.map==='winter'?0x74836e:0x5c743d);this.materials.leafDark.color.setHex(this.sim.options.map==='winter'?0x364d40:0x3e5732);buildLandscape(this);};
   p.buildForest=function(){buildForest(this);};
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};
@@ -98,9 +99,12 @@ export function installRealm3D(WorldView){
     if(e.kind==='unit')node=this.unitNode(e);
     else node=this.mergeModel(e.kind==='building'?this.makeBuilding(e):resourceModel(this,e));
     node.position.set(e.x,this.entityHeight(e),e.z);node.userData.entity=e.id;node.userData.model3d={...node.userData.model3d,kind:e.kind,type:e.water?'fish':e.type};
+    if(e.kind==='building'&&!['farm','dock'].includes(e.type)){if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;groundBuildingFoundation(node,this.landscape);}
+    if(e.type==='gate')groundGatePortcullis(node,this.landscape);
     node.traverse(child=>child.userData.entity=e.id);this.objects.add(node);this.nodes.set(e.id,node);
-    if(e.owner===0){const field=e.type==='farm',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):this.geo.ring,ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.45));ring.visible=false;node.add(ring);node.userData.ring=ring;}
+    if(e.owner===0){const field=e.type==='farm',building=e.kind==='building',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):building?(this.geo.buildingRing??=new THREE.RingGeometry(.975,1,64)):this.geo.ring,ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:building?0x88d5b5:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.45));ring.visible=false;node.add(ring);node.userData.ring=ring;}
     if(e.type==='farm')fitFarmTerrain(node,this.landscape);
+    else if(e.kind==='building'&&e.type!=='dock')fitBuildingSelectionRing(node,this.landscape);
     return node;
   };
   p.updateConstruction=function(e,node){
@@ -118,12 +122,14 @@ export function installRealm3D(WorldView){
   p.showGhost=function(type,x,z,valid){
     if(this.ghost.userData.type!==type){
       this.ghost.userData.farmGroundX=this.ghost.userData.farmGroundZ=undefined;
+      this.ghost.userData.foundationGroundX=this.ghost.userData.foundationGroundZ=undefined;
       this.ghost.traverse(mesh=>{if(mesh.isMesh){if(!Object.values(this.geo).includes(mesh.geometry)&&!this.authoredGeometry?.has(mesh.geometry)&&!this.sharedModelGeometry?.has(mesh.geometry))mesh.geometry.dispose();if(mesh.userData.previewMaterial)mesh.material.dispose();}});this.clearGroup(this.ghost);
-      const model=this.mergeModel(buildingModel(this,{kind:'building',type,owner:0,r:2.5,x,z}));
-      model.traverse(mesh=>{if(!mesh.isMesh)return;mesh.material=mesh.material.clone();mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=type;
+      const model=this.mergeModel(this.makeBuilding({kind:'building',type,owner:0,r:BUILDINGS[type]?.r||2.5,x,z}));
+      model.traverse(mesh=>{if(!mesh.isMesh)return;const original=mesh.material;mesh.material=original.clone();mesh.material.defines={...original.defines};mesh.material.onBeforeCompile=original.onBeforeCompile;mesh.material.customProgramCacheKey=original.customProgramCacheKey;mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=type;
     }
-    this.ghost.position.set(x,this.groundHeight(x,z),z);this.ghost.visible=true;
+    this.ghost.position.set(x,foundation(this,{type,r:BUILDINGS[type]?.r||2.5,x,z}),z);this.ghost.visible=true;
     if(type==='farm'&&(this.ghost.userData.farmGroundX!==x||this.ghost.userData.farmGroundZ!==z)){fitFarmTerrain(this.ghost,this.landscape,true);this.ghost.userData.farmGroundX=x;this.ghost.userData.farmGroundZ=z;}
+    if(!['farm','dock'].includes(type)&&(this.ghost.userData.foundationGroundX!==x||this.ghost.userData.foundationGroundZ!==z)){groundBuildingFoundation(this.ghost.children[0],this.landscape,true);this.ghost.userData.foundationGroundX=x;this.ghost.userData.foundationGroundZ=z;}
     this.ghost.traverse(mesh=>{if(mesh.isMesh)mesh.material.color.setHex(valid?0x8de3c5:0xee816a);});
   };
   p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++){const f=this.fx[i];f.object.position.y=this.groundHeight(x,z)+.4;f.object.material.dispose();f.object.material=new THREE.MeshStandardMaterial({color:color??0xe8c28b,roughness:.9,transparent:true,opacity:.8});}};
@@ -149,7 +155,8 @@ export function installRealm3D(WorldView){
       let node=this.nodes.get(e.id);if(!node)continue;
       if(e.hp>0&&e.kind==='building'&&e.type==='towncenter'&&node.userData.model3d.architectureAge!==this.sim.players[e.owner].age){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
       const gate=node.userData.portcullis;
-      if(gate){const nearby=this.sim.entities.some(u=>u.hp>0&&u.kind==='unit'&&this.sim.allied(u.owner,e.owner)&&!u.embarked&&!UNITS[u.type].naval&&Math.hypot(u.x-e.x,u.z-e.z)<5.5),desired=nearby?2.5:0;gate.position.y+=(desired-gate.position.y)*Math.min(1,dt*6);}
+      if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
+      if(gate){const nearby=this.sim.entities.some(u=>u.hp>0&&u.kind==='unit'&&this.sim.allied(u.owner,e.owner)&&!u.embarked&&!UNITS[u.type].naval&&Math.hypot(u.x-e.x,u.z-e.z)<5.5),desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);}
     }
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);

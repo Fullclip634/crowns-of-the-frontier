@@ -43,6 +43,9 @@ if(!plan.resources){
   await run(process.execPath,['scripts/blender/compose-farms.mjs','--directory',plan.outputDirectory]);
   const editable=path.join(plan.rawDirectory,'frontier-assets.blend');
   await run(blender,['--background','--threads','1','--python-exit-code','1','--python','scripts/blender/compose-farm-editable.py','--','--source',editable,'--output',editable],path.join(plan.rawDirectory,'farm-editable-compose.log'));
+  await run(process.execPath,['scripts/blender/build-gate-footings.mjs','--source',editable]);
+  await run(process.execPath,['scripts/blender/compose-gate-footings.mjs','--directory',plan.outputDirectory]);
+  fs.copyFileSync(path.join(tools,'art-candidate/gate-footings/raw/frontier-assets.blend'),editable);
   await run(process.execPath,['scripts/blender/build-balanced.mjs','--directory',plan.outputDirectory]);
 }
 console.log(JSON.stringify({models:source.length,bytes:sizes,stage:plan.stage,completeCatalogue:!plan.resources,output:plan.outputDirectory}));

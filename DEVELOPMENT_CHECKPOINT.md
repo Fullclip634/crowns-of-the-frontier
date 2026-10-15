@@ -1,3 +1,9 @@
+# Foundations and gates checkpoint — 15 October 2026
+
+The whole-game goal remains active and incomplete. The isolated foundation release passes 268 regressions. Forty-two focused tests passed before the final thin-marker refinement; the final complete suite includes that refinement. Production build 1792059726497 passes six browser checks covering paid Wonder construction, fitted geometry/selection, actual friendly gate opening, Low/High/Balanced rendering, and a 640 × 360 layout. This is software SwiftShader evidence, not hardware FPS or a native touch-device pass.
+
+The three complete staged catalogues retain all 126 models, replacing only three gates; Blender comparison preserves the other 123 models including UVs, colors, metadata and transforms. The complete editable source is backed up before promotion. Complete art regeneration now includes the gate patch, but has not been rerun end to end. Unfinished compressed surfaces and graphics-transition work remains excluded. Hosted deployment, physical devices, broader balance and further visual work remain outstanding.
+
 # Chat and phone camera checkpoint — 15 October 2026
 
 The whole-game goal remains active and incomplete. This isolated release adds database-free human multiplayer battle chat and zoom-only phone pinching. All 257 release regressions and nine focused chat/existing-room checks pass. Production browser status: passed; see artifacts/battle-chat-qa.json. Physical phone keyboard behavior and hardware frame rates still need device validation.

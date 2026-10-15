@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "detail": "balanced",
+  "models": 60,
+  "maps": 7,
+  "validSites": 2283,
+  "extended": 1038,
+  "maximumGroundGap": -0.1335670552651087
+}

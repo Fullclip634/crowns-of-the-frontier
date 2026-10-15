@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "models": 126,
+  "unchangedOtherModels": 123,
+  "liveSourceSHA256": "4a687ce22e9bb46f016120632d0aa2838764c683a964fd41db4b5660ece6e341",
+  "candidateSHA256": "7f251d7370e692bf78ddd6dbe218274ad6d62d9d8313624dd61419bf01babe3a"
+}

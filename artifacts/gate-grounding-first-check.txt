@@ -1,0 +1,16 @@
+✔ the minimum of displayed grid cells bounds the complete footprint, including between sample corners (436.1909ms)
+✔ low foundations close terrain gaps at valid sites without changing architecture or source models (3730.3778ms)
+✔ balanced foundations close terrain gaps at valid sites without changing architecture or source models (8896.7456ms)
+✔ near foundations close terrain gaps at valid sites without changing architecture or source models (8529.7357ms)
+✔ moving a grounded construction preview restores its template and preserves shared buildings (191.506ms)
+✔ Balanced covers all 126 original models and its composition preserves selected compressed geometry before packing (284.0155ms)
+✔ the decoded Balanced geometry keeps visible triangles, silhouettes, surface roles and animated joints (806.9599ms)
+✔ quality composition rejects missing/duplicate models and unsupported external geometry (35.147ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 23267.7861

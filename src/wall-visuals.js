@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {wallConnections} from './walls.js';
 import {markInstancePrefix} from './render-batches.js';
+import {terrainFloor} from './building-grounding.js';
 
 // Small masonry joints use two shared instance batches rather than a new mesh
 // and material for every connection. The original Blender wall bodies remain.
@@ -21,7 +22,9 @@ export class WallVisuals{
     let visible=0;
     for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress,link.b.progress);if(progress<=0)continue;visible++;
       const ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,start={x:link.start.x-dx*.08,z:link.start.z-dz*.08},end={x:link.end.x+dx*.08,z:link.end.z+dz*.08};
-      this.piece(this.stone,link,start,end,ga,gb,1.67*progress,3.55*progress,1.47);this.piece(this.foundation,link,start,end,ga,gb,.08,.42,2.12);
+      this.piece(this.stone,link,start,end,ga,gb,1.67*progress,3.55*progress,1.47);
+      const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12,depth=Math.max(.42,Math.max(ga,gb)+.29-floor);
+      this.piece(this.foundation,link,start,end,ga,gb,.29-depth/2,depth,2.12);
       if(progress>.8){this.piece(this.stone,link,start,end,ga,gb,3.43*progress,.18,1.5);const mid={x:(start.x+end.x)/2,z:(start.z+end.z)/2},half=Math.min(.275,link.gap*.35),capA={x:mid.x-dx*half,z:mid.z-dz*half},capB={x:mid.x+dx*half,z:mid.z+dz*half};this.piece(this.stone,link,capA,capB,ga,gb,3.65*progress,.85*progress,1.5);}
     }
     for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;}v.wallDiagnostics={connections:this.links.length,visible,batches:2,stoneInstances:this.stone.count};

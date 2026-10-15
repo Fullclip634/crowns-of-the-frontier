@@ -84,7 +84,7 @@ function bakeSurface(view,part,matrix){
   if(!geometry.attributes.uv)geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(count*2),2));
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,color=material.color.toArray(),emissive=material.emissive?.toArray()||[0,0,0];
-  const mode=[m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
+  const mode=[m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
     colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1);
     surface[i*3+k]=k===0?material.roughness??.9:k===1?material.metalness??0:mode;

@@ -1,0 +1,110 @@
+{
+  "passed": true,
+  "baseline": "a0c8561167bd544fda85948308373348b9422e5c",
+  "production": {
+    "buildId": "1792059726497",
+    "version": "2.6.1"
+  },
+  "staticBuild": {
+    "buildId": "1792060003615",
+    "version": "2.6.1"
+  },
+  "tests": {
+    "releasePassed": 268,
+    "focusedBeforeThinMarkerPassed": 42,
+    "failed": 0
+  },
+  "browser": {
+    "passed": true,
+    "stage": "short-landscape",
+    "checks": [
+      {
+        "construction": {
+          "paid": true,
+          "completed": true,
+          "site": {
+            "x": 12,
+            "z": 22
+          }
+        }
+      },
+      {
+        "quality": "low",
+        "fittedMeshes": 1,
+        "ringError": 8.743076673756178e-8,
+        "drawCalls": 111,
+        "models": 126
+      },
+      {
+        "gate": {
+          "revision": "gate-footings-v1",
+          "poleMounted": true,
+          "open": 4.609401324465868,
+          "hiddenInsideHousing": true,
+          "wallJoints": 2
+        }
+      },
+      {
+        "quality": "high",
+        "fittedMeshes": 1,
+        "ringError": 8.806900647639893e-8,
+        "drawCalls": 110,
+        "models": 126
+      },
+      {
+        "quality": "medium",
+        "fittedMeshes": 1,
+        "ringError": 8.806900647639893e-8,
+        "drawCalls": 122,
+        "models": 126
+      },
+      {
+        "shortLandscape": {
+          "width": 640,
+          "height": 360,
+          "overflow": false,
+          "ring": true
+        },
+        "nativeTouchScope": "Viewport fit only; previous touch controls remain covered by the chat/pinch release"
+      }
+    ],
+    "errors": [],
+    "renderer": "Software SwiftShader; paused fixture for visual and functional checks, not physical-device FPS",
+    "buildId": "1792059726497"
+  },
+  "artwork": {
+    "passed": true,
+    "models": 126,
+    "replacedGates": 3,
+    "unchangedOtherModels": 123,
+    "bytes": {
+      "near": 17507608,
+      "low": 4156076,
+      "balanced": 16280868
+    },
+    "sourceBackup": ".tools\\art-backup\\gate-footings-20261015-a0c8561",
+    "editableSHA256": "7f251d7370e692bf78ddd6dbe218274ad6d62d9d8313624dd61419bf01babe3a",
+    "productionBuild": "1792059726497",
+    "physicalDeviceFrameRatesVerified": false
+  },
+  "staticEntries": 38,
+  "archives": [
+    {
+      "kind": "source",
+      "bytes": 33452557,
+      "sha256": "983e6d3595ebb63ad834bea8da9895a03a3bc9e75f9e6c70967a878ca1f4b53c"
+    },
+    {
+      "kind": "static",
+      "bytes": 33196535,
+      "sha256": "9f969de7c38860a34f78efeb86e0ddc3a94cf6fc2df288f024b231fe5c980472"
+    }
+  ],
+  "unfinishedGraphicsPublished": false,
+  "limitations": [
+    "Physical-device keyboard/touch and hardware FPS remain unverified",
+    "Complete Blender regeneration has not been rerun end to end",
+    "Broader visual/gameplay/balance work remains",
+    "Hosted Render revision has not been verified"
+  ]
+}

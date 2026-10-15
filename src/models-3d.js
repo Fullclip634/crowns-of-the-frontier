@@ -54,7 +54,7 @@ function builder(view,g){
 }
 function motion(mesh,type,pivot,side=1,parent=null){mesh.userData.motion={type,pivot,side,parent};return mesh;}
 function tag(group,definition){group.traverse(mesh=>{if(mesh.isMesh)mesh.userData.motion=definition;});}
-function flag(view,g,team,x,y,z,size=1){const b=builder(view,g);b.rod(view.materials.darkwood,[x,0,z],[x,y,z],.055);const f=b.piece(view.geo.cloth3d,team,x+size*.5,y-.35*size,z,size,.65*size,1);f.userData.flag=true;}
+function flag(view,g,team,x,y,z,size=1,mount=0){const b=builder(view,g);b.rod(view.materials.darkwood,[x,mount,z],[x,y,z],.055);const f=b.piece(view.geo.cloth3d,team,x+size*.5,y-.35*size,z,size,.65*size,1);f.userData.flag=true;}
 function barrel(view,g,x,y,z,s=.6){const b=builder(view,g),m=view.materials;b.piece(view.geo.capsule,m.wood,x,y+s*.7,z,s,s*1.4,s);for(const yy of [.25,1.1]){const hoop=b.piece(view.geo.ring3d,m.iron,x,y+s*yy,z,s*.48,s*.48,s*.48);hoop.rotation.x=Math.PI/2;}}
 function crate(view,g,x,y,z,s=.65){const b=builder(view,g),m=view.materials;b.box(m.wood,x,y+s*.5,z,s,s,s);for(const xx of [-.36,.36])b.box(m.darkwood,x+xx*s,y+s*.5,z+s*.51,.07*s,s*.95,.035);b.box(m.darkwood,x,y+s*.5,z+s*.525,s*1.15,.07,.035).rotation.z=.7;}
 function wheel(view,g,x,y,z,r=.5,animated=true){
@@ -307,7 +307,7 @@ export function buildingModel(view,e){
   }else if(type==='gate'){
     turret(view,g,o,-2,0,4.2,.76);turret(view,g,o,2,0,4.2,.76);b.arch(m.stone,0,0,0,4,3.7,1.2);b.box(m.stoneDark,0,3.65,0,4.3,.45,1.35);
     const gate=new THREE.Group(),p=builder(view,gate);for(let x=-1.15;x<=1.15;x+=.28)p.rod(m.iron,[x,.15,.05],[x,2.7,.05],.035);for(const yy of [.65,1.45,2.3])p.rod(m.iron,[-1.25,yy,.05],[1.25,yy,.05],.045);
-    view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,0,5.2,0,.75);
+    view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,0,5.2,0,.75,3.65);
   }else if(type==='monastery'){
     cottage(view,g,o,0,-.4,4.2,5.4,4.1);turret(view,g,o,-2.1,-1.8,7.3,.75,true);turret(view,g,o,2.1,-1.8,7.3,.75,true);
     b.arch(m.stoneDark,0,.1,2.4,2.1,3,.4);for(const x of [-1.55,1.55])b.arch(m.stoneDark,x,2.2,2.4,.75,1.5,.25);

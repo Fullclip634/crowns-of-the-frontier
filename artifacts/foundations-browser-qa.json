@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "stage": "short-landscape",
+  "checks": [
+    {
+      "construction": {
+        "paid": true,
+        "completed": true,
+        "site": {
+          "x": 12,
+          "z": 22
+        }
+      }
+    },
+    {
+      "quality": "low",
+      "fittedMeshes": 1,
+      "ringError": 8.743076673756178e-8,
+      "drawCalls": 111,
+      "models": 126
+    },
+    {
+      "gate": {
+        "revision": "gate-footings-v1",
+        "poleMounted": true,
+        "open": 4.609401324465868,
+        "hiddenInsideHousing": true,
+        "wallJoints": 2
+      }
+    },
+    {
+      "quality": "high",
+      "fittedMeshes": 1,
+      "ringError": 8.806900647639893e-8,
+      "drawCalls": 110,
+      "models": 126
+    },
+    {
+      "quality": "medium",
+      "fittedMeshes": 1,
+      "ringError": 8.806900647639893e-8,
+      "drawCalls": 122,
+      "models": 126
+    },
+    {
+      "shortLandscape": {
+        "width": 640,
+        "height": 360,
+        "overflow": false,
+        "ring": true
+      },
+      "nativeTouchScope": "Viewport fit only; previous touch controls remain covered by the chat/pinch release"
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; paused fixture for visual and functional checks, not physical-device FPS",
+  "buildId": "1792059726497"
+}
