@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "actualExpandedSettlement": {
+        "world": 480,
+        "grid": 240,
+        "players": 4,
+        "trees": 166,
+        "forestDepthRange": 19.464083828202863,
+        "terrain": {
+          "vertices": 12769,
+          "heightRange": {
+            "min": -4.348332405090332,
+            "max": 33.03353500366211
+          },
+          "rockyVertices": 5508,
+          "pathVertices": 20
+        },
+        "frame": 40,
+        "drawCalls": 84,
+        "triangles": 209622,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          960,
+          640
+        ]
+      },
+      "simulatedSeconds": 720.0000000000952
+    },
+    {
+      "landscapePhone": {
+        "world": 480,
+        "grid": 240,
+        "players": 4,
+        "trees": 166,
+        "forestDepthRange": 19.464083828202863,
+        "terrain": {
+          "vertices": 12769,
+          "heightRange": {
+            "min": -4.348332405090332,
+            "max": 33.03353500366211
+          },
+          "rockyVertices": 5508,
+          "pathVertices": 20
+        },
+        "frame": 23,
+        "drawCalls": 71,
+        "triangles": 200702,
+        "touch": true,
+        "touchPoints": 1,
+        "overflow": false,
+        "dimensions": [
+          640,
+          360
+        ]
+      },
+      "squareRadar": true,
+      "deselectRetainsOrder": true
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; emulated touch and rendered-scene verification, not physical-device FPS",
+  "stage": "landscape-touch",
+  "buildId": "1792106235903",
+  "phase": "remaining"
+}

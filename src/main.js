@@ -39,7 +39,7 @@ const recommendedQuality=modestDevice?'low':matchMedia('(pointer: coarse)').matc
 const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,music:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,...read('crowns-settings',{})};
 settings.frameRate=normalizeFrameRate(settings.frameRate);
 const progress=read('crowns-progress',{});const audio=new AudioEngine(settings);
-let customDraft={map:'highlands',mapSize:'huge',startAge:0,resourceLevel:'standard',populationLimit:80,seed:2026,victory:'annihilation',shareVision:true,revealRemnants:true,slots:battlePreset('2v2'),...read('crowns-custom-setup',{})};
+let customDraft={map:'highlands',mapSize:'vast',startAge:0,resourceLevel:'standard',populationLimit:80,seed:2026,victory:'annihilation',shareVision:true,revealRemnants:true,slots:battlePreset('2v2'),...read('crowns-custom-setup',{})};
 settings.bindings=readBindings(settings.bindings);
 document.querySelector('#app').innerHTML=`
   <div id="world" aria-label="3D strategy battlefield"></div><div class="vignette"></div>

@@ -1,0 +1,122 @@
+{
+  "passed": false,
+  "checks": [
+    {
+      "epicSetup": {
+        "world": 560,
+        "grid": 280,
+        "players": 8,
+        "trees": 140,
+        "forestDepthRange": 16.447273344885836,
+        "terrain": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -4.811552047729492,
+            "max": 33.196441650390625
+          },
+          "rockyVertices": 11346,
+          "pathVertices": 120
+        },
+        "frame": 64,
+        "drawCalls": 83,
+        "triangles": 1415675,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          1100,
+          720
+        ]
+      }
+    },
+    {
+      "largestMapNavigation": {
+        "corners": [
+          {
+            "target": [
+              250,
+              0.02452458867004642,
+              245
+            ],
+            "picked": [
+              250.00007826996753,
+              0.02468507278754828,
+              245.00012766156098
+            ]
+          },
+          {
+            "target": [
+              -250,
+              1.47501981258392,
+              245
+            ],
+            "picked": [
+              -249.9999217300325,
+              1.4751802967014243,
+              245.00012766156098
+            ]
+          },
+          {
+            "target": [
+              -250,
+              1.4433631045477773,
+              -245
+            ],
+            "picked": [
+              -249.99992173003224,
+              1.4435235886658262,
+              -244.99987233843987
+            ]
+          },
+          {
+            "target": [
+              250,
+              1.5417444195066206,
+              -245
+            ],
+            "picked": [
+              250.0000782699678,
+              1.541904903624669,
+              -244.99987233843987
+            ]
+          }
+        ],
+        "fog": 280,
+        "grid": 78400
+      }
+    },
+    {
+      "rollingTerrain": {
+        "world": 560,
+        "grid": 280,
+        "players": 8,
+        "trees": 140,
+        "forestDepthRange": 16.447273344885836,
+        "terrain": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -4.811552047729492,
+            "max": 33.196441650390625
+          },
+          "rockyVertices": 11346,
+          "pathVertices": 120
+        },
+        "frame": 81,
+        "drawCalls": 173,
+        "triangles": 887163,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          1100,
+          720
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; emulated touch and rendered-scene verification, not physical-device FPS",
+  "stage": "actual-expanded-ai-settlement",
+  "buildId": "1792106235903",
+  "failure": "page.evaluate: Target page, context or browser has been closed\n    at C:\\New\\Age_Of_Emprire\\scripts\\ai-world-qa.mjs:21:298"
+}

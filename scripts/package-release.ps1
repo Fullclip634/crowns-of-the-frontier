@@ -47,7 +47,7 @@ $taskSourceFiles=@()
 foreach ($taskDirectory in @('src','server','scripts','tests','public')) {
     $taskSourceFiles+=Get-ChildItem -LiteralPath (Join-Path $taskProject $taskDirectory) -Recurse -File | Where-Object { $_.Extension -notin @('.pyc','.pyo') -and $_.FullName -notmatch '[\\/]__pycache__[\\/]' }
 }
-foreach ($taskFileName in @('package.json','package-lock.json','index.html','vite.config.js','netlify.toml','render.yaml','.gitignore','.nvmrc','README.md','ART_PIPELINE.md','DEPLOYMENT.md','RELEASE_CHECKS.md','ROADMAP.md','CHANGELOG.md','DEVELOPMENT_CHECKPOINT.md','QUALITY_TARGETS.md')) {
+foreach ($taskFileName in @('package.json','package-lock.json','index.html','vite.config.js','netlify.toml','render.yaml','.gitignore','.nvmrc','README.md','ART_PIPELINE.md','AI_AND_MAP_DESIGN.md','DEPLOYMENT.md','RELEASE_CHECKS.md','ROADMAP.md','CHANGELOG.md','DEVELOPMENT_CHECKPOINT.md','QUALITY_TARGETS.md')) {
     $taskFilePath=Join-Path $taskProject $taskFileName
     if (Test-Path -LiteralPath $taskFilePath) { $taskSourceFiles+=Get-Item -LiteralPath $taskFilePath }
 }

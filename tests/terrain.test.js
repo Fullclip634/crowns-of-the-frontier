@@ -5,6 +5,15 @@ import {Landscape} from '../src/landscape.js';
 import {prepareTerrainGeometry,terrainWeights,roadDistance} from '../src/terrain-layout.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {TerrainDetails,pebbleGeometry} from '../src/terrain-details.js';
+import {terrainRelief} from '../src/terrain-relief.js';
+
+test('playable land has broad rolling elevation at Epic size while capitals retain level construction ground',()=>{
+  for(const map of ['highlands','winter','desert','canyon','valley','rivers','coast']){
+    const land=new Landscape(512,map,560,[{x:-140,z:140},{x:140,z:-140}]),heights=[];
+    for(let z=-240;z<=240;z+=6)for(let x=-240;x<=240;x+=6){const h=terrainRelief(map,x,z,land.phase);assert.ok(Number.isFinite(h));assert.ok(Math.abs(terrainRelief(map,x+.1,z,land.phase)-h)/.1<.5);assert.ok(Math.abs(terrainRelief(map,x,z+.1,land.phase)-h)/.1<.5);heights.push(h);}
+    assert.ok(Math.max(...heights)-Math.min(...heights)>(map==='desert'?4.5:6));for(const base of land.settlements)assert.equal(land.heightAt(base.x,base.z),.65);
+  }
+});
 
 test('terrain material transitions preserve roads and form normalized finite weights over all biomes',()=>{
   for(const map of ['highlands','winter','desert','canyon','valley','rivers','coast']){

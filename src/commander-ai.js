@@ -1,5 +1,7 @@
 import {UNITS,BUILDINGS,TECHS,AGE_COSTS,DIFFICULTIES,availableTo} from './data.js';
 import {customOpening,alliedSupport} from './allied-ai.js';
+import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers} from './ai-settlements.js';
+import {orderSiegeAssault} from './ai-siege.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -107,11 +109,13 @@ export function chooseArmyUnit(sim,building,state,owner=1,plan=null){
 export function installCommanderAI(Simulation){
   const p=Simulation.prototype,assignWorker=p.assignWorker,serialize=p.serialize,restore=Simulation.restore;
   p.assignWorker=function(e){
-    if(e.owner===0&&this.players[0].controller!=='ai'||e.type!=='villager')return assignWorker.call(this,e);const owner=e.owner;
+    if(this.players[e.owner].controller==='human'||e.owner===0&&this.players[0].controller!=='ai'||e.type!=='villager')return assignWorker.call(this,e);const owner=e.owner;
+    if(e.aiFleeing>this.time){e.order=null;e.path=[];return;}delete e.aiFleeing;
     const player=this.players[owner],workers=this.owned(owner,'unit','villager'),weights={food:player.age<3?.43:.36,wood:.32,gold:player.age<1?.15:.24,stone:.08};
     const counts=Object.fromEntries(Object.keys(weights).map(type=>[type,workers.filter(v=>v!==e&&v.order?.type==='gather'&&v.gatherType===type).length]));
-    const types=Object.keys(weights).sort((a,b)=>counts[a]/weights[a]-counts[b]/weights[b]);
+    const state=stateFor(this,owner),types=Object.keys(weights).sort((a,b)=>counts[a]/weights[a]-counts[b]/weights[b]);
     for(const type of types){const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1))
+      .filter(source=>!economicDanger(state,source))
       .sort((a,b)=>distance(e,a)-distance(e,b)).slice(0,5);
       for(const source of sources){const route=this.pathTo(e,source);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>source.r+e.r+1.1)continue;
         e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=0;return;
@@ -121,7 +125,7 @@ export function installCommanderAI(Simulation){
   p.commanderBuild=function(type,near=null,owner=1){
     const player=this.players[owner],definition=BUILDINGS[type],tc=this.owned(owner,'building','towncenter')[0];
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
-    const worker=this.owned(owner,'unit','villager').filter(w=>!['build','repair'].includes(w.order?.type)).sort((a,b)=>distance(a,near||tc)-distance(b,near||tc))[0];if(!worker)return false;
+    const worker=this.owned(owner,'unit','villager').filter(w=>!['build','repair'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion).sort((a,b)=>distance(a,near||tc)-distance(b,near||tc))[0];if(!worker)return false;
     for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
       if(!this.buildValid(type,point.x,point.z,owner))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
       return this.build(type,point.x,point.z,[worker.id],owner);
@@ -137,12 +141,16 @@ export function installCommanderAI(Simulation){
       else if(player.resources.food<120&&player.resources.gold>=130)this.trade('food',true,owner);
       else if(player.resources.gold<150&&player.resources.food>=900)this.trade('food',false,owner);
     }
-    this.assignEconomy(owner);const workers=this.owned(owner,'unit','villager'),buildings=this.owned(owner,'building'),army=this.owned(owner,'unit').filter(military),landArmy=army.filter(e=>!UNITS[e.type].naval);
+    this.assignEconomy(owner);const workers=this.owned(owner,'unit','villager'),buildings=this.owned(owner,'building'),army=this.owned(owner,'unit').filter(military),landArmy=army.filter(e=>!UNITS[e.type].naval),towns=buildings.filter(b=>b.type==='towncenter'),baseThreats=settlementThreats(this,owner,visible,buildings);
+    if(this.options.mode==='custom'&&this.time-(state.lastDeposits??-20)>=10){rememberDeposits(this,state,owner);state.lastDeposits=this.time;}
+    protectWorkers(this,state,owner,workers,buildings,visible);
+    staffSettlements(this,state,owner,workers,buildings);
+    manageExpansion(this,state,owner,workers,baseThreats);
     if(this.options.map==='coast'&&!buildings.some(site=>site.type==='dock')){const z=player.start?.z??tc.z;this.commanderBuild('dock',{x:Math.sin(z*.03)*2+Math.sign(tc.x)*20,z},owner);}
     const ageCost=AGE_COSTS[player.age];
-    state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=12&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers,18+player.age*8)};
+    state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=12&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor((this.options.populationLimit||160)*.5))};
     if(this.capacity(owner)<(this.options.populationLimit||160)&&this.capacity(owner)-this.population(owner)-this.reservedPopulation(owner)<6&&!buildings.some(b=>b.type==='house'&&b.progress<1))this.commanderBuild('house',null,owner);
-    if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&tc.queue.length<2)this.train(tc.id,'villager');
+    for(const town of towns.filter(b=>b.progress>=1))if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&town.queue.length<2)this.train(town.id,'villager');
     if(this.time>12&&!this.owned(owner,'unit','scout').length&&!countQueued(this,'scout',owner)&&tc.queue.length<3)this.train(tc.id,'scout');
     if(ageCost&&!player.agePending&&workers.length>=12&&this.canAfford(ageCost,owner))this.research(tc.id,'age');
     // Build actual drop-offs near the sources workers use, then diversify paid production.
@@ -150,16 +158,20 @@ export function installCommanderAI(Simulation){
       const active=workers.find(w=>w.gatherType===resource&&w.order?.type==='gather'),source=active&&this.get(active.order.target);
       if(source&&!buildings.some(b=>BUILDINGS[b.type].drop?.includes(resource)&&distance(b,source)<16)){if(this.commanderBuild(type,source,owner))break;}
     }
-    const naturalFood=this.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&distance(e,tc)<45).reduce((n,e)=>n+e.amount,0);
-    if((naturalFood<1200||player.resources.food<100&&this.time>90)&&buildings.filter(b=>b.type==='farm').length<Math.max(4,workers.length/3)&&!buildings.some(b=>b.type==='farm'&&b.progress<1))this.commanderBuild('farm',null,owner);
-    const priorities=['barracks',...(player.age>=1?['range','stable','blacksmith','market']:[]),...(player.age>=2?['workshop','monastery','tower']:[])];
+    const naturalFood=this.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&towns.some(base=>distance(e,base)<45)).reduce((n,e)=>n+e.amount,0);
+    if((naturalFood<1200||player.resources.food<100&&this.time>90)&&buildings.filter(b=>b.type==='farm').length<Math.max(4,workers.length/3)&&!buildings.some(b=>b.type==='farm'&&b.progress<1)){
+      const base=towns.filter(b=>b.progress>=1).sort((a,b)=>buildings.filter(f=>f.type==='farm'&&distance(f,a)<30).length-buildings.filter(f=>f.type==='farm'&&distance(f,b)<30).length)[0];this.commanderBuild('farm',base,owner);
+    }
+    fortifySettlements(this,state,owner,workers,buildings,baseThreats);
+    const priorities=['barracks',...(player.age>=1?['range','stable','blacksmith','market']:[]),...(player.age>=2?['workshop','monastery']:[])];
     for(const type of priorities)if(!buildings.some(b=>b.type===type)){if(this.commanderBuild(type,null,owner))break;}
-    if(this.time-state.lastRebalance>15){state.lastRebalance=this.time;for(const worker of workers.filter(w=>w.order?.type==='gather'&&!w.carry).slice(0,2))this.assignWorker(worker);}
+    if(this.time-state.lastRebalance>15){state.lastRebalance=this.time;for(const worker of workers.filter(w=>w.order?.type==='gather'&&!w.carry&&!w.aiFleeing).slice(0,2))this.assignWorker(worker);}
     const plan=armyPlan(this,state,owner);
     for(const b of buildings.filter(b=>b.progress>=1&&b.queue.length<2)){
       const type=chooseArmyUnit(this,b,state,owner,plan);if(!type)continue;
       if(this.options.mode==='custom'&&this.options.map==='coast'){const navy=this.owned(owner,'unit').filter(e=>UNITS[e.type].naval).length+buildings.reduce((n,site)=>n+site.queue.filter(q=>q.kind==='unit'&&UNITS[q.type]?.naval).length,0),reserve=Math.max(0,9-navy);if(this.population(owner)+this.reservedPopulation(owner)+(UNITS[type].pop||1)>this.capacity(owner)-reserve)continue;}
       const reserve=state.budget.savingAge?{food:Math.min(ageCost.food*.35,player.resources.food),gold:Math.min(ageCost.gold*.35,player.resources.gold)}:{};
+      if(state.expansion)for(const [resource,amount] of Object.entries(this.cost(BUILDINGS.towncenter.cost,owner,'building')))reserve[resource]=Math.max(reserve[resource]||0,amount);
       if(Object.entries(UNITS[type].cost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
     }
     if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','economy','attack','armor','ranged','husbandry','fortification']){
@@ -169,7 +181,7 @@ export function installCommanderAI(Simulation){
     }
     for(const building of buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*.65)){
       if(workers.some(w=>w.order?.type==='repair'&&w.order.target===building.id))continue;
-      const worker=workers.find(w=>!['build','repair'].includes(w.order?.type));if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
+      const worker=workers.find(w=>!['build','repair'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion);if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
     }
     const scout=this.owned(owner,'unit','scout')[0],waypoints=this.options.mode==='custom'?this.spawnPositions.flatMap((point,i)=>{
       if(!this.hostile(owner,i)||this.options.map==='coast'&&Math.sign(point.x)!==Math.sign(tc.x))return [];
@@ -183,7 +195,7 @@ export function installCommanderAI(Simulation){
     }
     const protectedBases=this.options.mode==='custom'?this.entities.filter(e=>e.hp>0&&e.type==='towncenter'&&this.allied(owner,e.owner)):[tc];
     const defendedBases=this.options.mode==='custom'?protectedBases.filter(base=>base.owner===owner):protectedBases;
-    const threats=visible.filter(e=>e.kind==='unit'&&UNITS[e.type].damage>0&&defendedBases.some(base=>distance(e,base)<30)),fieldEnemies=visible.filter(e=>e.kind==='unit'&&military(e)&&(distance(e,tc)<60||landArmy.some(unit=>distance(e,unit)<25)));
+    const threats=baseThreats,fieldEnemies=visible.filter(e=>e.kind==='unit'&&military(e)&&(defendedBases.some(base=>distance(e,base)<60)||landArmy.some(unit=>distance(e,unit)<25)));
     const ownPower=landArmy.reduce((n,e)=>n+power(e),0),enemyPower=fieldEnemies.reduce((n,e)=>n+power(e),0),wounded=landArmy.filter(e=>e.hp<e.maxHp*.28);
     const retreats=new Map();
     for(const unit of wounded){let retreat=this.options.mode!=='custom'&&this.options.map==='coast'&&unit.x<0?{x:-23,z:35}:{x:tc.x+8,z:tc.z-6};if(this.options.mode==='custom'&&this.options.map==='coast'){const base=protectedBases.filter(e=>Math.sign(e.x)===Math.sign(unit.x)&&distance(e,unit)<75).sort((a,b)=>distance(a,unit)-distance(b,unit))[0];retreat=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(unit.z*.03)*2+Math.sign(unit.x)*22,z:unit.z+Math.sign(tc.z-unit.z)*9};}
@@ -208,7 +220,8 @@ export function installCommanderAI(Simulation){
       else if(phase==='attack'||phase==='defend'){
         const guardCount=this.options.mode==='custom'&&phase==='attack'?Math.min(6,Math.max(2,Math.floor(fighters.length*.15))):0;
         const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege').sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
-        this.command(fighters.filter(e=>!ids.has(e.id)).map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
+        const assault=fighters.filter(e=>!ids.has(e.id));this.command(assault.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
+        if(phase==='attack')orderSiegeAssault(this,owner,assault,visible,target);
         if(guards.length)this.command(guards.map(e=>e.id),{type:'attackmove',x:tc.x+8,z:tc.z-6});state.homeGuard=guards.map(e=>e.id);
       }
       else if(this.options.mode!=='custom'&&this.options.map==='coast'){

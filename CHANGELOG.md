@@ -1,3 +1,9 @@
+## 16 October 2026 — Resource settlements and larger battlefields
+
+- Custom AI expands at scouted resource sites using paid builders, staffs new settlements, uses multiple town centers, protects workers, recovers construction and invests in defenses. Siege targets visible structures with infantry support.
+- Add 480 m Vast and 560 m Epic battlefields while preserving existing map sizes and saved layouts. Replace circular starting forests with irregular dense groves and give playable terrain broader rolling elevation.
+- Verified with 289 release regressions, 5 production browser checks and longer 2v2/4v4 AI diagnostics. Hardware FPS, human balance and full-game completion remain unverified.
+
 # Terrain-fitted foundations and clear gate passages (version 2.6.1)
 
 ## 15 October 2026 — Richer Balanced trees with a smaller catalogue

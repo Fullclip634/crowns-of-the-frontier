@@ -2,7 +2,7 @@ import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.j
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 
-export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'}};
+export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'},vast:{name:'Vast',size:480,desc:'9× standard area'},epic:{name:'Epic',size:560,desc:'12.25× standard area'}};
 export const PLAYER_COLORS=[0x48abc2,0xe07566,0xe6c064,0x73b67b,0xb98ed2,0x66cec0,0xe69b58,0xc3cdd5];
 export const VICTORY_RULES={annihilation:{name:'Destroy all buildings',desc:'A kingdom is eliminated when its last building falls, including walls and foundations. Its remaining army surrenders. Your alliance wins when every opposing kingdom is eliminated.'},capital:{name:'Capital conquest',desc:'Destroy every town center belonging to each opposing kingdom. Losing the last town center eliminates that kingdom.'},conquest:{name:'Total conquest',desc:'Destroy all opposing buildings and units. Surviving villagers can rebuild. Your alliance must eliminate every opposing kingdom.'}};
 
@@ -17,7 +17,7 @@ export function normalizeBattle(options){
   }));
   if(slots.length<2)throw new Error('Enable at least one opposing kingdom.');
   if(slots.every(slot=>slot.team===slots[0].team))throw new Error('Place at least one kingdom on a different team.');
-  const mapSize=BATTLE_SIZES[options.mapSize]?options.mapSize:'huge';
+  const mapSize=BATTLE_SIZES[options.mapSize]?options.mapSize:'vast';
   return {...options,mode:'custom',slots,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:[80,120,160].includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
 }
 export function battleSpawns(slots,worldSize){

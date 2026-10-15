@@ -1,0 +1,44 @@
+✔ resource expansion remembers sightings without learning hidden depletion (116.9673ms)
+✔ AI scouts a resource settlement, walks a paid builder there, and funds its real foundation (141.6443ms)
+✔ expansion cancels on observed danger and cannot dispatch across an unbridged sea (130.5985ms)
+✔ ordinary construction completes a resource settlement and the AI staffs and uses both town centers (778.2339ms)
+✔ new settlements receive defenses and attacks on remote economy count as base threats (105.2808ms)
+✔ raided workers retreat through real orders and return to work after danger clears (79.1993ms)
+✔ abandoned foundations regain a builder and survive planning save and restore (160.7792ms)
+✔ siege attacks observed fortifications while infantry screens the trebuchet (70.9719ms)
+✔ remapped controls resolve consistently and invalid saved bindings recover safely (2.5677ms)
+✔ patrol returns to its origin, yields to queued orders, and persists through saves (150.0201ms)
+✔ guards follow friendly units, reject enemy targets, and engage nearby attackers (109.6053ms)
+✔ unreachable land orders report a blocked route instead of succeeding at a partial endpoint (115.5336ms)
+✔ a newly opened route resumes movement and formation destinations avoid foundations (22.5939ms)
+✔ queued orders remain bounded and holding clears pending commands (9.613ms)
+✔ AI intelligence uses observed positions, expires troop sightings, and retains remembered buildings (16.7428ms)
+✔ AI counter production is affordable and respects the actual civilization roster and ages (14.1869ms)
+✔ AI does not create unpaid units or buildings and restores planning clocks with its scouting state (31.928ms)
+✔ AI uses paid market trade to recover from a timber shortage without creating supplies (25.5831ms)
+✔ AI market recovery has no dead zone between the real trade price and a reserve threshold (45.8887ms)
+✔ AI repairs its damaged buildings and retreats badly injured troops (19.485ms)
+✔ AI transport departure cancels unboarded reservations instead of making infantry chase it across the sea (14.9097ms)
+✔ custom naval transports release waiting troops when departing for an opposing shore (146.9544ms)
+✔ custom naval AI pays to rebuild a destroyed harbor and assigns a builder (245.8001ms)
+✔ custom transports retry canceled voyages and unload beside an occupied enemy harbor (112.2534ms)
+✔ a partially loaded custom transport departs after its boarding deadline (88.4613ms)
+✔ melee patrols do not abandon land routes to chase unreachable ships (43.9736ms)
+✔ valid movement destinations in the same grid cell do not stall near its center (23.1005ms)
+✔ landed naval invasion troops regroup and retreat on their current shore (24.0769ms)
+✔ custom coastal armies pursue capitals on their own shore before replacement harbors (97.1678ms)
+✔ coastal armies scout unseen capitals and search beyond a cleared starting location (84.4843ms)
+✔ AI records a capital scouting visit only after its location is visible (181.6444ms)
+✔ coastal AI replaces lost transports before fishing boats and reserves population for the fleet (189.7339ms)
+✔ custom invasions choose a flanking shore when the observed enemy harbor guards the direct landing (95.4332ms)
+✔ eight human commanders ready, receive private team perspectives, reconnect, and win as an alliance (1659.465ms)
+✔ custom rooms mix humans and AI, preserve assigned slots, and treat leaving as a concession (2188.2894ms)
+✔ multiplayer wall drags finish the paid connected line and reject foreign workers and hidden terrain (2394.1865ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10271.4885

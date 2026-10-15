@@ -1,0 +1,192 @@
+{
+  "passed": true,
+  "buildId": "1792106235903",
+  "checks": [
+    {
+      "epicSetup": {
+        "world": 560,
+        "grid": 280,
+        "players": 8,
+        "trees": 140,
+        "forestDepthRange": 16.447273344885836,
+        "terrain": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -4.811552047729492,
+            "max": 33.196441650390625
+          },
+          "rockyVertices": 11346,
+          "pathVertices": 120
+        },
+        "frame": 64,
+        "drawCalls": 83,
+        "triangles": 1415675,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          1100,
+          720
+        ]
+      }
+    },
+    {
+      "largestMapNavigation": {
+        "corners": [
+          {
+            "target": [
+              250,
+              0.02452458867004642,
+              245
+            ],
+            "picked": [
+              250.00007826996753,
+              0.02468507278754828,
+              245.00012766156098
+            ]
+          },
+          {
+            "target": [
+              -250,
+              1.47501981258392,
+              245
+            ],
+            "picked": [
+              -249.9999217300325,
+              1.4751802967014243,
+              245.00012766156098
+            ]
+          },
+          {
+            "target": [
+              -250,
+              1.4433631045477773,
+              -245
+            ],
+            "picked": [
+              -249.99992173003224,
+              1.4435235886658262,
+              -244.99987233843987
+            ]
+          },
+          {
+            "target": [
+              250,
+              1.5417444195066206,
+              -245
+            ],
+            "picked": [
+              250.0000782699678,
+              1.541904903624669,
+              -244.99987233843987
+            ]
+          }
+        ],
+        "fog": 280,
+        "grid": 78400
+      }
+    },
+    {
+      "rollingTerrain": {
+        "world": 560,
+        "grid": 280,
+        "players": 8,
+        "trees": 140,
+        "forestDepthRange": 16.447273344885836,
+        "terrain": {
+          "vertices": 25921,
+          "heightRange": {
+            "min": -4.811552047729492,
+            "max": 33.196441650390625
+          },
+          "rockyVertices": 11346,
+          "pathVertices": 120
+        },
+        "frame": 81,
+        "drawCalls": 173,
+        "triangles": 887163,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          1100,
+          720
+        ]
+      }
+    },
+    {
+      "actualExpandedSettlement": {
+        "world": 480,
+        "grid": 240,
+        "players": 4,
+        "trees": 166,
+        "forestDepthRange": 19.464083828202863,
+        "terrain": {
+          "vertices": 12769,
+          "heightRange": {
+            "min": -4.348332405090332,
+            "max": 33.03353500366211
+          },
+          "rockyVertices": 5508,
+          "pathVertices": 20
+        },
+        "frame": 40,
+        "drawCalls": 84,
+        "triangles": 209622,
+        "touch": false,
+        "touchPoints": 0,
+        "overflow": false,
+        "dimensions": [
+          960,
+          640
+        ]
+      },
+      "simulatedSeconds": 720.0000000000952
+    },
+    {
+      "landscapePhone": {
+        "world": 480,
+        "grid": 240,
+        "players": 4,
+        "trees": 166,
+        "forestDepthRange": 19.464083828202863,
+        "terrain": {
+          "vertices": 12769,
+          "heightRange": {
+            "min": -4.348332405090332,
+            "max": 33.03353500366211
+          },
+          "rockyVertices": 5508,
+          "pathVertices": 20
+        },
+        "frame": 23,
+        "drawCalls": 71,
+        "triangles": 200702,
+        "touch": true,
+        "touchPoints": 1,
+        "overflow": false,
+        "dimensions": [
+          640,
+          360
+        ]
+      },
+      "squareRadar": true,
+      "deselectRetainsOrder": true
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader; Medium desktop visual checks, Low expanded settlement and actual coarse-pointer/touch emulation. Not physical-device FPS.",
+  "attempts": [
+    {
+      "report": "artifacts/ai-world-browser-desktop-attempt.json",
+      "completedChecks": 3,
+      "failedStage": "actual-expanded-ai-settlement",
+      "reason": "Eight-minute software-rendering guard closed the browser while loading the full midgame; that stage was not counted."
+    },
+    {
+      "report": "artifacts/ai-world-browser-remaining.json",
+      "passed": true,
+      "completedChecks": 2
+    }
+  ]
+}

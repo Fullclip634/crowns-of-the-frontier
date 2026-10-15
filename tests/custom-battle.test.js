@@ -1,13 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation,distance} from '../src/simulation.js';
-import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor} from '../src/custom-battle.js';
+import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor,BATTLE_SIZES} from '../src/custom-battle.js';
 import {weatherAt} from '../src/weather.js';
 const make=(options={})=>new Simulation({mode:'custom',seed:512,...options});
 const destroy=(sim,owner,kind='building')=>{for(const e of sim.owned(owner,kind))e.hp=0;sim.revision++;sim.checkVictory();};
 
-test('custom defaults are huge, team-aware, and do not silently accept an empty opposition',()=>{
-  const s=make();assert.equal(s.worldSize,400);assert.equal(s.gridSize,200);assert.equal(s.players.length,4);assert.ok(s.allied(0,1));assert.ok(s.hostile(0,2));assert.ok(s.hostile(2,0));assert.equal(s.options.victory,'annihilation');
+test('larger custom sizes retain full navigation and legacy saves retain their chosen dimensions',()=>{
+  for(const [mapSize,{size}] of Object.entries(BATTLE_SIZES)){
+    const sim=make({mapSize,slots:battlePreset('4v4')}),loaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));
+    assert.equal(sim.worldSize,size);assert.equal(loaded.worldSize,size);assert.equal(loaded.grid(0).length,(size/2)**2);assert.equal(loaded.visible.length,(size/2)**2);assert.deepEqual(loaded.spawnPositions,sim.spawnPositions);
+  }
+  assert.equal(make({mapSize:'huge'}).worldSize,400);assert.equal(make({mapSize:'epic'}).worldSize**2/make({mapSize:'huge'}).worldSize**2,1.96);
+});
+
+test('custom defaults are vast, team-aware, and do not silently accept an empty opposition',()=>{
+  const s=make();assert.equal(s.worldSize,480);assert.equal(s.gridSize,240);assert.equal(s.players.length,4);assert.ok(s.allied(0,1));assert.ok(s.hostile(0,2));assert.ok(s.hostile(2,0));assert.equal(s.options.victory,'annihilation');
   assert.throws(()=>normalizeBattle({slots:[{team:1},{team:1}]}),/different team/);
   const slots=battlePreset('4v4');slots[2].enabled=false;const a=make({slots}),b=Simulation.restore(a.serialize());assert.equal(a.players[2].color,PLAYER_COLORS[3]);assert.deepEqual(a.players.map(p=>p.color),b.players.map(p=>p.color));
 });
@@ -24,7 +32,7 @@ test('eight kingdoms have distinct dry starts and local resources on every large
 });
 test('navigation and fog cover the expanded map beyond the old battlefield boundary',()=>{
   const s=make({slots:battlePreset('ffa8')}),unit=s.owned(0,'unit','villager')[0],point={x:160,z:150},path=s.pathTo(unit,point);
-  assert.equal(s.grid(0).length,40000);assert.equal(s.visible.length,40000);assert.ok(path.some(p=>p.x>80));assert.equal(unit.pathStatus,'ready');
+  assert.equal(s.grid(0).length,57600);assert.equal(s.visible.length,57600);assert.ok(path.some(p=>p.x>80));assert.equal(unit.pathStatus,'ready');
   const e=s.addUnit('scout',0,160,150);s.updateFog();assert.equal(s.isVisible(e.x,e.z),true);assert.equal(s.isExplored(-190,-190),false);
 });
 test('alliances prevent automatic and explicit friendly damage while allowing healing and gates',()=>{

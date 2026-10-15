@@ -6,6 +6,7 @@ import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,animateWaterSurface} from './water-surface.js';
 import {prepareTerrainGeometry} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
+import {terrainRelief} from './terrain-relief.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
@@ -13,8 +14,7 @@ export class Landscape {
   channels(){return this.waterChannels??=(this.map==='coast'?[{center:0,width:14,frequency:.03,bend:2}]:this.map==='valley'?[{center:0,width:5,frequency:.045,bend:4}]:this.map==='rivers'?[-19,19].map(center=>({center,width:4,frequency:.045,bend:3})):[]);}
   heightAt(x,z){
     const p=this.phase;
-    const relief={highlands:2.25,canyon:3.15,winter:1.8,valley:1.65,rivers:1.5,coast:1.5,desert:1.1}[this.map]||1;
-    let h=.8+relief*(Math.sin(x*.061+p)*Math.cos(z*.049-p)*1.15+Math.sin(x*.13+z*.075+p)*.32+Math.sin(x*.026+p*2)*Math.sin(z*.022-p)*.3);
+    let h=terrainRelief(this.map,x,z,p);
     const townDistance=Math.min(...this.settlements.map(point=>Math.hypot(x-point.x,z-point.z)));
     h=.65+(h-.65)*smooth(12,26,townDistance);
     for(const channel of this.channels()){

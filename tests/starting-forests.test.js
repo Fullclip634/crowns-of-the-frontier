@@ -10,14 +10,15 @@ const treesFor=(sim,owner)=>sim.entities.filter(e=>e.kind==='resource'&&e.startF
 const cellBlocked=(sim,owner,point)=>{const cell=sim.cell(point.x,point.z);return sim.grid(owner)[cell.z*sim.gridSize+cell.x];};
 
 test('dense starting forests retain open approaches and local resources for all eight slots',()=>{
-  for(const seed of [512,2026,4302])for(const map of maps)for(const mapSize of ['spacious','large','huge']) {
+  for(const seed of [512,2026,4302])for(const map of maps)for(const mapSize of ['spacious','large','huge','vast','epic']) {
     const sim=new Simulation({mode:'custom',map,mapSize,seed,slots:battlePreset('4v4')});
     for(const base of forestSettlements(sim)) {
       const trees=treesFor(sim,base.owner),scout=sim.owned(base.owner,'unit','scout')[0];
       assert.ok(trees.length>=45,`${seed}/${map}/${mapSize}/${base.owner}: a usable dense forest`);
-      assert.ok(trees.length<=160,'bounded tree count per settlement');
+      assert.ok(trees.length<=200,'bounded tree count per settlement');
       const connected=trees.filter(tree=>[[2,0],[-2,0],[0,2],[0,-2]].some(([dx,dz])=>trees.some(other=>Math.abs(other.x-tree.x-dx)<.001&&Math.abs(other.z-tree.z-dz)<.001)));
       assert.ok(connected.length>=trees.length*.85,`${map}/${base.owner}: woodlines must not be isolated decorative trees`);
+      const depths=trees.map(tree=>distance(tree,base));assert.ok(Math.max(...depths)-Math.min(...depths)>8,`${map}/${base.owner}: irregular groves have depth instead of a narrow circular band`);
       for(const type of ['wood','food','gold','stone'])assert.ok(sim.entities.some(e=>e.kind==='resource'&&e.type===type&&!e.water&&distance(e,base)<36),`${map}/${base.owner}: nearby ${type}`);
       for(const [type,count]of [['food',7],['gold',5],['stone',5]])assert.equal(sim.entities.filter(e=>e.startDeposit===base.owner&&e.type===type).length,count,`${seed}/${map}/${mapSize}/${base.owner}: fair ${type}`);
       for(const deposit of sim.entities.filter(e=>e.startDeposit===base.owner))assert.ok(sim.entities.filter(e=>e.kind==='building').every(e=>distance(e,deposit)>=e.r+3),`${seed}/${map}/${mapSize}/${base.owner}: deposits keep all buildings clear, including coastal docks`);
@@ -38,7 +39,7 @@ test('dense starting forests retain open approaches and local resources for all 
 test('woodlines block direct crossings but allow armies to route through the entrances',()=>{
   const sim=new Simulation({mode:'custom',seed:512}),base=forestSettlements(sim)[0],scout=sim.owned(0,'unit','scout')[0];
   const tree=treesFor(sim,0).find(e=>treesFor(sim,0).filter(other=>distance(e,other)<4.1).length>=6),dx=tree.x-base.x,dz=tree.z-base.z,length=Math.hypot(dx,dz);
-  const inside={x:base.x+dx/length*25,z:base.z+dz/length*25},outside={x:base.x+dx/length*35,z:base.z+dz/length*35};
+  const inside={x:base.x+dx/length*(length-5),z:base.z+dz/length*(length-5)},outside={x:base.x+dx/length*(length+5),z:base.z+dz/length*(length+5)};
   assert.equal(clearSegment(sim,sim.grid(0),inside,outside),false,'a forest substitutes for part of the defensive wall');
   scout.x=inside.x;scout.z=inside.z;
   const route=sim.pathTo(scout,outside);assert.equal(scout.pathStatus,'ready');assert.ok(route.length>3,'army routes around the woodline');
