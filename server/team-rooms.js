@@ -5,6 +5,7 @@ import {FACTIONS,MAPS} from '../src/data.js';
 import {normalizeBattle,visibilityFor} from '../src/custom-battle.js';
 import {originAllowed} from './origins.js';
 import {BattleChat} from './battle-chat.js';
+import {garrisonCount} from '../src/garrison.js';
 
 const code=()=>randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
@@ -29,8 +30,9 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     const data=sim.serialize(),known=room.known[side],entities=[];
     for(const e of sim.entities){
       if(e.kind==='resource'){if(!compact)entities.push({...e});continue;}
+      if(e.shelter&&e.owner!==side&&!observer)continue;
       if(e.owner===side||e.kind==='shrine'||shown(e)||observer){
-        const object={...e,path:[],orders:[]};if(e.owner>=0&&e.owner!==side){if(e.kind==='unit'&&['gather','build','repair'].includes(e.order?.type))object.activity=e.order.type;delete object.order;object.queue=[];delete object.rally;}
+        const object={...e,path:[],orders:[]};if(e.owner>=0&&e.owner!==side){if(e.kind==='unit'&&['gather','build','repair'].includes(e.order?.type))object.activity=e.order.type;delete object.order;object.queue=[];delete object.rally;delete object.shelterWork;if(object.garrison){object.garrisonCount=garrisonCount(sim,e);delete object.garrison;}}
         if(e.kind==='building'&&e.owner!==side){if(e.hp>0)known.set(e.id,{...object});else known.delete(e.id);}
         entities.push(object);
       }
@@ -79,6 +81,9 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       case 'guard':s.guard(ids(args[0]),args[1],!!args[2],owner);break;
       case 'setStance':s.setStance(ids(args[0]),args[1],owner);break;
       case 'unload':s.unload(args[0],args[1],args[2],owner);break;
+      case 'townBell':s.townBell(args[0],owner);break;
+      case 'returnToWork':s.returnToWork(args[0],owner);break;
+      case 'seekShelter':s.seekShelter(ids(args[0]),args[1]??null,owner);break;
       case 'assignWorker':if(owns(args[0])){const worker=s.get(args[0]);worker.order=null;s.assignWorker(worker);}break;
       case 'formation':if(['square','line','column'].includes(args[0]))s.players[owner].formation=args[0];break;
       case 'stance':s.setStance(ids(args[0]),args[1]==='hold'?'hold':'aggressive',owner);break;

@@ -7,7 +7,7 @@ const buildingHeight=type=>({tower:6.2,keep:7.5,towncenter:5.8,wall:2.4,gate:3.8
 
 // Cosmetic flight follows the visible/interpolated figures. Damage and attack
 // timing remain authoritative simulation events, independent of visual quality.
-export function attackFlight(view,entity,target){
+export function attackFlight(view,entity,target,arrowIndex=0){
   const def=UNITS[entity.type],ranged=entity.kind==='building'||(def?.range||0)>5;
   const siege=['catapult','warship'].includes(entity.type),kind=siege?'stone':ranged?'arrow':'slash';
   const x=entity.renderX??entity.x,z=entity.renderZ??entity.z;
@@ -15,9 +15,10 @@ export function attackFlight(view,entity,target){
   const distance=Math.hypot(tx-x,tz-z),heading=Math.atan2(tx-x,tz-z);
   const ground=view.entityHeight(entity,x,z),targetGround=view.entityHeight(target,tx,tz);
   const height=entity.kind==='building'?buildingHeight(entity.type):def?.naval?2.1:entity.type==='catapult'?3.3:1.95;
-  const localX=kind==='arrow'&&entity.kind==='unit'&&!def?.naval?-.48:0;
+  const localX=kind==='arrow'&&entity.kind==='unit'&&!def?.naval?-.48:entity.kind==='building'&&arrowIndex>0?(arrowIndex%2?-1:1)*Math.ceil(arrowIndex/2)*.55:0;
   const forward=entity.kind==='building'?Math.min(2,entity.r||1):def?.naval?1.7:entity.type==='catapult'?1.1:.65;
   const from=new THREE.Vector3(x+Math.cos(heading)*localX+Math.sin(heading)*forward,ground+height,z-Math.sin(heading)*localX+Math.cos(heading)*forward);
+  if(arrowIndex>0)from.y+=(arrowIndex%3-1)*.12;
   const to=new THREE.Vector3(tx,targetGround+(target.kind==='building'?Math.min(3.5,buildingHeight(target.type)*.6):UNITS[target.type]?.naval?1.15:1.35),tz);
   if(!ranged)from.lerp(to,.7);
   return {kind,from,to,duration:siege?clamp(distance/30,.45,1.4):ranged?clamp(distance/34,.14,.65):.19,

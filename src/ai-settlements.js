@@ -2,7 +2,7 @@ import {BUILDINGS,UNITS} from './data.js';
 
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const centers=(sim,owner)=>sim.owned(owner,'building','towncenter');
-const busy=worker=>['build','repair'].includes(worker.order?.type);
+const busy=worker=>worker.embarked||['build','repair','garrison'].includes(worker.order?.type);
 const hostileMemory=(state)=>Object.values(state.known||{});
 
 // Decisions use observed resource quantities and last-seen enemy positions.
@@ -114,6 +114,7 @@ export function staffSettlements(sim,state,owner,workers,buildings){
 export function protectWorkers(sim,state,owner,workers,buildings,visible){
   const enemies=visible.filter(e=>e.kind==='unit'&&UNITS[e.type]?.damage>0&&!UNITS[e.type].naval),shelters=buildings.filter(b=>b.progress>=1&&BUILDINGS[b.type].damage);
   for(const worker of workers){
+    if(worker.embarked||worker.order?.type==='garrison')continue;
     const danger=enemies.filter(enemy=>distance(worker,enemy)<Math.min(25,(UNITS[enemy.type].range||2)+8)).sort((a,b)=>distance(a,worker)-distance(b,worker))[0];
     if(!danger)continue;
     const safe=shelters.flatMap(base=>{

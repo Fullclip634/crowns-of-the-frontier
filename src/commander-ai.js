@@ -125,7 +125,7 @@ export function installCommanderAI(Simulation){
   p.commanderBuild=function(type,near=null,owner=1){
     const player=this.players[owner],definition=BUILDINGS[type],tc=this.owned(owner,'building','towncenter')[0];
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
-    const worker=this.owned(owner,'unit','villager').filter(w=>!['build','repair'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion).sort((a,b)=>distance(a,near||tc)-distance(b,near||tc))[0];if(!worker)return false;
+    const worker=this.owned(owner,'unit','villager').filter(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion).sort((a,b)=>distance(a,near||tc)-distance(b,near||tc))[0];if(!worker)return false;
     for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
       if(!this.buildValid(type,point.x,point.z,owner))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
       return this.build(type,point.x,point.z,[worker.id],owner);
@@ -181,7 +181,7 @@ export function installCommanderAI(Simulation){
     }
     for(const building of buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*.65)){
       if(workers.some(w=>w.order?.type==='repair'&&w.order.target===building.id))continue;
-      const worker=workers.find(w=>!['build','repair'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion);if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
+      const worker=workers.find(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion);if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
     }
     const scout=this.owned(owner,'unit','scout')[0],waypoints=this.options.mode==='custom'?this.spawnPositions.flatMap((point,i)=>{
       if(!this.hostile(owner,i)||this.options.map==='coast'&&Math.sign(point.x)!==Math.sign(tc.x))return [];

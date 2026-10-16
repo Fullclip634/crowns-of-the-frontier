@@ -1,0 +1,1763 @@
+{
+  "note": "Deterministic AI-controlled custom battle; ordinary resources, construction, fog and combat. Simulation CPU time is not rendering FPS. Reaching the limit is not proof of a completed match.",
+  "options": {
+    "mode": "custom",
+    "faction": "alder",
+    "difficulty": "normal",
+    "map": "highlands",
+    "seed": 512,
+    "mapSize": "vast",
+    "slots": [
+      {
+        "name": "Your kingdom",
+        "faction": "alder",
+        "team": 1,
+        "difficulty": "normal",
+        "enabled": true,
+        "slotNumber": 1,
+        "color": 4762562,
+        "controller": "human"
+      },
+      {
+        "name": "Kingdom 2",
+        "faction": "sun",
+        "team": 1,
+        "difficulty": "normal",
+        "enabled": true,
+        "slotNumber": 2,
+        "color": 14710118,
+        "controller": "ai"
+      },
+      {
+        "name": "Kingdom 3",
+        "faction": "raven",
+        "team": 2,
+        "difficulty": "normal",
+        "enabled": true,
+        "slotNumber": 3,
+        "color": 15122532,
+        "controller": "ai"
+      },
+      {
+        "name": "Kingdom 4",
+        "faction": "alder",
+        "team": 2,
+        "difficulty": "normal",
+        "enabled": true,
+        "slotNumber": 4,
+        "color": 7583355,
+        "controller": "ai"
+      }
+    ],
+    "startAge": 0,
+    "populationLimit": 80,
+    "aiPace": "balanced",
+    "worldSize": 480,
+    "victory": "annihilation",
+    "resourceLevel": "standard",
+    "shareVision": true,
+    "revealRemnants": true,
+    "multiplayer": false
+  },
+  "simulatedSeconds": 606.7000000000694,
+  "elapsedSeconds": 23.5820934,
+  "result": {
+    "won": true,
+    "reason": "Your alliance has eliminated every opposing kingdom."
+  },
+  "firstBaseDamage": 40.80000000000031,
+  "firstArmyBaseDamage": 319.10000000000406,
+  "peaks": [
+    {
+      "workers": 26,
+      "centers": 2,
+      "completedCenters": 2,
+      "towers": 2,
+      "keeps": 1
+    },
+    {
+      "workers": 30,
+      "centers": 2,
+      "completedCenters": 2,
+      "towers": 3,
+      "keeps": 0
+    },
+    {
+      "workers": 20,
+      "centers": 1,
+      "completedCenters": 1,
+      "towers": 1,
+      "keeps": 0
+    },
+    {
+      "workers": 20,
+      "centers": 1,
+      "completedCenters": 1,
+      "towers": 1,
+      "keeps": 0
+    }
+  ],
+  "phases": [
+    {
+      "opening": 1,
+      "muster": 4,
+      "defend": 2,
+      "attack": 4
+    },
+    {
+      "opening": 1,
+      "muster": 4,
+      "defend": 1,
+      "attack": 5
+    },
+    {
+      "opening": 1,
+      "muster": 5,
+      "attack": 1,
+      "defend": 4
+    },
+    {
+      "opening": 1,
+      "muster": 5,
+      "attack": 1,
+      "defend": 4
+    }
+  ],
+  "attacks": {
+    "towncenter:unit": 479,
+    "scout:building": 20,
+    "spearman:unit": 735,
+    "scout:unit": 7,
+    "tower:unit": 94,
+    "archer:unit": 1070,
+    "swordsman:unit": 486,
+    "outrider:building": 24,
+    "knight:unit": 252,
+    "archer:building": 833,
+    "spearman:building": 307,
+    "outrider:unit": 16,
+    "marksman:unit": 115,
+    "ram:unit": 202,
+    "knight:building": 326,
+    "swordsman:building": 201,
+    "sentinel:unit": 56,
+    "ram:building": 99,
+    "sentinel:building": 86,
+    "marksman:building": 97,
+    "catapult:unit": 19
+  },
+  "support": [
+    {
+      "time": 72.30000000000017,
+      "owner": 1,
+      "ally": 0,
+      "count": 2
+    },
+    {
+      "time": 321.0000000000045,
+      "owner": 0,
+      "ally": 1,
+      "count": 10
+    },
+    {
+      "time": 351.0000000000113,
+      "owner": 0,
+      "ally": 1,
+      "count": 11
+    },
+    {
+      "time": 357.30000000001274,
+      "owner": 1,
+      "ally": 0,
+      "count": 13
+    },
+    {
+      "time": 474.30000000003935,
+      "owner": 1,
+      "ally": 0,
+      "count": 13
+    }
+  ],
+  "shelter": {
+    "entries": 82,
+    "returnCommands": 14,
+    "extraArrows": 426,
+    "peakSheltered": 30
+  },
+  "tickMilliseconds": {
+    "median": 2.2098000000005413,
+    "p95": 12.80450000000019,
+    "p99": 30.357200000000375,
+    "max": 244.8765999999996
+  },
+  "timeline": [
+    {
+      "time": 0,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 0,
+          "defeated": false,
+          "population": 9,
+          "workers": 8,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 550,
+            "wood": 650,
+            "gold": 250,
+            "stone": 300
+          },
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 0,
+          "defeated": false,
+          "population": 9,
+          "workers": 8,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 550,
+            "wood": 650,
+            "gold": 250,
+            "stone": 300
+          },
+          "phase": "opening",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 0,
+          "defeated": false,
+          "population": 9,
+          "workers": 8,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 550,
+            "wood": 650,
+            "gold": 250,
+            "stone": 300
+          },
+          "phase": "opening",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 0,
+          "defeated": false,
+          "population": 9,
+          "workers": 8,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 550,
+            "wood": 650,
+            "gold": 250,
+            "stone": 300
+          },
+          "phase": "opening",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 60,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 0,
+          "defeated": false,
+          "population": 15,
+          "workers": 12,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 239,
+            "wood": 387,
+            "gold": 430,
+            "stone": 349
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 0,
+          "defeated": false,
+          "population": 16,
+          "workers": 12,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 142,
+            "wood": 546,
+            "gold": 239,
+            "stone": 418
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 0,
+          "defeated": false,
+          "population": 15,
+          "workers": 12,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 144,
+            "wood": 339,
+            "gold": 334,
+            "stone": 310
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 0,
+          "defeated": false,
+          "population": 15,
+          "workers": 12,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 50,
+            "wood": 453,
+            "gold": 226,
+            "stone": 383
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 120,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 0,
+          "defeated": false,
+          "population": 23,
+          "workers": 16,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 206,
+            "wood": 731,
+            "gold": 658,
+            "stone": 444
+          },
+          "phase": "defend",
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 0,
+          "defeated": false,
+          "population": 21,
+          "workers": 14,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 1250,
+            "wood": 1422,
+            "gold": 707,
+            "stone": 634
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 0,
+          "defeated": false,
+          "population": 22,
+          "workers": 15,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 454,
+            "wood": 947,
+            "gold": 508,
+            "stone": 458
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 0,
+          "defeated": false,
+          "population": 20,
+          "workers": 13,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 1054,
+            "wood": 1067,
+            "gold": 604,
+            "stone": 581
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 180,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 1,
+          "defeated": false,
+          "population": 26,
+          "workers": 16,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 301,
+            "wood": 130,
+            "gold": 638,
+            "stone": 512
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 1,
+          "defeated": false,
+          "population": 27,
+          "workers": 16,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 672,
+            "wood": 1029,
+            "gold": 437,
+            "stone": 702
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 1,
+          "defeated": false,
+          "population": 26,
+          "workers": 16,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 314,
+            "wood": 864,
+            "gold": 440,
+            "stone": 598
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 1,
+          "defeated": false,
+          "population": 25,
+          "workers": 14,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 586,
+            "wood": 609,
+            "gold": 540,
+            "stone": 582
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 240,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 1,
+          "defeated": false,
+          "population": 32,
+          "workers": 17,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 675,
+            "wood": 543,
+            "gold": 753,
+            "stone": 710
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 2,
+          "defeated": false,
+          "population": 32,
+          "workers": 16,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 186,
+            "wood": 901,
+            "gold": 38,
+            "stone": 954
+          },
+          "phase": "defend",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 1,
+          "defeated": false,
+          "population": 30,
+          "workers": 16,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 957,
+            "wood": 1213,
+            "gold": 816,
+            "stone": 810
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 2,
+          "defeated": false,
+          "population": 29,
+          "workers": 14,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1285,
+            "wood": 1010,
+            "gold": 1023,
+            "stone": 798
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 300,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 2,
+          "defeated": false,
+          "population": 38,
+          "workers": 19,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 294,
+            "wood": 788,
+            "gold": 131,
+            "stone": 1142
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 2,
+          "defeated": false,
+          "population": 42,
+          "workers": 18,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 891,
+            "wood": 1131,
+            "gold": 165,
+            "stone": 1332
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 2,
+          "defeated": false,
+          "population": 39,
+          "workers": 17,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 320,
+            "wood": 1170,
+            "gold": 253,
+            "stone": 1026
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 2,
+          "defeated": false,
+          "population": 39,
+          "workers": 16,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 65,
+            "wood": 524,
+            "gold": 135,
+            "stone": 942
+          },
+          "phase": "muster",
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 360,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 2,
+          "defeated": false,
+          "population": 47,
+          "workers": 19,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 810,
+            "wood": 467,
+            "gold": 24,
+            "stone": 1610
+          },
+          "phase": "defend",
+          "firstAttack": 303.0000000000004,
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 3,
+          "defeated": false,
+          "population": 51,
+          "workers": 18,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1063,
+            "wood": 1209,
+            "gold": 218,
+            "stone": 1944
+          },
+          "phase": "attack",
+          "firstAttack": 300.2999999999998,
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 2,
+          "defeated": false,
+          "population": 41,
+          "workers": 17,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1188,
+            "wood": 1354,
+            "gold": 280,
+            "stone": 1278
+          },
+          "phase": "attack",
+          "firstAttack": 300.49999999999983,
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 2,
+          "defeated": false,
+          "population": 44,
+          "workers": 16,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 40,
+            "wood": 684,
+            "gold": 47,
+            "stone": 1109
+          },
+          "phase": "attack",
+          "firstAttack": 300.7999999999999,
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 420,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 3,
+          "defeated": false,
+          "population": 56,
+          "workers": 19,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 911,
+            "wood": 494,
+            "gold": 258,
+            "stone": 2150
+          },
+          "phase": "attack",
+          "firstAttack": 303.0000000000004,
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 3,
+          "defeated": false,
+          "population": 67,
+          "workers": 22,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1604,
+            "wood": 1387,
+            "gold": 171,
+            "stone": 2527
+          },
+          "phase": "attack",
+          "firstAttack": 300.2999999999998,
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 3,
+          "defeated": false,
+          "population": 30,
+          "workers": 17,
+          "centers": [
+            {
+              "x": 115.39982668964454,
+              "z": -115.3998266896446,
+              "progress": 1,
+              "hp": 2595.5
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1691,
+            "wood": 1666,
+            "gold": 195,
+            "stone": 1782
+          },
+          "phase": "defend",
+          "firstAttack": 300.49999999999983,
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 3,
+          "defeated": false,
+          "population": 47,
+          "workers": 18,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 3120
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 0,
+            "wood": 1135,
+            "gold": 91,
+            "stone": 1307
+          },
+          "phase": "defend",
+          "firstAttack": 300.7999999999999,
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 480,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 3,
+          "defeated": false,
+          "population": 71,
+          "workers": 24,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 3112.6
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 1979,
+            "wood": 805,
+            "gold": 528,
+            "stone": 2640
+          },
+          "phase": "attack",
+          "firstAttack": 303.0000000000004,
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 3,
+          "defeated": false,
+          "population": 72,
+          "workers": 26,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 2600
+            },
+            {
+              "x": -71.10050506338834,
+              "z": -115.10050506338834,
+              "progress": 1,
+              "hp": 2600
+            }
+          ],
+          "towers": 1,
+          "keeps": 0,
+          "resources": {
+            "food": 2947,
+            "wood": 1656,
+            "gold": 581,
+            "stone": 2737
+          },
+          "phase": "attack",
+          "firstAttack": 300.2999999999998,
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 3,
+          "defeated": false,
+          "population": 28,
+          "workers": 20,
+          "centers": [],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 601,
+            "wood": 323,
+            "gold": 83,
+            "stone": 1392
+          },
+          "phase": "defend",
+          "firstAttack": 300.49999999999983,
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 3,
+          "defeated": false,
+          "population": 51,
+          "workers": 20,
+          "centers": [
+            {
+              "x": 115.3998266896446,
+              "z": 115.39982668964454,
+              "progress": 1,
+              "hp": 2255.776
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 15,
+            "wood": 33,
+            "gold": 70,
+            "stone": 1282
+          },
+          "phase": "defend",
+          "firstAttack": 300.7999999999999,
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 540,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 3,
+          "defeated": false,
+          "population": 80,
+          "workers": 26,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 4046.3799999999997
+            },
+            {
+              "x": -71.10050506338834,
+              "z": 113.10050506338834,
+              "progress": 1,
+              "hp": 4056
+            }
+          ],
+          "towers": 2,
+          "keeps": 0,
+          "resources": {
+            "food": 3931,
+            "wood": 608,
+            "gold": 362,
+            "stone": 2346
+          },
+          "phase": "attack",
+          "firstAttack": 303.0000000000004,
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 3,
+          "defeated": false,
+          "population": 79,
+          "workers": 29,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 4160
+            },
+            {
+              "x": -71.10050506338834,
+              "z": -115.10050506338834,
+              "progress": 1,
+              "hp": 4160
+            }
+          ],
+          "towers": 3,
+          "keeps": 0,
+          "resources": {
+            "food": 6264,
+            "wood": 2007,
+            "gold": 1893,
+            "stone": 2293
+          },
+          "phase": "attack",
+          "firstAttack": 300.2999999999998,
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 3,
+          "defeated": false,
+          "population": 14,
+          "workers": 11,
+          "centers": [
+            {
+              "x": 106.55110210314959,
+              "z": -107.29426852303078,
+              "progress": 0,
+              "hp": 135.8943999999999
+            }
+          ],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 541,
+            "wood": 0,
+            "gold": 346,
+            "stone": 1013
+          },
+          "phase": "defend",
+          "firstAttack": 300.49999999999983,
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 3,
+          "defeated": false,
+          "population": 28,
+          "workers": 4,
+          "centers": [],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 15,
+            "wood": 107,
+            "gold": 103,
+            "stone": 1376
+          },
+          "phase": "defend",
+          "firstAttack": 300.7999999999999,
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    },
+    {
+      "time": 600,
+      "kingdoms": [
+        {
+          "owner": 0,
+          "age": 3,
+          "defeated": false,
+          "population": 80,
+          "workers": 26,
+          "centers": [
+            {
+              "x": -115.39982668964456,
+              "z": 115.39982668964457,
+              "progress": 1,
+              "hp": 4980.16
+            },
+            {
+              "x": -71.10050506338834,
+              "z": 113.10050506338834,
+              "progress": 1,
+              "hp": 4992
+            }
+          ],
+          "towers": 2,
+          "keeps": 1,
+          "resources": {
+            "food": 6847,
+            "wood": 952,
+            "gold": 1126,
+            "stone": 1814
+          },
+          "phase": "attack",
+          "firstAttack": 303.0000000000004,
+          "stats": {
+            "gathered": 32864.32499999981,
+            "kills": 124,
+            "lost": 11,
+            "built": 21,
+            "trained": 82
+          }
+        },
+        {
+          "owner": 1,
+          "age": 3,
+          "defeated": false,
+          "population": 80,
+          "workers": 30,
+          "centers": [
+            {
+              "x": -115.3998266896446,
+              "z": -115.39982668964456,
+              "progress": 1,
+              "hp": 4940
+            },
+            {
+              "x": -71.10050506338834,
+              "z": -115.10050506338834,
+              "progress": 1,
+              "hp": 4940
+            }
+          ],
+          "towers": 3,
+          "keeps": 0,
+          "resources": {
+            "food": 9882,
+            "wood": 3453,
+            "gold": 3429,
+            "stone": 3013
+          },
+          "phase": "attack",
+          "firstAttack": 300.2999999999998,
+          "stats": {
+            "gathered": 42185.6106000003,
+            "kills": 134,
+            "lost": 18,
+            "built": 23,
+            "trained": 88
+          }
+        },
+        {
+          "owner": 2,
+          "age": 3,
+          "defeated": true,
+          "population": 0,
+          "workers": 0,
+          "centers": [],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 466,
+            "wood": 234,
+            "gold": 558,
+            "stone": 1061
+          },
+          "phase": "defend",
+          "firstAttack": 300.49999999999983,
+          "stats": {
+            "gathered": 21844.769999999928,
+            "kills": 20,
+            "lost": 133,
+            "built": 20,
+            "trained": 84
+          }
+        },
+        {
+          "owner": 3,
+          "age": 3,
+          "defeated": false,
+          "population": 0,
+          "workers": 0,
+          "centers": [],
+          "towers": 0,
+          "keeps": 0,
+          "resources": {
+            "food": 15,
+            "wood": 107,
+            "gold": 157,
+            "stone": 1212
+          },
+          "phase": "defend",
+          "firstAttack": 300.7999999999999,
+          "stats": {
+            "gathered": 15911.769999999902,
+            "kills": 9,
+            "lost": 127,
+            "built": 17,
+            "trained": 80
+          }
+        }
+      ]
+    }
+  ],
+  "kingdoms": [
+    {
+      "owner": 0,
+      "age": 3,
+      "defeated": false,
+      "population": 80,
+      "workers": 26,
+      "centers": [
+        {
+          "x": -115.39982668964456,
+          "z": 115.39982668964457,
+          "progress": 1,
+          "hp": 4980.16
+        },
+        {
+          "x": -71.10050506338834,
+          "z": 113.10050506338834,
+          "progress": 1,
+          "hp": 4992
+        }
+      ],
+      "towers": 2,
+      "keeps": 1,
+      "resources": {
+        "food": 7189,
+        "wood": 1042,
+        "gold": 1252,
+        "stone": 1886
+      },
+      "phase": "attack",
+      "firstAttack": 303.0000000000004,
+      "stats": {
+        "gathered": 32864.32499999981,
+        "kills": 124,
+        "lost": 11,
+        "built": 21,
+        "trained": 82
+      }
+    },
+    {
+      "owner": 1,
+      "age": 3,
+      "defeated": false,
+      "population": 80,
+      "workers": 30,
+      "centers": [
+        {
+          "x": -115.3998266896446,
+          "z": -115.39982668964456,
+          "progress": 1,
+          "hp": 4940
+        },
+        {
+          "x": -71.10050506338834,
+          "z": -115.10050506338834,
+          "progress": 1,
+          "hp": 4940
+        }
+      ],
+      "towers": 3,
+      "keeps": 0,
+      "resources": {
+        "food": 10314,
+        "wood": 3615,
+        "gold": 3591,
+        "stone": 3121
+      },
+      "phase": "attack",
+      "firstAttack": 300.2999999999998,
+      "stats": {
+        "gathered": 42185.6106000003,
+        "kills": 134,
+        "lost": 18,
+        "built": 23,
+        "trained": 88
+      }
+    },
+    {
+      "owner": 2,
+      "age": 3,
+      "defeated": true,
+      "population": 0,
+      "workers": 0,
+      "centers": [],
+      "towers": 0,
+      "keeps": 0,
+      "resources": {
+        "food": 466,
+        "wood": 234,
+        "gold": 558,
+        "stone": 1061
+      },
+      "phase": "defend",
+      "firstAttack": 300.49999999999983,
+      "stats": {
+        "gathered": 21844.769999999928,
+        "kills": 20,
+        "lost": 133,
+        "built": 20,
+        "trained": 84
+      }
+    },
+    {
+      "owner": 3,
+      "age": 3,
+      "defeated": true,
+      "population": 0,
+      "workers": 0,
+      "centers": [],
+      "towers": 0,
+      "keeps": 0,
+      "resources": {
+        "food": 15,
+        "wood": 107,
+        "gold": 157,
+        "stone": 1212
+      },
+      "phase": "defend",
+      "firstAttack": 300.7999999999999,
+      "stats": {
+        "gathered": 15911.769999999902,
+        "kills": 9,
+        "lost": 127,
+        "built": 17,
+        "trained": 80
+      }
+    }
+  ]
+}

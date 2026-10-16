@@ -23,3 +23,15 @@ The playable landscape uses broader, stronger rolling forms, with different reli
 - [Age of Empires IV Season Four map changes](https://www.ageofempires.com/news/ageiv_seasonfour_update_60878/) discusses preserving dock placement and flanking space. [Patch 20249](https://www.ageofempires.com/news/age-of-empires-iv-patch-20249/) documents resource-placement fairness and forest-blocked lanes. These motivate testing access and build space along with appearance.
 
 See the release checkpoint and `artifacts/ai-world-release-validation.json` for achieved verification and its limits. This milestone does not establish overall release completion or parity with commercial RTS games.
+
+## Villager shelter and defensive volleys
+
+Select an owned, completed town center, castle or tower and press **Shelter** to call nearby villagers. Select villagers and press **Shelter** to send them to eligible nearby fortifications. Town centers and castles hold 15 villagers; towers hold eight. Entry reserves capacity and uses ordinary land movement. The controls show occupants and incoming villagers. **Return to work** cancels incoming orders, releases occupants onto separate walkable ground, and restores their previous jobs, queued orders and carried resources.
+
+Every group of up to three sheltered villagers contributes one additional arrow per normal attack cycle. Town-center/tower arrows add five raw damage and castle arrows add seven, with the existing armor and masonry rules applied. Each arrow has a separate volumetric 3D flight origin. The capacity, damage and grouping values are this game's own balance choices. Sheltered workers remain part of the population, stop working, and cannot be targeted through the building. Destruction can injure escaping occupants; demolition evacuates them safely and preserves the existing last-town-center safeguard. A sinking ship retains the original passenger-loss rule.
+
+AI kingdoms shelter threatened nearby workers and send them back after the local danger clears. Human-controlled slots retain manual control. Network commands validate ownership on the authoritative server; opponents can observe a visible fort's occupant count without receiving its hidden villagers, occupant IDs or private work orders. Save files retain jobs, cargo, capacity and AI shelter timing.
+
+The official [Age of Empires II defense guide](https://www.ageofempires.com/learn-to-play/defending-your-empires-aoe2/) describes sheltering villagers in town centers and the resulting defensive arrows. The official [resource-control guide](https://www.ageofempires.com/learn-to-play/control-resources-aoe2/) discusses villagers retreating into defensive buildings. These inform the mechanic, rather than supplying this game's numerical balance.
+
+The garrison checkpoint and `artifacts/garrison-release-validation.json` record achieved verification. Physical devices, wider human balance, automatic AI wall/gate construction, and overall release readiness remain outstanding.

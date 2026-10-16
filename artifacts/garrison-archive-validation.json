@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "kind": "source",
+      "entries": 291,
+      "everyPayloadMatches": true
+    },
+    {
+      "kind": "static",
+      "entries": 38,
+      "everyPayloadMatches": true
+    }
+  ],
+  "unfinishedGraphicsAndWaterIncluded": false
+}

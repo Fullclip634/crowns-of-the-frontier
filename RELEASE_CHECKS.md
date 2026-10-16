@@ -1,3 +1,11 @@
+# Villager shelter and defensive volleys — 16 October 2026
+
+Town centers, castles and towers now shelter owned villagers, fire extra arrows and return workers to their previous jobs. Entry is real movement with reserved capacity; jobs, queued orders, carried resources and population survive sheltering. The AI shelters locally threatened workers and releases them after danger clears. Multiplayer validates ownership and keeps occupied villagers and private work orders hidden from opponents. Destruction, safe demolition, saved games, stale attack targets and sinking transports are covered by regressions. See AI_AND_MAP_DESIGN.md for controls and original balance values.
+
+Verification: all 302 isolated release regressions pass. Production 1792108621704 passes 4 rendered checks covering the town center, castle, tower and 640 × 360 touch controls, including return-to-work, live occupant/arrow labels and separate volumetric arrow flights. The normal 2v2 Vast diagnostic ended after 10.1 simulated minutes, with 82 shelter entries, 14 return commands and 426 extra defensive arrows. The hard 4v4 Epic diagnostic reached 20.0 minutes without ending, with 254 entries and 1052 extra arrows. These deterministic battles exercise the behavior; they do not establish final human balance or guarantee match duration. The shorter 2v2 result especially requires wider balance playtesting. CPU tick timings are recorded separately from rendering FPS.
+
+The broader goal remains active and incomplete. Software rendering and emulated touch do not prove physical-device smoothness. The hosted Render revision, human balance, wider mission/visual quality and full release readiness remain unverified. Separate graphics and water/weather experiments remain unpublished.
+
 # Settlement AI and larger battlefields — 16 October 2026
 
 Custom AI now establishes paid, scouted resource settlements with real builders, additional town-center production, worker allocation, defenses and foundation recovery. Threatened villagers withdraw through normal movement; economic sites participate in defense; visible buildings receive siege priorities and trebuchet escorts. A multiplayer regression caused by initializing AI planning state for human workers was found and fixed. Difficulty, pacing and allied reinforcement remain active. See AI_AND_MAP_DESIGN.md for research and behavior.

@@ -1,0 +1,23 @@
+✔ eight human commanders ready, receive private team perspectives, reconnect, and win as an alliance (2083.4382ms)
+✔ custom rooms mix humans and AI, preserve assigned slots, and treat leaving as a concession (2288.6374ms)
+✔ network shelter enforces ownership, keeps occupants and return jobs private, and releases actual villagers (835.3752ms)
+✔ multiplayer wall drags finish the paid connected line and reject foreign workers and hidden terrain (2721.8929ms)
+✔ Town Bell walks villagers into real shelter with bounded capacity, without changing resources or population (32.544ms)
+✔ castles and towers have their own capacities and add real defensive arrow damage (38.5109ms)
+✔ shelter reservations reject foreign troops, soldiers, unfinished sites and unreachable shores (26.2302ms)
+✔ Return to work restores tasks, queued commands and cargo and ejects onto distinct dry walkable cells (15.1969ms)
+✔ a later command cancels pending shelter and occupied villagers cannot build or gather invisibly (11.6869ms)
+✔ garrison occupants and return jobs survive real serialization and destruction releases survivors (31.1835ms)
+✔ a villager actually walks from the economy to shelter instead of teleporting from a bell command (31.7858ms)
+✔ AI shelters threatened workers, preserves its shelter clock, and releases them after the raid ends (73.4041ms)
+✔ shelter controls expose actual capacity, incoming villagers, arrows and return work without foreign controls (21.8928ms)
+✔ garrison volleys launch separate solid arrow flights from different firing positions (12.5258ms)
+✔ Wi-Fi rooms synchronize both players, enforce ownership, and reconnect (1129.2867ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9988.4999

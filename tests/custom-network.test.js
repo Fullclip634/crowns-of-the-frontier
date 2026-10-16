@@ -57,6 +57,19 @@ test('custom rooms mix humans and AI, preserve assigned slots, and treat leaving
   guest.send({type:'leave'});await until(()=>room.sim.players[4].defeated);assert.equal(room.sim.ended,null);const before=room.sim.time;await until(()=>room.sim.time>before);
 });
 
+test('network shelter enforces ownership, keeps occupants and return jobs private, and releases actual villagers',async t=>{
+  const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[2].controller='human';const host=await connect();host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,slots}});const session=await host.inbox.next('session'),guest=await connect();guest.send({type:'join',name:'Enemy',slot:3,code:session.code});await guest.inbox.next('session');guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await guest.inbox.next('begin');
+  const sim=service.rooms.get(session.code).sim,tick=sim.tick;sim.tick=()=>{};
+  try{
+    const tc=sim.owned(0,'building','towncenter')[0],worker=sim.owned(0,'unit','villager')[0],scout=sim.owned(2,'unit','scout')[0];worker.x=tc.x+7;worker.z=tc.z;scout.x=tc.x+17;scout.z=tc.z;sim.revision++;sim.updateFog();
+    guest.send({type:'action',method:'townBell',args:[tc.id]});guest.send({type:'action',method:'seekShelter',args:[[worker.id],tc.id]});await pause(100);assert.equal(worker.order?.type==='garrison',false);
+    host.send({type:'action',method:'townBell',args:[tc.id]});await until(()=>worker.order?.type==='garrison');sim.tickUnit(worker,.1);assert.equal(worker.shelter,tc.id);
+    let privateState;for(let i=0;i<30;i++){const message=await guest.inbox.next('state');if(message.state.entities.find(e=>e.id===tc.id)?.garrisonCount===1){privateState=message.state;break;}}
+    assert.ok(privateState);assert.equal(privateState.entities.some(e=>e.id===worker.id),false);const known=privateState.entities.find(e=>e.id===tc.id);assert.equal(known.garrison,undefined);assert.ok(privateState.entities.every(e=>e.shelterWork===undefined));
+    guest.send({type:'action',method:'returnToWork',args:[tc.id]});await pause(100);assert.equal(worker.embarked,true);host.send({type:'action',method:'returnToWork',args:[tc.id]});await until(()=>!worker.embarked);assert.equal(worker.shelter,undefined);assert.equal(tc.garrison.length,0);
+  }finally{sim.tick=tick;}
+});
+
 test('multiplayer wall drags finish the paid connected line and reject foreign workers and hidden terrain',async t=>{
   const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[1].controller='human';const host=await connect();host.send({type:'create',name:'Wall builder',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,startAge:1,slots}});const session=await host.inbox.next('session');
   const guest=await connect();guest.send({type:'join',name:'Ally',slot:2,code:session.code});await guest.inbox.next('session');guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await guest.inbox.next('begin');

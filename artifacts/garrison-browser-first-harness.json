@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "renderer": "Software SwiftShader, Low quality; actual 3D effects and emulated touch, not physical-device FPS",
+  "stage": "desktop-towncenter",
+  "buildId": "1792108095025",
+  "failure": "page.evaluate: TypeError: v.update is not a function\n    at eval (eval at evaluate (:370:30), <anonymous>:1:242)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at C:\\New\\Age_Of_Emprire\\scripts\\garrison-qa.mjs:32:29"
+}

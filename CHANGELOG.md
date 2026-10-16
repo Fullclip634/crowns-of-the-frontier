@@ -1,3 +1,9 @@
+## 16 October 2026 — Villager shelter and defensive volleys
+
+- Add Shelter and Return to work controls for town centers, castles and towers, with capacity, incoming workers, preserved jobs/cargo and additional 3D arrow volleys.
+- AI shelters threatened villagers and restores work after danger; server-authoritative multiplayer validates ownership and hides occupied workers from opponents.
+- Cover saves, targeting, evacuation, demolition and transport sinking with 302 passing release regressions, four rendered desktop/touch checks and a longer AI diagnostic. Physical-device performance and final human balance remain unverified.
+
 ## 16 October 2026 — Resource settlements and larger battlefields
 
 - Custom AI expands at scouted resource sites using paid builders, staffs new settlements, uses multiple town centers, protects workers, recovers construction and invests in defenses. Siege targets visible structures with infantry support.

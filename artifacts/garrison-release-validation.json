@@ -1,0 +1,391 @@
+{
+  "passed": true,
+  "baseline": "8bde8885585342c930c976981462cef993971404",
+  "production": {
+    "buildId": "1792108621704",
+    "version": "2.6.1"
+  },
+  "staticBuild": {
+    "buildId": "1792109697131",
+    "version": "2.6.1"
+  },
+  "regressions": 302,
+  "browser": {
+    "passed": true,
+    "checks": [
+      {
+        "type": "towncenter",
+        "phone": false,
+        "start": {
+          "site": 1,
+          "tree": 339,
+          "workers": 6,
+          "population": 9,
+          "resources": {
+            "food": 6000,
+            "wood": 6000,
+            "gold": 6000,
+            "stone": 6000
+          }
+        },
+        "sheltered": {
+          "inside": 6,
+          "population": 9,
+          "hidden": true,
+          "cargo": 9
+        },
+        "returnJobsRestored": true,
+        "labels": {
+          "shelter": "6/15 inside · 2 coming",
+          "arrows": "+2 defensive arrows"
+        },
+        "volley": {
+          "damage": 14,
+          "baseDamage": 10,
+          "arrows": [
+            {
+              "from": [
+                -37.10263340389897,
+                6.329999976158142,
+                30.632455532033674
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -37.27655867520823,
+                6.329999976158142,
+                31.154231345961456
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -36.92870813258971,
+                6.449999976158142,
+                30.110679718105892
+              ],
+              "vertices": 101
+            }
+          ],
+          "occupants": 6
+        },
+        "viewport": {
+          "width": 960,
+          "height": 640,
+          "coarse": false,
+          "touchPoints": 0,
+          "overflow": false
+        }
+      },
+      {
+        "type": "keep",
+        "phone": false,
+        "start": {
+          "site": 385,
+          "tree": 304,
+          "workers": 6,
+          "population": 9,
+          "resources": {
+            "food": 6000,
+            "wood": 6000,
+            "gold": 6000,
+            "stone": 6000
+          }
+        },
+        "sheltered": {
+          "inside": 6,
+          "population": 9,
+          "hidden": true,
+          "cargo": 9
+        },
+        "returnJobsRestored": true,
+        "labels": {
+          "shelter": "6/15 inside · 2 coming",
+          "arrows": "+2 defensive arrows"
+        },
+        "volley": {
+          "damage": 40,
+          "baseDamage": 32,
+          "arrows": [
+            {
+              "from": [
+                -13.102633403898972,
+                6.850306453008209,
+                24.632455532033674
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -13.276558675208232,
+                6.850306453008209,
+                25.154231345961456
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -12.928708132589712,
+                6.9703064530082095,
+                24.110679718105892
+              ],
+              "vertices": 101
+            }
+          ],
+          "occupants": 6
+        },
+        "viewport": {
+          "width": 960,
+          "height": 640,
+          "coarse": false,
+          "touchPoints": 0,
+          "overflow": false
+        }
+      },
+      {
+        "type": "tower",
+        "phone": false,
+        "start": {
+          "site": 385,
+          "tree": 304,
+          "workers": 6,
+          "population": 9,
+          "resources": {
+            "food": 6000,
+            "wood": 6000,
+            "gold": 6000,
+            "stone": 6000
+          }
+        },
+        "sheltered": {
+          "inside": 6,
+          "population": 9,
+          "hidden": true,
+          "cargo": 9
+        },
+        "returnJobsRestored": true,
+        "labels": {
+          "shelter": "6/8 inside",
+          "arrows": "+2 defensive arrows"
+        },
+        "volley": {
+          "damage": 19,
+          "baseDamage": 15,
+          "arrows": [
+            {
+              "from": [
+                -13.102633403898972,
+                3.402928674221044,
+                15.632455532033676
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -13.276558675208232,
+                3.402928674221044,
+                16.154231345961456
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -12.928708132589712,
+                3.522928674221044,
+                15.110679718105894
+              ],
+              "vertices": 101
+            }
+          ],
+          "occupants": 6
+        },
+        "viewport": {
+          "width": 960,
+          "height": 640,
+          "coarse": false,
+          "touchPoints": 0,
+          "overflow": false
+        }
+      },
+      {
+        "type": "keep",
+        "phone": true,
+        "start": {
+          "site": 385,
+          "tree": 304,
+          "workers": 6,
+          "population": 9,
+          "resources": {
+            "food": 6000,
+            "wood": 6000,
+            "gold": 6000,
+            "stone": 6000
+          }
+        },
+        "sheltered": {
+          "inside": 6,
+          "population": 9,
+          "hidden": true,
+          "cargo": 9
+        },
+        "returnJobsRestored": true,
+        "labels": {
+          "shelter": "6/15 inside · 2 coming",
+          "arrows": "+2 defensive arrows"
+        },
+        "volley": {
+          "damage": 40,
+          "baseDamage": 32,
+          "arrows": [
+            {
+              "from": [
+                -13.102633403898972,
+                6.850306453008209,
+                24.632455532033674
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -13.276558675208232,
+                6.850306453008209,
+                25.154231345961456
+              ],
+              "vertices": 101
+            },
+            {
+              "from": [
+                -12.928708132589712,
+                6.9703064530082095,
+                24.110679718105892
+              ],
+              "vertices": 101
+            }
+          ],
+          "occupants": 6
+        },
+        "viewport": {
+          "width": 640,
+          "height": 360,
+          "coarse": true,
+          "touchPoints": 1,
+          "overflow": false
+        }
+      }
+    ],
+    "errors": [],
+    "renderer": "Software SwiftShader, Low quality; actual 3D effects and emulated touch, not physical-device FPS",
+    "stage": "phone-keep",
+    "buildId": "1792108621704"
+  },
+  "diagnostics": [
+    "artifacts/garrison-vast-2v2.json",
+    "artifacts/garrison-epic-4v4.json"
+  ],
+  "browserAttempts": [
+    "artifacts/garrison-browser-first-harness.json",
+    "artifacts/garrison-browser-paused-fixture.json",
+    "artifacts/garrison-browser-qa.json"
+  ],
+  "staticEntries": 38,
+  "archives": [
+    {
+      "kind": "source",
+      "bytes": 32351314,
+      "sha256": "9bc7c4559a0c0b4c69921004c3d96e15a4fef78722bf7010685606c3ec4ee1cb"
+    },
+    {
+      "kind": "static",
+      "bytes": 31720127,
+      "sha256": "4320242fab9a643b2c47522b4c0cceaf585e2ed4ea7cd2e9da0c903c29237957"
+    }
+  ],
+  "codeHashes": {
+    "src/ai-settlements.js": "3904ba69f1f9fa3387809b7e04228676705fc01fe79735be638087730200265f",
+    "src/ai-siege.js": "2f9d2490fef0cf47f2b82de485f07be02cf5b774ace58c979975d086e1f6dbfc",
+    "src/allied-ai.js": "db6f2f1e883130c4bb36b58d845d252fd0109dc1d17dc4f65da914bda9d60334",
+    "src/audio.js": "306f107e13a79db7a7622bbd19bb26274bc1cdb2bf00e60f8eab3ae53e3fd3eb",
+    "src/authored-assets.js": "b3b1542dee289c3be3da8f1585a5b757c589eae39851f853f051df61b457bf0a",
+    "src/battle-chat.js": "2edb68968ca7c2815bbb25ac80db9cecf590e4feb7c54160ae5c5aaaa3edb4ff",
+    "src/battle-effects.js": "de5f0c20d5169895e0ff0533e4fd652820745300e72938dc53c6834258707491",
+    "src/battle-remains.js": "38e8ecf9a9c7a1f3883f4849bbeb4850a5e79524b57930a9e3fa6939297216b6",
+    "src/building-grounding.js": "5f3f6505145bd70a8290143659e257a1700e9f2f7235130f17494105a11e0e48",
+    "src/campaign-view.js": "074f95006f756db61a8c8fd795993ab44db19047fa41e6fad6bd6c8e06d31e19",
+    "src/campaigns.js": "fc81573ea7300737dc4f83d29cca7ad68006001866952c1b6d19b6ed03e07d5b",
+    "src/chat-protocol.js": "6ac8303dc089b8dd04901702f98e75830ec1054f5fb9160f5b35642bae1a96a7",
+    "src/combat-audio.js": "667d375df002324574ffcecdfd795e408adcd55855d7000d92e3036d0040b17f",
+    "src/combat-poses.js": "5d6991ac54333e3ac9644603d7eb8ce746b950a429cd18cd217ab601611d33d0",
+    "src/commander-ai.js": "cbf6eabce58274c2318b4a4cea2bebf751768f99e3b2bf87588263a4a00cbfe7",
+    "src/compact-hud.js": "612df1f79575d8c319d3f4045faddd1b8b3c51a26bbbd4dede2f008cecc06200",
+    "src/controls.js": "d348ad8d7b784d58325fae9f4ce0f23aabc02059f2d2abef1d8a9f49539b9bf4",
+    "src/custom-battle-ui.js": "f944e925c9601dae9486cb8f427460b91cac30ebe7c50cc7a3d5d5ff5e9af30c",
+    "src/custom-battle.js": "329f7b55f1594edcc6cdd2fc463e171b89f1560635e07a56200e2af53e2b54a0",
+    "src/data.js": "e8e1dd49bd480685249db1b3a008f4d9f5318c7cf9c976913ec162ada990be27",
+    "src/day-night.js": "29bde318116fa69ed33ce965774d98ac7ac2b527742f32be014ab9e7344bdebe",
+    "src/edge-scroll.js": "a1dfbf30b3cca5773c7418605fa5ecd3ea7ab087d19ff11f19d84b5642c8b527",
+    "src/farm-grounding.js": "9e50e566f9a19efd836f9f9cb2ce9b16d24907ec8e5e4db0281aad9ffd3e3765",
+    "src/frame-pacing.js": "c31a660c2f2b133eb8781159e9feeca9c8f69158bb3dc0d9383f59e927a9d159",
+    "src/frontiers.js": "c7d0bd5c066b2669752320998f4a998438e946f41d1851b349947bbaea7bd917",
+    "src/game-updates.js": "54d30815c35fab4cf5364796c340c1411e26c54224ce44c2f376e3b1ed9b94de",
+    "src/garrison-ui.js": "f9e55f8e4fe08d1ba7a4486cd93c84ad11e441444ea95109bb907bb85589aee6",
+    "src/garrison.js": "884d1fd6f819d5927197349c1d1cfff38f8e36bb2fecfe8ea55ebe91c83432e3",
+    "src/graphics-settings.js": "6befcd01ab306408d27361d017fef9a06699fdc4b86cd98efde8ae6dfc1e0f12",
+    "src/ground-cover.js": "be0261de10f2a947ce87fe81b849444dab5a4e2368b4aaef94c1fe40a9e6b763",
+    "src/keyboard-settings.js": "b03b24777ad7e4ec24157d39dbc21b76ed938556c80e0eb157c6471886117ad5",
+    "src/landscape.js": "b0e1a2ae0758efc05884096c98eba1953d2c1faad6e87cb4dd99449c78bd9b1c",
+    "src/local-save.js": "aa0fc7a304a688a70156026aeee30182137bec77d9ed66131730a5529ee25612",
+    "src/locomotion.js": "49b359b72ef355822dddd296269b4db6921414f904ddda7bae90e5e9b9b1cad0",
+    "src/main.js": "a2f7816edb900d4e74003a9db55742d896abceed7b362c5bc958f13502deaeee",
+    "src/map-geometry.js": "a259684b11cbe21ca6eae25910d6f265518d059cc353ca3acda50ddf83be44ce",
+    "src/minimap.js": "87808de0cc30b0168e72efea3c8b8b412238b96773a4593c41c31b0488cb2004",
+    "src/models-3d.js": "26608d06b0a7aa11419450d952c76f16d32ea1d2678dc08624d9bcd302f65241",
+    "src/motion-smoothing.js": "04e4c2f844151c39f70afe8490adc75c752f5b7bc693dd856566824b272f0012",
+    "src/multiplayer-endpoint.js": "725c90b6528cee006200a9463420a85d37349c4deb81c55371ec8216b52e0f04",
+    "src/navigation.js": "c457b661050bc089d6271b4719b9e8008816abf9253c261554f4bfdb4180593f",
+    "src/network.js": "a6610c567d615f0c43f524ad21beefd4075600721b6ea37d231ff79a60ed799c",
+    "src/offline-registration.js": "95b4ff0f57c57626057b86f48930ee7d42ad800bb7d68a98d20937962309dfeb",
+    "src/portrait-3d.js": "08f5f27567c11f8b9b0b958b558599c87712e558ea6d3999810812fc1a40f076",
+    "src/production.js": "486692405025a14c0c84845c497d9f47afd8c170fa744b104e7985dcf675d498",
+    "src/realm-3d.js": "52140f52cf88dbcf3e2bd835cbf4770f13fbe3d11e6edd35bc2724ff84005547",
+    "src/render-batches.js": "edc40faf998ea487dea8d811fe56d067053bc8a92b805e7de3bb6b6cee1de2c2",
+    "src/render-lifecycle.js": "aa3a63c405be8af2f2a8fbdeb0f1a7a67dae3b815bd1045f1169499b153fa5cd",
+    "src/render-quality.js": "d7a74a08699cab211e170fcf2407da56d5decd280345b8b2c41096c863a8f8b5",
+    "src/resource-picking.js": "cf0d047809a2a007d8f3df2c5f42b7eccd3e1d5828441d3ff72ddea18b5c620b",
+    "src/rig-batches.js": "fd6d41881518d2d1a213b5124eb88e5f3922cb79f3dcb966363a7895ea207971",
+    "src/shadow-sampling.js": "6f2ee9404de33e6c82b91d4c1b6ce3e4e1706a16ea1f731446e5471a1637ecb9",
+    "src/simulation.js": "f77520a677ab44d6b24894c88834a572300f3dca089b1ca1f3262111f329cacf",
+    "src/soundscape.js": "bd971d9be56abf50bce086cc56e810c19b81fb550a4daf9fce9ce576d09d709d",
+    "src/spatial-buckets.js": "070838e653ea65df0d59fc8de7333524438907fc2465c675182c9c8e18b14bc8",
+    "src/starting-forests.js": "61b1d17b036b8590727d25a308c00b9a2fb65f1aaeb3b7d0a6b783ae94ba29c9",
+    "src/structure-palette.js": "a468883f189464474dcd2e13a81b4fcd7fc1ff7a6dc1fd083997d6eaf8eab330",
+    "src/surface-assets.js": "d5e3044c1ebd188f44b14494c1b03838bd5305bc38b9b701a84635b4c03cde4f",
+    "src/tactics.js": "7a9548b39bbcdea54ceab3449b43b262c48021a9c4d191c3c1961c57b1370c09",
+    "src/technology-tree.js": "cf3b90de5eb3f487bba95668bd2184d5659d0148f1d3d52b394521d2de44b8c9",
+    "src/terrain-details.js": "8e22eecce0662e3b30236e0738d0baf1cddc278c449739a24e156c282879c8b6",
+    "src/terrain-layout.js": "843cd149ec2cc7fe2e287f52783915d2b993ade79f6a99644738c74c99279cf5",
+    "src/terrain-relief.js": "ce21bd936d0f986f73357a53ebb8f7657b3ba09ec21ae541a9fc117a42e81033",
+    "src/terrain-surface.js": "8615713ab04f3e5e296c9ebf699af98b9194be3703cfb70de69dc8fdf7688fac",
+    "src/touch-selection.js": "e9b1b53d0460fdb19dc6df82af7851ef30b54e92000fc9808ff8f8a56c1c37ec",
+    "src/tree-lod.js": "148ee1407952e9bd4ee9199f5c4e49f488fb0d02a6323108bfad8a7eb9d08622",
+    "src/ui-format.js": "873d0dc2148492b119a714423984229b63ee3bfafb12f41d6f6faf7a7717d3ce",
+    "src/unit-palette.js": "2311931d161341e90962301f6a66ebcda600b14698b35b90754e5a7e18bb1580",
+    "src/visual-depth.js": "4b35131c43426d770594e8105d71cb0c9db9c9ea7727782c69c37d7745111570",
+    "src/wall-visuals.js": "72d4d148aaea0cd6884d454870d3c65e8eb25f191ce3734ef5e4198e208a4dd5",
+    "src/walls.js": "edbd6fdb15c8576a5c32f26d5ba26f359d54d924a82c957d4954b02de1f47b9a",
+    "src/water-surface.js": "af3653c0b0cc0746815f77d0853c26a26bbae192a5ebf1c689893f38300110e7",
+    "src/weather-audio.js": "ef72dc27c526774f8e96c760046af88845b728648dcd0e6c29f53b6173c05f11",
+    "src/weather.js": "1b1ba0b1bf1933840568f27b480e69e8297607c6a111a9a80ae6958e71839f93",
+    "src/world-interactions.js": "b2b09ea8d4c1d1e8668b4c5c2f8a5c3facb57e279ef78d6d6b72fa3de7118e44",
+    "src/world-polish.js": "19156a406aa662cd1b391f47623c9b1983b166bf0ab58b0cfad2ca97884274f0",
+    "src/world.js": "f9601a0cc75525e3d4d22aa39fed7c91adffd60b46e7ab12d7960919a31a9d0e"
+  },
+  "unfinishedGraphicsAndWaterPublished": false,
+  "limitations": [
+    "Software rendering/touch emulation; physical-device FPS and native input unverified",
+    "Two deterministic AI battles do not establish full human balance or guaranteed duration; the normal 2v2 ended after about ten minutes",
+    "CPU tick timing is separate from rendering FPS",
+    "Hosted Render revision and complete release readiness unverified",
+    "Automatic AI wall/gate construction remains outstanding"
+  ]
+}

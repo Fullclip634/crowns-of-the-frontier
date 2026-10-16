@@ -1,0 +1,12 @@
+{"time":0,"elapsed":0,"age":[0,0,0,0],"workers":[8,8,8,8],"centers":[1,1,1,1],"population":[9,9,9,9],"dead":0}
+{"time":60,"elapsed":1,"age":[0,0,0,0],"workers":[12,12,12,12],"centers":[1,1,1,1],"population":[15,16,15,15],"dead":0}
+{"time":120,"elapsed":2,"age":[0,0,0,0],"workers":[16,14,15,13],"centers":[1,1,1,1],"population":[23,21,22,20],"dead":0}
+{"time":180,"elapsed":3,"age":[1,1,1,1],"workers":[16,16,16,14],"centers":[1,1,1,1],"population":[26,27,26,25],"dead":0}
+{"time":240,"elapsed":5,"age":[1,2,1,2],"workers":[17,16,16,14],"centers":[1,1,1,1],"population":[32,32,30,29],"dead":0}
+{"time":300,"elapsed":6,"age":[2,2,2,2],"workers":[19,18,17,16],"centers":[1,1,1,1],"population":[38,42,39,39],"dead":0}
+{"time":360,"elapsed":9,"age":[2,3,2,2],"workers":[19,18,17,16],"centers":[1,1,1,1],"population":[47,51,41,44],"dead":0}
+{"time":420,"elapsed":13,"age":[3,3,3,3],"workers":[19,22,17,18],"centers":[1,1,1,1],"population":[56,67,30,47],"dead":0}
+{"time":480,"elapsed":17,"age":[3,3,3,3],"workers":[24,26,20,20],"centers":[1,2,0,1],"population":[71,72,28,51],"dead":0}
+{"time":540,"elapsed":21,"age":[3,3,3,3],"workers":[26,29,11,4],"centers":[2,2,1,0],"population":[80,79,14,28],"dead":0}
+{"time":600,"elapsed":23,"age":[3,3,3,3],"workers":[26,30,0,0],"centers":[2,2,0,0],"population":[80,80,0,0],"dead":1}
+{"report":"artifacts/garrison-vast-2v2.json","result":{"won":true,"reason":"Your alliance has eliminated every opposing kingdom."},"peaks":[{"workers":26,"centers":2,"completedCenters":2,"towers":2,"keeps":1},{"workers":30,"centers":2,"completedCenters":2,"towers":3,"keeps":0},{"workers":20,"centers":1,"completedCenters":1,"towers":1,"keeps":0},{"workers":20,"centers":1,"completedCenters":1,"towers":1,"keeps":0}],"firstBaseDamage":40.80000000000031}

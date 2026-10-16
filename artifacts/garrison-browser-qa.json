@@ -1,0 +1,269 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "type": "towncenter",
+      "phone": false,
+      "start": {
+        "site": 1,
+        "tree": 339,
+        "workers": 6,
+        "population": 9,
+        "resources": {
+          "food": 6000,
+          "wood": 6000,
+          "gold": 6000,
+          "stone": 6000
+        }
+      },
+      "sheltered": {
+        "inside": 6,
+        "population": 9,
+        "hidden": true,
+        "cargo": 9
+      },
+      "returnJobsRestored": true,
+      "labels": {
+        "shelter": "6/15 inside · 2 coming",
+        "arrows": "+2 defensive arrows"
+      },
+      "volley": {
+        "damage": 14,
+        "baseDamage": 10,
+        "arrows": [
+          {
+            "from": [
+              -37.10263340389897,
+              6.329999976158142,
+              30.632455532033674
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -37.27655867520823,
+              6.329999976158142,
+              31.154231345961456
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -36.92870813258971,
+              6.449999976158142,
+              30.110679718105892
+            ],
+            "vertices": 101
+          }
+        ],
+        "occupants": 6
+      },
+      "viewport": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false
+      }
+    },
+    {
+      "type": "keep",
+      "phone": false,
+      "start": {
+        "site": 385,
+        "tree": 304,
+        "workers": 6,
+        "population": 9,
+        "resources": {
+          "food": 6000,
+          "wood": 6000,
+          "gold": 6000,
+          "stone": 6000
+        }
+      },
+      "sheltered": {
+        "inside": 6,
+        "population": 9,
+        "hidden": true,
+        "cargo": 9
+      },
+      "returnJobsRestored": true,
+      "labels": {
+        "shelter": "6/15 inside · 2 coming",
+        "arrows": "+2 defensive arrows"
+      },
+      "volley": {
+        "damage": 40,
+        "baseDamage": 32,
+        "arrows": [
+          {
+            "from": [
+              -13.102633403898972,
+              6.850306453008209,
+              24.632455532033674
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -13.276558675208232,
+              6.850306453008209,
+              25.154231345961456
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -12.928708132589712,
+              6.9703064530082095,
+              24.110679718105892
+            ],
+            "vertices": 101
+          }
+        ],
+        "occupants": 6
+      },
+      "viewport": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false
+      }
+    },
+    {
+      "type": "tower",
+      "phone": false,
+      "start": {
+        "site": 385,
+        "tree": 304,
+        "workers": 6,
+        "population": 9,
+        "resources": {
+          "food": 6000,
+          "wood": 6000,
+          "gold": 6000,
+          "stone": 6000
+        }
+      },
+      "sheltered": {
+        "inside": 6,
+        "population": 9,
+        "hidden": true,
+        "cargo": 9
+      },
+      "returnJobsRestored": true,
+      "labels": {
+        "shelter": "6/8 inside",
+        "arrows": "+2 defensive arrows"
+      },
+      "volley": {
+        "damage": 19,
+        "baseDamage": 15,
+        "arrows": [
+          {
+            "from": [
+              -13.102633403898972,
+              3.402928674221044,
+              15.632455532033676
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -13.276558675208232,
+              3.402928674221044,
+              16.154231345961456
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -12.928708132589712,
+              3.522928674221044,
+              15.110679718105894
+            ],
+            "vertices": 101
+          }
+        ],
+        "occupants": 6
+      },
+      "viewport": {
+        "width": 960,
+        "height": 640,
+        "coarse": false,
+        "touchPoints": 0,
+        "overflow": false
+      }
+    },
+    {
+      "type": "keep",
+      "phone": true,
+      "start": {
+        "site": 385,
+        "tree": 304,
+        "workers": 6,
+        "population": 9,
+        "resources": {
+          "food": 6000,
+          "wood": 6000,
+          "gold": 6000,
+          "stone": 6000
+        }
+      },
+      "sheltered": {
+        "inside": 6,
+        "population": 9,
+        "hidden": true,
+        "cargo": 9
+      },
+      "returnJobsRestored": true,
+      "labels": {
+        "shelter": "6/15 inside · 2 coming",
+        "arrows": "+2 defensive arrows"
+      },
+      "volley": {
+        "damage": 40,
+        "baseDamage": 32,
+        "arrows": [
+          {
+            "from": [
+              -13.102633403898972,
+              6.850306453008209,
+              24.632455532033674
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -13.276558675208232,
+              6.850306453008209,
+              25.154231345961456
+            ],
+            "vertices": 101
+          },
+          {
+            "from": [
+              -12.928708132589712,
+              6.9703064530082095,
+              24.110679718105892
+            ],
+            "vertices": 101
+          }
+        ],
+        "occupants": 6
+      },
+      "viewport": {
+        "width": 640,
+        "height": 360,
+        "coarse": true,
+        "touchPoints": 1,
+        "overflow": false
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "Software SwiftShader, Low quality; actual 3D effects and emulated touch, not physical-device FPS",
+  "stage": "phone-keep",
+  "buildId": "1792108621704"
+}

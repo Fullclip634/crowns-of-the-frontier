@@ -7,6 +7,7 @@ import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle
 import {SpatialBuckets} from './spatial-buckets.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
+import {installGarrison} from './garrison.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -115,7 +116,7 @@ export class Simulation {
     return !this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+d.r+(type==='wall'&&e.type==='wall'?-.3:.8));
   }
   build(type,x,z,workerIds,owner=0,append=false){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
-    const workers=workerIds.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.type==='villager');if(!workers.length)return this.fail('Select a villager to construct buildings.',owner);
+    const workers=workerIds.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.type==='villager'&&!e.embarked);if(!workers.length)return this.fail('Select a villager to construct buildings.',owner);
     if(!this.buildValid(type,x,z,owner))return this.fail('Choose open, visible land for this building.',owner);
     if(!this.spend(this.cost(d.cost,owner,'building'),owner))return this.fail('Not enough resources.',owner);
     const e=this.addBuilding(type,owner,x,z);this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
@@ -392,3 +393,4 @@ installTactics(Simulation);
 installCommanderAI(Simulation);
 installCampaigns(Simulation);
 installCustomBattle(Simulation);
+installGarrison(Simulation);
