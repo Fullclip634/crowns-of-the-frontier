@@ -13,7 +13,7 @@ import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncF
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
   if(fall){const t=Math.max(0,Math.min(1,(view.clock-fall.at)/1.5));rotation.makeRotationZ(t*t*1.48);pose.multiply(rotation);}
-  else if(leaves&&view.settings.quality!=='low'){rotation.makeRotationZ(Math.sin(view.clock*1.1+id*.27)*(.009+(view.weatherState?.intensity||0)*.014));pose.multiply(rotation);}
+  else if(leaves&&view.settings.quality!=='low'&&!view.settings.reducedMotion){rotation.makeRotationZ(Math.sin(view.clock*1.1+id*.27)*(.009+(view.weatherState?.amount||0)*.014));pose.multiply(rotation);}
   return pose;
 }
 

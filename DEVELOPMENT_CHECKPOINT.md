@@ -1,3 +1,13 @@
+# Water depth, coastal geometry and weather — 16 October 2026
+
+Water now has depth tint, bank transparency, separate ripple normals, a sky-reflection approximation and broken shoreline foam. Storm strength increases motion; night lighting dims foam and changes the reflected sky. Reduced decorative motion freezes water and foliage sway, while gameplay tree-felling remains visible. Foliage previously read a nonexistent weather intensity property; it now uses the actual amount.
+
+Balanced and High coastal water uses 20 cross-channel segments instead of eight, with the same bank coordinates. Low and narrow river meshes retain the previous budget. A 560 m coast has at most 11,200 water triangles and remains one water mesh. Animation updates uniforms without uploading water vertices or normals. See WATER_AND_WEATHER_DESIGN.md for budgets, research and limits.
+
+Verification: all 309 isolated release regressions pass. Production 1792111282353 passes six High-quality desktop / Low-quality 640 × 360 touch browser checks covering real changing water pixels, shader errors, unchanged CPU geometry, storm particles, night lighting, zero water-pixel change under reduced motion, river replacement/disposal, and the phone layout. A previous Low-only shader candidate and the published baseline were also rendered from the same coastal view; their original reports and comparison image are retained separately. This is software rendering and emulated touch, not hardware FPS or native phone validation.
+
+The broader goal remains active and incomplete. Reflections approximate the sky rather than depicting boats/buildings. Physical-device performance, human balance, broader visual/missions work, the hosted Render revision and complete release readiness remain unverified. Separate compressed-texture/shader-startup experiments remain unpublished.
+
 # Villager shelter and defensive volleys — 16 October 2026
 
 Town centers, castles and towers now shelter owned villagers, fire extra arrows and return workers to their previous jobs. Entry is real movement with reserved capacity; jobs, queued orders, carried resources and population survive sheltering. The AI shelters locally threatened workers and releases them after danger clears. Multiplayer validates ownership and keeps occupied villagers and private work orders hidden from opponents. Destruction, safe demolition, saved games, stale attack targets and sinking transports are covered by regressions. See AI_AND_MAP_DESIGN.md for controls and original balance values.

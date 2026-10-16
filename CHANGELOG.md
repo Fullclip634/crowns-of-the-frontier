@@ -1,3 +1,9 @@
+## 16 October 2026 — Water depth and weather rendering
+
+- Add depth coloring, shoreline transparency/foam, fine ripples and lighting-aware sky reflections to GPU-displaced water.
+- Resolve coastal waves more closely in Balanced/High while preserving Low's mesh budget and all navigation banks. Storms affect water and foliage; reduced decorative motion freezes their decorative movement.
+- Verified with 309 release regressions and six rendered High-quality desktop / Low-quality touch checks. Physical-device FPS and full release readiness remain unverified.
+
 ## 16 October 2026 — Villager shelter and defensive volleys
 
 - Add Shelter and Return to work controls for town centers, castles and towers, with capacity, incoming workers, preserved jobs/cargo and additional 3D arrow volleys.

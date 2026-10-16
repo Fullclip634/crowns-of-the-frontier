@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "clear": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1,
+          "reducedMotion": false
+        },
+        "weather": {
+          "type": "clear",
+          "rain": 0,
+          "snow": 0,
+          "ripples": 0,
+          "clouds": 0,
+          "drawCalls": 0
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 1.7,
+          "ripples": 0.075,
+          "motion": 1,
+          "light": 1,
+          "sky": [
+            0.37626212298046485,
+            0.45641102317066595,
+            0.4178850708380236
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 1701,
+            "triangles": 3200
+          }
+        ],
+        "frame": 30,
+        "drawCalls": 56,
+        "triangles": 1926756,
+        "quality": "high",
+        "programFailures": 0
+      },
+      "pixels": {
+        "still": false,
+        "changedPixels": 4057,
+        "colorDifference": 28777,
+        "colorRange": [
+          97,
+          161
+        ],
+        "glError": 0,
+        "unchangedGeometry": true,
+        "bounds": [
+          -0.005000001788139349,
+          0.16499999821186068
+        ],
+        "objectsExcludedFromPixelProbe": true
+      }
+    },
+    {
+      "componentPatterns": true
+    }
+  ],
+  "errors": [],
+  "baseline": false,
+  "pattern": true,
+  "quality": "high",
+  "renderer": "SwiftShader software rendering; rendered pixels and emulated touch, not physical-device FPS",
+  "stage": "isolate-water-pattern",
+  "buildId": "1792110369004"
+}

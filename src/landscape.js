@@ -4,6 +4,7 @@ import {insideMap} from './map-geometry.js';
 import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,animateWaterSurface} from './water-surface.js';
+import {WATER_WAVE_BOUND} from './water-waves.js';
 import {prepareTerrainGeometry} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
@@ -54,15 +55,15 @@ export class Landscape {
     }
     return null;
   }
-  waterGeometry(channel){
-    const vertices=[],uv=[],depth=[],shore=[],indices=[],across=8,length=this.worldSize/2;
+  waterGeometry(channel,quality='low'){
+    const vertices=[],uv=[],depth=[],shore=[],indices=[],across=quality==='low'?8:Math.max(8,Math.ceil(channel.width*2/1.4)),length=this.worldSize/2;
     for(let row=0;row<=length;row++){const z=-this.half+row*2,mid=channel.center+Math.sin(z*channel.frequency)*channel.bend;
       for(let col=0;col<=across;col++){const x=mid-channel.width+col/across*channel.width*2;vertices.push(x,.08,z);uv.push(col/across*2,row*.07);depth.push(Math.max(0,.08-this.surfaceHeightAt(x,z)));shore.push(channel.width*(1-Math.abs(col/across*2-1)));}
     }
     for(let row=0;row<length;row++)for(let col=0;col<across;col++){const a=row*(across+1)+col,b=a+across+1;indices.push(a,b,a+1,b,b+1,a+1);}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setAttribute('frontierWaterDepth',new THREE.Float32BufferAttribute(depth,1));geo.setAttribute('frontierWaterShore',new THREE.Float32BufferAttribute(shore,1));geo.setIndex(indices);geo.computeVertexNormals();
-    geo.computeBoundingBox();geo.boundingBox.min.y-=.055;geo.boundingBox.max.y+=.055;
-    geo.computeBoundingSphere();geo.boundingSphere.radius+=.055;return geo;
+    geo.computeBoundingBox();geo.boundingBox.min.y-=WATER_WAVE_BOUND;geo.boundingBox.max.y+=WATER_WAVE_BOUND;
+    geo.computeBoundingSphere();geo.boundingSphere.radius+=WATER_WAVE_BOUND;return geo;
   }
 }
 
@@ -101,7 +102,7 @@ export function buildLandscape(view){
   view.waterMeshes=[];
   configureWaterSurface(view.materials.water);
   for(const channel of land.channels()){
-    const water=new THREE.Mesh(land.waterGeometry(channel),view.materials.water);water.userData.channel=channel;view.terrain.add(water);view.waterMeshes.push(water);
+    const water=new THREE.Mesh(land.waterGeometry(channel,view.settings.quality),view.materials.water);water.userData.channel=channel;view.terrain.add(water);view.waterMeshes.push(water);
     if(land.map!=='coast')buildBridge(view,channel);
   }
   // Match the ground triangulation at every quality setting.

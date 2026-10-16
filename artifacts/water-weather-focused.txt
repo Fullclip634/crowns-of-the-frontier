@@ -1,0 +1,23 @@
+✔ projectiles follow raised, interpolated weapon positions and turn along their arc (6.1849ms)
+✔ combat mesh pools reuse completed shots, preserve shared geometry and bound retained objects (17.0298ms)
+✔ an explicit quality stays fixed under frame pressure while automatic graphics remain opt-in (0.6287ms)
+✔ navigation frees battlefield and portrait GPU contexts once (2.3338ms)
+✔ shared or missing renderers do not duplicate disposal and context loss is optional (0.2822ms)
+✔ playable land has broad rolling elevation at Epic size while capitals retain level construction ground (51.7772ms)
+✔ terrain material transitions preserve roads and form normalized finite weights over all biomes (453.8724ms)
+✔ solid terrain pebbles are bounded, seeded, hidden by fog and cleared beneath live foundations (57.6791ms)
+✔ water bank data follows the actual terrain in rivers and sea channels (164.5932ms)
+✔ wave normals agree with numerical surface derivatives and settle at both navigation banks (3.4398ms)
+✔ storm-displaced water remains inside the actual mesh bounds at every bank and map size (165.134ms)
+✔ the material keeps one shared uniform set and disposes the obsolete stripe map once (1.509ms)
+✔ real storm states strengthen water motion and night light dims the shoreline foam (0.6662ms)
+✔ reduced decorative motion freezes the water phase without changing its geometry or settings (0.3848ms)
+✔ forest sway responds to actual weather amounts and respects reduced decorative motion (0.8416ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1201.5561

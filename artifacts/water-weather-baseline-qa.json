@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "clear": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1
+        },
+        "weather": {
+          "type": "clear",
+          "rain": 0,
+          "snow": 0,
+          "ripples": 0,
+          "clouds": 0,
+          "drawCalls": 0
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 1.7,
+          "ripples": 0.035,
+          "sky": [
+            0.37626212298046485,
+            0.45641102317066595,
+            0.4178850708380236
+          ]
+        },
+        "frame": 28,
+        "drawCalls": 56,
+        "triangles": 135824,
+        "quality": "low",
+        "programFailures": 0
+      },
+      "pixels": {
+        "still": false,
+        "changedPixels": 3781,
+        "colorDifference": 14507,
+        "colorRange": [
+          128,
+          173
+        ],
+        "glError": 0,
+        "unchangedGeometry": true,
+        "bounds": [
+          0.024999998211860656,
+          0.13499999821186065
+        ],
+        "objectsExcludedFromPixelProbe": true
+      }
+    }
+  ],
+  "errors": [],
+  "baseline": true,
+  "quality": "low",
+  "renderer": "SwiftShader software rendering; rendered pixels and emulated touch, not physical-device FPS",
+  "stage": "desktop-coast-clear",
+  "buildId": "1792108621704"
+}

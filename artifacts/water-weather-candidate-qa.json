@@ -1,0 +1,297 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "clear": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1,
+          "reducedMotion": false
+        },
+        "weather": {
+          "type": "clear",
+          "rain": 0,
+          "snow": 0,
+          "ripples": 0,
+          "clouds": 0,
+          "drawCalls": 0
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 1.7,
+          "ripples": 0.06,
+          "detail": 1,
+          "motion": 1,
+          "light": 1,
+          "sky": [
+            0.37626212298046485,
+            0.45641102317066595,
+            0.4178850708380236
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 1701,
+            "triangles": 3200
+          }
+        ],
+        "frame": 29,
+        "drawCalls": 56,
+        "triangles": 1926756,
+        "quality": "high",
+        "programFailures": 0
+      },
+      "pixels": {
+        "still": false,
+        "changedPixels": 3726,
+        "colorDifference": 15750,
+        "colorRange": [
+          98,
+          160
+        ],
+        "glError": 0,
+        "unchangedGeometry": true,
+        "bounds": [
+          -0.005000001788139349,
+          0.16499999821186068
+        ],
+        "objectsExcludedFromPixelProbe": true
+      }
+    },
+    {
+      "storm": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1.45,
+          "reducedMotion": false
+        },
+        "weather": {
+          "type": "storm",
+          "rain": 1399,
+          "snow": 0,
+          "ripples": 59,
+          "clouds": 36,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 4.100000000000001,
+          "ripples": 0.081,
+          "detail": 1,
+          "motion": 1.45,
+          "light": 0.7159045771301923,
+          "sky": [
+            0.2676749009071716,
+            0.3389958493105837,
+            0.33065591546674145
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 1701,
+            "triangles": 3200
+          }
+        ],
+        "frame": 41,
+        "drawCalls": 59,
+        "triangles": 1959868,
+        "quality": "high",
+        "programFailures": 0
+      }
+    },
+    {
+      "night": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1.45,
+          "reducedMotion": false
+        },
+        "weather": {
+          "type": "storm",
+          "rain": 1399,
+          "snow": 0,
+          "ripples": 59,
+          "clouds": 36,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 0.9999999999999916,
+          "twilight": 3.3750779948604475e-14,
+          "label": "Night"
+        },
+        "uniforms": {
+          "time": 6.5000000000000036,
+          "ripples": 0.081,
+          "detail": 1,
+          "motion": 1.45,
+          "light": 0.2101217453932704,
+          "sky": [
+            0.023106189357193246,
+            0.03855549944612885,
+            0.06802991870547687
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 1701,
+            "triangles": 3200
+          }
+        ],
+        "frame": 53,
+        "drawCalls": 59,
+        "triangles": 1959868,
+        "quality": "high",
+        "programFailures": 0
+      }
+    },
+    {
+      "reducedMotion": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1,
+          "reducedMotion": true
+        },
+        "weather": {
+          "type": "clear",
+          "rain": 0,
+          "snow": 0,
+          "ripples": 0,
+          "clouds": 0,
+          "drawCalls": 0
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 0,
+          "ripples": 0,
+          "detail": 0,
+          "motion": 1,
+          "light": 0.999804103503867,
+          "sky": [
+            0.37618724723585023,
+            0.45633006015859173,
+            0.4178249224353311
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 1701,
+            "triangles": 3200
+          }
+        ],
+        "frame": 65,
+        "drawCalls": 56,
+        "triangles": 1926756,
+        "quality": "high",
+        "programFailures": 0
+      },
+      "pixels": {
+        "still": true,
+        "changedPixels": 0,
+        "colorDifference": 0,
+        "colorRange": [
+          99,
+          159
+        ],
+        "glError": 0,
+        "unchangedGeometry": true,
+        "bounds": [
+          -0.005000001788139349,
+          0.16499999821186068
+        ],
+        "objectsExcludedFromPixelProbe": true
+      }
+    },
+    {
+      "riverShoreCleanup": {
+        "disposed": 1,
+        "meshes": 2,
+        "finite": true,
+        "oldPhase": 0
+      }
+    },
+    {
+      "phone": {
+        "diagnostics": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1,
+          "reducedMotion": false
+        },
+        "weather": {
+          "type": "clear",
+          "rain": 0,
+          "snow": 0,
+          "ripples": 0,
+          "clouds": 0,
+          "drawCalls": 0
+        },
+        "lighting": {
+          "mode": "day",
+          "night": 0,
+          "twilight": 0,
+          "label": "Day"
+        },
+        "uniforms": {
+          "time": 1.5999999999999999,
+          "ripples": 0.035,
+          "detail": 0,
+          "motion": 1,
+          "light": 1,
+          "sky": [
+            0.37626212298046485,
+            0.45641102317066595,
+            0.4178850708380236
+          ]
+        },
+        "waterMeshes": [
+          {
+            "vertices": 729,
+            "triangles": 1280
+          }
+        ],
+        "frame": 24,
+        "drawCalls": 57,
+        "triangles": 158552,
+        "quality": "low",
+        "programFailures": 0
+      },
+      "viewport": {
+        "coarse": true,
+        "touch": 1,
+        "overflow": false
+      }
+    }
+  ],
+  "errors": [],
+  "baseline": false,
+  "pattern": false,
+  "quality": "high",
+  "renderer": "SwiftShader software rendering; rendered pixels and emulated touch, not physical-device FPS",
+  "stage": "landscape-phone",
+  "buildId": "1792111282353"
+}
