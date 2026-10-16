@@ -10,6 +10,7 @@ const sources={
 };
 const pending=new Map();
 const loaded=new Map();
+const retained=new Map(),reservations=new Map();
 let active=null;
 let loadSerial=0;
 
@@ -52,9 +53,8 @@ export function registerAuthoredAssets(gltf,detail='high',bytes=0,activate=true)
   return catalogue;
 }
 
-export async function loadAuthoredAssets(quality='high'){
-  const serial=++loadSerial;
-  const detail=['high','medium'].includes(quality)?quality:'low';
+const detailFor=quality=>['high','medium'].includes(quality)?quality:'low';
+async function catalogueFor(detail){
   if(!pending.has(detail))pending.set(detail,(async()=>{
     const response=await fetch(sources[detail]);
     if(!response.ok)throw new Error(`3D asset request failed (${response.status}).`);
@@ -63,8 +63,25 @@ export async function loadAuthoredAssets(quality='high'){
     const gltf=await loader.parseAsync(buffer,'');
     const catalogue=registerAuthoredAssets(gltf,detail,buffer.byteLength,false);loaded.set(detail,catalogue);return catalogue;
   })());
-  try{const catalogue=await pending.get(detail);if(serial===loadSerial)active=catalogue;return catalogue;}
+  try{return await pending.get(detail);}
   catch(error){pending.delete(detail);throw error;}
+}
+
+export async function loadAuthoredAssets(quality='high'){
+  const serial=++loadSerial,catalogue=await catalogueFor(detailFor(quality));if(serial===loadSerial)active=catalogue;return catalogue;
+}
+
+// Leases retain source meshes rather than a duplicate rendered battlefield.
+// A failed rebuild can reconstruct the previous preset without another fetch.
+export function retainAuthoredAssets(catalogue=active){
+  if(catalogue)retained.set(catalogue,(retained.get(catalogue)||0)+1);let released=false;
+  return {catalogue,activate(){if(released)throw new Error('Artwork lease already released.');loadSerial++;active=catalogue;},release(){if(released)return;released=true;if(catalogue){const count=retained.get(catalogue)-1;if(count)retained.set(catalogue,count);else retained.delete(catalogue);}}};
+}
+
+export async function prepareAuthoredAssets(quality){
+  const detail=detailFor(quality);reservations.set(detail,(reservations.get(detail)||0)+1);
+  try{return retainAuthoredAssets(await catalogueFor(detail));}
+  finally{const count=reservations.get(detail)-1;if(count)reservations.set(detail,count);else reservations.delete(detail);}
 }
 
 export function authoredAssetState(){return active?{source:active.source,detail:active.detail,models:active.templates.size,bytes:active.bytes}:null;}
@@ -75,13 +92,13 @@ export function trimAuthoredAssets(view){
   const pinned=new Set();for(const scene of [view.scene,view.modelPortrait?.scene])scene?.traverse(node=>{if(node.geometry)pinned.add(node.geometry);});
   let evicted=0;
   for(const [detail,catalogue]of loaded){
-    if(catalogue===active||[...catalogue.geometries].some(geometry=>pinned.has(geometry)))continue;
+    if(catalogue===active||retained.has(catalogue)||reservations.has(detail)||[...catalogue.geometries].some(geometry=>pinned.has(geometry)))continue;
     for(const geometry of catalogue.geometries)geometry.dispose();
     const materials=new Set();for(const root of catalogue.templates.values())root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(active?.geometries||[]),...[...loaded.values()].flatMap(catalogue=>[...catalogue.geometries])]);
-  view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,0),evicted};return view.artCacheDiagnostics;
+  view.authoredGeometry=new Set([...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,0),evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
 

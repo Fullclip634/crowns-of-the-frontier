@@ -31,6 +31,8 @@ function allocate(rig,rows){
   const data=new Float32Array(rows*rig.joints.length*16),roots=new Float32Array(rows*16);if(rig.data)data.set(rig.data);if(rig.roots)roots.set(rig.roots);
   const texture=new THREE.DataTexture(data,rig.joints.length*4,rows,THREE.RGBAFormat,THREE.FloatType);texture.needsUpdate=true;texture.generateMipmaps=false;
   rig.texture?.dispose();rig.texture=texture;rig.data=data;rig.roots=roots;rig.rows=rows;rig.uniform.value=texture;
+  rig.dirtyRows=new Set();rig.fullUpload=true;
+  texture.onUpdate=()=>{rig.dirtyRows.clear();rig.fullUpload=false;};
 }
 
 // Merge rigid Blender joint groups into one opaque draw without removing a part.
@@ -49,6 +51,8 @@ export function createRigidUnitPart(view,model,batch){
   const geometry=mergeGeometries(geometries);for(const part of geometries)part.dispose();if(!geometry)throw new Error('Rigid unit geometry could not merge.');
   geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(batch.capacity),1).setUsage(THREE.DynamicDrawUsage));
   const rig={joints,uniform:{value:null},batch,view};allocate(rig,Math.min(16,batch.capacity));
+  rig.restore=()=>{rig.fullUpload=true;rig.texture.clearUpdateRanges();rig.texture.needsUpdate=true;};
+  view.renderer?.domElement?.addEventListener('webglcontextrestored',rig.restore);
   const material=sourceMaterial.clone(),paletteShader=sourceMaterial.onBeforeCompile;material.defines={...sourceMaterial.defines};material.onBeforeCompile=(shader,renderer)=>{
     paletteShader.call(sourceMaterial,shader,renderer);applyRigShader(shader,rig.uniform);
   };material.customProgramCacheKey=()=>sourceMaterial.customProgramCacheKey()+':rig-v2';
@@ -60,10 +64,27 @@ export function createRigidUnitPart(view,model,batch){
 export function writeRigidPose(mesh,index,e,matrix){
   const rig=mesh.userData.rigidRig;if(index>=rig.rows)allocate(rig,Math.min(mesh.instanceMatrix.count,Math.max(index+1,rig.rows*2)));
   rig.roots.set(matrix.elements,index*16);const start=index*rig.joints.length*16;
-  for(let joint=0;joint<rig.joints.length;joint++)rig.data.set(animatePart(rig.view,rig.joints[joint],e,matrix).elements,start+joint*16);
+  for(let joint=0;joint<rig.joints.length;joint++){
+    const pose=animatePart(rig.view,rig.joints[joint],e,matrix).elements,offset=start+joint*16;
+    for(let component=0;component<16;component++){
+      const value=Math.fround(pose[component]);
+      if(rig.data[offset+component]!==value){rig.data[offset+component]=value;rig.dirtyRows.add(index);}
+    }
+  }
 }
 
-export function finishRigidFrame(mesh,count){const rig=mesh.userData.rigidRig;if(count)rig.texture.needsUpdate=true;return {used:count*rig.joints.length*64,uploaded:count?rig.data.byteLength:0,capacity:rig.data.byteLength,joints:rig.joints.length};}
+export function finishRigidFrame(mesh,count){
+  const rig=mesh.userData.rigidRig,row=rig.joints.length*16;let uploaded=0;
+  if(count&&(rig.fullUpload||rig.dirtyRows.size)){
+    // Three r180 uploads DataTexture ranges one row at a time. Preserve pending
+    // rows until onUpdate confirms a real upload, including skipped field frames.
+    rig.texture.clearUpdateRanges();
+    if(rig.fullUpload)uploaded=rig.data.byteLength;
+    else for(const index of rig.dirtyRows){rig.texture.addUpdateRange(index*row,row);uploaded+=row*4;}
+    rig.texture.needsUpdate=true;
+  }
+  return {used:count*row*4,uploaded,capacity:rig.data.byteLength,joints:rig.joints.length};
+}
 
 export function raycastRigidPart(mesh,raycaster,intersects){
   const rig=mesh.userData.rigidRig,geometry=mesh.geometry,root=rig.rootMatrix??=new THREE.Matrix4(),sphere=rig.pickSphere??=new THREE.Sphere(),dummy=rig.pickMesh??=new THREE.Mesh(geometry,mesh.material),hits=rig.pickHits??=[];
@@ -77,4 +98,4 @@ export function raycastRigidPart(mesh,raycaster,intersects){
   }}finally{geometry.setDrawRange(previous.start,previous.count);hits.length=0;}
 }
 
-export function disposeRigidPart(mesh){const rig=mesh.userData.rigidRig;if(!rig||rig.disposed)return;rig.disposed=true;rig.texture.dispose();mesh.material.dispose();mesh.customDepthMaterial.dispose();}
+export function disposeRigidPart(mesh){const rig=mesh.userData.rigidRig;if(!rig||rig.disposed)return;rig.disposed=true;rig.view.renderer?.domElement?.removeEventListener('webglcontextrestored',rig.restore);rig.texture.dispose();mesh.material.dispose();mesh.customDepthMaterial.dispose();}

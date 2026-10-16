@@ -1,0 +1,201 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "phone": false,
+      "quality": "high",
+      "restored": {
+        "sameMatch": true,
+        "sameState": true,
+        "quality": "high",
+        "selected": "high",
+        "savedPreference": "low",
+        "camera": {
+          "target": [
+            -40,
+            0.6499999761581421,
+            36
+          ],
+          "zoom": 32,
+          "angle": 0.3,
+          "tilt": 0.5585053606381855
+        },
+        "error": "QA partial forest replacement",
+        "valid": true,
+        "cache": {
+          "catalogues": [
+            "high"
+          ],
+          "bytes": 17635496,
+          "evicted": 1,
+          "retained": 0,
+          "reservations": 0
+        },
+        "surface": {
+          "source": "Poly Haven CC0",
+          "loaded": 21,
+          "compressed": 14,
+          "compressedMipBytes": 19573792,
+          "codecFallbacks": 0,
+          "codecPending": 0,
+          "anisotropy": 16,
+          "evicted": 0,
+          "pending": 0
+        },
+        "frame": 23,
+        "drawn": 9,
+        "shadows": true,
+        "shadowSize": 2048,
+        "shaderErrors": 0,
+        "beforeCamera": {
+          "target": [
+            -40,
+            0.6499999761581421,
+            36
+          ],
+          "zoom": 32,
+          "angle": 0.3,
+          "tilt": 0.5585053606381855
+        }
+      },
+      "fatal": {
+        "applied": false,
+        "fatal": true,
+        "valid": false,
+        "timeHeld": true,
+        "frameHeld": true,
+        "paused": true,
+        "sameMatch": true,
+        "focused": "retry-battlefield",
+        "autosaved": [
+          "crowns-save"
+        ],
+        "viewport": {
+          "overflow": false,
+          "coarse": false,
+          "touch": 0
+        }
+      },
+      "retry": {
+        "sameMatch": true,
+        "valid": true,
+        "quality": "high",
+        "fatal": null,
+        "paused": false,
+        "modal": false,
+        "cache": {
+          "catalogues": [
+            "high"
+          ],
+          "bytes": 17635496,
+          "evicted": 0,
+          "retained": 0,
+          "reservations": 0
+        },
+        "frame": 25,
+        "drawn": 9,
+        "shaderErrors": 0
+      }
+    },
+    {
+      "phone": true,
+      "quality": "low",
+      "restored": {
+        "sameMatch": true,
+        "sameState": true,
+        "quality": "low",
+        "selected": "low",
+        "savedPreference": "high",
+        "camera": {
+          "target": [
+            -40,
+            0.6499999761581421,
+            36
+          ],
+          "zoom": 32,
+          "angle": 0.3,
+          "tilt": 0.5585053606381855
+        },
+        "error": "QA partial forest replacement",
+        "valid": true,
+        "cache": {
+          "catalogues": [
+            "low"
+          ],
+          "bytes": 4236080,
+          "evicted": 1,
+          "retained": 0,
+          "reservations": 0
+        },
+        "surface": {
+          "source": "Poly Haven CC0",
+          "loaded": 7,
+          "compressed": 7,
+          "compressedMipBytes": 9786896,
+          "codecFallbacks": 0,
+          "codecPending": 0,
+          "anisotropy": 4,
+          "evicted": 14,
+          "pending": 0
+        },
+        "frame": 20,
+        "drawn": 9,
+        "shadows": false,
+        "shadowSize": 1024,
+        "shaderErrors": 0,
+        "beforeCamera": {
+          "target": [
+            -40,
+            0.6499999761581421,
+            36
+          ],
+          "zoom": 32,
+          "angle": 0.3,
+          "tilt": 0.5585053606381855
+        }
+      },
+      "fatal": {
+        "applied": false,
+        "fatal": true,
+        "valid": false,
+        "timeHeld": true,
+        "frameHeld": true,
+        "paused": true,
+        "sameMatch": true,
+        "focused": "retry-battlefield",
+        "autosaved": [
+          "crowns-save"
+        ],
+        "viewport": {
+          "overflow": false,
+          "coarse": true,
+          "touch": 1
+        }
+      },
+      "retry": {
+        "sameMatch": true,
+        "valid": true,
+        "quality": "low",
+        "fatal": null,
+        "paused": false,
+        "modal": false,
+        "cache": {
+          "catalogues": [
+            "low"
+          ],
+          "bytes": 4236080,
+          "evicted": 0,
+          "retained": 0,
+          "reservations": 0
+        },
+        "frame": 22,
+        "drawn": 9,
+        "shaderErrors": 0
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "SwiftShader software rendering; phone is emulated touch",
+  "stage": "phone",
+  "buildId": "1792126674471"
+}

@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "models": 126,
+  "unchangedOtherModels": 124,
+  "closedSolidParts": 189,
+  "keys": [
+    "unit:ram",
+    "unit:catapult"
+  ],
+  "sourceSHA256": "a25f4624fef138173a51da6fb7c39fd6f5e65a41a24d8bac97fb3128a0d50a25",
+  "checks": [
+    {
+      "detail": "low",
+      "unchangedModels": 124,
+      "bytes": 4236080
+    },
+    {
+      "detail": "near",
+      "unchangedModels": 124,
+      "bytes": 17635496
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {composeWindmillMounts} from './windmill-mounts.mjs';
+import {lowCatalogueBudget} from './content-budget.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url)),args=process.argv.slice(2),options={};
 for(let i=0;i<args.length;i+=2){assert.ok(['--source','--directory'].includes(args[i])&&args[i+1]);options[args[i]]=args[i+1];}
 const owned=value=>{const file=path.resolve(root,value),rel=path.relative(root,file);assert.ok(rel&&!rel.startsWith('..')&&!path.isAbsolute(rel));return file;};
@@ -21,7 +22,7 @@ for(const detail of ['low','near']){
   const patch=path.join(stage,`optimized/frontier-${detail}.glb`);
   await run(optimizer,['-i',path.join(stage,`raw/frontier-${detail}.glb`),'-o',patch,'-cc','-kn','-km','-ke','-kv','-vpf','-vtf'],path.join(stage,detail+'-pack.log'));
   const result=composeWindmillMounts(fs.readFileSync(path.join(directory,`frontier-${detail}.glb`)),fs.readFileSync(patch));
-  if(detail==='low')assert.ok(result.bytes.length<4*1024*1024,'Keep the complete Low catalogue budget');
+  if(detail==='low')assert.ok(result.bytes.length<lowCatalogueBudget(manifest),'Keep the complete Low catalogue budget');
   fs.writeFileSync(path.join(directory,`frontier-${detail}.glb`),result.bytes);manifest.sizes[detail]=result.bytes.length;
   checks.push({detail,unchangedModels:result.unchangedModels,mills:result.mills,bytes:result.bytes.length});
 }

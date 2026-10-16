@@ -46,22 +46,40 @@ export function applyRendererQuality(view,quality){
 
 // Free larger targets before decoding a downgrade. Upgrades wait for their art.
 // A later selection owns the transition even if an earlier load finishes last.
-export async function transitionRendererQuality(view,quality,prepare,rebuild){
+async function graphicsLock(view){
+  const before=view.graphicsMutationTail||Promise.resolve();let unlock;
+  const held=new Promise(resolve=>unlock=resolve),tail=before.then(()=>held);view.graphicsMutationTail=tail;
+  await before;return ()=>{unlock();if(view.graphicsMutationTail===tail)view.graphicsMutationTail=null;};
+}
+
+export async function transitionRendererQuality(view,quality,prepare,rebuild,capture){
+  if(!view.graphicsLoading&&!view.graphicsRebuilding)view.graphicsBaseline={...rendererTargets(view),quality:view.renderQuality};
+  const previous=view.graphicsBaseline||{...rendererTargets(view),quality:view.renderQuality};
   const request=view.graphicsRequest=(view.graphicsRequest||0)+1;view.graphicsLoading=quality;
-  const previous=rendererTargets(view),downgrade=qualityRank[quality]<qualityRank[view.renderQuality];let rendererPrepared=false;
+  const owns=()=>request===view.graphicsRequest,latest=()=>owns()&&view.settings.quality===quality&&!view.renderingReleased;
+  const downgrade=qualityRank[quality]<qualityRank[previous.quality];let unlock,checkpoint,mutated=false,restored=false;
+  const restore=()=>{
+    if(restored)return;restored=true;
+    try{checkpoint?.restore({superseded:!owns()});if(mutated||downgrade)restoreRendererTargets(view,previous);if(owns()){view.settings.quality=previous.quality;view.graphicsRestoredQuality=previous.quality;}if(mutated)view.graphicsSceneValid=true;}
+    catch(error){view.graphicsSceneValid=false;view.graphicsFatal={message:error.message,quality:previous.quality};throw error;}
+  };
   try{
-    if(downgrade)shrinkRendererTargets(view,quality,previous);
+    if(downgrade&&!view.graphicsRebuilding)shrinkRendererTargets(view,quality,previous);
     await prepare();
-    if(request!==view.graphicsRequest||view.settings.quality!==quality||!view.sim)return false;
-    view.graphicsRebuilding=request;await rebuild();
-    if(request!==view.graphicsRequest||view.settings.quality!==quality)return false;
-    rendererPrepared=true;configureShadows(view,quality);
+    if(!latest()||!view.sim)return false;
+    unlock=await graphicsLock(view);if(!latest())return false;
+    view.graphicsRebuilding=request;checkpoint=capture?.();mutated=true;view.graphicsSceneValid=false;await rebuild();view.graphicsSceneValid=true;
+    if(!latest()){if(!view.renderingReleased)restore();return false;}
+    configureShadows(view,quality);
     // Precompilation is optional: a rebuilt scene can also compile normally on
     // its first live frame. Restoring the old targets here would mislabel it.
     try{await prepareScenePrograms(view);if(request===view.graphicsRequest)view.graphicsWarmupError=null;}
     catch(error){if(request===view.graphicsRequest)view.graphicsWarmupError=error.message;}
-    if(request!==view.graphicsRequest||view.settings.quality!==quality)return false;
-    applyRendererQuality(view,quality);return true;
-  }catch(error){if((rendererPrepared||downgrade)&&request===view.graphicsRequest)restoreRendererTargets(view,previous);throw error;}
-  finally{if(view.graphicsRebuilding===request)view.graphicsRebuilding=null;if(request===view.graphicsRequest)view.graphicsLoading=null;}
+    if(!latest()){if(!view.renderingReleased)restore();return false;}
+    applyRendererQuality(view,quality);view.graphicsBaseline={...rendererTargets(view),quality};view.graphicsFatal=null;view.graphicsRestoredQuality=null;return true;
+  }catch(error){
+    if(!view.renderingReleased&&(mutated||owns())){try{restore();}catch(recovery){throw new AggregateError([error,recovery],'The graphics change and its recovery both failed.');}}
+    throw error;
+  }
+  finally{checkpoint?.release();if(view.graphicsRebuilding===request)view.graphicsRebuilding=null;unlock?.();if(owns())view.graphicsLoading=null;}
 }

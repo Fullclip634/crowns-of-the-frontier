@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
-import {authoredAssetState,loadAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
+import {authoredAssetState,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix} from './render-batches.js';
 import {installBattleRemains} from './battle-remains.js';
 import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './surface-assets.js';
@@ -24,6 +24,7 @@ import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from '.
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
 import {createWorldRenderer} from './render-context.js';
+import {graphicsCheckpoint} from './graphics-checkpoint.js';
 
 const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:1,...extra});
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
@@ -155,15 +156,18 @@ export class WorldView {
     }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);}
     else if(event.type==='heal'){const object=new THREE.Mesh(new THREE.RingGeometry(.65,1,24),new THREE.MeshBasicMaterial({color:0x91e0b4,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false}));object.rotation.x=-Math.PI/2;object.position.set(event.target.x,.3,event.target.z);this.scene.add(object);this.fx.push({object,time:0,duration:.65,heal:true});}
   }
-  quality(value){this.settings.quality=value;this.graphicsError=null;
+  quality(value){this.settings.quality=value;this.graphicsError=null;this.graphicsRestoredQuality=null;let artwork;const request=(this.graphicsRequest||0)+1;
     const detail=['high','medium'].includes(value)?value:'low';
-    if(!this.graphicsLoading&&authoredAssetState()?.detail===detail&&this.surfaceQuality===value){this.graphicsRequest=(this.graphicsRequest||0)+1;applyRendererQuality(this,value);return this.graphicsReady=Promise.resolve(true);}
-    return this.graphicsReady=transitionRendererQuality(this,value,()=>Promise.all([loadAuthoredAssets(value),loadSurfaceAssets(value,this.renderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]),()=>{
+    if(!this.graphicsLoading&&!this.graphicsFatal&&this.graphicsSceneValid!==false&&authoredAssetState()?.detail===detail&&this.surfaceQuality===value){this.graphicsRequest=(this.graphicsRequest||0)+1;applyRendererQuality(this,value);return this.graphicsReady=Promise.resolve(true);}
+    return this.graphicsReady=transitionRendererQuality(this,value,async()=>{
+      const [models]=await Promise.allSettled([prepareAuthoredAssets(value),loadSurfaceAssets(value,this.renderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]);
+      if(models.status==='rejected')throw models.reason;artwork=models.value;
+    },()=>{
       const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt;
-      this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
-    }).then(applied=>{trimAuthoredAssets(this);trimSurfaceAssets(this);return applied;}).catch(error=>{if(this.settings.quality===value)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;});
+      artwork.activate();this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
+    },()=>graphicsCheckpoint(this)).catch(error=>{if(this.graphicsRequest===request)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;}).finally(()=>{artwork?.release();trimAuthoredAssets(this);trimSurfaceAssets(this);});
   }
-  adapt(dt){if(this.settings.autoQuality===false)return;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
+  adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal)return;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
     const base=Math.min(devicePixelRatio,this.settings.quality==='high'?2:this.settings.quality==='low'?1:1.25),budget=1/targetFrameRate(this.settings);
     if(this.frameAverage>budget*1.35&&this.settings.quality==='high'){this.quality('medium');return;}
     if(this.frameAverage>budget*1.6&&this.settings.quality==='medium'){this.quality('low');return;}

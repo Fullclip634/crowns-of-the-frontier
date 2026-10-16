@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "archives": [
+    {
+      "kind": "source",
+      "entries": 342,
+      "bytes": 46153450,
+      "sha256": "66d31782afdafd5c456ea7724e15e4b85f776a662857a8d0bf99bc5722ffd4a5",
+      "allPayloadsMatch": true
+    },
+    {
+      "kind": "static",
+      "entries": 55,
+      "bytes": 45732127,
+      "sha256": "f7d278608aaf1947082c4e888eca3680291e09b1d2e87e1f2f32e92eb9d0b21f",
+      "allPayloadsMatch": true
+    }
+  ]
+}

@@ -1,3 +1,10 @@
+## 16 October 2026 — Solid siege and safer graphics
+
+- Replace ram/trebuchet art with solid Blender frames, mechanisms and wheels across every preset; preserve the other 124 models and reduce the High pair's total triangles.
+- Skip unchanged pose uploads, update only changed rows, retain pending writes and fully upload after context restoration.
+- Restore the working battlefield when a graphics rebuild fails, serialize overlapping replacements, and provide recovery controls that protect the live match and local saves.
+- Pass 341 regressions and rendered desktop/touch checks. See SIEGE_ART_DESIGN.md and artifacts/siege-release-validation.json for measurements, download tradeoffs and remaining validation.
+
 ## 16 October 2026 — Graphics loading and memory
 
 - Reuse the startup graphics context, retain decoded full-precision buffers, and support full-resolution compressed color/roughness maps with original-image recovery and unchanged normal detail.

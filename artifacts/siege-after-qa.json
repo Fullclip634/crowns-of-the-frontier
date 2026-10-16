@@ -1,0 +1,536 @@
+{
+  "passed": true,
+  "tag": "after",
+  "checks": [
+    {
+      "quality": "high",
+      "phone": false,
+      "start": {
+        "ids": [
+          385,
+          386
+        ],
+        "target": [
+          -7,
+          -0.7540841817855835,
+          10
+        ],
+        "heights": [
+          -2.951622247695923,
+          -2.156546115875244
+        ]
+      },
+      "poses": [
+        {
+          "name": "front",
+          "frame": 20,
+          "triangles": 1191282,
+          "calls": 70,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 10644,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 9072,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "side",
+          "frame": 21,
+          "triangles": 1576106,
+          "calls": 61,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 10644,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 9072,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "firing",
+          "frame": 22,
+          "triangles": 1089912,
+          "calls": 76,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 768,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 10644,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 9072,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uploads": {
+        "idle": {
+          "requests": 0,
+          "actual": []
+        },
+        "changed": {
+          "requests": 384,
+          "actual": [
+            {
+              "width": 24,
+              "height": 1,
+              "bytes": 384
+            }
+          ]
+        },
+        "picks": [
+          true,
+          true
+        ],
+        "capacity": 12288,
+        "shadows": true,
+        "shadowSize": 2048,
+        "ratio": 1,
+        "viewport": {
+          "overflow": false,
+          "coarse": false,
+          "touch": 0
+        }
+      }
+    },
+    {
+      "quality": "medium",
+      "phone": false,
+      "start": {
+        "ids": [
+          385,
+          386
+        ],
+        "target": [
+          -7,
+          -0.7540841817855835,
+          10
+        ],
+        "heights": [
+          -2.951622247695923,
+          -2.156546115875244
+        ]
+      },
+      "poses": [
+        {
+          "name": "front",
+          "frame": 20,
+          "triangles": 811153,
+          "calls": 70,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "side",
+          "frame": 21,
+          "triangles": 1053675,
+          "calls": 61,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "firing",
+          "frame": 22,
+          "triangles": 748984,
+          "calls": 76,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 768,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uploads": {
+        "idle": {
+          "requests": 0,
+          "actual": []
+        },
+        "changed": {
+          "requests": 384,
+          "actual": [
+            {
+              "width": 24,
+              "height": 1,
+              "bytes": 384
+            }
+          ]
+        },
+        "picks": [
+          true,
+          true
+        ],
+        "capacity": 12288,
+        "shadows": true,
+        "shadowSize": 1024,
+        "ratio": 1,
+        "viewport": {
+          "overflow": false,
+          "coarse": false,
+          "touch": 0
+        }
+      }
+    },
+    {
+      "quality": "low",
+      "phone": true,
+      "start": {
+        "ids": [
+          385,
+          386
+        ],
+        "target": [
+          -7,
+          -0.7424359440803527,
+          10
+        ],
+        "heights": [
+          -2.939412832260132,
+          -2.1454590559005733
+        ]
+      },
+      "poses": [
+        {
+          "name": "front",
+          "frame": 20,
+          "triangles": 113994,
+          "calls": 76,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "side",
+          "frame": 21,
+          "triangles": 135104,
+          "calls": 85,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 0,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "firing",
+          "frame": 22,
+          "triangles": 109556,
+          "calls": 79,
+          "shaders": 0,
+          "stats": {
+            "drawn": 2,
+            "allocated": 2,
+            "activeBatches": 2,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 65536,
+            "rigParts": 2,
+            "rigUploadBytes": 768,
+            "rigUsedBytes": 768
+          },
+          "rigs": [
+            {
+              "ids": [
+                385
+              ],
+              "parts": [
+                {
+                  "vertices": 8628,
+                  "joints": 6
+                }
+              ]
+            },
+            {
+              "ids": [
+                386
+              ],
+              "parts": [
+                {
+                  "vertices": 7440,
+                  "joints": 6
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uploads": {
+        "idle": {
+          "requests": 0,
+          "actual": []
+        },
+        "changed": {
+          "requests": 384,
+          "actual": [
+            {
+              "width": 24,
+              "height": 1,
+              "bytes": 384
+            }
+          ]
+        },
+        "picks": [
+          true,
+          true
+        ],
+        "capacity": 12288,
+        "shadows": false,
+        "shadowSize": 1024,
+        "ratio": 1,
+        "viewport": {
+          "overflow": false,
+          "coarse": true,
+          "touch": 1
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "SwiftShader; emulated touch is not physical-device performance"
+}

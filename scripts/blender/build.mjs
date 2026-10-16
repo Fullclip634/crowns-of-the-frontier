@@ -48,6 +48,8 @@ if(!plan.resources){
   fs.copyFileSync(path.join(tools,'art-candidate/gate-footings/raw/frontier-assets.blend'),editable);
   await run(process.execPath,['scripts/blender/build-windmill-mounts.mjs','--source',editable,'--directory',plan.outputDirectory]);
   fs.copyFileSync(path.join(tools,'art-candidate/windmill-mounts/raw/frontier-assets.blend'),editable);
+  await run(process.execPath,['scripts/blender/build-siege.mjs','--source',editable,'--directory',plan.outputDirectory]);
+  fs.copyFileSync(path.join(tools,'art-candidate/siege/raw/frontier-assets.blend'),editable);
   await run(process.execPath,['scripts/blender/build-balanced-foliage.mjs','--source',editable,'--directory',plan.outputDirectory]);
   await run(process.execPath,['scripts/blender/build-balanced.mjs','--directory',plan.outputDirectory]);
 }
