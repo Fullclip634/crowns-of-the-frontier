@@ -11,7 +11,7 @@ import {insideMap} from './map-geometry.js';
 import {authoredAssetState,loadAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix} from './render-batches.js';
 import {installBattleRemains} from './battle-remains.js';
-import {loadSurfaceAssets,retainedSurfaceTextures} from './surface-assets.js';
+import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './surface-assets.js';
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
@@ -23,13 +23,14 @@ import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
+import {createWorldRenderer} from './render-context.js';
 
 const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:1,...extra});
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
 export class WorldView {
-  constructor(container,settings){
+  constructor(container,settings,renderer=createWorldRenderer()){
     this.container=container;this.settings=settings;this.nodes=new Map();this.selection=new Set();this.fx=[];this.treeIndices=new Map();this.unitBatches=new Map();this.dynamicScale=1;this.frameAverage=.016;this.performanceClock=0;this.target=new THREE.Vector3(-37,0,29);this.angle=Math.PI/4;this.zoom=48;this.tilt=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).tilt;
-    this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
+    this.renderer=renderer;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
     this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa5b4ad);this.scene.fog=new THREE.Fog(0xa5b4ad,105,230);
     this.camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.5,400);this.raycaster=new THREE.Raycaster();this.mouse=new THREE.Vector2();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.clock=0;
     this.hemi=new THREE.HemisphereLight(0xc7def1,0x52633a,.9);this.scene.add(this.hemi);this.sun=new THREE.DirectionalLight(0xffe4bd,2.7);this.sun.position.set(-48,62,32);this.sun.castShadow=true;this.sun.shadow.mapSize.set(settings.quality==='high'?2048:1024,settings.quality==='high'?2048:1024);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:180});this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.025;this.scene.add(this.sun,this.sun.target);
@@ -157,10 +158,10 @@ export class WorldView {
   quality(value){this.settings.quality=value;this.graphicsError=null;
     const detail=['high','medium'].includes(value)?value:'low';
     if(!this.graphicsLoading&&authoredAssetState()?.detail===detail&&this.surfaceQuality===value){this.graphicsRequest=(this.graphicsRequest||0)+1;applyRendererQuality(this,value);return this.graphicsReady=Promise.resolve(true);}
-    return this.graphicsReady=transitionRendererQuality(this,value,()=>Promise.all([loadAuthoredAssets(value),loadSurfaceAssets(value).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]),()=>{
+    return this.graphicsReady=transitionRendererQuality(this,value,()=>Promise.all([loadAuthoredAssets(value),loadSurfaceAssets(value,this.renderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]),()=>{
       const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt;
       this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
-    }).then(applied=>{if(!applied)trimAuthoredAssets(this);return applied;}).catch(error=>{if(this.settings.quality===value)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;});
+    }).then(applied=>{trimAuthoredAssets(this);trimSurfaceAssets(this);return applied;}).catch(error=>{if(this.settings.quality===value)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;});
   }
   adapt(dt){if(this.settings.autoQuality===false)return;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
     const base=Math.min(devicePixelRatio,this.settings.quality==='high'?2:this.settings.quality==='low'?1:1.25),budget=1/targetFrameRate(this.settings);

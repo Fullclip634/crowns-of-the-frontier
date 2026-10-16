@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {applyTerrainShading} from './terrain-surface.js';
 import surfaceManifest from './assets3d/textures/manifest.json' with {type:'json'};
+import {SurfaceResidency,surfaceKeys,surfacePins} from './surface-residency.js';
+import {loadCompressedSurface,surfaceCodecState} from './surface-codecs.js';
 
 const files={
   grass:{color:new URL('./assets3d/textures/leafy_grass_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/leafy_grass_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/leafy_grass_arm.jpg',import.meta.url).href},
@@ -11,19 +13,28 @@ const files={
   rock:{color:new URL('./assets3d/textures/rocky_terrain_02_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/rocky_terrain_02_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/rocky_terrain_02_arm.jpg',import.meta.url).href},
   boulder:{color:new URL('./assets3d/textures/rock_01_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/rock_01_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/rock_01_arm.jpg',import.meta.url).href},
 };
-const cache=new Map(),surfaces={};
-async function texture(role,kind){
-  const key=role+':'+kind;if(!cache.has(key))cache.set(key,new THREE.TextureLoader().loadAsync(files[role][kind]).then(map=>{
+const compressed={
+  grass:{color:new URL('./assets3d/textures/ktx2/leafy_grass_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/leafy_grass_arm.ktx2',import.meta.url).href},
+  stone:{color:new URL('./assets3d/textures/ktx2/medieval_blocks_05_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/medieval_blocks_05_arm.ktx2',import.meta.url).href},
+  wood:{color:new URL('./assets3d/textures/ktx2/old_wood_floor_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/old_wood_floor_arm.ktx2',import.meta.url).href},
+  plaster:{color:new URL('./assets3d/textures/ktx2/painted_plaster_wall_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/painted_plaster_wall_arm.ktx2',import.meta.url).href},
+  soil:{color:new URL('./assets3d/textures/ktx2/brown_mud_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/brown_mud_arm.ktx2',import.meta.url).href},
+  rock:{color:new URL('./assets3d/textures/ktx2/rocky_terrain_02_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rocky_terrain_02_arm.ktx2',import.meta.url).href},
+  boulder:{color:new URL('./assets3d/textures/ktx2/rock_01_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rock_01_arm.ktx2',import.meta.url).href},
+};
+const surfaces={},cache=new SurfaceResidency({loaded(key,map){const [role,kind]=key.split(':');(surfaces[role]??={})[kind]=map;},removed(key,map){const [role,kind]=key.split(':');if(surfaces[role]?.[kind]===map)delete surfaces[role][kind];}});
+async function texture(role,kind,renderer){
+  return cache.load(role+':'+kind,async()=>{const map=await loadCompressedSurface(compressed[role]?.[kind],renderer)||await new THREE.TextureLoader().loadAsync(files[role][kind]);
     map.colorSpace=kind==='color'?THREE.SRGBColorSpace:THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.flipY=false;map.anisotropy=4;
-    (surfaces[role]??={})[kind]=map;return map;
-  }).catch(error=>{cache.delete(key);throw error;}));return cache.get(key);
+    return map;
+  });
 }
-export async function loadSurfaceAssets(quality){
+export async function loadSurfaceAssets(quality,renderer){
   const kinds=quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color'];
-  await Promise.all(Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind))));
-  if(quality==='medium')await Promise.all(['stone','wood','plaster'].map(role=>texture(role,'arm')));
+  await Promise.all(Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind,renderer))));
+  if(quality==='medium')await Promise.all(['stone','wood','plaster'].map(role=>texture(role,'arm',renderer)));
 }
-export function surfaceAssetState(){return {source:'Poly Haven CC0',loaded:[...cache.keys()].length};}
+export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
 
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
@@ -47,4 +58,9 @@ export function applyGroundSurface(material,land,quality){
   applyTerrainShading(material,land,quality,surfaces,{grass:dimension('leafy_grass'),soil:dimension('brown_mud'),rock:dimension('rocky_terrain_02')});
 }
 
-export function retainedSurfaceTextures(){return new Set(Object.values(surfaces).flatMap(set=>Object.values(set)));}
+export function retainedSurfaceTextures(){return cache.textures();}
+export function trimSurfaceAssets(view){
+  const needed=surfaceKeys(view.renderQuality||view.settings.quality,Object.keys(files));
+  if(view.graphicsLoading)for(const key of surfaceKeys(view.graphicsLoading,Object.keys(files)))needed.add(key);
+  const result=cache.trim(needed,surfacePins(view));view.surfaceDiagnostics={...view.surfaceDiagnostics,...surfaceAssetState(),evicted:result.evicted,pending:result.pending};return result;
+}

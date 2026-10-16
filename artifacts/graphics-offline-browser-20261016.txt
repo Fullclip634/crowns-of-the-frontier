@@ -1,0 +1,45 @@
+failed: http://127.0.0.1:61561/assets/basis_transcoder-o4Hde_L7.js net::ERR_ABORTED
+Offline cache includes all three Blender catalogues, 21 original maps, 14 compressed maps and both decoder assets.
+failed: http://127.0.0.1:61561/assets/painted_plaster_wall_color-cFYpKm_m.ktx2 net::ERR_ABORTED
+failed: http://127.0.0.1:61561/assets/brown_mud_color-DhcELWfo.ktx2 net::ERR_ABORTED
+failed: http://127.0.0.1:61561/assets/rocky_terrain_02_color-BozAruS8.ktx2 net::ERR_ABORTED
+{
+  "localQuality": {
+    "held": {
+      "start": 4.000000000000002,
+      "end": 4.000000000000002,
+      "frames": 24,
+      "progressVisible": true,
+      "busy": "true",
+      "rebuilding": true
+    },
+    "resumed": {
+      "quality": "medium",
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8,
+        "evicted": 0,
+        "pending": 0
+      },
+      "units": 9,
+      "shadows": true,
+      "shaderErrors": 0,
+      "progressHidden": true,
+      "time": 4.699999999999999
+    }
+  },
+  "buildId": "1792122713315",
+  "production": true,
+  "offlineReload": true,
+  "offlineGameplay": true,
+  "catalogues": 3,
+  "originalMaps": 21,
+  "compressedMaps": 14,
+  "decoderAssets": 2,
+  "errors": []
+}

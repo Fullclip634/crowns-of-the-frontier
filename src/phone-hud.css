@@ -108,3 +108,6 @@
   #hud .selection-panel.selection-expanded{left:8px;right:8px;bottom:calc(100px + var(--safe));max-height:calc(100dvh - 220px)}
   #hud .floating-panel{left:8px;right:8px;bottom:calc(172px + var(--safe));max-height:calc(100dvh - 270px)}
 }
+
+.graphics-status{position:fixed;z-index:45;top:70px;left:50%;transform:translateX(-50%);padding:8px 14px;border:1px solid #a89a6b66;border-radius:4px;background:#172b23ed;color:#f1e8d0;font-size:12px;max-width:calc(100vw - 24px);pointer-events:none}
+@media (pointer:coarse){.graphics-status{top:50px;padding:6px 10px;font-size:11px}}

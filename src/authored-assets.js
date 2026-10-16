@@ -15,10 +15,13 @@ let loadSerial=0;
 
 // Uniform float attributes let the existing material/joint batches merge
 // compressed meshes reliably, including normalized/interleaved source buffers.
-function canonicalGeometry(geometry){
+export function canonicalGeometry(geometry){
   for(const name of ['position','normal','uv','color']){
     const attribute=geometry.getAttribute(name);if(!attribute)continue;
     const size=name==='color'?3:attribute.itemSize;
+    // Decoder Float32 attributes already have the batch-compatible layout.
+    // Keep their exact buffers instead of allocating a second complete roster.
+    if(!attribute.isInterleavedBufferAttribute&&!attribute.normalized&&attribute.itemSize===size&&attribute.array instanceof Float32Array)continue;
     const values=new Float32Array(attribute.count*size);
     for(let i=0;i<attribute.count;i++)for(let k=0;k<size;k++)
       values[i*size+k]=attribute.getComponent(i,k);

@@ -36,6 +36,13 @@ test('render extensions see the fresh camera frustum and a shared timestamp on i
   view.camera.position.set(500,30,40);view.camera.lookAt(500,0,0);const second=view.render(.016);assert.equal(second.origin,false);assert.equal(second.destination,true);assert.ok(second.at>=first.at);
 });
 
+test('shader preparation holds the complete render pipeline and releases warmed programs after the live frame',()=>{
+  const events=[];class View{render(){events.push('draw');return 42;}}installRenderFrame(View);
+  const view=new View();view.camera=new THREE.PerspectiveCamera();view.graphicsRebuilding=1;view.graphicsProgramReleases=[()=>events.push('release')];
+  assert.equal(view.render(.016),undefined);assert.deepEqual(events,[]);assert.equal(view.frameFrustum,undefined);
+  view.graphicsRebuilding=null;assert.equal(view.render(.016),42);assert.deepEqual(events,['draw','release']);view.render(.016);assert.deepEqual(events,['draw','release','draw']);assert.deepEqual(view.graphicsProgramReleases,[]);
+});
+
 test('shared torso and limb poses retain exact animation while reusing prefixes only within one unit',()=>{
   const torso={type:'torso',pivot:[0,1,0],side:1},arm={type:'arm',pivot:[.4,1.7,0],side:1,parent:torso};
   const definitions=[torso,arm,{type:'forearm',pivot:[.45,1.3,.1],side:1,parent:arm},{type:'head',pivot:[0,1.9,0],side:1,parent:torso}];

@@ -3,11 +3,12 @@ import {resourceModel,treeModel} from './models-3d.js';
 import {workerVisualTask} from './authored-assets.js';
 import {animatePart} from './world-polish.js';
 import {mergeUnitModel} from './unit-palette.js';
+import {trimSurfaceAssets} from './surface-assets.js';
 
 // A small, throttled WebGL turntable uses the same solid models as the battlefield.
 export class ModelPortrait {
   constructor(view){
-    this.view=view;this.renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
+    this.view=view;this.renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:view.renderer.getContext().getContextAttributes()?.powerPreference||'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.setClearColor(0x1a3027,0);
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;
     this.renderer.domElement.setAttribute('aria-label','Rotating 3D model');
@@ -25,7 +26,7 @@ export class ModelPortrait {
     if(this.key===key)return;this.clear();this.key=key;
     const raw=e.kind==='unit'?this.view.makeUnit(e):e.kind==='building'?this.view.makeBuilding(e):e.type==='wood'?treeModel(this.view,this.view.sim.options.map,e.id%4):resourceModel(this.view,e);
     this.model=e.kind==='unit'?mergeUnitModel(this.view,raw):this.view.mergeModel(raw);const bounds=new THREE.Box3().setFromObject(this.model),center=bounds.getCenter(new THREE.Vector3());this.model.position.sub(center);
-    this.scene.add(this.model);this.radius=Math.max(.6,bounds.getSize(new THREE.Vector3()).length()*.5);
+    this.scene.add(this.model);this.radius=Math.max(.6,bounds.getSize(new THREE.Vector3()).length()*.5);trimSurfaceAssets(this.view);
   }
   render(container,e,now){
     if(now-(this.lastFrame||-1)<(this.view.settings.quality==='low'?1/12:1/24))return;this.lastFrame=now;

@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "phone": false,
+      "state": {
+        "view": false,
+        "playing": false,
+        "inert": true,
+        "offlineAttempts": 0,
+        "registrations": 0,
+        "choice": "high",
+        "overflow": false,
+        "focus": "retry-graphics"
+      },
+      "reloadReturnsToClearError": true,
+      "button": {
+        "x": 221,
+        "y": 393.953125,
+        "width": 518,
+        "height": 48
+      },
+      "viewport": {
+        "width": 960,
+        "height": 640
+      }
+    },
+    {
+      "phone": true,
+      "state": {
+        "view": false,
+        "playing": false,
+        "inert": true,
+        "offlineAttempts": 0,
+        "registrations": 0,
+        "choice": "high",
+        "overflow": false,
+        "focus": "retry-graphics"
+      },
+      "reloadReturnsToClearError": true,
+      "button": {
+        "x": 36,
+        "y": 236.84375,
+        "width": 568,
+        "height": 48
+      },
+      "viewport": {
+        "width": 640,
+        "height": 360
+      }
+    }
+  ],
+  "errors": [],
+  "heavyRequests": [],
+  "buildId": "1792122713315"
+}

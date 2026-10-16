@@ -1,0 +1,682 @@
+{
+  "passed": true,
+  "channel": "headless-tcp",
+  "phase": "all",
+  "scope": "Repeated preset transitions, reload and JPEG recovery",
+  "checks": [
+    {
+      "quality": "high",
+      "applied": "high",
+      "sceneFrame": 160,
+      "warmupHeld": false,
+      "warmupReferences": 0,
+      "units": {
+        "drawn": 9,
+        "allocated": 9,
+        "activeBatches": 4,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 131072,
+        "rigParts": 4,
+        "rigUploadBytes": 46080,
+        "rigUsedBytes": 6080
+      },
+      "finitePoses": true,
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 17535056
+      },
+      "cache": {
+        "catalogues": [
+          "high"
+        ],
+        "bytes": 17535056,
+        "evicted": 0
+      },
+      "surface": {
+        "source": "Poly Haven CC0",
+        "loaded": 21,
+        "compressed": 14,
+        "compressedMipBytes": 19573792,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 16,
+        "evicted": 0,
+        "pending": 0
+      },
+      "normalCompressed": false,
+      "normalPresent": true,
+      "memory": {
+        "geometries": 112,
+        "textures": 33
+      },
+      "heap": {
+        "used": 167000000,
+        "total": 177000000
+      },
+      "shadows": true,
+      "progress": {
+        "visible": true,
+        "busy": "true"
+      },
+      "warmupError": null
+    },
+    {
+      "quality": "medium",
+      "applied": "medium",
+      "sceneFrame": 178,
+      "warmupHeld": false,
+      "warmupReferences": 0,
+      "units": {
+        "drawn": 9,
+        "allocated": 9,
+        "activeBatches": 4,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 131072,
+        "rigParts": 4,
+        "rigUploadBytes": 46080,
+        "rigUsedBytes": 6080
+      },
+      "finitePoses": true,
+      "art": {
+        "source": "Blender",
+        "detail": "medium",
+        "models": 126,
+        "bytes": 12991188
+      },
+      "cache": {
+        "catalogues": [
+          "medium"
+        ],
+        "bytes": 12991188,
+        "evicted": 0
+      },
+      "surface": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8,
+        "evicted": 0,
+        "pending": 0
+      },
+      "normalCompressed": false,
+      "normalPresent": true,
+      "memory": {
+        "geometries": 111,
+        "textures": 29
+      },
+      "heap": {
+        "used": 167000000,
+        "total": 177000000
+      },
+      "shadows": true,
+      "progress": {
+        "visible": true,
+        "busy": "true"
+      },
+      "warmupError": null
+    },
+    {
+      "quality": "low",
+      "applied": "low",
+      "sceneFrame": 198,
+      "warmupHeld": false,
+      "warmupReferences": 0,
+      "units": {
+        "drawn": 9,
+        "allocated": 9,
+        "activeBatches": 4,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 131072,
+        "rigParts": 4,
+        "rigUploadBytes": 46080,
+        "rigUsedBytes": 6080
+      },
+      "finitePoses": true,
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 4165632
+      },
+      "cache": {
+        "catalogues": [
+          "low"
+        ],
+        "bytes": 4165632,
+        "evicted": 0
+      },
+      "surface": {
+        "source": "Poly Haven CC0",
+        "loaded": 7,
+        "compressed": 7,
+        "compressedMipBytes": 9786896,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 4,
+        "evicted": 0,
+        "pending": 0
+      },
+      "normalCompressed": false,
+      "normalPresent": false,
+      "memory": {
+        "geometries": 109,
+        "textures": 18
+      },
+      "heap": {
+        "used": 167000000,
+        "total": 177000000
+      },
+      "shadows": false,
+      "progress": {
+        "visible": true,
+        "busy": "true"
+      },
+      "warmupError": null
+    },
+    {
+      "quality": "high",
+      "applied": "high",
+      "sceneFrame": 253,
+      "warmupHeld": false,
+      "warmupReferences": 0,
+      "units": {
+        "drawn": 9,
+        "allocated": 9,
+        "activeBatches": 4,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 131072,
+        "rigParts": 4,
+        "rigUploadBytes": 46080,
+        "rigUsedBytes": 6080
+      },
+      "finitePoses": true,
+      "art": {
+        "source": "Blender",
+        "detail": "high",
+        "models": 126,
+        "bytes": 17535056
+      },
+      "cache": {
+        "catalogues": [
+          "high"
+        ],
+        "bytes": 17535056,
+        "evicted": 0
+      },
+      "surface": {
+        "source": "Poly Haven CC0",
+        "loaded": 21,
+        "compressed": 14,
+        "compressedMipBytes": 19573792,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 16,
+        "evicted": 0,
+        "pending": 0
+      },
+      "normalCompressed": false,
+      "normalPresent": true,
+      "memory": {
+        "geometries": 112,
+        "textures": 33
+      },
+      "heap": {
+        "used": 167000000,
+        "total": 177000000
+      },
+      "shadows": true,
+      "progress": {
+        "visible": true,
+        "busy": "true"
+      },
+      "warmupError": "QA optional warmup failure"
+    },
+    {
+      "quality": "low",
+      "applied": "low",
+      "sceneFrame": 274,
+      "warmupHeld": false,
+      "warmupReferences": 0,
+      "units": {
+        "drawn": 9,
+        "allocated": 9,
+        "activeBatches": 4,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 131072,
+        "rigParts": 4,
+        "rigUploadBytes": 46080,
+        "rigUsedBytes": 6080
+      },
+      "finitePoses": true,
+      "art": {
+        "source": "Blender",
+        "detail": "low",
+        "models": 126,
+        "bytes": 4165632
+      },
+      "cache": {
+        "catalogues": [
+          "low"
+        ],
+        "bytes": 4165632,
+        "evicted": 0
+      },
+      "surface": {
+        "source": "Poly Haven CC0",
+        "loaded": 7,
+        "compressed": 7,
+        "compressedMipBytes": 9786896,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 4,
+        "evicted": 0,
+        "pending": 0
+      },
+      "normalCompressed": false,
+      "normalPresent": false,
+      "memory": {
+        "geometries": 109,
+        "textures": 18
+      },
+      "heap": {
+        "used": 167000000,
+        "total": 177000000
+      },
+      "shadows": false,
+      "progress": {
+        "visible": true,
+        "busy": "true"
+      },
+      "warmupError": null
+    }
+  ],
+  "errors": [
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/leafy_grass_color-CbcxmF7W.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/medieval_blocks_05_color-D1rHvEUX.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/old_wood_floor_color-x5ODPASc.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/painted_plaster_wall_color-cFYpKm_m.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/brown_mud_color-DhcELWfo.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/rocky_terrain_02_color-BozAruS8.ktx2"
+    },
+    {
+      "message": "Failed to load resource: net::ERR_FAILED",
+      "url": "http://127.0.0.1:58326/assets/rock_01_color-rAELnqqa.ktx2"
+    }
+  ],
+  "warnings": [
+    "Service Worker registration blocked by Playwright",
+    "[.WebGL-0x354400421a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x354400421a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x354400421a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x354400421a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+    "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "Service Worker registration blocked by Playwright",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "A compressed surface could not load; using its original image: Failed to fetch",
+    "Service Worker registration blocked by Playwright"
+  ],
+  "stages": [
+    {
+      "name": "browser API import",
+      "elapsedMs": 0
+    },
+    {
+      "name": "browser launch",
+      "elapsedMs": 364
+    },
+    {
+      "name": "production load",
+      "elapsedMs": 1478
+    },
+    {
+      "name": "high prepare",
+      "elapsedMs": 14346
+    },
+    {
+      "name": "high residency",
+      "elapsedMs": 167711
+    },
+    {
+      "name": "high real frame",
+      "elapsedMs": 182011
+    },
+    {
+      "name": "medium prepare",
+      "elapsedMs": 206465
+    },
+    {
+      "name": "medium residency",
+      "elapsedMs": 259283
+    },
+    {
+      "name": "medium real frame",
+      "elapsedMs": 274916
+    },
+    {
+      "name": "medium screenshot",
+      "elapsedMs": 289844
+    },
+    {
+      "name": "low prepare",
+      "elapsedMs": 318593
+    },
+    {
+      "name": "low residency",
+      "elapsedMs": 326627
+    },
+    {
+      "name": "low real frame",
+      "elapsedMs": 329555
+    },
+    {
+      "name": "high prepare",
+      "elapsedMs": 335382
+    },
+    {
+      "name": "high residency",
+      "elapsedMs": 404209
+    },
+    {
+      "name": "high real frame",
+      "elapsedMs": 411315
+    },
+    {
+      "name": "high screenshot",
+      "elapsedMs": 433795
+    },
+    {
+      "name": "low prepare",
+      "elapsedMs": 464090
+    },
+    {
+      "name": "low residency",
+      "elapsedMs": 477960
+    },
+    {
+      "name": "low real frame",
+      "elapsedMs": 481232
+    },
+    {
+      "name": "low screenshot",
+      "elapsedMs": 487357
+    },
+    {
+      "name": "compressed preference reload",
+      "elapsedMs": 510392
+    },
+    {
+      "name": "JPEG recovery",
+      "elapsedMs": 560225
+    },
+    {
+      "name": "JPEG recovery rendered coast",
+      "elapsedMs": 568480
+    }
+  ],
+  "trace": [
+    {
+      "message": "decoder worker opened",
+      "elapsedMs": 2770
+    },
+    {
+      "message": "decoder worker closed",
+      "elapsedMs": 3078
+    },
+    {
+      "message": "QA graphics: fetched http://127.0.0.1:58326/assets/frontier-near-HAGP_OsN.glb",
+      "elapsedMs": 49375
+    },
+    {
+      "message": "decoder worker opened",
+      "elapsedMs": 90374
+    },
+    {
+      "message": "QA graphics: binary ready 17535056",
+      "elapsedMs": 91642
+    },
+    {
+      "message": "QA graphics: rebuilding high",
+      "elapsedMs": 164574
+    },
+    {
+      "message": "decoder worker closed",
+      "elapsedMs": 164580
+    },
+    {
+      "message": "QA graphics: rebuilt high",
+      "elapsedMs": 166757
+    },
+    {
+      "message": "QA graphics: fetched http://127.0.0.1:58326/assets/frontier-balanced-qgbRyTT9.glb",
+      "elapsedMs": 214190
+    },
+    {
+      "message": "QA graphics: binary ready 12991188",
+      "elapsedMs": 239279
+    },
+    {
+      "message": "QA graphics: rebuilding medium",
+      "elapsedMs": 251522
+    },
+    {
+      "message": "QA graphics: rebuilt medium",
+      "elapsedMs": 259280
+    },
+    {
+      "message": "QA graphics: fetched http://127.0.0.1:58326/assets/frontier-low-B4IaE_rp.glb",
+      "elapsedMs": 325091
+    },
+    {
+      "message": "QA graphics: binary ready 4165632",
+      "elapsedMs": 325130
+    },
+    {
+      "message": "QA graphics: rebuilding low",
+      "elapsedMs": 325731
+    },
+    {
+      "message": "QA graphics: rebuilt low",
+      "elapsedMs": 326582
+    },
+    {
+      "message": "QA graphics: fetched http://127.0.0.1:58326/assets/frontier-near-HAGP_OsN.glb",
+      "elapsedMs": 344151
+    },
+    {
+      "message": "QA graphics: binary ready 17535056",
+      "elapsedMs": 353402
+    },
+    {
+      "message": "decoder worker opened",
+      "elapsedMs": 359190
+    },
+    {
+      "message": "QA graphics: rebuilding high",
+      "elapsedMs": 395769
+    },
+    {
+      "message": "decoder worker closed",
+      "elapsedMs": 395778
+    },
+    {
+      "message": "QA graphics: rebuilt high",
+      "elapsedMs": 396418
+    },
+    {
+      "message": "QA graphics: fetched http://127.0.0.1:58326/assets/frontier-low-B4IaE_rp.glb",
+      "elapsedMs": 471054
+    },
+    {
+      "message": "QA graphics: binary ready 4165632",
+      "elapsedMs": 477210
+    },
+    {
+      "message": "QA graphics: rebuilding low",
+      "elapsedMs": 477420
+    },
+    {
+      "message": "QA graphics: rebuilt low",
+      "elapsedMs": 477958
+    },
+    {
+      "message": "decoder worker opened",
+      "elapsedMs": 554111
+    },
+    {
+      "message": "decoder worker closed",
+      "elapsedMs": 554535
+    }
+  ],
+  "stage": "JPEG recovery rendered coast",
+  "physicalPhone": false,
+  "launch": {
+    "pid": 19004,
+    "port": 58327,
+    "mode": "loopback CDP"
+  },
+  "gpu": {
+    "devices": [
+      {
+        "vendorId": 65535,
+        "deviceId": 65535,
+        "subSysId": 0,
+        "revision": 0,
+        "vendorString": "Google Inc. (Google)",
+        "deviceString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+        "driverVendor": "SwANGLE",
+        "driverVersion": "5.0.0"
+      }
+    ],
+    "auxAttributes": {
+      "amdSwitchable": false,
+      "bgra8OverlaySupport": "NONE",
+      "canSupportThreadedTextureMailbox": false,
+      "directComposition": false,
+      "directMLFeatureLevel": "Not supported",
+      "directRenderingVersion": "",
+      "displayType": "ANGLE_SWIFTSHADER",
+      "dx12FeatureLevel": "Not supported",
+      "glExtensions": "GL_AMD_performance_monitor GL_ANGLE_base_vertex_base_instance_shader_builtin GL_ANGLE_blob_cache GL_ANGLE_client_arrays GL_ANGLE_clip_cull_distance GL_ANGLE_compressed_texture_etc GL_ANGLE_copy_texture_3d GL_ANGLE_depth_texture GL_ANGLE_framebuffer_blit GL_ANGLE_framebuffer_multisample GL_ANGLE_get_image GL_ANGLE_get_serialized_context_string GL_ANGLE_get_tex_level_parameter GL_ANGLE_instanced_arrays GL_ANGLE_memory_object_flags GL_ANGLE_memory_size GL_ANGLE_multi_draw GL_ANGLE_pack_reverse_row_order GL_ANGLE_polygon_mode GL_ANGLE_program_binary_readiness_query GL_ANGLE_program_cache_control GL_ANGLE_read_only_depth_stencil_feedback_loops GL_ANGLE_relaxed_vertex_attribute_type GL_ANGLE_renderability_validation GL_ANGLE_request_extension GL_ANGLE_rgbx_internal_format GL_ANGLE_robust_client_memory GL_ANGLE_robust_fragment_shader_output GL_ANGLE_robust_resource_initialization GL_ANGLE_shader_pixel_local_storage GL_ANGLE_shader_pixel_local_storage_coherent GL_ANGLE_stencil_texturing GL_ANGLE_texture_compression_dxt3 GL_ANGLE_texture_compression_dxt5 GL_ANGLE_texture_multisample GL_ANGLE_texture_usage GL_ANGLE_translated_shader_source GL_ANGLE_vulkan_image GL_ANGLE_yuv_internal_format GL_APPLE_clip_distance GL_ARM_rgba8 GL_ARM_shader_framebuffer_fetch GL_CHROMIUM_bind_generates_resource GL_CHROMIUM_bind_uniform_location GL_CHROMIUM_copy_compressed_texture GL_CHROMIUM_copy_texture GL_CHROMIUM_lose_context GL_EXT_EGL_image_array GL_EXT_EGL_image_external_wrap_modes GL_EXT_EGL_image_storage GL_EXT_base_instance GL_EXT_blend_minmax GL_EXT_buffer_storage GL_EXT_clear_texture GL_EXT_clip_control GL_EXT_clip_cull_distance GL_EXT_color_buffer_float GL_EXT_color_buffer_half_float GL_EXT_compressed_ETC1_RGB8_sub_texture GL_EXT_conservative_depth GL_EXT_copy_image GL_EXT_debug_label GL_EXT_debug_marker GL_EXT_depth_clamp GL_EXT_discard_framebuffer GL_EXT_disjoint_timer_query GL_EXT_draw_buffers GL_EXT_draw_buffers_indexed GL_EXT_draw_elements_base_vertex GL_EXT_float_blend GL_EXT_frag_depth GL_EXT_instanced_arrays GL_EXT_map_buffer_range GL_EXT_memory_object GL_EXT_occlusion_query_boolean GL_EXT_polygon_offset_clamp GL_EXT_read_format_bgra GL_EXT_robustness GL_EXT_sRGB GL_EXT_sRGB_write_control GL_EXT_semaphore GL_EXT_separate_shader_objects GL_EXT_shader_framebuffer_fetch GL_EXT_shader_framebuffer_fetch_non_coherent GL_EXT_shader_non_constant_global_initializers GL_EXT_shader_texture_lod GL_EXT_shadow_samplers GL_EXT_texture_border_clamp GL_EXT_texture_compression_bptc GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_rgtc GL_EXT_texture_compression_s3tc_srgb GL_EXT_texture_filter_anisotropic GL_EXT_texture_format_BGRA8888 GL_EXT_texture_lod_bias GL_EXT_texture_mirror_clamp_to_edge GL_EXT_texture_rg GL_EXT_texture_sRGB_R8 GL_EXT_texture_sRGB_RG8 GL_EXT_texture_sRGB_decode GL_EXT_texture_shadow_lod GL_EXT_texture_storage GL_EXT_texture_type_2_10_10_10_REV GL_EXT_unpack_subimage GL_KHR_blend_equation_advanced GL_KHR_debug GL_KHR_robust_buffer_access_behavior GL_KHR_robustness GL_KHR_texture_compression_astc_ldr GL_NV_fence GL_NV_framebuffer_blit GL_NV_pack_subimage GL_NV_pixel_buffer_object GL_NV_polygon_mode GL_NV_read_depth GL_NV_read_depth_stencil GL_NV_read_stencil GL_NV_shader_noperspective_interpolation GL_OES_EGL_image GL_OES_EGL_image_external GL_OES_EGL_image_external_essl3 GL_OES_EGL_sync GL_OES_compressed_ETC1_RGB8_texture GL_OES_compressed_paletted_texture GL_OES_copy_image GL_OES_depth24 GL_OES_depth32 GL_OES_depth_texture GL_OES_depth_texture_cube_map GL_OES_draw_buffers_indexed GL_OES_draw_elements_base_vertex GL_OES_element_index_uint GL_OES_fbo_render_mipmap GL_OES_get_program_binary GL_OES_mapbuffer GL_OES_packed_depth_stencil GL_OES_required_internalformat GL_OES_rgb8_rgba8 GL_OES_sample_shading GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_standard_derivatives GL_OES_surfaceless_context GL_OES_texture_3D GL_OES_texture_border_clamp GL_OES_texture_float GL_OES_texture_float_linear GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_texture_stencil8 GL_OES_texture_storage_multisample_2d_array GL_OES_vertex_array_object GL_OES_vertex_half_float GL_OES_vertex_type_10_10_10_2 GL_OVR_multiview GL_OVR_multiview2 GL_QCOM_texture_lod_bias ",
+      "glImplementationParts": "(gl=egl-angle,angle=swiftshader)",
+      "glRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+      "glResetNotificationStrategy": 33362,
+      "glVendor": "Google Inc. (Google)",
+      "glVersion": "OpenGL ES 3.0 (ANGLE 2.1.28967 git hash: dfeede58b618)",
+      "glWsExtensions": "EGL_EXT_create_context_robustness EGL_ANGLE_surface_orientation EGL_KHR_create_context EGL_KHR_image EGL_KHR_image_base EGL_EXT_image_gl_colorspace EGL_KHR_gl_colorspace EGL_KHR_gl_texture_2D_image EGL_KHR_gl_texture_cubemap_image EGL_KHR_gl_renderbuffer_image EGL_KHR_get_all_proc_addresses EGL_KHR_fence_sync EGL_KHR_wait_sync EGL_ANGLE_create_context_webgl_compatibility EGL_CHROMIUM_create_context_bind_generates_resource EGL_KHR_swap_buffers_with_damage EGL_EXT_pixel_format_float EGL_KHR_surfaceless_context EGL_ANGLE_display_texture_share_group EGL_ANGLE_display_semaphore_share_group EGL_ANGLE_create_context_client_arrays EGL_ANGLE_program_cache_control EGL_ANGLE_robust_resource_initialization EGL_ANGLE_create_context_extensions_enabled EGL_ANDROID_blob_cache EGL_ANDROID_recordable EGL_ANGLE_create_context_backwards_compatible EGL_KHR_no_config_context EGL_IMG_context_priority EGL_KHR_create_context_no_error EGL_KHR_reusable_sync EGL_EXT_buffer_age EGL_ANGLE_create_surface_swap_interval EGL_ANGLE_vulkan_image EGL_KHR_partial_update EGL_ANGLE_global_fence_sync EGL_ANGLE_memory_usage_report ",
+      "glWsVendor": "Google Inc. (Google)",
+      "glWsVersion": "1.5 (ANGLE 2.1.28967 git hash: dfeede58b618)",
+      "inProcessGpu": false,
+      "initializationTime": 0.083264,
+      "isAsan": false,
+      "isClangCoverage": false,
+      "jpegDecodeAcceleratorSupported": false,
+      "maxMsaaSamples": "4",
+      "nv12OverlaySupport": "NONE",
+      "optimus": false,
+      "p010OverlaySupport": "NONE",
+      "passthroughCmdDecoder": true,
+      "pixelShaderVersion": "3.00",
+      "processCrashCount": 0,
+      "rgb10a2OverlaySupport": "NONE",
+      "sandboxed": false,
+      "skiaBackendType": "None",
+      "subpixelFontRendering": true,
+      "supportsD3dSharedImages": false,
+      "supportsDirectML": false,
+      "supportsDx12": false,
+      "supportsOverlays": false,
+      "supportsVulkan": false,
+      "targetCpuBits": 64,
+      "vertexShaderVersion": "3.00",
+      "visibilityCallbackCallCount": 0,
+      "vulkanVersion": "Not supported",
+      "yuy2OverlaySupport": "NONE"
+    },
+    "featureStatus": {
+      "2d_canvas": "unavailable_software",
+      "direct_rendering_display_compositor": "disabled_off_ok",
+      "gpu_compositing": "disabled_software",
+      "multiple_raster_threads": "enabled_on",
+      "opengl": "disabled_off",
+      "rasterization": "disabled_software",
+      "raw_draw": "disabled_off_ok",
+      "skia_graphite": "disabled_off",
+      "trees_in_viz": "disabled_off",
+      "video_decode": "disabled_software",
+      "video_encode": "disabled_software",
+      "webgl": "unavailable_software",
+      "webgpu": "unavailable_software",
+      "webnn": "unavailable_software"
+    },
+    "driverBugWorkarounds": [],
+    "videoDecoding": [],
+    "videoEncoding": []
+  },
+  "viewport": {
+    "width": 800,
+    "height": 480
+  },
+  "buildId": "1792122713315",
+  "startupContexts": 1,
+  "fallback": {
+    "surfaces": {
+      "source": "Poly Haven CC0",
+      "loaded": 7,
+      "compressed": 0,
+      "compressedMipBytes": 0,
+      "codecFallbacks": 7,
+      "codecPending": 0,
+      "anisotropy": 4
+    },
+    "models": 126
+  },
+  "fallbackGameplay": {
+    "playing": true,
+    "map": "coast",
+    "sceneFrame": 21,
+    "drawCalls": 95,
+    "unitsDrawn": 12,
+    "surfaces": {
+      "source": "Poly Haven CC0",
+      "loaded": 7,
+      "compressed": 0,
+      "compressedMipBytes": 0,
+      "codecFallbacks": 7,
+      "codecPending": 0,
+      "anisotropy": 4
+    }
+  },
+  "unexpectedErrors": []
+}

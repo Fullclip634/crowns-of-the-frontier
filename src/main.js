@@ -30,6 +30,8 @@ import {graphicsSelection,applyGraphicsChoice} from './graphics-settings.js';
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
+import {createWorldRenderer} from './render-context.js';
+import {releaseSurfaceCodec} from './surface-codecs.js';
 import {selectionDetailsMarkup,closeCompactCommands,toggleCompactCommands,toggleSelectionDetails,closeSelectionDetails,toggleMinimapSize,resetCompactHud} from './compact-hud.js';
 import {WORLD,AGES,UNITS,BUILDINGS,TECHS,MAPS,RELEASE,AGE_COSTS,FACTIONS,DIFFICULTIES,MODES,MISSIONS,ICONS,costText,formatTime,availableTo} from './data.js';
 
@@ -43,7 +45,7 @@ const progress=read('crowns-progress',{});const audio=new AudioEngine(settings);
 let customDraft={map:'highlands',mapSize:'vast',startAge:0,resourceLevel:'standard',populationLimit:80,seed:2026,victory:'annihilation',shareVision:true,revealRemnants:true,slots:battlePreset('2v2'),...read('crowns-custom-setup',{})};
 settings.bindings=readBindings(settings.bindings);
 document.querySelector('#app').innerHTML=`
-  <div id="world" aria-label="3D strategy battlefield"></div><div class="vignette"></div>
+  <div id="world" aria-label="3D strategy battlefield"></div><div class="vignette"></div><div id="graphics-status" class="graphics-status hidden" role="status">Updating graphics…</div>
   <div id="landing" class="landing">
     <header class="landing-header"><a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">♜</span><span>CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a><div class="header-links"><button data-action="codex">Field guide <span>↗</span></button><button data-action="settings" aria-label="Settings">⚙</button><span class="edition">${RELEASE.split(" - ").reverse().join(" / ").toUpperCase()}</span></div></header>
     <main class="landing-main"><div class="eyebrow"><span class="short-rule"></span> BUILD A KINGDOM. WRITE YOUR LEGACY.</div><h1>Crowns <em>of the</em><br>Frontier<span class="title-dot">.</span></h1><p class="intro">From the first timber to the final siege.<br>Raise your kingdom in a living, three-dimensional world.</p><div class="main-actions"><button class="primary" data-mode="skirmish">Begin your reign <span>➜</span></button><button class="secondary" data-action="campaign">The campaign <span>↗</span></button></div><button class="network-entry custom-entry" data-action="custom-battle">Create a custom battle · allies & rivals <span>↗</span></button><button id="resume" class="resume hidden" data-action="resume">↶ &nbsp; Resume saved kingdom</button><button class="network-entry" data-action="lan">⚔ &nbsp; Play with friends <span>↗</span></button><div class="landing-note"><span class="status-dot"></span> ORIGINAL REAL-TIME STRATEGY <span class="separator">/</span> SOLO & WI-FI MULTIPLAYER</div></main>
@@ -72,15 +74,17 @@ const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
 const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
+let startupRenderer,startupFailure;try{startupRenderer=createWorldRenderer();}catch(error){startupFailure=error;}
+window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // A missing/old catalogue must not silently replace the promised Blender art.
-for(;;){
+for(;!startupFailure;){
   let attemptActive=true;
   try{
     let modelsReady=false,surfacesReady=false;
     const status=()=>{if(attemptActive)bootStatus.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
     await Promise.all([
       loadAuthoredAssets(settings.quality).then(()=>{modelsReady=true;status();}),
-      loadSurfaceAssets(settings.quality).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
+      loadSurfaceAssets(settings.quality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
     ]);break;
   }
   catch(error){
@@ -90,7 +94,12 @@ for(;;){
     await new Promise(resolve=>{bootStatus.querySelector('button').onclick=resolve;});bootStatus.textContent='Preparing your kingdom…';
   }
 }
-try {view=new WorldView($('#world'),settings);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){$('#world').innerHTML=`<div class="webgl-error"><h2>3D graphics could not start</h2><p>This game needs a browser with WebGL 2 enabled. Try an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled.</p><small>${esc(error.message)}</small></div>`;console.error(error);}
+try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
+  releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
+  const failure=document.createElement('div');failure.className='modal-backdrop';failure.style.position='fixed';failure.style.zIndex='100';
+  failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs WebGL 2. Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button></div>`;
+  document.body.append(failure);failure.querySelector('button').focus();console.error(error);
+}
 bootStatus.remove();for(const button of bootButtons)button.disabled=!view;
 audio.setCombatListener(createCombatListener(view,()=>playing&&!paused&&!modal&&!document.hidden&&!sim.ended));
 $('#resume').classList.toggle('hidden',!readLocalSave());
@@ -256,6 +265,7 @@ function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){const layer=$('#health-layer');let html='';for(const e of sim.entities){if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))continue;if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)continue;const p=view.project(e);if(p.visible&&p.x>0&&p.x<innerWidth&&p.y>50&&p.y<innerHeight-100)html+=`<div class="world-health ${sim.hostile(0,e.owner)?'rival':''}" style="left:${p.x}px;top:${p.y}px"><i style="width:${e.hp/e.maxHp*100}%"></i>${e.kind==='building'&&e.progress<1?`<small>${Math.floor(e.progress*100)}%</small>`:''}</div>`;}layer.innerHTML=html;}
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){audio.unlock();
+  if(name==='retry-graphics'){location.reload();return;}
   if(name==='command-options'){toggleCompactCommands(document);return;}
   if(name==='selection-details'){toggleSelectionDetails(document);return;}
   if(name==='map-expand'){toggleMinimapSize(document);closeCompactCommands(document);return;}
@@ -265,7 +275,7 @@ function action(name){audio.unlock();
   if(name==='resume'){const save=readLocalSave();if(save)try{startGame(save.options,save);}catch(error){toast('The saved kingdom could not be restored.','warning');}return;}
   if(name==='pause'){if(paused&&modal)closeModal();else showPause();return;}
   if(name==='checkpoint'){const checkpoint=sim.campaignCheckpoint;if(checkpoint)return startGame(checkpoint.options,checkpoint);return;}if(name==='journal')return showJournal();if(name==='quest-unit'){const cart=sim.get(sim.campaignState?.cartId);if(cart){setSelection([cart.id]);view.focus(cart.x,cart.z);}return;}if(name==='mission-goal'){const marker=campaignObjective(sim)?.marker;if(marker)view.focus(marker.x,marker.z);return;}if(name==='save'){saveGame();return;}if(name==='menu')return menuReturn();if(name==='restart'){if(net.active||sim.options.multiplayer){menuReturn();showLan();return;}return startGame(sim.options);}
-  if(name==='apply-settings'){const draft=settingsBindings($('#modal-root')),errors=bindingErrors(draft);if(errors.length){$('#modal-root .binding-feedback').textContent=errors.join(' ');$('#modal-root .binding-feedback').classList.add('binding-error');return;}settings.bindings=draft;settings.highContrast=$('#high-contrast').checked;settings.reducedMotion=$('#reduced-motion').checked;applyAccessibility();refreshShortcutLabels();keys.clear();applyGraphicsChoice(settings,$('#quality').value,recommendedQuality);settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();view.quality(settings.quality);view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}audio.unlock();closeModal();return;}
+  if(name==='apply-settings'){const draft=settingsBindings($('#modal-root')),errors=bindingErrors(draft);if(errors.length){$('#modal-root .binding-feedback').textContent=errors.join(' ');$('#modal-root .binding-feedback').classList.add('binding-error');return;}settings.bindings=draft;settings.highContrast=$('#high-contrast').checked;settings.reducedMotion=$('#reduced-motion').checked;applyAccessibility();refreshShortcutLabels();keys.clear();applyGraphicsChoice(settings,$('#quality').value,recommendedQuality);settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();view.quality(settings.quality).then(applied=>{if(!applied&&view.graphicsError)toast('Graphics could not change. Check your connection and try again.','warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}audio.unlock();closeModal();return;}
   if(name==='fullscreen'){document.documentElement.requestFullscreen?.().then(()=>{screen.orientation?.lock?.('landscape').catch(()=>{});}).catch(()=>toast('Use your browser fullscreen control on this device.'));return;}
   if(!playing||sim.ended)return;
   if(name==='objectives-expand'){$('#objectives').classList.toggle('objectives-expanded');renderHUD();return;}
@@ -352,9 +362,10 @@ if(view){const canvas=view.renderer.domElement;canvas.addEventListener('contextm
 }
 let lastRender=0,frameRequest=0,renderClosed=false;const framePacer=new FramePacer();
 function frame(now){if(renderClosed)return;const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(.08,elapsed);last=now;
+  const graphicsBusy=!!view?.graphicsLoading;$('#graphics-status').classList.toggle('hidden',!graphicsBusy);$('#world').setAttribute('aria-busy',String(graphicsBusy));
   if(view){const keyboardPan=['panUp','panDown','panLeft','panRight'].some(id=>heldControl(keys,id,settings.bindings));const edgeMoved=edgeScroll.tick(view,dt,{active:playing&&!paused&&!sim.ended&&!modal&&!chat.opened&&!keyboardPan,enabled:settings.edgeScroll,speed:settings.edgeScrollSpeed});
     if(edgeMoved&&buildType&&edgeScroll.point){const point=view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);if(point)view.showGhost(buildType,point.x,point.z,sim.buildValid(buildType,point.x,point.z));else view.hideGhost();}
-    if(playing&&!paused&&!sim.ended){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
+    if(playing&&!paused&&!sim.ended&&!view.graphicsRebuilding){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
       accumulator+=dt*speed;while(accumulator>=.1){if(!net.active){view.localMotion.capture(sim);sim.tick(.1);view.localMotion.commit(sim);}accumulator-=.1;}uiTime+=dt;fogTime+=dt;if(fogTime>.5){view.updateFog();fogTime=0;}if(uiTime>.3){renderHUD();renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
     }
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
@@ -368,7 +379,7 @@ window.addEventListener('pagehide',event=>{if(event.persisted)return;renderClose
 // Expose the running game for reproducible browser QA and debugging.
 window.frontier={get sim(){return sim;},get view(){return view;},get audio(){return audio;},get playing(){return playing;},get paused(){return paused;},start:startGame,select:setSelection,action,save:saveGame};
 
-if(import.meta.env.PROD)registerOfflineGame();
+if(import.meta.env.PROD&&view)registerOfflineGame();
 
 document.addEventListener('keydown',event=>{if(event.key!=='Tab'||!modal)return;const dialog=$('#modal-root [role=dialog]');if(!dialog||getComputedStyle(dialog).visibility==='hidden')return;const buttons=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden');if(!buttons.length)return;const first=buttons[0],last=buttons.at(-1);if(!dialog.contains(document.activeElement)||event.shiftKey&&document.activeElement===first){event.preventDefault();(event.shiftKey?last:first).focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
 

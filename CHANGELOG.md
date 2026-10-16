@@ -1,3 +1,10 @@
+## 16 October 2026 — Graphics loading and memory
+
+- Reuse the startup graphics context, retain decoded full-precision buffers, and support full-resolution compressed color/roughness maps with original-image recovery and unchanged normal detail.
+- Evict unused quality maps, prepare shaders before field draws, show progress, hold/resume local combat during frame replacement and recover from optional precompilation failure.
+- Add a focused graphics-unavailable reload screen before heavy downloads/offline caching. Preserve manual presets and existing Blender art.
+- Verified with 328 regressions, repeated rendered switches, both texture formats, offline play and desktop/touch startup recovery. Downloads/cache grow; physical-device performance and whole-game readiness remain unverified.
+
 ## 16 October 2026 — Windmill roof clearance
 
 - Move all civilization mill rotors ahead of their roofs and add solid Blender axle mounts across Low, Balanced and High, with a matching procedural fallback.

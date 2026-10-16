@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+const root=path.resolve(process.env.QA_GAME_DIST||'dist'),report={passed:false,checks:[],errors:[],heavyRequests:[]};let browser;
+const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm'};
+const server=http.createServer((request,response)=>{const url=new URL(request.url,'http://localhost'),file=path.resolve(root,'.'+(url.pathname==='/'?'/index.html':decodeURIComponent(url.pathname)));if(/\.(glb|jpe?g|ktx2|wasm)$/.test(url.pathname))report.heavyRequests.push(url.pathname);if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){response.writeHead(404);response.end();return;}response.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});fs.createReadStream(file).pipe(response);});
+const guard=setTimeout(()=>{report.failure='Startup verification exceeded three minutes';browser?.close().catch(()=>{});setTimeout(()=>process.exit(1),5000);},180000);
+try{
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));browser=await chromium.connectOverCDP(process.env.QA_BROWSER_ENDPOINT);
+  for(const phone of [false,true]){
+    const page=await browser.newPage({viewport:phone?{width:640,height:360}:{width:960,height:640},isMobile:phone,hasTouch:phone,serviceWorkers:'allow'});page.setDefaultTimeout(30000);page.on('pageerror',error=>report.errors.push(error.message));
+    await page.addInitScript(()=>{localStorage.setItem('crowns-settings',JSON.stringify({quality:'high',autoQuality:false,volume:0,music:false}));const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /^(webgl2?|experimental-webgl)$/.test(type)?null:get.call(this,type,...args);};window.qaSWAttempts=0;if(navigator.serviceWorker){const register=navigator.serviceWorker.register.bind(navigator.serviceWorker);navigator.serviceWorker.register=(...args)=>{window.qaSWAttempts++;return register(...args);};}});
+    await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'load'});report.buildId??=await page.locator('meta[name="frontier-build"]').getAttribute('content');
+    const dialog=page.getByRole('alertdialog'),retry=dialog.getByRole('button',{name:'Reload game'});await dialog.waitFor({state:'visible'});await retry.scrollIntoViewIfNeeded();assert.ok(await retry.isEnabled());
+    const state=await page.evaluate(async()=>({view:!!frontier.view,playing:frontier.playing,inert:document.querySelector('#landing').inert,offlineAttempts:window.qaSWAttempts,registrations:(await navigator.serviceWorker.getRegistrations()).length,choice:JSON.parse(localStorage.getItem('crowns-settings')).quality,overflow:document.documentElement.scrollWidth>innerWidth,focus:document.activeElement?.dataset.action}));assert.equal(state.view,false);assert.equal(state.playing,false);assert.equal(state.inert,true);assert.equal(state.offlineAttempts,0);assert.equal(state.registrations,0);assert.equal(state.choice,'high');assert.equal(state.overflow,false);assert.equal(state.focus,'retry-graphics');assert.deepEqual(report.heavyRequests,[]);
+    const button=await retry.boundingBox(),viewport=page.viewportSize();assert.ok(button.x>=0&&button.y>=0&&button.x+button.width<=viewport.width&&button.y+button.height<=viewport.height);
+    await page.screenshot({path:`artifacts/graphics-startup-${phone?'phone':'desktop'}-failure.png`});await Promise.all([page.waitForEvent('load'),retry.click()]);await page.getByRole('alertdialog').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>window.qaSWAttempts),0);assert.deepEqual(report.heavyRequests,[]);report.checks.push({phone,state,reloadReturnsToClearError:true,button,viewport});await page.close();
+  }assert.deepEqual(report.errors,[]);report.passed=true;console.log(JSON.stringify({passed:true,checks:report.checks.length,heavyAssetRequests:report.heavyRequests.length}));
+}catch(error){report.failure=error.stack;process.exitCode=1;console.log(JSON.stringify({failure:error.message}));}
+finally{clearTimeout(guard);fs.writeFileSync('artifacts/graphics-startup-qa.json',JSON.stringify(report,null,2));await browser?.close().catch(()=>{});await new Promise(resolve=>server.close(resolve));}

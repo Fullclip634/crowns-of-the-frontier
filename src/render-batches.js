@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {animatePart,beginJointPose,endJointPose} from './world-polish.js';
 import {writeRigidPose,finishRigidFrame} from './rig-batches.js';
+import {releasePreparedPrograms} from './shader-preparation.js';
 
 // Keep allocation slots stable while packing only the current visible poses.
 // Picking uses the packed IDs, never the allocator's potentially empty slots.
@@ -19,7 +20,7 @@ export function beginUnitFrame(view,refreshViewport=true){
 // Prepare the camera before any render extension samples contacts or cargo.
 export function installRenderFrame(WorldView){
   const render=WorldView.prototype.render;
-  WorldView.prototype.render=function(dt,menu=false){this.renderFrameAt=performance.now();prepareViewport(this);return render.call(this,dt,menu);};
+  WorldView.prototype.render=function(dt,menu=false){if(this.graphicsRebuilding)return;this.renderFrameAt=performance.now();prepareViewport(this);try{return render.call(this,dt,menu);}finally{releasePreparedPrograms(this);}};
 }
 
 export function markInstancePrefix(mesh,count=mesh.count){

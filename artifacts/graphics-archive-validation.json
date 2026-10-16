@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "kind": "source",
+      "entries": 331,
+      "everyPayloadMatches": true
+    },
+    {
+      "kind": "static",
+      "entries": 55,
+      "everyPayloadMatches": true
+    }
+  ],
+  "compressedAndOriginalTexturesIncluded": true,
+  "privateDirectoriesAndEnvironmentFilesExcluded": true
+}

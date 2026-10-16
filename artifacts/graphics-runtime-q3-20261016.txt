@@ -1,0 +1,99 @@
+browser API import
+browser launch
+production load
+decoder worker opened
+decoder worker closed
+high prepare
+QA graphics: fetched http://127.0.0.1:58326/assets/frontier-near-HAGP_OsN.glb
+decoder worker opened
+QA graphics: binary ready 17535056
+QA graphics: rebuilding high
+decoder worker closed
+QA graphics: rebuilt high
+high residency
+high real frame
+medium prepare
+QA graphics: fetched http://127.0.0.1:58326/assets/frontier-balanced-qgbRyTT9.glb
+QA graphics: binary ready 12991188
+QA graphics: rebuilding medium
+QA graphics: rebuilt medium
+medium residency
+medium real frame
+medium screenshot
+low prepare
+QA graphics: fetched http://127.0.0.1:58326/assets/frontier-low-B4IaE_rp.glb
+QA graphics: binary ready 4165632
+QA graphics: rebuilding low
+QA graphics: rebuilt low
+low residency
+low real frame
+high prepare
+QA graphics: fetched http://127.0.0.1:58326/assets/frontier-near-HAGP_OsN.glb
+QA graphics: binary ready 17535056
+decoder worker opened
+QA graphics: rebuilding high
+decoder worker closed
+QA graphics: rebuilt high
+high residency
+high real frame
+high screenshot
+low prepare
+QA graphics: fetched http://127.0.0.1:58326/assets/frontier-low-B4IaE_rp.glb
+QA graphics: binary ready 4165632
+QA graphics: rebuilding low
+QA graphics: rebuilt low
+low residency
+low real frame
+low screenshot
+compressed preference reload
+decoder worker opened
+decoder worker closed
+JPEG recovery
+JPEG recovery rendered coast
+{
+  "passed": true,
+  "profiles": [
+    {
+      "quality": "high",
+      "loaded": 21,
+      "compressed": 14,
+      "payload": 19573792
+    },
+    {
+      "quality": "medium",
+      "loaded": 17,
+      "compressed": 10,
+      "payload": 13981280
+    },
+    {
+      "quality": "low",
+      "loaded": 7,
+      "compressed": 7,
+      "payload": 9786896
+    },
+    {
+      "quality": "high",
+      "loaded": 21,
+      "compressed": 14,
+      "payload": 19573792
+    },
+    {
+      "quality": "low",
+      "loaded": 7,
+      "compressed": 7,
+      "payload": 9786896
+    }
+  ],
+  "fallback": {
+    "surfaces": {
+      "source": "Poly Haven CC0",
+      "loaded": 7,
+      "compressed": 0,
+      "compressedMipBytes": 0,
+      "codecFallbacks": 7,
+      "codecPending": 0,
+      "anisotropy": 4
+    },
+    "models": 126
+  }
+}

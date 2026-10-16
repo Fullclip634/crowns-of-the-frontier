@@ -6,7 +6,7 @@ let outputDirectory='dist';
 const buildId=String(Date.now());
 export default defineConfig({
   server:{watch:{ignored:['**/.tools/**','**/artifacts/**']}},
-  optimizeDeps:{include:['three/addons/loaders/GLTFLoader.js','three/addons/libs/meshopt_decoder.module.js']},
+  optimizeDeps:{include:['three/addons/loaders/GLTFLoader.js','three/addons/loaders/KTX2Loader.js','three/addons/libs/meshopt_decoder.module.js']},
   build:{rollupOptions:{output:{manualChunks:{three:['three']}}}},
   plugins:[{name:'offline-game',configResolved(config){outputDirectory=path.resolve(config.root,config.build.outDir);},transformIndexHtml(){return [{tag:'meta',attrs:{name:'frontier-build',content:buildId},injectTo:'head'}];},closeBundle(){
     const assets=fs.readdirSync(path.join(outputDirectory,'assets')).map(f=>'/assets/'+f);

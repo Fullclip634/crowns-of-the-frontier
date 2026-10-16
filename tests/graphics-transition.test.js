@@ -29,3 +29,26 @@ test('failed preparation preserves the working renderer and clears the loading s
   await assert.rejects(transitionRendererQuality(view,'high',()=>Promise.reject(new Error('asset unavailable')),()=>rebuilt=true),/asset unavailable/);
   assert.equal(rebuilt,false);assert.deepEqual(pixels,[]);assert.deepEqual(sizes,[]);assert.equal(view.renderQuality,'low');assert.equal(view.graphicsLoading,null);
 });
+
+test('a downgrade frees large targets before decoding without announcing its artwork as ready',async()=>{
+  const previousRatio=globalThis.devicePixelRatio;globalThis.devicePixelRatio=2.5;
+  try{
+  const {view,pixels,sizes,disposed}=fixture(),art=deferred();view.settings.quality='medium';view.renderQuality='high';view.renderer.shadowMap.enabled=true;view.sun.shadow.mapSize.x=view.sun.shadow.mapSize.y=2048;view.renderer.getPixelRatio=()=>pixels.at(-1)??2;
+  const ready=transitionRendererQuality(view,'medium',()=>{assert.equal(view.sun.shadow.map,null);assert.equal(view.sun.shadow.mapSize.x,1024);assert.equal(view.renderer.getPixelRatio(),1.25);return art.promise;},()=>{});
+  assert.deepEqual(disposed,[true]);assert.equal(view.renderQuality,'high');assert.equal(view.graphicsLoading,'medium');assert.deepEqual(sizes,[[1024,1024]]);
+  art.resolve();assert.equal(await ready,true);assert.equal(view.renderQuality,'medium');assert.equal(view.renderer.shadowMap.enabled,true);
+  }finally{if(previousRatio===undefined)delete globalThis.devicePixelRatio;else globalThis.devicePixelRatio=previousRatio;}
+});
+
+test('failed downgrade restores the previous resolution and shadow targets',async()=>{
+  const {view,pixels}=fixture();view.settings.quality='low';view.renderQuality='high';view.renderer.shadowMap.enabled=true;view.sun.shadow.mapSize.x=view.sun.shadow.mapSize.y=2048;view.renderer.getPixelRatio=()=>pixels.at(-1)??1.75;view.dynamicScale=.875;
+  await assert.rejects(transitionRendererQuality(view,'low',()=>{assert.equal(view.renderer.shadowMap.enabled,false);assert.equal(view.renderer.getPixelRatio(),1);return Promise.reject(new Error('decode failed'));},()=>assert.fail('failed artwork cannot replace the scene')),/decode failed/);
+  assert.equal(view.renderer.getPixelRatio(),1.75);assert.equal(view.renderer.shadowMap.enabled,true);assert.equal(view.sun.shadow.mapSize.x,2048);assert.equal(view.renderQuality,'high');assert.equal(view.dynamicScale,.875);assert.equal(view.graphicsLoading,null);
+});
+
+test('an obsolete failed downgrade cannot undo a later successful preset',async()=>{
+  const {view,pixels}=fixture();view.settings.quality='medium';view.renderQuality='high';view.renderer.shadowMap.enabled=true;view.sun.shadow.mapSize.x=view.sun.shadow.mapSize.y=2048;view.renderer.getPixelRatio=()=>pixels.at(-1)??2;
+  let reject;const wait=new Promise((_,fail)=>reject=fail),first=transitionRendererQuality(view,'medium',()=>wait,()=>assert.fail('obsolete scene'));
+  view.settings.quality='low';assert.equal(await transitionRendererQuality(view,'low',()=>Promise.resolve(),()=>{}),true);
+  reject(new Error('obsolete failure'));await assert.rejects(first,/obsolete failure/);assert.equal(view.renderQuality,'low');assert.equal(view.renderer.getPixelRatio(),1);assert.equal(view.renderer.shadowMap.enabled,false);assert.equal(view.graphicsLoading,null);
+});

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Surface fidelity fixture</title><link rel="icon" href="data:,">
+<style>body{margin:0;background:#11231d}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from 'three';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
+const renderer=new THREE.WebGLRenderer({antialias:false});
+renderer.setSize(512,512);renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.append(renderer.domElement);
+window.textureFixture={THREE,KTX2Loader,renderer};
+window.addEventListener('pagehide',()=>{renderer.dispose();renderer.forceContextLoss();});
+</script></body></html>

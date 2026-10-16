@@ -14,17 +14,19 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
   const arid=['desert','canyon'].includes(land.map),amount=land.map==='winter'?.22:arid?.43:.82;
+  for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];
   const uniforms={
     grass:{value:grass.color},soil:{value:soil.color||grass.color},rock:{value:rock.color||grass.color},
-    grassNormal:{value:grass.normal||null},soilNormal:{value:soil.normal||grass.normal||null},rockNormal:{value:rock.normal||grass.normal||null},
-    grassArm:{value:grass.arm||null},soilArm:{value:soil.arm||grass.arm||null},rockArm:{value:rock.arm||grass.arm||null},
+    grassNormal:{value:normal||null},soilNormal:{value:normal?(soil.normal||grass.normal):null},rockNormal:{value:normal?(rock.normal||grass.normal):null},
+    grassArm:{value:quality==='high'?grass.arm||null:null},soilArm:{value:quality==='high'?soil.arm||grass.arm||null:null},rockArm:{value:quality==='high'?rock.arm||grass.arm||null:null},
     scale:{value:new THREE.Vector3(land.renderSize/(dimensions.grass||2),land.renderSize/(dimensions.soil||1.3),land.renderSize/(dimensions.rock||90))},
     amount:{value:amount},tint:{value:new THREE.Color(arid?0xd5b58d:land.map==='winter'?0xe3e8de:0xdbe1c6)},
     roads:{value:roads},
   };
   material.frontierTerrainUniforms=uniforms;
-  material.defines={...material.defines,...(quality==='high'?{FRONTIER_TERRAIN_ARM:''}:{})};
+  material.defines={...material.defines};delete material.defines.FRONTIER_TERRAIN_ARM;
+  if(quality==='high')material.defines.FRONTIER_TERRAIN_ARM='';
   material.onBeforeCompile=shader=>{
     for(const [key,value]of Object.entries(uniforms))shader.uniforms['frontierTerrain'+key]=value;
     shader.vertexShader='attribute vec3 terrainMix;\nvarying vec3 vTerrainMix;\n'+shader.vertexShader;
@@ -71,4 +73,5 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   };
   material.customProgramCacheKey=()=>`frontier-terrain-v2:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled natural grass, soil and rocky terrain';
+  material.needsUpdate=true;
 }
