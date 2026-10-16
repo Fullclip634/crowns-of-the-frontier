@@ -1,3 +1,11 @@
+# Windmill roof clearance — 16 October 2026
+
+All three civilizations' mill rotors now turn ahead of the front gable, roof tiles and timber trim. A solid Blender bearing, axle and iron hub connect the rotor to the building. Low, Balanced, High and the procedural fallback use the corrected placement. The original roof and blade geometry is retained; the swept blade volume stays more than 0.24 m ahead of the original building geometry throughout its rotation. The added static parts merge into existing building draws.
+
+Verification: all 312 isolated release regressions pass. Exact vertex checks cover full rotations before/after render batching for nine authored civilization/quality combinations and the three procedural variants. The original compressed mesh buffers and transforms of all 123 unrelated models are unchanged. Normalizing only the mill pivot/mount additions also recovers all 126 original model fingerprints. Repeated composition preserves all 126 fingerprints. Production 1792121849615 passes six actual rendered desktop High / 640 × 360 touch Low cases, with front/side views, rotating pivots, picking and no shader errors. Two published-version comparison cases reproduce the clipping. Phone testing uses emulated touch and software rendering, not physical-device FPS.
+
+The complete editable Blender catalogue is preserved locally with a backup of the previous master. Complete art builds now add this selective mount stage after gates and before Balanced; the source export leaves mounts to Blender to avoid duplicates. That full regeneration sequence has not been rerun end to end. This is a targeted visual correction; broader release readiness and the hosted Render revision remain unverified.
+
 # Water depth, coastal geometry and weather — 16 October 2026
 
 Water now has depth tint, bank transparency, separate ripple normals, a sky-reflection approximation and broken shoreline foam. Storm strength increases motion; night lighting dims foam and changes the reflected sky. Reduced decorative motion freezes water and foliage sway, while gameplay tree-felling remains visible. Foliage previously read a nonexistent weather intensity property; it now uses the actual amount.

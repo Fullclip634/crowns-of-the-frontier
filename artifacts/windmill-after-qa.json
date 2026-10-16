@@ -1,0 +1,316 @@
+{
+  "passed": true,
+  "baseline": false,
+  "checks": [
+    {
+      "quality": "high",
+      "phone": false,
+      "start": {
+        "site": 4,
+        "faction": "alder",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "high"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 27
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 28
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": false,
+        "touch": 0
+      }
+    },
+    {
+      "quality": "high",
+      "phone": false,
+      "start": {
+        "site": 4,
+        "faction": "sun",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "high"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 30
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 31
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": false,
+        "touch": 0
+      }
+    },
+    {
+      "quality": "high",
+      "phone": false,
+      "start": {
+        "site": 4,
+        "faction": "raven",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "high"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 33
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 34
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": false,
+        "touch": 0
+      }
+    },
+    {
+      "quality": "low",
+      "phone": true,
+      "start": {
+        "site": 4,
+        "faction": "alder",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "low"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 20
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 21
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": true,
+        "touch": 1
+      }
+    },
+    {
+      "quality": "low",
+      "phone": true,
+      "start": {
+        "site": 4,
+        "faction": "sun",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "low"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 23
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 24
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": true,
+        "touch": 1
+      }
+    },
+    {
+      "quality": "low",
+      "phone": true,
+      "start": {
+        "site": 4,
+        "faction": "raven",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "windmillRevision": "axle-clearance-v1",
+          "authored": true,
+          "detail": "low"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 26
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            2.65
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 27
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": true,
+        "touch": 1
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "SwiftShader software rendering; phone uses emulated touch, not physical-device performance",
+  "stage": "phone-low",
+  "buildId": "1792121849615"
+}

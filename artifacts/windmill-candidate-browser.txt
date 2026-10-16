@@ -1,0 +1,9 @@
+desktop-high
+alder: two rendered angles, rotor animated and pickable
+sun: two rendered angles, rotor animated and pickable
+raven: two rendered angles, rotor animated and pickable
+phone-low
+alder: two rendered angles, rotor animated and pickable
+sun: two rendered angles, rotor animated and pickable
+raven: two rendered angles, rotor animated and pickable
+{"passed":true,"checks":6,"buildId":"1792121849615"}

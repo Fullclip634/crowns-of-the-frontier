@@ -1,0 +1,110 @@
+{
+  "passed": true,
+  "baseline": true,
+  "checks": [
+    {
+      "quality": "low",
+      "phone": false,
+      "start": {
+        "site": 4,
+        "faction": "alder",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "authored": true,
+          "detail": "low"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            1.70000005
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 23
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            1.70000005
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 24
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": false,
+        "touch": 0
+      }
+    },
+    {
+      "quality": "low",
+      "phone": false,
+      "start": {
+        "site": 4,
+        "faction": "raven",
+        "authored": {
+          "kind": "building",
+          "type": "mill",
+          "volumetric": true,
+          "architectureAge": 0,
+          "artRevision": "civic-arcades",
+          "authored": true,
+          "detail": "low"
+        }
+      },
+      "poses": [
+        {
+          "name": "front",
+          "pivot": [
+            0,
+            5.69999981,
+            1.70000005
+          ],
+          "angle": 0,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 26
+        },
+        {
+          "name": "side",
+          "pivot": [
+            0,
+            5.69999981,
+            1.70000005
+          ],
+          "angle": 0.7853981633974483,
+          "meshes": 3,
+          "pickable": true,
+          "shaderFailures": 0,
+          "frame": 27
+        }
+      ],
+      "viewport": {
+        "overflow": false,
+        "coarse": false,
+        "touch": 0
+      }
+    }
+  ],
+  "errors": [],
+  "renderer": "SwiftShader software rendering; phone uses emulated touch, not physical-device performance",
+  "stage": "desktop-low",
+  "buildId": "1792111282353"
+}

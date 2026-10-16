@@ -263,7 +263,14 @@ export function buildingModel(view,e){
     cottage(view,g,o,0,-.4,3.6,3.8,5.1);
     const blades=new THREE.Group(),a=builder(view,blades);
     for(let i=0;i<4;i++){const arm=new THREE.Group(),r=builder(view,arm);r.rod(m.wood,[0,0,0],[0,3.1,0],.095);for(let k=0;k<5;k++)r.box(m.canvas,.28,1.35+k*.33,.02,.8,.2,.07);arm.rotation.z=i*Math.PI/2;blades.add(arm);}
-    const merged=view.mergeModel(blades);merged.userData.windmill=true;merged.position.set(0,5.7,1.7);g.add(merged);barrel(view,g,2.2,0,1,.65);
+    // Keep the whole swept blade volume forward of the gable and roof trim.
+    // The catalogue pipeline authors its mounts in Blender after refinement.
+    if(!view.exportingOriginalCatalogue){
+      b.box(m.wood,0,5.7,1.98,.65,.65,.36).userData.windmillMount=true;
+      b.rod(m.darkwood,[0,5.7,1.45],[0,5.7,2.75],.16).userData.windmillMount=true;
+      const hub=b.piece(view.geo.cylinder,m.iron,0,5.7,2.75,.27,.18,.27);hub.rotation.x=Math.PI/2;hub.userData.windmillMount=true;
+    }
+    const merged=view.mergeModel(blades);merged.userData.windmill=true;merged.position.set(0,5.7,2.65);g.add(merged);barrel(view,g,2.2,0,1,.65);
   }else if(type==='camp'){
     for(const x of [-1.6,1.6])for(const z of [-1.2,1.2])b.rod(m.wood,[x,0,z],[x,2.3,z],.09);
     b.roof(view.roofMaterials[o],0,2.3,0,4,1.3,3.5);b.box(m.wood,0,.8,1.5,2.8,.16,1);

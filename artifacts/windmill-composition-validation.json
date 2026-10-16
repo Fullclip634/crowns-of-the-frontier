@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "detail": "low",
+      "unchangedOriginalModelsAndMeshBuffers": 126,
+      "repeatCompositionStableModels": 126
+    },
+    {
+      "detail": "near",
+      "unchangedOriginalModelsAndMeshBuffers": 126,
+      "repeatCompositionStableModels": 126
+    }
+  ]
+}

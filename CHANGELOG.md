@@ -1,3 +1,9 @@
+## 16 October 2026 — Windmill roof clearance
+
+- Move all civilization mill rotors ahead of their roofs and add solid Blender axle mounts across Low, Balanced and High, with a matching procedural fallback.
+- Preserve existing roof/blade mesh data and all unrelated models; retain animated picking and existing building draw budgets.
+- Verified with 312 release regressions, six rendered desktop/touch cases and full-rotation/batching checks. Physical-device performance and hosted deployment remain unverified.
+
 ## 16 October 2026 — Water depth and weather rendering
 
 - Add depth coloring, shoreline transparency/foam, fine ripples and lighting-aware sky reflections to GPU-displaced water.

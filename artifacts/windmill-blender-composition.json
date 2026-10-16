@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "detail": "low",
+      "unchangedModels": 123,
+      "mills": 3,
+      "bytes": 4165632
+    },
+    {
+      "detail": "near",
+      "unchangedModels": 123,
+      "mills": 3,
+      "bytes": 17535056
+    }
+  ]
+}

@@ -29,6 +29,7 @@ const colors = {
 };
 function fixture(faction) {
   const view = Object.create(WorldView.prototype);
+  view.exportingOriginalCatalogue = true;
   view.materials = Object.fromEntries(Object.entries(colors).map(([key,color]) =>
     [key,new THREE.MeshStandardMaterial({color,roughness:.85})]));
   view.materials.shadow = new THREE.MeshBasicMaterial({transparent:true,opacity:.1});

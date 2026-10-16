@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "models": 126,
+  "unchangedOtherModels": 123,
+  "mills": [
+    {
+      "key": "building:mill:alder:0",
+      "rotorCenterBrowser": [
+        0,
+        5.7,
+        2.65
+      ],
+      "solidMountMeshes": 3
+    },
+    {
+      "key": "building:mill:raven:0",
+      "rotorCenterBrowser": [
+        0,
+        5.7,
+        2.65
+      ],
+      "solidMountMeshes": 3
+    },
+    {
+      "key": "building:mill:sun:0",
+      "rotorCenterBrowser": [
+        0,
+        5.7,
+        2.65
+      ],
+      "solidMountMeshes": 3
+    }
+  ],
+  "liveEditableChanged": false
+}
