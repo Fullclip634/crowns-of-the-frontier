@@ -1,0 +1,67 @@
+[
+  {
+    "wall": false,
+    "before": 8,
+    "ok": true,
+    "onboard": 2,
+    "landed": [
+      {
+        "type": "catapult",
+        "x": -17,
+        "z": -1,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -15,
+        "z": 3,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -15,
+        "z": -5,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "catapult",
+        "x": -17,
+        "z": 7,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -19,
+        "z": 3,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -21,
+        "z": 1,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      }
+    ],
+    "overlaps": []
+  },
+  {
+    "wall": true,
+    "before": 8,
+    "ok": false,
+    "onboard": 8,
+    "landed": [],
+    "overlaps": []
+  }
+]

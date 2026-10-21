@@ -1,3 +1,20 @@
+## 22 October 2026 — Clear transport landings
+
+Transports reserve separate dry landing spaces, including the larger Blender
+siege envelopes. Shore walls and hostile gates block unloading; crowded beaches
+release only the troops that fit and preserve the remaining passengers. AI keeps
+partially completed landings, and classic multiplayer leaves transports under
+human control.
+
+Verified: **377 serial tests**, production **1792610564505**, actual desktop
+WebGL/native WebGPU and emulated landscape-touch Unload input, six authored model
+envelopes, save/retry and a full eight-Hard-AI coastal battle ending normally at
+1182.2 simulated seconds. See
+[DISEMBARKATION_DESIGN.md](DISEMBARKATION_DESIGN.md) and
+[the validation report](artifacts/disembark-release-validation.json). CPU timings
+are not FPS; physical devices, broader seeds/balance and Render's public revision
+remain unverified. The whole-game goal remains active.
+
 ## 22 October 2026 — Projectile impacts and coastal AI
 
 - Resolve ranged damage after weapon windup and flight; align archer, trebuchet

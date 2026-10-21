@@ -45,7 +45,7 @@ function customNavy(sim,owner,visible,known,army,tc){
     if(ship.landing){const shoreZ=ship.landing.shoreZ??ship.landing.z,shore={x:mid(shoreZ)+ship.landing.sign*20,z:shoreZ};
       const passengers=[...ship.passengers];let unloaded=false;
       for(const offset of [0,6,-6,9,-9]){const z=shore.z+offset,x=mid(z)+ship.landing.sign*20,cell=sim.cell(x,z);if(distance(ship,{x,z})<=11&&!sim.grid(owner)[cell.z*sim.gridSize+cell.x]&&sim.unload(ship.id,x,z,owner)){unloaded=true;break;}}
-      if(unloaded){for(const id of passengers){const unit=sim.get(id);if(unit?.owner===owner&&military(unit))sim.command([id],{type:'attackmove',x:ship.landing.x,z:ship.landing.z});}ship.landing=null;ship.loadingSince=null;}
+      if(unloaded){for(const id of passengers){const unit=sim.get(id);if(unit?.owner===owner&&!unit.embarked&&military(unit))sim.command([id],{type:'attackmove',x:ship.landing.x,z:ship.landing.z});}if(!ship.passengers.length){ship.landing=null;ship.loadingSince=null;}}
       else{
         const approach=coastalApproach(ship.landing.sign,shoreZ);
         if(distance(ship,approach)<8||ship.pathStatus==='blocked'){

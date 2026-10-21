@@ -95,10 +95,14 @@ test('custom naval AI pays to rebuild a destroyed harbor and assigns a builder',
   sim.hurt(dock,dock.hp+1,sim.owned(0,'unit','galley')[0]);sim.tickCustomAI(4);const replacement=sim.owned(owner,'building','dock')[0];assert.ok(replacement);assert.ok(replacement.progress<1);assert.ok(sim.players[owner].resources.wood<before);assert.ok(sim.owned(owner,'unit','villager').some(unit=>unit.order?.type==='build'&&unit.order.target===replacement.id));
 });
 
-test('custom transports retry canceled voyages and unload beside an occupied enemy harbor',()=>{
+test('custom transports retry canceled voyages and sail around an occupied enemy harbor to unload',()=>{
   const sim=new Simulation({mode:'custom',map:'coast',slots:battlePreset('2v2'),seed:512}),owner=2,tc=sim.owned(owner,'building','towncenter')[0],ship=sim.owned(owner,'unit','transport')[0],army=sim.owned(owner,'unit','spearman');ship.passengers=army.slice(0,4).map(unit=>unit.id);for(const unit of army.slice(0,4)){unit.embarked=true;unit.transport=ship.id;}
   ship.landing={...sim.players[0].start,sign:-1};ship.x=3;ship.z=ship.landing.z;ship.order=null;sim.commanderNavy({},[],[],army,tc,owner);assert.equal(ship.order.type,'move');assert.ok(ship.order.x<0);
-  ship.x=Math.sin(ship.landing.z*.03)*2-12;ship.z=ship.landing.z;sim.commanderNavy({},[],[],army,tc,owner);assert.equal(ship.passengers.length,0);assert.equal(ship.landing,null);
+  ship.x=Math.sin(ship.landing.z*.03)*2-12;ship.z=ship.landing.z;
+  // The harbor is a real obstacle, so this may need another beach rather than
+  // instantly placing the passengers through its footprint.
+  for(let i=0;i<600&&ship.passengers.length;i++){const before={x:ship.x,z:ship.z};if(i%10===0)sim.commanderNavy({},[],[],army,tc,owner);sim.tickUnit(ship,.1);assert.ok(Math.hypot(ship.x-before.x,ship.z-before.z)<2);for(const unit of army.slice(0,4))sim.tickUnit(unit,.1);sim.time+=.1;}
+  assert.equal(ship.passengers.length,0);assert.equal(ship.landing,null);
   for(const unit of army.slice(0,4)){assert.equal(unit.embarked,false);assert.equal(sim.isWater(unit.x,unit.z),false);const cell=sim.cell(unit.x,unit.z);assert.equal(sim.grid(owner)[cell.z*sim.gridSize+cell.x],0);assert.equal(unit.order.type,'attackmove');}
 });
 

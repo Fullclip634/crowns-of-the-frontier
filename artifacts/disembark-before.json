@@ -1,0 +1,306 @@
+[
+  {
+    "wall": false,
+    "before": 8,
+    "ok": true,
+    "onboard": 0,
+    "landed": [
+      {
+        "type": "ram",
+        "x": -16.3,
+        "z": 0,
+        "r": 1.35,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "catapult",
+        "x": -15,
+        "z": 0,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -15,
+        "z": -1,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -16.3,
+        "z": 1.3,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "ram",
+        "x": -15,
+        "z": 1.3,
+        "r": 1.35,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "catapult",
+        "x": -15,
+        "z": 1,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -16.3,
+        "z": 2.6,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -15,
+        "z": 2.6,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      }
+    ],
+    "overlaps": [
+      {
+        "a": "catapult",
+        "b": "ram",
+        "distance": 1.3000000000000007,
+        "minimum": 2.45
+      },
+      {
+        "a": "knight",
+        "b": "ram",
+        "distance": 1.6401219466856731,
+        "minimum": 2
+      },
+      {
+        "a": "knight",
+        "b": "catapult",
+        "distance": 1,
+        "minimum": 1.75
+      },
+      {
+        "a": "spearman",
+        "b": "ram",
+        "distance": 1.3,
+        "minimum": 2
+      },
+      {
+        "a": "ram",
+        "b": "ram",
+        "distance": 1.8384776310850242,
+        "minimum": 2.7
+      },
+      {
+        "a": "ram",
+        "b": "catapult",
+        "distance": 1.3,
+        "minimum": 2.45
+      },
+      {
+        "a": "ram",
+        "b": "spearman",
+        "distance": 1.3000000000000007,
+        "minimum": 2
+      },
+      {
+        "a": "catapult",
+        "b": "ram",
+        "distance": 1.6401219466856731,
+        "minimum": 2.45
+      },
+      {
+        "a": "catapult",
+        "b": "catapult",
+        "distance": 1,
+        "minimum": 2.2
+      },
+      {
+        "a": "catapult",
+        "b": "spearman",
+        "distance": 1.3341664064126342,
+        "minimum": 1.75
+      },
+      {
+        "a": "catapult",
+        "b": "ram",
+        "distance": 0.30000000000000004,
+        "minimum": 2.45
+      },
+      {
+        "a": "knight",
+        "b": "ram",
+        "distance": 1.8384776310850242,
+        "minimum": 2
+      },
+      {
+        "a": "spearman",
+        "b": "ram",
+        "distance": 1.3,
+        "minimum": 2
+      },
+      {
+        "a": "spearman",
+        "b": "catapult",
+        "distance": 1.6,
+        "minimum": 1.75
+      }
+    ]
+  },
+  {
+    "wall": true,
+    "before": 8,
+    "ok": true,
+    "onboard": 0,
+    "landed": [
+      {
+        "type": "ram",
+        "x": -23.3,
+        "z": 0,
+        "r": 1.35,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "catapult",
+        "x": -22,
+        "z": 0,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -20.7,
+        "z": 0,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -23.3,
+        "z": 1.3,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "ram",
+        "x": -22,
+        "z": 1.3,
+        "r": 1.35,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "catapult",
+        "x": -20.7,
+        "z": 1.3,
+        "r": 1.1,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "knight",
+        "x": -23.3,
+        "z": 2.6,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      },
+      {
+        "type": "spearman",
+        "x": -22,
+        "z": 2.6,
+        "r": 0.65,
+        "water": false,
+        "blocked": false
+      }
+    ],
+    "overlaps": [
+      {
+        "a": "catapult",
+        "b": "ram",
+        "distance": 1.3000000000000007,
+        "minimum": 2.45
+      },
+      {
+        "a": "knight",
+        "b": "catapult",
+        "distance": 1.3000000000000007,
+        "minimum": 1.75
+      },
+      {
+        "a": "spearman",
+        "b": "ram",
+        "distance": 1.3,
+        "minimum": 2
+      },
+      {
+        "a": "ram",
+        "b": "ram",
+        "distance": 1.8384776310850242,
+        "minimum": 2.7
+      },
+      {
+        "a": "ram",
+        "b": "catapult",
+        "distance": 1.3,
+        "minimum": 2.45
+      },
+      {
+        "a": "ram",
+        "b": "knight",
+        "distance": 1.8384776310850242,
+        "minimum": 2
+      },
+      {
+        "a": "ram",
+        "b": "spearman",
+        "distance": 1.3000000000000007,
+        "minimum": 2
+      },
+      {
+        "a": "catapult",
+        "b": "catapult",
+        "distance": 1.8384776310850242,
+        "minimum": 2.2
+      },
+      {
+        "a": "catapult",
+        "b": "knight",
+        "distance": 1.3,
+        "minimum": 1.75
+      },
+      {
+        "a": "catapult",
+        "b": "ram",
+        "distance": 1.3000000000000007,
+        "minimum": 2.45
+      },
+      {
+        "a": "knight",
+        "b": "ram",
+        "distance": 1.8384776310850242,
+        "minimum": 2
+      },
+      {
+        "a": "spearman",
+        "b": "ram",
+        "distance": 1.3,
+        "minimum": 2
+      }
+    ]
+  }
+]

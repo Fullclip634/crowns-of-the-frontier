@@ -1,0 +1,948 @@
+{
+  "startedAt": "2026-10-21T19:23:20.023Z",
+  "cases": [
+    {
+      "backend": "webgl",
+      "quality": "high",
+      "open": {
+        "remaining": 2,
+        "landed": [
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -17,
+            "z": -1,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -15,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -5,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.8309518948453
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -17,
+            "z": 7,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 8.602325267042627
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -19,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 7.615773105863909
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -21,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 9.055385138137417
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "openRetry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "ram",
+            "x": -17,
+            "z": -1,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -31.654624307190776,
+            "z": 1.747742057598269,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.732178261831926
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -32.12379851772603,
+            "z": 5.853966419621005,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.957962439704932
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -31.53450344908156,
+            "z": -5.918583524948976,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.411429541900702
+          },
+          {
+            "id": 377,
+            "type": "ram",
+            "x": -17,
+            "z": 5,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 7.0710678118654755
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -31.632178063276974,
+            "z": 2.4274443552259433,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.781680960068382
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -31.730987431287886,
+            "z": 5.728068735275975,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.545623291827546
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -31.88361415132023,
+            "z": -5.348774921603473,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.59047121560253
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "blocked": {
+        "remaining": 8,
+        "landed": [],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "partial": {
+        "remaining": 3,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -15.000140058922494,
+            "z": -0.00020539969650812395,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.000140065953671
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -15,
+            "z": 3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "retry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -50,
+            "z": 13,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.162171256046406
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -50,
+            "z": 14,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.496913462633174
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -50,
+            "z": 15,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.85339643163099
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -50,
+            "z": 16,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.2310562561766
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -50,
+            "z": 17,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.62931659299729
+          },
+          {
+            "id": 378,
+            "type": "spearman",
+            "x": -15.000140058922494,
+            "z": -0.00020539969650812395,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.000140065953671
+          },
+          {
+            "id": 379,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      }
+    },
+    {
+      "backend": "webgpu",
+      "quality": "medium",
+      "open": {
+        "remaining": 2,
+        "landed": [
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -17,
+            "z": -1,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -15,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -5,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.8309518948453
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -17,
+            "z": 7,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 8.602325267042627
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -19,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 7.615773105863909
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -21,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 9.055385138137417
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "openRetry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "ram",
+            "x": -17,
+            "z": -1,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -31.654624307190776,
+            "z": 1.747742057598269,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.732178261831926
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -32.12379851772603,
+            "z": 5.853966419621005,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.957962439704932
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -31.53450344908156,
+            "z": -5.918583524948976,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.411429541900702
+          },
+          {
+            "id": 377,
+            "type": "ram",
+            "x": -17,
+            "z": 5,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 7.0710678118654755
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -31.632178063276974,
+            "z": 2.4274443552259433,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.781680960068382
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -31.730987431287886,
+            "z": 5.728068735275975,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.545623291827546
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -31.88361415132023,
+            "z": -5.348774921603473,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.59047121560253
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "blocked": {
+        "remaining": 8,
+        "landed": [],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "partial": {
+        "remaining": 3,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -15.000140058922494,
+            "z": -0.00020539969647614953,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.000140065953671
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -15,
+            "z": 3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "retry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -50,
+            "z": 13,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.162171256046406
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -50,
+            "z": 14,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.496913462633174
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -50,
+            "z": 15,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.85339643163099
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -50,
+            "z": 16,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.2310562561766
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -50,
+            "z": 17,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.62931659299729
+          },
+          {
+            "id": 378,
+            "type": "spearman",
+            "x": -15.000140058922494,
+            "z": -0.00020539969647614953,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.000140065953671
+          },
+          {
+            "id": 379,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      }
+    },
+    {
+      "backend": "webgl",
+      "quality": "low",
+      "phone": true,
+      "open": {
+        "remaining": 2,
+        "landed": [
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -17,
+            "z": -1,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -15,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -5,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.8309518948453
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -17,
+            "z": 7,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 8.602325267042627
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -19,
+            "z": 3,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 7.615773105863909
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -21,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 9.055385138137417
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "openRetry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "ram",
+            "x": -17,
+            "z": -1,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 374,
+            "type": "catapult",
+            "x": -31.654624307190776,
+            "z": 1.747742057598269,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.732178261831926
+          },
+          {
+            "id": 375,
+            "type": "knight",
+            "x": -32.12379851772603,
+            "z": 5.853966419621005,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.957962439704932
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -31.53450344908156,
+            "z": -5.918583524948976,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.411429541900702
+          },
+          {
+            "id": 377,
+            "type": "ram",
+            "x": -17,
+            "z": 5,
+            "hp": 611.6,
+            "water": false,
+            "groundDry": true,
+            "range": 7.0710678118654755
+          },
+          {
+            "id": 378,
+            "type": "catapult",
+            "x": -31.632178063276974,
+            "z": 2.4274443552259433,
+            "hp": 250.20000000000002,
+            "water": false,
+            "groundDry": true,
+            "range": 19.781680960068382
+          },
+          {
+            "id": 379,
+            "type": "knight",
+            "x": -31.730987431287886,
+            "z": 5.728068735275975,
+            "hp": 298.85,
+            "water": false,
+            "groundDry": true,
+            "range": 20.545623291827546
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -31.88361415132023,
+            "z": -5.348774921603473,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 20.59047121560253
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "blocked": {
+        "remaining": 8,
+        "landed": [],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "partial": {
+        "remaining": 3,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -15.000139055134905,
+            "z": -0.00020565353174362144,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.0001390621834743
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -15,
+            "z": -3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -15,
+            "z": 3,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 4.242640687119286
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      },
+      "retry": {
+        "remaining": 0,
+        "landed": [
+          {
+            "id": 373,
+            "type": "spearman",
+            "x": -50,
+            "z": 13,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.162171256046406
+          },
+          {
+            "id": 374,
+            "type": "spearman",
+            "x": -50,
+            "z": 14,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.496913462633174
+          },
+          {
+            "id": 375,
+            "type": "spearman",
+            "x": -50,
+            "z": 15,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 40.85339643163099
+          },
+          {
+            "id": 376,
+            "type": "spearman",
+            "x": -50,
+            "z": 16,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.2310562561766
+          },
+          {
+            "id": 377,
+            "type": "spearman",
+            "x": -50,
+            "z": 17,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 41.62931659299729
+          },
+          {
+            "id": 378,
+            "type": "spearman",
+            "x": -15.000139055134905,
+            "z": -0.00020565353174362144,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 3.0001390621834743
+          },
+          {
+            "id": 379,
+            "type": "spearman",
+            "x": -17,
+            "z": -1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          },
+          {
+            "id": 380,
+            "type": "spearman",
+            "x": -17,
+            "z": 1,
+            "hp": 167.8425,
+            "water": false,
+            "groundDry": true,
+            "range": 5.099019513592785
+          }
+        ],
+        "overlaps": [],
+        "overflow": false,
+        "shaderErrors": 0
+      }
+    }
+  ],
+  "errors": [],
+  "buildId": "1792610564505",
+  "passed": true
+}

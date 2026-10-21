@@ -6,6 +6,11 @@ Ranged attacks now resolve after windup and flight, siege can miss moving troops
 and coastal AI transports retry blocked beaches. See
 [combat rules and verification](PROJECTILE_COMBAT_DESIGN.md).
 
+To unload a transport, select it, open **Options** on a phone, choose **Unload**,
+then click or tap nearby open shore. Crowded beaches release only the troops
+that fit; clear room or choose another beach for the remaining passengers.
+Walls and hostile gates block landing. See [landing checks](DISEMBARKATION_DESIGN.md).
+
 An original 3D browser RTS built with Three.js. Version 2.6.1 integrates 126 original Blender models, photographed CC0 surfaces, raised terrain, solid ground cover and battlefield remains. Custom battles support up to eight kingdoms, configurable human/AI slots, allies and enemies, individual difficulties, large maps, team multiplayer and 3D weather. Staged campaigns, checkpoints, naval warfare, civilization-exclusive troops and upgrades, a technology tree and laptop/phone controls are available. Compact phone panels leave more battlefield visible. Original metallic combat sounds follow the camera; shoreline shading, optimized articulated troops, stable tree detail and moonlit lighting improve the 3D presentation. This remains a development beta; verified scenarios and open release requirements are recorded in [RELEASE_CHECKS.md](RELEASE_CHECKS.md).
 
 In **Settings → Battlefield lighting**, choose **Daylight**, **Moonlit night**, or **Day & night cycle**. Night has cooler ambient light and warm building windows, and works with rain and storms. The cycle takes 18 minutes of game time; pausing single-player also pauses it. The choice is saved on the device. Nearby trees retain richer models; distant trees use lighter versions, with a hold range to reduce repeated detail swaps while panning.

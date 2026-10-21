@@ -1,5 +1,5 @@
 import {UNITS,BUILDINGS,DIFFICULTIES,TECHS} from './data.js';
-import {formationSlot} from './tactics.js';
+import {disembarkSlots} from './disembark.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 
 export function installFrontiers(Simulation){
@@ -53,10 +53,15 @@ export function installFrontiers(Simulation){
     if(legal.length<ids.length)this.fail('Ships sail on water. Land troops need a transport to cross the sea.',owner);
     original.smartCommand.call(this,legal,target,x,z,append,attackMove,owner);
   };
-  p.unload=function(id,x,z,owner=0){const ship=this.get(id);if(!ship||ship.owner!==owner||ship.type!=='transport')return false;
-    if(this.isWater(x,z)||distance(ship,{x,z})>11)return this.fail('Choose a shore within 11 meters of the transport.',owner);
+  p.unload=function(id,x,z,owner=0){const ship=this.get(id);if(!ship||ship.owner!==owner||ship.type!=='transport'||![x,z].every(Number.isFinite))return false;
+    if(Math.abs(x)>this.halfWorld-3||Math.abs(z)>this.halfWorld-3||this.isWater(x,z)||distance(ship,{x,z})>11)return this.fail('Choose a shore within 11 meters of the transport.',owner);
     const cell=this.cell(x,z);if(this.grid(owner)[cell.z*this.gridSize+cell.x])return this.fail('Choose open land to disembark.',owner);
-    const passengers=ship.passengers||[];passengers.forEach((pid,i)=>{const e=this.get(pid);if(!e)return;const point=formationSlot(this,e,{x:x+(i%3-1)*1.3,z:z+Math.floor(i/3)*1.3});e.embarked=false;e.transport=null;e.x=point.x;e.z=point.z;if(this.isWater(e.x,e.z)){e.x=x;e.z=z;}e.order=null;e.orders=[];e.path=[];});ship.passengers=[];this.emit('unload',{entity:ship});return true;
+    const passengers=[...new Set(ship.passengers||[])].map(pid=>this.get(pid)).filter(e=>e?.kind==='unit'&&e.embarked&&e.transport===ship.id&&!UNITS[e.type].naval&&this.allied(owner,e.owner));
+    if(!passengers.length)return this.fail('This transport has no passengers to unload.',owner);
+    const slots=disembarkSlots(this,ship,{x,z},passengers);if(!slots.length)return this.fail('No clear landing space. Move the transport or choose another beach.',owner);
+    for(const {unit:e,point}of slots){e.embarked=false;e.transport=null;e.x=point.x;e.z=point.z;e.order=null;e.orders=[];e.path=[];e.pathStatus='idle';e.repath=0;e.stuckTime=0;e.moving=false;delete e.renderX;delete e.renderZ;}
+    ship.passengers=passengers.filter(e=>e.embarked).map(e=>e.id);this.sightCache=null;this.emit('unload',{entity:ship,count:slots.length,remaining:ship.passengers.length});
+    if(ship.passengers.length)this.emit('notice',{owner,message:`${slots.length} disembarked; ${ship.passengers.length} remain aboard. Clear room or choose another beach.`,tone:'info'});return true;
   };
   p.tickUnit=function(e,dt){
     if(e.embarked){const ship=this.get(e.transport);if(!ship){e.hp=0;return;}e.x=ship.x;e.z=ship.z;return;}
@@ -78,7 +83,7 @@ export function installFrontiers(Simulation){
     const site=e.order?.type==='build'?this.get(e.order.target):null,progress=site?.progress;
     original.tickUnit.call(this,e,dt);
     if(e.owner>0&&site&&progress<1&&site.progress>=1)this.emit('stat-complete',{entity:site});
-    if(this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1))e.order={type:'move',x:10,z:-24};}
+    if(!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:-24};}
   };
   p.hurt=function(e,amount,attacker){const hp=e.hp;if(attacker?.owner>=0)e.lastAttacker=attacker.owner;original.hurt.call(this,e,amount,attacker);if(hp>0&&e.hp<=0&&e.kind==='unit'){this.revision--;for(const id of e.passengers||[]){const passenger=this.get(id);if(passenger)this.hurt(passenger,passenger.hp,attacker);}}};
   p.canSee=function(owner,entity){

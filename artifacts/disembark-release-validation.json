@@ -1,0 +1,137 @@
+{
+  "createdAt": "2026-10-21T19:26:54.604Z",
+  "build": {
+    "buildId": "1792610564505",
+    "version": "2.6.1"
+  },
+  "regression": {
+    "tests": 377,
+    "passed": 377,
+    "failed": 0
+  },
+  "browser": {
+    "passed": true,
+    "cases": [
+      {
+        "backend": "webgl",
+        "quality": "high",
+        "emulatedTouch": false,
+        "firstRelease": 6,
+        "firstRemaining": 2,
+        "blockedRemaining": 8,
+        "crowdedRemaining": 3,
+        "finalRemaining": 0
+      },
+      {
+        "backend": "webgpu",
+        "quality": "medium",
+        "emulatedTouch": false,
+        "firstRelease": 6,
+        "firstRemaining": 2,
+        "blockedRemaining": 8,
+        "crowdedRemaining": 3,
+        "finalRemaining": 0
+      },
+      {
+        "backend": "webgl",
+        "quality": "low",
+        "emulatedTouch": true,
+        "firstRelease": 6,
+        "firstRemaining": 2,
+        "blockedRemaining": 8,
+        "crowdedRemaining": 3,
+        "finalRemaining": 0
+      }
+    ],
+    "errors": []
+  },
+  "modelEnvelopes": [
+    {
+      "detail": "low",
+      "type": "ram",
+      "sweptRadius": 2.5115538838898193,
+      "clearance": 2.7,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    },
+    {
+      "detail": "low",
+      "type": "catapult",
+      "sweptRadius": 2.871962364372191,
+      "clearance": 3.3,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    },
+    {
+      "detail": "balanced",
+      "type": "ram",
+      "sweptRadius": 2.5115538838898193,
+      "clearance": 2.7,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    },
+    {
+      "detail": "balanced",
+      "type": "catapult",
+      "sweptRadius": 2.871962364372191,
+      "clearance": 3.3,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    },
+    {
+      "detail": "near",
+      "type": "ram",
+      "sweptRadius": 2.509921780230335,
+      "clearance": 2.7,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    },
+    {
+      "detail": "near",
+      "type": "catapult",
+      "sweptRadius": 2.8694546894754285,
+      "clearance": 3.3,
+      "groundRadius": 1.9133398131959736,
+      "groundClearance": 2.1
+    }
+  ],
+  "coastalBattle": {
+    "seconds": 1182.2000000000203,
+    "ended": {
+      "won": false,
+      "reason": "Every kingdom in your alliance has been eliminated."
+    },
+    "projectiles": {
+      "shots": 20736,
+      "garrisonArrows": 2070,
+      "impacts": 19107,
+      "siegeImpacts": 817,
+      "primarySiegeMisses": 297,
+      "maxPending": 41
+    },
+    "tickMilliseconds": {
+      "median": 8.903200000000652,
+      "p95": 34.07050000000163,
+      "p99": 55.26279999999679,
+      "max": 343.7670999999973
+    }
+  },
+  "limits": [
+    "One Intel GPU; phone input is emulated touch.",
+    "Controlled browser fixtures verify landings; the complete battle uses ordinary economy and combat.",
+    "CPU tick timings are not rendered FPS.",
+    "Movement collision radii are unchanged; these checks do not prove every animation or moving formation is intersection-free.",
+    "Other coastal seeds, physical phones, sustained performance and the public Render revision remain unverified."
+  ],
+  "sourceSHA256": {
+    "src/disembark.js": "b07526037b045ff78a3606a50bc7a8bc1a555f8d59b38187918cc039554b98d9",
+    "src/frontiers.js": "7097174257a5655245ce25cbb70e53415efbe07a362e02df8c6d1a06e3738bf0",
+    "src/commander-ai.js": "bf39e4c9f85fe18e2bb77cc1d475e0f1fc8d07be06c2b009fdaa5f7f8ea8cdbf",
+    "src/main.js": "cb55e0477bc4b36ace74dbfc341a317784fd2fe1e2de973199db0260e5c589a8",
+    "tests/disembark.test.js": "cfefbefc59d0b3ab946ff3998fd4e8b2066c0d02c98c8b45b85ce2071705f7e5",
+    "tests/frontiers.test.js": "3c8a8ff344ed30f37e2abfc38f674f90984358db778515a6e0f2e9273611079f",
+    "tests/commander.test.js": "3e0afda74c09c81f1f62f88f5c02101d17f704af9687525356479b58d190cfa0",
+    "tests/siege-models.test.js": "6f8469cbb49679511cf374fe9a441527755d22af98e82cda9af91dcdcb044e30",
+    "scripts/disembark-qa.mjs": "a6a53ba6d2b69c3bce11624bc1c9b5ec5b3dd51bbb8943f3309e0a30c829a3a6"
+  }
+}
