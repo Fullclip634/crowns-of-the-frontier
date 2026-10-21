@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {nodeRuntime,standardMaterial} from './render-runtime.js';
 import {treeDetail} from './tree-lod.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
@@ -108,6 +109,23 @@ export function installRealm3D(WorldView){
     return node;
   };
   p.updateConstruction=function(e,node){
+    if(this.renderer.isWebGPURenderer){
+      if(e.progress<1){
+        if(!node.userData.construction){
+          const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0),group=new (nodeRuntime().ClippingGroup)();
+          group.clippingPlanes=[plane];group.clipShadows=true;
+          for(const child of [...node.children])if(child!==node.userData.ring)group.add(child);
+          node.add(group);const frame=scaffold(this,e);node.add(frame);
+          node.userData.construction={plane,group,frame};
+        }
+        node.userData.construction.plane.constant=node.position.y+Math.max(.18,e.progress*13);
+      }else if(node.userData.construction){
+        const {group,frame}=node.userData.construction;
+        for(const child of [...group.children])node.add(child);group.removeFromParent();
+        frame.traverse(mesh=>{if(mesh.isMesh)mesh.geometry.dispose();});frame.removeFromParent();delete node.userData.construction;
+      }
+      return;
+    }
     if(e.progress<1){
       if(!node.userData.construction){
         const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0),materials=[],restore=[];
@@ -132,7 +150,7 @@ export function installRealm3D(WorldView){
     if(!['farm','dock'].includes(type)&&(this.ghost.userData.foundationGroundX!==x||this.ghost.userData.foundationGroundZ!==z)){groundBuildingFoundation(this.ghost.children[0],this.landscape,true);this.ghost.userData.foundationGroundX=x;this.ghost.userData.foundationGroundZ=z;}
     this.ghost.traverse(mesh=>{if(mesh.isMesh)mesh.material.color.setHex(valid?0x8de3c5:0xee816a);});
   };
-  p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++){const f=this.fx[i];f.object.position.y=this.groundHeight(x,z)+.4;f.object.material.dispose();f.object.material=new THREE.MeshStandardMaterial({color:color??0xe8c28b,roughness:.9,transparent:true,opacity:.8});}};
+  p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++){const f=this.fx[i];f.object.position.y=this.groundHeight(x,z)+.4;f.object.material.dispose();f.object.material=standardMaterial({color:color??0xe8c28b,roughness:.9,transparent:true,opacity:.8});}};
   p.effect=function(event){
     if(event.type==='attack'){
       if(this.fx.length>(this.settings.quality==='low'?32:90))return;

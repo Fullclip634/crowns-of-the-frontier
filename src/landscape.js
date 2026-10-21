@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
 import {GroundCover} from './ground-cover.js';
@@ -94,7 +95,7 @@ function groundRelief(seed){
 }
 
 export function buildLandscape(view){
-  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=new THREE.MeshStandardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
+  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
   const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
   geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
   applyGroundSurface(material,land,view.settings.quality);

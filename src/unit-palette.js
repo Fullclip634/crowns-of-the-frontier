@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function paletteMaterial(view){
   if(!view.materials.unitPalette){
-    const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9});
+    const material=standardMaterial({vertexColors:true,roughness:.9});
     const wood={value:view.materials.wood.map||null},teams={value:Array.from({length:8},(_,i)=>view.teamMaterials[i]?.color||new THREE.Color())},roofs={value:Array.from({length:8},(_,i)=>view.roofMaterials?.[i]?.color||new THREE.Color())};material.frontierUniforms={wood,teams,roofs};
-    material.onBeforeCompile=shader=>{
+    if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
       shader.uniforms.frontierUnitWood=wood;
       shader.uniforms.frontierTeamColors=teams;shader.uniforms.frontierRoofColors=roofs;
       shader.vertexShader='attribute vec3 unitSurface;\nattribute float unitTeamMask;\n#ifdef USE_INSTANCING\nattribute float instanceOwner;\n#endif\nuniform vec3 frontierTeamColors[8];\nuniform vec3 frontierRoofColors[8];\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.vertexShader;
@@ -22,11 +23,12 @@ function paletteMaterial(view){
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vUnitSurface.y, 0.0, 1.0);');
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v2';
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v2';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;
   for(let i=0;i<8;i++){uniforms.teams.value[i]=view.teamMaterials[i]?.color||uniforms.teams.value[i];uniforms.roofs.value[i]=view.roofMaterials?.[i]?.color||uniforms.roofs.value[i];}
+  if(view.materials.unitPalette.isNodeMaterial&&!view.materials.unitPalette.colorNode)nodeRuntime().unitPalette(view.materials.unitPalette,uniforms);
   return view.materials.unitPalette;
 }
 

@@ -1,3 +1,26 @@
+## 21 October 2026 — Optional WebGPU preview
+
+Current source adds a lazy WebGPU renderer behind `?renderer=webgpu`, with the
+classic WebGL renderer as the default and startup fallback. Three.js is pinned
+to 0.186.1. Terrain, roads, palettes, rigid poses, water, construction, environment
+and portraits have node-renderer paths. Queued battlefield submissions are
+bounded, shadow sampling remains scheduled, hidden phone portraits stay idle,
+and device loss uses save/rejoin recovery.
+
+The clean publication source passes **350 serial tests** and a production build
+(1792588702658). Browser checks pass native Intel Gen 11 WebGPU, classic
+WebGL and forced unsupported-WebGPU fallback, each with all quality changes,
+construction, storm/night, portraits and a touch landscape viewport. WebGPU
+offline caching/reload and local-match startup also pass. See
+[WEBGPU_MIGRATION.md](WEBGPU_MIGRATION.md) and
+[the browser report](artifacts/renderer-webgpu-validation.json).
+
+WebGPU remains opt-in pending physical-device and sustained performance testing.
+The whole-game quality goal remains active. This is not full release or universal
+FPS certification. Versioned 2.6.1 ZIPs retain the previous stable siege snapshot.
+Render deployment and its public revision have not been verified. Separate
+unfinished projectile work is retained locally and excluded from this milestone.
+
 # Solid siege milestone — 16 October 2026
 
 Verified on production 1792126674471: all 341 serial regressions; front/side/firing gameplay on High and Balanced plus 640 × 360 emulated-touch Low; actual GPU upload calls, picking and zero shader errors; real WebGL loss/restoration; overlapping Low → High requests; desktop High and phone Low partial/persistent rebuild failures, unchanged serialized match/camera, correct textures/shadows, released source leases, focused recovery, Escape handling, blocked reload on simulated full storage and successful UI retry. Current images were inspected. Browser rendering uses SwiftShader; it does not establish physical-device FPS or native phone behavior.

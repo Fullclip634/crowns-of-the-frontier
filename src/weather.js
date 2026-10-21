@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {DayNightLighting} from './day-night.js';
@@ -26,7 +27,7 @@ export class WeatherRenderer {
     this.rain=this.instances(new THREE.CylinderGeometry(.018,.012,1,4),new THREE.MeshBasicMaterial({color:0xbdd1db,transparent:true,opacity:.52,depthWrite:false}),1400);
     this.snow=this.instances(new THREE.IcosahedronGeometry(.11,0),new THREE.MeshBasicMaterial({color:0xe9f1e9,transparent:true,opacity:.8,depthWrite:false}),1000);
     this.ripples=this.instances(new THREE.TorusGeometry(1,.028,3,12).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xb2c7cb,transparent:true,opacity:.2,depthWrite:false}),60);
-    this.clouds=this.instances(new THREE.IcosahedronGeometry(1,2),new THREE.MeshStandardMaterial({color:0xb6c3ca,transparent:true,opacity:.38,depthWrite:false,roughness:1}),36);
+    this.clouds=this.instances(new THREE.IcosahedronGeometry(1,2),standardMaterial({color:0xb6c3ca,transparent:true,opacity:.38,depthWrite:false,roughness:1}),36);
     const rng=seededRandom(this.seed+55131);this.particles=Array.from({length:1400},()=>({x:rng(),z:rng(),phase:rng(),speed:.8+rng()*.4,scale:.7+rng()*.6}));
     this.cloudSeeds=Array.from({length:36},()=>({x:(rng()-.5)*210,z:(rng()-.5)*210,y:48+rng()*24,scale:9+rng()*12}));
     this.daylight=new DayNightLighting(view);

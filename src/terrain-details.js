@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
@@ -17,7 +18,7 @@ export function pebbleGeometry(){
 export class TerrainDetails{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),high=view.settings.quality==='high',capacity=high?360:120;
-    const material=view.materials?.rock?.clone()||new THREE.MeshStandardMaterial();material.color.setHex(0xffffff);material.roughness=.98;material.vertexColors=false;
+    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.98;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const arid=['desert','canyon'].includes(land.map),palette=land.map==='winter'?[0xc3cbc5,0xe0e4db,0xa7b4a9]:arid?[0xd7c4a4,0xc8b69a,0xe1d0b0]:[0xc4c8b5,0xd8cfb6,0xaeb9a2];

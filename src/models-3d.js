@@ -1,9 +1,10 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {authoredUnit,authoredBuilding,authoredResource,authoredTree} from './authored-assets.js';
 
 const Y=new THREE.Vector3(0,1,0);
-function standard(color,extra={}){return new THREE.MeshStandardMaterial({color,roughness:.85,...extra});}
+function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
 function closedCloth(width=1,height=1){
   const positions=[],uv=[],indices=[],cols=8,rows=3;
   for(let side=0;side<2;side++)for(let row=0;row<=rows;row++)for(let col=0;col<=cols;col++){

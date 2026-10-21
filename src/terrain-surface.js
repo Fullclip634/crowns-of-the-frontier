@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {nodeRuntime} from './render-runtime.js';
 import {roadDistance} from './terrain-layout.js';
 
 function roadMask(land){
@@ -27,6 +28,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   material.frontierTerrainUniforms=uniforms;
   material.defines={...material.defines};delete material.defines.FRONTIER_TERRAIN_ARM;
   if(quality==='high')material.defines.FRONTIER_TERRAIN_ARM='';
+  if(material.isNodeMaterial){nodeRuntime().terrain(material,uniforms);return;}
   material.onBeforeCompile=shader=>{
     for(const [key,value]of Object.entries(uniforms))shader.uniforms['frontierTerrain'+key]=value;
     shader.vertexShader='attribute vec3 terrainMix;\nvarying vec3 vTerrainMix;\n'+shader.vertexShader;

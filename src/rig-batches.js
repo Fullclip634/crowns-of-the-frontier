@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {animatePart} from './world-polish.js';
 
@@ -30,7 +31,7 @@ objectNormal = mat3(frontierPose) * objectNormal;`);
 function allocate(rig,rows){
   const data=new Float32Array(rows*rig.joints.length*16),roots=new Float32Array(rows*16);if(rig.data)data.set(rig.data);if(rig.roots)roots.set(rig.roots);
   const texture=new THREE.DataTexture(data,rig.joints.length*4,rows,THREE.RGBAFormat,THREE.FloatType);texture.needsUpdate=true;texture.generateMipmaps=false;
-  rig.texture?.dispose();rig.texture=texture;rig.data=data;rig.roots=roots;rig.rows=rows;rig.uniform.value=texture;
+  rig.texture?.dispose();rig.texture=texture;rig.data=data;rig.roots=roots;rig.rows=rows;rig.uniform.value=texture;if(rig.poseNode)rig.poseNode.value=texture;
   rig.dirtyRows=new Set();rig.fullUpload=true;
   texture.onUpdate=()=>{rig.dirtyRows.clear();rig.fullUpload=false;};
 }
@@ -53,10 +54,11 @@ export function createRigidUnitPart(view,model,batch){
   const rig={joints,uniform:{value:null},batch,view};allocate(rig,Math.min(16,batch.capacity));
   rig.restore=()=>{rig.fullUpload=true;rig.texture.clearUpdateRanges();rig.texture.needsUpdate=true;};
   view.renderer?.domElement?.addEventListener('webglcontextrestored',rig.restore);
-  const material=sourceMaterial.clone(),paletteShader=sourceMaterial.onBeforeCompile;material.defines={...sourceMaterial.defines};material.onBeforeCompile=(shader,renderer)=>{
+  const material=sourceMaterial.clone(),paletteShader=sourceMaterial.onBeforeCompile;material.defines={...sourceMaterial.defines};if(!material.isNodeMaterial)material.onBeforeCompile=(shader,renderer)=>{
     paletteShader.call(sourceMaterial,shader,renderer);applyRigShader(shader,rig.uniform);
-  };material.customProgramCacheKey=()=>sourceMaterial.customProgramCacheKey()+':rig-v2';
-  const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});depth.onBeforeCompile=shader=>applyRigShader(shader,rig.uniform);depth.customProgramCacheKey=()=> 'frontier-rig-depth-v1';
+  };if(!material.isNodeMaterial)material.customProgramCacheKey=()=>sourceMaterial.customProgramCacheKey()+':rig-v2';
+  if(material.isNodeMaterial)nodeRuntime().rigidPose(material,rig);
+  const depth=material.isNodeMaterial?null:new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});if(depth){depth.onBeforeCompile=shader=>applyRigShader(shader,rig.uniform);depth.customProgramCacheKey=()=> 'frontier-rig-depth-v1';}
   const mesh=new THREE.InstancedMesh(geometry,material,batch.capacity);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=mesh.receiveShadow=true;mesh.customDepthMaterial=depth;
   mesh.userData.rigidRig=rig;mesh.userData.unitIds=batch.renderIds;mesh.raycast=(raycaster,intersects)=>raycastRigidPart(mesh,raycaster,intersects);return mesh;
 }
@@ -79,7 +81,9 @@ export function finishRigidFrame(mesh,count){
     // Three r180 uploads DataTexture ranges one row at a time. Preserve pending
     // rows until onUpdate confirms a real upload, including skipped field frames.
     rig.texture.clearUpdateRanges();
-    if(rig.fullUpload)uploaded=rig.data.byteLength;
+    // The node renderer in Three r180 does not apply DataTexture row ranges.
+    // Report its real full upload instead of claiming the legacy row savings.
+    if(rig.fullUpload||rig.view.renderer?.isWebGPURenderer)uploaded=rig.data.byteLength;
     else for(const index of rig.dirtyRows){rig.texture.addUpdateRange(index*row,row);uploaded+=row*4;}
     rig.texture.needsUpdate=true;
   }
@@ -98,4 +102,4 @@ export function raycastRigidPart(mesh,raycaster,intersects){
   }}finally{geometry.setDrawRange(previous.start,previous.count);hits.length=0;}
 }
 
-export function disposeRigidPart(mesh){const rig=mesh.userData.rigidRig;if(!rig||rig.disposed)return;rig.disposed=true;rig.view.renderer?.domElement?.removeEventListener('webglcontextrestored',rig.restore);rig.texture.dispose();mesh.material.dispose();mesh.customDepthMaterial.dispose();}
+export function disposeRigidPart(mesh){const rig=mesh.userData.rigidRig;if(!rig||rig.disposed)return;rig.disposed=true;rig.view.renderer?.domElement?.removeEventListener('webglcontextrestored',rig.restore);rig.texture.dispose();mesh.material.dispose();mesh.customDepthMaterial?.dispose();}

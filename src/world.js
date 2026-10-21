@@ -5,6 +5,7 @@ import {installCampaignView} from './campaign-view.js';
 import {installWeather} from './weather.js';
 import {installWorldInteractions} from './world-interactions.js';
 import * as THREE from 'three';
+import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
@@ -26,12 +27,12 @@ import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
 import {createWorldRenderer} from './render-context.js';
 import {graphicsCheckpoint} from './graphics-checkpoint.js';
 
-const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:1,...extra});
+const mat=(color,extra={})=>standardMaterial({color,roughness:1,...extra});
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
 export class WorldView {
   constructor(container,settings,renderer=createWorldRenderer()){
     this.container=container;this.settings=settings;this.nodes=new Map();this.selection=new Set();this.fx=[];this.treeIndices=new Map();this.unitBatches=new Map();this.dynamicScale=1;this.frameAverage=.016;this.performanceClock=0;this.target=new THREE.Vector3(-37,0,29);this.angle=Math.PI/4;this.zoom=48;this.tilt=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).tilt;
-    this.renderer=renderer;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
+    this.renderer=renderer;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
     this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa5b4ad);this.scene.fog=new THREE.Fog(0xa5b4ad,105,230);
     this.camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.5,400);this.raycaster=new THREE.Raycaster();this.mouse=new THREE.Vector2();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.clock=0;
     this.hemi=new THREE.HemisphereLight(0xc7def1,0x52633a,.9);this.scene.add(this.hemi);this.sun=new THREE.DirectionalLight(0xffe4bd,2.7);this.sun.position.set(-48,62,32);this.sun.castShadow=true;this.sun.shadow.mapSize.set(settings.quality==='high'?2048:1024,settings.quality==='high'?2048:1024);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:180});this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.025;this.scene.add(this.sun,this.sun.target);

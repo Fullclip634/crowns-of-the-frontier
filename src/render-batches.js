@@ -2,13 +2,14 @@ import * as THREE from 'three';
 import {animatePart,beginJointPose,endJointPose} from './world-polish.js';
 import {writeRigidPose,finishRigidFrame} from './rig-batches.js';
 import {releasePreparedPrograms} from './shader-preparation.js';
+import {canSubmitFrame,submittedFrame} from './render-flight.js';
 
 // Keep allocation slots stable while packing only the current visible poses.
 // Picking uses the packed IDs, never the allocator's potentially empty slots.
 export function prepareViewport(view){
   view.camera.updateMatrixWorld();
   const projection=view.frameProjection??=new THREE.Matrix4();
-  (view.frameFrustum??=new THREE.Frustum()).setFromProjectionMatrix(projection.multiplyMatrices(view.camera.projectionMatrix,view.camera.matrixWorldInverse));
+  (view.frameFrustum??=new THREE.Frustum()).setFromProjectionMatrix(projection.multiplyMatrices(view.camera.projectionMatrix,view.camera.matrixWorldInverse),view.camera.coordinateSystem);
 }
 
 export function beginUnitFrame(view,refreshViewport=true){
@@ -20,7 +21,7 @@ export function beginUnitFrame(view,refreshViewport=true){
 // Prepare the camera before any render extension samples contacts or cargo.
 export function installRenderFrame(WorldView){
   const render=WorldView.prototype.render;
-  WorldView.prototype.render=function(dt,menu=false){if(this.graphicsRebuilding||this.graphicsFatal)return;this.renderFrameAt=performance.now();prepareViewport(this);try{return render.call(this,dt,menu);}finally{releasePreparedPrograms(this);}};
+  WorldView.prototype.render=function(dt,menu=false){if(this.graphicsRebuilding||this.graphicsFatal||!canSubmitFrame(this))return false;this.renderFrameAt=performance.now();prepareViewport(this);try{const result=render.call(this,dt,menu);submittedFrame(this);return result;}finally{releasePreparedPrograms(this);}};
 }
 
 export function markInstancePrefix(mesh,count=mesh.count){

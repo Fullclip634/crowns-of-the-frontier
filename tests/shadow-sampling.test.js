@@ -26,3 +26,12 @@ test('light-space snapping retains the sun direction and holds sub-texel camera 
   view.target.addScaledVector(right,.11);positionShadowLight(view,55);assert.ok(Math.abs(sun.target.position.dot(right)-110/1024)<1e-8);
   sun.shadow.mapSize.set(2048,2048);positionShadowLight(view,55);assert.ok(sun.target.position.toArray().every(Number.isFinite));
 });
+
+test('node renderer consumes refresh requests without relying on a WebGL flag reset',()=>{
+  const view={renderer:{isWebGPURenderer:true,shadowMap:{enabled:true,needsUpdate:true}},sim:{revision:0},settings:{quality:'high'},target:new THREE.Vector3(),zoom:44,angle:0,tilt:.6,camera:{aspect:1.6},sun:{shadow:{mapSize:new THREE.Vector2(2048,2048)}},clock:0};
+  let updates=0;for(let i=0;i<60;i++){view.clock=i/60;if(scheduleShadows(view))updates++;}
+  assert.equal(updates,30);assert.equal(view.renderer.shadowMap.needsUpdate,false);assert.equal(view.sun.shadow.autoUpdate,false);assert.equal(view.sun.shadow.needsUpdate,true);
+  view.settings.quality='medium';view.clock=0;updates=0;
+  for(let i=0;i<60;i++){view.clock=i/60;if(scheduleShadows(view))updates++;}
+  assert.equal(updates,20);
+});

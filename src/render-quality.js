@@ -18,7 +18,9 @@ export function setShadowEnabled(view,enabled){
 function configureShadows(view,quality){
   setShadowEnabled(view,quality!=='low');
   const size=quality==='high'?2048:1024,shadow=view.sun.shadow;
-  if(shadow.map&&(quality==='low'||shadow.mapSize.x!==size)){shadow.map.dispose();shadow.map=null;}
+  // Node-renderer ShadowNode owns its target and cached bindings. It resizes the
+  // target from mapSize; destroying it here leaves submitted texture views stale.
+  if(!view.renderer.isWebGPURenderer&&shadow.map&&(quality==='low'||shadow.mapSize.x!==size)){shadow.map.dispose();shadow.map=null;}
   if(shadow.mapSize.x!==size)shadow.mapSize.set(size,size);
 }
 
@@ -29,12 +31,12 @@ function shrinkRendererTargets(view,quality,previous){
   const ratio=Math.min(previous.ratio,pixelLimit(quality));if(ratio<previous.ratio)view.renderer.setPixelRatio(ratio);
   if(quality==='low')setShadowEnabled(view,false);
   const shadow=view.sun.shadow,size=quality==='high'?2048:1024;
-  if(shadow.map&&(quality==='low'||shadow.mapSize.x>size)){shadow.map.dispose();shadow.map=null;}
+  if(!view.renderer.isWebGPURenderer&&shadow.map&&(quality==='low'||shadow.mapSize.x>size)){shadow.map.dispose();shadow.map=null;}
   if(shadow.mapSize.x>size)shadow.mapSize.set(size,size);
 }
 function restoreRendererTargets(view,previous){
   setShadowEnabled(view,previous.shadows);const shadow=view.sun.shadow;
-  if(shadow.map&&(shadow.mapSize.x!==previous.width||shadow.mapSize.y!==previous.height)){shadow.map.dispose();shadow.map=null;}
+  if(!view.renderer.isWebGPURenderer&&shadow.map&&(shadow.mapSize.x!==previous.width||shadow.mapSize.y!==previous.height)){shadow.map.dispose();shadow.map=null;}
   shadow.mapSize.set(previous.width,previous.height);if(view.renderer.getPixelRatio?.()!==previous.ratio)view.renderer.setPixelRatio(previous.ratio);
 }
 
@@ -53,10 +55,11 @@ async function graphicsLock(view){
 }
 
 export async function transitionRendererQuality(view,quality,prepare,rebuild,capture){
+  if(view.graphicsFatal?.deviceLost)return false;
   if(!view.graphicsLoading&&!view.graphicsRebuilding)view.graphicsBaseline={...rendererTargets(view),quality:view.renderQuality};
   const previous=view.graphicsBaseline||{...rendererTargets(view),quality:view.renderQuality};
   const request=view.graphicsRequest=(view.graphicsRequest||0)+1;view.graphicsLoading=quality;
-  const owns=()=>request===view.graphicsRequest,latest=()=>owns()&&view.settings.quality===quality&&!view.renderingReleased;
+  const owns=()=>request===view.graphicsRequest,latest=()=>owns()&&view.settings.quality===quality&&!view.renderingReleased&&!view.graphicsFatal?.deviceLost;
   const downgrade=qualityRank[quality]<qualityRank[previous.quality];let unlock,checkpoint,mutated=false,restored=false;
   const restore=()=>{
     if(restored)return;restored=true;
@@ -69,16 +72,16 @@ export async function transitionRendererQuality(view,quality,prepare,rebuild,cap
     if(!latest()||!view.sim)return false;
     unlock=await graphicsLock(view);if(!latest())return false;
     view.graphicsRebuilding=request;checkpoint=capture?.();mutated=true;view.graphicsSceneValid=false;await rebuild();view.graphicsSceneValid=true;
-    if(!latest()){if(!view.renderingReleased)restore();return false;}
+    if(!latest()){if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost)restore();return false;}
     configureShadows(view,quality);
     // Precompilation is optional: a rebuilt scene can also compile normally on
     // its first live frame. Restoring the old targets here would mislabel it.
     try{await prepareScenePrograms(view);if(request===view.graphicsRequest)view.graphicsWarmupError=null;}
     catch(error){if(request===view.graphicsRequest)view.graphicsWarmupError=error.message;}
-    if(!latest()){if(!view.renderingReleased)restore();return false;}
+    if(!latest()){if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost)restore();return false;}
     applyRendererQuality(view,quality);view.graphicsBaseline={...rendererTargets(view),quality};view.graphicsFatal=null;view.graphicsRestoredQuality=null;return true;
   }catch(error){
-    if(!view.renderingReleased&&(mutated||owns())){try{restore();}catch(recovery){throw new AggregateError([error,recovery],'The graphics change and its recovery both failed.');}}
+    if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost&&(mutated||owns())){try{restore();}catch(recovery){throw new AggregateError([error,recovery],'The graphics change and its recovery both failed.');}}
     throw error;
   }
   finally{checkpoint?.release();if(view.graphicsRebuilding===request)view.graphicsRebuilding=null;unlock?.();if(owns())view.graphicsLoading=null;}

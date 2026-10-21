@@ -13,12 +13,12 @@ export function positionShadowLight(view,span){
 // Keep full-resolution shadow maps, but avoid repeating this second scene pass
 // at every display refresh. Camera and structural changes refresh immediately.
 export function scheduleShadows(view){
-  const map=view.renderer.shadowMap;map.autoUpdate=false;
+  const map=view.renderer.shadowMap;map.autoUpdate=false;if(view.renderer.isWebGPURenderer)view.sun.shadow.autoUpdate=false;
   if(!map.enabled){view.shadowSampling=null;return false;}
   const state=view.shadowSampling??={at:-Infinity,updates:0,skipped:0},t=view.target;
   const key=[t.x,t.y,t.z,view.zoom,view.angle,view.tilt,view.camera.aspect,view.settings.quality,view.sun.shadow.mapSize.x].join(':');
   const interval=(view.renderQuality||view.settings.quality)==='high'?1/30:1/20;
   const due=map.needsUpdate||state.sim!==view.sim||state.revision!==view.sim.revision||state.camera!==key||view.clock-state.at>=interval-1e-7||view.clock<state.at;
-  if(due){map.needsUpdate=true;state.at=view.clock;state.sim=view.sim;state.revision=view.sim.revision;state.camera=key;state.updates++;}else state.skipped++;
+  if(due){map.needsUpdate=!view.renderer.isWebGPURenderer;if(view.renderer.isWebGPURenderer)view.sun.shadow.needsUpdate=true;state.at=view.clock;state.sim=view.sim;state.revision=view.sim.revision;state.camera=key;state.updates++;}else state.skipped++;
   view.shadowDiagnostics={updates:state.updates,skipped:state.skipped,refreshRate:1/interval,mapSize:view.sun.shadow.mapSize.x};return due;
 }

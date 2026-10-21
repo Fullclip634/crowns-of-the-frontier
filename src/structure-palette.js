@@ -1,14 +1,15 @@
 import * as THREE from 'three';
+import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
-    const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9});
+    const material=standardMaterial({vertexColors:true,roughness:.9});
     const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0}};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
-    material.onBeforeCompile=shader=>{
+    if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
       for(const [key,uniform] of Object.entries(uniforms))shader.uniforms['frontierStructure'+key]=uniform;
       shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;');
@@ -58,7 +59,7 @@ function paletteMaterial(view){
         }
         #endif`);
     };
-    material.customProgramCacheKey=()=> 'frontier-structure-palette-v5';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v5';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
@@ -72,6 +73,7 @@ function paletteMaterial(view){
   u.detail.value=view.settings?.quality==='high'?2:view.settings?.quality==='medium'?1:0;
   const normal=u.stoneNormal.value||u.woodNormal.value||u.plasterNormal.value||null;
   if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}
+  if(material.isNodeMaterial&&!material.colorNode)nodeRuntime().structurePalette(material,u);
   return material;
 }
 

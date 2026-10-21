@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
@@ -29,7 +30,7 @@ export class GroundCover{
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
     const winter=land.map==='winter',arid=['desert','canyon'].includes(land.map);
-    const material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
+    const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();

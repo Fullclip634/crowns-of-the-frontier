@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS,seededRandom} from './data.js';
@@ -25,8 +26,8 @@ export class BattleRemains{
   constructor(view){
     this.view=view;this.group=new THREE.Group();this.group.name='Battle remains';view.scene.add(this.group);
     this.limit=view.settings.quality==='high'?24:8;this.items=[];this.batches=new Map();this.seen=new Set();this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    this.material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:.08});
-    this.rubble=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),new THREE.MeshStandardMaterial({color:0xffffff,roughness:1}),this.limit*12);
+    this.material=standardMaterial({vertexColors:true,roughness:.92,metalness:.08});
+    this.rubble=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),standardMaterial({color:0xffffff,roughness:1}),this.limit*12);
     this.rubble.name='Solid masonry and timber rubble';this.rubble.count=0;this.rubble.frustumCulled=false;this.rubble.castShadow=view.settings.quality!=='low';this.rubble.receiveShadow=true;this.rubble.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(this.rubble);
   }
   spawn(e){

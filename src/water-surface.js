@@ -1,3 +1,4 @@
+import {nodeRuntime} from './render-runtime.js';
 import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
 // Moving volume and slope normals stay on the GPU. Depth tint and a cheap sky
@@ -11,6 +12,8 @@ export function configureWaterSurface(material){
   const motion=material.frontierWaterMotion={value:1};
   const light=material.frontierWaterLight={value:1};
   if(material.map?.isCanvasTexture){material.map.dispose();material.map=null;}
+  material.metalness=0;material.roughness=.28;
+  if(material.isNodeMaterial){nodeRuntime().water(material);return;}
   const previous=material.onBeforeCompile;
   material.onBeforeCompile=(shader,renderer)=>{
     previous.call(material,shader,renderer);

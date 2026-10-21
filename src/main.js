@@ -31,7 +31,7 @@ import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
-import {createWorldRenderer} from './render-context.js';
+import {initializeWorldRenderer,rendererBackend,watchRendererDevice} from './render-context.js';
 import {releaseSurfaceCodec} from './surface-codecs.js';
 import {selectionDetailsMarkup,closeCompactCommands,toggleCompactCommands,toggleSelectionDetails,closeSelectionDetails,toggleMinimapSize,resetCompactHud} from './compact-hud.js';
 import {WORLD,AGES,UNITS,BUILDINGS,TECHS,MAPS,RELEASE,AGE_COSTS,FACTIONS,DIFFICULTIES,MODES,MISSIONS,ICONS,costText,formatTime,availableTo} from './data.js';
@@ -75,7 +75,7 @@ const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
 const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
-let startupRenderer,startupFailure;try{startupRenderer=createWorldRenderer();}catch(error){startupFailure=error;}
+let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:new URLSearchParams(location.search).get('renderer')||'webgl',onFallback:error=>console.warn('WebGPU could not start; using WebGL 2:',error.message)});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // A missing/old catalogue must not silently replace the promised Blender art.
 for(;!startupFailure;){
@@ -95,10 +95,10 @@ for(;!startupFailure;){
     await new Promise(resolve=>{bootStatus.querySelector('button').onclick=resolve;});bootStatus.textContent='Preparing your kingdom…';
   }
 }
-try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
+try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);watchRendererDevice(view);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
   releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
   const failure=document.createElement('div');failure.className='modal-backdrop';failure.style.position='fixed';failure.style.zIndex='100';
-  failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs WebGL 2. Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button></div>`;
+  failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs a supported 3D graphics API (WebGPU or WebGL 2). Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button></div>`;
   document.body.append(failure);failure.querySelector('button').focus();console.error(error);
 }
 bootStatus.remove();for(const button of bootButtons)button.disabled=!view;
@@ -267,7 +267,7 @@ function renderHealth(){const layer=$('#health-layer');let html='';for(const e o
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
   if(name==='retry-battlefield'){retryBattlefield();return;}
-  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent='Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}location.reload();return;}audio.unlock();
+  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent='Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(view?.graphicsFatal?.deviceLost){const url=new URL(location.href);url.searchParams.set('renderer','webgl');location.replace(url.href);}else location.reload();return;}audio.unlock();
   if(name==='retry-graphics'){location.reload();return;}
   if(name==='command-options'){toggleCompactCommands(document);return;}
   if(name==='selection-details'){toggleSelectionDetails(document);return;}
@@ -369,7 +369,7 @@ function syncGraphicsRecovery(){
     if(graphicsRecoveryUi?.failure===view.graphicsFatal)return;
     const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
-    showModal(graphicsRecoveryMarkup({playing,network,saved}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"]')?.focus();
+    showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
   }else if(graphicsRecoveryUi){
     const state=graphicsRecoveryUi;graphicsRecoveryUi=null;
     if(modal==='graphics-recovery'){closeModal();paused=state.wasPaused;toast('The battlefield is restored.');}
@@ -392,7 +392,7 @@ function frame(now){if(renderClosed)return;syncGraphicsRecovery();const elapsed=
     }
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active?1:Math.min(1,accumulator/.1);
-    if(playing&&!paused&&!modal&&!document.hidden)view.adapt(elapsed);const renderInterval=document.hidden?1000:modal||!playing?100:1000/targetFrameRate(settings);if(framePacer.due(now,renderInterval)){view.render(Math.min(.2,(now-lastRender)/1000),!playing);lastRender=now;}audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);const weatherLabel=$('#weather-label');if(weatherLabel){weatherLabel.textContent=view.weatherState?.type==='clear'?'Clear':WEATHER_NAMES[view.weatherState?.type]?.split(' ')[0]||'Clear';weatherLabel.parentElement.title=`Weather: ${WEATHER_NAMES[view.weatherState?.type]||'Clear'}. Mode: ${settings.weather}. Click to change.`;}
+    if(playing&&!paused&&!modal&&!document.hidden)view.adapt(elapsed);const renderInterval=document.hidden?1000:modal||!playing?100:1000/targetFrameRate(settings);if(framePacer.due(now,renderInterval)){if(view.render(Math.min(.2,(now-lastRender)/1000),!playing)!==false)lastRender=now;}audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);const weatherLabel=$('#weather-label');if(weatherLabel){weatherLabel.textContent=view.weatherState?.type==='clear'?'Clear':WEATHER_NAMES[view.weatherState?.type]?.split(' ')[0]||'Clear';weatherLabel.parentElement.title=`Weather: ${WEATHER_NAMES[view.weatherState?.type]||'Clear'}. Mode: ${settings.weather}. Click to change.`;}
     audio.updateCombat();
   }frameRequest=requestAnimationFrame(frame);
 }

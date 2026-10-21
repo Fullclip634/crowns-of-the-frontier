@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {environmentGenerator,standardMaterial} from './render-runtime.js';
 import {UNITS} from './data.js';
 import {decorateMaterials} from './world-polish.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
@@ -23,7 +24,7 @@ function initializeDepth(view){
   c.fillStyle=gradient;c.fillRect(0,0,128,64);
   const source=new THREE.CanvasTexture(sky);source.colorSpace=THREE.SRGBColorSpace;
   source.mapping=THREE.EquirectangularReflectionMapping;
-  const generator=new THREE.PMREMGenerator(view.renderer);
+  const generator=environmentGenerator(view.renderer);
   view.environmentTarget=generator.fromEquirectangular(source);
   view.scene.environment=view.environmentTarget.texture;view.scene.environmentIntensity=.3;
   source.dispose();generator.dispose();
@@ -34,8 +35,8 @@ function initializeDepth(view){
   m.plaster.color.setHex(0xd9c8a6);m.stone.color.setHex(0xb6b5a4);
   m.stoneDark.color.setHex(0x737e78);m.iron.metalness=.8;m.iron.roughness=.32;
   m.gold.metalness=.75;m.gold.roughness=.3;m.shadow.opacity=.06;
-  m.glass=new THREE.MeshStandardMaterial({color:0x263e42,roughness:.3,metalness:.08});
-  m.timberEdge=new THREE.MeshStandardMaterial({color:0x473328,roughness:.92});
+  m.glass=standardMaterial({color:0x263e42,roughness:.3,metalness:.08});
+  m.timberEdge=standardMaterial({color:0x473328,roughness:.92});
   view.geo.head=new THREE.SphereGeometry(1,10,8);
   view.geo.torso=new THREE.CylinderGeometry(.47,.53,1,8);
   view.geo.shield=new THREE.CylinderGeometry(.5,.5,1,12).rotateZ(Math.PI/2);

@@ -1,0 +1,16 @@
+{
+  "testedAt": "2026-10-21",
+  "backend": "native WebGPU",
+  "growth": {
+    "drawn": 24,
+    "rows": 32,
+    "count": 22,
+    "expected": 349,
+    "picks": [
+      343,
+      343,
+      349
+    ]
+  },
+  "scope": "Earlier native build with the same rigid pose implementation; later changes concern fallback, portrait visibility and water reflection."
+}

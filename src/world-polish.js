@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {workerVisualTask} from './authored-assets.js';
@@ -57,7 +58,7 @@ export function installWorldPolish(WorldView){const p=WorldView.prototype,base={
   };
   p.attach=function(sim){if(!this.polished){decorateMaterials(this);this.polished=true;}base.attach.call(this,sim);if(sim.options.map==='coast')this.makeSea();};
   p.makeSea=function(){const vertices=[],uv=[],indices=[];for(let i=0;i<=80;i++){const z=-80+i*2,mid=Math.sin(z*.03)*2;vertices.push(mid-14,.12,z,mid+14,.12,z);uv.push(0,i*.13,1,i*.13);if(i<80){const a=i*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();const sea=new THREE.Mesh(geo,this.materials.water);this.terrain.add(sea);
-    const shore=new THREE.Mesh(new THREE.PlaneGeometry(35,160),new THREE.MeshStandardMaterial({color:0xb8ac85,roughness:1}));shore.rotation.x=-Math.PI/2;shore.position.y=.045;shore.receiveShadow=true;this.terrain.add(shore);
+    const shore=new THREE.Mesh(new THREE.PlaneGeometry(35,160),standardMaterial({color:0xb8ac85,roughness:1}));shore.rotation.x=-Math.PI/2;shore.position.y=.045;shore.receiveShadow=true;this.terrain.add(shore);
   };
   p.createNode=function(e){const node=base.createNode.call(this,e);if(e.water){this.clearGroup(node);const ring=new THREE.Mesh(new THREE.RingGeometry(1.8,2,28),new THREE.MeshBasicMaterial({color:0xd2e9df,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.25;ring.userData.entity=e.id;node.add(ring);for(let i=0;i<5;i++){const fish=this.piece(node,this.geo.cone,this.materials.iron,Math.sin(i)*1.3,.3,Math.cos(i)*1.3,.13,.45,.13);fish.rotation.x=Math.PI/2;fish.userData.entity=e.id;}}
     return node;

@@ -1,0 +1,408 @@
+{
+  "startedAt": "2026-10-21T13:18:54.068Z",
+  "checks": [
+    {
+      "mode": "webgl",
+      "expected": "webgl",
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4
+        }
+      ],
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        }
+      }
+    },
+    {
+      "mode": "webgpu",
+      "expected": "webgpu",
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 18,
+            "skipped": 1,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 22,
+            "skipped": 1,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 26,
+            "skipped": 1,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4
+        }
+      ],
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        }
+      },
+      "offline": {
+        "nodeChunk": true,
+        "catalogues": 3,
+        "reload": true,
+        "gameplay": true
+      }
+    },
+    {
+      "mode": "fallback",
+      "expected": "webgl",
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4
+        }
+      ],
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "mode": "webgl",
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "mode": "webgl",
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "mode": "webgpu",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "webgpu",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "fallback",
+      "type": "warning",
+      "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+    },
+    {
+      "mode": "fallback",
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "mode": "fallback",
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    }
+  ],
+  "passed": true,
+  "build": {
+    "buildId": "1792588702658",
+    "version": "2.6.1"
+  },
+  "three": "0.186.1",
+  "environment": "Owned headless Edge profile, ANGLE D3D11, Intel Gen 11 UHD; emulated touch viewport",
+  "limits": [
+    "Functional checks; no sustained FPS comparison",
+    "No physical phone certification",
+    "Default remains classic WebGL"
+  ]
+}

@@ -1,3 +1,4 @@
+import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS} from './data.js';
@@ -61,12 +62,12 @@ function arrowGeometry(){
 export class FlightEffects{
   constructor(){
     this.geometry={arrow:arrowGeometry(),stone:new THREE.IcosahedronGeometry(.26,1),slash:new THREE.TorusGeometry(.38,.026,5,14,Math.PI*.85)};
-    this.material={arrow:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.75,metalness:.15}),stone:new THREE.MeshStandardMaterial({color:0xa0927c,roughness:.96})};
+    this.material={arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.15}),stone:standardMaterial({color:0xa0927c,roughness:.96})};
     this.free={arrow:[],stone:[],slash:[]};this.retained=new Set();this.limit=96;
   }
   acquire(kind){
     let mesh=this.free[kind].pop();
-    if(!mesh){const material=kind==='slash'?new THREE.MeshStandardMaterial({color:0xe0d6b1,transparent:true,opacity:0,depthWrite:false,roughness:.6}):this.material[kind];mesh=new THREE.Mesh(this.geometry[kind],material);mesh.userData.flightKind=kind;this.retained.add(mesh);}
+    if(!mesh){const material=kind==='slash'?standardMaterial({color:0xe0d6b1,transparent:true,opacity:0,depthWrite:false,roughness:.6}):this.material[kind];mesh=new THREE.Mesh(this.geometry[kind],material);mesh.userData.flightKind=kind;this.retained.add(mesh);}
     mesh.visible=true;mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
   }
   release(mesh){
