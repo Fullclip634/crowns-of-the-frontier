@@ -1,0 +1,1121 @@
+{
+  "startedAt": "2026-10-21T18:43:54.126Z",
+  "cases": [
+    {
+      "backend": "webgl",
+      "quality": "high",
+      "windup": {
+        "time": 0.1,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "prepare"
+          }
+        ],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "release": {
+        "time": 0.2,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.15000000000000002,
+            "impactAt": 0.4147058823529412
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              -0.48,
+              1.0474870920181274,
+              18.65
+            ],
+            "to": [
+              0,
+              1.169624073803425,
+              27
+            ],
+            "position": [
+              -0.3893333333333333,
+              1.297030536705447,
+              20.22722222222222
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          }
+        ]
+      },
+      "resume": {
+        "before": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.0474870920181274,
+                18.65
+              ],
+              "to": [
+                0,
+                1.169624073803425,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.297030536705447,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        },
+        "after": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.0474870920181274,
+                18.65
+              ],
+              "to": [
+                0,
+                1.169624073803425,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.297030536705447,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        }
+      },
+      "impact": {
+        "time": 0.49999999999999994,
+        "hp": 205.76,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          },
+          {
+            "type": "projectile-impact",
+            "time": 0.44999999999999996,
+            "projectile": 1
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          },
+          {
+            "kind": "metal",
+            "x": 0,
+            "z": 27,
+            "time": 0.44999999999999996
+          }
+        ]
+      },
+      "stopped": {
+        "time": 0.8,
+        "hp": 215,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "siegeRelease": {
+        "time": 0.39999999999999997,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.35,
+            "impactAt": 1.0833333333333333
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              0,
+              4.868727469487043,
+              18.127399447794634
+            ],
+            "to": [
+              0,
+              0.9393521547317505,
+              40
+            ],
+            "position": [
+              0,
+              6.097275154661229,
+              19.618713121808636
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 4,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.35,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "wood",
+            "x": 0,
+            "z": 18,
+            "time": 0.35
+          }
+        ]
+      },
+      "siegeImpact": {
+        "state": {
+          "time": 1.2,
+          "hp": 215,
+          "pending": [],
+          "flights": [],
+          "drawn": 4,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.35,
+              "projectile": 1,
+              "pendingImpact": true
+            },
+            {
+              "type": "projectile-impact",
+              "time": 1.1000000000000003,
+              "projectile": 1
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "wood",
+              "x": 0,
+              "z": 18,
+              "time": 0.35
+            },
+            {
+              "kind": "siege",
+              "x": 0,
+              "z": 40,
+              "time": 1.1000000000000003
+            }
+          ]
+        },
+        "targetX": -5.703999999999999,
+        "hp": {
+          "target": 215,
+          "nearby": 105,
+          "ally": 167.8425
+        },
+        "nearby": 64.368,
+        "ally": 167.8425
+      },
+      "beforeVictory": {
+        "ended": null,
+        "hp": 2
+      },
+      "victory": {
+        "ended": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        },
+        "title": "Victory.",
+        "enemyDefeated": true,
+        "overflow": false
+      }
+    },
+    {
+      "backend": "webgpu",
+      "quality": "medium",
+      "windup": {
+        "time": 0.1,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "prepare"
+          }
+        ],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "release": {
+        "time": 0.2,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.15000000000000002,
+            "impactAt": 0.4147058823529412
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              -0.48,
+              1.0474870920181274,
+              18.65
+            ],
+            "to": [
+              0,
+              1.169624073803425,
+              27
+            ],
+            "position": [
+              -0.3893333333333333,
+              1.297030536705447,
+              20.22722222222222
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          }
+        ]
+      },
+      "resume": {
+        "before": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.0474870920181274,
+                18.65
+              ],
+              "to": [
+                0,
+                1.169624073803425,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.297030536705447,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        },
+        "after": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.0474870920181274,
+                18.65
+              ],
+              "to": [
+                0,
+                1.169624073803425,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.297030536705447,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        }
+      },
+      "impact": {
+        "time": 0.49999999999999994,
+        "hp": 205.76,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          },
+          {
+            "type": "projectile-impact",
+            "time": 0.44999999999999996,
+            "projectile": 1
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          },
+          {
+            "kind": "metal",
+            "x": 0,
+            "z": 27,
+            "time": 0.44999999999999996
+          }
+        ]
+      },
+      "stopped": {
+        "time": 0.8,
+        "hp": 215,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "siegeRelease": {
+        "time": 0.39999999999999997,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.35,
+            "impactAt": 1.0833333333333333
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              0,
+              4.868727469487043,
+              18.127399447794634
+            ],
+            "to": [
+              0,
+              0.9393521547317505,
+              40
+            ],
+            "position": [
+              0,
+              6.097275154661229,
+              19.618713121808636
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 4,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.35,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "wood",
+            "x": 0,
+            "z": 18,
+            "time": 0.35
+          }
+        ]
+      },
+      "siegeImpact": {
+        "state": {
+          "time": 1.2,
+          "hp": 215,
+          "pending": [],
+          "flights": [],
+          "drawn": 4,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.35,
+              "projectile": 1,
+              "pendingImpact": true
+            },
+            {
+              "type": "projectile-impact",
+              "time": 1.1000000000000003,
+              "projectile": 1
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "wood",
+              "x": 0,
+              "z": 18,
+              "time": 0.35
+            },
+            {
+              "kind": "siege",
+              "x": 0,
+              "z": 40,
+              "time": 1.1000000000000003
+            }
+          ]
+        },
+        "targetX": -5.703999999999999,
+        "hp": {
+          "target": 215,
+          "nearby": 105,
+          "ally": 167.8425
+        },
+        "nearby": 64.368,
+        "ally": 167.8425
+      },
+      "beforeVictory": {
+        "ended": null,
+        "hp": 2
+      },
+      "victory": {
+        "ended": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        },
+        "title": "Victory.",
+        "enemyDefeated": true,
+        "overflow": false
+      }
+    },
+    {
+      "backend": "webgl",
+      "quality": "low",
+      "phone": true,
+      "windup": {
+        "time": 0.1,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "prepare"
+          }
+        ],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "release": {
+        "time": 0.2,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.15000000000000002,
+            "impactAt": 0.4147058823529412
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              -0.48,
+              1.04781774878502,
+              18.65
+            ],
+            "to": [
+              0,
+              1.1690671941265471,
+              27
+            ],
+            "position": [
+              -0.3893333333333333,
+              1.2971935476996277,
+              20.22722222222222
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          }
+        ]
+      },
+      "resume": {
+        "before": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.04781774878502,
+                18.65
+              ],
+              "to": [
+                0,
+                1.1690671941265471,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.2971935476996277,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        },
+        "after": {
+          "time": 0.2,
+          "hp": 215,
+          "pending": [
+            {
+              "id": 1,
+              "stage": "flight",
+              "releasedAt": 0.15000000000000002,
+              "impactAt": 0.4147058823529412
+            }
+          ],
+          "flights": [
+            {
+              "age": 0.04999999999999999,
+              "from": [
+                -0.48,
+                1.04781774878502,
+                18.65
+              ],
+              "to": [
+                0,
+                1.1690671941265471,
+                27
+              ],
+              "position": [
+                -0.3893333333333333,
+                1.2971935476996277,
+                20.22722222222222
+              ],
+              "finite": true
+            }
+          ],
+          "drawn": 2,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.15000000000000002,
+              "projectile": 1,
+              "pendingImpact": true
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "arrow",
+              "x": 0,
+              "z": 18,
+              "time": 0.15000000000000002
+            }
+          ]
+        }
+      },
+      "impact": {
+        "time": 0.49999999999999994,
+        "hp": 205.76,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.15000000000000002,
+            "projectile": 1,
+            "pendingImpact": true
+          },
+          {
+            "type": "projectile-impact",
+            "time": 0.44999999999999996,
+            "projectile": 1
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "arrow",
+            "x": 0,
+            "z": 18,
+            "time": 0.15000000000000002
+          },
+          {
+            "kind": "metal",
+            "x": 0,
+            "z": 27,
+            "time": 0.44999999999999996
+          }
+        ]
+      },
+      "stopped": {
+        "time": 0.8,
+        "hp": 215,
+        "pending": [],
+        "flights": [],
+        "drawn": 2,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [],
+        "sounds": []
+      },
+      "siegeRelease": {
+        "time": 0.39999999999999997,
+        "hp": 215,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.35,
+            "impactAt": 1.0833333333333333
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.04999999999999999,
+            "from": [
+              0,
+              4.869058126253935,
+              18.127399447794634
+            ],
+            "to": [
+              0,
+              0.9393521547317505,
+              40
+            ],
+            "position": [
+              0,
+              6.097583266648559,
+              19.618713121808636
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 4,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.35,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "wood",
+            "x": 0,
+            "z": 18,
+            "time": 0.35
+          }
+        ]
+      },
+      "siegeImpact": {
+        "state": {
+          "time": 1.2,
+          "hp": 215,
+          "pending": [],
+          "flights": [],
+          "drawn": 4,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.35,
+              "projectile": 1,
+              "pendingImpact": true
+            },
+            {
+              "type": "projectile-impact",
+              "time": 1.1000000000000003,
+              "projectile": 1
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "wood",
+              "x": 0,
+              "z": 18,
+              "time": 0.35
+            },
+            {
+              "kind": "siege",
+              "x": 0,
+              "z": 40,
+              "time": 1.1000000000000003
+            }
+          ]
+        },
+        "targetX": -5.703999999999999,
+        "hp": {
+          "target": 215,
+          "nearby": 105,
+          "ally": 167.8425
+        },
+        "nearby": 64.368,
+        "ally": 167.8425
+      },
+      "navalRelease": {
+        "time": 0.3,
+        "hp": 271.2,
+        "pending": [
+          {
+            "id": 1,
+            "stage": "flight",
+            "releasedAt": 0.2,
+            "impactAt": 0.9333333333333333
+          }
+        ],
+        "flights": [
+          {
+            "age": 0.09999999999999998,
+            "from": [
+              0,
+              2.18,
+              19.7
+            ],
+            "to": [
+              0,
+              0.33,
+              40
+            ],
+            "position": [
+              0,
+              3.572770724214743,
+              22.46818181818182
+            ],
+            "finite": true
+          }
+        ],
+        "drawn": 4,
+        "finiteRig": true,
+        "shaderErrors": 0,
+        "events": [
+          {
+            "type": "attack",
+            "time": 0.2,
+            "projectile": 1,
+            "pendingImpact": true
+          }
+        ],
+        "sounds": [
+          {
+            "kind": "wood",
+            "x": 0,
+            "z": 18,
+            "time": 0.2
+          }
+        ]
+      },
+      "navalImpact": {
+        "state": {
+          "time": 1.1,
+          "hp": 203.2,
+          "pending": [],
+          "flights": [],
+          "drawn": 4,
+          "finiteRig": true,
+          "shaderErrors": 0,
+          "events": [
+            {
+              "type": "attack",
+              "time": 0.2,
+              "projectile": 1,
+              "pendingImpact": true
+            },
+            {
+              "type": "projectile-impact",
+              "time": 0.9500000000000003,
+              "projectile": 1
+            }
+          ],
+          "sounds": [
+            {
+              "kind": "wood",
+              "x": 0,
+              "z": 18,
+              "time": 0.2
+            },
+            {
+              "kind": "siege",
+              "x": 0,
+              "z": 40,
+              "time": 0.9500000000000003
+            }
+          ]
+        },
+        "hp": {
+          "target": 271.2,
+          "nearby": 271.2,
+          "ally": 333.6
+        },
+        "nearby": 230.39999999999998,
+        "ally": 333.6,
+        "water": {
+          "animation": "GPU mesh displacement",
+          "geometryUploadsPerFrame": 0,
+          "meshes": 1,
+          "motionScale": 1,
+          "reducedMotion": false
+        }
+      },
+      "beforeVictory": {
+        "ended": null,
+        "hp": 2
+      },
+      "victory": {
+        "ended": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        },
+        "title": "Victory.",
+        "enemyDefeated": true,
+        "overflow": false
+      }
+    }
+  ],
+  "errors": [],
+  "buildId": "1792608202676",
+  "passed": true
+}

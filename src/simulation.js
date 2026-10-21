@@ -8,6 +8,7 @@ import {SpatialBuckets} from './spatial-buckets.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {installGarrison} from './garrison.js';
+import {installProjectileCombat} from './projectile-combat.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -376,6 +377,7 @@ export class Simulation {
     const entities=this.entitySpatial??=new SpatialBuckets(8),units=this.unitSpatial??=new SpatialBuckets(4);entities.reset();units.reset();this.entityBuckets=entities.columns;this.unitBuckets=units.columns;this.maxEntityRadius=0;
     for(const e of this.entities)if(e.hp>0){entities.add(e,e.kind==='unit'||e.kind==='building');this.maxEntityRadius=Math.max(this.maxEntityRadius,e.r||0);if(e.kind==='unit'&&!e.embarked)units.add(e);}
     for(const e of [...this.entities])if(e.hp>0){if(e.kind==='unit')this.tickUnit(e,dt);else if(e.kind==='building')this.tickBuilding(e,dt);}
+    this.tickProjectiles();
     this.aiClock+=dt;if(this.options.mode==='custom')this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival&&this.time>=this.nextWave&&this.wave<(this.mission?.waves||10))this.spawnWave();
     this.tickShrines(dt);
@@ -394,3 +396,4 @@ installCommanderAI(Simulation);
 installCampaigns(Simulation);
 installCustomBattle(Simulation);
 installGarrison(Simulation);
+installProjectileCombat(Simulation);

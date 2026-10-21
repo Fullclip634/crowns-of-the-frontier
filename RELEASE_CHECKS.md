@@ -1,3 +1,20 @@
+## 22 October 2026 — Projectile impacts and coastal AI
+
+Current source passes **370 serial regressions** and production build
+**1792608202676**. Real-room tests verify shot redaction, owner mapping, reconnect,
+transport cargo privacy and actual unload. Complete eight-Hard-AI seeded battles
+finish on Highlands (900.9 simulated seconds, player alliance victory) and Coast
+(1171.8 seconds, player alliance defeat). A separate old-save replay confirms
+both formerly stuck transports unload within 17.5 simulated seconds.
+
+Final-build browser evidence is in
+`artifacts/projectile-browser-validation.json`; full battles and regression output
+are in the adjacent `projectile-*` reports. See
+[PROJECTILE_COMBAT_DESIGN.md](PROJECTILE_COMBAT_DESIGN.md) for exact coverage and
+reproduction. Checks use one Intel GPU and an emulated 640 × 360 touch viewport.
+They do not certify physical phones, sustained FPS, all seeds or player balance.
+The public Render revision remains unverified; the overall release goal is active.
+
 ## 21 October 2026 — Optional WebGPU preview
 
 Current source adds a lazy WebGPU renderer behind `?renderer=webgpu`, with the
@@ -19,7 +36,7 @@ WebGPU remains opt-in pending physical-device and sustained performance testing.
 The whole-game quality goal remains active. This is not full release or universal
 FPS certification. Versioned 2.6.1 ZIPs retain the previous stable siege snapshot.
 Render deployment and its public revision have not been verified. Separate
-unfinished projectile work is retained locally and excluded from this milestone.
+unfinished projectile work was excluded from that renderer milestone.
 
 # Solid siege milestone — 16 October 2026
 

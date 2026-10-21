@@ -21,7 +21,7 @@ test('Town Bell walks villagers into real shelter with bounded capacity, without
 test('castles and towers have their own capacities and add real defensive arrow damage',()=>{
   for(const type of ['towncenter','keep','tower']){
     const {sim,site,workers}=fixture(type),enemy=sim.addUnit('knight',1,site.x+12,site.z),normal=sim.attackDamage(site,enemy);sim.seekShelter(workers.map(w=>w.id),site.id);enter(sim,workers);
-    assert.equal(garrisonCount(sim,site),GARRISONS[type].capacity);const hp=enemy.hp,events=[];sim.on(e=>{if(e.type==='attack')events.push(e);});sim.hit(site,enemy);assert.ok(hp-enemy.hp>normal);assert.equal(events.length,1+garrisonArrows(sim,site));
+    assert.equal(garrisonCount(sim,site),GARRISONS[type].capacity);const hp=enemy.hp,events=[];sim.on(e=>{if(e.type==='attack')events.push(e);});sim.hit(site,enemy);assert.equal(enemy.hp,hp,'A defensive volley deals damage on arrival');assert.equal(events.length,1+garrisonArrows(sim,site));sim.time+=sim.projectiles[0].duration;sim.tickProjectiles();assert.ok(hp-enemy.hp>normal);
     const after=enemy.hp;sim.hit(site,enemy);assert.equal(enemy.hp,after,'one volley per actual building cooldown');
   }
 });

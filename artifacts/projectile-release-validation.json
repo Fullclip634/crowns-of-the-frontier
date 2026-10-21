@@ -1,0 +1,155 @@
+{
+  "createdAt": "2026-10-21T18:48:27.514Z",
+  "build": {
+    "buildId": "1792608202676",
+    "version": "2.6.1"
+  },
+  "regression": {
+    "tests": 370,
+    "passed": 370,
+    "failed": 0
+  },
+  "browser": {
+    "passed": true,
+    "cases": [
+      {
+        "backend": "webgl",
+        "quality": "high",
+        "emulatedTouch": false,
+        "arrowImpactHP": 205.76,
+        "victory": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        }
+      },
+      {
+        "backend": "webgpu",
+        "quality": "medium",
+        "emulatedTouch": false,
+        "arrowImpactHP": 205.76,
+        "victory": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        }
+      },
+      {
+        "backend": "webgl",
+        "quality": "low",
+        "emulatedTouch": true,
+        "arrowImpactHP": 205.76,
+        "victory": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        }
+      }
+    ],
+    "errors": []
+  },
+  "battles": {
+    "passed": true,
+    "battles": [
+      {
+        "map": "highlands",
+        "seconds": 900.9000000001363,
+        "ended": {
+          "won": true,
+          "reason": "Your alliance has eliminated every opposing kingdom."
+        },
+        "projectiles": {
+          "shots": 9680,
+          "garrisonArrows": 1034,
+          "impacts": 8936,
+          "siegeImpacts": 172,
+          "primarySiegeMisses": 49,
+          "maxPending": 33
+        },
+        "tickMilliseconds": {
+          "median": 7.759600000001228,
+          "p95": 38.468699999997625,
+          "p99": 66.94159999999829,
+          "max": 254.548700000003
+        }
+      },
+      {
+        "map": "coast",
+        "seconds": 1171.8000000000297,
+        "ended": {
+          "won": false,
+          "reason": "Every kingdom in your alliance has been eliminated."
+        },
+        "projectiles": {
+          "shots": 19926,
+          "garrisonArrows": 1428,
+          "impacts": 18720,
+          "siegeImpacts": 873,
+          "primarySiegeMisses": 328,
+          "maxPending": 45
+        },
+        "tickMilliseconds": {
+          "median": 9.250099999975646,
+          "p95": 37.578999999997905,
+          "p99": 57.417700000005425,
+          "max": 196.6954999999998
+        }
+      }
+    ]
+  },
+  "coastalReplay": {
+    "start": 2342.499999998965,
+    "end": 2542.599999998783,
+    "unloads": [
+      {
+        "id": 3233,
+        "time": 2357.899999998951,
+        "remaining": 0
+      },
+      {
+        "id": 3279,
+        "time": 2359.999999998949,
+        "remaining": 0
+      },
+      {
+        "id": 3233,
+        "time": 2459.3999999988587,
+        "remaining": 0
+      },
+      {
+        "id": 3279,
+        "time": 2459.3999999988587,
+        "remaining": 0
+      }
+    ],
+    "ended": null
+  },
+  "originalCoastalFailure": {
+    "simulatedSeconds": 2400.0999999989126,
+    "ended": null
+  },
+  "limits": [
+    "One Intel GPU; touch is emulated, not a physical phone.",
+    "CPU tick timing is not rendered FPS.",
+    "Two seeded full battles do not establish competitive balance or all-seed reliability.",
+    "Public Render revision has not been verified."
+  ],
+  "sourceSHA256": {
+    "src/ai-landings.js": "c25ab96890361c22b65e0af3e08b8f4b830169c8e05b095d25b987ce1971191c",
+    "src/projectile-combat.js": "e8b15ce3e035503b182f1bc524bca0b39c7ae605aa2bf85d5c38657447388d95",
+    "src/projectile-state.js": "0e3e26e28f7c4648254eb486cca4857d5a7eef2429aa47454fa07dafbeea9cbb",
+    "src/combat-timing.js": "c0928550b87bc1cf88fa7568c1efc2cb2da4dee91143638e8432ec7f06ee0200",
+    "src/combat-presentation.js": "81072609d0d6d677b08824fec50e53c731bef5268b9e7c5bf41e9b53c79b1120",
+    "src/simulation.js": "f87f094905df9994bfe6c8b10d1fec4c73e8115b3b8278b0eec6217ef6524b3e",
+    "src/commander-ai.js": "070f3a96e59988cce72fc20cafb3cd0b6a8a058096acaed1309b88522f87601e",
+    "src/main.js": "3740ecc1009d1febb982bfafb04e091beefd2669bc21dc420286ed1e1950d079",
+    "src/world.js": "4ee9e8dcc5b99132022d9183f88030e01c3f845e9d16972c12ccd0f48d941ad0",
+    "src/battle-effects.js": "df5d069a38d2f9a96ea8c9d36a72b04a10d295f35cf85681fc8e5df13ca7ff7e",
+    "src/combat-poses.js": "8f249023807c6fc86faf502a193a21f3e13de8a3d70e2125fa3ee5782f259c35",
+    "src/combat-audio.js": "9500630d2f1d69cbb14b626d020635e2c72f06e183bcedb35686a902c98eddf1",
+    "src/realm-3d.js": "1e8e3d3846d1867a7761f2fa061726b2943db263d784f64b6ecd174de706975f",
+    "src/world-polish.js": "107df2ebdd26d6abba3a1da27f30a542c062aa6a5f4d3577ef80e96de2ff816b",
+    "server/combat-perspective.js": "ac30329ccb1ebec46ff0b63d95c60e94fbd2aa775953f414d08d1c23626e0a1a",
+    "server/entity-perspective.js": "eb7a894f477d4622686462633f1900f020f8f797cd6a883ad7f59493def9b782",
+    "server/team-rooms.js": "63972ff9f797df3753f261a85e01e47e8c3c8a438469c4d90f8fafd14172d74f",
+    "scripts/projectile-qa.mjs": "1143a381a181bb39c3bc72777e8d9fde6a4e627023892a59b64a64aef1a477ef",
+    "scripts/battle-benchmark.mjs": "a5ba2545d1f3144eff09e16091f787eaa7564cb5a0acf6bc7fea4b4e862be1f3"
+  }
+}

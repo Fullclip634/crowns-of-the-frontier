@@ -1,3 +1,24 @@
+## 22 October 2026 — Projectile impacts and coastal AI
+
+Source passes **370 serial tests** and production build **1792608202676**. Ranged
+damage now follows actual windup and travel; archer, siege and naval visuals share
+their timing. Saves preserve pending shots, Stop cancels windups, and multiplayer
+keeps authoritative damage, unseen combat identities and transport cargo private.
+
+Coastal transports retry blocked beaches through ordinary movement. A ready
+population-capped army no longer waits indefinitely for an unaffordable escort.
+The original stalled-save replay unloads both boats within 17.5 simulated seconds;
+fresh eight-Hard-AI Highlands and Coast matches reach normal alliance results at
+900.9 and 1171.8 seconds. These are simulation diagnostics, not rendered FPS or
+competitive balance certification.
+
+The final build's desktop WebGL, native WebGPU and emulated landscape-touch checks
+are recorded in `artifacts/projectile-browser-validation.json`. See
+[PROJECTILE_COMBAT_DESIGN.md](PROJECTILE_COMBAT_DESIGN.md) for rules, reproduction
+and limitations. Physical devices, broader balance and the hosted Render revision
+remain unverified. The whole-game goal remains active. Existing versioned 2.6.1
+ZIPs still contain the earlier stable siege snapshot.
+
 ## 21 October 2026 — Optional WebGPU preview
 
 Current source adds a lazy WebGPU renderer behind `?renderer=webgpu`, with the
@@ -19,7 +40,7 @@ WebGPU remains opt-in pending physical-device and sustained performance testing.
 The whole-game quality goal remains active. This is not full release or universal
 FPS certification. Versioned 2.6.1 ZIPs retain the previous stable siege snapshot.
 Render deployment and its public revision have not been verified. Separate
-unfinished projectile work is retained locally and excluded from this milestone.
+unfinished projectile work was excluded from that renderer milestone.
 
 # 16 October 2026 — Solid siege, incremental poses and graphics recovery
 

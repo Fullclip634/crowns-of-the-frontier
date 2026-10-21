@@ -1,3 +1,15 @@
+## 22 October 2026 — Projectile impacts and coastal AI
+
+- Resolve ranged damage after weapon windup and flight; align archer, trebuchet
+  and naval effects with release and impact. Siege can miss moving targets.
+- Preserve shots in saves and cosmetic flights on reconnect; cancel unreleased
+  attacks with Stop and keep hidden targets, shooters and transport cargo private.
+- Reroute coastal AI transports around blocked beaches and let a ready capped
+  army depart with its surviving escort after the normal buildup.
+- Pass 370 serial tests and a production build. Fresh eight-AI Highlands and
+  Coast battles reach normal results at 900.9 and 1171.8 simulated seconds.
+  See [behaviour, evidence and remaining limits](PROJECTILE_COMBAT_DESIGN.md).
+
 ## 21 October 2026 — Optional WebGPU preview
 
 Current source adds a lazy WebGPU renderer behind `?renderer=webgpu`, with the
@@ -19,7 +31,7 @@ WebGPU remains opt-in pending physical-device and sustained performance testing.
 The whole-game quality goal remains active. This is not full release or universal
 FPS certification. Versioned 2.6.1 ZIPs retain the previous stable siege snapshot.
 Render deployment and its public revision have not been verified. Separate
-unfinished projectile work is retained locally and excluded from this milestone.
+unfinished projectile work was excluded from that renderer milestone.
 
 ## 16 October 2026 — Solid siege and safer graphics
 

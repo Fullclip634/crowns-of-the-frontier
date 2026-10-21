@@ -78,7 +78,7 @@ export function installCombatAudio(AudioEngine){
       if(voice.pan&&Math.abs(voice.pan.pan.value-spatial.pan)>.01)voice.pan.pan.setTargetAtTime(spatial.pan,this.context.currentTime,.025);
     }
   };
-  p.combat=function(entity,target){
+  p.combat=function(entity,target,materialKind){
     const ctx=this.context;
     if(ctx?.state!=='running'||this.settings.volume<=0)return false;
     const spatial=this.combatListener?.(entity);
@@ -87,7 +87,8 @@ export function installCombatAudio(AudioEngine){
     // Bound both overlap and event bursts, rather than creating oscillators
     // for every soldier in a large fight. Offscreen events consume no budget.
     if(this.combatVoices.size>=MAX_COMBAT_VOICES||ctx.currentTime-(this.lastCombatAt??-Infinity)<.035)return false;
-    const kind=combatSoundKind(entity,target),variant=(this.combatSequence=(this.combatSequence||0)+1)%4,key=`${kind}:${variant}`;
+    const kind=materialKind||combatSoundKind(entity,target);if(!DURATIONS[kind])return false;
+    const variant=(this.combatSequence=(this.combatSequence||0)+1)%4,key=`${kind}:${variant}`;
     let buffer=this.combatBuffers.get(key);
     if(!buffer){const samples=synthesizeCombat(kind,ctx.sampleRate,variant);buffer=ctx.createBuffer(1,samples.length,ctx.sampleRate);buffer.getChannelData(0).set(samples);this.combatBuffers.set(key,buffer);}
     const source=ctx.createBufferSource(),gain=ctx.createGain(),pan=ctx.createStereoPanner?.();source.buffer=buffer;gain.gain.value=spatial.gain*LEVELS[kind];source.connect(gain);

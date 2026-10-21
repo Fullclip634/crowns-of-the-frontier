@@ -2,6 +2,7 @@ import {UNITS,BUILDINGS,TECHS,AGE_COSTS,DIFFICULTIES,availableTo} from './data.j
 import {customOpening,alliedSupport} from './allied-ai.js';
 import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers} from './ai-settlements.js';
 import {orderSiegeAssault} from './ai-siege.js';
+import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -19,7 +20,9 @@ function customNavy(sim,owner,visible,known,army,tc){
   const opponents=sim.players.map((p,i)=>({...p,owner:i})).filter(p=>sim.hostile(owner,p.owner)).sort((a,b)=>distance(a.start,tc)-distance(b.start,tc));
   const enemy=opponents[0];if(!enemy)return;
   const target=visible.filter(e=>UNITS[e.type]?.naval&&UNITS[e.type].damage).sort((a,b)=>distance(a,tc)-distance(b,tc))[0]||known.filter(e=>e.type==='dock').sort((a,b)=>distance(a,tc)-distance(b,tc))[0],mid=z=>Math.sin(z*.03)*2;
-  const state=stateFor(sim,owner),opening=customOpening(sim,owner,AI_PROFILES[sim.difficulty(owner)]),ships=sim.owned(owner,'unit').filter(e=>UNITS[e.type].naval&&UNITS[e.type].damage),launch=sim.time>=opening.earliest&&sim.owned(owner,'unit','villager').length>=opening.workers&&ships.length>=Math.min(3,1+sim.players[owner].age);
+  const state=stateFor(sim,owner),opening=customOpening(sim,owner,AI_PROFILES[sim.difficulty(owner)]),ships=sim.owned(owner,'unit').filter(e=>UNITS[e.type].naval&&UNITS[e.type].damage);
+  const capped=sim.population(owner)+sim.reservedPopulation(owner)>=sim.capacity(owner),stalledFleet=capped&&sim.time>=opening.earliest+60&&army.filter(e=>UNITS[e.type].damage>0).length>=opening.army;
+  const launch=sim.time>=opening.earliest&&sim.owned(owner,'unit','villager').length>=opening.workers&&ships.length>=(stalledFleet?1:Math.min(3,1+sim.players[owner].age));
   const home=dock||tc,defense=visible.filter(e=>UNITS[e.type]?.naval&&UNITS[e.type].damage&&distance(e,home)<38).sort((a,b)=>distance(a,home)-distance(b,home))[0];
   const aid=!defense?Object.values(sim.teamAlarms||{}).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&sim.get(alarm.base)?.type==='dock'&&distance(home,alarm)<240).sort((a,b)=>distance(home,a)-distance(home,b))[0]:null;
   const aidCount=aid?Math.min(3,Math.floor(ships.length/2)):0;
@@ -43,7 +46,14 @@ function customNavy(sim,owner,visible,known,army,tc){
       const passengers=[...ship.passengers];let unloaded=false;
       for(const offset of [0,6,-6,9,-9]){const z=shore.z+offset,x=mid(z)+ship.landing.sign*20,cell=sim.cell(x,z);if(distance(ship,{x,z})<=11&&!sim.grid(owner)[cell.z*sim.gridSize+cell.x]&&sim.unload(ship.id,x,z,owner)){unloaded=true;break;}}
       if(unloaded){for(const id of passengers){const unit=sim.get(id);if(unit?.owner===owner&&military(unit))sim.command([id],{type:'attackmove',x:ship.landing.x,z:ship.landing.z});}ship.landing=null;ship.loadingSince=null;}
-      else if(!ship.order)sim.command([ship.id],{type:'move',x:mid(shoreZ)+ship.landing.sign*12,z:shoreZ});
+      else{
+        const approach=coastalApproach(ship.landing.sign,shoreZ);
+        if(distance(ship,approach)<8||ship.pathStatus==='blocked'){
+          ship.landing.blockedSince??=sim.time;
+          if(sim.time-ship.landing.blockedSince>=12){const next=chooseLandingShore(sim,owner,ship,ship.landing.sign,shoreZ,visible,known,{retry:true});if(next!==null){ship.landing.shoreZ=next;delete ship.landing.blockedSince;sim.command([ship.id],{type:'move',...coastalApproach(ship.landing.sign,next)});continue;}}
+        }else delete ship.landing.blockedSince;
+        if(!ship.order)sim.command([ship.id],{type:'move',...approach});
+      }
       continue;
     }
     if(!opposite){if(ship.passengers.length)ship.landing={x:tc.x,z:tc.z,sign:homeSign};continue;}
@@ -51,8 +61,7 @@ function customNavy(sim,owner,visible,known,army,tc){
     const crew=army.filter(e=>!e.embarked&&Math.sign(e.x)===sign&&e.hp>e.maxHp*.5),goal=crew.length+ship.passengers.length>=8?8:4,boardingTime=Math.min(90,35+crew.reduce((longest,e)=>Math.max(longest,distance(e,ship)/UNITS[e.type].speed),0));
     if(ship.passengers.length>=goal||ship.passengers.length>0&&sim.time-(ship.loadingSince??sim.time)>boardingTime){
       for(const unit of boarding)sim.command([unit.id],{type:'move',x:tc.x+8,z:tc.z-6});
-      const candidates=[0,36,-36,60,-60].map(offset=>opposite.start.z+offset).filter(z=>Math.abs(z)<sim.halfWorld-10),danger=z=>visible.filter(e=>e.kind==='unit'&&UNITS[e.type]?.damage>0).reduce((score,e)=>score+Math.max(0,(UNITS[e.type].range||0)+16-distance(e,{x:mid(z)+Math.sign(opposite.start.x)*20,z}))*(UNITS[e.type].naval?3:1),0)+known.filter(e=>e.type==='dock'||e.type==='tower'||e.type==='keep').reduce((score,e)=>score+Math.max(0,32-Math.abs(e.z-z)),0);
-      const shoreZ=candidates.sort((a,b)=>danger(a)-danger(b)||Math.abs(a-opposite.start.z)-Math.abs(b-opposite.start.z))[0]??opposite.start.z;
+      const shoreZ=chooseLandingShore(sim,owner,ship,Math.sign(opposite.start.x),opposite.start.z,visible,known)??opposite.start.z;
       ship.landing={...opposite.start,shoreZ,sign:Math.sign(opposite.start.x)};sim.command([ship.id],{type:'move',x:mid(shoreZ)+ship.landing.sign*12,z:shoreZ});continue;
     }
     const load={x:mid(loadZ)+sign*12,z:loadZ};if(distance(ship,load)>5){if(ship.order?.type!=='move'||distance(ship.order,load)>5)sim.command([ship.id],{type:'move',...load});continue;}
@@ -80,7 +89,7 @@ export function coastalArmyOrders(sim,owner,fighters,visible,known,phase,tc,stat
 
 export function rememberVisibleEnemies(sim,state,owner=1){
   state.scoutedSpawns??={};for(let i=0;i<sim.players.length;i++)if(sim.hostile(owner,i)&&sim.players[i].start&&sim.canSee(owner,{...sim.players[i].start,r:2}))state.scoutedSpawns[i]=true;
-  const visible=sim.entities.filter(e=>e.hp>0&&sim.hostile(owner,e.owner)&&['unit','building'].includes(e.kind)&&sim.canSee(owner,e)),ids=new Set(visible.map(e=>e.id));
+  const visible=sim.entities.filter(e=>e.hp>0&&!e.embarked&&sim.hostile(owner,e.owner)&&['unit','building'].includes(e.kind)&&sim.canSee(owner,e)),ids=new Set(visible.map(e=>e.id));
   for(const e of visible)state.known[e.id]={id:e.id,owner:e.owner,type:e.type,kind:e.kind,x:e.x,z:e.z,hp:e.hp,maxHp:e.maxHp,lastSeen:sim.time};
   for(const [id,memory]of Object.entries(state.known)){
     if(memory.owner!==undefined&&!sim.hostile(owner,memory.owner)||memory.kind==='unit'&&sim.time-memory.lastSeen>AI_PROFILES[sim.difficulty(owner)].memory||sim.canSee(owner,memory)&&!ids.has(Number(id)))delete state.known[id];

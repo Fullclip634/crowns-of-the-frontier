@@ -5,7 +5,9 @@ import {FACTIONS,MAPS} from '../src/data.js';
 import {normalizeBattle,visibilityFor} from '../src/custom-battle.js';
 import {originAllowed} from './origins.js';
 import {BattleChat} from './battle-chat.js';
-import {garrisonCount} from '../src/garrison.js';
+import {entityPerspective} from './entity-perspective.js';
+import {projectileVisualEvents} from '../src/projectile-combat.js';
+import {combatPerspective} from './combat-perspective.js';
 
 const code=()=>randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
@@ -14,6 +16,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   server.on('upgrade',(req,socket,head)=>{if(req.url!=='/socket'||!originAllowed(req.headers.origin,req.headers.host,allowedOrigins)){socket.destroy();return;}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
   const send=(ws,message)=>{if(ws?.readyState!==1)return;if(ws.bufferedAmount>=4000000){ws.terminate();return;}if(message.type==='state'&&ws.bufferedAmount>=1000000)return;ws.send(JSON.stringify(message));};
   const custom=room=>room.options.mode==='custom';
+  const observing=(room,side)=>custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
   const humanSlots=room=>custom(room)?room.options.slots.map((slot,i)=>slot.controller==='human'?i:-1).filter(i=>i>=0):[0,1];
   const connected=player=>player.ws?.readyState===1;
   const requiredPlayers=room=>room.players.filter(player=>!player.conceded&&!room.sim?.players[player.side]?.defeated);
@@ -25,14 +28,16 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   }
   const orderFor=(room,side)=>[side,...room.sim.players.map((_,i)=>i).filter(i=>i!==side)];
   function perspective(room,side,compact=false){
-    const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=custom(room)&&sim.players.filter(p=>p.team===sim.players[side].team).every(p=>p.defeated);
+    const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
     const explored=room.explored[side],visible=visibilityFor(sim,side,explored,observer),shown=e=>!!visible[sim.cell(e.x,e.z).z*sim.gridSize+sim.cell(e.x,e.z).x];
-    const data=sim.serialize(),known=room.known[side],entities=[];
+    const data=sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
+    data.projectiles=[];data.nextProjectileId=0;
+    data.visualProjectiles=projectileVisualEvents(sim.projectiles,sim.time).map(event=>combatPerspective(sim,side,event,{observer})).filter(Boolean).map(event=>({...event,entity:{...event.entity,owner:mapOwner(event.entity.owner)},target:{...event.target,owner:mapOwner(event.target.owner)}}));
     for(const e of sim.entities){
       if(e.kind==='resource'){if(!compact)entities.push({...e});continue;}
-      if(e.shelter&&e.owner!==side&&!observer)continue;
+      if(e.embarked&&e.owner!==side&&!observer)continue;
       if(e.owner===side||e.kind==='shrine'||shown(e)||observer){
-        const object={...e,path:[],orders:[]};if(e.owner>=0&&e.owner!==side){if(e.kind==='unit'&&['gather','build','repair'].includes(e.order?.type))object.activity=e.order.type;delete object.order;object.queue=[];delete object.rally;delete object.shelterWork;if(object.garrison){object.garrisonCount=garrisonCount(sim,e);delete object.garrison;}}
+        const object=entityPerspective(sim,side,e);
         if(e.kind==='building'&&e.owner!==side){if(e.hp>0)known.set(e.id,{...object});else known.delete(e.id);}
         entities.push(object);
       }
@@ -63,7 +68,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(event.type==='complete'||event.type==='stat-complete')room.stats[event.entity.owner].built++;
       if(event.type==='notice')send(room.players.find(p=>p.side===event.owner)?.ws,{type:'error',message:event.message});
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
-      if(['attack','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
+      if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
     for(const player of room.players)send(player.ws,{type:'begin',state:perspective(room,player.side),code:room.code,chat:room.chat.session(room,player)});
   }
@@ -149,8 +154,8 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000)concede(room,player,'Commander did not reconnect.');
     if(room.sim&&!waiting(room))room.sim.tick(.1);
     if(room.sim&&snapshotClock%2===0){for(const player of room.players){
-      if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner);
-      const effects=room.effects.filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]?.owner>=0){e[key].owner=mapOwner(e[key].owner);e[key].orders=[];e[key].path=[];if(e[key].owner!==0){e[key].queue=[];delete e[key].order;delete e[key].rally;}}return e;});
+      if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner),observer=observing(room,player.side);
+      const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
       send(player.ws,{type:'state',state:perspective(room,player.side,custom(room)),effects,waiting:waiting(room)});
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);

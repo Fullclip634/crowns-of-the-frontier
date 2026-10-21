@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {workerVisualTask} from './authored-assets.js';
 import {combatJointAngle} from './combat-poses.js';
+import {siegeArmAngle,combatRenderOffset} from './combat-timing.js';
 
 function texture(kind){const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=kind==='stone'?'#bdb8ac':kind==='roof'?'#d9d5cf':'#a98c67';ctx.fillRect(0,0,256,256);
   if(kind==='stone'){for(let row=0;row<8;row++)for(let col=-1;col<9;col++){const x=col*40+(row%2)*20,y=row*32;ctx.fillStyle=`rgb(${165+Math.random()*35},${162+Math.random()*32},${147+Math.random()*30})`;ctx.fillRect(x+2,y+2,36,28);ctx.strokeStyle='#8b897c';ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,36,28);ctx.fillStyle='#dbd5c477';ctx.fillRect(x+3,y+3,34,2);}}
@@ -73,7 +74,7 @@ export function installWorldPolish(WorldView){const p=WorldView.prototype,base={
 }
 
 function jointAngle(view,m,e){
-  const combat=combatJointAngle(e,m);if(combat!==null)return combat;
+  const combat=combatJointAngle(e,m,combatRenderOffset(view));if(combat!==null)return combat;
   const working=e.type==='villager'&&!e.moving&&['gather','build','repair'].includes(e.order?.type||e.activity);
   const gait=view.locomotion?.get(e.id),phase=gait?.phase??view.clock*8.5+e.id*.7,blend=gait?.blend??Number(!!e.moving),walk=Math.sin(phase)*(m.side??1)*blend;
   if(m.type==='wheel')return gait?.wheel??(e.moving?view.clock*5:0);
@@ -86,7 +87,7 @@ function jointAngle(view,m,e){
   if(m.type==='sail')return Math.sin(view.clock*1.5+e.id)*.035;
   if(m.type==='oar')return e.moving?Math.sin(view.clock*3+e.id)*.18*m.side:0;
   if(m.type==='ram')return 0;
-  if(m.type==='siege')return e.cooldown>0?Math.sin(Math.min(1,(3.8-e.cooldown)/.7)*Math.PI)*1.15:0;
+  if(m.type==='siege')return siegeArmAngle(e,combatRenderOffset(view));
   if(m.type==='forearm'){
     if(working)return m.side<0?-.12:-.18+Math.sin(view.clock*(workerVisualTask(view,e)==='build'?8:6)+e.id)*.12;
     return -.15*blend;
