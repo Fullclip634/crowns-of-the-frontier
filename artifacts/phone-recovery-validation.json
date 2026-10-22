@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-10-22T21:34:24.597Z",
+  "buildId": "1792704492682",
+  "tests": {
+    "total": 430,
+    "passed": 430,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "mainBundle": "/assets/index-BPjByW-n.js",
+  "mainSHA256": "3d62bac44edd2c0c2805fa46d51da5127189b3335572dc69c6e1084b4b898a48",
+  "sourceSHA256": {
+    "src/main.js": "b2c3e77de8eca6c8a9eb0de5ea3a97027a093da300d599bfd6f38041799ef2b0",
+    "src/graphics-compatibility.js": "7871876a0a7f7fc4af1b4eb45f2aae90d25c4d45cb18e0e5784ece4de38761e8",
+    "tests/graphics-compatibility.test.js": "d2c6d9d2c2b8b2376fb775b9977de9b47bcffec6cc49ebf7643c66b2f15c661e",
+    "scripts/startup-compatibility-qa.mjs": "b5b9d9ec4a28822e4e663a4fead45692d074f48e040779fe36887c5f552df7d7",
+    "PHONE_GRAPHICS_RECOVERY.md": "010ae9fc5d640002737b24817ef7e131fabf22ee155beef3089d4ff1869fabd7"
+  },
+  "browserReport": "artifacts/phone-recovery-chrome-d3d11/validation.json",
+  "checks": {
+    "nativeStartupFailureRecovered": true,
+    "compatibleChoiceRememberedInTab": true,
+    "reloadLoopPrevented": true,
+    "phoneBattlefieldsPainted": true,
+    "explicitNativeRetryAvailable": true,
+    "activeMatchHeldSavedAndResumed": true
+  },
+  "limitations": [
+    "Browser testing uses an isolated host GPU-blocklist override and emulated phone viewports.",
+    "The user confirmed the existing manual compatible reload works on an Infinix Note 7; the new automatic recovery still needs confirmation on that physical phone.",
+    "The original phone GPU error was not captured; this improves recovery without claiming to repair its underlying driver or shader cause.",
+    "No universal device compatibility or frame-rate guarantee."
+  ]
+}

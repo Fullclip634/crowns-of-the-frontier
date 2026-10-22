@@ -1,0 +1,13 @@
+# Phone graphics startup recovery
+
+A player reported the “Restore the battlefield” dialog when opening the game in Chrome on an Infinix Note 7. The player confirmed that its compatible reload allowed gameplay. The original native GPU error was not captured, so this report does not establish a particular driver or shader defect.
+
+The game already fell back to WebGL 2 when WebGPU initialization failed. It now also recovers automatically when the native backend fails on the landing screen after initialization. The reload opens a fresh compatible canvas and remembers the choice in session storage for the current tab. A bare game link in that tab continues using compatible graphics; a new tab still prefers WebGPU, and an explicit `?renderer=webgpu` link allows another native attempt. Graphics quality preferences are preserved.
+
+Automatic recovery does not reload over a match, an active room connection, or an unfinished menu. Those cases retain the existing recovery dialog, local-save protection, and multiplayer rejoin flow. A compatible renderer cannot trigger the native automatic reload path, preventing a reload loop. If session storage is blocked, the explicit compatible reload URL still works.
+
+`tests/graphics-compatibility.test.js` checks startup recovery, tab preference, explicit retry, blocked storage, loop prevention and protection of matches/menu forms. `scripts/startup-compatibility-qa.mjs` injects errors through an initialized renderer's real error callback, verifies the actual navigation and remembered preference, checks painted 568×320 and 740×360 battlefields, then verifies an active match is held and can be saved, reloaded and resumed. Browser emulation and injected failures do not replace testing the actual Infinix phone or prove performance on every device.
+
+The [Three.js renderer callback documentation](https://threejs.org/docs/pages/Renderer) distinguishes uncaptured backend errors from initialization errors. [Chrome's WebGPU overview](https://developer.chrome.com/docs/web-platform/webgpu/overview) describes platform and hardware support requirements. This game selects by actual API availability/failure rather than assuming every phone model supports the same backend.
+
+Verification: [430 passing regression tests](artifacts/phone-recovery-regression.txt), [production and source validation](artifacts/phone-recovery-validation.json), and the [actual browser recovery flow](artifacts/phone-recovery-chrome-d3d11/validation.json). The isolated Chrome harness overrides its host GPU blocklist; the report retains expected injected errors and known driver precision warnings. Phone screenshots verify visible rendering and layout, not physical-device performance.

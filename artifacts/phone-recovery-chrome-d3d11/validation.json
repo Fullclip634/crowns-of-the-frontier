@@ -1,0 +1,84 @@
+{
+  "startedAt": "2026-10-22T21:33:36.633Z",
+  "browser": "155.0.8059.80",
+  "harness": "chrome-d3d11",
+  "gpuBlocklistOverride": true,
+  "softwareRendering": false,
+  "limitations": "Emulated phone layout and injected native failure; not a physical Infinix test or an FPS benchmark.",
+  "messages": [
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected native startup failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected in-match failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    }
+  ],
+  "buildId": "1792704492682",
+  "startup": {
+    "renderer": "webgl",
+    "loads": 2,
+    "fatal": null,
+    "dialog": false,
+    "quality": "low"
+  },
+  "reopen": {
+    "renderer": "webgl",
+    "loads": 3,
+    "query": null
+  },
+  "smallPhone": {
+    "samples": 4218,
+    "colors": 2437,
+    "luminanceVariance": 798.9372779544265,
+    "painted": true
+  },
+  "phone": {
+    "samples": 6216,
+    "colors": 3247,
+    "luminanceVariance": 791.5350269832816,
+    "painted": true
+  },
+  "matchHeld": {
+    "native": true,
+    "playing": true,
+    "paused": true,
+    "loads": 4,
+    "seed": 713
+  },
+  "resumed": {
+    "renderer": "webgl",
+    "seed": 713,
+    "fatal": null
+  },
+  "passed": true
+}

@@ -30,6 +30,7 @@ import {registerOfflineGame} from './offline-registration.js';
 import {graphicsSelection,applyGraphicsChoice,rendererStatus} from './graphics-settings.js';
 import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery-ui.js';
 import {graphicsNeedsReload} from './graphics-failure.js';
+import {preferredRenderer,compatibleGraphicsURL,startupCompatibilityURL} from './graphics-compatibility.js';
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
@@ -79,7 +80,8 @@ const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
 const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
-const requestedRenderer=new URLSearchParams(location.search).get('renderer')==='webgl'?'webgl':'webgpu';
+const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
+const requestedRenderer=preferredRenderer(location.href,graphicsSession);
 let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>console.warn('WebGPU could not start; using WebGL 2:',error.message)});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // A missing/old catalogue must not silently replace the promised Blender art.
@@ -273,7 +275,7 @@ function renderHealth(){const layer=$('#health-layer');let html='';for(const e o
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
   if(name==='retry-battlefield'){retryBattlefield();return;}
-  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent=graphicsNeedsReload(view?.graphicsFatal)?'Your kingdom could not be saved. Keep this page open and free browser storage before trying Save and reload again.':'Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(graphicsNeedsReload(view?.graphicsFatal)){const url=new URL(location.href);url.searchParams.set('renderer','webgl');location.replace(url.href);}else location.reload();return;}audio.unlock();
+  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent=graphicsNeedsReload(view?.graphicsFatal)?'Your kingdom could not be saved. Keep this page open and free browser storage before trying Save and reload again.':'Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(graphicsNeedsReload(view?.graphicsFatal)){location.replace(compatibleGraphicsURL(location.href,graphicsSession));}else location.reload();return;}audio.unlock();
   if(name==='retry-graphics'){location.reload();return;}
   if(name==='command-options'){toggleCompactCommands(document);return;}
   if(name==='selection-details'){toggleSelectionDetails(document);return;}
@@ -373,6 +375,8 @@ let graphicsRecoveryUi=null;
 function syncGraphicsRecovery(){
   if(view?.graphicsFatal){
     if(graphicsRecoveryUi?.failure===view.graphicsFatal)return;
+    const compatible=startupCompatibilityURL({failure:view.graphicsFatal,backend:rendererBackend(view.renderer),playing,network:!!net.socket,modal:!!modal,href:location.href,storage:graphicsSession});
+    if(compatible){renderClosed=true;$('#graphics-status').textContent='Opening compatible graphics…';$('#graphics-status').classList.remove('hidden');location.replace(compatible);return true;}
     const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
     showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
@@ -389,7 +393,7 @@ async function retryBattlefield(){
   if(!applied){const current=$('#modal-root [data-action="retry-battlefield"]');if(current)current.disabled=false;const status=$('#graphics-recovery-note');if(status)status.textContent='Graphics could not recover. Your match remains in memory. Try again, or save before reloading.';}
 }
 let lastRender=0,frameRequest=0,renderClosed=false;const framePacer=new FramePacer();
-function frame(now){if(renderClosed)return;syncGraphicsRecovery();const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(.08,elapsed);last=now;
+function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(.08,elapsed);last=now;
   const graphicsBusy=!!view?.graphicsLoading;$('#graphics-status').classList.toggle('hidden',!graphicsBusy);$('#world').setAttribute('aria-busy',String(graphicsBusy));
   if(view){const keyboardPan=['panUp','panDown','panLeft','panRight'].some(id=>heldControl(keys,id,settings.bindings));const edgeMoved=edgeScroll.tick(view,dt,{active:playing&&!paused&&!sim.ended&&!modal&&!chat.opened&&!keyboardPan,enabled:settings.edgeScroll,speed:settings.edgeScrollSpeed});
     if(edgeMoved&&buildType&&edgeScroll.point){const point=view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);if(point)view.showGhost(buildType,point.x,point.z,sim.buildValid(buildType,point.x,point.z));else view.hideGhost();}
