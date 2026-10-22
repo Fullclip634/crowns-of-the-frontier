@@ -1,0 +1,209 @@
+{
+  "startedAt": "2026-10-22T20:50:23.435Z",
+  "environment": {
+    "browser": "156.0.8078.4",
+    "harness": "shell",
+    "softwareRendering": true,
+    "gpuBlocklistOverride": true,
+    "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+  },
+  "checks": [
+    {
+      "mode": "webgl",
+      "expected": "webgl",
+      "url": "http://127.0.0.1:53554/?renderer=webgl",
+      "queryRenderer": "webgl",
+      "nativeModuleRequests": 0,
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 6388,
+              "indices": 10644
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 5380,
+              "indices": 9072
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 3740,
+              "indices": 8826
+            }
+          ]
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4800,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4080,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4876,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4156,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        }
+      ],
+      "status": "Compatible graphics (WebGL 2) is active.",
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        },
+        "pixels": {
+          "samples": 756,
+          "colors": 487,
+          "luminanceVariance": 87.2882110663187,
+          "painted": true
+        }
+      },
+      "unpaintedFixture": {
+        "samples": 756,
+        "colors": 3,
+        "luminanceVariance": 0.009380375384353101,
+        "painted": false
+      },
+      "smallPhone": {
+        "width": 568,
+        "height": 320,
+        "scroll": 568,
+        "pixels": {
+          "samples": 342,
+          "colors": 214,
+          "luminanceVariance": 233.48077186142632,
+          "painted": true
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "mode": "webgl",
+      "type": "warning",
+      "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+    }
+  ],
+  "buildId": "1792700997481",
+  "passed": true
+}

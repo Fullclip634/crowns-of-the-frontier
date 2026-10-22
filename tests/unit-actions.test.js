@@ -25,6 +25,12 @@ test('observed workers retain the same visible work phase without exposing their
   assert.deepEqual(remote.update(view,observed,.1),local.update(view,unit,.1));unit.order.returning=true;assert.equal(entityPerspective(sim,0,unit).working,false);
 });
 
+test('large combat armies retain no work states and changing a unit role clears its old action',()=>{
+  const {unit,view,actions}=fixture();actions.update(view,unit,.1);assert.equal(actions.states.size,1);
+  assert.equal(actions.update(view,{...unit,type:'swordsman'},.1),null);assert.equal(actions.states.size,0);
+  for(let id=1;id<=1280;id++)actions.update(view,{id,type:id%2?'knight':'archer',moving:true},1/60);assert.equal(actions.states.size,0);
+});
+
 test('Blender tool grips stay attached to the hands through chopping, mining and construction in all detail tiers',async()=>{
   for(const tier of ['near','balanced','low']){
     const bytes=await fs.readFile(new URL('../src/assets3d/frontier-'+tier+'.glb',import.meta.url)),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');

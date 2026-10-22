@@ -1,0 +1,212 @@
+{
+  "verifiedAt": "2026-10-22T21:04:11.062Z",
+  "buildId": "1792700997481",
+  "tests": {
+    "total": 423,
+    "passed": 423,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "browsers": [
+    {
+      "file": "artifacts/forest-memory-default/validation.json",
+      "phoneRepaintFile": "artifacts/forest-memory-default-phone/validation.json",
+      "buildId": "1792700997481",
+      "environment": {
+        "browser": "155.0.8059.80",
+        "harness": "chrome-d3d11",
+        "softwareRendering": false,
+        "gpuBlocklistOverride": true,
+        "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+      },
+      "checks": [
+        {
+          "mode": "default",
+          "qualities": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "sameMatch": true,
+          "forestMaps": [
+            "highlands",
+            "winter",
+            "desert"
+          ],
+          "workerTasks": [
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ],
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ],
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ]
+          ],
+          "offline": {
+            "nodeChunk": true,
+            "catalogues": 4,
+            "reload": true,
+            "gameplay": true
+          }
+        }
+      ],
+      "phoneChecks": [
+        {
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            },
+            "pixels": {
+              "samples": 756,
+              "colors": 486,
+              "luminanceVariance": 89.06219030822172,
+              "painted": true
+            }
+          },
+          "smallPhone": {
+            "width": 568,
+            "height": 320,
+            "scroll": 568,
+            "pixels": {
+              "samples": 342,
+              "colors": 215,
+              "luminanceVariance": 248.13234461505692,
+              "painted": true
+            }
+          },
+          "unpaintedFixture": {
+            "samples": 756,
+            "colors": 3,
+            "luminanceVariance": 0.009380375384353101,
+            "painted": false
+          }
+        }
+      ]
+    },
+    {
+      "file": "artifacts/forest-memory-webgl/validation.json",
+      "phoneRepaintFile": "artifacts/forest-memory-webgl-phone/validation.json",
+      "buildId": "1792700997481",
+      "environment": {
+        "browser": "156.0.8078.4",
+        "harness": "shell",
+        "softwareRendering": true,
+        "gpuBlocklistOverride": true,
+        "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+      },
+      "checks": [
+        {
+          "mode": "webgl",
+          "qualities": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "sameMatch": true,
+          "forestMaps": [
+            "highlands",
+            "winter",
+            "desert"
+          ],
+          "workerTasks": [
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ],
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ],
+            [
+              "wood",
+              "mine",
+              "food",
+              "build"
+            ]
+          ]
+        }
+      ],
+      "phoneChecks": [
+        {
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            },
+            "pixels": {
+              "samples": 756,
+              "colors": 487,
+              "luminanceVariance": 87.2882110663187,
+              "painted": true
+            }
+          },
+          "smallPhone": {
+            "width": 568,
+            "height": 320,
+            "scroll": 568,
+            "pixels": {
+              "samples": 342,
+              "colors": 214,
+              "luminanceVariance": 233.48077186142632,
+              "painted": true
+            }
+          },
+          "unpaintedFixture": {
+            "samples": 756,
+            "colors": 3,
+            "luminanceVariance": 0.009380375384353101,
+            "painted": false
+          }
+        }
+      ]
+    }
+  ],
+  "measurementFile": "artifacts/forest-memory-and-army-actions.json",
+  "sourceSHA256": {
+    "src/authored-assets.js": "eae76ce4a0df90564a401b4adecff3cee6889fc9be8e15374f32612d94cbf542",
+    "src/unit-actions.js": "815224e2b8f8929aa1290ebce28bd7c03bac2c28fd2b48208c2b8d3180468ce2",
+    "src/allied-ai.js": "91601f0376f23ec19996ae4a9920763d035e6433cbc806bc1abd6f0b9b26f4e6",
+    "src/commander-ai.js": "776d09ba50c360e3fc6969fa4dbb3687338b1b1ab409b71f62b8e7e0870ea9a1",
+    "src/assets3d/frontier-trees.glb": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543"
+  },
+  "limits": [
+    "Memory counts distinct decoded model attribute/index ArrayBuffers reachable through catalogue parents and children; not total RAM or GPU memory.",
+    "Action timings are isolated loop measurements, not displayed FPS.",
+    "The completed battle is one deterministic all-AI seed at 0.1-second simulation steps; human-player balance across all maps remains unproven.",
+    "The initial full-feature reports predate a phone screenshot timing correction. Phone repaint checks were rerun separately on this exact same build, including a negative blank-image fixture.",
+    "Browser tests verify behavior and layout, not physical phone performance. Native tests override the GPU blocklist; WebGL uses software rendering."
+  ],
+  "goalComplete": false
+}

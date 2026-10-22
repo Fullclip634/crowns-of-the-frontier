@@ -1,0 +1,154 @@
+{
+  "checkedAt": "2026-10-22T20:39:40.599Z",
+  "baselineCommit": "6d04bbfea3e3b0455f0af07ca52a9d3f34d3d197",
+  "sourceSHA256": {
+    "src/authored-assets.js": "eae76ce4a0df90564a401b4adecff3cee6889fc9be8e15374f32612d94cbf542",
+    "src/unit-actions.js": "815224e2b8f8929aa1290ebce28bd7c03bac2c28fd2b48208c2b8d3180468ce2",
+    "src/allied-ai.js": "91601f0376f23ec19996ae4a9920763d035e6433cbc806bc1abd6f0b9b26f4e6",
+    "src/commander-ai.js": "776d09ba50c360e3fc6969fa4dbb3687338b1b1ab409b71f62b8e7e0870ea9a1",
+    "src/assets3d/frontier-trees.glb": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543"
+  },
+  "forests": [
+    {
+      "tier": "near",
+      "before": {
+        "tier": "near",
+        "nodes": 1628,
+        "geometries": 1326,
+        "models": 150,
+        "treeRoots": 48,
+        "decodedBufferBytes": 77084030
+      },
+      "after": {
+        "tier": "near",
+        "nodes": 1508,
+        "geometries": 1230,
+        "models": 126,
+        "treeRoots": 24,
+        "decodedBufferBytes": 73353446
+      },
+      "releasedBytes": 3730584,
+      "releasedMiB": 3.5577621459960938
+    },
+    {
+      "tier": "balanced",
+      "before": {
+        "tier": "balanced",
+        "nodes": 1628,
+        "geometries": 926,
+        "models": 150,
+        "treeRoots": 48,
+        "decodedBufferBytes": 55851158
+      },
+      "after": {
+        "tier": "balanced",
+        "nodes": 1508,
+        "geometries": 830,
+        "models": 126,
+        "treeRoots": 24,
+        "decodedBufferBytes": 53538182
+      },
+      "releasedBytes": 2312976,
+      "releasedMiB": 2.2058258056640625
+    },
+    {
+      "tier": "low",
+      "before": {
+        "tier": "low",
+        "nodes": 1561,
+        "geometries": 867,
+        "models": 150,
+        "treeRoots": 48,
+        "decodedBufferBytes": 22141766
+      },
+      "after": {
+        "tier": "low",
+        "nodes": 1457,
+        "geometries": 787,
+        "models": 126,
+        "treeRoots": 24,
+        "decodedBufferBytes": 20888510
+      },
+      "releasedBytes": 1253256,
+      "releasedMiB": 1.1951980590820312
+    }
+  ],
+  "actions": {
+    "initialBefore": {
+      "updatesPerRun": 768000,
+      "units": 1280,
+      "frames": 600,
+      "medianMilliseconds": 27.821799999999996,
+      "retainedActionStates": 1280,
+      "scope": "Isolated action-state update cost; not game FPS"
+    },
+    "initialAfter": {
+      "updatesPerRun": 768000,
+      "units": 1280,
+      "frames": 600,
+      "medianMilliseconds": 6.9480000000000075,
+      "retainedActionStates": 0,
+      "scope": "Isolated action-state update cost; not game FPS"
+    },
+    "alternatingComparison": {
+      "updatesPerRun": 768000,
+      "units": 1280,
+      "frames": 600,
+      "alternatingOrder": true,
+      "before": {
+        "medianMilliseconds": 26.482699999999966,
+        "retainedActionStates": 1280,
+        "runs": [
+          25.634199999999964,
+          26.310699999999997,
+          26.823499999999967,
+          26.969100000000026,
+          26.704200000000014,
+          25.487899999999968,
+          26.654699999999934,
+          25.60749999999996
+        ]
+      },
+      "after": {
+        "medianMilliseconds": 8.54585000000003,
+        "retainedActionStates": 0,
+        "runs": [
+          9.2029,
+          9.19059999999996,
+          8.134400000000028,
+          8.435800000000086,
+          8.792299999999955,
+          8.538400000000024,
+          8.24529999999993,
+          8.553300000000036
+        ]
+      },
+      "scope": "Isolated action-state update cost; not game FPS"
+    }
+  },
+  "soak": {
+    "file": "artifacts/allied-defense-30-minute-soak.json",
+    "simulatedSeconds": 1726.5999999995252,
+    "result": {
+      "won": true,
+      "reason": "Your alliance has eliminated every opposing kingdom."
+    },
+    "firstArmyBaseDamage": 345.40000000001004,
+    "dispatchNotices": 286,
+    "actualReliefHits": 1958,
+    "actualReliefDamage": 35893.07048949085,
+    "assistingPairs": 15,
+    "tickMilliseconds": {
+      "median": 8.684000000008382,
+      "p95": 31.03740000000107,
+      "p99": 48.3408000000054,
+      "max": 199.47880000000077
+    }
+  },
+  "limits": [
+    "Memory counts distinct decoded model attribute/index ArrayBuffers reachable through catalogue parents and children; not total RAM or GPU memory.",
+    "Action timings are isolated loop measurements, not displayed FPS.",
+    "The completed battle is one deterministic all-AI seed at 0.1-second simulation steps; human-player balance across all maps remains unproven."
+  ],
+  "goalComplete": false
+}

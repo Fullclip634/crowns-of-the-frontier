@@ -21,6 +21,9 @@ export class UnitActions{
   clear(){this.states.clear();}
   get(id){return this.states.get(id);}
   update(view,e,dt){
+    // Soldiers use combat poses and locomotion directly. Avoid retaining and
+    // updating a work-state object for every soldier in a large battlefield.
+    if(e.type!=='villager'&&e.type!=='monk'){this.states.delete(e.id);return null;}
     let state=this.states.get(e.id);if(!state){state={task:null,blend:0,phase:0,active:false,grip:false};this.states.set(e.id,state);}
     const observed=!e.order&&['gather','build','repair'].includes(e.activity)&&e.working===true&&!e.moving&&!e.embarked&&e.hp>0&&!(e.cooldown>0);
     const working=observed||!!workTarget(view,e),healing=e.type==='monk'&&!e.moving&&!e.embarked&&e.hp>0&&e.cooldown>0;

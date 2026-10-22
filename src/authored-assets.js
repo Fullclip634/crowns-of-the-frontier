@@ -26,7 +26,9 @@ export function registerSharedTrees(gltf,bytes=0){
 }
 
 export function useSharedTrees(catalogue,trees){
-  for(const [key,root]of trees.templates)catalogue.templates.set(key,root);
+  // Other template roots retain their parent scene. Detach superseded trees
+  // so that those parent links cannot retain an unused second forest roster.
+  for(const [key,root]of trees.templates){const old=catalogue.templates.get(key);if(old&&old!==root)old.removeFromParent();catalogue.templates.set(key,root);}
   const used=new Set();for(const root of catalogue.templates.values())root.traverse(node=>{if(node.isMesh)used.add(node.geometry);});
   for(const geometry of catalogue.geometries)if(!used.has(geometry)){geometry.dispose();catalogue.geometries.delete(geometry);}
   catalogue.trees=trees;return catalogue;

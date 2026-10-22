@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {battlefieldPixels,settleBattlefieldResize,capturePaintedBattlefield} from './painted-battlefield-qa.mjs';
 
 const output=process.env.QA_OUTPUT||'artifacts/renderer-qa.json';
 fs.mkdirSync(path.dirname(output),{recursive:true});
@@ -63,9 +64,13 @@ try{
     });
     const f=check.features;assert.ok(f.construction&&f.clipping&&f.completed&&f.weather.rain>0&&f.lighting.night>.9&&f.portrait.ready&&!f.portrait.disabled&&f.portrait.width>0);assert.ok(f.ghost.every(m=>m.color===0xee816a&&m.alpha===.38));
     if(process.env.QA_FOREST_ACTIONS==='1'){const {verifyForestActions}=await import('./forest-actions-qa.mjs');check.forestActions=await verifyForestActions(page,output);}
-    await page.setViewportSize({width:740,height:360});await page.evaluate(()=>qaDraw());
+    await page.setViewportSize({width:740,height:360});await settleBattlefieldResize(page);
     check.phone=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:frontier.view.renderer.domElement.getBoundingClientRect().toJSON()}));assert.ok(check.phone.scroll<=check.phone.width&&check.phone.canvas.width>=check.phone.width-1);
-    const image=path.join(path.dirname(output),'renderer-'+mode+'-landscape.png');await page.screenshot({path:image});
+    const image=path.join(path.dirname(output),'renderer-'+mode+'-landscape.png');check.phone.pixels=(await capturePaintedBattlefield(page,image,{manual:true})).pixels;
+    if(process.env.QA_UNPAINTED_FIXTURE){check.unpaintedFixture=await battlefieldPixels(page,fs.readFileSync(process.env.QA_UNPAINTED_FIXTURE));assert.equal(check.unpaintedFixture.painted,false,'The captured resize regression must fail the painted-battlefield check.');}
+    // Also exercise the ordinary game loop through a smaller phone resize.
+    await page.evaluate(()=>{frontier.view.render=qaRender;});await page.setViewportSize({width:568,height:320});await page.waitForTimeout(150);
+    const small=await capturePaintedBattlefield(page,path.join(path.dirname(output),'renderer-'+mode+'-small-landscape.png'));check.smallPhone=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollWidth}));check.smallPhone.pixels=small.pixels;assert.ok(check.smallPhone.scroll<=check.smallPhone.width,'Small phone must not overflow horizontally.');await page.evaluate(()=>{frontier.view.render=()=>false;});
     if(['webgpu','default'].includes(mode)&&process.env.QA_OFFLINE==='1'){
       await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
       check.offline=await page.evaluate(async()=>{const cache=await caches.open((await caches.keys()).find(k=>k.startsWith('frontier-'))),files=(await cache.keys()).map(r=>r.url);return {nodeChunk:files.some(f=>/render-nodes-.*\.js$/.test(f)),catalogues:files.filter(f=>f.endsWith('.glb')).length};});
