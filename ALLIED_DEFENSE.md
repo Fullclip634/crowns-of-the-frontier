@@ -2,6 +2,12 @@
 
 Allied assistance uses the same rules for every team configuration, including unequal teams and human/AI mixtures. Enemy AI teams receive the same behavior. Free-for-all kingdoms receive no allied assistance. Human commanders retain control of their units.
 
+Multiple simultaneous alarms are considered in priority order until a real relief route is found. Previously, an urgent alarm behind an impassable wall could prevent a commander from helping any other teammate. The planner now skips that blocked assignment and checks the next threatened allied base. It retains the ordinary home reserves, visibility limits and movement rules.
+
+`tests/allied-team-routing.test.js` reproduces that failure with a continuous hostile wall, then verifies assistance reaches the accessible teammate. It also covers reordered player slots, unequal teams, three separate alliances, and an AI protecting a remote human teammate in a multiplayer custom setup without controlling the human's troops. These cases supplement the existing 2v2, 3v3, 4v4, coastal and free-for-all checks; 4v4 is not a special requirement for assistance.
+
+The routing follow-up is verified by [426 passing regression tests](artifacts/allied-routing-regression.txt) and a [production-build validation report](artifacts/allied-routing-validation.json). This change affects simulation decisions; it makes no new rendering or device-performance claim.
+
 The previous implementation rejected relief when the assisting commander's town center was over 240 map units away, even if that commander's army was beside the threatened ally. A reproducible eight-kingdom scenario had an army 17 units from the damaged base, its home 339 units away, and zero reinforcements. The new planner ranks available armies by their actual travel time and validates a real ground route.
 
 Relief troops now move toward visible attackers around the protected base, prioritizing nearby siege, rather than stopping at a rally point on the rear side of the town center. Without enemy vision they approach the reported allied base; the damage report contains no hidden attacker data. A visible attacking group or siege can trigger assistance before buildings take damage. A lone scouting unit does not trigger a full relief deployment.

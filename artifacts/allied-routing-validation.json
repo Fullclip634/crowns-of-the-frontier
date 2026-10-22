@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-22T21:19:24.444Z",
+  "buildId": "1792703951144",
+  "tests": {
+    "total": 426,
+    "passed": 426,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "mainBundle": "/assets/index-2TGQ87ic.js",
+  "mainSHA256": "25f8e728e386058669298a911663770d9030ae5331bda44f8a422fc6097a032b",
+  "sourceSHA256": {
+    "src/allied-ai.js": "f9bc309328aa654e2ae26fe744dff2b7c28fb2e20a3ffb3c82dbfba4204b3062",
+    "tests/allied-team-routing.test.js": "b63c6e7ec4105598006522a7156c02648e816e2f548f3167524b1a0d1f191168",
+    "ALLIED_DEFENSE.md": "93c5313ed9088ca26605ead4ee25fb96fd87381faa275f90c1988e18c3339418"
+  },
+  "checks": [
+    "Real continuous hostile wall blocks the highest-priority relief route; a reachable allied base still receives reinforcements.",
+    "Unequal, reordered and three-alliance teams use actual team membership.",
+    "Remote human teammates can receive AI aid without their troops being commanded.",
+    "Existing ordinary-combat rescue, home reserves, coastal routes, save/restore and visibility regressions pass."
+  ],
+  "limitations": [
+    "No claim that every match is balanced or every threatened base can be rescued.",
+    "This simulation-only change has no new visual or physical-device performance claim."
+  ]
+}

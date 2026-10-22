@@ -89,16 +89,20 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   if(duty||sim.time-(state.lastSupport??-40)<8)return new Set(duty?.units||[]);
   const arrival=alarm=>Math.min(...combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,alarm)).map(unit=>distance(unit,alarm)/UNITS[unit.type].speed));
   const candidates=Object.values(sim.teamAlarms).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&Number.isFinite(arrival(alarm))).sort((a,b)=>(arrival(a)-a.intensity*.025)-(arrival(b)-b.intensity*.025));
-  const alarm=candidates[0];if(!alarm)return new Set();
-  const base=sim.get(alarm.base),point=destination(base),plan=relief(base,alarm);if(plan.count<2)return new Set();
-  const group=plan.available.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count);
-  // Validate one leader before dispatch; the regular movement system then routes
-  // every real unit, including friendly gates and bridges, without teleporting.
-  const route=routeFor(group,point);if(!route)return new Set();
-  const healer=ready.find(u=>u.owner===owner&&u.type==='monk'&&!u.embarked&&u.hp>u.maxHp*.5&&u.order?.type!=='board'&&sameShore(u,base)&&distance(u,point)<Math.max(240,distance(route.unit,point)+30)),units=group.map(u=>u.id);
-  sim.command(units,{type:'attackmove',x:point.x,z:point.z});if(healer){sim.guard([healer.id],route.unit.id,false,owner);units.push(healer.id);}
-  const travel=route.length/Math.min(...group.map(unit=>UNITS[unit.type].speed));
-  state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+travel*1.5+30,lastOrder:sim.time,lastReinforce:sim.time};state.lastSupport=sim.time;
-  sim.emit('ally-support',{owner,ally:alarm.owner,count:units.length,x:base.x,z:base.z});
-  return new Set(units);
+  // An urgent but unreachable base must not starve other allies of help.
+  // Check candidates in priority order and commit only a viable assignment.
+  for(const alarm of candidates){
+    const base=sim.get(alarm.base),point=destination(base),plan=relief(base,alarm);if(plan.count<2)continue;
+    const group=plan.available.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count);
+    // Validate one leader before dispatch; the regular movement system then routes
+    // every real unit, including friendly gates and bridges, without teleporting.
+    const route=routeFor(group,point);if(!route)continue;
+    const healer=ready.find(u=>u.owner===owner&&u.type==='monk'&&!u.embarked&&u.hp>u.maxHp*.5&&u.order?.type!=='board'&&sameShore(u,base)&&distance(u,point)<Math.max(240,distance(route.unit,point)+30)),units=group.map(u=>u.id);
+    sim.command(units,{type:'attackmove',x:point.x,z:point.z});if(healer){sim.guard([healer.id],route.unit.id,false,owner);units.push(healer.id);}
+    const travel=route.length/Math.min(...group.map(unit=>UNITS[unit.type].speed));
+    state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+travel*1.5+30,lastOrder:sim.time,lastReinforce:sim.time};state.lastSupport=sim.time;
+    sim.emit('ally-support',{owner,ally:alarm.owner,count:units.length,x:base.x,z:base.z});
+    return new Set(units);
+  }
+  return new Set();
 }
