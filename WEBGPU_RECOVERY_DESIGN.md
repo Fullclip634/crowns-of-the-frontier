@@ -37,7 +37,8 @@ into a local save. This change does not pause the multiplayer server.
 Settings reports the active renderer. If WebGPU was requested but the page is
 insecure, the message points players to the deployed HTTPS address. A secure
 page that cannot start WebGPU reports compatibility rendering. The existing
-WebGL default and opt-in `?renderer=webgpu` behavior are retained.
+The normal game URL now prefers native WebGPU. Explicit `?renderer=webgl` still
+selects compatibility graphics, including the protected recovery reload.
 
 The HTTPS requirement comes from the browser API's
 [secure-context restriction](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/gpu).

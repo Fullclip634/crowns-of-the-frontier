@@ -1,0 +1,986 @@
+{
+  "createdAt": "2026-10-22T12:06:07.157Z",
+  "build": {
+    "buildId": "1792670321980",
+    "version": "2.6.1"
+  },
+  "referenceCommit": "2b3b14e5ae1241c753eadd669891b3319c2e28eb",
+  "rendererSelection": "WebGPU automatically preferred; classic WebGL fallback or explicit override",
+  "initialCandidate": {
+    "buildId": "1792668887102",
+    "failureEvidence": "artifacts/webgpu-default-initial-adapter-timeout.json",
+    "failure": "page.waitForFunction: Timeout 240000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\renderer-qa.mjs:26:73",
+    "finalEligibilityCheckPassed": true,
+    "nativeModuleLoadedForRejectedAdapter": false
+  },
+  "functionalVerified": true,
+  "releaseReady": false,
+  "regression": {
+    "tests": 407,
+    "passed": 407,
+    "failed": 0,
+    "focused": 15
+  },
+  "browser": [
+    {
+      "mode": "default",
+      "evidence": "artifacts/webgpu-default-default.json",
+      "startedAt": "2026-10-22T12:01:39.264Z",
+      "checks": [
+        {
+          "mode": "default",
+          "expected": "webgpu",
+          "url": "http://127.0.0.1:51428/",
+          "queryRenderer": null,
+          "nativeModuleRequests": 1,
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 16,
+                "skipped": 1,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 23,
+                "skipped": 1,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 26,
+                "skipped": 1,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "status": "WebGPU is active.",
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          },
+          "offline": {
+            "nodeChunk": true,
+            "catalogues": 3,
+            "reload": true,
+            "gameplay": true
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "default",
+          "type": "warning",
+          "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+        },
+        {
+          "mode": "default",
+          "type": "warning",
+          "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+        },
+        {
+          "mode": "default",
+          "type": "warning",
+          "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+        },
+        {
+          "mode": "default",
+          "type": "warning",
+          "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+        }
+      ],
+      "buildId": "1792670321980",
+      "passed": true
+    },
+    {
+      "mode": "default-fallback",
+      "evidence": "artifacts/webgpu-default-default-fallback.json",
+      "startedAt": "2026-10-22T12:02:52.782Z",
+      "checks": [
+        {
+          "mode": "default-fallback",
+          "expected": "webgl",
+          "url": "http://127.0.0.1:54881/",
+          "queryRenderer": null,
+          "nativeModuleRequests": 0,
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "status": "WebGPU could not start on this device. Compatible graphics (WebGL 2) is active.",
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "default-fallback",
+          "type": "warning",
+          "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+        },
+        {
+          "mode": "default-fallback",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        },
+        {
+          "mode": "default-fallback",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        }
+      ],
+      "buildId": "1792670321980",
+      "passed": true
+    },
+    {
+      "mode": "default-no-adapter",
+      "evidence": "artifacts/webgpu-default-default-no-adapter.json",
+      "startedAt": "2026-10-22T12:00:00.726Z",
+      "checks": [
+        {
+          "mode": "default-no-adapter",
+          "expected": "webgl",
+          "url": "http://127.0.0.1:49610/",
+          "queryRenderer": null,
+          "nativeModuleRequests": 0,
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "adapterRequests": 1,
+          "status": "WebGPU could not start on this device. Compatible graphics (WebGL 2) is active.",
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "default-no-adapter",
+          "type": "warning",
+          "text": "WebGPU could not start; using WebGL 2: No usable WebGPU adapter is available on this device."
+        },
+        {
+          "mode": "default-no-adapter",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        },
+        {
+          "mode": "default-no-adapter",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        }
+      ],
+      "buildId": "1792670321980",
+      "passed": true
+    },
+    {
+      "mode": "webgl",
+      "evidence": "artifacts/webgpu-default-webgl.json",
+      "startedAt": "2026-10-22T12:03:49.154Z",
+      "checks": [
+        {
+          "mode": "webgl",
+          "expected": "webgl",
+          "url": "http://127.0.0.1:61495/?renderer=webgl",
+          "queryRenderer": "webgl",
+          "nativeModuleRequests": 0,
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "status": "Compatible graphics (WebGL 2) is active.",
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "webgl",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        },
+        {
+          "mode": "webgl",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        }
+      ],
+      "buildId": "1792670321980",
+      "passed": true
+    }
+  ],
+  "recovery": {
+    "evidence": "artifacts/webgpu-default-recovery.json",
+    "startedAt": "2026-10-22T12:04:45.160Z",
+    "harnessSHA256": "00d28659b856b6cb0a3e2da2c5fb88325ced0e49ff6f7b4ae5ccc1995a8e5264",
+    "item": {
+      "quality": "low",
+      "phone": true,
+      "defaultRenderer": true
+    },
+    "expectedHandled": true,
+    "physicalPhone": false,
+    "errors": [],
+    "expectedErrors": [
+      {
+        "type": "error",
+        "source": "engine",
+        "text": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n"
+      },
+      {
+        "type": "warning",
+        "source": "driver",
+        "text": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n"
+      },
+      {
+        "type": "error",
+        "source": "engine",
+        "text": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-2\"\"]).\n"
+      },
+      {
+        "type": "warning",
+        "source": "driver",
+        "text": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-2\"\"]).\n"
+      }
+    ],
+    "phases": [
+      "healthy with shared-device portrait",
+      "first fault held and saved",
+      "recovery and blocked reload"
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/155.0.8059.80",
+      "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "jsVersion": "15.5.35.23"
+    },
+    "buildId": "1792670321980",
+    "startup": {
+      "backend": "webgpu",
+      "requested": null,
+      "secure": true,
+      "gpu": true,
+      "quality": "low"
+    },
+    "status": "WebGPU is active.",
+    "portrait": {
+      "ready": true,
+      "sharedDevice": true
+    },
+    "recovery": {
+      "failure": {
+        "backendError": true,
+        "type": "GPUValidationError",
+        "message": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n",
+        "quality": "low"
+      },
+      "paused": true,
+      "sameState": true,
+      "saved": true,
+      "sameCamera": true,
+      "quality": "low",
+      "frameRate": "60",
+      "held": true,
+      "overflow": false
+    },
+    "retryIgnored": true,
+    "persistedSettings": {
+      "quality": "low",
+      "autoQuality": false,
+      "frameRate": "60",
+      "fog": true,
+      "weather": "clear",
+      "lighting": "day",
+      "music": false,
+      "volume": 0
+    },
+    "latched": {
+      "sameFailure": true,
+      "sameDialog": true,
+      "sameState": true
+    },
+    "storageBlocked": true,
+    "restored": {
+      "backend": "webgl",
+      "playing": true,
+      "quality": "low",
+      "frameRate": "60",
+      "exactSerializedMatch": false,
+      "sameKingdomState": true,
+      "fog": {
+        "lostHistory": 0,
+        "addedCurrentVision": 6,
+        "addedOutsideVision": 0
+      },
+      "saved": {
+        "seed": 512,
+        "seconds": 0.7999999999999999,
+        "entities": 384,
+        "nextId": 385,
+        "rngState": 4234357408
+      },
+      "resumed": {
+        "seed": 512,
+        "seconds": 0.7999999999999999,
+        "entities": 384,
+        "nextId": 385,
+        "rngState": 4234357408
+      },
+      "rendered": {
+        "held": false,
+        "drawn": 9,
+        "calls": 86,
+        "quality": "low",
+        "shaderErrors": 0
+      },
+      "status": "Compatible graphics (WebGL 2) is active."
+    },
+    "passed": true
+  },
+  "qualification": {
+    "headless": true,
+    "forcedHardwareEligibility": true,
+    "foregroundScheduling": true,
+    "physicalPhone": false
+  },
+  "limits": [
+    "This change makes the requested migration the normal startup behavior; it is not a new performance optimization or full-game release certification.",
+    "WebGPU needs a supported secure browser/GPU. Missing API or failed adapter startup selects the classic GLSL renderer. An explicit renderer=webgl URL remains authoritative, including recovery reloads.",
+    "Four-unit paused feature checks and an emulated landscape-touch recovery scenario do not verify physical phones, all drivers, thermal behavior or maximum-population battles.",
+    "The earlier geometry milestone recorded missed native 60/30 frame targets, long cold starts and failed crowded WebGL warmups. Those performance issues remain open; no new FPS improvement is claimed.",
+    "Public Render deployment and the live revision require separate verification; a GitHub push alone does not prove them.",
+    "The broader game goal remains active."
+  ],
+  "sourceSHA256": {
+    "src/main.js": "41f4535862ac44c5ce1fe22d412263ff18b4142726a2c9ee23497fcb020c1ad8",
+    "src/render-context.js": "81616fe37406e822b7c3ebc15aac616e419f646b3bfbe9226f5a256ad5be72ea",
+    "src/render-runtime.js": "dbf56c2b523ef666596559a3ca9b9f3fded63e41c9621f9157370f2e8e25202e",
+    "src/graphics-settings.js": "bdd44710b741631bb0e60196da907d9efb8098586fed901024a43102c330f812",
+    "tests/graphics-settings.test.js": "36431772101f0cbbe58c933e40ba1aecdb13c7087be4d04c4ddf9b033c16a4bd",
+    "scripts/renderer-qa.mjs": "a2ab19bf5940e204a7ae2fced5fc7dac45c4b8505b7eb8210827b1319c8b7d2f",
+    "scripts/native-error-qa.mjs": "00d28659b856b6cb0a3e2da2c5fb88325ced0e49ff6f7b4ae5ccc1995a8e5264"
+  },
+  "evidenceSHA256": {
+    "artifacts/webgpu-default-initial-adapter-timeout.json": "310e936bc55668ceb0b028a43a758561e27d93a9a9c8660836b5c41fe1d46be5",
+    "artifacts/webgpu-default-regression.txt": "d81495af5327ffcd94f88439d25a81b90d25ae4fe11aa36dd3fa6e2e01b5b689",
+    "artifacts/webgpu-default-focused.txt": "adaf2758b815aecce888c1f838ff00cf0f5addec983b4ae695902f21eb8f33ff",
+    "artifacts/webgpu-default-build.txt": "5d257db0d87b3a8beb1c8e9c0e263404ab811dea1c75266f341a9ac48d710293",
+    "artifacts/webgpu-default-default.json": "b318c151cfeebe1eb73e742ea8b89241690300b56b4c6856c409d567418cf04d",
+    "artifacts/webgpu-default-default-fallback.json": "b1cf253f92cbc9aacbd1713565010ae7e1952a2438c57e217691d919eba4887b",
+    "artifacts/webgpu-default-default-no-adapter.json": "16cdd2da4365339c21e7800b320b5ea53137954aeb91887d89152bc73d9e5239",
+    "artifacts/webgpu-default-webgl.json": "f2bef7c10db39381c4b8b2f2fb3e1e2b699855ba12658b03cb0d431f2cae9bc3",
+    "artifacts/webgpu-default-recovery.json": "31573b25935fd4a68e309c56b23553c2c307bd2c6658dd815e0f038bee8fe13b",
+    "artifacts/webgpu-default-active-status.png": "15c488c4950809f1cc7e65463d765f876825bad74613edd9da4448a2d147903b",
+    "artifacts/webgpu-default-high.png": "cf0b8a436c58e4984aa65acd6291d157de1bddc703a78a9292759e9e14b7802e",
+    "artifacts/webgpu-default-landscape.png": "14a9771e215de52aa8c98d5b2bf73e623189e6e16a365de49b53d5a3e2aff6d4"
+  },
+  "localDist": {
+    "files": 56,
+    "hashVerified": true,
+    "previousExtraAssetsRetained": true
+  }
+}

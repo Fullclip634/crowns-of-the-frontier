@@ -1,0 +1,23 @@
+✔ renderer status explains default native fallback, insecure origins and explicit compatibility (2.2213ms)
+✔ an explicit quality stays fixed under frame pressure while automatic graphics remain opt-in (0.6351ms)
+✔ automatic native graphics account for held GPU submissions at both frame targets (3.2864ms)
+✔ native pressure windows reset during graphics work and tolerate replaced counters (0.7489ms)
+✔ node material variants and shader previews preserve PBR maps, tint and node graphs (5.0784ms)
+✔ device loss holds the battlefield and keeps the engine loss callback (1.8508ms)
+✔ uncaptured native errors latch one recovery state while preserving diagnostics and disposal (0.3321ms)
+✔ a shared device still holds the battlefield after a portrait replaces its property handler (0.342ms)
+✔ device watches can be replaced and released without retaining callbacks or listeners (0.3333ms)
+✔ a native fault during an asynchronous rebuild cannot mark invalid graphics valid again (1.4507ms)
+✔ an uncaptured native error during shader warmup blocks further quality requests (1.1517ms)
+✔ native backend recovery offers compatible reload without exposing raw driver details or retry (0.4894ms)
+✔ a quality warm-up cannot revive a lost device or rebuild through recovery (0.6736ms)
+✔ a disconnected device offers reload instead of retrying the same renderer (0.3599ms)
+✔ a failed downgrade keeps a node-renderer shadow target alive for its cached bindings (1.6128ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 676.2664

@@ -1,3 +1,30 @@
+## 22 October 2026 — WebGPU on the normal game URL
+
+The normal game address now prefers native WebGPU automatically. Players no
+longer need a renderer query parameter. Missing WebGPU support or adapter
+startup failure selects the established classic WebGL renderer; an explicit
+`?renderer=webgl` override, including protected recovery reloads, is honored.
+Settings reports the active renderer and explains compatibility fallback.
+Adapter eligibility is checked before loading the native engine. The initial
+candidate timed out in the failed-adapter fixture; that failure is retained,
+and the final candidate enters compatibility graphics without loading the node
+module in that case.
+
+Verified: **407 serial tests**, **15 focused tests**, production
+**1792670321980**, and four browser renderer cases. The ordinary URL starts
+native WebGPU, switches all three detail levels without replacing the match,
+and reloads offline with its node module and all three model catalogues cached.
+Missing-API, failed-adapter and explicit-compatibility cases pass the same
+construction, placement, night rain, portrait and landscape checks. A default-URL
+landscape-touch native fault test protects the save, blocks reload when storage
+fails, and restores the kingdom using explicit compatible graphics.
+
+See [startup behavior](WEBGPU_MIGRATION.md) and
+[validation evidence](artifacts/webgpu-default-validation.json). This startup
+policy change does not resolve the previously measured cold-start delays or
+missed frame targets. Physical devices, sustained performance and the public
+Render revision remain open. The full game goal stays active.
+
 ## 22 October 2026 — Preserve model vertex sharing
 
 Scenery merging, ownership-color baking and articulated troop batches now keep

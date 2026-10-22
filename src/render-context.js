@@ -5,13 +5,17 @@ import {installNodeRuntime} from './render-runtime.js';
 // full-size backbuffer until its artwork has finished preparing.
 export function createWorldRenderer(){return new WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}
 
-// Opt-in during visual and performance qualification. A failed WebGPU startup
-// creates a fresh legacy canvas; a canvas cannot switch context types safely.
-export async function initializeWorldRenderer({backend='webgl',onFallback=()=>{}}={}){
-  if(backend!=='webgpu')return createWorldRenderer();
+// Prefer native WebGPU. An explicit compatibility request or failed startup
+// creates a fresh WebGL canvas; a canvas cannot switch context types safely.
+export async function initializeWorldRenderer({backend='webgpu',onFallback=()=>{}}={}){
+  if(backend==='webgl')return createWorldRenderer();
   if(!globalThis.navigator?.gpu){onFallback(new Error('WebGPU is unavailable in this browser or connection.'));return createWorldRenderer();}
   let renderer;
   try{
+    // An exposed API does not guarantee an eligible adapter. Check before
+    // loading the node engine or creating its separate compatibility context.
+    const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance',featureLevel:'compatibility'});
+    if(!adapter)throw new Error('No usable WebGPU adapter is available on this device.');
     const runtime=await import('./render-nodes.js');
     renderer=new runtime.WebGPURenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
     await renderer.init();

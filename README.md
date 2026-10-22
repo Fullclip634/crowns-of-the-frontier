@@ -1,11 +1,13 @@
 # Crowns of the Frontier
 
-Optional WebGPU preview: append `?renderer=webgpu` to the game URL. WebGL remains the default and compatibility fallback. See [setup, verification and limits](WEBGPU_MIGRATION.md).
+The game automatically prefers WebGPU on supported browsers and devices. No URL
+change is needed. WebGL 2 remains the compatibility fallback; `?renderer=webgl`
+explicitly selects it. See [setup, verification and limits](WEBGPU_MIGRATION.md).
 
 Settings shows which renderer is active. A native graphics fault pauses local
 play and offers **Save and reload** with compatible graphics; failed saves keep
 the kingdom in memory and block reload. On a phone, use the deployed HTTPS
-address to try WebGPU. See [recovery behavior and verification](WEBGPU_RECOVERY_DESIGN.md).
+address for WebGPU. See [recovery behavior and verification](WEBGPU_RECOVERY_DESIGN.md).
 
 Ranged attacks now resolve after windup and flight, siege can miss moving troops,
 and coastal AI transports retry blocked beaches. See

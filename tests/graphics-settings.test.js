@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {graphicsSelection,applyGraphicsChoice} from '../src/graphics-settings.js';
+import {graphicsSelection,applyGraphicsChoice,rendererStatus} from '../src/graphics-settings.js';
 import {WorldView} from '../src/world.js';
+
+test('renderer status explains default native fallback, insecure origins and explicit compatibility',()=>{
+  assert.equal(rendererStatus({active:'webgpu'}),'WebGPU is active.');
+  assert.match(rendererStatus({active:'webgl'}),/WebGPU could not start.*WebGL 2/);
+  assert.match(rendererStatus({active:'webgl',secure:false}),/deployed HTTPS/);
+  assert.equal(rendererStatus({requested:'webgl',active:'webgl'}),'Compatible graphics (WebGL 2) is active.');
+});
 
 test('an explicit quality stays fixed under frame pressure while automatic graphics remain opt-in',()=>{
   const settings={quality:'low',autoQuality:true,frameRate:'60'};

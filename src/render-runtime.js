@@ -1,7 +1,7 @@
 import {MeshStandardMaterial,PMREMGenerator} from 'three';
 
-// Installed only after the optional renderer has initialized successfully.
-// The production WebGL path does not load the node renderer or change materials.
+// Installed only after native WebGPU has initialized successfully.
+// Compatibility graphics keep their GLSL materials after a failed native startup.
 let runtime=null;
 export const nodeRuntime=()=>runtime;
 export function installNodeRuntime(value){runtime=value;}

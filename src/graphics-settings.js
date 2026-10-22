@@ -1,7 +1,7 @@
 const qualities=new Set(['high','medium','low']);
 
-export function rendererStatus({requested='webgl',active='webgl',secure=true}){
-  if(active==='webgpu')return 'WebGPU preview is active.';
+export function rendererStatus({requested='webgpu',active='webgl',secure=true}){
+  if(active==='webgpu')return 'WebGPU is active.';
   if(requested==='webgpu')return secure?'WebGPU could not start on this device. Compatible graphics (WebGL 2) is active.':'This address cannot use WebGPU. Open the deployed HTTPS address to try it. Compatible graphics (WebGL 2) is active.';
   return 'Compatible graphics (WebGL 2) is active.';
 }

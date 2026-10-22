@@ -78,7 +78,8 @@ const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
 const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
-let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:new URLSearchParams(location.search).get('renderer')||'webgl',onFallback:error=>console.warn('WebGPU could not start; using WebGL 2:',error.message)});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;}
+const requestedRenderer=new URLSearchParams(location.search).get('renderer')==='webgl'?'webgl':'webgpu';
+let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>console.warn('WebGPU could not start; using WebGL 2:',error.message)});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // A missing/old catalogue must not silently replace the promised Blender art.
 for(;!startupFailure;){
@@ -160,7 +161,7 @@ function showSettings(){
       <option value="medium" ${graphicsMode==='medium'?'selected':''}>Balanced · detailed bases, lighter armies</option>
       <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft contacts</option>
     </select><p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality.</p>
-    <p id="renderer-status" class="settings-note">${esc(rendererStatus({requested:new URLSearchParams(location.search).get('renderer')||'webgl',active:rendererBackend(view.renderer),secure:globalThis.isSecureContext!==false}))}</p>
+    <p id="renderer-status" class="settings-note">${esc(rendererStatus({requested:requestedRenderer,active:rendererBackend(view.renderer),secure:globalThis.isSecureContext!==false}))}</p>
     <label class="field-label" for="frame-rate">FRAME RATE TARGET</label><select id="frame-rate">${Object.entries(FRAME_RATES).map(([id,name])=>`<option value="${id}" ${settings.frameRate===id?'selected':''}>${name}</option>`).join('')}</select>
     <label class="field-label" for="camera-preset">CAMERA VIEW</label><select id="camera-preset">${Object.entries(CAMERA_PRESETS).map(([id,p])=>`<option value="${id}" ${settings.cameraPreset===id?'selected':''}>${p.label}</option>`).join('')}</select>
     <label class="toggle"><input id="edge-scroll" type="checkbox" ${settings.edgeScroll?'checked':''}> Mouse edge scrolling</label>

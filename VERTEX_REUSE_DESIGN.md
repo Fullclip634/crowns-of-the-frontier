@@ -86,4 +86,5 @@ and [frame-scheduling implementation](https://chromium.googlesource.com/chromium
 
 Physical phones, broader drivers, cold-start latency, sustained frame times,
 maximum-population battles and complete release readiness remain open. Native
-WebGPU remains an opt-in preview, and the overall game goal stays active.
+WebGPU is now preferred automatically on supported devices; these measurements
+predate that startup-policy change. The overall game goal stays active.

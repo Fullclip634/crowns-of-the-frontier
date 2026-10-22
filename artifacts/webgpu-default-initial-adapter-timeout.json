@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-10-22T11:48:06.048Z",
+  "checks": [],
+  "messages": [
+    {
+      "mode": "default-no-adapter",
+      "type": "warning",
+      "text": "THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend."
+    },
+    {
+      "mode": "default-no-adapter",
+      "type": "warning",
+      "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable; using the compatibility renderer."
+    }
+  ],
+  "failure": "page.waitForFunction: Timeout 240000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\renderer-qa.mjs:26:73"
+}
