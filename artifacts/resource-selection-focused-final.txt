@@ -1,0 +1,12 @@
+✔ closest selection preserves equal-distance order, object identity and the source array (3.58ms)
+✔ large forests use one score per eligible source and retain the exact stable-sort prefix (15.8702ms)
+✔ AI resource selection keeps safety, depleted/water exclusions, stable ties and route retries (189.6207ms)
+✔ AI construction chooses the first equally close available worker and retains busy-worker exclusions (138.1634ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 524.5299

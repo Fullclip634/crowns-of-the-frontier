@@ -11,6 +11,10 @@ Ranged attacks now resolve after windup and flight, siege can miss moving troops
 and coastal AI transports retry blocked beaches. See
 [combat rules and verification](PROJECTILE_COMBAT_DESIGN.md).
 
+AI workers now choose nearby safe resources without sorting the entire forest.
+Reference battle replays retain the same decisions and state. See
+[resource selection and measured CPU work](RESOURCE_SELECTION_DESIGN.md).
+
 To unload a transport, select it, open **Options** on a phone, choose **Unload**,
 then click or tap nearby open shore. Crowded beaches release only the troops
 that fit; clear room or choose another beach for the remaining passengers.

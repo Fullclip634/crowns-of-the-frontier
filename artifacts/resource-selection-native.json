@@ -1,0 +1,1507 @@
+{
+  "startedAt": "2026-10-22T01:54:07.392Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 90,
+    "queryDiagnostics": false,
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [
+    {
+      "quality": "medium",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 123,
+      "submittedFPS": 12.134126490869587,
+      "attempts": 249,
+      "held": 126,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10136.700000000186
+      },
+      "simulation": {
+        "advancedSeconds": 10.20000000000232,
+        "wallSeconds": 10.136700000000186,
+        "speedRatio": 1.0062446358284385,
+        "ticks": {
+          "samples": 102,
+          "median": 28.90000000037253,
+          "p95": 63.10000000055879,
+          "p99": 67.79999999981374,
+          "max": 69
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 122,
+        "median": 76.6000000005588,
+        "p95": 136.59999999962747,
+        "p99": 338.3999999994412,
+        "max": 378.20000000018626
+      },
+      "renderAttemptCPU": {
+        "samples": 249,
+        "median": 0.19999999925494194,
+        "p95": 44.90000000037253,
+        "p99": 57.200000000186265,
+        "max": 132.20000000018626
+      },
+      "submittedRenderCPU": {
+        "samples": 123,
+        "median": 32.700000000186265,
+        "p95": 49.5,
+        "p99": 57.30000000074506,
+        "max": 132.20000000018626
+      },
+      "apiQueries": {},
+      "slowQueries": [],
+      "pipelineLayouts": {
+        "limit": 8,
+        "layouts": [
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 11
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 1,
+            "attributes": 1
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1291",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1573",
+            "buffers": 3,
+            "attributes": 12
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1292",
+            "buffers": 4,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_770",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1293",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_773",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_817",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 5,
+            "attributes": 8
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2908",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_770",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_771",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_777",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_773",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2903",
+            "buffers": 3,
+            "attributes": 6
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2904",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2905",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2906",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_791",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2918",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2917",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2922",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2923",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2923",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2926",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 1,
+            "attributes": 1
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2984",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          }
+        ]
+      },
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 91,
+        "allocated": 290,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 166912,
+        "rigUsedBytes": 59072
+      },
+      "shadows": {
+        "updates": 197,
+        "skipped": 25,
+        "refreshRate": 20,
+        "mapSize": 1024
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8
+      },
+      "render": {
+        "calls": 656,
+        "frameCalls": 3,
+        "drawCalls": 278,
+        "triangles": 3403948,
+        "points": 0,
+        "lines": 0,
+        "timestamp": 0
+      },
+      "memory": {
+        "attributes": 834,
+        "attributesSize": 85370512,
+        "geometries": 150,
+        "indexAttributes": 67,
+        "indexAttributesSize": 5289264,
+        "indirectStorageAttributes": 0,
+        "indirectStorageAttributesSize": 0,
+        "programs": 133,
+        "programsSize": 974229,
+        "readbackBuffers": 0,
+        "readbackBuffersSize": 0,
+        "renderTargets": 3,
+        "storageAttributes": 0,
+        "storageAttributesSize": 0,
+        "textures": 42,
+        "texturesSize": 74008381,
+        "uniformBuffers": 816,
+        "uniformBuffersSize": 1761856,
+        "total": 167404242
+      },
+      "shaderErrors": 0,
+      "backend": "webgpu",
+      "requestedQuality": "medium",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "autoQuality": false,
+      "actualRenderQuality": "medium",
+      "validationErrors": 0,
+      "validLayout": true,
+      "validWindow": true,
+      "targetMet": false,
+      "cpuProfile": {
+        "milliseconds": 8908.325,
+        "self": [
+          {
+            "functionName": "(program)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 5368.546999999994
+          },
+          {
+            "functionName": "(idle)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 314.95500000000004
+          },
+          {
+            "functionName": "fetch",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 308.212
+          },
+          {
+            "functionName": "Hd",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 62505,
+            "milliseconds": 137.133
+          },
+          {
+            "functionName": "",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 139899,
+            "milliseconds": 133.54800000000003
+          },
+          {
+            "functionName": "nearest",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 150731,
+            "milliseconds": 114.03399999999996
+          },
+          {
+            "functionName": "tickUnit",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 154678,
+            "milliseconds": 98.59500000000001
+          },
+          {
+            "functionName": "(garbage collector)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 93.329
+          },
+          {
+            "functionName": "owned",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 132971,
+            "milliseconds": 92.654
+          },
+          {
+            "functionName": "buildValid",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 139622,
+            "milliseconds": 89.43
+          },
+          {
+            "functionName": "move",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 147793,
+            "milliseconds": 84.84999999999997
+          },
+          {
+            "functionName": "tick",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 168504,
+            "milliseconds": 62.081999999999994
+          },
+          {
+            "functionName": "Jd.e.canSee",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 74863,
+            "milliseconds": 53.160000000000004
+          },
+          {
+            "functionName": "Hd",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 62505,
+            "milliseconds": 48.646
+          },
+          {
+            "functionName": "_renderObjectDirect",
+            "scriptId": "22",
+            "url": "http://127.0.0.1:56423/assets/render-nodes-BwUjMvQb.js",
+            "lineNumber": 39,
+            "columnNumber": 23638,
+            "milliseconds": 47.537000000000006
+          },
+          {
+            "functionName": "ao",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 86936,
+            "milliseconds": 47.33999999999999
+          },
+          {
+            "functionName": "In",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 268571,
+            "milliseconds": 45.607
+          },
+          {
+            "functionName": "Yd",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 80077,
+            "milliseconds": 42.395999999999994
+          },
+          {
+            "functionName": "ao",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 86936,
+            "milliseconds": 40.879000000000005
+          },
+          {
+            "functionName": "getBoundingClientRect",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 35.963
+          },
+          {
+            "functionName": "render",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 201,
+            "columnNumber": 43788,
+            "milliseconds": 35.907000000000004
+          },
+          {
+            "functionName": "updateBefore",
+            "scriptId": "22",
+            "url": "http://127.0.0.1:56423/assets/render-nodes-BwUjMvQb.js",
+            "lineNumber": 36,
+            "columnNumber": 15454,
+            "milliseconds": 33.376
+          },
+          {
+            "functionName": "",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 155383,
+            "milliseconds": 31.759
+          },
+          {
+            "functionName": "updateMatrixWorld",
+            "scriptId": "6",
+            "url": "http://127.0.0.1:56423/assets/three-DX1BsE5H.js",
+            "lineNumber": 0,
+            "columnNumber": 63357,
+            "milliseconds": 31.110000000000003
+          },
+          {
+            "functionName": "Ur",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 80036,
+            "milliseconds": 30.788999999999994
+          },
+          {
+            "functionName": "_projectObject",
+            "scriptId": "22",
+            "url": "http://127.0.0.1:56423/assets/render-nodes-BwUjMvQb.js",
+            "lineNumber": 39,
+            "columnNumber": 17947,
+            "milliseconds": 28.981
+          },
+          {
+            "functionName": "",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 84553,
+            "milliseconds": 28.234
+          },
+          {
+            "functionName": "_projectObject",
+            "scriptId": "22",
+            "url": "http://127.0.0.1:56423/assets/render-nodes-BwUjMvQb.js",
+            "lineNumber": 39,
+            "columnNumber": 17947,
+            "milliseconds": 27.444
+          },
+          {
+            "functionName": "setVertexBuffer",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1,
+            "milliseconds": 26.578
+          },
+          {
+            "functionName": "pathTo",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 147757,
+            "milliseconds": 23.116000000000003
+          },
+          {
+            "functionName": "e.render",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 150,
+            "columnNumber": 27598,
+            "milliseconds": 22.738999999999997
+          },
+          {
+            "functionName": "owned",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 132971,
+            "milliseconds": 21.651
+          },
+          {
+            "functionName": "PA",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 22,
+            "columnNumber": 11374,
+            "milliseconds": 21.644
+          },
+          {
+            "functionName": "Z",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 79881,
+            "milliseconds": 21.552000000000003
+          },
+          {
+            "functionName": "tickBuilding",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 159628,
+            "milliseconds": 21.462999999999997
+          },
+          {
+            "functionName": "capacity",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 138926,
+            "milliseconds": 21.388
+          },
+          {
+            "functionName": "wo",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 266991,
+            "milliseconds": 21.142
+          },
+          {
+            "functionName": "af",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 201,
+            "columnNumber": 65897,
+            "milliseconds": 20.038
+          },
+          {
+            "functionName": "Jd.e.canSee",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 74863,
+            "milliseconds": 19.209
+          },
+          {
+            "functionName": "traverse",
+            "scriptId": "6",
+            "url": "http://127.0.0.1:56423/assets/three-DX1BsE5H.js",
+            "lineNumber": 0,
+            "columnNumber": 62767,
+            "milliseconds": 18.902
+          },
+          {
+            "functionName": "Jd.e.tickUnit",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 72814,
+            "milliseconds": 17.854000000000003
+          },
+          {
+            "functionName": "updateForRender",
+            "scriptId": "22",
+            "url": "http://127.0.0.1:56423/assets/render-nodes-BwUjMvQb.js",
+            "lineNumber": 36,
+            "columnNumber": 16118,
+            "milliseconds": 17.785
+          },
+          {
+            "functionName": "nearest",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 150731,
+            "milliseconds": 17.094
+          },
+          {
+            "functionName": "pop",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 61186,
+            "milliseconds": 17.066
+          },
+          {
+            "functionName": "e.tick",
+            "scriptId": "7",
+            "url": "http://127.0.0.1:56423/assets/index-DvKzfzY5.js",
+            "lineNumber": 5,
+            "columnNumber": 116903,
+            "milliseconds": 16.564
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Edg/155.0.4283.62",
+      "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+      "jsVersion": "15.5.9.7"
+    }
+  },
+  "buildId": "1792633987231",
+  "warmups": [
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "phone": false,
+      "states": [
+        {
+          "at": 36361.90000000037,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.4000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 0,
+          "submitted": 2,
+          "flight": {
+            "pending": 2,
+            "submitted": 10,
+            "skipped": 2,
+            "failed": 0
+          },
+          "heap": 298713753,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 45906.700000000186,
+          "hidden": false,
+          "paused": false,
+          "seconds": 426.7000000000285,
+          "ended": null,
+          "attempts": 99,
+          "held": 46,
+          "submitted": 53,
+          "flight": {
+            "pending": 2,
+            "submitted": 61,
+            "skipped": 48,
+            "failed": 0
+          },
+          "heap": 325720706,
+          "backend": "webgpu",
+          "pipelines": 88
+        }
+      ]
+    }
+  ],
+  "pipelineLayouts": [
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "phone": false,
+      "limit": 8,
+      "layouts": [
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 11
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 1,
+          "attributes": 1
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1291",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1573",
+          "buffers": 3,
+          "attributes": 12
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1292",
+          "buffers": 4,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_770",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1293",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_773",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_817",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 5,
+          "attributes": 8
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2908",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_770",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_771",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_777",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_872",
+          "buffers": 7,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_773",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2903",
+          "buffers": 3,
+          "attributes": 6
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2904",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2905",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2906",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_791",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2918",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2917",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2922",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2923",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2923",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2926",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 1,
+          "attributes": 1
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_872",
+          "buffers": 7,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2984",
+          "buffers": 2,
+          "attributes": 2
+        }
+      ]
+    }
+  ],
+  "measured": true
+}

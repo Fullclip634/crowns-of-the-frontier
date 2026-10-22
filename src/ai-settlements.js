@@ -15,8 +15,10 @@ export function rememberDeposits(sim,state,owner){
   }
 }
 
-export function economicDanger(state,point,margin=0){
-  return hostileMemory(state).some(enemy=>{
+// A synchronous resource search can reuse its observed-enemy list. Other calls
+// read current memory as before; no knowledge is retained between decisions.
+export function economicDanger(state,point,margin=0,memory=hostileMemory(state)){
+  return memory.some(enemy=>{
     const definition=enemy.kind==='building'?BUILDINGS[enemy.type]:UNITS[enemy.type];
     if(!definition?.damage||enemy.type==='scout')return false;
     return distance(enemy,point)<(enemy.kind==='building'?(definition.range||0)+16:25)+margin;

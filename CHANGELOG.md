@@ -1,3 +1,26 @@
+## 22 October 2026 — AI resource-search CPU work
+
+AI worker assignments select the five closest safe sources in one pass and reuse
+the observed-enemy list only within that synchronous decision. Construction
+chooses the same nearest available builder without a full sort. Stable ties,
+safety, path retries, paid construction and graphics presets are preserved.
+
+Verified: **399 serial tests**, final focused assertions, production
+**1792633987231**, and six exact reference replays totaling **1,200 ticks**.
+The crowded replay's 218 assignments used 268.1 ms rather than 846.1 ms in one
+paired Node observation. Total timing varies; this is not an FPS guarantee.
+Three evolving production-browser battle windows record:
+
+- webgpu, medium: 12.1 submissions/s; 60 target; targetMet=false.
+- webgl, medium: 20.0 submissions/s; 60 target; targetMet=false.
+- webgpu, low emulated landscape touch: 28.0 submissions/s; 30 target; targetMet=false.
+
+See [the design and scope](RESOURCE_SELECTION_DESIGN.md) and
+[validation evidence](artifacts/resource-selection-validation.json). Browser
+submission cadence is not display-presentation FPS. Physical devices, sustained
+performance, native GPU optimization and the public Render revision remain open.
+The full development goal is active.
+
 ## 22 October 2026 — Shared WebGPU device recovery
 
 Unexpected native errors now hold the battlefield, protect local saves and offer

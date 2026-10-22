@@ -3,6 +3,7 @@ import {customOpening,alliedSupport} from './allied-ai.js';
 import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers} from './ai-settlements.js';
 import {orderSiegeAssault} from './ai-siege.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
+import {closestCandidates} from './closest-candidates.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -122,10 +123,10 @@ export function installCommanderAI(Simulation){
     if(e.aiFleeing>this.time){e.order=null;e.path=[];return;}delete e.aiFleeing;
     const player=this.players[owner],workers=this.owned(owner,'unit','villager'),weights={food:player.age<3?.43:.36,wood:.32,gold:player.age<1?.15:.24,stone:.08};
     const counts=Object.fromEntries(Object.keys(weights).map(type=>[type,workers.filter(v=>v!==e&&v.order?.type==='gather'&&v.gatherType===type).length]));
-    const state=stateFor(this,owner),types=Object.keys(weights).sort((a,b)=>counts[a]/weights[a]-counts[b]/weights[b]);
-    for(const type of types){const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1))
-      .filter(source=>!economicDanger(state,source))
-      .sort((a,b)=>distance(e,a)-distance(e,b)).slice(0,5);
+    const state=stateFor(this,owner),memory=Object.values(state.known||{}),types=Object.keys(weights).sort((a,b)=>counts[a]/weights[a]-counts[b]/weights[b]);
+    for(const type of types){const sources=closestCandidates(this.entities,5,
+      t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1)&&!economicDanger(state,t,0,memory),
+      source=>distance(e,source));
       for(const source of sources){const route=this.pathTo(e,source);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>source.r+e.r+1.1)continue;
         e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=0;return;
       }
@@ -134,7 +135,7 @@ export function installCommanderAI(Simulation){
   p.commanderBuild=function(type,near=null,owner=1){
     const player=this.players[owner],definition=BUILDINGS[type],tc=this.owned(owner,'building','towncenter')[0];
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
-    const worker=this.owned(owner,'unit','villager').filter(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion).sort((a,b)=>distance(a,near||tc)-distance(b,near||tc))[0];if(!worker)return false;
+    const worker=closestCandidates(this.owned(owner,'unit','villager'),1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion,w=>distance(w,near||tc))[0];if(!worker)return false;
     for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
       if(!this.buildValid(type,point.x,point.z,owner))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
       return this.build(type,point.x,point.z,[worker.id],owner);

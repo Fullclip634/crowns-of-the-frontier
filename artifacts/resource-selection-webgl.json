@@ -1,0 +1,195 @@
+{
+  "startedAt": "2026-10-22T01:55:43.572Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 90,
+    "queryDiagnostics": false,
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [
+    {
+      "quality": "medium",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 200,
+      "submittedFPS": 19.97443272611095,
+      "attempts": 200,
+      "held": 0,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10012.799999999814
+      },
+      "simulation": {
+        "advancedSeconds": 10.100000000002296,
+        "wallSeconds": 10.012799999999814,
+        "speedRatio": 1.0087088526688324,
+        "ticks": {
+          "samples": 101,
+          "median": 23.59999999962747,
+          "p95": 60.19999999925494,
+          "p99": 77.20000000018626,
+          "max": 84
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 199,
+        "median": 44.299999999813735,
+        "p95": 95.70000000018626,
+        "p99": 123.69999999925494,
+        "max": 140
+      },
+      "renderAttemptCPU": {
+        "samples": 200,
+        "median": 20.40000000037253,
+        "p95": 34.90000000037253,
+        "p99": 43.299999999813735,
+        "max": 59.5
+      },
+      "submittedRenderCPU": {
+        "samples": 200,
+        "median": 20.40000000037253,
+        "p95": 34.90000000037253,
+        "p99": 43.299999999813735,
+        "max": 59.5
+      },
+      "adapter": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "apiQueries": {},
+      "slowQueries": [],
+      "pipelineLayouts": {
+        "layouts": []
+      },
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 87,
+        "allocated": 282,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 40,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 56064,
+        "rigUsedBytes": 56448
+      },
+      "shadows": {
+        "updates": 248,
+        "skipped": 87,
+        "refreshRate": 20,
+        "mapSize": 1024
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8
+      },
+      "render": {
+        "frame": 350,
+        "calls": 141,
+        "triangles": 1741959,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 147,
+        "textures": 40
+      },
+      "shaderErrors": 0,
+      "backend": "webgl",
+      "requestedQuality": "medium",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "autoQuality": false,
+      "actualRenderQuality": "medium",
+      "validationErrors": 0,
+      "validLayout": true,
+      "validWindow": true,
+      "targetMet": false
+    }
+  ],
+  "errors": [],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Edg/155.0.4283.62",
+      "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+      "jsVersion": "15.5.9.7"
+    }
+  },
+  "buildId": "1792633987231",
+  "warmups": [
+    {
+      "quality": "medium",
+      "backend": "webgl",
+      "phone": false,
+      "states": [
+        {
+          "at": 31219.700000000186,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.9000000000279,
+          "ended": null,
+          "attempts": 47,
+          "held": 0,
+          "submitted": 47,
+          "heap": 252596513,
+          "backend": "webgl",
+          "pipelines": 0
+        }
+      ]
+    }
+  ],
+  "pipelineLayouts": [
+    {
+      "quality": "medium",
+      "backend": "webgl",
+      "phone": false,
+      "layouts": []
+    }
+  ],
+  "measured": true
+}

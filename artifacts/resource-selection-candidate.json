@@ -1,0 +1,433 @@
+{
+  "createdAt": "2026-10-22T01:50:37.712Z",
+  "node": "v24.20.0",
+  "harnessSHA256": "79de0af21b23fc9af7b9e11dfb958c74c474e1be9d1c8c8012d3926b7ede5574",
+  "ticksRequested": 200,
+  "reference": ".tools/resource-selection-reference.json",
+  "sourceSHA256": {
+    "commander-ai.js": "1bd285e844bf6232fc818e3774f3f278da39f0b93913c80245e0b25fe8582b14",
+    "ai-settlements.js": "ee5eccc9da4b3181f5bce5a7b906d35e5989d2d0b8075d58a14ae6302243b365",
+    "closest-candidates.js": "d741e819f929134c328876a14d44d5cec1cff0f30c37ba5040b00de71a85faa7",
+    "simulation.js": "f87f094905df9994bfe6c8b10d1fec4c73e8115b3b8278b0eec6217ef6524b3e"
+  },
+  "cases": [
+    {
+      "name": "early",
+      "fixtureSHA256": "78cca3c2563ca095292ef4ed6d7b2953a3cbea734e656c9b2baa30171edec405",
+      "seed": 512,
+      "map": "highlands",
+      "players": 8,
+      "ticks": 200,
+      "seconds": 139.99999999999633,
+      "digest": "2d1f961ce42d673717ff11b1532804e61798a3dbba3f175882922375be8cc406",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "01f93b23d0671eba71cefe8066a0d5c6fab115bfd4bea600585e41f0d716eaf8"
+        },
+        {
+          "tick": 40,
+          "sha256": "893da01584fbb2d9bf9c14c1e9827dfa415e7e1c6c5fcd86e9f84b3419f5db9f"
+        },
+        {
+          "tick": 60,
+          "sha256": "8365bf45dc0028c23dce6dcbeb36b06d9073ca4d5ccb3158421c1d1012941499"
+        },
+        {
+          "tick": 80,
+          "sha256": "2491d615d460bbb640624d1a0341af0d246ef9341bfa40cfdf5b8cd393d42165"
+        },
+        {
+          "tick": 100,
+          "sha256": "5bc28fc07c3238abd5fd9961af30144e1c21949a572e09a0aa732b923990ac82"
+        },
+        {
+          "tick": 120,
+          "sha256": "ba2bd537618115083ea309940b2c920f0af0339a587d61042c072057ff8e14d6"
+        },
+        {
+          "tick": 140,
+          "sha256": "cf542a9f1f533ea730018a33c0f236ea553e205db6bcff8c18fb35e72497ac06"
+        },
+        {
+          "tick": 160,
+          "sha256": "9f4ab287fc0fe07deaad4a8f1f5da108324eaafe2f1f3389bcd02a86494f4c4d"
+        },
+        {
+          "tick": 180,
+          "sha256": "362220f07961a8dd65581d5e173bff5cc728a82cc3b3ef36d84b0bd40a5d261a"
+        },
+        {
+          "tick": 200,
+          "sha256": "aa2756ecaac5747e10f79edf2347d5d750cd6655b0a5b3b8605df362869b6b3a"
+        }
+      ],
+      "workerCalls": 75,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 1099.9392999999961,
+        "median": 3.9033999999999196,
+        "p95": 15.615999999999985,
+        "max": 35.39569999999998
+      },
+      "workerMilliseconds": {
+        "samples": 75,
+        "total": 122.53949999999946,
+        "median": 0.6390000000001237,
+        "p95": 5.798600000000079,
+        "max": 7.3746000000001
+      },
+      "livingUnits": 179,
+      "ended": null,
+      "identicalReplay": true
+    },
+    {
+      "name": "crowded",
+      "fixtureSHA256": "3443a6b228adf54ad837269d5b29884acdfbace99321aef64cafd1bc3bfe8938",
+      "seed": 512,
+      "map": "highlands",
+      "players": 8,
+      "ticks": 200,
+      "seconds": 440.00000000003155,
+      "digest": "4d50ad47f6c7c5a0ecb25cd843236f7aa305ffd9c9e9a9674237e0b4534e2895",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "6413b3b65f12598994cdc2c57da7bc33f2ed8dd5500a5b654c880f9f4ff5f85f"
+        },
+        {
+          "tick": 40,
+          "sha256": "6920fc75c7091cdf6d2cdfb3f6bfd9af40f6bff74356e00f8b32330d5af8a856"
+        },
+        {
+          "tick": 60,
+          "sha256": "01cd2575a94aa5589db9788671593c3fcff520725d0dbfeb749cbf840e23b088"
+        },
+        {
+          "tick": 80,
+          "sha256": "4747d21722ba1a0ea84fedbb1399f13a85da0efbaae58944e195eb426f080cc3"
+        },
+        {
+          "tick": 100,
+          "sha256": "b88964a04a16fbca34786e95909889f8f7e853b1dfbe987a9521b3f5763db75f"
+        },
+        {
+          "tick": 120,
+          "sha256": "43af879aa9ef4dda8f788ad7311a50c80f5a78ce0185e2e75b61e4684fb97d65"
+        },
+        {
+          "tick": 140,
+          "sha256": "0c145f9364379ad7f3cc0a017590d57fd872f1ed22e11fa3dcdf9420c4abfb8b"
+        },
+        {
+          "tick": 160,
+          "sha256": "93c06fc766b580c21226196e9c84a63c523e6f09e183b7355f84219c979aca00"
+        },
+        {
+          "tick": 180,
+          "sha256": "8da912d812ba3d7da44aec8f3d40b118676d61b2df38bcfcabb3494ad4015cbc"
+        },
+        {
+          "tick": 200,
+          "sha256": "9310a16cc6d868ce6c19e356629bcbf9c7f777183bdb78b6c4f417da53b79f8d"
+        }
+      ],
+      "workerCalls": 218,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 2609.0248999999967,
+        "median": 10.583200000000033,
+        "p95": 29.08510000000024,
+        "max": 53.92320000000018
+      },
+      "workerMilliseconds": {
+        "samples": 218,
+        "total": 268.09829999998874,
+        "median": 0.00029999999969732016,
+        "p95": 9.30369999999948,
+        "max": 11.6270999999997
+      },
+      "livingUnits": 401,
+      "ended": null,
+      "identicalReplay": true
+    },
+    {
+      "name": "late",
+      "fixtureSHA256": "8eb575edc37c01d3f9ffa8eb6f1fe7edccfe3c203870a264ed0030f958302859",
+      "seed": 512,
+      "map": "highlands",
+      "players": 8,
+      "ticks": 200,
+      "seconds": 740.0000000000997,
+      "digest": "ea73c306926014ef8929f1724e3887bd6e7a6648f189a2c14413bd420e995eeb",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "2f0bd4a385ff7289c98b5111f339f5098bd60364c1f4975e850c26de40d6e65e"
+        },
+        {
+          "tick": 40,
+          "sha256": "d2cfe5192857666ee40da7a24e2cf569f00f743de9d00a26edd9adbcd1b53a9c"
+        },
+        {
+          "tick": 60,
+          "sha256": "1c9557fb107a0873f27487288836e03ad0cc8c4b852d2be168b6acb8313c8adc"
+        },
+        {
+          "tick": 80,
+          "sha256": "27b1b0a15ed561e0f3190ef15b17dc7a2b96dfee752b221a774aa74c3d1df60f"
+        },
+        {
+          "tick": 100,
+          "sha256": "acb0f8e4cd6cf4578ab961e39ecc0f73ee4b1708d01f96aea9cedd158595e156"
+        },
+        {
+          "tick": 120,
+          "sha256": "f8da6e2279a853ca050f99b36b787ee4d2b4779a94ba756ba03911759ebd3b46"
+        },
+        {
+          "tick": 140,
+          "sha256": "27576e9558db73a1ace3cd5086f8f0e48155596f13e8efced85901b0fcaacdba"
+        },
+        {
+          "tick": 160,
+          "sha256": "1a6bb50320a67674986af42f3c02f773bf40004d32df565ec95971a039aed16e"
+        },
+        {
+          "tick": 180,
+          "sha256": "aa4a692efee1464c80d74e45bee942eab78359cae49c00d1cc73cc6090e720f1"
+        },
+        {
+          "tick": 200,
+          "sha256": "bfbf6eb54dfc73abadb908d1eb5e9a86517cc3f4faa4c8d1536a833f87c507b2"
+        }
+      ],
+      "workerCalls": 40,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 2613.0159999999814,
+        "median": 10.3862999999983,
+        "p95": 31.32380000000194,
+        "max": 57.6190000000006
+      },
+      "workerMilliseconds": {
+        "samples": 40,
+        "total": 25.222700000003897,
+        "median": 0.5362999999997555,
+        "p95": 1.6640999999999622,
+        "max": 2.2617000000009284
+      },
+      "livingUnits": 489,
+      "ended": null,
+      "identicalReplay": true
+    },
+    {
+      "name": "coastal-allies",
+      "seed": 512,
+      "map": "coast",
+      "players": 8,
+      "ticks": 200,
+      "seconds": 20.000000000000014,
+      "digest": "ac66506258d245a5ea154ec5550d70b32933d7c756a5b26ec9936334e3e5b484",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "7f652c17a721196a3a90279684fe8eb22020bc0e13586373c1b5007a678a911c"
+        },
+        {
+          "tick": 40,
+          "sha256": "1d23ffcda426850a402d28c92129a491787c6ee6e743d107d154f2e7b4e8027c"
+        },
+        {
+          "tick": 60,
+          "sha256": "77d09c2c12d64feec55cb582b680ef01e0e1436d467855b2ee84c46fa965592b"
+        },
+        {
+          "tick": 80,
+          "sha256": "3fda3d96039da60c6c92a0805455ceba677c1adc8bcca1a08d2700acc340c40f"
+        },
+        {
+          "tick": 100,
+          "sha256": "6fe58842c8ea49ea56aa3d0d83b1501609908442dd1fe30c098a93b7fae0862c"
+        },
+        {
+          "tick": 120,
+          "sha256": "47865586d17e01885ebbf310784859419865b06791a07d4f44a4e1c1d0087abb"
+        },
+        {
+          "tick": 140,
+          "sha256": "92afc885f6edd01e8c66262f7755d856d9315cdb7695632ccb3288503c290b72"
+        },
+        {
+          "tick": 160,
+          "sha256": "d1e951bb1532c101495a106730bfb76550d5e2fc18fc46a10363b5faed6d957b"
+        },
+        {
+          "tick": 180,
+          "sha256": "2e8a10ed8802a0e9f0720801e1c3af940b688b9c7e5474dd61afd8c56db937f6"
+        },
+        {
+          "tick": 200,
+          "sha256": "b2432150da4a084be182bb22c0e273945d96a5acff4fdff1c0de1ccc7b2957dd"
+        }
+      ],
+      "workerCalls": 35,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 861.1642999999967,
+        "median": 2.3448000000025786,
+        "p95": 12.365799999999581,
+        "max": 48.70630000000165
+      },
+      "workerMilliseconds": {
+        "samples": 35,
+        "total": 75.27679999999964,
+        "median": 0.5867999999973108,
+        "p95": 9.743500000000495,
+        "max": 14.169600000001083
+      },
+      "livingUnits": 146,
+      "ended": null,
+      "identicalReplay": true
+    },
+    {
+      "name": "coastal-rivals",
+      "seed": 2241,
+      "map": "coast",
+      "players": 8,
+      "ticks": 200,
+      "seconds": 20.000000000000014,
+      "digest": "97889caa07dcafe7b588d91edcb539ed8ad06e6688e96415b2f7d8eb835ef133",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "63830c58c375e6041214ffab8e2d8fe55e7b9f7f2378b883082fa476a87cb1d1"
+        },
+        {
+          "tick": 40,
+          "sha256": "a07ef03a652654a7d32aa31b74e207198b1995236502c1a56a221e84157ec6c3"
+        },
+        {
+          "tick": 60,
+          "sha256": "bbbafcb1d6cb74236c35c41e40eb6cd9ae468778c44b150a1c0cf8d84cf853a5"
+        },
+        {
+          "tick": 80,
+          "sha256": "9e747ed5b7b763ce9274394694c054d8905f6f04917e660a411dd92eaca0f0a3"
+        },
+        {
+          "tick": 100,
+          "sha256": "bf41e5637fbdc38e87034f5c4076794bbfbbf4561076daed4987973ff366088d"
+        },
+        {
+          "tick": 120,
+          "sha256": "8fedd900791124ff73c1adbef676ce10ae50796bf5b9bf792acaa36c256966ba"
+        },
+        {
+          "tick": 140,
+          "sha256": "f9b5a1f05c4f9134d72f6754db642b079b55a4884aee3b8d291b99b20a299a3b"
+        },
+        {
+          "tick": 160,
+          "sha256": "92f77bd5428e283fc1f0797eab63ed6d90defaf6d8105ed72af3f370fc8562ec"
+        },
+        {
+          "tick": 180,
+          "sha256": "1a450f3c3b6917bb5ee5b76017d32df55e8ee099738214ef012d7e81a4593cd8"
+        },
+        {
+          "tick": 200,
+          "sha256": "7c2b3ee975cc422b93f1f0c1c4fc771a85a0ea079210906ed9101cb5b6306064"
+        }
+      ],
+      "workerCalls": 40,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 682.4577999999892,
+        "median": 2.177400000000489,
+        "p95": 11.557700000001205,
+        "max": 20.67120000000068
+      },
+      "workerMilliseconds": {
+        "samples": 40,
+        "total": 44.60829999999987,
+        "median": 0.25930000000153086,
+        "p95": 4.058499999999185,
+        "max": 4.977699999999459
+      },
+      "livingUnits": 142,
+      "ended": null,
+      "identicalReplay": true
+    },
+    {
+      "name": "classic-rivals",
+      "seed": 746,
+      "map": "highlands",
+      "players": 2,
+      "ticks": 200,
+      "seconds": 20.000000000000014,
+      "digest": "1678d44c303777bee1f45f9caebdec243ee8e26228330e1e54defae4fcca0399",
+      "checkpoints": [
+        {
+          "tick": 20,
+          "sha256": "e14664c882bdead0ba085c55e55e3ca014a89f6689599841ab3993d0c8734049"
+        },
+        {
+          "tick": 40,
+          "sha256": "6a73640f1dd7adc9f35439412276072f004249dfbec5dcd31b0e75a1441bb4dd"
+        },
+        {
+          "tick": 60,
+          "sha256": "f91384d71697fea6559ecc763887cdbc287b22fc8b42c7bfadfbbb703ba0c083"
+        },
+        {
+          "tick": 80,
+          "sha256": "ebf2db696f45e5951dc2b8f7a67654ad2c6af3ccef72ba35a4d545841e2db0e3"
+        },
+        {
+          "tick": 100,
+          "sha256": "979b222b4834447efdd6a4c9680e5235254b411f970c736a9844ad65e57870e4"
+        },
+        {
+          "tick": 120,
+          "sha256": "07aedfdfac0f13d34539828d499bc5c58489c0ffbe6ae8a7afe87020422f4b60"
+        },
+        {
+          "tick": 140,
+          "sha256": "f44ab720fd29be9278665d20a201f02be6d57082b5912283a22f3b4133d64b4f"
+        },
+        {
+          "tick": 160,
+          "sha256": "af4aabf5198bea98211632c069888cee21d4deb36a1b663f2d131d218da9c8a0"
+        },
+        {
+          "tick": 180,
+          "sha256": "6edbaf538b05954d4640aaa9fe7328e86e8ae711948476805a69158655932854"
+        },
+        {
+          "tick": 200,
+          "sha256": "855b7bcb87d1488ed428731cc79c916be3f1cda61e549ebcfb53da28b7811277"
+        }
+      ],
+      "workerCalls": 5,
+      "tickMilliseconds": {
+        "samples": 200,
+        "total": 86.30870000000868,
+        "median": 0.3393000000032771,
+        "p95": 0.9932000000007974,
+        "max": 4.023000000001048
+      },
+      "workerMilliseconds": {
+        "samples": 5,
+        "total": 2.4412000000011176,
+        "median": 0.08949999999822467,
+        "p95": 1.2993999999998778,
+        "max": 1.2993999999998778
+      },
+      "livingUnits": 24,
+      "ended": null,
+      "identicalReplay": true
+    }
+  ],
+  "passed": true
+}
