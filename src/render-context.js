@@ -27,13 +27,35 @@ export async function initializeWorldRenderer({backend='webgl',onFallback=()=>{}
 
 export function rendererBackend(renderer){return renderer?.isWebGPURenderer?(renderer.backend?.isWebGPUBackend?'webgpu':'nodes-webgl'):'webgl';}
 
+function holdRenderer(view,failure){
+  if(view.renderingReleased)return;
+  view.graphicsSceneValid=false;
+  if(view.graphicsFatal?.deviceLost||view.graphicsFatal?.backendError&&!failure.deviceLost)return;
+  view.graphicsFatal={...failure,quality:view.renderQuality};
+}
+
 export function watchRendererDevice(view){
-  const renderer=view.renderer;if(!renderer?.isWebGPURenderer)return;
-  const previous=renderer.onDeviceLost;
-  renderer.onDeviceLost=info=>{
+  view.releaseRendererWatch?.();
+  const renderer=view.renderer;if(!renderer?.isWebGPURenderer||view.renderingReleased)return;
+  const previous=renderer.onDeviceLost,previousError=renderer.onError;
+  const loss=info=>{
+    holdRenderer(view,{deviceLost:true,message:String(info?.message||'The graphics device was disconnected.').slice(0,1000)});
     previous?.call(renderer,info);
-    if(view.renderingReleased)return;
-    view.graphicsSceneValid=false;
-    view.graphicsFatal={deviceLost:true,message:info.message||'The graphics device was disconnected.',quality:view.renderQuality};
   };
+  const error=info=>{
+    holdRenderer(view,{backendError:true,type:String(info?.type||'GPUError').slice(0,80),message:String(info?.message||'The graphics backend could not render the battlefield.').slice(0,1000)});
+    previousError?.call(renderer,info);
+  };
+  renderer.onDeviceLost=loss;renderer.onError=error;
+  // Portraits share the device. Each engine backend replaces its property
+  // handler, so the battlefield also needs an independent device listener.
+  const device=renderer.backend?.device,gpuError=event=>holdRenderer(view,{backendError:true,type:String(event.error?.constructor?.name||'GPUError').slice(0,80),message:String(event.error?.message||'The graphics backend could not render the battlefield.').slice(0,1000)});
+  device?.addEventListener?.('uncapturederror',gpuError);let active=true;
+  const release=()=>{
+    if(!active)return;active=false;device?.removeEventListener?.('uncapturederror',gpuError);
+    if(renderer.onDeviceLost===loss)renderer.onDeviceLost=previous;
+    if(renderer.onError===error)renderer.onError=previousError;
+    if(view.releaseRendererWatch===release)view.releaseRendererWatch=null;
+  };
+  view.releaseRendererWatch=release;return release;
 }

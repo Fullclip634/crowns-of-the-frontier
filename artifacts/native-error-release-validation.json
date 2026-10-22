@@ -1,0 +1,395 @@
+{
+  "createdAt": "2026-10-22T01:38:01.309Z",
+  "build": {
+    "buildId": "1792630432510",
+    "version": "2.6.1"
+  },
+  "regression": {
+    "tests": 395,
+    "passed": 395,
+    "failed": 0
+  },
+  "before": {
+    "buildId": "1792625522529",
+    "sharedPortrait": true,
+    "recoveryDialog": false,
+    "fatal": null
+  },
+  "cases": [
+    {
+      "name": "desktop",
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Edg/155.0.4283.62",
+        "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "jsVersion": "15.5.9.7"
+      },
+      "item": {
+        "quality": "medium",
+        "phone": false,
+        "insecure": false
+      },
+      "startup": {
+        "backend": "webgpu",
+        "secure": true,
+        "gpu": true,
+        "quality": "medium"
+      },
+      "status": "WebGPU preview is active.",
+      "portrait": {
+        "ready": true,
+        "sharedDevice": true
+      },
+      "recovery": {
+        "failure": {
+          "backendError": true,
+          "type": "GPUValidationError",
+          "message": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n",
+          "quality": "medium"
+        },
+        "paused": true,
+        "sameState": true,
+        "saved": true,
+        "sameCamera": true,
+        "quality": "medium",
+        "frameRate": "60",
+        "held": true,
+        "overflow": false
+      },
+      "latched": {
+        "sameFailure": true,
+        "sameDialog": true,
+        "sameState": true
+      },
+      "storageBlocked": true,
+      "retryIgnored": true,
+      "restored": {
+        "backend": "webgl",
+        "playing": true,
+        "quality": "medium",
+        "frameRate": "60",
+        "exactSerializedMatch": false,
+        "sameKingdomState": true,
+        "fog": {
+          "lostHistory": 0,
+          "addedCurrentVision": 9,
+          "addedOutsideVision": 0
+        },
+        "saved": {
+          "seed": 512,
+          "seconds": 0.8999999999999999,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "resumed": {
+          "seed": 512,
+          "seconds": 0.8999999999999999,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "rendered": {
+          "held": false,
+          "drawn": 9,
+          "calls": 86,
+          "quality": "medium",
+          "shaderErrors": 0
+        },
+        "status": "Compatible graphics (WebGL 2) is active."
+      },
+      "expectedDiagnostics": [
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        },
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        }
+      ],
+      "unexpectedErrors": []
+    },
+    {
+      "name": "phone",
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Edg/155.0.4283.62",
+        "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "jsVersion": "15.5.9.7"
+      },
+      "item": {
+        "quality": "low",
+        "phone": true,
+        "insecure": false
+      },
+      "startup": {
+        "backend": "webgpu",
+        "secure": true,
+        "gpu": true,
+        "quality": "low"
+      },
+      "status": "WebGPU preview is active.",
+      "portrait": {
+        "ready": true,
+        "sharedDevice": true
+      },
+      "recovery": {
+        "failure": {
+          "backendError": true,
+          "type": "GPUValidationError",
+          "message": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n",
+          "quality": "low"
+        },
+        "paused": true,
+        "sameState": true,
+        "saved": true,
+        "sameCamera": true,
+        "quality": "low",
+        "frameRate": "60",
+        "held": true,
+        "overflow": false
+      },
+      "latched": {
+        "sameFailure": true,
+        "sameDialog": true,
+        "sameState": true
+      },
+      "storageBlocked": true,
+      "retryIgnored": true,
+      "restored": {
+        "backend": "webgl",
+        "playing": true,
+        "quality": "low",
+        "frameRate": "60",
+        "exactSerializedMatch": false,
+        "sameKingdomState": true,
+        "fog": {
+          "lostHistory": 0,
+          "addedCurrentVision": 2,
+          "addedOutsideVision": 0
+        },
+        "saved": {
+          "seed": 512,
+          "seconds": 0.7,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "resumed": {
+          "seed": 512,
+          "seconds": 0.7,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "rendered": {
+          "held": false,
+          "drawn": 9,
+          "calls": 86,
+          "quality": "low",
+          "shaderErrors": 0
+        },
+        "status": "Compatible graphics (WebGL 2) is active."
+      },
+      "expectedDiagnostics": [
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        },
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        }
+      ],
+      "unexpectedErrors": []
+    },
+    {
+      "name": "insecure",
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Edg/155.0.4283.62",
+        "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "jsVersion": "15.5.9.7"
+      },
+      "item": {
+        "quality": "low",
+        "phone": true,
+        "insecure": true
+      },
+      "startup": {
+        "backend": "webgl",
+        "secure": false,
+        "gpu": false,
+        "quality": "low"
+      },
+      "status": "This address cannot use WebGPU. Open the deployed HTTPS address to try it. Compatible graphics (WebGL 2) is active.",
+      "rendered": {
+        "held": false,
+        "drawn": 9,
+        "calls": 194,
+        "quality": "low",
+        "shaderErrors": 0
+      },
+      "expectedDiagnostics": [
+        {
+          "type": "warning",
+          "source": "startup"
+        }
+      ],
+      "unexpectedErrors": []
+    },
+    {
+      "name": "chrome-desktop",
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/155.0.8059.80",
+        "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "jsVersion": "15.5.35.23"
+      },
+      "item": {
+        "quality": "medium",
+        "phone": false,
+        "insecure": false
+      },
+      "startup": {
+        "backend": "webgpu",
+        "secure": true,
+        "gpu": true,
+        "quality": "medium"
+      },
+      "status": "WebGPU preview is active.",
+      "portrait": {
+        "ready": true,
+        "sharedDevice": true
+      },
+      "recovery": {
+        "failure": {
+          "backendError": true,
+          "type": "GPUValidationError",
+          "message": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n",
+          "quality": "medium"
+        },
+        "paused": true,
+        "sameState": true,
+        "saved": true,
+        "sameCamera": true,
+        "quality": "medium",
+        "frameRate": "60",
+        "held": true,
+        "overflow": false
+      },
+      "latched": {
+        "sameFailure": true,
+        "sameDialog": true,
+        "sameState": true
+      },
+      "storageBlocked": true,
+      "retryIgnored": true,
+      "restored": {
+        "backend": "webgl",
+        "playing": true,
+        "quality": "medium",
+        "frameRate": "60",
+        "exactSerializedMatch": false,
+        "sameKingdomState": true,
+        "fog": {
+          "lostHistory": 0,
+          "addedCurrentVision": 6,
+          "addedOutsideVision": 0
+        },
+        "saved": {
+          "seed": 512,
+          "seconds": 0.7999999999999999,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "resumed": {
+          "seed": 512,
+          "seconds": 0.7999999999999999,
+          "entities": 384,
+          "nextId": 385,
+          "rngState": 4234357408
+        },
+        "rendered": {
+          "held": false,
+          "drawn": 9,
+          "calls": 86,
+          "quality": "medium",
+          "shaderErrors": 0
+        },
+        "status": "Compatible graphics (WebGL 2) is active."
+      },
+      "expectedDiagnostics": [
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        },
+        {
+          "type": "error",
+          "source": "engine"
+        },
+        {
+          "type": "warning",
+          "source": "driver"
+        }
+      ],
+      "unexpectedErrors": []
+    }
+  ],
+  "qualification": {
+    "headless": true,
+    "foregroundTestFlags": true,
+    "forcedHardwareEligibility": true,
+    "physicalPhone": false
+  },
+  "limits": [
+    "The whole-game goal remains active; this does not establish release completion or AAA parity.",
+    "Only controlled GPU validation faults were injected. Physical out-of-memory, driver hangs and operating-system failures are not certified.",
+    "Current visibility is recomputed on Resume; reports preserve the distinction between exact serialized equality and kingdom-state preservation.",
+    "All other saved fields match; exploration history is retained and new exploration is limited to current visibility.",
+    "Permanent storage denial still blocks local reload until saving becomes possible.",
+    "Native runs use owned browser qualification flags, including ignore-gpu-blocklist; normal device eligibility is not established.",
+    "This phase does not add a real-room browser reconnect test or new FPS measurements. Existing server/privacy regressions remain in the complete CPU suite.",
+    "Physical devices, broader browsers/drivers, sustained performance and the public Render revision remain unverified."
+  ],
+  "sourceSHA256": {
+    "src/graphics-failure.js": "092b1cd198404103b8b0c334563edb3331d370054de18e133fed0c7790b163d9",
+    "src/graphics-recovery-ui.js": "22a705424b8fffc47d9aa35d0df90fff913f9801a74ff5286a3add3ca3e1dfcc",
+    "src/graphics-settings.js": "3f7f51d253d448203556a48f358a4e1341d3291e49cdff8137bf4fb59e023ec8",
+    "src/main.js": "9c1f091f60a8fed3dce1991daa12831ceb08fc44de9451f1983028a6545f540f",
+    "src/render-context.js": "0524e79f901673a313393212423707318ef6f1325ffd7b09ec5e23aa2ab73fe7",
+    "src/render-lifecycle.js": "b07b3cec88109f9250a7b5140596d8b7a0b170a2375be1bf8143a0373772be37",
+    "src/render-quality.js": "4fdc53d8fa0e3168fe4f7769c98e8f3376cac77bc6b70f2094ad51187457735f",
+    "src/portrait-3d.js": "666280371129c42eb35e1ec57ed24dd8135841b056d64474a2191ab676022b36",
+    "src/local-save.js": "aa0fc7a304a688a70156026aeee30182137bec77d9ed66131730a5529ee25612",
+    "src/simulation.js": "f87f094905df9994bfe6c8b10d1fec4c73e8115b3b8278b0eec6217ef6524b3e",
+    "tests/render-backend.test.js": "81386b725d8e5dd0d4a6a987a35c0feae2d7615094220cfe5abb2382b56d04ab",
+    "scripts/native-error-qa.mjs": "a2a26ca8e3805c9690e06cd3f11e110ca85ddb1ea81bf2f8ed1bff12d5dcdd7c"
+  }
+}

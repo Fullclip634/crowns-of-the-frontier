@@ -1,0 +1,55 @@
+{
+  "startedAt": "2026-10-22T00:55:17.550Z",
+  "item": {
+    "quality": "medium",
+    "phone": false,
+    "insecure": false
+  },
+  "expectedHandled": false,
+  "physicalPhone": false,
+  "errors": [],
+  "expectedErrors": [
+    {
+      "type": "error",
+      "source": "engine",
+      "text": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n"
+    },
+    {
+      "type": "warning",
+      "source": "driver",
+      "text": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n"
+    }
+  ],
+  "phases": [
+    "healthy with shared-device portrait"
+  ],
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Edg/155.0.4283.62",
+    "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+    "jsVersion": "15.5.9.7"
+  },
+  "buildId": "1792625522529",
+  "startup": {
+    "backend": "webgpu",
+    "secure": true,
+    "gpu": true,
+    "quality": "medium"
+  },
+  "portrait": {
+    "ready": true,
+    "sharedDevice": true
+  },
+  "before": {
+    "fatal": null,
+    "recovery": false,
+    "events": [
+      {
+        "type": "GPUValidationError",
+        "message": "Buffer usages (BufferUsage::(MapRead|Storage)) is invalid. If a buffer usage contains BufferUsage::MapRead the only other allowed usage is BufferUsage::CopyDst.\n - While calling [Device].CreateBuffer([BufferDescriptor \"\"frontier-qa-validation-1\"\"]).\n"
+      }
+    ]
+  },
+  "passed": true
+}

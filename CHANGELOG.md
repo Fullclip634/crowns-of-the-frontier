@@ -1,3 +1,21 @@
+## 22 October 2026 — Shared WebGPU device recovery
+
+Unexpected native errors now hold the battlefield, protect local saves and offer
+compatible reload. Opening a 3D portrait cannot replace error protection on its
+shared device. A fault during an asynchronous rebuild cannot mark the failed
+scene valid. Settings reports the active renderer and explains insecure-address
+fallback.
+
+Verified: **395 serial tests**, production **1792630432510**, four candidate
+browser scenarios across Edge, Chrome and emulated landscape touch, plus the
+published-build reproduction. Recovery preserves the kingdom and manual graphics
+choice, blocks reload when saving fails, and renders the restored 3D scene.
+Current visibility is recomputed on Resume; no exploration history is lost. See
+[WEBGPU_RECOVERY_DESIGN.md](WEBGPU_RECOVERY_DESIGN.md) and
+[the validation report](artifacts/native-error-release-validation.json).
+Physical devices, real out-of-memory/driver failures, sustained performance and
+the public Render revision remain open. The overall development goal is active.
+
 ## 22 October 2026 — Battle timing and native buffer compatibility
 
 Foreground simulation uses bounded fixed steps independently of the visual delta

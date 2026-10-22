@@ -2,6 +2,11 @@
 
 Optional WebGPU preview: append `?renderer=webgpu` to the game URL. WebGL remains the default and compatibility fallback. See [setup, verification and limits](WEBGPU_MIGRATION.md).
 
+Settings shows which renderer is active. A native graphics fault pauses local
+play and offers **Save and reload** with compatible graphics; failed saves keep
+the kingdom in memory and block reload. On a phone, use the deployed HTTPS
+address to try WebGPU. See [recovery behavior and verification](WEBGPU_RECOVERY_DESIGN.md).
+
 Ranged attacks now resolve after windup and flight, siege can miss moving troops,
 and coastal AI transports retry blocked beaches. See
 [combat rules and verification](PROJECTILE_COMBAT_DESIGN.md).
@@ -88,7 +93,7 @@ Start with **First light**, the guided tutorial. Use **Clash of crowns** for a s
 - Closer perspective cameras, selectable close/perspective/overview angles, mouse and touch rotation, surface relief, directional lighting, sharper camera-centered shadows, timber framing, window recesses, and shared instanced contact shadows that remain available in Performance quality.
 - All 19 building types and all 18 character/ship types (16 trainable across the catalog, the sovereign, and a campaign supply caravan) have solid mesh models. Buildings use arches, domes, gables, piers, fences, turrets, grain stalks, and distinct workshops. Human models have faces, shaped torsos, jointed limbs, held tools and weapons; cavalry adds modeled horses, and siege equipment has moving wheels and mechanisms. Trees, ore deposits, fruit, fish, and shrines also use mesh geometry.
 - All seven maps have seeded rolling terrain and surrounding ridges. Picking, walking, building foundations, effects, previews, and fog follow the surface. Bridges stay dry and naval channels have submerged beds. Water has moving vertices and updated normals. Nearby gate portcullises lift for friendly troops.
-- Selection portraits render the actual model as a live WebGL turntable. Tap/click the portrait, or press **I**, to inspect the selected object. The square camera button hides or restores battlefield panels for an unobstructed view.
+- Selection portraits render the actual model as a live 3D turntable using the active graphics backend. Tap/click the portrait, or press **I**, to inspect the selected object. The square camera button hides or restores battlefield panels for an unobstructed view.
 - Fog of war, exploration, a working minimap, mission objectives, victory/defeat screens, match statistics, synthesized audio, pause, game speed, local saves, and campaign completion tracking.
 - Landscape-first touch interface, pinch zoom, drag pan, responsive menus, graphics presets, and automatic rendering resolution adjustment.
 

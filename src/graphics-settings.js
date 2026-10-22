@@ -1,5 +1,11 @@
 const qualities=new Set(['high','medium','low']);
 
+export function rendererStatus({requested='webgl',active='webgl',secure=true}){
+  if(active==='webgpu')return 'WebGPU preview is active.';
+  if(requested==='webgpu')return secure?'WebGPU could not start on this device. Compatible graphics (WebGL 2) is active.':'This address cannot use WebGPU. Open the deployed HTTPS address to try it. Compatible graphics (WebGL 2) is active.';
+  return 'Compatible graphics (WebGL 2) is active.';
+}
+
 export function graphicsSelection(settings){return settings.autoQuality===false&&qualities.has(settings.quality)?settings.quality:'auto';}
 
 export function applyGraphicsChoice(settings,choice,recommended='medium'){

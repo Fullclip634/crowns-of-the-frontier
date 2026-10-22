@@ -5,6 +5,7 @@ import {watchRendererDevice} from '../src/render-context.js';
 import {transitionRendererQuality} from '../src/render-quality.js';
 import {releasePreparedPrograms} from '../src/shader-preparation.js';
 import {graphicsRecoveryMarkup} from '../src/graphics-recovery-ui.js';
+import {releaseRenderers} from '../src/render-lifecycle.js';
 
 const deferred=()=>{let resolve;const promise=new Promise(done=>resolve=done);return {promise,resolve};};
 test('device loss holds the battlefield and keeps the engine loss callback',()=>{
@@ -13,6 +14,52 @@ test('device loss holds the battlefield and keeps the engine loss callback',()=>
   assert.equal(calls,1);assert.equal(view.graphicsSceneValid,false);assert.deepEqual(view.graphicsFatal,{deviceLost:true,message:'Disconnected',quality:'high'});
   view.renderingReleased=true;view.graphicsFatal=null;renderer.onDeviceLost({message:'Page closed'});
   assert.equal(calls,2);assert.equal(view.graphicsFatal,null,'closing the page must not open another recovery dialog');
+});
+
+test('uncaptured native errors latch one recovery state while preserving diagnostics and disposal',()=>{
+  const events=[],renderer={isWebGPURenderer:true,onError(info){assert.equal(this,renderer);events.push(info);}},view={renderer,renderQuality:'medium',graphicsSceneValid:true};watchRendererDevice(view);
+  const event={api:'WebGPU',type:'GPUValidationError',message:'Bad buffer',originalEvent:{resource:'Do not retain the GPU event'}};renderer.onError(event);const failure=view.graphicsFatal;
+  assert.deepEqual(failure,{backendError:true,type:'GPUValidationError',message:'Bad buffer',quality:'medium'});assert.equal(view.graphicsSceneValid,false);assert.equal(events[0],event);
+  renderer.onError({type:'GPUOutOfMemoryError',message:'Another failure'});assert.equal(view.graphicsFatal,failure);assert.equal(events.length,2);
+  renderer.onDeviceLost({message:'Device subsequently disconnected'});assert.equal(view.graphicsFatal.deviceLost,true);assert.notEqual(view.graphicsFatal,failure);const lost=view.graphicsFatal;renderer.onError(event);assert.equal(view.graphicsFatal,lost);
+  view.renderingReleased=true;view.graphicsFatal=null;renderer.onError(event);assert.equal(view.graphicsFatal,null);assert.equal(events.length,4);
+  const classic={onError(){}};watchRendererDevice({renderer:classic});assert.equal(Object.hasOwn(classic,'onDeviceLost'),false);
+});
+
+test('a shared device still holds the battlefield after a portrait replaces its property handler',()=>{
+  const device=new EventTarget();let portraitCalls=0;const portrait=()=>portraitCalls++,view={renderQuality:'high',graphicsSceneValid:true,renderer:{isWebGPURenderer:true,backend:{device}}};watchRendererDevice(view);device.onuncapturederror=portrait;
+  class GPUValidationError extends Error{}const event=Object.assign(new Event('uncapturederror'),{error:new GPUValidationError('Shared portrait device')});device.onuncapturederror(event);device.dispatchEvent(event);
+  assert.equal(portraitCalls,1);assert.equal(device.onuncapturederror,portrait);assert.deepEqual(view.graphicsFatal,{backendError:true,type:'GPUValidationError',message:'Shared portrait device',quality:'high'});assert.equal(view.graphicsSceneValid,false);view.releaseRendererWatch();
+});
+
+test('device watches can be replaced and released without retaining callbacks or listeners',()=>{
+  const device=new EventTarget();let calls=0;const original=()=>calls++,loss=()=>{},renderer={isWebGPURenderer:true,backend:{device},onError:original,onDeviceLost:loss},view={renderer,renderQuality:'medium',graphicsSceneValid:true};
+  const first=watchRendererDevice(view),second=watchRendererDevice(view);first();renderer.onError({message:'One diagnostic'});assert.equal(calls,1);second();view.graphicsFatal=null;device.dispatchEvent(Object.assign(new Event('uncapturederror'),{error:new Error('Already detached')}));assert.equal(view.graphicsFatal,null);assert.equal(renderer.onError,original);assert.equal(renderer.onDeviceLost,loss);assert.equal(view.releaseRendererWatch,null);
+  watchRendererDevice(view);renderer.dispose=()=>{assert.equal(renderer.onError,original);assert.equal(view.releaseRendererWatch,null);};assert.equal(releaseRenderers(view),true);assert.equal(watchRendererDevice(view),undefined);
+});
+
+test('a native fault during an asynchronous rebuild cannot mark invalid graphics valid again',async()=>{
+  for(const type of ['deviceLost','backendError']){
+    const rebuilding=deferred(),resume=deferred();let restored=0,released=0;
+    const view={settings:{quality:'high'},sim:{},renderQuality:'low',scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),materials:{},graphicsSceneValid:true,
+      renderer:{isWebGPURenderer:true,shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){}},sun:{shadow:{map:null,mapSize:{x:1024,y:1024,set(x,y){this.x=x;this.y=y;}}}}};watchRendererDevice(view);
+    const change=transitionRendererQuality(view,'high',async()=>{},async()=>{rebuilding.resolve();await resume.promise;},()=>({restore(){restored++;},release(){released++;}}));await rebuilding.promise;
+    if(type==='deviceLost')view.renderer.onDeviceLost({message:'Lost during rebuild'});else view.renderer.onError({type:'GPUInternalError',message:'Failed during rebuild'});const failure=view.graphicsFatal;resume.resolve();
+    assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,1);assert.equal(view.graphicsRebuilding,null);assert.equal(view.graphicsLoading,null);
+  }
+});
+
+test('an uncaptured native error during shader warmup blocks further quality requests',async()=>{
+  const compiling=deferred(),resume=deferred();let restored=0,released=0;
+  const view={settings:{quality:'high'},sim:{},renderQuality:'low',scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),materials:{},graphicsSceneValid:true,
+    renderer:{isWebGPURenderer:true,shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){},async compileAsync(){compiling.resolve();await resume.promise;}},sun:{shadow:{map:null,mapSize:{x:1024,y:1024,set(x,y){this.x=x;this.y=y;}}}}};watchRendererDevice(view);
+  const change=transitionRendererQuality(view,'high',async()=>{},()=>{},()=>({restore(){restored++;},release(){released++;}}));await compiling.promise;view.renderer.onError({type:'GPUOutOfMemoryError',message:'Out of memory'});const failure=view.graphicsFatal;resume.resolve();
+  assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,1);
+  let prepared=false;assert.equal(await transitionRendererQuality(view,'low',async()=>{prepared=true;},()=>{}),false);assert.equal(prepared,false);
+});
+
+test('native backend recovery offers compatible reload without exposing raw driver details or retry',()=>{
+  for(const network of [false,true]){const html=graphicsRecoveryMarkup({playing:true,network,saved:false,backendError:true});assert.match(html,/compatible graphics/);assert.match(html,/data-action="reload-battlefield"/);assert.doesNotMatch(html,/data-action="retry-battlefield"/);assert.match(html,network?/never saved as a local game/:/until your kingdom can be saved/);}
 });
 
 test('a quality warm-up cannot revive a lost device or rebuild through recovery',async()=>{

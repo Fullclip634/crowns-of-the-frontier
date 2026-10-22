@@ -1,4 +1,5 @@
 import {prepareScenePrograms} from './shader-preparation.js';
+import {graphicsNeedsReload} from './graphics-failure.js';
 
 // Shadow-map presence changes the material program, not just a light uniform.
 // Three.js requires needsUpdate when this feature is toggled after a render.
@@ -55,11 +56,11 @@ async function graphicsLock(view){
 }
 
 export async function transitionRendererQuality(view,quality,prepare,rebuild,capture){
-  if(view.graphicsFatal?.deviceLost)return false;
+  if(graphicsNeedsReload(view.graphicsFatal))return false;
   if(!view.graphicsLoading&&!view.graphicsRebuilding)view.graphicsBaseline={...rendererTargets(view),quality:view.renderQuality};
   const previous=view.graphicsBaseline||{...rendererTargets(view),quality:view.renderQuality};
   const request=view.graphicsRequest=(view.graphicsRequest||0)+1;view.graphicsLoading=quality;
-  const owns=()=>request===view.graphicsRequest,latest=()=>owns()&&view.settings.quality===quality&&!view.renderingReleased&&!view.graphicsFatal?.deviceLost;
+  const owns=()=>request===view.graphicsRequest,latest=()=>owns()&&view.settings.quality===quality&&!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal);
   const downgrade=qualityRank[quality]<qualityRank[previous.quality];let unlock,checkpoint,mutated=false,restored=false;
   const restore=()=>{
     if(restored)return;restored=true;
@@ -71,17 +72,17 @@ export async function transitionRendererQuality(view,quality,prepare,rebuild,cap
     await prepare();
     if(!latest()||!view.sim)return false;
     unlock=await graphicsLock(view);if(!latest())return false;
-    view.graphicsRebuilding=request;checkpoint=capture?.();mutated=true;view.graphicsSceneValid=false;await rebuild();view.graphicsSceneValid=true;
-    if(!latest()){if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost)restore();return false;}
+    view.graphicsRebuilding=request;checkpoint=capture?.();mutated=true;view.graphicsSceneValid=false;await rebuild();
+    if(!latest()){if(!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal))restore();return false;}view.graphicsSceneValid=true;
     configureShadows(view,quality);
     // Precompilation is optional: a rebuilt scene can also compile normally on
     // its first live frame. Restoring the old targets here would mislabel it.
     try{await prepareScenePrograms(view);if(request===view.graphicsRequest)view.graphicsWarmupError=null;}
     catch(error){if(request===view.graphicsRequest)view.graphicsWarmupError=error.message;}
-    if(!latest()){if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost)restore();return false;}
+    if(!latest()){if(!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal))restore();return false;}
     applyRendererQuality(view,quality);view.graphicsBaseline={...rendererTargets(view),quality};view.graphicsFatal=null;view.graphicsRestoredQuality=null;return true;
   }catch(error){
-    if(!view.renderingReleased&&!view.graphicsFatal?.deviceLost&&(mutated||owns())){try{restore();}catch(recovery){throw new AggregateError([error,recovery],'The graphics change and its recovery both failed.');}}
+    if(!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal)&&(mutated||owns())){try{restore();}catch(recovery){throw new AggregateError([error,recovery],'The graphics change and its recovery both failed.');}}
     throw error;
   }
   finally{checkpoint?.release();if(view.graphicsRebuilding===request)view.graphicsRebuilding=null;unlock?.();if(owns())view.graphicsLoading=null;}

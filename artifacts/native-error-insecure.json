@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-10-22T01:29:17.337Z",
+  "harnessSHA256": "a2a26ca8e3805c9690e06cd3f11e110ca85ddb1ea81bf2f8ed1bff12d5dcdd7c",
+  "item": {
+    "quality": "low",
+    "phone": true,
+    "insecure": true
+  },
+  "expectedHandled": true,
+  "physicalPhone": false,
+  "errors": [],
+  "expectedErrors": [
+    {
+      "type": "warning",
+      "source": "startup",
+      "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+    }
+  ],
+  "phases": [],
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Edg/155.0.4283.62",
+    "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+    "jsVersion": "15.5.9.7"
+  },
+  "buildId": "1792630432510",
+  "startup": {
+    "backend": "webgl",
+    "secure": false,
+    "gpu": false,
+    "quality": "low"
+  },
+  "status": "This address cannot use WebGPU. Open the deployed HTTPS address to try it. Compatible graphics (WebGL 2) is active.",
+  "rendered": {
+    "held": false,
+    "drawn": 9,
+    "calls": 194,
+    "quality": "low",
+    "shaderErrors": 0
+  },
+  "passed": true
+}

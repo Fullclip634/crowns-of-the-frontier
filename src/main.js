@@ -27,8 +27,9 @@ import {SimulationPacer,SIMULATION_STEP} from './simulation-pacing.js';
 import {installGameUpdates} from './game-updates.js';
 import {resourceAmount} from './ui-format.js';
 import {registerOfflineGame} from './offline-registration.js';
-import {graphicsSelection,applyGraphicsChoice} from './graphics-settings.js';
+import {graphicsSelection,applyGraphicsChoice,rendererStatus} from './graphics-settings.js';
 import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery-ui.js';
+import {graphicsNeedsReload} from './graphics-failure.js';
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
@@ -159,6 +160,7 @@ function showSettings(){
       <option value="medium" ${graphicsMode==='medium'?'selected':''}>Balanced · detailed bases, lighter armies</option>
       <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft contacts</option>
     </select><p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality.</p>
+    <p id="renderer-status" class="settings-note">${esc(rendererStatus({requested:new URLSearchParams(location.search).get('renderer')||'webgl',active:rendererBackend(view.renderer),secure:globalThis.isSecureContext!==false}))}</p>
     <label class="field-label" for="frame-rate">FRAME RATE TARGET</label><select id="frame-rate">${Object.entries(FRAME_RATES).map(([id,name])=>`<option value="${id}" ${settings.frameRate===id?'selected':''}>${name}</option>`).join('')}</select>
     <label class="field-label" for="camera-preset">CAMERA VIEW</label><select id="camera-preset">${Object.entries(CAMERA_PRESETS).map(([id,p])=>`<option value="${id}" ${settings.cameraPreset===id?'selected':''}>${p.label}</option>`).join('')}</select>
     <label class="toggle"><input id="edge-scroll" type="checkbox" ${settings.edgeScroll?'checked':''}> Mouse edge scrolling</label>
@@ -269,7 +271,7 @@ function renderHealth(){const layer=$('#health-layer');let html='';for(const e o
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
   if(name==='retry-battlefield'){retryBattlefield();return;}
-  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent='Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(view?.graphicsFatal?.deviceLost){const url=new URL(location.href);url.searchParams.set('renderer','webgl');location.replace(url.href);}else location.reload();return;}audio.unlock();
+  if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent=graphicsNeedsReload(view?.graphicsFatal)?'Your kingdom could not be saved. Keep this page open and free browser storage before trying Save and reload again.':'Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(graphicsNeedsReload(view?.graphicsFatal)){const url=new URL(location.href);url.searchParams.set('renderer','webgl');location.replace(url.href);}else location.reload();return;}audio.unlock();
   if(name==='retry-graphics'){location.reload();return;}
   if(name==='command-options'){toggleCompactCommands(document);return;}
   if(name==='selection-details'){toggleSelectionDetails(document);return;}
@@ -371,14 +373,14 @@ function syncGraphicsRecovery(){
     if(graphicsRecoveryUi?.failure===view.graphicsFatal)return;
     const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
-    showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
+    showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
   }else if(graphicsRecoveryUi){
     const state=graphicsRecoveryUi;graphicsRecoveryUi=null;
     if(modal==='graphics-recovery'){closeModal();paused=state.wasPaused;toast('The battlefield is restored.');}
   }
 }
 async function retryBattlefield(){
-  if(!view?.graphicsFatal||view.graphicsLoading)return;
+  if(!view?.graphicsFatal||view.graphicsLoading||graphicsNeedsReload(view.graphicsFatal))return;
   const button=$('#modal-root [data-action="retry-battlefield"]');if(button)button.disabled=true;
   const note=$('#graphics-recovery-note');if(note)note.textContent='Restoring your battlefield…';
   const applied=await view.quality(view.graphicsRecoveryQuality||view.renderQuality||'low');
