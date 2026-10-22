@@ -1,3 +1,33 @@
+## 22 October 2026 — Preserve model vertex sharing
+
+Scenery merging, ownership-color baking and articulated troop batches now keep
+the Blender/exporter's existing indices. Genuinely unindexed immutable Float32
+inputs share only bit-identical complete vertices; hard edges, UVs, colors,
+surface channels, joint assignments and triangle order remain intact. Picking
+uses the corresponding index-stream ranges. No triangles or detail presets are
+removed.
+
+Verified: **406 serial tests**, **19 focused tests**, production
+**1792665364111**, and native WebGPU, WebGL and unsupported-WebGPU fallback
+checks at High, Balanced and Performance. Those paused four-unit checks preserve
+the match and cover construction, placement, night rain, 3D portraits and
+740 × 360 landscape layout.
+
+Live Chrome WebGPU windows submitted **16.9/s** at Balanced desktop (60 target)
+and **22.8/s** at Performance emulated touch (30 target). Both missed their
+targets; touch simulation/wall time was **0.880**. Both report zero rendering
+errors and at most seven native vertex buffers against the limit of eight.
+Crowded WebGL warmup timed out separately in Edge and Chrome; no valid
+measurement window is claimed for those failures. Desktop native initialization
+took about 54 seconds and warmup had severe stalls.
+
+See [the design and limits](VERTEX_REUSE_DESIGN.md) and
+[successful checks and failed captures](artifacts/vertex-reuse-validation.json).
+Submission counts are not display-presentation FPS or an equal-state speedup.
+Native WebGPU stays opt-in. Cold starts, sustained performance, physical devices,
+maximum-population workloads and the public Render revision remain open. The
+overall game goal remains active.
+
 ## 22 October 2026 — AI resource-search CPU work
 
 AI worker assignments select the five closest safe sources in one pass and reuse

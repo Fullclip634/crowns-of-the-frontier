@@ -24,6 +24,7 @@ import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
+import {ensureModelIndices} from './vertex-layout.js';
 import {createWorldRenderer} from './render-context.js';
 import {graphicsCheckpoint} from './graphics-checkpoint.js';
 import {installCombatPresentation,combatTime} from './combat-presentation.js';
@@ -55,7 +56,7 @@ export class WorldView {
   clearGroup(group){for(const child of [...group.children])group.remove(child);}
   mergeModel(group){
     group.updateMatrixWorld(true);const byMaterial=new Map(),remove=[];
-    group.traverse(child=>{if(!child.isMesh||child.userData.flag||child.parent.userData.windmill||child.parent.userData.gate||child.parent.userData.dockPier)return;const key=child.material.uuid+':'+JSON.stringify(child.userData.motion||null);if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,geometries:[],motion:child.userData.motion});let geometry=child.geometry.clone().applyMatrix4(child.matrixWorld);if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat;}byMaterial.get(key).geometries.push(geometry);remove.push(child);});
+    group.traverse(child=>{if(!child.isMesh||child.userData.flag||child.parent.userData.windmill||child.parent.userData.gate||child.parent.userData.dockPier)return;const key=child.material.uuid+':'+JSON.stringify(child.userData.motion||null);if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,geometries:[],motion:child.userData.motion});const geometry=child.geometry.clone().applyMatrix4(child.matrixWorld);ensureModelIndices(geometry);byMaterial.get(key).geometries.push(geometry);remove.push(child);});
     for(const child of remove)child.removeFromParent();
     for(const {material,geometries,motion} of byMaterial.values()){const geometry=mergeGeometries(geometries);if(geometry){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=material!==this.materials.shadow;mesh.receiveShadow=true;mesh.userData.motion=motion;group.add(mesh);}for(const geo of geometries)geo.dispose();}
     return group;

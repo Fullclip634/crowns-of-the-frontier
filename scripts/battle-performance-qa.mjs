@@ -23,7 +23,7 @@ try{
    const focusCDP=await context.newCDPSession(page);await focusCDP.send('Emulation.setFocusEmulationEnabled',{enabled:true});await focusCDP.detach();
    assert.equal(await page.evaluate(()=>document.documentElement.dataset.renderer),item.backend);report.buildId??=await page.locator('meta[name="frontier-build"]').getAttribute('content');
   const setup=await page.evaluate(save=>{
-   frontier.start(save.options,save);const s=frontier.sim,v=frontier.view;s.players[0].controller='human';
+   const setupStarted=performance.now();frontier.start(save.options,save);const s=frontier.sim,v=frontier.view;s.players[0].controller='human';
    const visible=s.entities.filter(e=>e.hp>0&&e.kind==='unit'&&!e.embarked&&(e.owner===0||s.isVisible(e.x,e.z))),army=visible.filter(e=>!['villager','fishingboat','monk'].includes(e.type));
    const focus=(army.length?army:visible).map(e=>({entity:e,score:visible.reduce((n,other)=>n+(Math.hypot(e.x-other.x,e.z-other.z)<35?1:0),0)})).sort((a,b)=>b.score-a.score||a.entity.id-b.entity.id)[0]?.entity||s.players[0].start;
    v.focus(focus.x,focus.z);v.zoom=65;v.angle=Math.PI/4;v.updateCamera();frontier.select([]);
@@ -34,7 +34,7 @@ try{
    renderer.render=function(scene,camera,...args){if(scene===v.scene&&camera===v.camera)battleMeter.submitted.push(performance.now());return draw.call(this,scene,camera,...args);};
    v.render=function(...args){const start=performance.now(),before=battleMeter.submitted.length,result=render.apply(this,args),elapsed=performance.now()-start;battleMeter.attempts++;if(result===false)battleMeter.held++;battleMeter.renderCPU.push(elapsed);if(battleMeter.submitted.length>before)battleMeter.submittedCPU.push(elapsed);return result;};
    s.tick=function(...args){const start=performance.now();try{return tick.apply(this,args);}finally{battleMeter.tickCPU.push(performance.now()-start);}};
-   return {focus:{x:focus.x,z:focus.z},visibleUnits:visible.length,world:s.worldSize,players:s.players.length,units:s.entities.filter(e=>e.kind==='unit'&&e.hp>0).length};
+   return {initializationMilliseconds:performance.now()-setupStarted,focus:{x:focus.x,z:focus.z},visibleUnits:visible.length,world:s.worldSize,players:s.players.length,units:s.entities.filter(e=>e.kind==='unit'&&e.hp>0).length};
   },save);
   if(process.env.BENCH_GL_DIAG==='1')await page.evaluate(()=>{
    const renderer=frontier.view.renderer;if(renderer.isWebGPURenderer)return;const gl=renderer.getContext();

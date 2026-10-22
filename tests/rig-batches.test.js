@@ -13,10 +13,10 @@ function cleanup(f){disposeRigidPart(f.mesh);f.mesh.geometry.dispose();f.mesh.di
 
 test('one rigid draw preserves every source vertex and exact nested world poses for both color and shadow passes',()=>{
   const f=fixture(),e={id:7,type:'spearman',moving:true},root=new THREE.Matrix4().makeRotationY(.8).setPosition(10,3,-5);beginJointPose(f.view,e,root);writeRigidPose(f.mesh,0,e,root);endJointPose(f.view);
-  const rig=f.mesh.userData.rigidRig,p=f.mesh.geometry.attributes.position;assert.equal(p.count,f.body.geometry.attributes.position.count+f.arm.geometry.attributes.position.count);assert.equal(rig.joints.length,2);
+  const rig=f.mesh.userData.rigidRig,p=f.mesh.geometry.attributes.position,indices=f.mesh.geometry.index;assert.equal(indices.count,f.body.geometry.attributes.position.count+f.arm.geometry.attributes.position.count);assert.ok(p.count<indices.count);assert.equal(rig.joints.length,2);
   for(const [index,source]of [f.body,f.arm].entries()){
     const expected=animatePart(f.view,source,e,root).clone(),stored=new THREE.Matrix4().fromArray(rig.data,index*16),range=rig.joints[index];
-    for(let vertex=range.start;vertex<range.start+range.count;vertex++){const a=new THREE.Vector3().fromBufferAttribute(p,vertex).applyMatrix4(stored),b=new THREE.Vector3().fromBufferAttribute(p,vertex).applyMatrix4(expected);assert.ok(a.distanceTo(b)<1e-6);}
+    for(let vertex=range.start;vertex<range.start+range.count;vertex++){const source=indices.getX(vertex),a=new THREE.Vector3().fromBufferAttribute(p,source).applyMatrix4(stored),b=new THREE.Vector3().fromBufferAttribute(p,source).applyMatrix4(expected);assert.ok(a.distanceTo(b)<1e-6);}
   }
   const standard={vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader,uniforms:{}},depth={vertexShader:THREE.ShaderLib.depth.vertexShader,fragmentShader:THREE.ShaderLib.depth.fragmentShader,uniforms:{}};
   f.mesh.material.onBeforeCompile(standard);f.mesh.customDepthMaterial.onBeforeCompile(depth);assert.equal(standard.uniforms.frontierRigPoses,depth.uniforms.frontierRigPoses);assert.equal(standard.uniforms.frontierRigPoses.value,rig.texture);

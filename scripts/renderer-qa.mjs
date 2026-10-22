@@ -22,6 +22,7 @@ try{
     await page.addInitScript(()=>localStorage.setItem('crowns-settings',JSON.stringify({quality:'low',autoQuality:false,frameRate:'30',fog:false,weather:'clear',lighting:'day',volume:0,music:false})));
     const url=new URL(process.env.QA_URL||'http://localhost:4173/');url.searchParams.set('renderer',mode==='fallback'?'webgpu':mode);
     await page.goto(url.href,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view);
+    report.buildId??=await page.locator('meta[name="frontier-build"]').getAttribute('content');
     const expected=mode==='webgpu'?'webgpu':'webgl';assert.equal(await page.evaluate(()=>document.documentElement.dataset.renderer),expected);
     const check={mode,expected,qualities:[]};report.checks.push(check);
     await page.evaluate(async()=>{
@@ -37,9 +38,11 @@ try{
       const result=await page.evaluate(async quality=>{
         const v=frontier.view,s=frontier.sim,before=JSON.stringify(s.serialize());v.render=qaRender;
         const applied=await v.quality(quality);await new Promise(resolve=>setTimeout(resolve,500));v.render=()=>false;await qaDraw();
-        return {quality,applied,actual:v.renderQuality,sameMatch:s===frontier.sim&&JSON.stringify(s.serialize())===before,valid:v.graphicsSceneValid,fatal:v.graphicsFatal,flight:v.renderFlight&&{...v.renderFlight},surfaces:v.surfaceDiagnostics,drawn:v.unitRenderDiagnostics.drawn};
+        return {quality,applied,actual:v.renderQuality,sameMatch:s===frontier.sim&&JSON.stringify(s.serialize())===before,valid:v.graphicsSceneValid,fatal:v.graphicsFatal,flight:v.renderFlight&&{...v.renderFlight},surfaces:v.surfaceDiagnostics,drawn:v.unitRenderDiagnostics.drawn,indexedUnits:[...v.unitBatches].flatMap(([type,batch])=>batch.parts.filter(part=>part.userData.rigidRig).map(part=>({type,vertices:part.geometry.attributes.position.count,indices:part.geometry.index?.count||0})))};
       },quality);check.qualities.push(result);console.log(JSON.stringify(result));
       assert.ok(result.applied&&result.actual===quality&&result.sameMatch&&result.valid&&!result.fatal&&result.drawn===4);
+      assert.ok(result.indexedUnits.length>0&&result.indexedUnits.every(part=>part.indices>0));
+      await page.screenshot({path:path.join(path.dirname(output),`renderer-${mode}-${quality}.png`)});
     }
     check.features=await page.evaluate(async()=>{
       const v=frontier.view,s=frontier.sim,e=s.addBuilding('house',0,-13,8);e.progress=.25;await qaDraw();

@@ -1,0 +1,118 @@
+{
+  "startedAt": "2026-10-22T11:16:56.854Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 90,
+    "queryDiagnostics": false,
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [],
+  "errors": [],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/155.0.8059.80",
+      "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "jsVersion": "15.5.35.23"
+    }
+  },
+  "buildId": "1792665364111",
+  "warmups": [
+    {
+      "quality": "medium",
+      "backend": "webgl",
+      "phone": false,
+      "states": [
+        {
+          "at": 199281.69999999995,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 0,
+          "submitted": 2,
+          "heap": 211120365,
+          "backend": "webgl",
+          "pipelines": 0
+        },
+        {
+          "at": 215536.19999999995,
+          "hidden": false,
+          "paused": false,
+          "seconds": 421.0000000000272,
+          "ended": null,
+          "attempts": 4,
+          "held": 0,
+          "submitted": 4,
+          "heap": 214847794,
+          "backend": "webgl",
+          "pipelines": 0
+        },
+        {
+          "at": 217826.30000000005,
+          "hidden": false,
+          "paused": false,
+          "seconds": 421.60000000002736,
+          "ended": null,
+          "attempts": 7,
+          "held": 0,
+          "submitted": 7,
+          "heap": 215629107,
+          "backend": "webgl",
+          "pipelines": 0
+        },
+        {
+          "at": 228494.5,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.6000000000278,
+          "ended": null,
+          "attempts": 17,
+          "held": 0,
+          "submitted": 17,
+          "heap": 209779970,
+          "backend": "webgl",
+          "pipelines": 0
+        },
+        {
+          "at": 243557.09999999986,
+          "hidden": false,
+          "paused": false,
+          "seconds": 428.0000000000288,
+          "ended": null,
+          "attempts": 60,
+          "held": 0,
+          "submitted": 60,
+          "heap": 227242211,
+          "backend": "webgl",
+          "pipelines": 0
+        }
+      ]
+    }
+  ],
+  "failure": "page.waitForFunction: Timeout 120000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\battle-performance-qa.mjs:47:64"
+}

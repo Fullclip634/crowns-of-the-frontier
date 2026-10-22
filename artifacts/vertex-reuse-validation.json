@@ -1,0 +1,1060 @@
+{
+  "createdAt": "2026-10-22T11:25:21.151Z",
+  "build": {
+    "buildId": "1792665364111",
+    "version": "2.6.1"
+  },
+  "referenceCommit": "06bed8945f96785b04b80afe5ed64fdd5b328743",
+  "functionalVerified": true,
+  "performanceQualified": false,
+  "releaseReady": false,
+  "regression": {
+    "tests": 406,
+    "passed": 406,
+    "failed": 0,
+    "focused": 19
+  },
+  "functional": [
+    {
+      "mode": "webgpu",
+      "evidence": "artifacts/vertex-reuse-renderer-webgpu.json",
+      "startedAt": "2026-10-22T11:01:46.531Z",
+      "checks": [
+        {
+          "mode": "webgpu",
+          "expected": "webgpu",
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 17,
+                "skipped": 0,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 21,
+                "skipped": 0,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "flight": {
+                "pending": 0,
+                "submitted": 26,
+                "skipped": 0,
+                "failed": 0
+              },
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "webgpu",
+          "type": "warning",
+          "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+        }
+      ],
+      "buildId": "1792665364111",
+      "passed": true
+    },
+    {
+      "mode": "webgl",
+      "evidence": "artifacts/vertex-reuse-renderer-webgl.json",
+      "startedAt": "2026-10-22T11:06:00.599Z",
+      "checks": [
+        {
+          "mode": "webgl",
+          "expected": "webgl",
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "webgl",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        },
+        {
+          "mode": "webgl",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        }
+      ],
+      "buildId": "1792665364111",
+      "passed": true
+    },
+    {
+      "mode": "fallback",
+      "evidence": "artifacts/vertex-reuse-renderer-fallback.json",
+      "startedAt": "2026-10-22T11:09:14.592Z",
+      "checks": [
+        {
+          "mode": "fallback",
+          "expected": "webgl",
+          "qualities": [
+            {
+              "quality": "high",
+              "applied": true,
+              "actual": "high",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 21,
+                "compressed": 14,
+                "compressedMipBytes": 19573792,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 16,
+                "evicted": 0,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 6388,
+                  "indices": 10644
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 5380,
+                  "indices": 9072
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 3740,
+                  "indices": 8826
+                }
+              ]
+            },
+            {
+              "quality": "medium",
+              "applied": true,
+              "actual": "medium",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 17,
+                "compressed": 10,
+                "compressedMipBytes": 13981280,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 8,
+                "evicted": 4,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4800,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4080,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            },
+            {
+              "quality": "low",
+              "applied": true,
+              "actual": "low",
+              "sameMatch": true,
+              "valid": true,
+              "fatal": null,
+              "surfaces": {
+                "source": "Poly Haven CC0",
+                "loaded": 7,
+                "compressed": 7,
+                "compressedMipBytes": 9786896,
+                "codecFallbacks": 0,
+                "codecPending": 0,
+                "anisotropy": 4,
+                "evicted": 10,
+                "pending": 0
+              },
+              "drawn": 4,
+              "indexedUnits": [
+                {
+                  "type": "ram:standard",
+                  "vertices": 4876,
+                  "indices": 8628
+                },
+                {
+                  "type": "catapult:standard",
+                  "vertices": 4156,
+                  "indices": 7440
+                },
+                {
+                  "type": "archer:standard",
+                  "vertices": 1154,
+                  "indices": 2562
+                }
+              ]
+            }
+          ],
+          "features": {
+            "construction": true,
+            "clipping": true,
+            "completed": true,
+            "ghost": [
+              {
+                "alpha": 0.38,
+                "color": 15630698
+              }
+            ],
+            "weather": {
+              "type": "storm",
+              "rain": 240,
+              "snow": 0,
+              "ripples": 12,
+              "clouds": 10,
+              "drawCalls": 3
+            },
+            "lighting": {
+              "mode": "night",
+              "night": 1,
+              "twilight": 0,
+              "label": "Night"
+            },
+            "portrait": {
+              "ready": true,
+              "disabled": false,
+              "width": 42
+            }
+          },
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ],
+      "messages": [
+        {
+          "mode": "fallback",
+          "type": "warning",
+          "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+        },
+        {
+          "mode": "fallback",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        },
+        {
+          "mode": "fallback",
+          "type": "warning",
+          "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+        }
+      ],
+      "buildId": "1792665364111",
+      "passed": true
+    }
+  ],
+  "live": [
+    {
+      "name": "preserved-native",
+      "evidence": "artifacts/vertex-reuse-native.json",
+      "status": "measured",
+      "hardware": {
+        "gpu": [
+          {
+            "vendor": "",
+            "device": "Intel(R) UHD Graphics",
+            "driver": "30.0.100.9864"
+          },
+          {
+            "vendor": "",
+            "device": "Microsoft Basic Render Driver",
+            "driver": "10.0.26100.9711"
+          }
+        ],
+        "browser": {
+          "protocolVersion": "1.3",
+          "product": "Chrome/155.0.8059.80",
+          "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+          "jsVersion": "15.5.35.23"
+        }
+      },
+      "configuration": {
+        "sampleMilliseconds": 10000,
+        "warmupSubmittedFrames": 90,
+        "queryDiagnostics": false,
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "samples": [
+        {
+          "quality": "medium",
+          "documentHidden": false,
+          "targetFPS": 60,
+          "submittedFrames": 169,
+          "submittedFPS": 16.89695854746177,
+          "attempts": 349,
+          "held": 180,
+          "window": {
+            "requestedMilliseconds": 10000,
+            "elapsedMilliseconds": 10001.799999999814
+          },
+          "simulation": {
+            "advancedSeconds": 10.000000000002274,
+            "wallSeconds": 10.001799999999815,
+            "speedRatio": 0.9998200323944149,
+            "ticks": {
+              "samples": 100,
+              "median": 25.700000000186265,
+              "p95": 59.5,
+              "p99": 72.30000000074506,
+              "max": 72.30000000074506
+            },
+            "ended": null
+          },
+          "frameIntervals": {
+            "samples": 168,
+            "median": 57.799999999813735,
+            "p95": 96.20000000018626,
+            "p99": 138.5,
+            "max": 147.20000000018626
+          },
+          "renderAttemptCPU": {
+            "samples": 349,
+            "median": 0.10000000055879354,
+            "p95": 40.60000000055879,
+            "p99": 48.700000000186265,
+            "max": 78
+          },
+          "submittedRenderCPU": {
+            "samples": 169,
+            "median": 25.09999999962747,
+            "p95": 43.59999999962747,
+            "p99": 72,
+            "max": 78
+          },
+          "apiQueries": {},
+          "slowQueries": [],
+          "queriedPrograms": [],
+          "drawingBuffer": {
+            "width": 1280,
+            "height": 720,
+            "pixelRatio": 1
+          },
+          "units": {
+            "drawn": 91,
+            "allocated": 289,
+            "activeBatches": 13,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 76,
+            "capacityMatrixBytes": 1146880,
+            "rigParts": 14,
+            "rigUploadBytes": 166912,
+            "rigUsedBytes": 59072
+          },
+          "shadows": {
+            "updates": 192,
+            "skipped": 73,
+            "refreshRate": 20,
+            "mapSize": 1024
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8
+          },
+          "render": {
+            "calls": 737,
+            "frameCalls": 0,
+            "drawCalls": 0,
+            "triangles": 0,
+            "points": 0,
+            "lines": 0,
+            "timestamp": 0
+          },
+          "memory": {
+            "attributes": 834,
+            "attributesSize": 69394876,
+            "geometries": 150,
+            "indexAttributes": 142,
+            "indexAttributesSize": 6554040,
+            "indirectStorageAttributes": 0,
+            "indirectStorageAttributesSize": 0,
+            "programs": 133,
+            "programsSize": 974229,
+            "readbackBuffers": 0,
+            "readbackBuffersSize": 0,
+            "renderTargets": 3,
+            "storageAttributes": 0,
+            "storageAttributesSize": 0,
+            "textures": 42,
+            "texturesSize": 74008381,
+            "uniformBuffers": 814,
+            "uniformBuffersSize": 1761600,
+            "total": 152693126
+          },
+          "shaderErrors": 0,
+          "backend": "webgpu",
+          "requestedQuality": "medium",
+          "emulatedTouch": false,
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "setup": {
+            "initializationMilliseconds": 54057.10000000056,
+            "focus": {
+              "x": -24.909155883843237,
+              "z": -118.90594392413874
+            },
+            "visibleUnits": 251,
+            "world": 400,
+            "players": 8,
+            "units": 399
+          },
+          "autoQuality": false,
+          "actualRenderQuality": "medium",
+          "validationErrors": 0,
+          "validLayout": true,
+          "validWindow": true,
+          "targetMet": false,
+          "pipelineLayouts": {
+            "limit": 8,
+            "count": 91,
+            "maxBuffers": 7
+          }
+        }
+      ],
+      "failure": null,
+      "errors": []
+    },
+    {
+      "name": "preserved-phone",
+      "evidence": "artifacts/vertex-reuse-native-phone.json",
+      "status": "measured",
+      "hardware": {
+        "gpu": [
+          {
+            "vendor": "",
+            "device": "Intel(R) UHD Graphics",
+            "driver": "30.0.100.9864"
+          },
+          {
+            "vendor": "",
+            "device": "Microsoft Basic Render Driver",
+            "driver": "10.0.26100.9711"
+          }
+        ],
+        "browser": {
+          "protocolVersion": "1.3",
+          "product": "Chrome/155.0.8059.80",
+          "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+          "jsVersion": "15.5.35.23"
+        }
+      },
+      "configuration": {
+        "sampleMilliseconds": 10000,
+        "warmupSubmittedFrames": 90,
+        "queryDiagnostics": false,
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "samples": [
+        {
+          "quality": "low",
+          "documentHidden": false,
+          "targetFPS": 30,
+          "submittedFrames": 228,
+          "submittedFPS": 22.798404111711754,
+          "attempts": 232,
+          "held": 4,
+          "window": {
+            "requestedMilliseconds": 10000,
+            "elapsedMilliseconds": 10000.700000000186
+          },
+          "simulation": {
+            "advancedSeconds": 8.800000000002001,
+            "wallSeconds": 10.000700000000187,
+            "speedRatio": 0.8799384043118819,
+            "ticks": {
+              "samples": 88,
+              "median": 11.400000000139698,
+              "p95": 31.199999999953434,
+              "p99": 47.5,
+              "max": 47.5
+            },
+            "ended": null
+          },
+          "frameIntervals": {
+            "samples": 227,
+            "median": 33.10000000009313,
+            "p95": 54.800000000046566,
+            "p99": 292.80000000004657,
+            "max": 1484
+          },
+          "renderAttemptCPU": {
+            "samples": 232,
+            "median": 7.7999999998137355,
+            "p95": 16.799999999813735,
+            "p99": 21.300000000046566,
+            "max": 30.600000000093132
+          },
+          "submittedRenderCPU": {
+            "samples": 228,
+            "median": 7.899999999906868,
+            "p95": 16.799999999813735,
+            "p99": 21.300000000046566,
+            "max": 30.600000000093132
+          },
+          "apiQueries": {},
+          "slowQueries": [],
+          "queriedPrograms": [],
+          "drawingBuffer": {
+            "width": 640,
+            "height": 360,
+            "pixelRatio": 1
+          },
+          "units": {
+            "drawn": 84,
+            "allocated": 281,
+            "activeBatches": 12,
+            "matrixUploadBytes": 0,
+            "ownerUploadBytes": 0,
+            "capacityMatrixBytes": 1146880,
+            "rigParts": 14,
+            "rigUploadBytes": 150528,
+            "rigUsedBytes": 54464
+          },
+          "shadows": {},
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4
+          },
+          "render": {
+            "calls": 659,
+            "frameCalls": 2,
+            "drawCalls": 127,
+            "triangles": 332985,
+            "points": 0,
+            "lines": 0,
+            "timestamp": 0
+          },
+          "memory": {
+            "attributes": 730,
+            "attributesSize": 24135224,
+            "geometries": 135,
+            "indexAttributes": 127,
+            "indexAttributesSize": 2011008,
+            "indirectStorageAttributes": 0,
+            "indirectStorageAttributesSize": 0,
+            "programs": 77,
+            "programsSize": 613131,
+            "readbackBuffers": 0,
+            "readbackBuffersSize": 0,
+            "renderTargets": 2,
+            "storageAttributes": 0,
+            "storageAttributesSize": 0,
+            "textures": 31,
+            "texturesSize": 18171945,
+            "uniformBuffers": 412,
+            "uniformBuffersSize": 977136,
+            "total": 45908444
+          },
+          "shaderErrors": 0,
+          "backend": "webgpu",
+          "requestedQuality": "low",
+          "emulatedTouch": true,
+          "viewport": {
+            "width": 640,
+            "height": 360
+          },
+          "setup": {
+            "initializationMilliseconds": 1603.1000000000931,
+            "focus": {
+              "x": -24.909155883843237,
+              "z": -118.90594392413874
+            },
+            "visibleUnits": 251,
+            "world": 400,
+            "players": 8,
+            "units": 399
+          },
+          "autoQuality": false,
+          "actualRenderQuality": "low",
+          "validationErrors": 0,
+          "validLayout": true,
+          "validWindow": true,
+          "targetMet": false,
+          "pipelineLayouts": {
+            "limit": 8,
+            "count": 52,
+            "maxBuffers": 7
+          }
+        }
+      ],
+      "failure": null,
+      "errors": []
+    },
+    {
+      "name": "preserved-webgl",
+      "evidence": "artifacts/vertex-reuse-webgl-timeout.json",
+      "status": "warmup-timeout",
+      "hardware": {
+        "gpu": [
+          {
+            "vendor": "",
+            "device": "Intel(R) UHD Graphics",
+            "driver": "30.0.100.9864"
+          },
+          {
+            "vendor": "",
+            "device": "Microsoft Basic Render Driver",
+            "driver": "10.0.26100.9711"
+          }
+        ],
+        "browser": {
+          "protocolVersion": "1.3",
+          "product": "Edg/155.0.4283.62",
+          "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+          "jsVersion": "15.5.9.7"
+        }
+      },
+      "configuration": {
+        "sampleMilliseconds": 10000,
+        "warmupSubmittedFrames": 90,
+        "queryDiagnostics": false,
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "samples": [],
+      "failure": "page.waitForFunction: Timeout 120000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\battle-performance-qa.mjs:47:64",
+      "errors": []
+    },
+    {
+      "name": "preserved-webgl-chrome",
+      "evidence": "artifacts/vertex-reuse-webgl-chrome-timeout.json",
+      "status": "warmup-timeout",
+      "hardware": {
+        "gpu": [
+          {
+            "vendor": "",
+            "device": "Intel(R) UHD Graphics",
+            "driver": "30.0.100.9864"
+          },
+          {
+            "vendor": "",
+            "device": "Microsoft Basic Render Driver",
+            "driver": "10.0.26100.9711"
+          }
+        ],
+        "browser": {
+          "protocolVersion": "1.3",
+          "product": "Chrome/155.0.8059.80",
+          "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+          "jsVersion": "15.5.35.23"
+        }
+      },
+      "configuration": {
+        "sampleMilliseconds": 10000,
+        "warmupSubmittedFrames": 90,
+        "queryDiagnostics": false,
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "samples": [],
+      "failure": "page.waitForFunction: Timeout 120000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\battle-performance-qa.mjs:47:64",
+      "errors": []
+    }
+  ],
+  "qualification": {
+    "headless": true,
+    "foregroundTestFlags": true,
+    "forcedHardwareEligibility": true,
+    "disableFrameRateLimit": false,
+    "physicalPhone": false,
+    "maximumPopulationSaturation": false
+  },
+  "limits": [
+    "The full game goal remains active. This is a verified geometry-storage change, not release readiness, AAA parity or universal smoothness.",
+    "WebGPU remains opt-in. Classic WebGL remains the default and compatibility fallback; all three paths passed separate four-unit functional checks.",
+    "Both completed native battle windows missed the unchanged 60 desktop / 30 emulated-touch targets. Simulation also ran below wall time in the touch sample.",
+    "Crowded WebGL warmup timed out in both Edge and Chrome. These are failed checks without a valid performance window, not zero-FPS measurements.",
+    "Native desktop setup took about 54 seconds and warmup severely stalled. Cold-start latency and sustained performance remain unresolved.",
+    "Battles evolve during warmup. Submission cadence is not display-presentation FPS or a controlled before/after speedup.",
+    "The fixture has eight kingdoms and 399 initial living units; configured 1280 batch capacity does not prove performance at maximum population.",
+    "Paused timestamp diagnostic experiments stalled, including prior builds. No successful paired timestamp or pixel comparison is claimed for the final implementation.",
+    "Owned qualification profiles force GPU eligibility and foreground scheduling. Physical phones, unmodified-browser driver support, thermal behavior and broader devices remain unverified.",
+    "Pushing GitHub does not verify the public Render deployment or its active revision."
+  ],
+  "sourceSHA256": {
+    "src/vertex-layout.js": "f8b385bf9be6983b2551fc2021d5f9fcee91bd069aabfbd1fe6a06390d1b9417",
+    "src/rig-batches.js": "95c27c49e8de2004fea58efbb4db87a61e387e320330a4a7a2ae53e2d6c8e96c",
+    "src/unit-palette.js": "20186ff9dcea4ed27b9473467f174bf7bb5f3564ea3444fdfd6ee15ff7f57bf1",
+    "src/world.js": "d9a59c6ada3f80db18f5f2bfbfa39fc082f63a2d52bb7d4102038b0d56003352",
+    "tests/vertex-layout.test.js": "f9b02d0d143b094b694a940c2062e687dc1f879fd3c1bb61e12a81ff850d3e45",
+    "tests/rig-batches.test.js": "cf0f0d2c39fcc4d89b48d48d21330a9219ae03ebe7b3da228dad65b5f975d0b6",
+    "scripts/renderer-qa.mjs": "fbdd2e64b10dca39fdeb7cf016adfe37a67d5f28b48930fbb9789352a4dae2bf",
+    "scripts/battle-performance-qa.mjs": "a547b434df80998c7642d5e272465aae9efa9099fdcec35f6843023f65a7b499",
+    "scripts/native-pass-profile.mjs": "13642ce7bc04a3616d9dc750d4bcb74afb0e525e59d2acc14036cdf92a8e6116"
+  },
+  "evidenceSHA256": {
+    "artifacts/vertex-reuse-regression.txt": "5bfcac25275df861cef7982c870df978eeae0e28cf7ada5cf93fd48d778a5605",
+    "artifacts/vertex-reuse-focused.txt": "7555567aabba13d0aaa520d22b3fc0250d6fa216366fa5589c0fd53ca8409830",
+    "artifacts/vertex-reuse-build.txt": "3c728bc93e3569a7fa9b179ce7d20ce60a1de460b6131dbf6127c81f093d6cf2",
+    "artifacts/vertex-reuse-renderer-webgpu.json": "5332bb92a0044c7a4804bef2707046594de65ceaad5eb9566c6a90ea3db5d250",
+    "artifacts/vertex-reuse-renderer-webgl.json": "2c79673f0c68d86cb14768dd1be43009018a1af8b55e3d71fe59a37ada96b53e",
+    "artifacts/vertex-reuse-renderer-fallback.json": "e4ea6d480d50dee60f549ad133c20320e4744fe0b3a072343d4bc0ecb825cd4c",
+    "artifacts/vertex-reuse-native.json": "b6740fd707f070c2e3a25ee64baf55ed5d3da83a7d960aaa001f2def2f99e305",
+    "artifacts/vertex-reuse-native-phone.json": "9e65b77b3cae52e7c6f2ca45d69d227db6073f40b98958a133cd6444efd0d24b",
+    "artifacts/vertex-reuse-webgl-timeout.json": "27770be6c7061fae01ac9167d4ea6a8dd3f2b4d29a41dae717797a0722597225",
+    "artifacts/vertex-reuse-webgl-chrome-timeout.json": "0f8b622035799fda384a35fe05b94c9af092bfd7e51012c0e7bd96bc69a62a9d",
+    "artifacts/vertex-reuse-crowded-native.png": "4635d5711efd3c3a6916b947a62c77768c08e33282903549c6715b479cb5d94a",
+    "artifacts/vertex-reuse-landscape-native.png": "2ea8a5738a0cd3b84e4ba56ce182e326fefb906274e2cc426664e56de14e7f35",
+    "artifacts/vertex-reuse-high-native.png": "f1fda8a01a23f7313304ed567746e50554f413fadc77174651c424e2864de048",
+    "artifacts/vertex-reuse-selection-landscape.png": "c66c350bcf5141c733b543e365944ccbcf1a12fd5a1b8521b6b8c406a26d4d51"
+  },
+  "localDist": {
+    "files": 56,
+    "hashVerified": true,
+    "extraPreviousAssetsRetained": true
+  }
+}

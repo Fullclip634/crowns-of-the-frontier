@@ -15,6 +15,10 @@ AI workers now choose nearby safe resources without sorting the entire forest.
 Reference battle replays retain the same decisions and state. See
 [resource selection and measured CPU work](RESOURCE_SELECTION_DESIGN.md).
 
+The model pipeline now retains the original Blender vertex sharing through
+scenery, ownership colors and troop animation, preserving triangle detail and
+picking. See [verification and remaining performance limits](VERTEX_REUSE_DESIGN.md).
+
 To unload a transport, select it, open **Options** on a phone, choose **Unload**,
 then click or tap nearby open shore. Crowded beaches release only the troops
 that fit; clear room or choose another beach for the remaining passengers.

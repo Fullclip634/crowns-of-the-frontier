@@ -1,0 +1,1295 @@
+{
+  "startedAt": "2026-10-22T10:38:30.614Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 90,
+    "queryDiagnostics": false,
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [
+    {
+      "quality": "medium",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 169,
+      "submittedFPS": 16.89695854746177,
+      "attempts": 349,
+      "held": 180,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10001.799999999814
+      },
+      "simulation": {
+        "advancedSeconds": 10.000000000002274,
+        "wallSeconds": 10.001799999999815,
+        "speedRatio": 0.9998200323944149,
+        "ticks": {
+          "samples": 100,
+          "median": 25.700000000186265,
+          "p95": 59.5,
+          "p99": 72.30000000074506,
+          "max": 72.30000000074506
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 168,
+        "median": 57.799999999813735,
+        "p95": 96.20000000018626,
+        "p99": 138.5,
+        "max": 147.20000000018626
+      },
+      "renderAttemptCPU": {
+        "samples": 349,
+        "median": 0.10000000055879354,
+        "p95": 40.60000000055879,
+        "p99": 48.700000000186265,
+        "max": 78
+      },
+      "submittedRenderCPU": {
+        "samples": 169,
+        "median": 25.09999999962747,
+        "p95": 43.59999999962747,
+        "p99": 72,
+        "max": 78
+      },
+      "apiQueries": {},
+      "slowQueries": [],
+      "pipelineLayouts": {
+        "limit": 8,
+        "layouts": [
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 11
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 1,
+            "attributes": 1
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1291",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_779",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_780",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1573",
+            "buffers": 3,
+            "attributes": 12
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1292",
+            "buffers": 4,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_770",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1293",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_773",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_817",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_781",
+            "buffers": 5,
+            "attributes": 8
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2908",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_770",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_771",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_777",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_773",
+            "buffers": 4,
+            "attributes": 4
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2915",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2903",
+            "buffers": 3,
+            "attributes": 6
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2904",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2905",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2906",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2913",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_791",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2926",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshBasicMaterial_2926",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2925",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2940",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 1,
+            "attributes": 1
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_2984",
+            "buffers": 2,
+            "attributes": 2
+          },
+          {
+            "label": "renderPipeline_ShadowMaterial_1274",
+            "buffers": 3,
+            "attributes": 3
+          },
+          {
+            "label": "renderPipeline_MeshStandardNodeMaterial_872",
+            "buffers": 7,
+            "attributes": 7
+          }
+        ]
+      },
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 91,
+        "allocated": 289,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 76,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 166912,
+        "rigUsedBytes": 59072
+      },
+      "shadows": {
+        "updates": 192,
+        "skipped": 73,
+        "refreshRate": 20,
+        "mapSize": 1024
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8
+      },
+      "render": {
+        "calls": 737,
+        "frameCalls": 0,
+        "drawCalls": 0,
+        "triangles": 0,
+        "points": 0,
+        "lines": 0,
+        "timestamp": 0
+      },
+      "memory": {
+        "attributes": 834,
+        "attributesSize": 69394876,
+        "geometries": 150,
+        "indexAttributes": 142,
+        "indexAttributesSize": 6554040,
+        "indirectStorageAttributes": 0,
+        "indirectStorageAttributesSize": 0,
+        "programs": 133,
+        "programsSize": 974229,
+        "readbackBuffers": 0,
+        "readbackBuffersSize": 0,
+        "renderTargets": 3,
+        "storageAttributes": 0,
+        "storageAttributesSize": 0,
+        "textures": 42,
+        "texturesSize": 74008381,
+        "uniformBuffers": 814,
+        "uniformBuffersSize": 1761600,
+        "total": 152693126
+      },
+      "shaderErrors": 0,
+      "backend": "webgpu",
+      "requestedQuality": "medium",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "initializationMilliseconds": 54057.10000000056,
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "autoQuality": false,
+      "actualRenderQuality": "medium",
+      "validationErrors": 0,
+      "validLayout": true,
+      "validWindow": true,
+      "targetMet": false
+    }
+  ],
+  "errors": [],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/155.0.8059.80",
+      "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "jsVersion": "15.5.35.23"
+    }
+  },
+  "buildId": "1792665364111",
+  "warmups": [
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "phone": false,
+      "states": [
+        {
+          "at": 111795.70000000019,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.70000000002716,
+          "ended": null,
+          "attempts": 3,
+          "held": 2,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 2,
+            "failed": 0
+          },
+          "heap": 306202294,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 119572.89999999944,
+          "hidden": false,
+          "paused": false,
+          "seconds": 421.0000000000272,
+          "ended": null,
+          "attempts": 4,
+          "held": 2,
+          "submitted": 2,
+          "flight": {
+            "pending": 2,
+            "submitted": 4,
+            "skipped": 2,
+            "failed": 0
+          },
+          "heap": 244658579,
+          "backend": "webgpu",
+          "pipelines": 83
+        },
+        {
+          "at": 129576.70000000019,
+          "hidden": false,
+          "paused": false,
+          "seconds": 421.0000000000272,
+          "ended": null,
+          "attempts": 4,
+          "held": 2,
+          "submitted": 2,
+          "flight": {
+            "pending": 1,
+            "submitted": 4,
+            "skipped": 2,
+            "failed": 0
+          },
+          "heap": 243133835,
+          "backend": "webgpu",
+          "pipelines": 83
+        },
+        {
+          "at": 139591.39999999944,
+          "hidden": false,
+          "paused": false,
+          "seconds": 421.2000000000273,
+          "ended": null,
+          "attempts": 5,
+          "held": 2,
+          "submitted": 3,
+          "flight": {
+            "pending": 2,
+            "submitted": 5,
+            "skipped": 2,
+            "failed": 0
+          },
+          "heap": 246041773,
+          "backend": "webgpu",
+          "pipelines": 83
+        },
+        {
+          "at": 149583.39999999944,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.70000000002784,
+          "ended": null,
+          "attempts": 22,
+          "held": 8,
+          "submitted": 14,
+          "flight": {
+            "pending": 2,
+            "submitted": 16,
+            "skipped": 8,
+            "failed": 0
+          },
+          "heap": 254114187,
+          "backend": "webgpu",
+          "pipelines": 88
+        },
+        {
+          "at": 159589.59999999963,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.70000000002784,
+          "ended": null,
+          "attempts": 22,
+          "held": 8,
+          "submitted": 14,
+          "flight": {
+            "pending": 2,
+            "submitted": 16,
+            "skipped": 8,
+            "failed": 0
+          },
+          "heap": 254140069,
+          "backend": "webgpu",
+          "pipelines": 88
+        },
+        {
+          "at": 169601.39999999944,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.70000000002784,
+          "ended": null,
+          "attempts": 22,
+          "held": 8,
+          "submitted": 14,
+          "flight": {
+            "pending": 2,
+            "submitted": 16,
+            "skipped": 8,
+            "failed": 0
+          },
+          "heap": 254153033,
+          "backend": "webgpu",
+          "pipelines": 88
+        },
+        {
+          "at": 179692.2999999998,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.70000000002784,
+          "ended": null,
+          "attempts": 22,
+          "held": 8,
+          "submitted": 14,
+          "flight": {
+            "pending": 2,
+            "submitted": 16,
+            "skipped": 8,
+            "failed": 0
+          },
+          "heap": 254166209,
+          "backend": "webgpu",
+          "pipelines": 88
+        },
+        {
+          "at": 189617.2999999998,
+          "hidden": false,
+          "paused": false,
+          "seconds": 423.70000000002784,
+          "ended": null,
+          "attempts": 22,
+          "held": 8,
+          "submitted": 14,
+          "flight": {
+            "pending": 2,
+            "submitted": 16,
+            "skipped": 8,
+            "failed": 0
+          },
+          "heap": 254182449,
+          "backend": "webgpu",
+          "pipelines": 88
+        },
+        {
+          "at": 199643.09999999963,
+          "hidden": false,
+          "paused": false,
+          "seconds": 426.7000000000285,
+          "ended": null,
+          "attempts": 100,
+          "held": 47,
+          "submitted": 53,
+          "flight": {
+            "pending": 2,
+            "submitted": 55,
+            "skipped": 47,
+            "failed": 0
+          },
+          "heap": 265377038,
+          "backend": "webgpu",
+          "pipelines": 88
+        }
+      ]
+    }
+  ],
+  "pipelineLayouts": [
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "phone": false,
+      "limit": 8,
+      "layouts": [
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 11
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 1,
+          "attributes": 1
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1291",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_779",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_780",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1573",
+          "buffers": 3,
+          "attributes": 12
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1292",
+          "buffers": 4,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_770",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1293",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_773",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_817",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_781",
+          "buffers": 5,
+          "attributes": 8
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2908",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_770",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_771",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_777",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_872",
+          "buffers": 7,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_773",
+          "buffers": 4,
+          "attributes": 4
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2915",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2903",
+          "buffers": 3,
+          "attributes": 6
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2904",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2905",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2906",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2913",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_791",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2926",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshBasicMaterial_2926",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2925",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2940",
+          "buffers": 2,
+          "attributes": 2
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 1,
+          "attributes": 1
+        },
+        {
+          "label": "renderPipeline_ShadowMaterial_1274",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_1281",
+          "buffers": 3,
+          "attributes": 3
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_872",
+          "buffers": 7,
+          "attributes": 7
+        },
+        {
+          "label": "renderPipeline_MeshStandardNodeMaterial_2984",
+          "buffers": 2,
+          "attributes": 2
+        }
+      ]
+    }
+  ],
+  "measured": true
+}

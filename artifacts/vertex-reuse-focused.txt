@@ -1,0 +1,27 @@
+✔ unit poses pack visible IDs despite freed slots, fog and embarked troops (8.5208ms)
+✔ render extensions see the fresh camera frustum and a shared timestamp on immediate pans (1.6662ms)
+✔ shader preparation holds the complete render pipeline and releases warmed programs after the live frame (0.4982ms)
+✔ shared torso and limb poses retain exact animation while reusing prefixes only within one unit (4.1657ms)
+✔ one rigid draw preserves every source vertex and exact nested world poses for both color and shadow passes (9.2077ms)
+✔ pose texture grows with visible rows, retains existing data and disposes replaced and final resources (6.0163ms)
+✔ raycasting follows stored articulated poses and packed IDs after repacking instead of the bind pose (4.7291ms)
+✔ unchanged poses skip uploads while moved and repacked rows update color and shadow data exactly (2.1821ms)
+✔ a restored graphics context uploads the complete pose texture and disposal removes its listener (1.907ms)
+✔ native packed vertices retain articulated picking at the maximum eight-kingdom batch capacity (3.5896ms)
+✔ native vertex storage preserves exact floats, channels, topology and independent instance updates (5.6917ms)
+✔ packing keeps mutable and integer channels separate and does not repack an existing layout (0.9897ms)
+✔ exact indexing preserves every triangle channel, hard edge, joint, float bit and draw range (3.1713ms)
+✔ different vertices with the same hash remain distinct, while exact repeats share storage (0.7465ms)
+✔ large exact indices cannot overflow 16 bits or wrap the last canonical vertex (42.03ms)
+✔ exact indexing leaves unsupported mutable, integer, morph and previously indexed layouts untouched (1.2198ms)
+✔ static model merging reuses solid vertices without modifying shared originals or moving gate parts (12.994ms)
+✔ indexed model inputs retain their original sharing and unshared triangles get identity indices (0.3594ms)
+✔ palette baking preserves indexed face order, team masks and independent surface materials (2.8309ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 845.5971

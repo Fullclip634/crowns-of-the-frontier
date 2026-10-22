@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {animatePart} from './world-polish.js';
-import {interleaveStaticVertices} from './vertex-layout.js';
+import {interleaveStaticVertices,ensureModelIndices} from './vertex-layout.js';
 
 const rigShader=`attribute float unitJoint;
 uniform highp sampler2D frontierRigPoses;
@@ -41,13 +41,13 @@ function allocate(rig,rows){
 // Pose textures grow with visible instances instead of allocating the population
 // ceiling. The same stored matrices drive shading, shadow depth and CPU picking.
 export function createRigidUnitPart(view,model,batch){
-  const geometries=[],joints=[];let vertex=0,sourceMaterial;
+  const geometries=[],joints=[];let draw=0,sourceMaterial;
   model.traverse(part=>{
     if(!part.isMesh||part.material.transparent)return;
     sourceMaterial??=part.material;if(part.material!==sourceMaterial)throw new Error('Rigid unit surfaces require the shared palette.');
-    let geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat;}
+    const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);ensureModelIndices(geometry);
     const count=geometry.attributes.position.count;geometry.setAttribute('unitJoint',new THREE.Float32BufferAttribute(new Float32Array(count).fill(joints.length),1));
-    joints.push({start:vertex,count,userData:{motion:part.userData.motion}});vertex+=count;geometries.push(geometry);
+    const drawCount=geometry.index.count;joints.push({start:draw,count:drawCount,userData:{motion:part.userData.motion}});draw+=drawCount;geometries.push(geometry);
   });
   if(!joints.length)return null;
   const geometry=mergeGeometries(geometries);for(const part of geometries)part.dispose();if(!geometry)throw new Error('Rigid unit geometry could not merge.');

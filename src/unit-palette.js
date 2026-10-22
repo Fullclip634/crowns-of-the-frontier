@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {ensureModelIndices} from './vertex-layout.js';
 
 function paletteMaterial(view){
   if(!view.materials.unitPalette){
@@ -41,8 +42,7 @@ export function mergeUnitModel(view,model,neutralTeams=false){
   model.traverse(part=>{
     if(!part.isMesh)return;
     if(part.material.transparent){const copy=part.clone();copy.geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);copy.position.set(0,0,0);copy.rotation.set(0,0,0);copy.scale.setScalar(1);transparent.push(copy);return;}
-    let geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);
-    if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat;}
+    const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);ensureModelIndices(geometry);
     for(const name of Object.keys(geometry.attributes))if(!['position','normal','uv','color'].includes(name))geometry.deleteAttribute(name);
     const team=neutralTeams?(view.teamMaterials.includes(part.material)?1:view.roofMaterials?.includes(part.material)?2:0):0;
     const count=geometry.attributes.position.count,old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),color=team?[1,1,1]:part.material.color.toArray();
