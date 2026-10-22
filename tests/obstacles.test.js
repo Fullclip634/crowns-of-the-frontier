@@ -77,8 +77,8 @@ test('spatial targeting finds enemies across bucket boundaries and includes larg
 });
 
 test('an AI attack continues across a large map while its next raid clock resets',()=>{
-  const sim=new Simulation({mode:'custom',slots:battlePreset('2v2'),seed:512}),owner=2,tc=sim.owned(owner,'building','towncenter')[0],enemy=sim.owned(0,'building','towncenter')[0];
-  sim.aiStates[owner]={known:{[enemy.id]:{id:enemy.id,owner:0,kind:'building',type:'towncenter',x:enemy.x,z:enemy.z,lastSeen:0}},phase:'attack',scoutIndex:0,lastOrders:-20,lastRebalance:0,decision:0,nextAttack:500};
+  const sim=new Simulation({mode:'custom',slots:battlePreset('2v2'),seed:512}),owner=2,tc=sim.owned(owner,'building','towncenter')[0],enemy=sim.entities.filter(e=>e.type==='towncenter'&&sim.hostile(owner,e.owner)).sort((a,b)=>distance(tc,a)-distance(tc,b))[0];
+  sim.aiStates[owner]={known:{[enemy.id]:{id:enemy.id,owner:enemy.owner,kind:'building',type:'towncenter',x:enemy.x,z:enemy.z,lastSeen:0}},phase:'attack',scoutIndex:0,lastOrders:-20,lastRebalance:0,decision:0,nextAttack:500};
   for(let i=0;i<12;i++)sim.addUnit('spearman',owner,tc.x+i,tc.z+15);sim.time=200;sim.tickAI(owner);
   assert.equal(sim.aiStates[owner].phase,'attack');assert.ok(distance(sim.aiStates[owner].target,enemy)<1);assert.ok(sim.owned(owner,'unit','spearman').every(unit=>unit.order?.type==='attackmove'));
 });

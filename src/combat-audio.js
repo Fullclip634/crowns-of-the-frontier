@@ -26,8 +26,15 @@ export function combatSoundKind(entity,target){
   return 'metal';
 }
 
-const DURATIONS={metal:.42,arrow:.2,wood:.28,siege:.7};
-const LEVELS={metal:.4,arrow:.24,wood:.36,siege:.48};
+const DURATIONS={metal:.34,arrow:.2,wood:.28,siege:.7,earth:.2};
+const LEVELS={metal:.4,arrow:.24,wood:.36,siege:.48,earth:.20};
+
+export function projectileImpactSound(event){return event.siege?'siege':event.damage>0?(event.target?.kind==='building'?'wood':'metal'):'earth';}
+
+export function steelResonances(sampleRate,variant=0){
+  const pitch=2**(([-1.7,-.4,.8,1.6][((variant%4)+4)%4])/12);
+  return [940,1417,2161,3127,4567,6389].flatMap((frequency,index)=>frequency*pitch<sampleRate*.45?[{frequency:frequency*pitch,level:[.21,.22,.18,.14,.09,.055][index],decay:[.055,.09,.073,.050,.036,.024][index]}]:[]);
+}
 
 // Original, cached effects: inharmonic steel ringing, a short blade scrape,
 // bowstring twang, and timber/stone impacts. No downloaded game recordings.
@@ -36,17 +43,22 @@ export function synthesizeCombat(kind,sampleRate=44100,variant=0){
   const data=new Float32Array(Math.ceil(DURATIONS[kind]*sampleRate));
   let seed=(7919+variant*104729)>>>0,previous=0,low=0,peak=0;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
-  const base=750+variant*107,ratios=[1,1.47,2.11,2.93,4.18];
+  const modes=kind==='metal'?steelResonances(sampleRate,variant).map(mode=>({...mode,sine:0,cosine:1,stepSine:Math.sin(2*Math.PI*mode.frequency/sampleRate),stepCosine:Math.cos(2*Math.PI*mode.frequency/sampleRate),gain:mode.level,damping:Math.exp(-1/(sampleRate*mode.decay))})):[];
   for(let i=0;i<data.length;i++){
     const t=i/sampleRate,noise=random(),bright=noise-previous;previous=noise;low+=.08*(noise-low);let value=0;
     if(kind==='metal'){
-      for(let j=0;j<ratios.length;j++)value+=Math.sin(2*Math.PI*base*ratios[j]*t)*Math.exp(-t/(.14-j*.018))*(.28-j*.042);
-      value+=bright*.28*Math.exp(-t/.009)+Math.sin(2*Math.PI*145*t)*.17*Math.exp(-t/.025);
-      if(t>.018)value+=bright*.065*Math.exp(-(t-.018)/.025);
+      // Damped, inharmonic blade modes plus a hard contact and short scrape.
+      // Recurrences avoid a sine and exponential per mode per sample. Modes
+      // above the device's useful bandwidth are omitted rather than aliased.
+      for(const mode of modes){value+=mode.sine*mode.gain;const sine=mode.sine;mode.sine=sine*mode.stepCosine+mode.cosine*mode.stepSine;mode.cosine=mode.cosine*mode.stepCosine-sine*mode.stepSine;mode.gain*=mode.damping;}
+      value+=bright*.38*Math.exp(-t/.004)+(noise-low)*.21*Math.exp(-t/.022)+Math.sin(2*Math.PI*185*t)*.09*Math.exp(-t/.018);
+      if(t>.016)value+=bright*.12*Math.exp(-(t-.016)/.010);
     }else if(kind==='arrow'){
       value=Math.sin(2*Math.PI*(310*t+30*(1-Math.exp(-t/.04))))*.58*Math.exp(-t/.04)+bright*.18*Math.exp(-t/.012);
     }else if(kind==='wood'){
       value=Math.sin(2*Math.PI*(105+variant*13)*t)*.65*Math.exp(-t/.045)+Math.sin(2*Math.PI*247*t)*.17*Math.exp(-t/.018)+noise*.3*Math.exp(-t/.02);
+    }else if(kind==='earth'){
+      value=low*.9*Math.exp(-t/.035)+noise*.10*Math.exp(-t/.016);
     }else{
       value=low*2.4*Math.exp(-t/.18)+Math.sin(2*Math.PI*64*t)*.3*Math.exp(-t/.12)+bright*.14*Math.exp(-t/.018);
     }

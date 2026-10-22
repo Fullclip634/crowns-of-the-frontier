@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "models": 24,
+  "meshes": 96,
+  "visibleTriangles": 126184,
+  "exactTrianglePositionsAndWinding": true,
+  "normalLimitDegrees": 0.05,
+  "maxNormalDegrees": 0.003907090598753798,
+  "maxUVError": 0,
+  "maxColorError": 0,
+  "referenceBytes": 14596092,
+  "candidateBytes": 2435668,
+  "referenceDecodedBufferBytes": 38116616,
+  "candidateDecodedBufferBytes": 5708470
+}

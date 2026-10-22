@@ -1,0 +1,19 @@
+# Consistent forests and character actions
+
+Every graphics preset loads the same 24 Blender tree models from `frontier-trees.glb`: three biomes, four variants, and near/far geometry. High, Balanced and Low keep the detailed trees' species, branch positions, canopy, snow and colors. A shared 40-pixel projected-height distance threshold and 18% hysteresis prevent a quality change from replacing a tree at an unchanged camera position. Distant trees still use a cheaper 3D model. Shadows, resolution, weather detail and other preset-controlled effects can still change the overall image.
+
+`node scripts/blender/build-shared-trees.mjs` extracts the High Blender trees, decodes their normalized attributes, then packs only those meshes. Packing validates exact Float32 triangle positions and winding, original transforms and metadata, UVs, colors and normal accuracy. The shared download is about 2.4 MB and its decoded attribute buffers about 5.7 MB. It is loaded once and reused through preset changes rather than fetching an entire High roster on phones. Keeping detailed nearby trees increases Low's forest geometry cost; universal frame-rate claims require physical-device testing.
+
+`npm run art:balanced` also regenerates the shared trees, as does complete artwork regeneration. The original High, Balanced and Low roster files remain unchanged. The shared runtime tree asset supersedes their embedded forest models. Source Blender masters remain unchanged.
+
+Villagers have separate chopping, mining, gathering and construction stroke phases, with preparation, contact and recovery. Tool rotation uses an independent grip pivot at the right hand; the tool follows the elbow, shoulder and torso without separating from the hand. Walking still uses distance-based locomotion. Carrying, healing and melee recovery have distinct poses. These are procedural articulated animations, not motion capture or full inverse kinematics; irregular resource surfaces and construction reach still need further visual refinement.
+
+Work poses require an actual reachable live resource or unfinished/damaged building, and fade out when work stops. Observed network workers receive only a cosmetic `working` flag alongside the existing activity, never a target ID or private order. Local and observed units use the same work clock and pose equations. Render-only action state does not alter saved kingdoms, economy rates or combat rules.
+
+Steel effects use a hard transient, short scrape and six damped inharmonic resonances. They are original synthesized sounds, not recordings from another game. Resonances outside the audio device's useful bandwidth are omitted. Arrow misses use a ground impact rather than an armor clash; siege and building impacts keep their own materials. Existing viewport/fog audibility, twelve-voice limit and cached variations remain in place.
+
+References: [Three.js animation concepts](https://threejs.org/manual/pages/animation-system.html), [DAFx modal sound synthesis](https://www.dafx.de/paper-archive/2009/papers/paper_47.pdf), [DAFx inharmonic sound modeling](https://dafx.de/papers/DAFX02_Polotti_Menzer_Evangelista_inharmonic_sound.pdf).
+
+This is an incremental improvement, not a claim of AAA parity, release completion or guaranteed performance on every device.
+
+Verification: [tree precision](artifacts/shared-trees-precision.json), [native WebGPU checks](artifacts/allied-response-default/validation.json), [software WebGL checks](artifacts/allied-response-webgl/validation.json), and the [combined report](artifacts/allied-forests-actions-validation.json). Each browser check covers High, Balanced and Low on all three forest biomes, worker action phases and landscape phone layout; the native check also covers offline reload. [Original steel sound preview](artifacts/steel-clash-preview.wav).

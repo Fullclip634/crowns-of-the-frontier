@@ -1,0 +1,1992 @@
+{
+  "startedAt": "2026-10-22T20:00:57.446Z",
+  "environment": {
+    "browser": "156.0.8078.4",
+    "harness": "shell",
+    "softwareRendering": true,
+    "gpuBlocklistOverride": true,
+    "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+  },
+  "checks": [
+    {
+      "mode": "webgl",
+      "expected": "webgl",
+      "url": "http://127.0.0.1:59952/?renderer=webgl",
+      "queryRenderer": "webgl",
+      "nativeModuleRequests": 0,
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 6388,
+              "indices": 10644
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 5380,
+              "indices": 9072
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 3740,
+              "indices": 8826
+            }
+          ]
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4800,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4080,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4876,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4156,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        }
+      ],
+      "status": "Compatible graphics (WebGL 2) is active.",
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "forestActions": {
+        "maps": [
+          {
+            "map": "highlands",
+            "presets": [
+              {
+                "quality": "high",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 873924279,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 3905205240,
+                            "triangles": 3964
+                          },
+                          {
+                            "hash": 3219317573,
+                            "triangles": 3958
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3900047053,
+                            "triangles": 645
+                          },
+                          {
+                            "hash": 1077208107,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2069939285,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4085572345,
+                            "triangles": 2357
+                          },
+                          {
+                            "hash": 2880038851,
+                            "triangles": 3902
+                          },
+                          {
+                            "hash": 818325375,
+                            "triangles": 3934
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1502747335,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1176755108,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 981625100,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3119515566,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3821234687,
+                            "triangles": 3986
+                          },
+                          {
+                            "hash": 1799635538,
+                            "triangles": 3980
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2532272034,
+                            "triangles": 644
+                          },
+                          {
+                            "hash": 1612323559,
+                            "triangles": 160
+                          },
+                          {
+                            "hash": 2959578072,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 2980390494,
+                            "triangles": 2355
+                          },
+                          {
+                            "hash": 1726711096,
+                            "triangles": 3980
+                          },
+                          {
+                            "hash": 2805745104,
+                            "triangles": 3978
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3269299256,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 3813790953,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2264547456,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "medium",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 873924279,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 3905205240,
+                            "triangles": 3964
+                          },
+                          {
+                            "hash": 3219317573,
+                            "triangles": 3958
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3900047053,
+                            "triangles": 645
+                          },
+                          {
+                            "hash": 1077208107,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2069939285,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4085572345,
+                            "triangles": 2357
+                          },
+                          {
+                            "hash": 2880038851,
+                            "triangles": 3902
+                          },
+                          {
+                            "hash": 818325375,
+                            "triangles": 3934
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1502747335,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1176755108,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 981625100,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3119515566,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3821234687,
+                            "triangles": 3986
+                          },
+                          {
+                            "hash": 1799635538,
+                            "triangles": 3980
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2532272034,
+                            "triangles": 644
+                          },
+                          {
+                            "hash": 1612323559,
+                            "triangles": 160
+                          },
+                          {
+                            "hash": 2959578072,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 2980390494,
+                            "triangles": 2355
+                          },
+                          {
+                            "hash": 1726711096,
+                            "triangles": 3980
+                          },
+                          {
+                            "hash": 2805745104,
+                            "triangles": 3978
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3269299256,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 3813790953,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2264547456,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "low",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 873924279,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 3905205240,
+                            "triangles": 3964
+                          },
+                          {
+                            "hash": 3219317573,
+                            "triangles": 3958
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3900047053,
+                            "triangles": 645
+                          },
+                          {
+                            "hash": 1077208107,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2069939285,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4085572345,
+                            "triangles": 2357
+                          },
+                          {
+                            "hash": 2880038851,
+                            "triangles": 3902
+                          },
+                          {
+                            "hash": 818325375,
+                            "triangles": 3934
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1502747335,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1176755108,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 981625100,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3119515566,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3821234687,
+                            "triangles": 3986
+                          },
+                          {
+                            "hash": 1799635538,
+                            "triangles": 3980
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2532272034,
+                            "triangles": 644
+                          },
+                          {
+                            "hash": 1612323559,
+                            "triangles": 160
+                          },
+                          {
+                            "hash": 2959578072,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 2980390494,
+                            "triangles": 2355
+                          },
+                          {
+                            "hash": 1726711096,
+                            "triangles": 3980
+                          },
+                          {
+                            "hash": 2805745104,
+                            "triangles": 3978
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3269299256,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 3813790953,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 2264547456,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              }
+            ]
+          },
+          {
+            "map": "winter",
+            "presets": [
+              {
+                "quality": "high",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          800,
+                          804,
+                          808
+                        ],
+                        "parts": [
+                          {
+                            "hash": 109323719,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 541421011,
+                            "triangles": 1402
+                          },
+                          {
+                            "hash": 1405627981,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1315094666,
+                            "triangles": 1866
+                          },
+                          {
+                            "hash": 4110523023,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 4087431025,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          797,
+                          801,
+                          805
+                        ],
+                        "parts": [
+                          {
+                            "hash": 784047731,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2565313677,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3398211581,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3464222835,
+                            "triangles": 1871
+                          },
+                          {
+                            "hash": 1292324005,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3856511933,
+                            "triangles": 384
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          798,
+                          802,
+                          806
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3662269688,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2098448503,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3055807829,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1489102389,
+                            "triangles": 1865
+                          },
+                          {
+                            "hash": 2153971292,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 967107901,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          799,
+                          803,
+                          807
+                        ],
+                        "parts": [
+                          {
+                            "hash": 124034743,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 747111652,
+                            "triangles": 1400
+                          },
+                          {
+                            "hash": 3702064077,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1498564889,
+                            "triangles": 1868
+                          },
+                          {
+                            "hash": 1344044656,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3690281061,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "medium",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          800,
+                          804,
+                          808
+                        ],
+                        "parts": [
+                          {
+                            "hash": 109323719,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 541421011,
+                            "triangles": 1402
+                          },
+                          {
+                            "hash": 1405627981,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1315094666,
+                            "triangles": 1866
+                          },
+                          {
+                            "hash": 4110523023,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 4087431025,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          797,
+                          801,
+                          805
+                        ],
+                        "parts": [
+                          {
+                            "hash": 784047731,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2565313677,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3398211581,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3464222835,
+                            "triangles": 1871
+                          },
+                          {
+                            "hash": 1292324005,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3856511933,
+                            "triangles": 384
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          798,
+                          802,
+                          806
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3662269688,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2098448503,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3055807829,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1489102389,
+                            "triangles": 1865
+                          },
+                          {
+                            "hash": 2153971292,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 967107901,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          799,
+                          803,
+                          807
+                        ],
+                        "parts": [
+                          {
+                            "hash": 124034743,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 747111652,
+                            "triangles": 1400
+                          },
+                          {
+                            "hash": 3702064077,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1498564889,
+                            "triangles": 1868
+                          },
+                          {
+                            "hash": 1344044656,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3690281061,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "low",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          800,
+                          804,
+                          808
+                        ],
+                        "parts": [
+                          {
+                            "hash": 109323719,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 541421011,
+                            "triangles": 1402
+                          },
+                          {
+                            "hash": 1405627981,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1315094666,
+                            "triangles": 1866
+                          },
+                          {
+                            "hash": 4110523023,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 4087431025,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          797,
+                          801,
+                          805
+                        ],
+                        "parts": [
+                          {
+                            "hash": 784047731,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2565313677,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3398211581,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3464222835,
+                            "triangles": 1871
+                          },
+                          {
+                            "hash": 1292324005,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3856511933,
+                            "triangles": 384
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          798,
+                          802,
+                          806
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3662269688,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 2098448503,
+                            "triangles": 1388
+                          },
+                          {
+                            "hash": 3055807829,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1489102389,
+                            "triangles": 1865
+                          },
+                          {
+                            "hash": 2153971292,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 967107901,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          799,
+                          803,
+                          807
+                        ],
+                        "parts": [
+                          {
+                            "hash": 124034743,
+                            "triangles": 4640
+                          },
+                          {
+                            "hash": 747111652,
+                            "triangles": 1400
+                          },
+                          {
+                            "hash": 3702064077,
+                            "triangles": 864
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 1498564889,
+                            "triangles": 1868
+                          },
+                          {
+                            "hash": 1344044656,
+                            "triangles": 560
+                          },
+                          {
+                            "hash": 3690281061,
+                            "triangles": 368
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              }
+            ]
+          },
+          {
+            "map": "desert",
+            "presets": [
+              {
+                "quality": "high",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4064952290,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 1854643840,
+                            "triangles": 3916
+                          },
+                          {
+                            "hash": 1525052166,
+                            "triangles": 3904
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 333415089,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1524866606,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 3618984750,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 145559743,
+                            "triangles": 2349
+                          },
+                          {
+                            "hash": 3593627166,
+                            "triangles": 3882
+                          },
+                          {
+                            "hash": 3395770382,
+                            "triangles": 3882
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3267871451,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 4203713915,
+                            "triangles": 148
+                          },
+                          {
+                            "hash": 3344737776,
+                            "triangles": 76
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3104760852,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3923914782,
+                            "triangles": 3932
+                          },
+                          {
+                            "hash": 3305382917,
+                            "triangles": 3964
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 15019835,
+                            "triangles": 646
+                          },
+                          {
+                            "hash": 3527813631,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 1135292954,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 1093872586,
+                            "triangles": 2344
+                          },
+                          {
+                            "hash": 3197874230,
+                            "triangles": 3950
+                          },
+                          {
+                            "hash": 1794207457,
+                            "triangles": 3950
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2531536833,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 4261433613,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 1705665711,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "medium",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4064952290,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 1854643840,
+                            "triangles": 3916
+                          },
+                          {
+                            "hash": 1525052166,
+                            "triangles": 3904
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 333415089,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1524866606,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 3618984750,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 145559743,
+                            "triangles": 2349
+                          },
+                          {
+                            "hash": 3593627166,
+                            "triangles": 3882
+                          },
+                          {
+                            "hash": 3395770382,
+                            "triangles": 3882
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3267871451,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 4203713915,
+                            "triangles": 148
+                          },
+                          {
+                            "hash": 3344737776,
+                            "triangles": 76
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3104760852,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3923914782,
+                            "triangles": 3932
+                          },
+                          {
+                            "hash": 3305382917,
+                            "triangles": 3964
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 15019835,
+                            "triangles": 646
+                          },
+                          {
+                            "hash": 3527813631,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 1135292954,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 1093872586,
+                            "triangles": 2344
+                          },
+                          {
+                            "hash": 3197874230,
+                            "triangles": 3950
+                          },
+                          {
+                            "hash": 1794207457,
+                            "triangles": 3950
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2531536833,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 4261433613,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 1705665711,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              },
+              {
+                "quality": "low",
+                "applied": true,
+                "valid": true,
+                "sharedTrees": 24,
+                "signature": [
+                  {
+                    "variant": 0,
+                    "sets": [
+                      {
+                        "ids": [
+                          680,
+                          684,
+                          688
+                        ],
+                        "parts": [
+                          {
+                            "hash": 4064952290,
+                            "triangles": 2356
+                          },
+                          {
+                            "hash": 1854643840,
+                            "triangles": 3916
+                          },
+                          {
+                            "hash": 1525052166,
+                            "triangles": 3904
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 333415089,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 1524866606,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 3618984750,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 1,
+                    "sets": [
+                      {
+                        "ids": [
+                          677,
+                          681,
+                          685
+                        ],
+                        "parts": [
+                          {
+                            "hash": 145559743,
+                            "triangles": 2349
+                          },
+                          {
+                            "hash": 3593627166,
+                            "triangles": 3882
+                          },
+                          {
+                            "hash": 3395770382,
+                            "triangles": 3882
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 3267871451,
+                            "triangles": 647
+                          },
+                          {
+                            "hash": 4203713915,
+                            "triangles": 148
+                          },
+                          {
+                            "hash": 3344737776,
+                            "triangles": 76
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 2,
+                    "sets": [
+                      {
+                        "ids": [
+                          678,
+                          682,
+                          686
+                        ],
+                        "parts": [
+                          {
+                            "hash": 3104760852,
+                            "triangles": 2362
+                          },
+                          {
+                            "hash": 3923914782,
+                            "triangles": 3932
+                          },
+                          {
+                            "hash": 3305382917,
+                            "triangles": 3964
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 15019835,
+                            "triangles": 646
+                          },
+                          {
+                            "hash": 3527813631,
+                            "triangles": 158
+                          },
+                          {
+                            "hash": 1135292954,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "variant": 3,
+                    "sets": [
+                      {
+                        "ids": [
+                          679,
+                          683,
+                          687
+                        ],
+                        "parts": [
+                          {
+                            "hash": 1093872586,
+                            "triangles": 2344
+                          },
+                          {
+                            "hash": 3197874230,
+                            "triangles": 3950
+                          },
+                          {
+                            "hash": 1794207457,
+                            "triangles": 3950
+                          }
+                        ]
+                      },
+                      {
+                        "ids": [],
+                        "parts": [
+                          {
+                            "hash": 2531536833,
+                            "triangles": 648
+                          },
+                          {
+                            "hash": 4261433613,
+                            "triangles": 156
+                          },
+                          {
+                            "hash": 1705665711,
+                            "triangles": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "treeBytes": 2435668
+              }
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "phase": 0.1,
+            "workers": [
+              {
+                "id": 693,
+                "task": "wood",
+                "blend": 0.9092820467105875
+              },
+              {
+                "id": 694,
+                "task": "mine",
+                "blend": 0.9092820467105875
+              },
+              {
+                "id": 695,
+                "task": "food",
+                "blend": 0.9092820467105875
+              },
+              {
+                "id": 696,
+                "task": "build",
+                "blend": 0.9092820467105875
+              }
+            ],
+            "joints": [
+              {
+                "type": "villager:wood",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:mine",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:food",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:build",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "swordsman:standard",
+                "joints": 10,
+                "finite": true
+              }
+            ]
+          },
+          {
+            "phase": 0.45,
+            "workers": [
+              {
+                "id": 693,
+                "task": "wood",
+                "blend": 0.9816843611112659
+              },
+              {
+                "id": 694,
+                "task": "mine",
+                "blend": 0.9816843611112659
+              },
+              {
+                "id": 695,
+                "task": "food",
+                "blend": 0.9816843611112659
+              },
+              {
+                "id": 696,
+                "task": "build",
+                "blend": 0.9816843611112659
+              }
+            ],
+            "joints": [
+              {
+                "type": "villager:wood",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:mine",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:food",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:build",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "swordsman:standard",
+                "joints": 10,
+                "finite": true
+              }
+            ]
+          },
+          {
+            "phase": 0.8,
+            "workers": [
+              {
+                "id": 693,
+                "task": "wood",
+                "blend": 0.996302136283517
+              },
+              {
+                "id": 694,
+                "task": "mine",
+                "blend": 0.996302136283517
+              },
+              {
+                "id": 695,
+                "task": "food",
+                "blend": 0.996302136283517
+              },
+              {
+                "id": 696,
+                "task": "build",
+                "blend": 0.996302136283517
+              }
+            ],
+            "joints": [
+              {
+                "type": "villager:wood",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:mine",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:food",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "villager:build",
+                "joints": 11,
+                "finite": true
+              },
+              {
+                "type": "swordsman:standard",
+                "joints": 10,
+                "finite": true
+              }
+            ]
+          }
+        ]
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "mode": "webgl",
+      "type": "warning",
+      "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+    }
+  ],
+  "buildId": "1792698945872",
+  "passed": true
+}

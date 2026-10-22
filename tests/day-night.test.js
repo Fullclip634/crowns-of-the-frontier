@@ -18,10 +18,9 @@ test('moonlight stays readable, retains lightning and restores daylight resource
   lighting.dispose();assert.equal(v.scene.environmentIntensity,.3);assert.equal(v.renderer.toneMappingExposure,1.1);assert.deepEqual(v.hemi.groundColor,ground);assert.equal(v.materials.structurePalette.frontierUniforms.night.value,0);
 });
 
-test('tree detail does not flicker under small camera changes and resets on a quality change',()=>{
-  let state=treeDetail(35,'high');assert.ok(state.near);
-  for(const height of [33,34,32,31,28]){state=treeDetail(height,'high',state);assert.ok(state.near);}
-  state=treeDetail(23,'high',state);assert.equal(state.near,false);assert.equal(treeDetail(29,'high',state).near,false);assert.equal(treeDetail(31,'high',state).near,true);
-  assert.equal(treeDetail(50,'low',state).near,false);assert.equal(treeDetail(57,'medium').near,true);assert.equal(treeDetail(101,'low').near,true);
-  let balanced=treeDetail(41,'medium');assert.ok(balanced.near);assert.ok(treeDetail(34,'medium',balanced).near);balanced=treeDetail(32,'medium',balanced);assert.equal(balanced.near,false);assert.equal(treeDetail(39,'medium',balanced).near,false);assert.equal(treeDetail(40,'medium',balanced).near,true);
+test('tree distance detail is stable across camera jitter and graphics changes',()=>{
+  let state=treeDetail(41,'high');assert.ok(state.near);
+  for(const quality of ['low','medium','high']){state=treeDetail(34,quality,state);assert.ok(state.near,'changing presets preserves hysteresis');}
+  state=treeDetail(32,'low',state);assert.equal(state.near,false);
+  for(const quality of ['high','medium','low']){state=treeDetail(39,quality,state);assert.equal(state.near,false);assert.ok(treeDetail(40,quality,state).near);assert.equal(treeDetail(20,quality,state).near,false);}
 });

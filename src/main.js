@@ -34,6 +34,7 @@ import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
 import {initializeWorldRenderer,rendererBackend,watchRendererDevice} from './render-context.js';
+import {projectileImpactSound} from './combat-audio.js';
 import {releaseSurfaceCodec} from './surface-codecs.js';
 import {selectionDetailsMarkup,closeCompactCommands,toggleCompactCommands,toggleSelectionDetails,closeSelectionDetails,toggleMinimapSize,resetCompactHud} from './compact-hud.js';
 import {WORLD,AGES,UNITS,BUILDINGS,TECHS,MAPS,RELEASE,AGE_COSTS,FACTIONS,DIFFICULTIES,MODES,MISSIONS,ICONS,costText,formatTime,availableTo} from './data.js';
@@ -144,7 +145,7 @@ function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!=
   if(e.type==='raid')toast('Scouts report an enemy army on the move.','warning');
   if(e.type==='wave'){toast(`Wave ${e.wave} · ${e.count} enemies approach. Supplies have arrived.`,'warning');audio.play('alarm');}
   if(e.type==='capture'){toast(e.owner===0?'An ancient shrine is under your control.':'The enemy has captured a shrine.',e.owner===0?'':'warning');audio.play('complete');}
-  if(e.type==='attack'||e.type==='projectile-impact'||e.type==='death'||e.type==='heal'){view.effect(e);if(e.type==='attack'){if(e.pendingImpact)audio.combat(e.entity,e.target,['catapult','warship'].includes(e.entity.type)?'wood':'arrow');else audio.play('attack',e.entity,e.target);}if(e.type==='projectile-impact')audio.combat(e.target,e.entity,e.siege?'siege':e.target.kind==='building'?'wood':'metal');}
+  if(e.type==='attack'||e.type==='projectile-impact'||e.type==='death'||e.type==='heal'){view.effect(e);if(e.type==='attack'){if(e.pendingImpact)audio.combat(e.entity,e.target,['catapult','warship'].includes(e.entity.type)?'wood':'arrow');else audio.play('attack',e.entity,e.target);}if(e.type==='projectile-impact')audio.combat(e.target,e.entity,projectileImpactSound(e));}
   if(e.type==='campaign-stage'){toast(e.text);audio.play('complete');renderHUD();}
   if(e.type==='campaign-checkpoint'){saveGame(true);toast('Campaign checkpoint saved. Restore it from the commander menu.');}
   if(e.type==='end')showEnd(e);
@@ -160,7 +161,7 @@ function showSettings(){
       <option value="high" ${graphicsMode==='high'?'selected':''}>High · detailed models & sharp surfaces</option>
       <option value="medium" ${graphicsMode==='medium'?'selected':''}>Balanced · detailed bases, lighter armies</option>
       <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft contacts</option>
-    </select><p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality.</p>
+    </select><p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality. Tree shapes stay consistent in every preset.</p>
     <p id="renderer-status" class="settings-note">${esc(rendererStatus({requested:requestedRenderer,active:rendererBackend(view.renderer),secure:globalThis.isSecureContext!==false}))}</p>
     <label class="field-label" for="frame-rate">FRAME RATE TARGET</label><select id="frame-rate">${Object.entries(FRAME_RATES).map(([id,name])=>`<option value="${id}" ${settings.frameRate===id?'selected':''}>${name}</option>`).join('')}</select>
     <label class="field-label" for="camera-preset">CAMERA VIEW</label><select id="camera-preset">${Object.entries(CAMERA_PRESETS).map(([id,p])=>`<option value="${id}" ${settings.cameraPreset===id?'selected':''}>${p.label}</option>`).join('')}</select>

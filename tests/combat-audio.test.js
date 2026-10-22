@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PerspectiveCamera,Vector3} from 'three';
 import {AudioEngine} from '../src/audio.js';
-import {createCombatListener,combatSoundKind,synthesizeCombat,MAX_COMBAT_VOICES} from '../src/combat-audio.js';
+import {createCombatListener,combatSoundKind,projectileImpactSound,steelResonances,synthesizeCombat,MAX_COMBAT_VOICES} from '../src/combat-audio.js';
 
 function fixture(){
   const view={camera:new PerspectiveCamera(48,16/9,.1,1000),target:new Vector3(),zoom:50,sim:{isVisible:()=>true},entityHeight:()=>0};
@@ -55,12 +55,24 @@ test('sound materials distinguish steel, bows and structural impacts',()=>{
 });
 
 test('original effect buffers are finite, bounded and varied with a silent tail',()=>{
-  for(const kind of ['metal','arrow','wood','siege']){
+  for(const kind of ['metal','arrow','wood','siege','earth']){
     const samples=synthesizeCombat(kind,8000,0),other=synthesizeCombat(kind,8000,1);
     assert.ok(samples.every(Number.isFinite));assert.ok(Math.max(...samples.map(Math.abs))<=.821);assert.equal(Math.abs(samples[0]),0);assert.ok(Math.abs(samples.at(-1))<.001);
     assert.ok(samples.some((value,index)=>Math.abs(value-other[index])>.02));
     assert.ok(samples.reduce((sum,value)=>sum+value*value,0)/samples.length>.002);
   }
+});
+
+test('steel modes stay in the device bandwidth and misses do not make armor clashes',()=>{
+  for(const rate of [8000,22050,44100,48000])for(let variant=0;variant<4;variant++){
+    const modes=steelResonances(rate,variant);assert.ok(modes.length>=4);assert.ok(modes.every(mode=>mode.frequency<rate*.45&&mode.decay<.1));
+    const samples=synthesizeCombat('metal',rate,variant),energy=(from,to)=>samples.slice(Math.floor(from*rate),Math.floor(to*rate)).reduce((sum,value)=>sum+value*value,0);
+    assert.ok(samples.every(Number.isFinite));assert.ok(energy(0,.08)>energy(.16,.24)*15,'hard steel contact decays quickly rather than ringing like a bell');
+  }
+  assert.equal(projectileImpactSound({damage:0,target:{kind:'unit'}}),'earth');
+  assert.equal(projectileImpactSound({damage:5,target:{kind:'unit'}}),'metal');
+  assert.equal(projectileImpactSound({damage:5,target:{kind:'building'}}),'wood');
+  assert.equal(projectileImpactSound({siege:true,damage:0}),'siege');
 });
 
 test('offscreen events allocate no audio and do not consume the on-screen burst budget',()=>{

@@ -8,8 +8,9 @@ fs.mkdirSync(path.dirname(output),{recursive:true});
 const browser=process.env.QA_BROWSER_ENDPOINT
   ?await chromium.connectOverCDP(process.env.QA_BROWSER_ENDPOINT)
   :await chromium.launch({channel:process.env.QA_BROWSER_CHANNEL||'msedge',headless:true});
-const report={startedAt:new Date().toISOString(),checks:[],messages:[]};
+const report={startedAt:new Date().toISOString(),environment:{browser:browser.version(),harness:process.env.QA_TCP_BROWSER||'standard Playwright',softwareRendering:process.env.QA_TCP_BROWSER==='shell',gpuBlocklistOverride:!!process.env.QA_TCP_BROWSER,purpose:'Functional verification; not a frame-rate benchmark or proof of default driver eligibility.'},checks:[],messages:[]};
 const knownWarning=text=>/powerPreference option|WebGPU could not start; using WebGL 2:|WebGPURenderer: WebGPU is not available, running under WebGL2 backend\./.test(text)
+  ||text==='THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.'
   ||text.startsWith('THREE.WebGLProgram: Program Info Log:')&&text.includes('warning X4122:')&&!text.includes('error ');
 try{
   for(const mode of (process.env.QA_RENDERERS||'webgl,webgpu,fallback').split(',')){
@@ -61,13 +62,14 @@ try{
       return {construction,clipping,completed,ghost,weather:v.weatherDiagnostics,lighting:v.lightingState,portrait:{ready:v.modelPortrait?.ready,disabled:v.portraitDisabled||false,width:v.modelPortrait?.width}};
     });
     const f=check.features;assert.ok(f.construction&&f.clipping&&f.completed&&f.weather.rain>0&&f.lighting.night>.9&&f.portrait.ready&&!f.portrait.disabled&&f.portrait.width>0);assert.ok(f.ghost.every(m=>m.color===0xee816a&&m.alpha===.38));
+    if(process.env.QA_FOREST_ACTIONS==='1'){const {verifyForestActions}=await import('./forest-actions-qa.mjs');check.forestActions=await verifyForestActions(page,output);}
     await page.setViewportSize({width:740,height:360});await page.evaluate(()=>qaDraw());
     check.phone=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:frontier.view.renderer.domElement.getBoundingClientRect().toJSON()}));assert.ok(check.phone.scroll<=check.phone.width&&check.phone.canvas.width>=check.phone.width-1);
     const image=path.join(path.dirname(output),'renderer-'+mode+'-landscape.png');await page.screenshot({path:image});
     if(['webgpu','default'].includes(mode)&&process.env.QA_OFFLINE==='1'){
       await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
       check.offline=await page.evaluate(async()=>{const cache=await caches.open((await caches.keys()).find(k=>k.startsWith('frontier-'))),files=(await cache.keys()).map(r=>r.url);return {nodeChunk:files.some(f=>/render-nodes-.*\.js$/.test(f)),catalogues:files.filter(f=>f.endsWith('.glb')).length};});
-      assert.ok(check.offline.nodeChunk&&check.offline.catalogues===3);
+      assert.ok(check.offline.nodeChunk&&check.offline.catalogues===4);
       await context.setOffline(true);await page.reload({waitUntil:'load'});await page.waitForFunction(()=>window.frontier?.view);assert.equal(await page.evaluate(()=>document.documentElement.dataset.renderer),'webgpu');
       await page.evaluate(()=>frontier.start({mode:'sandbox',map:'highlands',seed:512}));assert.equal(await page.evaluate(()=>frontier.playing),true);check.offline.reload=true;check.offline.gameplay=true;
     }

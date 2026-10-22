@@ -6,13 +6,13 @@ function restoreCamera(view,state){view.target.copy(state.target);view.zoom=stat
 // Keep the simulation object live. Restoring visuals must never restore an old
 // game snapshot or replace a newer match/network state with an earlier one.
 export function graphicsCheckpoint(view){
-  const artwork=retainAuthoredAssets(),quality=view.renderQuality,sim=view.sim,camera=cameraState(view);
+  const artwork=retainAuthoredAssets(),quality=view.renderQuality,sim=view.sim,camera=cameraState(view),forestLodState=view.forestLodState;
   view.graphicsRecoveryQuality=quality;
   return {
     restore({superseded=false}={}){
       const selected=view.settings.quality,pose=view.sim===sim?camera:cameraState(view);
       view.settings.quality=quality;view.graphicsSceneValid=false;
-      try{artwork.activate();view.attach(view.sim);restoreCamera(view,pose);view.graphicsSceneValid=true;}
+      try{artwork.activate();view.attach(view.sim);if(view.sim===sim)view.forestLodState=forestLodState;restoreCamera(view,pose);view.graphicsSceneValid=true;}
       finally{view.settings.quality=superseded?selected:quality;}
     },
     release(){artwork.release();},

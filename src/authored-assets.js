@@ -2,17 +2,44 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import manifest from './assets3d/catalogue.json' with {type:'json'};
+import {bindWorkerToolJoints} from './worker-tool-rig.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
   medium:new URL('./assets3d/frontier-balanced.glb',import.meta.url).href,
   high:new URL('./assets3d/frontier-near.glb',import.meta.url).href,
+  trees:new URL('./assets3d/frontier-trees.glb',import.meta.url).href,
 };
 const pending=new Map();
 const loaded=new Map();
 const retained=new Map(),reservations=new Map();
 let active=null;
 let loadSerial=0;
+let sharedTrees=null,treesPending=null;
+
+export function registerSharedTrees(gltf,bytes=0){
+  const templates=new Map(),geometries=new Set();
+  gltf.scene.traverse(node=>{if(node.userData.assetKey)templates.set(node.userData.assetKey,node);if(node.isMesh&&!geometries.has(node.geometry)){canonicalGeometry(node.geometry);geometries.add(node.geometry);}});
+  const expected=manifest.models.filter(model=>model.key.startsWith('tree:')).map(model=>model.key);
+  if(templates.size!==expected.length||expected.some(key=>!templates.has(key)))throw new Error('Shared tree artwork is incomplete.');
+  return {templates,geometries,bytes};
+}
+
+export function useSharedTrees(catalogue,trees){
+  for(const [key,root]of trees.templates)catalogue.templates.set(key,root);
+  const used=new Set();for(const root of catalogue.templates.values())root.traverse(node=>{if(node.isMesh)used.add(node.geometry);});
+  for(const geometry of catalogue.geometries)if(!used.has(geometry)){geometry.dispose();catalogue.geometries.delete(geometry);}
+  catalogue.trees=trees;return catalogue;
+}
+
+async function sharedTreeCatalogue(){
+  if(!treesPending)treesPending=(async()=>{
+    const response=await fetch(sources.trees);if(!response.ok)throw new Error(`Tree asset request failed (${response.status}).`);
+    const buffer=await response.arrayBuffer(),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');
+    return sharedTrees=registerSharedTrees(gltf,buffer.byteLength);
+  })();
+  try{return await treesPending;}catch(error){treesPending=null;throw error;}
+}
 
 // Uniform float attributes let the existing material/joint batches merge
 // compressed meshes reliably, including normalized/interleaved source buffers.
@@ -56,12 +83,12 @@ export function registerAuthoredAssets(gltf,detail='high',bytes=0,activate=true)
 const detailFor=quality=>['high','medium'].includes(quality)?quality:'low';
 async function catalogueFor(detail){
   if(!pending.has(detail))pending.set(detail,(async()=>{
-    const response=await fetch(sources[detail]);
+    const [response,trees]=await Promise.all([fetch(sources[detail]),sharedTreeCatalogue()]);
     if(!response.ok)throw new Error(`3D asset request failed (${response.status}).`);
     const buffer=await response.arrayBuffer();
     const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const gltf=await loader.parseAsync(buffer,'');
-    const catalogue=registerAuthoredAssets(gltf,detail,buffer.byteLength,false);loaded.set(detail,catalogue);return catalogue;
+    const catalogue=useSharedTrees(registerAuthoredAssets(gltf,detail,buffer.byteLength,false),trees);loaded.set(detail,catalogue);return catalogue;
   })());
   try{return await pending.get(detail);}
   catch(error){pending.delete(detail);throw error;}
@@ -84,7 +111,7 @@ export async function prepareAuthoredAssets(quality){
   finally{const count=reservations.get(detail)-1;if(count)reservations.set(detail,count);else reservations.delete(detail);}
 }
 
-export function authoredAssetState(){return active?{source:active.source,detail:active.detail,models:active.templates.size,bytes:active.bytes}:null;}
+export function authoredAssetState(){return active?{source:active.source,detail:active.detail,models:active.templates.size,bytes:active.bytes,sharedTrees:active.trees?.templates.size||0}:null;}
 
 // Keep the active catalogue and anything still used by a scene during a switch.
 // Old quality catalogues otherwise retain both CPU arrays and GPU buffers.
@@ -94,17 +121,18 @@ export function trimAuthoredAssets(view){
   for(const [detail,catalogue]of loaded){
     if(catalogue===active||retained.has(catalogue)||reservations.has(detail)||[...catalogue.geometries].some(geometry=>pinned.has(geometry)))continue;
     for(const geometry of catalogue.geometries)geometry.dispose();
-    const materials=new Set();for(const root of catalogue.templates.values())root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});for(const material of materials)material.dispose();
+    const materials=new Set();for(const [key,root]of catalogue.templates){if(catalogue.trees?.templates.has(key))continue;root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});}for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
-  view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,0),evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
+  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,sharedTrees?.bytes||0),sharedTreeBytes:sharedTrees?.bytes||0,evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
 
 function cloneAsset(view,key,owner=0){
   const template=active?.templates.get(key);if(!template)return null;
   const root=template.clone(true);
+  if(key.startsWith('unit:villager'))bindWorkerToolJoints(root);
   view.authoredGeometry??=new Set();
   root.traverse(part=>{
     if(part.userData.assetBody)root.userData.body=part;
@@ -122,7 +150,7 @@ function cloneAsset(view,key,owner=0){
     part.castShadow=true;part.receiveShadow=true;
     view.authoredGeometry.add(part.geometry);
   });
-  root.userData.model3d={...root.userData.model3d,authored:true,detail:active.detail};
+  root.userData.model3d={...root.userData.model3d,authored:true,detail:key.startsWith('tree:')&&active.trees?'shared':active.detail};
   view.artDiagnostics=authoredAssetState();
   return root;
 }

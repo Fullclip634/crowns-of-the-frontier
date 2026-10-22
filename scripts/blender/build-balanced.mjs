@@ -6,6 +6,7 @@ import {validateMeshPrecision} from './validate-mesh-precision.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawn} from 'node:child_process';
+import {buildSharedTrees} from './build-shared-trees.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url)),args=process.argv.slice(2);
 assert.ok(!args.length||(args.length===2&&args[0]==='--directory'),'Use --directory for a staged complete catalogue.');
 const directory=path.resolve(project,args[1]||'src/assets3d'),relative=path.relative(project,directory);
@@ -33,3 +34,4 @@ manifest.balancedPrecision={...precision,referenceSHA256:createHash('sha256').up
 manifest.balancedSourceHashes=Object.fromEntries(Object.entries({near,low,foliage}).map(([key,value])=>[key,createHash('sha256').update(value).digest('hex')]));
 await fs.writeFile(new URL('catalogue.json',base),JSON.stringify(manifest,null,2)+'\n');
 console.log(JSON.stringify({models:126,richer,lighter,foliageModels:8,bytes:packed.length}));
+await buildSharedTrees(directory);

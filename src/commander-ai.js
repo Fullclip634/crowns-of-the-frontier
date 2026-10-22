@@ -1,5 +1,5 @@
 import {UNITS,BUILDINGS,TECHS,AGE_COSTS,DIFFICULTIES,availableTo} from './data.js';
-import {customOpening,alliedSupport} from './allied-ai.js';
+import {customOpening,alliedSupport,customAttackTarget} from './allied-ai.js';
 import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers} from './ai-settlements.js';
 import {orderSiegeAssault} from './ai-siege.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
@@ -221,7 +221,7 @@ export function installCommanderAI(Simulation){
     if(threats.length){phase='defend';target=threats.sort((a,b)=>distance(a,tc)-distance(b,tc))[0];}
     else if(enemyPower>0&&ownPower<enemyPower*profile.retreat&&ready.some(e=>distance(e,tc)>30)){phase='regroup';}
     else if(state.phase==='attack'&&ready.filter(e=>UNITS[e.type].damage>0).length>=Math.max(3,Math.floor(profile.raid/2))||offensiveReady&&this.time>=nextAttack&&ready.filter(e=>UNITS[e.type].damage>0).length>=(opening?.army??Math.min(profile.raid,6+player.age*3))){
-      phase='attack';target=knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||(this.options.mode==='custom'?this.spawnPositions.find((point,i)=>this.hostile(owner,i)):{x:0,z:0});
+      phase='attack';target=this.options.mode==='custom'?customAttackTarget(this,owner,state,tc,knownBuildings):knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
     }
     if(this.options.map==='coast')this.commanderNavy(state,visible,knownBuildings,landArmy.filter(e=>!support.has(e.id)),tc,owner);
     if(this.time-state.lastOrders>=8||state.phase!==phase){state.lastOrders=this.time;state.phase=phase;

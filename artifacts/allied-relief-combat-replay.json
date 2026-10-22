@@ -1,0 +1,23 @@
+{
+  "scenario": "A visible raid on the far side of an allied capital; real movement and combat, no resource or combat bonuses",
+  "baseline": {
+    "baseSurvived": false,
+    "baseHp": 0,
+    "elapsed": 17.699999999998994,
+    "sent": 9,
+    "firstReliefAttackAt": null,
+    "reliefDamage": 0,
+    "enemiesAlive": 7,
+    "reliefSurvivors": 22
+  },
+  "candidate": {
+    "baseSurvived": true,
+    "baseHp": 203.60000000000124,
+    "elapsed": 39.999999999997726,
+    "sent": 30,
+    "firstReliefAttackAt": 6.999999999999602,
+    "reliefDamage": 750.4000000000007,
+    "enemiesAlive": 0,
+    "reliefSurvivors": 22
+  }
+}

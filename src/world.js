@@ -20,6 +20,7 @@ import {updateFlight,releaseEffect,ImpactEffects} from './battle-effects.js';
 import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
+import {UnitActions} from './unit-actions.js';
 import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
@@ -78,6 +79,7 @@ export class WorldView {
     this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;
     this.locomotion??=new UnitLocomotion();this.locomotion.clear();this.locomotionPrunedAt=0;
+    this.unitActions??=new UnitActions();this.unitActions.clear();
     for(const batch of this.unitBatches.values())for(const part of batch.parts){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();
     const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
     for(const material of sharedMaterials)for(const key of ['map','bumpMap'])if(material[key])sharedTextures.add(material[key]);
@@ -167,8 +169,8 @@ export class WorldView {
       const [models]=await Promise.allSettled([prepareAuthoredAssets(value),loadSurfaceAssets(value,this.renderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]);
       if(models.status==='rejected')throw models.reason;artwork=models.value;
     },()=>{
-      const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt;
-      artwork.activate();this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
+      const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt,forestLodState=this.forestLodState;
+      artwork.activate();this.attach(this.sim);this.forestLodState=forestLodState;this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
     },()=>graphicsCheckpoint(this)).catch(error=>{if(this.graphicsRequest===request)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;}).finally(()=>{artwork?.release();trimAuthoredAssets(this);trimSurfaceAssets(this);});
   }
   adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal){this.renderPressure=null;this.performanceClock=0;return;}const flight=this.renderer.backend?.isWebGPUBackend?this.renderFlight:null,pressure=flight?(this.renderPressure??={submitted:flight.submitted,skipped:flight.skipped}):null;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
@@ -194,6 +196,7 @@ export class WorldView {
       if(e.hp<=0){if(node){if(node.userData.batch){const {batch,index}=node.userData;batch.ids[index]=null;batch.free.push(index);}this.releaseNode(node);this.objects.remove(node);this.nodes.delete(e.id);}continue;}
       const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));if(!node&&(!visible||e.embarked))continue;if(!node)node=this.createNode(e);node.visible=visible&&!e.embarked;
       const position=renderPosition(this,e),rx=position.x,rz=position.z,heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,ground=this.entityHeight(e,rx,rz),gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;e.renderX=rx;e.renderZ=rz;
+      if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){
         node.position.set(rx,ground,rz);node.rotation.y=heading;
         if(!visible||e.embarked||!nearViewport(this,rx,ground,rz,13)){node.visible=false;continue;}
@@ -209,7 +212,7 @@ export class WorldView {
     let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smoke.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smoke.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smoke);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     endUnitFrame(this);
-    if(this.clock-this.locomotionPrunedAt>2){this.locomotion.prune(this.sim);this.locomotionPrunedAt=this.clock;}
+    if(this.clock-this.locomotionPrunedAt>2){this.locomotion.prune(this.sim);this.unitActions.prune(this.sim);this.locomotionPrunedAt=this.clock;}
     this.wallVisuals??=new WallVisuals(this);this.wallVisuals.update(menu);
     scheduleShadows(this);
     this.renderer.render(this.scene,this.camera);

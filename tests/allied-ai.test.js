@@ -33,7 +33,8 @@ test('AI sends real reinforcements to a damaged allied base, keeping home defend
 test('reinforcements return when their own base is threatened and never control human allies',()=>{
   const sim=make(),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0],army=readyArmy(sim),enemy=sim.addUnit('knight',2,base.x+5,base.z),state={};
   sim.time=70;sim.hurt(base,35,enemy);const sent=alliedSupport(sim,1,state,army,[],tc,[]);assert.ok(sent.size);
-  alliedSupport(sim,1,state,army,[],tc,[enemy]);assert.equal(state.support,null);for(const id of sent)assert.equal(sim.get(id).order.type,'move');
+  const raid=Array.from({length:12},(_,i)=>sim.addUnit('knight',2,tc.x+8+i%3,tc.z+i));
+  alliedSupport(sim,1,state,army,raid,tc,raid);assert.equal(state.support,null);for(const id of sent)assert.equal(sim.get(id).order.type,'move');
   sim.players[1].controller='human';assert.equal(alliedSupport(sim,1,{},army,[],tc,[]).size,0);
 });
 

@@ -1,9 +1,9 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
-import {workerVisualTask} from './authored-assets.js';
 import {combatJointAngle} from './combat-poses.js';
 import {siegeArmAngle,combatRenderOffset} from './combat-timing.js';
+import {actionJointRotation} from './unit-actions.js';
 
 function texture(kind){const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=kind==='stone'?'#bdb8ac':kind==='roof'?'#d9d5cf':'#a98c67';ctx.fillRect(0,0,256,256);
   if(kind==='stone'){for(let row=0;row<8;row++)for(let col=-1;col<9;col++){const x=col*40+(row%2)*20,y=row*32;ctx.fillStyle=`rgb(${165+Math.random()*35},${162+Math.random()*32},${147+Math.random()*30})`;ctx.fillRect(x+2,y+2,36,28);ctx.strokeStyle='#8b897c';ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,36,28);ctx.fillStyle='#dbd5c477';ctx.fillRect(x+3,y+3,34,2);}}
@@ -74,14 +74,12 @@ export function installWorldPolish(WorldView){const p=WorldView.prototype,base={
 }
 
 function jointAngle(view,m,e){
-  const combat=combatJointAngle(e,m,combatRenderOffset(view));if(combat!==null)return combat;
-  const working=e.type==='villager'&&!e.moving&&['gather','build','repair'].includes(e.order?.type||e.activity);
   const gait=view.locomotion?.get(e.id),phase=gait?.phase??view.clock*8.5+e.id*.7,blend=gait?.blend??Number(!!e.moving),walk=Math.sin(phase)*(m.side??1)*blend;
   if(m.type==='wheel')return gait?.wheel??(e.moving?view.clock*5:0);
   if(m.type==='horseleg')return Math.sin(phase+(m.pivot[2]>0?Math.PI:0))*(m.side??1)*blend*.5;
   if(m.type==='knee')return m.riding?Math.sin(phase)*blend*.035:Math.max(0,-walk)*.65;
   if(m.type==='leg')return m.riding?Math.sin(phase)*blend*.025:walk*.46;
-  if(m.type==='torso')return blend>.01?walk*.022:working?.04+Math.sin(view.clock*4+e.id)*.022:Math.sin(view.clock*1.7+e.id)*.009;
+  if(m.type==='torso')return blend>.01?walk*.022:Math.sin(view.clock*1.7+e.id)*.009;
   if(m.type==='head')return blend>.01?-.018:Math.sin(view.clock*1.4+e.id)*.012;
   if(m.type==='cape')return Math.sin(view.clock*2+e.id)*(.025+(view.weatherState?.intensity||0)*.035)+(e.moving?.07:0);
   if(m.type==='sail')return Math.sin(view.clock*1.5+e.id)*.035;
@@ -89,15 +87,19 @@ function jointAngle(view,m,e){
   if(m.type==='ram')return 0;
   if(m.type==='siege')return siegeArmAngle(e,combatRenderOffset(view));
   if(m.type==='forearm'){
-    if(working)return m.side<0?-.12:-.18+Math.sin(view.clock*(workerVisualTask(view,e)==='build'?8:6)+e.id)*.12;
     return -.15*blend;
   }
   if(m.type==='arm'){
-    if(working){const task=workerVisualTask(view,e),rate=task==='build'?8:task==='food'?4:6;return m.side<0?-.24+Math.sin(view.clock*rate+e.id)*.1:(task==='food'?-.55:-.65)+Math.sin(view.clock*rate+e.id)*(task==='food'?.22:task==='build'?.32:.60);}
     if(e.cooldown>.45)return -.3-Math.sin((1.2-e.cooldown)*5)*.75;
     return walk*.3;
   }
   return 0;
+}
+function jointRotation(view,joint,e,matrix){
+  const combat=combatJointAngle(e,joint,combatRenderOffset(view));if(combat!==null)return matrix.makeRotationX(combat);
+  const action=view.unitActions?.get(e.id),angles=view.actionAngles??={x:0,y:0,z:0};
+  if(actionJointRotation(action,joint,angles))return matrix.makeRotationFromEuler((view.actionEuler??=new THREE.Euler()).set(angles.x,angles.y,angles.z));
+  return matrix.makeRotationX(jointAngle(view,joint,e));
 }
 export function beginJointPose(view,entity,matrix){
   view.jointPoseEpoch=(view.jointPoseEpoch||0)+1;view.jointPoseEntity=entity;view.jointPoseRoot=matrix;
@@ -113,12 +115,12 @@ export function animatePart(view,part,e,matrix){
     const cache=view.jointPoseCache??=new Map();let parent=matrix;
     for(const pose of part.userData.poseChain){
       let entry=cache.get(pose.key);if(!entry){entry={epoch:-1,matrix:new THREE.Matrix4()};cache.set(pose.key,entry);}
-      if(entry.epoch!==view.jointPoseEpoch){rotation.makeRotationX(jointAngle(view,pose.joint,e));entry.matrix.copy(parent).multiply(pose.forward).multiply(rotation).multiply(pose.back);entry.epoch=view.jointPoseEpoch;if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.computed++;}
+      if(entry.epoch!==view.jointPoseEpoch){jointRotation(view,pose.joint,e,rotation);entry.matrix.copy(parent).multiply(pose.forward).multiply(rotation).multiply(pose.back);entry.epoch=view.jointPoseEpoch;if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.computed++;}
       else if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.reused++;
       parent=entry.matrix;
     }
     return parent;
   }
-  for(const pose of part.userData.poseChain){rotation.makeRotationX(jointAngle(view,pose.joint,e));result.multiply(pose.forward).multiply(rotation).multiply(pose.back);}
+  for(const pose of part.userData.poseChain){jointRotation(view,pose.joint,e,rotation);result.multiply(pose.forward).multiply(rotation).multiply(pose.back);}
   return result;
 }

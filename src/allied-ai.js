@@ -1,5 +1,16 @@
 import {UNITS,DIFFICULTIES} from './data.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+const strength=unit=>(UNITS[unit.type]?.damage||0)/(UNITS[unit.type]?.cooldown||1.2)*Math.max(0,unit.hp/Math.max(1,unit.maxHp));
+const fieldFighter=unit=>unit?.hp>0&&!unit.embarked&&unit.hp>unit.maxHp*.28&&UNITS[unit.type]?.damage>0&&!UNITS[unit.type].naval&&!['worker','fisher','quest','siege'].includes(UNITS[unit.type].role)&&!['king','scout'].includes(unit.type)&&unit.order?.type!=='board';
+
+// Starting positions are public in the custom setup. Scout the nearest rival
+// front instead of treating the first opponent in the slot list as a target.
+export function customAttackTarget(sim,owner,state,tc,knownBuildings){
+  const unseen=sim.spawnPositions.map((point,i)=>({...point,owner:i,unscouted:true})).filter(point=>sim.hostile(owner,point.owner)&&!sim.players[point.owner].defeated&&!state.scoutedSpawns?.[point.owner]);
+  const targets=[...knownBuildings,...unseen];
+  targets.sort((a,b)=>(distance(tc,a)+(a.unscouted?10:a.type==='towncenter'?-20:0))-(distance(tc,b)+(b.unscouted?10:b.type==='towncenter'?-20:0)));
+  return targets[0]||sim.spawnPositions.map((point,i)=>({...point,owner:i})).filter(point=>sim.hostile(owner,point.owner)&&!sim.players[point.owner].defeated).sort((a,b)=>distance(tc,a)-distance(tc,b))[0]||tc;
+}
 
 export const AI_PACES={balanced:{name:'Balanced · build up, then battle',factor:1,army:1},patient:{name:'Grand war · longer buildup',factor:1.5,army:1.3},aggressive:{name:'Aggressive · early pressure',factor:0,army:.65}};
 export function customOpening(sim,owner,profile){
@@ -23,10 +34,33 @@ export function recordBaseAlarm(sim,target,attacker,damage){
 export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   if(sim.options.mode!=='custom'||sim.players[owner].controller!=='ai')return new Set();
   sim.teamAlarms??={};for(const [key,alarm] of Object.entries(sim.teamAlarms))if(sim.time-alarm.at>90||!sim.get(alarm.base)?.hp)delete sim.teamAlarms[key];
+  const dangers=base=>visible.filter(e=>e.hp>0&&e.kind==='unit'&&UNITS[e.type]?.damage>0&&!UNITS[e.type].naval&&sim.hostile(owner,e.owner)&&distance(e,base)<34);
   for(const base of sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&['towncenter','keep','dock'].includes(e.type)&&e.owner!==owner&&sim.allied(owner,e.owner)&&sim.canSee(owner,e))){
-    const attackers=visible.filter(e=>e.kind==='unit'&&e.type!=='scout'&&UNITS[e.type].damage>0&&distance(e,base)<24);
-    if(attackers.length>=3){const key=base.owner+':'+base.id;sim.teamAlarms[key]={owner:base.owner,base:base.id,x:base.x,z:base.z,at:sim.time,intensity:Math.min(500,attackers.length*25+(sim.teamAlarms[key]?.intensity||0))};}
+    const attackers=dangers(base).filter(e=>e.type!=='scout');
+    if(attackers.length>=2||attackers.some(e=>UNITS[e.type].role==='siege')){const key=base.owner+':'+base.id;sim.teamAlarms[key]={owner:base.owner,base:base.id,x:base.x,z:base.z,at:sim.time,intensity:Math.max(attackers.length*25,sim.teamAlarms[key]?.intensity||0)};}
   }
+  const combat=ready.filter(unit=>unit.owner===owner&&fieldFighter(unit)),reserve=new Set();
+  // Keep a home guard, sized to a real local threat. A lone harasser no longer
+  // recalls the entire relief army while the ally's capital is being razed.
+  for(const shore of sim.options.map==='coast'?[-1,1]:[0]){
+    const local=combat.filter(unit=>!shore||Math.sign(unit.x)===shore),homeNeed=ownThreats.filter(enemy=>!shore||Math.sign(enemy.x)===shore).reduce((sum,enemy)=>sum+strength(enemy),0)*1.15,minimum=Math.min(local.length,Math.max(local.length>=4?2:1,Math.ceil(local.length*.25)));
+    let homePower=0,count=0;for(const unit of local.sort((a,b)=>distance(a,tc)-distance(b,tc))){if(count>=minimum&&homePower>=homeNeed)break;reserve.add(unit.id);count++;homePower+=strength(unit);}
+  }
+  const sameShore=(unit,base)=>sim.options.map!=='coast'||Math.sign(unit.x)===Math.sign(base.x);
+  const relief=(base,alarm)=>{
+    const available=combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,base)),attackers=dangers(base),urgent=base.hp<base.maxHp*.6||(alarm?.intensity||0)>=Math.max(100,base.maxHp*.1)||attackers.length>=6;
+    const average=available.reduce((sum,unit)=>sum+strength(unit),0)/Math.max(1,available.length),needed=attackers.length?Math.ceil(attackers.reduce((sum,enemy)=>sum+strength(enemy),0)*1.25/Math.max(1,average)):Math.ceil((alarm?.intensity||0)/30)+1;
+    const count=Math.min(available.length,Math.max(2,Math.ceil(combat.length*(urgent?.65:.45))));
+    return {available,urgent,count:Math.min(count,Math.max(2,urgent?count:needed))};
+  };
+  const destination=base=>{
+    const attackers=dangers(base).sort((a,b)=>(distance(a,base)-(UNITS[a.type].role==='siege'?14:0))-(distance(b,base)-(UNITS[b.type].role==='siege'?14:0)));
+    if(attackers.length)return {x:attackers[0].x,z:attackers[0].z,engaging:true};
+    const d=Math.max(1,distance(tc,base));return {x:base.x+(tc.x-base.x)/d*(base.r+5),z:base.z+(tc.z-base.z)/d*(base.r+5),engaging:false};
+  };
+  const routeFor=(units,point)=>{
+    for(const unit of units.slice(0,4)){const path=sim.pathTo(unit,point);if(unit.pathStatus==='blocked'||!path.length||distance(path.at(-1),point)>10)continue;let length=0,last=unit;for(const waypoint of path){length+=distance(last,waypoint);last=waypoint;}return {unit,length};}return null;
+  };
   let duty=state.support;
   const release=()=>{
     const ids=(duty?.units||[]).filter(id=>{const unit=sim.get(id);return unit?.hp>0&&unit.owner===owner&&!unit.embarked;});
@@ -36,29 +70,35 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   if(duty){
     const base=sim.get(duty.base),alarm=sim.teamAlarms[duty.ally+':'+duty.base];
     duty.units=duty.units.filter(id=>{const u=sim.get(id);return u?.hp>0&&u.owner===owner&&!u.embarked&&u.hp>u.maxHp*.28;});
-    if(ownThreats.length||!base?.hp||!sim.allied(owner,duty.ally)||!duty.units.length||sim.time>duty.until)release();
+    const recalled=duty.units.filter(id=>reserve.has(id));if(recalled.length){sim.command(recalled,{type:'move',x:tc.x+8,z:tc.z-6});duty.units=duty.units.filter(id=>!reserve.has(id));}
+    if(!base?.hp||!sim.allied(owner,duty.ally)||!duty.units.some(id=>fieldFighter(sim.get(id)))||sim.time>duty.until)release();
     else{
       if(alarm&&sim.time-alarm.at<20)duty.until=Math.max(duty.until,sim.time+25);
-      const arrived=duty.units.some(id=>distance(sim.get(id),base)<20),danger=visible.some(e=>e.kind==='unit'&&UNITS[e.type].damage&&distance(e,base)<30);
+      const arrived=duty.units.some(id=>distance(sim.get(id),base)<20),danger=dangers(base).length>0;
       if(arrived&&!danger&&(!alarm||sim.time-alarm.at>18))release();
-      else if(sim.time-(duty.lastOrder||0)>12){sim.command(duty.units.filter(id=>UNITS[sim.get(id).type].damage),{type:'attackmove',x:duty.x,z:duty.z});duty.lastOrder=sim.time;}
+      else{
+        const point=destination(base),plan=relief(base,alarm),fighters=duty.units.filter(id=>fieldFighter(sim.get(id)));
+        if(alarm&&sim.time-alarm.at<30&&sim.time-(duty.lastReinforce??-10)>=6&&fighters.length<plan.count){
+          const additions=plan.available.filter(unit=>!duty.units.includes(unit.id)).sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count-fighters.length),route=routeFor(additions,point);duty.lastReinforce=sim.time;
+          if(route){const ids=additions.map(unit=>unit.id);sim.command(ids,{type:'attackmove',x:point.x,z:point.z});duty.units.push(...ids);duty.until=Math.max(duty.until,sim.time+route.length/Math.min(...additions.map(unit=>UNITS[unit.type].speed))*1.5+30);sim.emit('ally-support',{owner,ally:duty.ally,count:ids.length,x:base.x,z:base.z});}
+        }
+        if(sim.time-(duty.lastOrder??0)>=6||point.engaging!==duty.engaging){sim.command(duty.units.filter(id=>UNITS[sim.get(id).type].damage),{type:'attackmove',x:point.x,z:point.z});Object.assign(duty,point,{lastOrder:sim.time});}
+      }
     }
   }
-  if(duty||ownThreats.length||sim.time-(state.lastSupport||-40)<25)return new Set(duty?.units||[]);
-  const candidates=Object.values(sim.teamAlarms).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&distance(tc,alarm)<240&&(sim.options.map!=='coast'||Math.sign(tc.x)===Math.sign(alarm.x))).sort((a,b)=>(distance(tc,a)-a.intensity*.08)-(distance(tc,b)-b.intensity*.08));
+  if(duty||sim.time-(state.lastSupport??-40)<8)return new Set(duty?.units||[]);
+  const arrival=alarm=>Math.min(...combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,alarm)).map(unit=>distance(unit,alarm)/UNITS[unit.type].speed));
+  const candidates=Object.values(sim.teamAlarms).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&Number.isFinite(arrival(alarm))).sort((a,b)=>(arrival(a)-a.intensity*.025)-(arrival(b)-b.intensity*.025));
   const alarm=candidates[0];if(!alarm)return new Set();
-  const sameShore=unit=>sim.options.map!=='coast'||Math.sign(unit.x)===Math.sign(alarm.x);
-  const combat=ready.filter(u=>UNITS[u.type].damage>0&&UNITS[u.type].role!=='siege'&&!UNITS[u.type].naval&&u.order?.type!=='board'&&sameShore(u));
-  const reserve=Math.max(2,Math.ceil(combat.length*.25)),count=Math.min(12,Math.max(2,Math.ceil(combat.length*.4)),combat.length-reserve);if(count<2)return new Set();
-  const base=sim.get(alarm.base),d=Math.max(1,distance(tc,base)),point={x:base.x+(tc.x-base.x)/d*(base.r+6),z:base.z+(tc.z-base.z)/d*(base.r+6)};
-  const group=combat.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,count);
+  const base=sim.get(alarm.base),point=destination(base),plan=relief(base,alarm);if(plan.count<2)return new Set();
+  const group=plan.available.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count);
   // Validate one leader before dispatch; the regular movement system then routes
   // every real unit, including friendly gates and bridges, without teleporting.
-  const path=sim.pathTo(group[0],point);if(group[0].pathStatus==='blocked'||!path.length||distance(path.at(-1),point)>10)return new Set();
-  const healer=ready.find(u=>u.type==='monk'&&u.hp>u.maxHp*.5&&distance(u,point)<240&&sameShore(u)),units=group.map(u=>u.id);
-  sim.command(units,{type:'attackmove',...point});if(healer){sim.guard([healer.id],group[0].id,false,owner);units.push(healer.id);}
-  const travel=distance(group[0],point)/UNITS[group[0].type].speed;
-  state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+Math.min(100,travel+25),lastOrder:sim.time};state.lastSupport=sim.time;
+  const route=routeFor(group,point);if(!route)return new Set();
+  const healer=ready.find(u=>u.owner===owner&&u.type==='monk'&&!u.embarked&&u.hp>u.maxHp*.5&&u.order?.type!=='board'&&sameShore(u,base)&&distance(u,point)<Math.max(240,distance(route.unit,point)+30)),units=group.map(u=>u.id);
+  sim.command(units,{type:'attackmove',x:point.x,z:point.z});if(healer){sim.guard([healer.id],route.unit.id,false,owner);units.push(healer.id);}
+  const travel=route.length/Math.min(...group.map(unit=>UNITS[unit.type].speed));
+  state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+travel*1.5+30,lastOrder:sim.time,lastReinforce:sim.time};state.lastSupport=sim.time;
   sim.emit('ally-support',{owner,ally:alarm.owner,count:units.length,x:base.x,z:base.z});
   return new Set(units);
 }

@@ -9,6 +9,7 @@ import {BUILDINGS,UNITS} from '../src/data.js';
 import {buildingModel,unitModel,treeModel,resourceModel} from '../src/models-3d.js';
 import {registerAuthoredAssets,clearAuthoredAssets,workerVisualTask} from '../src/authored-assets.js';
 import {animatePart} from '../src/world-polish.js';
+import {UnitActions} from '../src/unit-actions.js';
 import {mergeUnitModel} from '../src/unit-palette.js';
 import {packBuildingModel} from '../src/structure-palette.js';
 
@@ -118,18 +119,18 @@ test('Blender catalogues cover all civilizations, buildings, troops, resources a
 
 test('workers switch solid tools with their current job and nested joints preserve a rigid pose',async()=>{
   try{
-    const assets=await catalogue('low'),view=fixture(assets);
-    const e={kind:'unit',id:51,type:'villager',owner:0,moving:false,carryType:'wood'};
-    view.sim.get=id=>({type:{1:'gold',2:'stone',3:'farm',4:'food',5:'wood'}[id]});
-    for(const [order,variant] of [[{type:'gather',target:1},'mine'],[{type:'gather',target:2},'mine'],[{type:'gather',target:3},'food'],[{type:'gather',target:4},'food'],[{type:'gather',target:5},'wood'],[{type:'build'},'build'],[{type:'repair'},'build']]){
+    const assets=await catalogue('low'),view=fixture(assets);view.unitActions=new UnitActions();
+    const e={kind:'unit',id:51,type:'villager',owner:0,moving:false,carryType:'wood',hp:40,x:0,z:0,work:0};
+    view.sim.get=id=>id===undefined?null:({type:{1:'gold',2:'stone',3:'farm',4:'food',5:'wood'}[id]||'house',kind:id===3||id===6?'building':'resource',hp:10,maxHp:100,progress:id===3?1:.2,amount:100,x:0,z:0,r:1});
+    for(const [order,variant] of [[{type:'gather',target:1},'mine'],[{type:'gather',target:2},'mine'],[{type:'gather',target:3},'food'],[{type:'gather',target:4},'food'],[{type:'gather',target:5},'wood'],[{type:'build',target:6},'build'],[{type:'repair',target:6},'build']]){
       e.order=order;assert.equal(workerVisualTask(view,e),variant);
       const model=view.mergeModel(unitModel(view,e));solid(model);
       assert.equal(model.userData.model3d.figure,'adult');assert.equal(model.userData.model3d.variant,variant);
-      let tool;model.traverse(part=>{if(part.userData.motion?.type==='forearm'&&part.userData.assetMaterial!=='skin')tool=part;});
+      let tool;model.traverse(part=>{if(part.userData.motion?.type==='workerTool')tool=part;});
       // Merged parts keep the complete wrist -> shoulder -> torso pose chain.
       const parts=[];model.traverse(part=>{if(part.userData.motion?.type==='forearm')parts.push(part);});
-      assert.ok(parts.length);tool??=parts[0];assert.equal(tool.userData.motion.parent.type,'arm');assert.equal(tool.userData.motion.parent.parent.type,'torso');
-      view.clock=.1;const first=animatePart(view,tool,e,new THREE.Matrix4()).clone();view.clock=.4;
+      assert.ok(parts.length);assert.ok(tool,'the tool has an independent wrist grip');assert.equal(tool.userData.motion.parent.type,'forearm');assert.equal(tool.userData.motion.parent.parent.type,'arm');assert.equal(tool.userData.motion.parent.parent.parent.type,'torso');
+      view.clock=view.sim.time=e.work=.1;view.unitActions.update(view,e,1);const first=animatePart(view,tool,e,new THREE.Matrix4()).clone();view.clock=view.sim.time=e.work=.4;view.unitActions.update(view,e,1);
       const second=animatePart(view,tool,e,new THREE.Matrix4()).clone();
       assert.notDeepEqual(first.elements,second.elements);assert.ok(second.elements.every(Number.isFinite));assert.ok(Math.abs(second.determinant()-1)<.001);
     }

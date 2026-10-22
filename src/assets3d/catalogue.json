@@ -558,5 +558,27 @@
   "windmillSourceSHA256": "a25f4624fef138173a51da6fb7c39fd6f5e65a41a24d8bac97fb3128a0d50a25",
   "siegeRevision": "solid-timber-v1",
   "siegeSourceSHA256": "1c12e2d8768911123dea20424c7f12c5dd87bbea044e99ce62d8d8e02441771e",
-  "lowContentBudgetBytes": 4325376
+  "lowContentBudgetBytes": 4325376,
+  "sharedTrees": {
+    "file": "frontier-trees.glb",
+    "models": 24,
+    "bytes": 2435668,
+    "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
+    "sha256": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543",
+    "precision": {
+      "passed": true,
+      "models": 24,
+      "meshes": 96,
+      "visibleTriangles": 126184,
+      "exactTrianglePositionsAndWinding": true,
+      "normalLimitDegrees": 0.05,
+      "maxNormalDegrees": 0.003907090598753798,
+      "maxUVError": 0,
+      "maxColorError": 0,
+      "referenceBytes": 14596092,
+      "candidateBytes": 2435668,
+      "referenceDecodedBufferBytes": 38116616,
+      "candidateDecodedBufferBytes": 5708470
+    }
+  }
 }

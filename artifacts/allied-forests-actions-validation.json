@@ -1,0 +1,270 @@
+{
+  "verifiedAt": "2026-10-22T20:09:02.797Z",
+  "buildId": "1792698945872",
+  "tests": {
+    "total": 422,
+    "passed": 422,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "sourceSHA256": {
+    "src/allied-ai.js": "91601f0376f23ec19996ae4a9920763d035e6433cbc806bc1abd6f0b9b26f4e6",
+    "src/commander-ai.js": "776d09ba50c360e3fc6969fa4dbb3687338b1b1ab409b71f62b8e7e0870ea9a1",
+    "src/authored-assets.js": "9cdf1d281f281b809ac4274449c01ce90de6f419bb888f0187762aac59979683",
+    "src/tree-lod.js": "44fa9362fdf8814b976358263082d8d1d9baa998ef99d3fd53581b2d1efb9ac0",
+    "src/unit-actions.js": "1e20c13ac837a25320275fb804b0cb299fcc7d88a861a1ff5b9b55db00c0f50c",
+    "src/worker-tool-rig.js": "ef66fc50192acede288df7bbd216fb8b1acf0ba24d936b0aeb6134e1cc595de0",
+    "src/work-activity.js": "0c0d524fb80c92721111cacb72c79680f014e651e3d6487594093b0d995f650d",
+    "src/combat-audio.js": "7c31111024b0881a7400910e9140225160252194cf5cf6665e2e1579d838b62e",
+    "src/combat-poses.js": "6c852b6230ffc0efde4c550840063c619a063697ad8562e9f5b774e6f167122f",
+    "src/world-polish.js": "108bd8d91fa79c8ae14e4eae2c3bb212fdcd64a5903c7eb4e0f2d6eab75aeb1b",
+    "src/world.js": "2fd85712e38d148802d6c45f1f0ac6031ae3e0af108c0679a9461b0854a68b5a",
+    "src/main.js": "41f896e7e4ead9f8188832e9346094ac0559110e9fe7136801ae1291f9aad0a6",
+    "src/graphics-checkpoint.js": "5be5c88a7dd8f33bf363e652ae6bea29af624df420723d80f5259ae8c68fde54",
+    "server/entity-perspective.js": "c20ca334e22e87c765e289063cb3656e1838da959bf5b797fdfea033351c4e45",
+    "src/assets3d/frontier-trees.glb": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543",
+    "src/assets3d/catalogue.json": "116a833d03616d0aed6c03541c9e1769a004587ac3213c27a0353dc110a0d838"
+  },
+  "browsers": [
+    {
+      "file": "artifacts/allied-response-default/validation.json",
+      "buildId": "1792698945872",
+      "environment": {
+        "browser": "155.0.8059.80",
+        "harness": "chrome-d3d11",
+        "softwareRendering": false,
+        "gpuBlocklistOverride": true,
+        "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+      },
+      "checks": [
+        {
+          "mode": "default",
+          "expected": "webgpu",
+          "qualities": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "sameMatch": true,
+          "maps": [
+            {
+              "map": "highlands",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            {
+              "map": "winter",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            {
+              "map": "desert",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "phase": 0.1,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            },
+            {
+              "phase": 0.45,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            },
+            {
+              "phase": 0.8,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            }
+          ],
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          },
+          "offline": {
+            "nodeChunk": true,
+            "catalogues": 4,
+            "reload": true,
+            "gameplay": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "artifacts/allied-response-webgl/validation.json",
+      "buildId": "1792698945872",
+      "environment": {
+        "browser": "156.0.8078.4",
+        "harness": "shell",
+        "softwareRendering": true,
+        "gpuBlocklistOverride": true,
+        "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+      },
+      "checks": [
+        {
+          "mode": "webgl",
+          "expected": "webgl",
+          "qualities": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "sameMatch": true,
+          "maps": [
+            {
+              "map": "highlands",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            {
+              "map": "winter",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            {
+              "map": "desert",
+              "presets": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "phase": 0.1,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            },
+            {
+              "phase": 0.45,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            },
+            {
+              "phase": 0.8,
+              "tasks": [
+                "wood",
+                "mine",
+                "food",
+                "build"
+              ],
+              "finite": true
+            }
+          ],
+          "phone": {
+            "width": 740,
+            "scroll": 740,
+            "canvas": {
+              "x": 0,
+              "y": 0,
+              "width": 740,
+              "height": 360,
+              "top": 0,
+              "right": 740,
+              "bottom": 360,
+              "left": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "combatReplay": {
+    "scenario": "A visible raid on the far side of an allied capital; real movement and combat, no resource or combat bonuses",
+    "baseline": {
+      "baseSurvived": false,
+      "baseHp": 0,
+      "elapsed": 17.699999999998994,
+      "sent": 9,
+      "firstReliefAttackAt": null,
+      "reliefDamage": 0,
+      "enemiesAlive": 7,
+      "reliefSurvivors": 22
+    },
+    "candidate": {
+      "baseSurvived": true,
+      "baseHp": 203.60000000000124,
+      "elapsed": 39.999999999997726,
+      "sent": 30,
+      "firstReliefAttackAt": 6.999999999999602,
+      "reliefDamage": 750.4000000000007,
+      "enemiesAlive": 0,
+      "reliefSurvivors": 22
+    }
+  },
+  "treePrecision": {
+    "passed": true,
+    "models": 24,
+    "meshes": 96,
+    "visibleTriangles": 126184,
+    "exactTrianglePositionsAndWinding": true,
+    "normalLimitDegrees": 0.05,
+    "maxNormalDegrees": 0.003907090598753798,
+    "maxUVError": 0,
+    "maxColorError": 0,
+    "referenceBytes": 14596092,
+    "candidateBytes": 2435668,
+    "referenceDecodedBufferBytes": 38116616,
+    "candidateDecodedBufferBytes": 5708470
+  },
+  "limits": [
+    "The default WebGPU harness overrides the GPU blocklist; this is functionality evidence, not default eligibility on every device.",
+    "WebGL software rendering verifies behavior, not hardware speed. The previous hardware WebGL run stalled during initialization.",
+    "Phone checks emulate layout and touch; physical-device performance and long full-match balance remain open."
+  ],
+  "goalComplete": false
+}
