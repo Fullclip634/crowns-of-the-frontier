@@ -88,3 +88,36 @@ export class FlightEffects{
     this.retained.clear();for(const list of Object.values(this.free))list.length=0;
   }
 }
+
+// Retain short-lived feedback between attacks. Disposing its last material
+// after each quiet gap can discard its linked GPU program as well.
+export class ImpactEffects{
+  constructor(){
+    this.geometry={burst:new THREE.IcosahedronGeometry(.13,0),heal:new THREE.TorusGeometry(.85,.035,5,28)};
+    this.free={burst:[],heal:[]};this.retained=new Set();this.limit=48;this.disposed=false;
+  }
+  acquire(kind,color=kind==='heal'?0x91e0b4:0xe8c28b){
+    if(this.disposed)throw new Error('Impact effects have been disposed.');
+    let mesh=this.free[kind].pop();
+    if(!mesh){
+      const material=kind==='burst'?standardMaterial({color,roughness:.9,transparent:true,opacity:.8}):new THREE.MeshBasicMaterial({color,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
+      mesh=kind==='burst'?new THREE.InstancedMesh(this.geometry.burst,material,8):new THREE.Mesh(this.geometry.heal,material);
+      mesh.userData.impactKind=kind;this.retained.add(mesh);
+      if(kind==='burst'){mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.userData.velocities=Array.from({length:8},()=>({x:0,y:0,z:0}));}
+    }
+    mesh.material.color.setHex(color);mesh.material.opacity=kind==='burst'?.8:.7;
+    mesh.visible=true;mesh.position.set(0,0,0);mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
+  }
+  release(mesh){
+    if(!this.retained.has(mesh))return;
+    mesh.removeFromParent();mesh.visible=false;
+    if(this.retained.size>this.limit){this.retained.delete(mesh);mesh.material.dispose();if(mesh.isInstancedMesh)mesh.dispose();}
+    else{const list=this.free[mesh.userData.impactKind];if(!list.includes(mesh))list.push(mesh);}
+  }
+  dispose(){
+    if(this.disposed)return;this.disposed=true;
+    for(const mesh of this.retained){mesh.removeFromParent();mesh.material.dispose();if(mesh.isInstancedMesh)mesh.dispose();}
+    for(const geometry of Object.values(this.geometry))geometry.dispose();
+    this.retained.clear();for(const list of Object.values(this.free))list.length=0;
+  }
+}

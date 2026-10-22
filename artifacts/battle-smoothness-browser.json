@@ -1,0 +1,856 @@
+{
+  "startedAt": "2026-10-21T23:51:33.354Z",
+  "configuration": {
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "cases": [
+    {
+      "quality": "high",
+      "backend": "webgl",
+      "cycles": [
+        {
+          "burst": "ca47e324-1d26-4b30-964b-ac28abc5ac4a",
+          "heal": "9546a79e-e11e-4a35-8e63-dfe97fefb305",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "32ec51f1-93fb-4cfd-a09d-582518e3a7a4",
+          "healGeometry": "690dc9f3-6ea1-4fe1-bab6-90b3179bc289",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "ca47e324-1d26-4b30-964b-ac28abc5ac4a",
+          "heal": "9546a79e-e11e-4a35-8e63-dfe97fefb305",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "32ec51f1-93fb-4cfd-a09d-582518e3a7a4",
+          "healGeometry": "690dc9f3-6ea1-4fe1-bab6-90b3179bc289",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "ca47e324-1d26-4b30-964b-ac28abc5ac4a",
+          "heal": "9546a79e-e11e-4a35-8e63-dfe97fefb305",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "32ec51f1-93fb-4cfd-a09d-582518e3a7a4",
+          "healGeometry": "690dc9f3-6ea1-4fe1-bab6-90b3179bc289",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "ca47e324-1d26-4b30-964b-ac28abc5ac4a",
+          "heal": "9546a79e-e11e-4a35-8e63-dfe97fefb305",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "32ec51f1-93fb-4cfd-a09d-582518e3a7a4",
+          "healGeometry": "690dc9f3-6ea1-4fe1-bab6-90b3179bc289",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "ca47e324-1d26-4b30-964b-ac28abc5ac4a",
+          "heal": "9546a79e-e11e-4a35-8e63-dfe97fefb305",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "32ec51f1-93fb-4cfd-a09d-582518e3a7a4",
+          "healGeometry": "690dc9f3-6ea1-4fe1-bab6-90b3179bc289",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "rigs": [
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "high",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    },
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "largeRoom": true,
+      "cycles": [
+        {
+          "burst": "fbf298f6-be8f-4d69-9130-04f18e851766",
+          "heal": "076422b0-fb01-4932-96a0-fb751d732146",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "23304e87-fd34-44ad-b09f-7d7876f7433b",
+          "healGeometry": "b4d40b2b-184f-4daa-b337-afc5756a429e",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 3,
+          "remaining": 0
+        },
+        {
+          "burst": "fbf298f6-be8f-4d69-9130-04f18e851766",
+          "heal": "076422b0-fb01-4932-96a0-fb751d732146",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "23304e87-fd34-44ad-b09f-7d7876f7433b",
+          "healGeometry": "b4d40b2b-184f-4daa-b337-afc5756a429e",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "fbf298f6-be8f-4d69-9130-04f18e851766",
+          "heal": "076422b0-fb01-4932-96a0-fb751d732146",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "23304e87-fd34-44ad-b09f-7d7876f7433b",
+          "healGeometry": "b4d40b2b-184f-4daa-b337-afc5756a429e",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "fbf298f6-be8f-4d69-9130-04f18e851766",
+          "heal": "076422b0-fb01-4932-96a0-fb751d732146",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "23304e87-fd34-44ad-b09f-7d7876f7433b",
+          "healGeometry": "b4d40b2b-184f-4daa-b337-afc5756a429e",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "fbf298f6-be8f-4d69-9130-04f18e851766",
+          "heal": "076422b0-fb01-4932-96a0-fb751d732146",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "23304e87-fd34-44ad-b09f-7d7876f7433b",
+          "healGeometry": "b4d40b2b-184f-4daa-b337-afc5756a429e",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "deviceLimit": 8,
+        "rigs": [
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "medium",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    },
+    {
+      "quality": "low",
+      "backend": "webgl",
+      "phone": true,
+      "cycles": [
+        {
+          "burst": "05495379-44ed-4f20-b5a8-e62939c9eeea",
+          "heal": "b454aa98-0d42-45b2-b207-1236d358c74c",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "511ae480-d69b-4b30-bd63-10a837e08d3c",
+          "healGeometry": "08b78955-f57b-4d35-974f-0545fd40ff06",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "05495379-44ed-4f20-b5a8-e62939c9eeea",
+          "heal": "b454aa98-0d42-45b2-b207-1236d358c74c",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "511ae480-d69b-4b30-bd63-10a837e08d3c",
+          "healGeometry": "08b78955-f57b-4d35-974f-0545fd40ff06",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "05495379-44ed-4f20-b5a8-e62939c9eeea",
+          "heal": "b454aa98-0d42-45b2-b207-1236d358c74c",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "511ae480-d69b-4b30-bd63-10a837e08d3c",
+          "healGeometry": "08b78955-f57b-4d35-974f-0545fd40ff06",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "05495379-44ed-4f20-b5a8-e62939c9eeea",
+          "heal": "b454aa98-0d42-45b2-b207-1236d358c74c",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "511ae480-d69b-4b30-bd63-10a837e08d3c",
+          "healGeometry": "08b78955-f57b-4d35-974f-0545fd40ff06",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "05495379-44ed-4f20-b5a8-e62939c9eeea",
+          "heal": "b454aa98-0d42-45b2-b207-1236d358c74c",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "511ae480-d69b-4b30-bd63-10a837e08d3c",
+          "healGeometry": "08b78955-f57b-4d35-974f-0545fd40ff06",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "rigs": [
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          },
+          {
+            "capacity": 512
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "low",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    },
+    {
+      "quality": "low",
+      "backend": "webgpu",
+      "largeRoom": true,
+      "cycles": [
+        {
+          "burst": "37d1e270-f2b3-4fea-bb2b-28e526b86cf3",
+          "heal": "5fba3528-5c1e-49cd-8f91-c8d4a357a63a",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "0bbb6fa2-9658-40d1-8c61-d7b4121743ff",
+          "healGeometry": "ea070a72-0764-47cd-831b-ba50638bd780",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 3,
+          "remaining": 0
+        },
+        {
+          "burst": "37d1e270-f2b3-4fea-bb2b-28e526b86cf3",
+          "heal": "5fba3528-5c1e-49cd-8f91-c8d4a357a63a",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "0bbb6fa2-9658-40d1-8c61-d7b4121743ff",
+          "healGeometry": "ea070a72-0764-47cd-831b-ba50638bd780",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "37d1e270-f2b3-4fea-bb2b-28e526b86cf3",
+          "heal": "5fba3528-5c1e-49cd-8f91-c8d4a357a63a",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "0bbb6fa2-9658-40d1-8c61-d7b4121743ff",
+          "healGeometry": "ea070a72-0764-47cd-831b-ba50638bd780",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "37d1e270-f2b3-4fea-bb2b-28e526b86cf3",
+          "heal": "5fba3528-5c1e-49cd-8f91-c8d4a357a63a",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "0bbb6fa2-9658-40d1-8c61-d7b4121743ff",
+          "healGeometry": "ea070a72-0764-47cd-831b-ba50638bd780",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "37d1e270-f2b3-4fea-bb2b-28e526b86cf3",
+          "heal": "5fba3528-5c1e-49cd-8f91-c8d4a357a63a",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "0bbb6fa2-9658-40d1-8c61-d7b4121743ff",
+          "healGeometry": "ea070a72-0764-47cd-831b-ba50638bd780",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "deviceLimit": 8,
+        "rigs": [
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "low",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    },
+    {
+      "quality": "high",
+      "backend": "webgpu",
+      "largeRoom": true,
+      "cycles": [
+        {
+          "burst": "dccef8ca-438b-4d30-87e7-51d90e870ac6",
+          "heal": "9bb94bb8-058e-4bca-a418-3c3cd8c4e3ec",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cbc880e5-e893-4b70-809c-d524eedef485",
+          "healGeometry": "899f9b04-3c79-4706-8a0e-ef44f75aa82d",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 3,
+          "remaining": 0
+        },
+        {
+          "burst": "dccef8ca-438b-4d30-87e7-51d90e870ac6",
+          "heal": "9bb94bb8-058e-4bca-a418-3c3cd8c4e3ec",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cbc880e5-e893-4b70-809c-d524eedef485",
+          "healGeometry": "899f9b04-3c79-4706-8a0e-ef44f75aa82d",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "dccef8ca-438b-4d30-87e7-51d90e870ac6",
+          "heal": "9bb94bb8-058e-4bca-a418-3c3cd8c4e3ec",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cbc880e5-e893-4b70-809c-d524eedef485",
+          "healGeometry": "899f9b04-3c79-4706-8a0e-ef44f75aa82d",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "dccef8ca-438b-4d30-87e7-51d90e870ac6",
+          "heal": "9bb94bb8-058e-4bca-a418-3c3cd8c4e3ec",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cbc880e5-e893-4b70-809c-d524eedef485",
+          "healGeometry": "899f9b04-3c79-4706-8a0e-ef44f75aa82d",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "dccef8ca-438b-4d30-87e7-51d90e870ac6",
+          "heal": "9bb94bb8-058e-4bca-a418-3c3cd8c4e3ec",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cbc880e5-e893-4b70-809c-d524eedef485",
+          "healGeometry": "899f9b04-3c79-4706-8a0e-ef44f75aa82d",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "deviceLimit": 8,
+        "rigs": [
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "high",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    }
+  ],
+  "errors": [],
+  "buildId": "1792625522529",
+  "passed": true
+}

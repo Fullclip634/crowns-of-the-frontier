@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {attackFlight,updateFlight,releaseEffect,FlightEffects} from '../src/battle-effects.js';
+import {attackFlight,updateFlight,releaseEffect,FlightEffects,ImpactEffects} from '../src/battle-effects.js';
 
 test('projectiles follow raised, interpolated weapon positions and turn along their arc',()=>{
   const view={entityHeight:e=>e.kind==='building'?4:2},archer={kind:'unit',type:'archer',x:0,z:0,renderX:1,renderZ:2},target={kind:'unit',type:'swordsman',x:1,z:12};
@@ -26,4 +26,24 @@ test('combat mesh pools reuse completed shots, preserve shared geometry and boun
   const many=Array.from({length:120},()=>pool.acquire('slash'));many.forEach(m=>pool.release(m));assert.ok(pool.retained.size<=pool.limit);assert.equal(disposed,false);
   const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial(),ordinary=new THREE.Mesh(geometry,material);let released=0;geometry.addEventListener('dispose',()=>released++);material.addEventListener('dispose',()=>released++);scene.add(ordinary);releaseEffect({object:ordinary});assert.equal(released,2);assert.equal(scene.children.length,0);
   pool.dispose();assert.equal(disposed,true);assert.equal(pool.retained.size,0);
+});
+
+test('impact feedback reuses meshes without sharing live colors, fading state or velocities',()=>{
+  const pool=new ImpactEffects(),scene=new THREE.Scene(),first=pool.acquire('burst',0xff0000),second=pool.acquire('burst',0x00ff00),heal=pool.acquire('heal');
+  scene.add(first,second,heal);assert.equal(first.geometry,second.geometry);assert.notEqual(first.material,second.material);assert.notEqual(first.userData.velocities,second.userData.velocities);
+  first.userData.velocities[0].x=19;assert.equal(second.userData.velocities[0].x,0);assert.equal(first.material.color.getHex(),0xff0000);assert.equal(second.material.color.getHex(),0x00ff00);
+  let disposed=0;first.geometry.addEventListener('dispose',()=>disposed++);first.material.addEventListener('dispose',()=>disposed++);first.scale.setScalar(.2);first.material.opacity=.1;first.rotation.set(1,2,3);
+  releaseEffect({object:first,recycle:mesh=>pool.release(mesh)});assert.equal(disposed,0);assert.equal(scene.children.length,2);
+  const reused=pool.acquire('burst',0x0000ff);assert.equal(reused,first);assert.equal(reused.material.color.getHex(),0x0000ff);assert.equal(reused.material.opacity,.8);assert.deepEqual(reused.scale.toArray(),[1,1,1]);assert.equal(reused.quaternion.angleTo(new THREE.Quaternion()),0);
+  heal.material.opacity=.05;pool.release(heal);assert.equal(pool.acquire('heal'),heal);assert.equal(heal.material.opacity,.7);pool.release(heal);pool.release(heal);assert.equal(pool.free.heal.length,1);
+  pool.dispose();assert.equal(disposed,2);assert.equal(scene.children.length,0);
+});
+
+test('impact pools bound retained GPU objects, dispose overflow and release shared geometry only at teardown',()=>{
+  const pool=new ImpactEffects(),bursts=Array.from({length:60},()=>pool.acquire('burst')),rings=Array.from({length:12},()=>pool.acquire('heal'));
+  let burstGeometry=0,ringGeometry=0,meshes=0,materials=0;
+  pool.geometry.burst.addEventListener('dispose',()=>burstGeometry++);pool.geometry.heal.addEventListener('dispose',()=>ringGeometry++);
+  for(const mesh of [...bursts,...rings]){mesh.material.addEventListener('dispose',()=>materials++);if(mesh.isInstancedMesh)mesh.addEventListener('dispose',()=>meshes++);pool.release(mesh);}
+  assert.equal(pool.retained.size,pool.limit);assert.equal(materials,24);assert.equal(meshes,24);assert.equal(burstGeometry,0);assert.equal(ringGeometry,0);
+  pool.dispose();pool.dispose();assert.equal(materials,72);assert.equal(meshes,60);assert.equal(burstGeometry,1);assert.equal(ringGeometry,1);assert.equal(pool.retained.size,0);assert.throws(()=>pool.acquire('burst'),/disposed/);
 });

@@ -150,7 +150,7 @@ export function installRealm3D(WorldView){
     if(!['farm','dock'].includes(type)&&(this.ghost.userData.foundationGroundX!==x||this.ghost.userData.foundationGroundZ!==z)){groundBuildingFoundation(this.ghost.children[0],this.landscape,true);this.ghost.userData.foundationGroundX=x;this.ghost.userData.foundationGroundZ=z;}
     this.ghost.traverse(mesh=>{if(mesh.isMesh)mesh.material.color.setHex(valid?0x8de3c5:0xee816a);});
   };
-  p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++){const f=this.fx[i];f.object.position.y=this.groundHeight(x,z)+.4;f.object.material.dispose();f.object.material=standardMaterial({color:color??0xe8c28b,roughness:.9,transparent:true,opacity:.8});}};
+  p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++)this.fx[i].object.position.y=this.groundHeight(x,z)+.4;};
   p.effect=function(event){
     if(event.type==='attack'){
       if(this.fx.length>(this.settings.quality==='low'?32:90))return;
@@ -161,7 +161,7 @@ export function installRealm3D(WorldView){
     for(let i=count;i<this.fx.length;i++){
       const f=this.fx[i];if(f.particles)continue;
       if(event.type==='heal'){
-        f.groundY=this.entityHeight(event.target);f.object.geometry.dispose();f.object.geometry=new THREE.TorusGeometry(.85,.035,5,28);
+        f.groundY=this.entityHeight(event.target);
       }
     }
   };

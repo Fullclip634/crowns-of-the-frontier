@@ -4,10 +4,10 @@ import * as THREE from 'three';
 import {createRigidUnitPart,writeRigidPose,finishRigidFrame,disposeRigidPart,raycastRigidPart} from '../src/rig-batches.js';
 import {animatePart,beginJointPose,endJointPose} from '../src/world-polish.js';
 
-function fixture(){
+function fixture(native=false){
   const material=new THREE.MeshStandardMaterial(),model=new THREE.Group(),body=new THREE.Mesh(new THREE.BoxGeometry().toNonIndexed(),material),arm=new THREE.Mesh(new THREE.BoxGeometry(.4,.7,.4).toNonIndexed(),material);
   body.geometry.translate(0,1,0);arm.geometry.translate(2,2,0);arm.userData.motion={type:'arm',pivot:[2,2.3,0],side:1,parent:{type:'torso',pivot:[0,1.3,0],side:1}};model.add(body,arm);model.updateMatrixWorld();
-  const view={clock:.4,renderer:{domElement:new EventTarget()}},batch={capacity:64,renderIds:[7],ids:[7],free:[]},mesh=createRigidUnitPart(view,model,batch);return {view,batch,mesh,model,material,body,arm};
+  const view={clock:.4,renderer:{domElement:new EventTarget(),isWebGPURenderer:native}},batch={capacity:native?1280:64,renderIds:[7],ids:[7],free:[]},mesh=createRigidUnitPart(view,model,batch);return {view,batch,mesh,model,material,body,arm};
 }
 function cleanup(f){disposeRigidPart(f.mesh);f.mesh.geometry.dispose();f.mesh.dispose();f.body.geometry.dispose();f.arm.geometry.dispose();f.material.dispose();}
 
@@ -57,4 +57,10 @@ test('a restored graphics context uploads the complete pose texture and disposal
   writeRigidPose(f.mesh,0,{id:7,type:'spearman'},new THREE.Matrix4());finishRigidFrame(f.mesh,1);rig.texture.onUpdate();
   f.view.renderer.domElement.dispatchEvent(new Event('webglcontextrestored'));assert.equal(finishRigidFrame(f.mesh,1).uploaded,rig.data.byteLength);assert.deepEqual(rig.texture.updateRanges,[]);cleanup(f);
   const version=rig.texture.version;f.view.renderer.domElement.dispatchEvent(new Event('webglcontextrestored'));assert.equal(rig.texture.version,version,'Disposed rigs release the context listener');
+});
+
+test('native packed vertices retain articulated picking at the maximum eight-kingdom batch capacity',()=>{
+  const f=fixture(true),e={id:7,type:'spearman',moving:true},root=new THREE.Matrix4().makeTranslation(10,1,20);assert.ok(f.mesh.geometry.attributes.position.isInterleavedBufferAttribute);assert.equal(f.mesh.instanceMatrix.count,1280);assert.equal(f.mesh.geometry.attributes.instanceOwner.isInstancedBufferAttribute,true);
+  writeRigidPose(f.mesh,0,e,root);f.mesh.count=1;f.mesh.updateMatrixWorld();const rig=f.mesh.userData.rigidRig,pose=new THREE.Matrix4().fromArray(rig.data,16),center=new THREE.Vector3(2,2,0).applyMatrix4(pose),ray=new THREE.Raycaster(center.clone().add(new THREE.Vector3(0,0,10)),new THREE.Vector3(0,0,-1)),hits=[];
+  raycastRigidPart(f.mesh,ray,hits);assert.ok(hits.length>0);assert.ok(hits.every(hit=>hit.instanceId===0&&hit.object===f.mesh));assert.deepEqual(f.mesh.geometry.drawRange,{start:0,count:Infinity});cleanup(f);
 });

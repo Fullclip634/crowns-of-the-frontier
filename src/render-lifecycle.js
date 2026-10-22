@@ -3,6 +3,7 @@
 export function releaseRenderers(view){
   if(!view||view.renderingReleased)return false;
   view.renderingReleased=true;
+  view.impactEffects?.dispose();
   const renderers=new Set([view.renderer,view.modelPortrait?.renderer].filter(Boolean));
   for(const renderer of renderers){renderer.dispose();renderer.forceContextLoss?.();}
   return true;

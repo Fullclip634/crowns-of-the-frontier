@@ -1,0 +1,259 @@
+{
+  "startedAt": "2026-10-21T23:42:22.255Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 10,
+    "queryDiagnostics": false
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [],
+  "errors": [],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Edg/155.0.4283.62",
+      "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+      "jsVersion": "15.5.9.7"
+    }
+  },
+  "buildId": "1792625522529",
+  "warmups": [
+    {
+      "quality": "medium",
+      "backend": "webgpu",
+      "states": [
+        {
+          "at": 104646.19999999995,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274368896,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 105563.59999999986,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274386914,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 115411.8999999999,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274399858,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 127733.59999999986,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274412770,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 135589.59999999986,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274436518,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 148334.69999999995,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274449402,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 156534.69999999995,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274462286,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 170560.80000000005,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274478526,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 181981,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274492050,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 185467,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274511262,
+          "backend": "webgpu",
+          "pipelines": 80
+        },
+        {
+          "at": 195476.80000000005,
+          "hidden": false,
+          "paused": false,
+          "seconds": 420.5000000000271,
+          "ended": null,
+          "attempts": 2,
+          "held": 1,
+          "submitted": 1,
+          "flight": {
+            "pending": 1,
+            "submitted": 3,
+            "skipped": 1,
+            "failed": 0
+          },
+          "heap": 274528798,
+          "backend": "webgpu",
+          "pipelines": 80
+        }
+      ]
+    }
+  ],
+  "failure": "page.waitForFunction: Timeout 120000ms exceeded.\n    at C:\\New\\Age_Of_Emprire\\scripts\\battle-performance-qa.mjs:46:64"
+}

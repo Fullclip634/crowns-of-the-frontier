@@ -11,3 +11,8 @@ test('shared or missing renderers do not duplicate disposal and context loss is 
   let disposed=0;const renderer={dispose:()=>disposed++},view={renderer,modelPortrait:{renderer}};
   assert.equal(releaseRenderers(undefined),false);assert.equal(releaseRenderers(view),true);assert.equal(disposed,1);
 });
+
+test('navigation releases retained impact meshes before disposing their GPU context',()=>{
+  const calls=[],view={impactEffects:{dispose:()=>calls.push('effects')},renderer:{dispose:()=>calls.push('renderer')}};
+  assert.equal(releaseRenderers(view),true);assert.equal(releaseRenderers(view),false);assert.deepEqual(calls,['effects','renderer']);
+});

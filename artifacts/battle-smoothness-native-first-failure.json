@@ -1,0 +1,748 @@
+{
+  "startedAt": "2026-10-21T20:25:35.057Z",
+  "configuration": {
+    "sampleMilliseconds": 10000,
+    "warmupSubmittedFrames": 120,
+    "queryDiagnostics": true
+  },
+  "fixture": {
+    "file": ".tools/battle-stages/crowded.json",
+    "seconds": 420.000000000027,
+    "map": "highlands",
+    "world": 400,
+    "populationLimit": 160
+  },
+  "headless": true,
+  "physicalPhone": false,
+  "samples": [
+    {
+      "quality": "low",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 168,
+      "submittedFPS": 16.76730375767254,
+      "attempts": 168,
+      "held": 0,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10019.5
+      },
+      "simulation": {
+        "advancedSeconds": 5.600000000001273,
+        "wallSeconds": 10.0195,
+        "speedRatio": 0.5589101252558784,
+        "ticks": {
+          "samples": 56,
+          "median": 20.899999998509884,
+          "p95": 44.599999994039536,
+          "p99": 56.20000000298023,
+          "max": 56.20000000298023
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 167,
+        "median": 26.299999997019768,
+        "p95": 51,
+        "p99": 1022.5999999940395,
+        "max": 4028.60000000149
+      },
+      "renderAttemptCPU": {
+        "samples": 168,
+        "median": 18,
+        "p95": 24.200000002980232,
+        "p99": 29,
+        "max": 30.5
+      },
+      "submittedRenderCPU": {
+        "samples": 168,
+        "median": 18,
+        "p95": 24.200000002980232,
+        "p99": 29,
+        "max": 30.5
+      },
+      "adapter": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "apiQueries": {
+        "bufferSubData": {
+          "calls": 2121,
+          "milliseconds": 19.499999947845936,
+          "max": 0.30000000447034836
+        },
+        "texSubImage2D": {
+          "calls": 14096,
+          "milliseconds": 83.0000000372529,
+          "max": 5
+        }
+      },
+      "slowQueries": [],
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 84,
+        "allocated": 281,
+        "activeBatches": 12,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 54080,
+        "rigUsedBytes": 54464
+      },
+      "shadows": {},
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 7,
+        "compressed": 7,
+        "compressedMipBytes": 9786896,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 4
+      },
+      "render": {
+        "frame": 329,
+        "calls": 132,
+        "triangles": 337936,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 134,
+        "textures": 27
+      },
+      "shaderErrors": 0,
+      "backend": "webgl",
+      "requestedQuality": "low",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "validWindow": true,
+      "targetMet": false
+    },
+    {
+      "quality": "medium",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 201,
+      "submittedFPS": 19.797494287281488,
+      "attempts": 201,
+      "held": 0,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10152.80000000447
+      },
+      "simulation": {
+        "advancedSeconds": 9.700000000002206,
+        "wallSeconds": 10.15280000000447,
+        "speedRatio": 0.9554014656053438,
+        "ticks": {
+          "samples": 97,
+          "median": 17.5,
+          "p95": 74.40000000596046,
+          "p99": 107.20000000298023,
+          "max": 107.20000000298023
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 200,
+        "median": 39.70000000298023,
+        "p95": 114.70000000298023,
+        "p99": 202.10000000149012,
+        "max": 628.8000000044703
+      },
+      "renderAttemptCPU": {
+        "samples": 201,
+        "median": 12,
+        "p95": 27.399999998509884,
+        "p99": 36.30000000447035,
+        "max": 98.19999999552965
+      },
+      "submittedRenderCPU": {
+        "samples": 201,
+        "median": 12,
+        "p95": 27.399999998509884,
+        "p99": 36.30000000447035,
+        "max": 98.19999999552965
+      },
+      "adapter": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "apiQueries": {
+        "bufferSubData": {
+          "calls": 2952,
+          "milliseconds": 19.900000013411045,
+          "max": 0.7999999970197678
+        },
+        "texSubImage2D": {
+          "calls": 16911,
+          "milliseconds": 58.600000120699406,
+          "max": 1.1000000014901161
+        },
+        "bufferData": {
+          "calls": 10,
+          "milliseconds": 0.6000000014901161,
+          "max": 0.20000000298023224
+        }
+      },
+      "slowQueries": [],
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 90,
+        "allocated": 287,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 57664,
+        "rigUsedBytes": 58432
+      },
+      "shadows": {
+        "updates": 253,
+        "skipped": 114,
+        "refreshRate": 20,
+        "mapSize": 1024
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8
+      },
+      "render": {
+        "frame": 382,
+        "calls": 138,
+        "triangles": 1746417,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 147,
+        "textures": 40
+      },
+      "shaderErrors": 0,
+      "backend": "webgl",
+      "requestedQuality": "medium",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "validWindow": true,
+      "targetMet": false
+    },
+    {
+      "quality": "high",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 138,
+      "submittedFPS": 13.771080730466021,
+      "attempts": 138,
+      "held": 0,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10021
+      },
+      "simulation": {
+        "advancedSeconds": 10.100000000002296,
+        "wallSeconds": 10.021,
+        "speedRatio": 1.0078834447662206,
+        "ticks": {
+          "samples": 101,
+          "median": 17.400000005960464,
+          "p95": 46.79999999701977,
+          "p99": 61.70000000298023,
+          "max": 70.80000000447035
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 137,
+        "median": 72,
+        "p95": 131.89999999850988,
+        "p99": 165.29999999701977,
+        "max": 200.10000000149012
+      },
+      "renderAttemptCPU": {
+        "samples": 138,
+        "median": 11.5,
+        "p95": 22,
+        "p99": 31.799999997019768,
+        "max": 39.79999999701977
+      },
+      "submittedRenderCPU": {
+        "samples": 138,
+        "median": 11.5,
+        "p95": 22,
+        "p99": 31.799999997019768,
+        "max": 39.79999999701977
+      },
+      "adapter": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "apiQueries": {
+        "bufferSubData": {
+          "calls": 2160,
+          "milliseconds": 18.799999989569187,
+          "max": 1.2999999970197678
+        },
+        "texSubImage2D": {
+          "calls": 11781,
+          "milliseconds": 35.70000007748604,
+          "max": 3.2999999970197678
+        },
+        "bufferData": {
+          "calls": 22,
+          "milliseconds": 1.8999999910593033,
+          "max": 0.29999999701976776
+        }
+      },
+      "slowQueries": [],
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 88,
+        "allocated": 291,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 24,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 56768,
+        "rigUsedBytes": 57152
+      },
+      "shadows": {
+        "updates": 284,
+        "skipped": 12,
+        "refreshRate": 30,
+        "mapSize": 2048
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 21,
+        "compressed": 14,
+        "compressedMipBytes": 19573792,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 16
+      },
+      "render": {
+        "frame": 311,
+        "calls": 250,
+        "triangles": 6301581,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 156,
+        "textures": 44
+      },
+      "shaderErrors": 0,
+      "backend": "webgl",
+      "requestedQuality": "high",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "validWindow": true,
+      "targetMet": false
+    },
+    {
+      "quality": "low",
+      "documentHidden": false,
+      "targetFPS": 30,
+      "submittedFrames": 295,
+      "submittedFPS": 29.483489246017836,
+      "attempts": 295,
+      "held": 0,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10005.60000000149
+      },
+      "simulation": {
+        "advancedSeconds": 10.000000000002274,
+        "wallSeconds": 10.00560000000149,
+        "speedRatio": 0.9994403134245607,
+        "ticks": {
+          "samples": 100,
+          "median": 11.300000004470348,
+          "p95": 43,
+          "p99": 69,
+          "max": 69
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 294,
+        "median": 33.20000000298023,
+        "p95": 51.899999998509884,
+        "p99": 84.60000000149012,
+        "max": 147.5
+      },
+      "renderAttemptCPU": {
+        "samples": 295,
+        "median": 7.899999998509884,
+        "p95": 12.799999997019768,
+        "p99": 17.399999998509884,
+        "max": 18.600000001490116
+      },
+      "submittedRenderCPU": {
+        "samples": 295,
+        "median": 7.899999998509884,
+        "p95": 12.799999997019768,
+        "p99": 17.399999998509884,
+        "max": 18.600000001490116
+      },
+      "adapter": "ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "apiQueries": {
+        "bufferSubData": {
+          "calls": 3469,
+          "milliseconds": 16.700000032782555,
+          "max": 0.20000000298023224
+        },
+        "texSubImage2D": {
+          "calls": 24665,
+          "milliseconds": 64.20000004768372,
+          "max": 1.3000000044703484
+        },
+        "bufferData": {
+          "calls": 2,
+          "milliseconds": 0,
+          "max": 0
+        }
+      },
+      "slowQueries": [],
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 640,
+        "height": 360,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 83,
+        "allocated": 282,
+        "activeBatches": 12,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 53120,
+        "rigUsedBytes": 53504
+      },
+      "shadows": {},
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 7,
+        "compressed": 7,
+        "compressedMipBytes": 9786896,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 4
+      },
+      "render": {
+        "frame": 477,
+        "calls": 124,
+        "triangles": 331772,
+        "points": 0,
+        "lines": 0
+      },
+      "memory": {
+        "geometries": 134,
+        "textures": 27
+      },
+      "shaderErrors": 0,
+      "backend": "webgl",
+      "requestedQuality": "low",
+      "emulatedTouch": true,
+      "viewport": {
+        "width": 640,
+        "height": 360
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "validWindow": true,
+      "targetMet": true
+    },
+    {
+      "quality": "medium",
+      "documentHidden": false,
+      "targetFPS": 60,
+      "submittedFrames": 96,
+      "submittedFPS": 9.589164244406678,
+      "attempts": 236,
+      "held": 140,
+      "window": {
+        "requestedMilliseconds": 10000,
+        "elapsedMilliseconds": 10011.29999999702
+      },
+      "simulation": {
+        "advancedSeconds": 7.600000000001728,
+        "wallSeconds": 10.01129999999702,
+        "speedRatio": 0.7591421693490347,
+        "ticks": {
+          "samples": 76,
+          "median": 23.899999998509884,
+          "p95": 65.80000000447035,
+          "p99": 83.30000000447035,
+          "max": 83.30000000447035
+        },
+        "ended": null
+      },
+      "frameIntervals": {
+        "samples": 95,
+        "median": 72.5,
+        "p95": 162.79999999701977,
+        "p99": 335.29999999701977,
+        "max": 335.29999999701977
+      },
+      "renderAttemptCPU": {
+        "samples": 236,
+        "median": 0,
+        "p95": 38.20000000298023,
+        "p99": 53.899999998509884,
+        "max": 68.70000000298023
+      },
+      "submittedRenderCPU": {
+        "samples": 96,
+        "median": 23.200000002980232,
+        "p95": 42.5,
+        "p99": 68.70000000298023,
+        "max": 68.70000000298023
+      },
+      "apiQueries": {},
+      "slowQueries": [],
+      "queriedPrograms": [],
+      "drawingBuffer": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "units": {
+        "drawn": 89,
+        "allocated": 293,
+        "activeBatches": 13,
+        "matrixUploadBytes": 0,
+        "ownerUploadBytes": 0,
+        "capacityMatrixBytes": 1146880,
+        "rigParts": 14,
+        "rigUploadBytes": 166912,
+        "rigUsedBytes": 57792
+      },
+      "shadows": {
+        "updates": 183,
+        "skipped": 38,
+        "refreshRate": 20,
+        "mapSize": 1024
+      },
+      "surfaces": {
+        "source": "Poly Haven CC0",
+        "loaded": 17,
+        "compressed": 10,
+        "compressedMipBytes": 13981280,
+        "codecFallbacks": 0,
+        "codecPending": 0,
+        "anisotropy": 8
+      },
+      "render": {
+        "calls": 640,
+        "frameCalls": 0,
+        "drawCalls": 0,
+        "triangles": 0,
+        "points": 0,
+        "lines": 0,
+        "timestamp": 0
+      },
+      "memory": {
+        "attributes": 834,
+        "attributesSize": 70532752,
+        "geometries": 150,
+        "indexAttributes": 67,
+        "indexAttributesSize": 5289264,
+        "indirectStorageAttributes": 0,
+        "indirectStorageAttributesSize": 0,
+        "programs": 133,
+        "programsSize": 974229,
+        "readbackBuffers": 0,
+        "readbackBuffersSize": 0,
+        "renderTargets": 3,
+        "storageAttributes": 0,
+        "storageAttributesSize": 0,
+        "textures": 42,
+        "texturesSize": 74008381,
+        "uniformBuffers": 814,
+        "uniformBuffersSize": 1761600,
+        "total": 152566226
+      },
+      "shaderErrors": 0,
+      "backend": "webgpu",
+      "requestedQuality": "medium",
+      "emulatedTouch": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setup": {
+        "focus": {
+          "x": -24.909155883843237,
+          "z": -118.90594392413874
+        },
+        "visibleUnits": 251,
+        "world": 400,
+        "players": 8,
+        "units": 399
+      },
+      "validWindow": true,
+      "targetMet": false
+    }
+  ],
+  "errors": [
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "error",
+      "error": "THREE.WebGPURenderer: Render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_1573): Vertex buffer count (9) exceeds the maximum number of vertex buffers (8).\n - While validating vertex state.\n - While calling [Device].CreateRenderPipeline([RenderPipelineDescriptor \"\"renderPipeline_MeshStandardNodeMaterial_1573\"\"]).\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "error",
+      "error": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\n - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\n - While finishing [CommandEncoder \"renderContext_2\"].\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "warning",
+      "error": "[Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\n - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\n - While finishing [CommandEncoder \"renderContext_2\"].\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "error",
+      "error": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "warning",
+      "error": "[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "error",
+      "error": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\n - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\n - While finishing [CommandEncoder \"renderContext_2\"].\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "warning",
+      "error": "[Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\n - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\n - While finishing [CommandEncoder \"renderContext_2\"].\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "error",
+      "error": "THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\n"
+    },
+    {
+      "item": {
+        "quality": "medium",
+        "backend": "webgpu"
+      },
+      "type": "warning",
+      "error": "[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\n"
+    }
+  ],
+  "hardware": {
+    "gpu": [
+      {
+        "vendor": "",
+        "device": "Intel(R) UHD Graphics",
+        "driver": "30.0.100.9864"
+      },
+      {
+        "vendor": "",
+        "device": "Microsoft Basic Render Driver",
+        "driver": "10.0.26100.9711"
+      }
+    ],
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Edg/155.0.4283.45",
+      "revision": "@50f24ef2aa5369a074b8888b7db82d9c0652d642",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+      "jsVersion": "15.5.9.4"
+    }
+  },
+  "buildId": "1792613844347",
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   {\n+     error: 'THREE.WebGPURenderer: Render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_1573): Vertex buffer count (9) exceeds the maximum number of vertex buffers (8).\\n' +\n+       ' - While validating vertex state.\\n' +\n+       ' - While calling [Device].CreateRenderPipeline([RenderPipelineDescriptor \"\"renderPipeline_MeshStandardNodeMaterial_1573\"\"]).\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'error'\n+   },\n+   {\n+     error: 'THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\\n' +\n+       ' - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\\n' +\n+       ' - While finishing [CommandEncoder \"renderContext_2\"].\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'error'\n+   },\n+   {\n+     error: '[Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\\n' +\n+       ' - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\\n' +\n+       ' - While finishing [CommandEncoder \"renderContext_2\"].\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'warning'\n+   },\n+   {\n+     error: 'THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\\n' +\n+       ' - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'error'\n+   },\n+   {\n+     error: '[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\\n' +\n+       ' - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'warning'\n+   },\n+   {\n+     error: 'THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\\n' +\n+       ' - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\\n' +\n+       ' - While finishing [CommandEncoder \"renderContext_2\"].\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'error'\n+   },\n+   {\n+     error: '[Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"] is invalid due to a previous error.\\n' +\n+       ' - While encoding [RenderPassEncoder (unlabeled)].SetPipeline([Invalid RenderPipeline \"renderPipeline_MeshStandardNodeMaterial_1573\"]).\\n' +\n+       ' - While finishing [CommandEncoder \"renderContext_2\"].\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'warning'\n+   },\n+   {\n+     error: 'THREE.WebGPURenderer: Uncaptured WebGPU GPUValidationError: [Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\\n' +\n+       ' - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'error'\n+   },\n+   {\n+     error: '[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"] is invalid due to a previous error.\\n' +\n+       ' - While calling [Queue].Submit([[Invalid CommandBuffer from CommandEncoder \"renderContext_2\"]])\\n',\n+     item: {\n+       backend: 'webgpu',\n+       quality: 'medium'\n+     },\n+     type: 'warning'\n+   }\n+ ]\n- []\n\n    at file:///C:/New/Age_Of_Emprire/scripts/battle-performance-qa.mjs:61:9"
+}

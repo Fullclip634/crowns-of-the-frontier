@@ -1,0 +1,995 @@
+{
+  "createdAt": "2026-10-22T00:23:35.338Z",
+  "build": {
+    "buildId": "1792625522529",
+    "version": "2.6.1"
+  },
+  "regression": {
+    "tests": 389,
+    "passed": 389,
+    "failed": 0
+  },
+  "controlled": {
+    "beforeBuild": "1792610564505",
+    "beforeClock": {
+      "foreground": 0.6,
+      "paused": 0,
+      "resumed": 0.09999999999999998,
+      "background": 0,
+      "returnAdvance": 0,
+      "restoredAdvance": 0.6000000000000001,
+      "quality": "medium",
+      "overflow": false
+    },
+    "after": [
+      {
+        "backend": "webgl",
+        "quality": "high",
+        "emulatedTouch": false,
+        "largeCapacity": false,
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "high",
+          "overflow": false
+        },
+        "retained": 2,
+        "geometryDisposals": 0,
+        "repeatShaderQueries": 0,
+        "repeatPipelines": 0
+      },
+      {
+        "backend": "webgpu",
+        "quality": "medium",
+        "emulatedTouch": false,
+        "largeCapacity": true,
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "medium",
+          "overflow": false
+        },
+        "retained": 2,
+        "geometryDisposals": 0,
+        "repeatShaderQueries": 0,
+        "repeatPipelines": 0
+      },
+      {
+        "backend": "webgl",
+        "quality": "low",
+        "emulatedTouch": true,
+        "largeCapacity": false,
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "low",
+          "overflow": false
+        },
+        "retained": 2,
+        "geometryDisposals": 0,
+        "repeatShaderQueries": 0,
+        "repeatPipelines": 0
+      },
+      {
+        "backend": "webgpu",
+        "quality": "low",
+        "emulatedTouch": false,
+        "largeCapacity": true,
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "low",
+          "overflow": false
+        },
+        "retained": 2,
+        "geometryDisposals": 0,
+        "repeatShaderQueries": 0,
+        "repeatPipelines": 0
+      },
+      {
+        "backend": "webgpu",
+        "quality": "high",
+        "emulatedTouch": false,
+        "largeCapacity": true,
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "high",
+          "overflow": false
+        },
+        "retained": 2,
+        "geometryDisposals": 0,
+        "repeatShaderQueries": 0,
+        "repeatPipelines": 0
+      }
+    ]
+  },
+  "fixtures": [
+    {
+      "stage": "early",
+      "seconds": 119.99999999999746,
+      "units": 169,
+      "buildings": 68,
+      "configuredKingdoms": 8,
+      "populationPerKingdom": 160
+    },
+    {
+      "stage": "crowded",
+      "seconds": 420.000000000027,
+      "units": 399,
+      "buildings": 174,
+      "configuredKingdoms": 8,
+      "populationPerKingdom": 160
+    },
+    {
+      "stage": "late",
+      "seconds": 720.0000000000952,
+      "units": 474,
+      "buildings": 161,
+      "configuredKingdoms": 8,
+      "populationPerKingdom": 160
+    }
+  ],
+  "chrome": [
+    {
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/155.0.8059.80",
+        "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "jsVersion": "15.5.35.23"
+      },
+      "configuration": {
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "case": {
+        "quality": "medium",
+        "backend": "webgpu",
+        "largeRoom": true,
+        "cycles": [
+          {
+            "burst": "d54adb6c-fe74-4833-9821-bdb111c918ff",
+            "heal": "7e50e219-5b2d-4ad7-9f5f-b5ef9710d04a",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "0f1a9d99-bbab-452d-81e6-4dab6e47de57",
+            "healGeometry": "b464c7ea-8718-4b5b-9d7b-26cb1d15b9a3",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 3,
+            "remaining": 0
+          },
+          {
+            "burst": "d54adb6c-fe74-4833-9821-bdb111c918ff",
+            "heal": "7e50e219-5b2d-4ad7-9f5f-b5ef9710d04a",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "0f1a9d99-bbab-452d-81e6-4dab6e47de57",
+            "healGeometry": "b464c7ea-8718-4b5b-9d7b-26cb1d15b9a3",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "d54adb6c-fe74-4833-9821-bdb111c918ff",
+            "heal": "7e50e219-5b2d-4ad7-9f5f-b5ef9710d04a",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "0f1a9d99-bbab-452d-81e6-4dab6e47de57",
+            "healGeometry": "b464c7ea-8718-4b5b-9d7b-26cb1d15b9a3",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "d54adb6c-fe74-4833-9821-bdb111c918ff",
+            "heal": "7e50e219-5b2d-4ad7-9f5f-b5ef9710d04a",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "0f1a9d99-bbab-452d-81e6-4dab6e47de57",
+            "healGeometry": "b464c7ea-8718-4b5b-9d7b-26cb1d15b9a3",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "d54adb6c-fe74-4833-9821-bdb111c918ff",
+            "heal": "7e50e219-5b2d-4ad7-9f5f-b5ef9710d04a",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "0f1a9d99-bbab-452d-81e6-4dab6e47de57",
+            "healGeometry": "b464c7ea-8718-4b5b-9d7b-26cb1d15b9a3",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          }
+        ],
+        "pooled": true,
+        "retained": 2,
+        "geometryDisposals": 0,
+        "nativeLayout": {
+          "deviceLimit": 8,
+          "rigs": [
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            }
+          ]
+        },
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "medium",
+          "overflow": false
+        },
+        "shaderErrors": 0
+      }
+    },
+    {
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/155.0.8059.80",
+        "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "jsVersion": "15.5.35.23"
+      },
+      "configuration": {
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "case": {
+        "quality": "low",
+        "backend": "webgpu",
+        "largeRoom": true,
+        "cycles": [
+          {
+            "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+            "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+            "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 3,
+            "remaining": 0
+          },
+          {
+            "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+            "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+            "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+            "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+            "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+            "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+            "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+            "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+            "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          }
+        ],
+        "pooled": true,
+        "retained": 2,
+        "geometryDisposals": 0,
+        "nativeLayout": {
+          "deviceLimit": 8,
+          "rigs": [
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            }
+          ]
+        },
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "low",
+          "overflow": false
+        },
+        "shaderErrors": 0
+      }
+    },
+    {
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/155.0.8059.80",
+        "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "jsVersion": "15.5.35.23"
+      },
+      "configuration": {
+        "focusEmulation": true,
+        "foregroundTestFlags": true
+      },
+      "case": {
+        "quality": "high",
+        "backend": "webgpu",
+        "largeRoom": true,
+        "cycles": [
+          {
+            "burst": "aeb1c2ee-5bf3-4a52-b0a9-8f0be74cf02b",
+            "heal": "2ec642e2-4ff5-4533-a03b-7e77363e7b6c",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "b7f6d298-56ca-44ec-be6f-5d3f6cfcb3a6",
+            "healGeometry": "e3bf9c79-92ff-44a8-bdad-7c5c23acce5c",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 3,
+            "remaining": 0
+          },
+          {
+            "burst": "aeb1c2ee-5bf3-4a52-b0a9-8f0be74cf02b",
+            "heal": "2ec642e2-4ff5-4533-a03b-7e77363e7b6c",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "b7f6d298-56ca-44ec-be6f-5d3f6cfcb3a6",
+            "healGeometry": "e3bf9c79-92ff-44a8-bdad-7c5c23acce5c",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "aeb1c2ee-5bf3-4a52-b0a9-8f0be74cf02b",
+            "heal": "2ec642e2-4ff5-4533-a03b-7e77363e7b6c",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "b7f6d298-56ca-44ec-be6f-5d3f6cfcb3a6",
+            "healGeometry": "e3bf9c79-92ff-44a8-bdad-7c5c23acce5c",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "aeb1c2ee-5bf3-4a52-b0a9-8f0be74cf02b",
+            "heal": "2ec642e2-4ff5-4533-a03b-7e77363e7b6c",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "b7f6d298-56ca-44ec-be6f-5d3f6cfcb3a6",
+            "healGeometry": "e3bf9c79-92ff-44a8-bdad-7c5c23acce5c",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          },
+          {
+            "burst": "aeb1c2ee-5bf3-4a52-b0a9-8f0be74cf02b",
+            "heal": "2ec642e2-4ff5-4533-a03b-7e77363e7b6c",
+            "moved": true,
+            "uploads": 0,
+            "healDraws": 0,
+            "singlePass": false,
+            "side": 2,
+            "geometry": "b7f6d298-56ca-44ec-be6f-5d3f6cfcb3a6",
+            "healGeometry": "e3bf9c79-92ff-44a8-bdad-7c5c23acce5c",
+            "burstPBR": true,
+            "logs": 0,
+            "pipelines": 0,
+            "remaining": 0
+          }
+        ],
+        "pooled": true,
+        "retained": 2,
+        "geometryDisposals": 0,
+        "nativeLayout": {
+          "deviceLimit": 8,
+          "rigs": [
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            },
+            {
+              "capacity": 1280,
+              "layout": {
+                "channels": [
+                  "position",
+                  "normal",
+                  "uv",
+                  "color",
+                  "unitSurface",
+                  "unitTeamMask",
+                  "unitJoint"
+                ],
+                "staticBuffersBefore": 7,
+                "staticBuffersAfter": 1,
+                "strideBytes": 64
+              }
+            }
+          ]
+        },
+        "clock": {
+          "foreground": 0.9999999999999999,
+          "paused": 0,
+          "resumed": 0.09999999999999998,
+          "background": 0,
+          "returnAdvance": 0,
+          "restoredAdvance": 1.0000000000000007,
+          "quality": "high",
+          "overflow": false
+        },
+        "shaderErrors": 0
+      }
+    }
+  ],
+  "performance": {
+    "configuration": {
+      "sampleMilliseconds": 10000,
+      "warmupSubmittedFrames": 120,
+      "queryDiagnostics": true,
+      "focusEmulation": true,
+      "foregroundTestFlags": true
+    },
+    "hardware": {
+      "gpu": [
+        {
+          "vendor": "",
+          "device": "Intel(R) UHD Graphics",
+          "driver": "30.0.100.9864"
+        },
+        {
+          "vendor": "",
+          "device": "Microsoft Basic Render Driver",
+          "driver": "10.0.26100.9711"
+        }
+      ],
+      "browser": {
+        "protocolVersion": "1.3",
+        "product": "Edg/155.0.4283.62",
+        "revision": "@aa3a7406ba8c53a83536df539f07124d73c899bd",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "jsVersion": "15.5.9.7"
+      }
+    },
+    "samples": [
+      {
+        "backend": "webgl",
+        "quality": "low",
+        "requestedQuality": "low",
+        "drawingBuffer": {
+          "width": 1280,
+          "height": 720,
+          "pixelRatio": 1
+        },
+        "autoQuality": false,
+        "actualRenderQuality": "low",
+        "emulatedTouch": false,
+        "submittedFPS": 24.424353444031254,
+        "targetFPS": 60,
+        "targetMet": false,
+        "simulationSpeedRatio": 0.9947014910676281,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 0
+      },
+      {
+        "backend": "webgl",
+        "quality": "medium",
+        "requestedQuality": "medium",
+        "drawingBuffer": {
+          "width": 1280,
+          "height": 720,
+          "pixelRatio": 1
+        },
+        "autoQuality": false,
+        "actualRenderQuality": "medium",
+        "emulatedTouch": false,
+        "submittedFPS": 22.9614248063258,
+        "targetFPS": 60,
+        "targetMet": false,
+        "simulationSpeedRatio": 0.9983228176665662,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 0
+      },
+      {
+        "backend": "webgl",
+        "quality": "high",
+        "requestedQuality": "high",
+        "drawingBuffer": {
+          "width": 1280,
+          "height": 720,
+          "pixelRatio": 1
+        },
+        "autoQuality": false,
+        "actualRenderQuality": "high",
+        "emulatedTouch": false,
+        "submittedFPS": 10.992634934594129,
+        "targetFPS": 60,
+        "targetMet": false,
+        "simulationSpeedRatio": 0.8094576633657516,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 0
+      },
+      {
+        "backend": "webgl",
+        "quality": "low",
+        "requestedQuality": "low",
+        "drawingBuffer": {
+          "width": 640,
+          "height": 360,
+          "pixelRatio": 1
+        },
+        "autoQuality": false,
+        "actualRenderQuality": "low",
+        "emulatedTouch": true,
+        "submittedFPS": 29.58077249787638,
+        "targetFPS": 30,
+        "targetMet": true,
+        "simulationSpeedRatio": 0.9993504222257805,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 0
+      },
+      {
+        "backend": "webgpu",
+        "quality": "medium",
+        "requestedQuality": "medium",
+        "drawingBuffer": {
+          "width": 1280,
+          "height": 720,
+          "pixelRatio": 1
+        },
+        "autoQuality": false,
+        "actualRenderQuality": "medium",
+        "emulatedTouch": false,
+        "submittedFPS": 9.186862786215883,
+        "targetFPS": 60,
+        "targetMet": false,
+        "simulationSpeedRatio": 0.8487862356831821,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 7,
+        "deviceBufferLimit": 8
+      },
+      {
+        "backend": "webgpu",
+        "quality": "low",
+        "requestedQuality": "high",
+        "drawingBuffer": {
+          "width": 793,
+          "height": 446,
+          "pixelRatio": 0.62
+        },
+        "autoQuality": true,
+        "graphicsPressure": {
+          "cpuFrameSeconds": 0.0218622603538803,
+          "effectiveFrameSeconds": 0.031624653342091004,
+          "submitted": 159,
+          "held": 71,
+          "targetFPS": 60
+        },
+        "actualRenderQuality": "low",
+        "emulatedTouch": false,
+        "submittedFPS": 30.272452068617277,
+        "targetFPS": 60,
+        "targetMet": false,
+        "simulationSpeedRatio": 0.999090827347332,
+        "validWindow": true,
+        "validationErrors": 0,
+        "pipelineBufferMaximum": 7,
+        "deviceBufferLimit": 8
+      }
+    ]
+  },
+  "limits": [
+    "The whole-game development goal remains active; this is not complete release or AAA-parity certification.",
+    "Submission cadence is not display-presentation FPS. Desktop 60 FPS and emulated-touch 30 FPS targets remain unchanged; missed targets are recorded.",
+    "One Intel GPU, headless Edge/Chrome and emulated touch do not establish physical-device performance or thermal behavior.",
+    "The crowded fixture has hundreds of normally recruited units; it does not saturate the configured 1,280-unit limit.",
+    "Large native feedback scenes exercise batch capacity, not maximum live population.",
+    "Live evolving battles are observations, not a controlled percentage-speedup comparison.",
+    "Simulation recovery is bounded; severe stalls can still slow local play.",
+    "The native first-failure report is from the earlier candidate before vertex packing; the separate published-build native reproduction timed out and is inconclusive.",
+    "Broader seeds, devices, gameplay/player balance, startup/offline cost and the public Render revision remain open."
+  ],
+  "sourceSHA256": {
+    "src/battle-effects.js": "0beff209a5634b7838cd31d216eb6a692974b76a4676299dcaee676a07b23823",
+    "src/world.js": "ee3951dc020112be28ef4aa211bc77793567dc92ef1ed3ad2d076a8cfab8e67a",
+    "src/realm-3d.js": "635df8cb543aecaa9af58246b341056712fca98b4b30a985ba6b7d4fea517c6c",
+    "src/render-lifecycle.js": "702f8c4c5db47299689d6f7a6f3aab632089931989f166e477dfb7ae2a7b0274",
+    "src/main.js": "42c2ff0fa9c468be825279eee06e16d2b93b99f56c01cb82c1c1336cb277548d",
+    "src/rig-batches.js": "ef5b6a20165aaf4962e32860098aa5294f8be02bda93a03196240c44313781cf",
+    "src/simulation-pacing.js": "8c969c2a932138ab65e5bd7d12a2d0edb5d83882547bc2fcad68fef4eb2ef494",
+    "src/vertex-layout.js": "03888f7740c9bc90ed8d0f03f043e28a90ad3e876a2c8f1e358a288ac9a50bed",
+    "scripts/capture-battle-stages.mjs": "c8273a92450c3c38e26a8b9f7c51fd3a4dd267e9bcbe460ab5c44a935ee3bea6",
+    "scripts/battle-performance-qa.mjs": "89147f8c0e9173a80f96a5381f8cce111472e5dbce5a66ba65b49743c171c068",
+    "scripts/feedback-clock-qa.mjs": "657ff6ef5945cd2dae63e42370d99f9df759ff0cd91e9270120c4a408140b6f0",
+    "tests/battle-effects.test.js": "29ed7daf8785a1256d86b87dde0ced90f292b77fbfd9e4b79751e5701f48f98f",
+    "tests/render-lifecycle.test.js": "6a815f060a2532515d4318fedd463e8e53e766990238223dea71ee0d51dcb599",
+    "tests/rig-batches.test.js": "8bb1bd7910080abc5e432d193c6629bc7ec0f80b7d14e6efed3e5f40c7a227fd",
+    "tests/simulation-pacing.test.js": "46d40dce727545a967e32916f7a6b384b86ee9ed9426abf20b8d4659549937f0",
+    "tests/impact-integration.test.js": "4d7865271e81c059968a2eb133cb7aec04f8d27361cd0d9b6b2a3e8e772dc2c4",
+    "tests/vertex-layout.test.js": "188a347089be010d25aa6bd60ad0098feb760715b6771611761261fe1131f761",
+    "tests/graphics-settings.test.js": "0776b7ece94380f8ee4094942cf038bccf2bf688b5d45c3bc1ca1dedf59626a5"
+  }
+}

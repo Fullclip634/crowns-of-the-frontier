@@ -1,0 +1,103 @@
+{
+  "startedAt": "2026-10-21T20:17:45.526Z",
+  "cases": [
+    {
+      "quality": "medium",
+      "backend": "webgl",
+      "cycles": [
+        {
+          "burst": "6da04e19-18cf-4f82-911d-e01d999f5850",
+          "heal": "8acb5ee8-dbb8-434c-92db-82271ff2416d",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "cf5642f6-dfa8-4240-9b5b-956140c681f1",
+          "healGeometry": "74945870-b57e-4693-b8af-5b7c12561f90",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "86ea0b1c-b6e4-4ea2-a0a6-61cb87234584",
+          "heal": "3f8f6c13-f3ab-4a3d-9851-c04af70e730f",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "c43b4b1a-2275-4168-b3a1-2e2c85e92052",
+          "healGeometry": "db713499-2fd7-4805-9641-965ac8de4ffc",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "f9ac4f46-5220-4377-b2c7-a2b57a28a868",
+          "heal": "3e0cdbe7-d4b8-45b0-9888-35e96077bfac",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "7bbb5cee-b8e0-4a68-b38d-5cba94c9f86f",
+          "healGeometry": "9fce4e0e-8d7a-40d5-b725-c116e30ac508",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "c45cff12-0345-413c-beb3-47463cdf638b",
+          "heal": "285443ca-37bd-4b3b-8d3f-e1c92a77092b",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "c616f005-c0f2-458f-b4e1-ff063e11eb16",
+          "healGeometry": "18dd19d8-b354-4e12-bc7f-19a3202d81a6",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "5cc28bc7-1dc5-4cdf-a306-e7e97773d83a",
+          "heal": "f0de5b1a-a2f9-46d5-bed2-302f6cae1fa3",
+          "moved": true,
+          "uploads": 2,
+          "healDraws": 4,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "b4bfecf7-65dc-4bc1-8270-866c9a9e8c60",
+          "healGeometry": "1040ae32-0862-40c6-a4ce-4b9bbba16db8",
+          "burstPBR": true,
+          "logs": 2,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": false,
+      "retained": 0,
+      "geometryDisposals": 10,
+      "clock": {
+        "foreground": 0.6,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 0.6000000000000001,
+        "quality": "medium",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    }
+  ],
+  "errors": [],
+  "buildId": "1792610564505",
+  "passed": true
+}

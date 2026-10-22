@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-10-21T23:47:49.672Z",
+  "errors": [],
+  "result": {
+    "pixel": [
+      204,
+      140,
+      38,
+      255
+    ],
+    "format": "bgra8unorm",
+    "limit": 8,
+    "fenceMilliseconds": 2677.399999999907,
+    "beforeFrames": 66,
+    "afterFrames": 100,
+    "hidden": false,
+    "focused": true
+  },
+  "passed": true
+}

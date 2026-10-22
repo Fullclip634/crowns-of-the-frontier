@@ -16,7 +16,7 @@ import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './sur
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
-import {updateFlight,releaseEffect} from './battle-effects.js';
+import {updateFlight,releaseEffect,ImpactEffects} from './battle-effects.js';
 import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
@@ -153,11 +153,11 @@ export class WorldView {
   showGhost(type,x,z,valid){if(this.ghost.userData.type!==type){this.clearGroup(this.ghost);const d=BUILDINGS[type];const m=new THREE.Mesh(new THREE.BoxGeometry(d.r*2,2,d.r*2),new THREE.MeshBasicMaterial({color:0x78c7ac,transparent:true,opacity:.35,depthWrite:false}));m.position.y=1;this.ghost.add(m);const edges=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0x78c7ac}));edges.position.y=1;this.ghost.add(edges);this.ghost.userData.type=type;}this.ghost.position.set(x,.2,z);this.ghost.visible=true;this.ghost.children.forEach(c=>c.material.color.setHex(valid?0x9de2bc:0xeb7b65));}
   hideGhost(){this.ghost.visible=false;}
   mark(x,z){this.marker.position.set(x,this.groundHeight(x,z)+.12,z);this.marker.visible=true;this.markerTime=.8;}
-  burst(x,z,color=0xe8c28b,size=1){if(this.fx.length>(this.settings.quality==='low'?24:70))return;const geometry=new THREE.IcosahedronGeometry(.13,0),material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.8,depthWrite:false}),object=new THREE.InstancedMesh(geometry,material,8),dummy=new THREE.Object3D();object.position.set(x,.4,z);object.frustumCulled=false;const velocities=[];for(let i=0;i<8;i++){const a=Math.random()*Math.PI*2;velocities.push({x:Math.cos(a)*(1+Math.random()*2)*size,y:(2+Math.random()*3)*size,z:Math.sin(a)*(1+Math.random()*2)*size});dummy.scale.setScalar(size);dummy.updateMatrix();object.setMatrixAt(i,dummy.matrix);}this.scene.add(object);this.fx.push({object,time:0,duration:.75,particles:velocities,size});}
+  burst(x,z,color=0xe8c28b,size=1){if(this.fx.length>(this.settings.quality==='low'?24:70))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('burst',color),dummy=this.effectDummy??=new THREE.Object3D(),velocities=object.userData.velocities;object.position.set(x,.4,z);dummy.position.set(0,0,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(size);dummy.updateMatrix();for(let i=0;i<8;i++){const a=Math.random()*Math.PI*2,velocity=velocities[i];velocity.x=Math.cos(a)*(1+Math.random()*2)*size;velocity.y=(2+Math.random()*3)*size;velocity.z=Math.sin(a)*(1+Math.random()*2)*size;object.setMatrixAt(i,dummy.matrix);}markInstancePrefix(object);this.scene.add(object);this.fx.push({object,time:0,duration:.75,particles:velocities,size,recycle:mesh=>pool.release(mesh)});}
   effect(event){if(this.fx.length>(this.settings.quality==='low'?32:90))return;const e=event.entity;if(event.type==='attack'){
       const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5;const object=new THREE.Mesh(ranged?new THREE.SphereGeometry(['catapult','warship'].includes(e.type)?.3:.09,5,4):new THREE.RingGeometry(.3,.6,8),new THREE.MeshBasicMaterial({color:['catapult','warship'].includes(e.type)?0xf0a564:0xf3db9b,transparent:true}));object.position.set(e.x,3,e.z);this.scene.add(object);this.fx.push({object,time:0,duration:['catapult','warship'].includes(e.type)?.65:ranged?.3:.2,from:new THREE.Vector3(e.x,e.kind==='building'?5:1.6,e.z),to:new THREE.Vector3(target.x,1.2,target.z),arc:['catapult','warship'].includes(e.type)?10:1,impact:['catapult','warship'].includes(e.type)});
     }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);}
-    else if(event.type==='heal'){const object=new THREE.Mesh(new THREE.RingGeometry(.65,1,24),new THREE.MeshBasicMaterial({color:0x91e0b4,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false}));object.rotation.x=-Math.PI/2;object.position.set(event.target.x,.3,event.target.z);this.scene.add(object);this.fx.push({object,time:0,duration:.65,heal:true});}
+    else if(event.type==='heal'){const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('heal',0x91e0b4);object.rotation.x=-Math.PI/2;object.position.set(event.target.x,.3,event.target.z);this.scene.add(object);this.fx.push({object,time:0,duration:.65,heal:true,recycle:mesh=>pool.release(mesh)});}
   }
   quality(value){this.settings.quality=value;this.graphicsError=null;this.graphicsRestoredQuality=null;let artwork;const request=(this.graphicsRequest||0)+1;
     const detail=['high','medium'].includes(value)?value:'low';
@@ -170,13 +170,16 @@ export class WorldView {
       artwork.activate();this.attach(this.sim);this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
     },()=>graphicsCheckpoint(this)).catch(error=>{if(this.graphicsRequest===request)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;}).finally(()=>{artwork?.release();trimAuthoredAssets(this);trimSurfaceAssets(this);});
   }
-  adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal)return;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
+  adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal){this.renderPressure=null;this.performanceClock=0;return;}const flight=this.renderer.backend?.isWebGPUBackend?this.renderFlight:null,pressure=flight?(this.renderPressure??={submitted:flight.submitted,skipped:flight.skipped}):null;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
     const base=Math.min(devicePixelRatio,this.settings.quality==='high'?2:this.settings.quality==='low'?1:1.25),budget=1/targetFrameRate(this.settings);
-    if(this.frameAverage>budget*1.35&&this.settings.quality==='high'){this.quality('medium');return;}
-    if(this.frameAverage>budget*1.6&&this.settings.quality==='medium'){this.quality('low');return;}
-    if(this.frameAverage>budget*1.2&&this.dynamicScale>.62){this.dynamicScale=Math.max(.62,this.dynamicScale-.12);this.renderer.setPixelRatio(base*this.dynamicScale);}
-    else if(this.frameAverage>budget*1.8)setShadowEnabled(this,false);
-    else if(this.frameAverage<budget*1.05&&this.dynamicScale<1){this.dynamicScale=Math.min(1,this.dynamicScale+.08);this.renderer.setPixelRatio(base*this.dynamicScale);}
+    let average=this.frameAverage,submitted=0,held=0;if(pressure){submitted=Math.max(0,flight.submitted-pressure.submitted);held=Math.max(0,flight.skipped-pressure.skipped);pressure.submitted=flight.submitted;pressure.skipped=flight.skipped;if(held)average=Math.max(average,budget)*(submitted?1+held/submitted:2);}
+    // Queue holds are missed render opportunities, not fast displayed frames.
+    this.graphicsPressure={cpuFrameSeconds:this.frameAverage,effectiveFrameSeconds:average,submitted,held,targetFPS:1/budget};
+    if(average>budget*1.35&&this.settings.quality==='high'){this.quality('medium');return;}
+    if(average>budget*1.6&&this.settings.quality==='medium'){this.quality('low');return;}
+    if(average>budget*1.2&&this.dynamicScale>.62){this.dynamicScale=Math.max(.62,this.dynamicScale-.12);this.renderer.setPixelRatio(base*this.dynamicScale);}
+    else if(average>budget*1.8)setShadowEnabled(this,false);
+    else if(average<budget*1.05&&this.dynamicScale<1){this.dynamicScale=Math.min(1,this.dynamicScale+.08);this.renderer.setPixelRatio(base*this.dynamicScale);}
   }
   render(dt,menu=false){if(!this.sim)return;this.clock+=dt;this.fogMesh.visible=!menu&&this.settings.fog!==false;
     beginUnitFrame(this,false);

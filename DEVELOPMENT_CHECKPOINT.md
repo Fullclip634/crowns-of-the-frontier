@@ -1,3 +1,22 @@
+## 22 October 2026 — Battle timing and native buffer compatibility
+
+Foreground simulation uses bounded fixed steps independently of the visual delta
+cap. Impact and healing feedback reuse their final PBR and solid 3D resources.
+Native rigid-unit geometry shares immutable vertex storage, fixing the nine-buffer
+pipeline failure at eight-kingdom capacity without reducing model detail. Automatic graphics also responds to held native
+GPU submissions while preserving manual presets and frame targets.
+
+Verified: **389 serial tests**, production **1792625522529**, controlled
+before/after timing and feedback, High WebGL, landscape-touch Low, all three
+native presets at 1,280-instance batch capacity, separate Chrome checks for all three native presets, and six crowded-battle performance
+windows with zero reported rendering errors. Measured submission cadence and
+missed frame-rate targets remain explicit in
+[the validation report](artifacts/battle-smoothness-validation.json). See
+[BATTLE_SMOOTHNESS_DESIGN.md](BATTLE_SMOOTHNESS_DESIGN.md) for reproduction.
+One development GPU and emulated touch do not certify physical phones, all
+seeds/populations, sustained performance or the public Render revision.
+The whole-game goal remains active.
+
 ## 22 October 2026 — Clear transport landings
 
 Transports reserve separate dry landing spaces, including the larger Blender

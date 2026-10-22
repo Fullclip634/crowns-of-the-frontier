@@ -1,0 +1,222 @@
+{
+  "startedAt": "2026-10-22T00:21:59.495Z",
+  "configuration": {
+    "focusEmulation": true,
+    "foregroundTestFlags": true
+  },
+  "cases": [
+    {
+      "quality": "low",
+      "backend": "webgpu",
+      "largeRoom": true,
+      "cycles": [
+        {
+          "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+          "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+          "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 3,
+          "remaining": 0
+        },
+        {
+          "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+          "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+          "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+          "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+          "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+          "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+          "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        },
+        {
+          "burst": "7df97c4b-167c-402c-9e4d-15a0b815ef9e",
+          "heal": "10d02584-8225-4e73-953f-a5d6a64e8ea1",
+          "moved": true,
+          "uploads": 0,
+          "healDraws": 0,
+          "singlePass": false,
+          "side": 2,
+          "geometry": "e1e61e2a-9fce-4b89-ac32-8cf2e872be38",
+          "healGeometry": "25f05c81-64ce-43d5-96ba-dd5a96c722a1",
+          "burstPBR": true,
+          "logs": 0,
+          "pipelines": 0,
+          "remaining": 0
+        }
+      ],
+      "pooled": true,
+      "retained": 2,
+      "geometryDisposals": 0,
+      "nativeLayout": {
+        "deviceLimit": 8,
+        "rigs": [
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          },
+          {
+            "capacity": 1280,
+            "layout": {
+              "channels": [
+                "position",
+                "normal",
+                "uv",
+                "color",
+                "unitSurface",
+                "unitTeamMask",
+                "unitJoint"
+              ],
+              "staticBuffersBefore": 7,
+              "staticBuffersAfter": 1,
+              "strideBytes": 64
+            }
+          }
+        ]
+      },
+      "clock": {
+        "foreground": 0.9999999999999999,
+        "paused": 0,
+        "resumed": 0.09999999999999998,
+        "background": 0,
+        "returnAdvance": 0,
+        "restoredAdvance": 1.0000000000000007,
+        "quality": "low",
+        "overflow": false
+      },
+      "shaderErrors": 0
+    }
+  ],
+  "errors": [],
+  "buildId": "1792625522529",
+  "passed": true,
+  "browserVersion": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/155.0.8059.80",
+    "revision": "@43a195105613ac83c21d3f14de279f4a045c7da0",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "jsVersion": "15.5.35.23"
+  }
+}

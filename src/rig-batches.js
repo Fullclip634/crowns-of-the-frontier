@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {animatePart} from './world-polish.js';
+import {interleaveStaticVertices} from './vertex-layout.js';
 
 const rigShader=`attribute float unitJoint;
 uniform highp sampler2D frontierRigPoses;
@@ -51,6 +52,7 @@ export function createRigidUnitPart(view,model,batch){
   if(!joints.length)return null;
   const geometry=mergeGeometries(geometries);for(const part of geometries)part.dispose();if(!geometry)throw new Error('Rigid unit geometry could not merge.');
   geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(batch.capacity),1).setUsage(THREE.DynamicDrawUsage));
+  if(view.renderer?.isWebGPURenderer)interleaveStaticVertices(geometry);
   const rig={joints,uniform:{value:null},batch,view};allocate(rig,Math.min(16,batch.capacity));
   rig.restore=()=>{rig.fullUpload=true;rig.texture.clearUpdateRanges();rig.texture.needsUpdate=true;};
   view.renderer?.domElement?.addEventListener('webglcontextrestored',rig.restore);
