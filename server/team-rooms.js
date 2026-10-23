@@ -30,7 +30,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   function perspective(room,side,compact=false){
     const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
     const explored=room.explored[side],visible=visibilityFor(sim,side,explored,observer),shown=e=>!!visible[sim.cell(e.x,e.z).z*sim.gridSize+sim.cell(e.x,e.z).x];
-    const data=sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
+    const data=compact?{time:sim.time,wave:sim.wave,nextWave:sim.nextWave,hold:sim.hold,enemyHold:sim.enemyHold,wonderTime:sim.wonderTime}:sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
     data.projectiles=[];data.nextProjectileId=0;
     data.visualProjectiles=projectileVisualEvents(sim.projectiles,sim.time).map(event=>combatPerspective(sim,side,event,{observer})).filter(Boolean).map(event=>({...event,entity:{...event.entity,owner:mapOwner(event.entity.owner)},target:{...event.target,owner:mapOwner(event.target.owner)}}));
     for(const e of sim.entities){
@@ -50,6 +50,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
     if(data.ended)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
     if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities.filter(e=>e.kind==='resource'&&(shown(e)||observer))){const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(cache.get(e.id)!==value){cache.set(e.id,value);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
+    if(compact){const state={};for(const key of ['entities','players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners','visualProjectiles','projectiles','nextProjectileId','visible','explored','compactResources','resourceUpdates','aiStates','commanderAI','teamAlarms','intel'])if(key in data)state[key]=data[key];return JSON.parse(JSON.stringify(state));}
     return JSON.parse(JSON.stringify(data));
   }
   function start(room){
