@@ -8,13 +8,16 @@ import {BattleChat} from './battle-chat.js';
 import {entityPerspective} from './entity-perspective.js';
 import {projectileVisualEvents} from '../src/projectile-combat.js';
 import {combatPerspective} from './combat-perspective.js';
+import {createVisibilityDelta} from '../src/network-visibility.js';
 
 const code=()=>randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
+const snapshotCommit=Symbol('snapshotCommit');
 export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS||'').split(',').map(value=>value.trim()).filter(Boolean),maxRooms=Math.max(1,Math.min(8,Number(process.env.MAX_ROOMS)||8)),heartbeatInterval=20000}={}){
   const wss=new WebSocketServer({noServer:true,maxPayload:24000,perMessageDeflate:{threshold:1024,serverNoContextTakeover:true,zlibDeflateOptions:{level:1}}}),rooms=new Map();
   server.on('upgrade',(req,socket,head)=>{if(req.url!=='/socket'||!originAllowed(req.headers.origin,req.headers.host,allowedOrigins)){socket.destroy();return;}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
-  const send=(ws,message)=>{if(ws?.readyState!==1)return;if(ws.bufferedAmount>=4000000){ws.terminate();return;}if(message.type==='state'&&ws.bufferedAmount>=1000000)return;ws.send(JSON.stringify(message));};
+  const send=(ws,message)=>{if(ws?.readyState!==1)return false;if(ws.bufferedAmount>=4000000){ws.terminate();return false;}if(message.type==='state'&&ws.bufferedAmount>=1000000)return false;ws.send(JSON.stringify(message));return true;};
+  const commitSnapshot=(room,side,state)=>{const commit=state?.[snapshotCommit];if(!commit)return;if(commit.visibility)room.visibility[side]=commit.visibility;for(const [id,value]of commit.resources)room.resources[side].set(id,value);};
   const custom=room=>room.options.mode==='custom';
   const observing=(room,side)=>custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
   const humanSlots=room=>custom(room)?room.options.slots.map((slot,i)=>slot.controller==='human'?i:-1).filter(i=>i>=0):[0,1];
@@ -27,7 +30,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     for(const player of room.players)send(player.ws,{type:'lobby',code:room.code,host:player.host,selfSide:player.side,selfReady:player.ready,canStart:canStart(room),slots,players:room.players.map(p=>({side:p.side,name:p.name,faction:p.faction,ready:p.ready,connected:connected(p)})),options:room.options});
   }
   const orderFor=(room,side)=>[side,...room.sim.players.map((_,i)=>i).filter(i=>i!==side)];
-  function perspective(room,side,compact=false){
+  function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false){
     const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
     const explored=room.explored[side],visible=visibilityFor(sim,side,explored,observer),shown=e=>!!visible[sim.cell(e.x,e.z).z*sim.gridSize+sim.cell(e.x,e.z).x];
     const data=compact?{time:sim.time,wave:sim.wave,nextWave:sim.nextWave,hold:sim.hold,enemyHold:sim.enemyHold,wonderTime:sim.wonderTime}:sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
@@ -45,13 +48,22 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!entities.some(entity=>entity.id===id))entities.push({...e});}
     data.entities=entities.map(e=>({...e,owner:mapOwner(e.owner)}));
     data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
-    data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.visible=Array.from(visible);data.explored=Array.from(explored);data.stats=custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
+    data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
     data.ended=sim.ended?{...sim.ended,won:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
     if(data.ended)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
-    if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities.filter(e=>e.kind==='resource'&&(shown(e)||observer))){const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(cache.get(e.id)!==value){cache.set(e.id,value);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
-    if(compact){const state={};for(const key of ['entities','players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners','visualProjectiles','projectiles','nextProjectileId','visible','explored','compactResources','resourceUpdates','aiStates','commanderAI','teamAlarms','intel'])if(key in data)state[key]=data[key];return JSON.parse(JSON.stringify(state));}
-    return JSON.parse(JSON.stringify(data));
+    const resourceChanges=[];
+    if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities.filter(e=>e.kind==='resource'&&(shown(e)||observer))){const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
+    const previous=compact&&deltaVisibility&&!forceVisibility?room.visibility[side]:null,sequence=previous?previous.sequence+1:0;
+    const delta=previous?createVisibilityDelta(previous.visible,previous.explored,visible,explored,sequence):null;
+    // Large reveals (for example observer mode) can be cheaper as full grids.
+    if(delta&&JSON.stringify(delta).length<visible.length*4+32)data.visibilityDelta=delta;
+    else{data.visible=Array.from(visible);data.explored=Array.from(explored);if(deltaVisibility)data.visibilitySequence=sequence;}
+    const state=compact?{}:data;
+    if(compact)for(const key of ['entities','players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners','visualProjectiles','projectiles','nextProjectileId','visible','explored','visibilitySequence','visibilityDelta','compactResources','resourceUpdates','aiStates','commanderAI','teamAlarms','intel'])if(key in data)state[key]=data[key];
+    const snapshot=JSON.parse(JSON.stringify(state));
+    Object.defineProperty(snapshot,snapshotCommit,{value:{visibility:deltaVisibility?{visible:visible.slice(),explored:explored.slice(),sequence}:null,resources:resourceChanges}});
+    return snapshot;
   }
   function start(room){
     room.chat=new BattleChat();
@@ -62,7 +74,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       for(const unit of room.sim.owned(1,'unit'))unit.hp=0;for(const unit of room.sim.owned(0,'unit')){const mirror=room.sim.addUnit(unit.type,1,-unit.x,-unit.z);if(unit.type==='fishingboat')room.sim.assignWorker(mirror);}room.sim.assignEconomy(1);room.sim.revision++;
       for(const e of room.sim.owned(1).filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=room.sim.maxHP(e);e.hp=e.maxHp;}
     }
-    room.explored=room.sim.players.map(()=>new Uint8Array(room.sim.gridSize**2));room.stats=room.sim.players.map(emptyStats);room.known=room.sim.players.map(()=>new Map());room.resources=room.sim.players.map(()=>new Map());room.effects=[];
+    room.explored=room.sim.players.map(()=>new Uint8Array(room.sim.gridSize**2));room.visibility=room.sim.players.map(()=>null);room.stats=room.sim.players.map(emptyStats);room.known=room.sim.players.map(()=>new Map());room.resources=room.sim.players.map(()=>new Map());room.effects=[];
     room.sim.on(event=>{
       if(event.type==='gathered')room.stats[event.owner].gathered+=event.amount;
       if(event.type==='trained'||event.type==='stat-trained')room.stats[event.entity.owner].trained++;
@@ -72,7 +84,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
       if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
-    for(const player of room.players)send(player.ws,{type:'begin',state:perspective(room,player.side),code:room.code,chat:room.chat.session(room,player)});
+    for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
   }
   function action(player,room,message){
     const s=room.sim;if(!s||s.ended||s.players[player.side]?.defeated||waiting(room))return;
@@ -116,7 +128,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<2)return send(ws,{type:'error',message:'Choose at least two human slots for a multiplayer room.'});}
         else options={...base,mode:['skirmish','regicide','dominion','wonder','tides'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
         room={code:code(),options,players:[],created:now};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
-        player={side:0,host:true,ready:true,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomBytes(16).toString('hex'),ws};room.players.push(player);
+        player={side:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomBytes(16).toString('hex'),ws};room.players.push(player);
         if(custom(room)){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
         send(ws,{type:'session',code:room.code,token:player.token});lobby(room);return;
       }
@@ -124,15 +136,16 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         room=rooms.get(String(message.code||'').toUpperCase());if(!room||room.sim)return send(ws,{type:'error',message:'That room is unavailable. Check its code.'});
         const free=humanSlots(room).filter(side=>!room.players.some(p=>p.side===side)),requested=custom(room)?room.options.slots.findIndex(slot=>slot.slotNumber===Number(message.slot)):-1,side=requested>=0?requested:free[0];
         if(!free.includes(side))return send(ws,{type:'error',message:'That human slot is unavailable. Choose another slot or use automatic assignment.'});
-        player={side,host:false,ready:!custom(room),name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'raven',token:randomBytes(16).toString('hex'),ws};room.players.push(player);
+        player={side,host:false,ready:!custom(room),protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'raven',token:randomBytes(16).toString('hex'),ws};room.players.push(player);
         if(custom(room)){room.options.slots[side].name=player.name;room.options.slots[side].faction=player.faction;}
         send(ws,{type:'session',code:room.code,token:player.token});lobby(room);return;
       }
       if(message.type==='resume'&&!player){
         room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',message:'That network session has ended.'});
-        player.ws?.close();player.ws=ws;delete player.disconnected;if(room.sim)send(ws,{type:'begin',state:perspective(room,player.side),code:room.code,chat:room.chat.session(room,player)});else lobby(room);return;
+        player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
       }
       if(!player||!room)return;
+      if(message.type==='visibility-resync'){if(player.ws===ws&&room.sim&&custom(room)&&player.protocol>=2)player.visibilityResync=true;return;}
       if(message.type==='chat'){
         if(!room.sim||player.ws!==ws||!rooms.has(room.code))return;
         const result=room.chat.accept(room,player,message);
@@ -159,7 +172,8 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     if(room.sim&&snapshotClock%2===0){for(const player of room.players){
       if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner),observer=observing(room,player.side);
       const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
-      send(player.ws,{type:'state',state:perspective(room,player.side,custom(room)),effects,waiting:waiting(room)});
+      const state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync);
+      if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);
   }},100);

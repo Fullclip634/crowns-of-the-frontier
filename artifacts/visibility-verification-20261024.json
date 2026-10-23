@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-10-23T20:49:09.168Z",
+  "buildId": "1792788311103",
+  "tests": {
+    "command": "npm test",
+    "total": 481,
+    "passed": 481,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 152945.2311
+  },
+  "build": {
+    "passed": true,
+    "mainAsset": "/assets/index-B6m4gkSm.js",
+    "mainSHA256": "dae5aebdb9a8b19e118adf8446d3efb3640bc404d4a039dddb9020b23a2639d3",
+    "oversizedJavaScriptWarning": true
+  },
+  "browser": {
+    "report": "artifacts/visibility-multiplayer/report.json",
+    "passed": true,
+    "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "checks": [
+      "Huge eight-kingdom production client applies negotiated deltas alongside a legacy host",
+      "Allied scout reveals then hides an enemy while retaining explored terrain",
+      "Actual browser detects an omitted state, requests one resync and restores resource amounts",
+      "Reload/rejoin installs a fresh full baseline and preserves paid training"
+    ],
+    "buildId": "1792788311103"
+  },
+  "sourceHashes": {
+    "server/team-rooms.js": "228fa8967ada38679f8c993580f47ca99a0a4e8ae77d60bedc9fe0e8a7febbf6",
+    "src/network.js": "f0655aba825cb2b59694ba00b2816b2a2daf894423bb0829152722734caec5b8",
+    "src/network-visibility.js": "a5a0f069e8c2e68742ac1ee527e71782c4d755389d603e6e943d2ccc10cfc204",
+    "src/main.js": "b889e02c79093b7e66ec1a4d14f0e13da47fef59f369b63e3be148ba02849b68"
+  },
+  "localLogHashes": {
+    "artifacts/visibility-regression-20261024.log": "aa62669629f8cde90594a0216820b047af831765e92745390bdbbfb8cbaa3204",
+    "artifacts/visibility-build-20261024.log": "39f41364ef2afbfd921455147a0ea640e9b6e26120916b0de8c3c44de57e8e6c",
+    "artifacts/visibility-browser-20261024.log": "a7962b4743f03d7577469edbd9c31b8375b09d93d15d60561f5952ccab04f6a4"
+  },
+  "scope": "Regression and local emulated-browser evidence. Physical-device performance, hosted capacity and whole-game completion remain open."
+}

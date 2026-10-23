@@ -1,15 +1,17 @@
 import {multiplayerEndpoint} from './multiplayer-endpoint.js';
+import {VisibilityReceiver} from './network-visibility.js';
 export class LanClient {
   constructor(callbacks){this.callbacks=callbacks;this.active=false;this.retry=0;this.socket=null;this.ping=0;this.session=null;try{this.session=JSON.parse(sessionStorage.getItem('crowns-lan'));}catch{};}
   connect(message){clearTimeout(this.reconnectTimer);clearInterval(this.pinger);this.intent=message;this.leaving=false;let endpoint;try{endpoint=multiplayerEndpoint(location,import.meta.env?.VITE_MULTIPLAYER_URL||'',import.meta.env?.VITE_STATIC_HOST==='true');if(!endpoint){this.callbacks.notice('AI battles are ready. Online multiplayer has not been enabled on this hosted game yet.');return;}this.socket?.close();this.socket=new WebSocket(endpoint);}catch(error){this.callbacks.notice(error.message);return;}const socket=this.socket;
-    socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.retry=0;this.send(message);clearInterval(this.pinger);this.pinger=setInterval(()=>this.send({type:'ping',stamp:Date.now()}),3000);});
+    this.visibility=new VisibilityReceiver();this.visibilityResync=false;
+    socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.retry=0;this.send({...message,protocol:2});clearInterval(this.pinger);this.pinger=setInterval(()=>this.send({type:'ping',stamp:Date.now()}),3000);});
     socket.addEventListener('message',event=>{if(this.socket!==socket)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}
       if(data.type==='lobby')this.callbacks.lobby(data);
-      if(data.type==='begin'){this.active=true;this.code=data.code;this.callbacks.begin(data.state);this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
+      if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.visibilityResync=false;this.active=true;this.code=data.code;this.callbacks.begin(state);this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
       if(data.type==='chat')this.callbacks.chat?.(data.message);
       if(data.type==='chat-error')this.callbacks.chatError?.(data.message);
       if(data.type==='donation')this.callbacks.donation?.(data);
-      if(data.type==='state')this.callbacks.state(data.state,data.effects,data.waiting);
+      if(data.type==='state'){const state=this.visibility.read(data.state);if(state){this.visibilityResync=false;this.callbacks.state(state,data.effects,data.waiting);}else if(!this.visibilityResync){this.visibilityResync=this.send({type:'visibility-resync'});}}
       if(data.type==='error'){if(!this.active&&this.intent?.type==='resume'){this.session=null;try{sessionStorage.removeItem('crowns-lan');}catch{}}this.callbacks.notice(data.message);}
       if(data.type==='closed'){this.leave();this.callbacks.closed?.();this.callbacks.notice(data.message);}
       if(data.type==='pong')this.ping=Date.now()-data.stamp;
