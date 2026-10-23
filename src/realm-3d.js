@@ -60,7 +60,7 @@ export function installRealm3D(WorldView){
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};
   p.makeUnit=function(e){return unitModel(this,e);};
-  p.groundHeight=function(x,z){return this.landscape?.surfaceHeightAt(x,z)||0;};
+  p.groundHeight=function(x,z){return this.landscape?.walkableHeightAt(x,z)||0;};
   p.entityHeight=function(e,x=e.x,z=e.z){
     if(e.water||UNITS[e.type]?.naval)return .08;
     if(e.kind==='building'){if(!this.foundationHeights.has(e.id))this.foundationHeights.set(e.id,foundation(this,e));return this.foundationHeights.get(e.id);}
@@ -167,6 +167,7 @@ export function installRealm3D(WorldView){
   };
   p.render=function(dt,menu){
     animateWater(this);
+    for(const bridge of this.bridgeMeshes||[])bridge.visible=!!menu||this.settings.fog===false||this.sim.isExplored(bridge.userData.bridge.center,0);
     if(this.materials.glow)this.materials.glow.emissiveIntensity=1.4+Math.sin(this.clock*8)*.25;
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     for(const e of this.sim?.entities||[]){

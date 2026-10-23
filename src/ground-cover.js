@@ -4,6 +4,7 @@ import {seededRandom} from './data.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {roadDistance} from './terrain-layout.js';
 import {terrainBiome} from './terrain-biomes.js';
+import {bridgeFootprint} from './bridge-layout.js';
 
 export function grassTuftGeometry(){
   const vertices=[],indices=[],uv=[];
@@ -38,7 +39,7 @@ export class GroundCover{
     const palette=terrainBiome(land.map).grass;
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<1.7||winter&&rng()<.5)continue;
+      if(y<.2||roadDistance(x,z,land)<1.7||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
       this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.65+rng()*.8,color:palette[i%3],shade:.88+rng()*.18});
     }
     this.update(true,true);

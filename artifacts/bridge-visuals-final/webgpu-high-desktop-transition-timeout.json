@@ -1,0 +1,55 @@
+{
+  "quality": "high",
+  "renderer": "webgpu",
+  "phone": false,
+  "offline": false,
+  "checks": [
+    {
+      "map": "valley",
+      "quality": "high",
+      "bridge": {
+        "source": "Blender",
+        "revision": "masonry-vault-v1",
+        "bridges": 1,
+        "triangles": 11456,
+        "draws": 3,
+        "bytes": 204560,
+        "clearWidth": 19.2
+      },
+      "backend": "webgpu",
+      "fatal": null,
+      "draws": 118,
+      "triangles": 2660078,
+      "programFailures": 0,
+      "overflow": false,
+      "feet": [
+        {
+          "type": "villager",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        },
+        {
+          "type": "spearman",
+          "y": 2.2199999999999998,
+          "road": 2.2199999999999998
+        },
+        {
+          "type": "knight",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        }
+      ],
+      "fog": {
+        "hidden": true,
+        "shown": true
+      }
+    }
+  ],
+  "scope": "Rendered production build and emulated viewport; not physical-phone performance evidence",
+  "buildId": "1792757922249",
+  "waiting": {
+    "map": "valley",
+    "from": 21
+  },
+  "error": "page.evaluate: Target page, context or browser has been closed\n    at C:\\New\\Age_Of_Emprire\\scripts\\bridge-visual-qa.mjs:17:14"
+}

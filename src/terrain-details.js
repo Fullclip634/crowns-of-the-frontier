@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
+import {bridgeFootprint} from './bridge-layout.js';
 
 export function pebbleGeometry(){
   const geometry=new THREE.IcosahedronGeometry(.35,1),p=geometry.attributes.position;
@@ -24,7 +25,7 @@ export class TerrainDetails{
     const palette=land.map==='winter'?[0xc3cbc5,0xe0e4db,0xa7b4a9]:[0xb9c1ac,0xcad0bf,0x98a58d];
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<2)continue;
+      if(y<.2||roadDistance(x,z,land)<2||bridgeFootprint(land.map,x,z,3))continue;
       this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.3+rng()*.6,color:palette[i%3],stretch:.8+rng()*.6,shade:.9+rng()*.15});
     }
     this.update(true,true);

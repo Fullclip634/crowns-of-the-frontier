@@ -11,6 +11,7 @@ import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
 import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
+import {bridgeFootprint,clearSavedBridgeResources} from './bridge-layout.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -53,6 +54,7 @@ export class Simulation {
   hostile(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&!this.allied(a,b)&&!this.players[b].defeated;}
   difficulty(owner=1){return this.players[owner]?.difficulty||this.options.difficulty;}
   startClearing(x,z){
+    if(bridgeFootprint(this.options.map,x,z,3))return true;
     const custom=this.options.mode==='custom';if(custom?this.players.some(player=>player.start&&Math.hypot(x-player.start.x,z-player.start.z-16)<11):Math.min(Math.hypot(x+36,z-49),Math.hypot(x-36,z+49))<12)return true;
     if(this.options.map!=='coast')return false;
     return custom?this.players.some(player=>player.start&&Math.hypot(x-Math.sin(player.start.z*.03)*2-Math.sign(player.start.x)*20,z-player.start.z)<8):Math.min(Math.hypot(x+19,z-25),Math.hypot(x-19,z+25))<8;
@@ -114,7 +116,7 @@ export class Simulation {
   canAfford(cost,owner=0){return Object.entries(cost).every(([r,n])=>this.players[owner].resources[r]>=n);}
   spend(cost,owner){if(!this.canAfford(cost,owner))return false;for(const[r,n]of Object.entries(cost))this.players[owner].resources[r]-=n;return true;}
   fail(message,owner=0){this.emit('notice',{message,owner,tone:'warning'});return false;}
-  buildValid(type,x,z,owner=0){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z))return false;
+  buildValid(type,x,z,owner=0){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
     return !this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+d.r+(type==='wall'&&e.type==='wall'?-.3:.8));
@@ -391,7 +393,7 @@ export class Simulation {
     if(this.events.length>200)this.events.splice(0,100);
   }
   serialize(){return {version:1,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
-  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};s.updateFog();return s;}
+  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};clearSavedBridgeResources(s);s.updateFog();return s;}
 }
 
 installFrontiers(Simulation);

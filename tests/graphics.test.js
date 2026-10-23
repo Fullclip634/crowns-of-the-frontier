@@ -32,21 +32,21 @@ test('construction clipping retains custom palette shader defines and restores t
   building.progress=1;v.updateConstruction(building,node);assert.equal(mesh.material,original);assert.equal(disposals,1);assert.equal(node.userData.construction,undefined);mesh.geometry.dispose();original.dispose();
 });
 
-test('all maps have seeded elevated meshes and picking follows their triangulated surface',()=>{
+test('all maps have seeded elevated meshes and picking follows their walkable surface',()=>{
   for(const map of Object.keys(MAPS)){
     const a=new Landscape(512,map),b=new Landscape(512,map),geometry=a.geometry(320,112),copy=b.geometry(320,112);
     assert.deepEqual(geometry.getAttribute('position').array,copy.getAttribute('position').array);
     assert.ok(geometry.boundingBox.max.y-geometry.boundingBox.min.y>10);
     for(const [x,z]of [[-37,30],[27,19],[-10,-22],[0,0],[52,43]]){
       const hit=a.rayPoint(new THREE.Ray(new THREE.Vector3(x,80,z),new THREE.Vector3(0,-1,0)));
-      assert.ok(hit);assert.ok(Math.abs(hit.y-a.surfaceHeightAt(x,z))<.002);
+      assert.ok(hit);assert.ok(Math.abs(hit.y-a.walkableHeightAt(x,z))<.002);
     }
     geometry.dispose();copy.dispose();
   }
 });
 test('naval basins sit below the water while bridge routes keep dry elevation',()=>{
   const coast=new Landscape(512,'coast');for(const z of [-65,-30,30,65])assert.ok(coast.heightAt(Math.sin(z*.03)*2,z)<0);
-  for(const map of ['valley','rivers']){const land=new Landscape(512,map);for(const channel of land.channels()){assert.ok(land.heightAt(channel.center,0)>.5);const z=30,x=channel.center+Math.sin(z*channel.frequency)*channel.bend;assert.ok(land.heightAt(x,z)<0);}}
+  for(const map of ['valley','rivers']){const land=new Landscape(512,map);for(const channel of land.channels()){assert.ok(land.heightAt(channel.center,0)<0);assert.ok(land.walkableHeightAt(channel.center,0)>.5);const z=30,x=channel.center+Math.sin(z*channel.frequency)*channel.bend;assert.ok(land.heightAt(x,z)<0);}}
 });
 test('every building and troop has a solid model across all three civilizations',()=>{
   for(const faction of ['alder','sun','raven']){

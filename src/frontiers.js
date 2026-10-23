@@ -1,5 +1,6 @@
 import {UNITS,BUILDINGS,DIFFICULTIES,TECHS} from './data.js';
 import {disembarkSlots} from './disembark.js';
+import {bridgeFootprint} from './bridge-layout.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 
 export function installFrontiers(Simulation){
@@ -32,7 +33,7 @@ export function installFrontiers(Simulation){
     const size=this.gridSize,half=this.halfWorld,data=new Uint8Array(size*size);for(let z=0;z<size;z++)for(let x=0;x<size;x++)data[z*size+x]=this.isWater(x*2-half+1,z*2-half+1)?0:1;this.grids[key]={revision:this.revision,data};return data;
   };
   p.buildValid=function(type,x,z,owner=0){if(type!=='dock')return original.buildValid.call(this,type,x,z,owner);
-    if(Math.abs(x)>this.halfWorld-6||Math.abs(z)>this.halfWorld-6||this.isWater(x,z)||owner===0&&!this.isVisible(x,z))return false;
+    if(Math.abs(x)>this.halfWorld-6||Math.abs(z)>this.halfWorld-6||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,BUILDINGS.dock.r)||owner===0&&!this.isVisible(x,z))return false;
     let shore=false;for(let i=0;i<16;i++)if(this.isWater(x+Math.cos(i*Math.PI/8)*7,z+Math.sin(i*Math.PI/8)*7))shore=true;
     return shore&&!this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+BUILDINGS.dock.r+.8);
   };

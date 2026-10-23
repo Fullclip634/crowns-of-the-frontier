@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-23T20:29:27.165Z",
+  "buildId": "1792786360132",
+  "tests": {
+    "command": "npm test",
+    "total": 470,
+    "passed": 470,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "durationMs": 142368.643
+  },
+  "productionBuild": {
+    "command": "npm run build",
+    "passed": true,
+    "oversizedJavaScriptWarning": true
+  },
+  "artwork": {
+    "file": "src/assets3d/frontier-bridge.glb",
+    "bytes": 204560,
+    "sha256": "eea673c9059df5974b5574e4d5e62d45b30202952569aa53d334d5f5a63fdf23",
+    "builtAsset": "frontier-bridge-BKOMVWcP.glb"
+  },
+  "visualReports": [
+    {
+      "renderer": "webgpu",
+      "quality": "high",
+      "phone": false,
+      "offline": false,
+      "maps": [
+        "valley",
+        "rivers"
+      ],
+      "passed": true,
+      "buildId": "1792786360132"
+    },
+    {
+      "renderer": "webgl",
+      "quality": "low",
+      "phone": true,
+      "offline": true,
+      "maps": [
+        "valley",
+        "rivers"
+      ],
+      "passed": true,
+      "buildId": "1792786360132"
+    }
+  ],
+  "localLogs": {
+    "tests": {
+      "path": "artifacts/bridge-regression-20261024.log",
+      "sha256": "6c64302b0cf72c2879ae0132061114897ef70d228e488a672a1c5c435cce9308"
+    },
+    "build": {
+      "path": "artifacts/bridge-build-20261024.log",
+      "sha256": "e242997a77dc6d2d91eb4b6fe46ec746167b8a4bdeb0b9093723c65c05774eb1"
+    }
+  },
+  "scope": "Functional regressions and rendered browser checks; physical-device performance and whole-game completion remain unproven."
+}

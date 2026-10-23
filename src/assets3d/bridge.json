@@ -1,0 +1,14 @@
+{
+  "revision": "masonry-vault-v1",
+  "halfLength": 13.0,
+  "roadHalfWidth": 9.6,
+  "baseHeight": 0.72,
+  "crownHeight": 1.5,
+  "triangles": 9728,
+  "materialRoles": [
+    "stone",
+    "stoneDark",
+    "leafDark"
+  ],
+  "sourceSHA256": "420a700bd4db69d097a055161c39c138a5eaf1357dbc1c55b5bacd0ceb03cfb0"
+}

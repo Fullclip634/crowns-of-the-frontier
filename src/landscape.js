@@ -10,6 +10,8 @@ import {prepareTerrainGeometry} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainBiome} from './terrain-biomes.js';
+import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork} from './bridge-layout.js';
+import {buildBridges} from './bridge-art.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
@@ -22,12 +24,17 @@ export class Landscape {
     h=.65+(h-.65)*smooth(12,26,townDistance);
     for(const channel of this.channels()){
       const d=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend);
-      if(this.map!=='coast'&&Math.abs(z)<=9&&d<channel.width+5){h=.72+(h-.72)*smooth(channel.width+2,channel.width+5,d);continue;}
       // The water mesh and naval navigation end at the same channel width.
       // Meet water level there instead of leaving a submerged "dry" bank.
       if(d<channel.width)h=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
+      const span=bridgeSpans(this.map).find(span=>span.center===channel.center);
+      if(span){const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(11.2,18,Math.abs(z));h+=(bridgeArtwork.baseHeight-h)*bank*across;}
     }
+    // Keep every terrain triangle adjacent to the crossing below its lowest
+    // paving. The collar covers the coarsest supported grid at every quality.
+    const collar=Math.max(2,this.renderSize/112+1);
+    for(const span of bridgeSpans(this.map)){const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(11.2+collar,15.2+collar,Math.abs(z));h-=Math.max(0,h-(bridgeArtwork.baseHeight-.35))*along*across;}
     const edge=Math.max(Math.abs(x),Math.abs(z)),rise=smooth(this.half-4,this.half+30,edge);
     const ridges=7+Math.pow(Math.sin(x*.043+p)*Math.cos(z*.037-p),2)*18+Math.sin((x+z)*.07)*2;
     h+=rise*ridges;
@@ -46,13 +53,21 @@ export class Landscape {
     const h00=grid.heights[a],h10=grid.heights[a+1],h01=grid.heights[a+stride],h11=grid.heights[a+stride+1];
     return u+v<=1?h00+u*(h10-h00)+v*(h01-h00):h11+(1-u)*(h01-h11)+(1-v)*(h10-h11);
   }
+  walkableHeightAt(x,z){
+    const span=bridgeAt(this.map,x,z,3);
+    if(!span||Math.abs(z)>bridgeArtwork.roadHalfWidth+1e-6)return this.surfaceHeightAt(x,z);
+    const distance=Math.abs(x-span.center);
+    if(distance<=span.halfLength)return bridgeDeckHeight(span,x);
+    const outer=span.center+Math.sign(x-span.center)*(span.halfLength+3),blend=smooth(0,3,distance-span.halfLength);
+    return Math.max(this.surfaceHeightAt(x,z),bridgeArtwork.baseHeight+(this.surfaceHeightAt(outer,z)-bridgeArtwork.baseHeight)*blend);
+  }
   rayPoint(ray){
     // Sample the actual triangulated surface; never command on an invisible y=0 plane.
     let previous=null;
     for(let distance=0;distance<=Math.max(400,this.renderSize*1.5);distance+=2){const x=ray.origin.x+ray.direction.x*distance,y=ray.origin.y+ray.direction.y*distance,z=ray.origin.z+ray.direction.z*distance;
       if(Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize){previous=null;continue;}
-      const delta=y-this.surfaceHeightAt(x,z);
-      if(delta<=0&&previous!==null){let lo=previous,hi=distance;for(let i=0;i<11;i++){const mid=(lo+hi)/2,xx=ray.origin.x+ray.direction.x*mid,zz=ray.origin.z+ray.direction.z*mid,yy=ray.origin.y+ray.direction.y*mid;if(yy>this.surfaceHeightAt(xx,zz))lo=mid;else hi=mid;}const point=ray.at((lo+hi)/2,new THREE.Vector3());return insideMap(point.x,point.z,this.worldSize)?point:null;}
+      const delta=y-this.walkableHeightAt(x,z);
+      if(delta<=0&&previous!==null){let lo=previous,hi=distance;for(let i=0;i<11;i++){const mid=(lo+hi)/2,xx=ray.origin.x+ray.direction.x*mid,zz=ray.origin.z+ray.direction.z*mid,yy=ray.origin.y+ray.direction.y*mid;if(yy>this.walkableHeightAt(xx,zz))lo=mid;else hi=mid;}const point=ray.at((lo+hi)/2,new THREE.Vector3());return insideMap(point.x,point.z,this.worldSize)?point:null;}
       previous=distance;
     }
     return null;
@@ -104,8 +119,8 @@ export function buildLandscape(view){
   configureWaterSurface(view.materials.water);
   for(const channel of land.channels()){
     const water=new THREE.Mesh(land.waterGeometry(channel,view.settings.quality),view.materials.water);water.userData.channel=channel;view.terrain.add(water);view.waterMeshes.push(water);
-    if(land.map!=='coast')buildBridge(view,channel);
   }
+  buildBridges(view);
   // Match the ground triangulation at every quality setting.
   view.fogMesh.geometry.dispose();view.fogMesh.geometry=land.geometry(land.renderSize,segments,.13);view.fogMesh.rotation.set(0,0,0);view.fogMesh.position.y=0;
   const fogPositions=view.fogMesh.geometry.getAttribute('position'),fogUV=view.fogMesh.geometry.getAttribute('uv');
@@ -113,18 +128,6 @@ export function buildLandscape(view){
   view.fogMesh.material.polygonOffset=true;view.fogMesh.material.polygonOffsetFactor=-1;view.fogMesh.material.polygonOffsetUnits=-1;
   view.groundCover=new GroundCover(view);
   view.terrainDetails=new TerrainDetails(view);
-}
-
-function buildBridge(view,channel){
-  const g=new THREE.Group(),m=view.materials,x=channel.center,width=channel.width+3;
-  view.box(g,m.wood,x,.54,0,width*2,.36,15.5);
-  for(let z=-7.5;z<=7.5;z+=.65)view.box(g,m.darkwood,x,.745,z,width*2,.045,.06);
-  for(const side of [-1,1]){
-    view.box(g,m.stoneDark,x,1.18,side*7.4,width*2+.6,.3,.45);
-    for(let xx=-width;xx<=width;xx+=2){view.box(g,m.stone,x+xx,.7,side*7.4,.5,1.3,.5);}
-  }
-  for(const xx of [-width+1,width-1])for(const z of [-6,6])view.box(g,m.stoneDark,x+xx,-.05,z,1.2,2.5,1.5);
-  view.terrain.add(view.mergeModel(g));
 }
 
 export function animateWater(view){

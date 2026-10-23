@@ -1,0 +1,97 @@
+{
+  "quality": "high",
+  "renderer": "webgpu",
+  "phone": false,
+  "offline": false,
+  "checks": [
+    {
+      "map": "valley",
+      "quality": "high",
+      "bridge": {
+        "source": "Blender",
+        "revision": "masonry-vault-v1",
+        "bridges": 1,
+        "triangles": 11456,
+        "draws": 3,
+        "bytes": 204560,
+        "clearWidth": 19.2
+      },
+      "backend": "webgpu",
+      "fatal": null,
+      "draws": 0,
+      "triangles": 0,
+      "programFailures": 0,
+      "overflow": false,
+      "feet": [
+        {
+          "type": "villager",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        },
+        {
+          "type": "spearman",
+          "y": 2.2199999999999998,
+          "road": 2.2199999999999998
+        },
+        {
+          "type": "knight",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        }
+      ],
+      "fog": {
+        "hidden": true,
+        "shown": true
+      }
+    },
+    {
+      "map": "rivers",
+      "quality": "high",
+      "bridge": {
+        "source": "Blender",
+        "revision": "masonry-vault-v1",
+        "bridges": 2,
+        "triangles": 22912,
+        "draws": 6,
+        "bytes": 204560,
+        "clearWidth": 19.2
+      },
+      "backend": "webgpu",
+      "fatal": null,
+      "draws": 0,
+      "triangles": 0,
+      "programFailures": 0,
+      "overflow": false,
+      "feet": [
+        {
+          "type": "villager",
+          "y": 2.0003300858899102,
+          "road": 2.0003300858899102
+        },
+        {
+          "type": "spearman",
+          "y": 2.2199999999999998,
+          "road": 2.2199999999999998
+        },
+        {
+          "type": "knight",
+          "y": 2.0003300858899102,
+          "road": 2.0003300858899102
+        }
+      ],
+      "fog": {
+        "hidden": true,
+        "shown": true
+      }
+    }
+  ],
+  "scope": "Rendered production build and emulated viewport; not physical-phone performance evidence",
+  "buildId": "1792786360132",
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "waiting": {
+    "map": "rivers",
+    "from": 75
+  },
+  "errors": [],
+  "passed": true
+}

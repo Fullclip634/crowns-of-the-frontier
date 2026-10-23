@@ -1,0 +1,97 @@
+{
+  "quality": "low",
+  "renderer": "webgl",
+  "phone": true,
+  "offline": true,
+  "checks": [
+    {
+      "map": "valley",
+      "quality": "low",
+      "bridge": {
+        "source": "Blender",
+        "revision": "masonry-vault-v1",
+        "bridges": 1,
+        "triangles": 11456,
+        "draws": 3,
+        "bytes": 204560,
+        "clearWidth": 19.2
+      },
+      "backend": "webgl",
+      "fatal": null,
+      "draws": 69,
+      "triangles": 484889,
+      "programFailures": 0,
+      "overflow": false,
+      "feet": [
+        {
+          "type": "villager",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        },
+        {
+          "type": "spearman",
+          "y": 2.2199999999999998,
+          "road": 2.2199999999999998
+        },
+        {
+          "type": "knight",
+          "y": 2.0313830611283255,
+          "road": 2.0313830611283255
+        }
+      ],
+      "fog": {
+        "hidden": true,
+        "shown": true
+      }
+    },
+    {
+      "map": "rivers",
+      "quality": "low",
+      "bridge": {
+        "source": "Blender",
+        "revision": "masonry-vault-v1",
+        "bridges": 2,
+        "triangles": 22912,
+        "draws": 6,
+        "bytes": 204560,
+        "clearWidth": 19.2
+      },
+      "backend": "webgl",
+      "fatal": null,
+      "draws": 48,
+      "triangles": 523887,
+      "programFailures": 0,
+      "overflow": false,
+      "feet": [
+        {
+          "type": "villager",
+          "y": 2.0003300858899102,
+          "road": 2.0003300858899102
+        },
+        {
+          "type": "spearman",
+          "y": 2.2199999999999998,
+          "road": 2.2199999999999998
+        },
+        {
+          "type": "knight",
+          "y": 2.0003300858899102,
+          "road": 2.0003300858899102
+        }
+      ],
+      "fog": {
+        "hidden": true,
+        "shown": true
+      }
+    }
+  ],
+  "scope": "Rendered production build and emulated viewport; not physical-phone performance evidence",
+  "buildId": "1792786360132",
+  "bridgeCached": true,
+  "waiting": {
+    "map": "rivers",
+    "from": 37
+  },
+  "errors": [],
+  "passed": true
+}

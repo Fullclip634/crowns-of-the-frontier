@@ -17,6 +17,7 @@ import {mechanicalUnit} from './maintenance.js';
 import {Simulation,distance} from './simulation.js';
 import {WorldView,CAMERA_PRESETS} from './world.js';
 import {loadAuthoredAssets} from './authored-assets.js';
+import {loadBridgeArtwork} from './bridge-art.js';
 import {loadSurfaceAssets} from './surface-assets.js';
 import {AudioEngine} from './audio.js';
 import {createCombatListener} from './combat-audio.js';
@@ -108,7 +109,7 @@ for(;!startupFailure;){
     let modelsReady=false,surfacesReady=false;
     const status=()=>{if(attemptActive)bootStatus.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
     await Promise.all([
-      loadAuthoredAssets(settings.quality).then(()=>{modelsReady=true;status();}),
+      Promise.all([loadAuthoredAssets(settings.quality),loadBridgeArtwork()]).then(()=>{modelsReady=true;status();}),
       loadSurfaceAssets(settings.quality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
     ]);break;
   }
