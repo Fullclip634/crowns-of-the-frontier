@@ -1,0 +1,57 @@
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 130 modules transformed.
+rendering chunks...
+computing gzip size...
+.tools/maintenance-candidate-dist/index.html                                            0.81 kB │ gzip:   0.46 kB
+.tools/maintenance-candidate-dist/assets/basis_transcoder-o4Hde_L7.js                  57.53 kB
+.tools/maintenance-candidate-dist/assets/medieval_blocks_05_arm-BU44WXcj.jpg          188.54 kB
+.tools/maintenance-candidate-dist/assets/rock_01_arm-fXUUj8_O.jpg                     201.56 kB
+.tools/maintenance-candidate-dist/assets/brown_mud_arm-Z8kNFMTF.jpg                   224.43 kB
+.tools/maintenance-candidate-dist/assets/painted_plaster_wall_arm-CwLmScXZ.ktx2       446.29 kB
+.tools/maintenance-candidate-dist/assets/brown_mud_color-BbWfHDjQ.jpg                 501.96 kB
+.tools/maintenance-candidate-dist/assets/painted_plaster_wall_arm-i5moMyFO.jpg        511.11 kB
+.tools/maintenance-candidate-dist/assets/rocky_terrain_02_arm-dgF_mb8C.jpg            524.87 kB
+.tools/maintenance-candidate-dist/assets/basis_transcoder-VXdx5NbI.wasm               527.33 kB │ gzip: 247.62 kB
+.tools/maintenance-candidate-dist/assets/rocky_terrain_02_arm-D6y2iIr1.ktx2           586.16 kB
+.tools/maintenance-candidate-dist/assets/old_wood_floor_arm-C6SZRpOX.ktx2             614.38 kB
+.tools/maintenance-candidate-dist/assets/old_wood_floor_arm-SQU0J2mh.jpg              646.10 kB
+.tools/maintenance-candidate-dist/assets/medieval_blocks_05_color-CUaDZYtZ.jpg        653.29 kB
+.tools/maintenance-candidate-dist/assets/painted_plaster_wall_color-Cd9DjhAQ.jpg      686.73 kB
+.tools/maintenance-candidate-dist/assets/rock_01_color-CZTjHcC4.jpg                   688.08 kB
+.tools/maintenance-candidate-dist/assets/old_wood_floor_normal-3sFZj2Ca.jpg           714.49 kB
+.tools/maintenance-candidate-dist/assets/old_wood_floor_color-Cda7KFIT.jpg            755.94 kB
+.tools/maintenance-candidate-dist/assets/rock_01_normal-Z4CE2v_p.jpg                  798.81 kB
+.tools/maintenance-candidate-dist/assets/rocky_terrain_02_color-CemMALHM.jpg          843.19 kB
+.tools/maintenance-candidate-dist/assets/medieval_blocks_05_arm-U2vcLL50.ktx2         852.86 kB
+.tools/maintenance-candidate-dist/assets/painted_plaster_wall_normal-48uy-TVR.jpg     900.46 kB
+.tools/maintenance-candidate-dist/assets/painted_plaster_wall_color-cFYpKm_m.ktx2     905.03 kB
+.tools/maintenance-candidate-dist/assets/rock_01_arm-UD4ri-3Q.ktx2                    941.16 kB
+.tools/maintenance-candidate-dist/assets/brown_mud_arm-Da0V4fPO.ktx2                  960.47 kB
+.tools/maintenance-candidate-dist/assets/rocky_terrain_02_normal-DX7AM3nD.jpg         993.69 kB
+.tools/maintenance-candidate-dist/assets/leafy_grass_arm-CDt3Zw7v.jpg               1,010.08 kB
+.tools/maintenance-candidate-dist/assets/brown_mud_normal-C3h-u0Ls.jpg              1,011.78 kB
+.tools/maintenance-candidate-dist/assets/old_wood_floor_color-x5ODPASc.ktx2         1,030.21 kB
+.tools/maintenance-candidate-dist/assets/leafy_grass_arm-hiw9LmU4.ktx2              1,097.40 kB
+.tools/maintenance-candidate-dist/assets/rocky_terrain_02_color-BozAruS8.ktx2       1,111.83 kB
+.tools/maintenance-candidate-dist/assets/brown_mud_color-DhcELWfo.ktx2              1,156.40 kB
+.tools/maintenance-candidate-dist/assets/medieval_blocks_05_normal-MXY7VBwo.jpg     1,167.77 kB
+.tools/maintenance-candidate-dist/assets/leafy_grass_color-vig3bC4b.jpg             1,195.39 kB
+.tools/maintenance-candidate-dist/assets/rock_01_color-rAELnqqa.ktx2                1,270.53 kB
+.tools/maintenance-candidate-dist/assets/medieval_blocks_05_color-D1rHvEUX.ktx2     1,294.99 kB
+.tools/maintenance-candidate-dist/assets/leafy_grass_color-CbcxmF7W.ktx2            1,361.39 kB
+.tools/maintenance-candidate-dist/assets/leafy_grass_normal-Cp8RKkAj.jpg            1,466.05 kB
+.tools/maintenance-candidate-dist/assets/frontier-trees-CjWiv_VI.glb                2,435.67 kB
+.tools/maintenance-candidate-dist/assets/frontier-low-BdR3GvEL.glb                  4,236.08 kB
+.tools/maintenance-candidate-dist/assets/frontier-balanced-DkZYn4yd.glb            13,031.18 kB
+.tools/maintenance-candidate-dist/assets/frontier-near-DfEtOZOe.glb                17,635.50 kB
+.tools/maintenance-candidate-dist/assets/index-DM7vCEO0.css                            78.52 kB │ gzip:  15.68 kB
+.tools/maintenance-candidate-dist/assets/three-DcGoeEDp.js                            636.92 kB │ gzip: 161.39 kB
+.tools/maintenance-candidate-dist/assets/index-BqZsu6tw.js                            641.81 kB │ gzip: 217.62 kB
+.tools/maintenance-candidate-dist/assets/render-nodes-6PTaoUij.js                     703.55 kB │ gzip: 198.19 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 6.52s

@@ -91,3 +91,15 @@ test('multiplayer wall drags finish the paid connected line and reject foreign w
     tick.call(sim,.1);tick.call(sim,.1);assert.notEqual(worker.order?.type,'build');assert.equal(worker.orders.length,0);
   }finally{sim.tick=tick;}
 });
+
+test('authoritative siege repairs charge the repairing commander and healers cannot refill a ram',async t=>{
+  const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[1].controller='human';const host=await connect();host.send({type:'create',name:'Castle defender',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,slots}});const session=await host.inbox.next('session'),ally=await connect();ally.send({type:'join',name:'Engineer ally',slot:2,code:session.code});await ally.inbox.next('session');ally.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await ally.inbox.next('begin');
+  const sim=service.rooms.get(session.code).sim,tick=sim.tick;sim.tick=()=>{};
+  try{
+    const tc=sim.owned(0,'building','towncenter')[0],ram=sim.addUnit('ram',0,tc.x+10,tc.z+10),worker=sim.addUnit('villager',1,ram.x+2,ram.z),monk=sim.addUnit('monk',0,ram.x+1,ram.z);ram.hp=100;sim.players[1].resources.wood=1000;sim.players[1].resources.gold=1000;sim.updateFog();
+    host.send({type:'action',method:'smartCommand',args:[[worker.id],ram.id,ram.x,ram.z,false,false]});await pause(100);assert.equal(worker.order,null,'a commander cannot issue repairs using another player’s worker');
+    const before={...sim.players[1].resources},hostWood=sim.players[0].resources.wood;
+    ally.send({type:'action',method:'smartCommand',args:[[worker.id],ram.id,ram.x,ram.z,false,false]});await until(()=>worker.order?.type==='repair');sim.tickUnit(worker,1);assert.equal(ram.hp,123);assert.ok(sim.players[1].resources.wood<before.wood&&sim.players[1].resources.gold<before.gold);assert.equal(sim.players[0].resources.wood,hostWood);
+    host.send({type:'action',method:'smartCommand',args:[[monk.id],ram.id,ram.x,ram.z,false,false]});await until(()=>monk.order);sim.tickUnit(monk,1);assert.equal(ram.hp,123,'networked healer orders cannot refill mechanical units');
+  }finally{sim.tick=tick;}
+});

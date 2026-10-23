@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-23T06:04:00.520Z",
+  "buildId": "1792735323307",
+  "tests": {
+    "total": 452,
+    "passed": 452,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "mainBundle": "/assets/index-BqZsu6tw.js",
+  "mainSHA256": "4021de5c4bb54d3458dbca89294c70c09db5b17893fe667369f4b8d8a38ecfe6",
+  "sourceSHA256": {
+    "src/main.js": "1e71bfb7f399ceb815c7439941a342987c0c42ee4af30ec962eb1abf5dd51857",
+    "src/simulation.js": "9ba5e08f77999f4e8732287453d9b3e77496c355db8ff1897ccf4b70391219ce",
+    "src/frontiers.js": "5f0f86be91d08dfd03d68a0eef5992c3590a9e732beb70d88c4daba62fe92a14",
+    "src/data.js": "7412b439dc5ecef01a52ed71ff28f58cba143c8577455ae9d98ed2122c6a72ce",
+    "src/maintenance.js": "40ed7b646aea844ebb0dae14b6986ea9d16bd2fb656a42765de45fd78725cc56",
+    "src/work-activity.js": "768e5caab348317c6339fba1954175d8fe1dccc1f661dbcdc1c52161f1187783",
+    "tests/maintenance.test.js": "8eddda1084f6091a09cac9fef61d0bd0de14e8e3933d8b2b6180116b0083486f",
+    "tests/custom-network.test.js": "c48714546b5c7bba3d9bba6fa97136fff9f66b2f2c93a1f83ef32cb9a197e765",
+    "scripts/maintenance-qa.mjs": "b0b8a054bce9d7f0dd7f6172228a8e1f9ce7e5ab1f148b7063059736a76e1029",
+    "SIEGE_REPAIRS.md": "98c938519d4cefd741a336fd41a54cf9d78eff542f58ac1944939e967fa910ff"
+  },
+  "browserReport": "artifacts/maintenance-browser/validation.json",
+  "checks": {
+    "ramAttacksNeverStealHealth": true,
+    "healersExcludeMechanicalTargets": true,
+    "livingAlliesStillHeal": true,
+    "villagerCastleRepair": true,
+    "proportionalPaidSiegeRepair": true,
+    "resourceAndOwnershipEnforced": true,
+    "saveAndStopPreserveRepairRules": true,
+    "multiplayerAuthority": true,
+    "desktopRightClickAndPhoneTap": true,
+    "workerAnimationAndPaintedBattlefield": true
+  },
+  "limitations": [
+    "The observed match was not supplied as a save or recording. The previous healer filter independently reproduced a mechanical-unit health gain; this release corrects that rule.",
+    "Phone controls were checked through browser touch emulation; this is not a physical-device frame-rate or full-match claim.",
+    "The broader 3D RTS goal remains active; Blender worker contact improvements are still pending."
+  ]
+}

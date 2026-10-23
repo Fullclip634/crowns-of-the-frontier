@@ -1,0 +1,128 @@
+{
+  "startedAt": "2026-10-23T06:02:31.166Z",
+  "environment": "Owned headless Chrome D3D11 with GPU blocklist override; functional desktop and emulated phone validation, not a physical-device benchmark.",
+  "maintenance": {
+    "cases": [
+      {
+        "width": 1024,
+        "height": 600,
+        "input": "right-click",
+        "castle": {
+          "before": {
+            "hp": 4200,
+            "stone": 1000
+          },
+          "after": {
+            "hp": 4420.8000000000175,
+            "stone": 994.2400000000052
+          },
+          "order": {
+            "type": "repair",
+            "target": 385
+          }
+        },
+        "ram": {
+          "before": {
+            "hp": 100,
+            "resources": {
+              "wood": 1000,
+              "gold": 1000,
+              "stone": 994.2400000000052,
+              "food": 1000
+            }
+          },
+          "after": {
+            "hp": 123,
+            "resources": {
+              "wood": 997.7624264224984,
+              "gold": 999.3418901242642,
+              "stone": 994.2400000000052,
+              "food": 1000
+            }
+          }
+        },
+        "animation": {
+          "task": "build",
+          "overflow": false
+        },
+        "pixels": {
+          "samples": 9302,
+          "colors": 3268,
+          "luminanceVariance": 373.7384799558722,
+          "painted": true
+        }
+      },
+      {
+        "width": 568,
+        "height": 320,
+        "input": "tap",
+        "castle": {
+          "before": {
+            "hp": 4200,
+            "stone": 1000
+          },
+          "after": {
+            "hp": 4420.8000000000175,
+            "stone": 994.2400000000052
+          },
+          "order": {
+            "type": "repair",
+            "target": 385
+          }
+        },
+        "ram": {
+          "before": {
+            "hp": 100,
+            "resources": {
+              "wood": 1000,
+              "gold": 1000,
+              "stone": 994.2400000000052,
+              "food": 1000
+            }
+          },
+          "after": {
+            "hp": 123,
+            "resources": {
+              "wood": 997.7624264224984,
+              "gold": 999.3418901242642,
+              "stone": 994.2400000000052,
+              "food": 1000
+            }
+          }
+        },
+        "animation": {
+          "task": "build",
+          "overflow": false
+        },
+        "pixels": {
+          "samples": 4218,
+          "colors": 1416,
+          "luminanceVariance": 276.63674645795436,
+          "painted": true
+        }
+      }
+    ],
+    "messages": [
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      }
+    ],
+    "simulationTimeFrozenForInput": true,
+    "buildId": "1792735323307"
+  },
+  "buildId": "1792735323307",
+  "passed": true
+}

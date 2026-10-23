@@ -11,9 +11,9 @@ export const UNITS = {
   archer:{name:'Archer',desc:'Ranged infantry. Counters spearmen; vulnerable to cavalry.',cost:{wood:50,gold:25},hp:65,damage:9,range:11,speed:3.7,time:18,age:1,at:['range'],role:'ranged',vision:17},
   swordsman:{name:'Man-at-arms',desc:'Armored frontline infantry. Excels against archers and spears.',cost:{food:75,gold:30},hp:145,damage:16,armor:3,range:2,speed:3.2,time:22,age:1,at:['barracks'],role:'infantry',vision:15},
   knight:{name:'Knight',desc:'Heavy cavalry. Devastates archers; beware of spearmen.',cost:{food:110,gold:65},hp:215,damage:24,armor:3,range:2.4,speed:6.2,time:29,age:2,at:['stable'],role:'cavalry',vision:18},
-  ram:{name:'Battering ram',desc:'Slow, armored siege. Crushing damage to buildings.',cost:{wood:170,gold:50},hp:440,damage:38,armor:8,range:3.1,speed:2.5,time:32,age:2,at:['workshop'],role:'siege',vision:14},
+  ram:{name:'Battering ram',desc:'Slow, armored siege. Crushing damage to buildings. Villagers repair it using timber and gold.',cost:{wood:170,gold:50},hp:440,damage:38,armor:8,range:3.1,speed:2.5,time:32,age:2,at:['workshop'],role:'siege',vision:14},
   catapult:{name:'Trebuchet',desc:'Long-range siege with splash damage. Protect it with infantry.',cost:{wood:240,gold:150},hp:180,damage:52,range:25,speed:2.1,time:40,age:3,at:['workshop'],role:'siege',vision:23,cooldown:3.8},
-  monk:{name:'Healer',desc:'Automatically heals nearby allies. Cannot attack.',cost:{gold:90},hp:65,damage:0,range:10,speed:3.1,time:25,age:2,at:['monastery'],role:'healer',vision:18},
+  monk:{name:'Healer',desc:'Automatically heals nearby living allies. Siege engines and ships need villager repairs. Cannot attack.',cost:{gold:90},hp:65,damage:0,range:10,speed:3.1,time:25,age:2,at:['monastery'],role:'healer',vision:18},
   king:{name:'Sovereign',desc:'Your irreplaceable ruler in Crownfall mode. Protect the sovereign at all costs.',cost:{},hp:360,damage:15,armor:4,range:2,speed:4.2,time:0,age:2,at:[],role:'infantry',vision:20},
 };
 export const BUILDINGS = {

@@ -7,6 +7,6 @@ export function workingTarget(sim,e){
   const range=order.type==='gather'?(target.r||0)+(e.r||0)+1.1:(target.r||0)+3;
   if(Math.hypot(e.x-target.x,e.z-target.z)>range+.05)return null;
   if(order.type==='gather'&&!(target.kind==='resource'&&target.amount>0||target.type==='farm'&&target.progress>=1))return null;
-  if(order.type!=='gather'&&target.progress>=1&&target.hp>=target.maxHp)return null;
+  if(order.type!=='gather'&&(target.progress>=1||order.type==='repair')&&target.hp>=target.maxHp)return null;
   return target;
 }

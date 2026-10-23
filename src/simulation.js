@@ -9,6 +9,7 @@ import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from '
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
+import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -168,7 +169,8 @@ export class Simulation {
       if(this.hostile(owner,target?.owner)&&target.kind!=='resource')order={type:'attack',target:target.id};
       else if(unit.type==='villager'&&target?.kind==='resource')order={type:'gather',target:target.id};
       else if(unit.type==='villager'&&target?.kind==='building'&&this.allied(owner,target.owner)){order=target.owner===owner&&target.progress<1?{type:'build',target:target.id}:target.type==='farm'&&target.owner===owner?{type:'gather',target:target.id}:target.progress>=1?{type:'repair',target:target.id}:order;}
-      else if(unit.type==='monk'&&this.allied(owner,target?.owner)&&target.kind==='unit')order={type:'heal',target:target.id};
+      else if(unit.type==='villager'&&mechanicalUnit(target)&&this.allied(owner,target.owner)&&target.hp<target.maxHp)order={type:'repair',target:target.id};
+      else if(unit.type==='monk'&&this.allied(owner,target?.owner)&&healableUnit(target))order={type:'heal',target:target.id};
       this.command([unit.id],order,append);
     }
   }
@@ -257,8 +259,8 @@ export class Simulation {
   }
   tickUnit(e,dt){e.moving=false;e.cooldown=Math.max(0,e.cooldown-dt);const d=UNITS[e.type],order=e.order;if(order?.type==='attack'&&!d.damage){this.finishOrder(e);return;}
     if(d.role==='healer'){
-      const target=order?.type==='heal'?this.get(order.target):this.nearest(e,t=>this.allied(t.owner,e.owner)&&t.kind==='unit'&&t.hp<t.maxHp,12,true);
-      if(target&&this.allied(e.owner,target.owner)&&target.hp<target.maxHp){if(distance(e,target)>d.range+target.r)this.move(e,target,dt,d.range);else if(e.cooldown<=0){target.hp=Math.min(target.maxHp,target.hp+12);e.cooldown=1;this.emit('heal',{entity:e,target});}return;}
+      const target=order?.type==='heal'?this.get(order.target):this.nearest(e,t=>this.allied(t.owner,e.owner)&&healableUnit(t)&&t.hp<t.maxHp,12,true);
+      if(healableUnit(target)&&this.allied(e.owner,target.owner)&&target.hp<target.maxHp){if(distance(e,target)>d.range+target.r)this.move(e,target,dt,d.range);else if(e.cooldown<=0){target.hp=Math.min(target.maxHp,target.hp+12);e.cooldown=1;this.emit('heal',{entity:e,target});}return;}
     }
     let combat=null;
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
@@ -283,12 +285,12 @@ export class Simulation {
       if(order.type==='build'&&e.type==='villager'&&(order.wallConstruction||this.entities.some(wall=>wall.id===order.target&&wall.type==='wall'&&wall.owner===e.owner)))this.finishWallOrder(e,this.entities.find(wall=>wall.id===order.target));else this.finishOrder(e);return;
     }
     if(order.type==='build'||order.type==='repair'){
-      if(e.type!=='villager'||(order.type==='build'?target.owner!==e.owner:!this.allied(target.owner,e.owner))){this.finishOrder(e);return;}
+      if(e.type!=='villager'||(order.type==='build'?target.kind!=='building'||target.owner!==e.owner:!repairableTarget(target)||!this.allied(target.owner,e.owner))){this.finishOrder(e);return;}
       if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}
       e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       if(target.progress<1){const delta=dt/BUILDINGS[target.type].time;target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
-      else if(target.hp<target.maxHp){const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}
+      else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}}
       else{if(order.type==='build'&&target.type==='wall')this.finishWallOrder(e,target);else this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};
       }return;
     }
