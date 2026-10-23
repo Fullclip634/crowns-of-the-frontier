@@ -109,7 +109,7 @@ test('Blender catalogues cover all civilizations, buildings, troops, resources a
         const natural=type==='gold'?view.materials.oreRock:view.materials.rock;
         assert.ok(parts.some(part=>part.material===natural),'deposits use natural rock rather than a masonry wall');
         assert.ok(parts.every(part=>![view.materials.stone,view.materials.stoneDark].includes(part.material)));
-        if(type==='gold')assert.ok(parts.some(part=>part.material===view.materials.gold),'metallic inclusions remain separate solid parts');
+        if(type==='gold')assert.ok(parts.some(part=>part.material===view.materials.oreGold),'metallic inclusions remain separate solid parts');
       }
       solid(resourceModel(view,{kind:'resource',id:52,type:'food',water:true}));
       solid(resourceModel(view,{kind:'shrine',id:53}));

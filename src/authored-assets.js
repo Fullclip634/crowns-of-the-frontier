@@ -144,7 +144,7 @@ function cloneAsset(view,key,owner=0){
     // Ore uses natural boulder grain; buildings retain their masonry surfaces.
     // Gold inclusions remain their separate metallic geometry and material.
     const deposit=/^resource:(stone|gold):/.test(key);
-    const role=deposit&&['stone','stoneDark'].includes(authoredRole)?(key.startsWith('resource:gold:')?'oreRock':'rock'):authoredRole;
+    const role=deposit&&['stone','stoneDark'].includes(authoredRole)?(key.startsWith('resource:gold:')?'oreRock':'rock'):deposit&&key.startsWith('resource:gold:')&&authoredRole==='gold'?'oreGold':authoredRole;
     const material=role==='team'?view.teamMaterials[owner]:role==='teamRoof'?view.roofMaterials[owner]:view.materials[role];
     if(!material)throw new Error(`Unknown 3D surface '${role}' in '${key}'.`);
     material.vertexColors=true;part.material=material;

@@ -1,0 +1,42 @@
+{
+  "cases": [
+    {
+      "width": 1024,
+      "height": 600,
+      "touch": false,
+      "toggle": {
+        "x": 876,
+        "y": 15.5,
+        "width": 28,
+        "height": 30
+      },
+      "balances": {
+        "from": 275,
+        "to": 175
+      },
+      "enemyHidden": true,
+      "overspendDisabled": true,
+      "overflow": false
+    },
+    {
+      "width": 568,
+      "height": 320,
+      "touch": true,
+      "toggle": {
+        "x": 424,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "balances": {
+        "from": 275,
+        "to": 175
+      },
+      "enemyHidden": true,
+      "overspendDisabled": true,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

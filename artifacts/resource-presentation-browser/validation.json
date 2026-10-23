@@ -1,0 +1,279 @@
+{
+  "cases": [
+    {
+      "width": 1024,
+      "height": 600,
+      "touch": false,
+      "quality": "high",
+      "renderer": "webgpu",
+      "labels": [
+        "FOOD",
+        "WOOD",
+        "GOLD",
+        "STONE",
+        "POP"
+      ],
+      "icons": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "aria": [
+        "food: 1021",
+        "wood: 2312",
+        "gold: 78",
+        "stone: 2",
+        "Population: 0 of 0"
+      ],
+      "bar": {
+        "left": 246.296875,
+        "right": 648.296875,
+        "width": 402
+      },
+      "items": [
+        {
+          "left": 246.296875,
+          "right": 312.296875,
+          "width": 66
+        },
+        {
+          "left": 330.296875,
+          "right": 396.296875,
+          "width": 66
+        },
+        {
+          "left": 414.296875,
+          "right": 480.296875,
+          "width": 66
+        },
+        {
+          "left": 498.296875,
+          "right": 564.296875,
+          "width": 66
+        },
+        {
+          "left": 582.296875,
+          "right": 648.296875,
+          "width": 66
+        }
+      ],
+      "deposits": {
+        "gold": {
+          "amount": 4400,
+          "parts": [
+            {
+              "color": 16765550,
+              "map": false
+            },
+            {
+              "color": 13936195,
+              "map": false
+            }
+          ]
+        },
+        "stone": {
+          "amount": 3600,
+          "parts": [
+            {
+              "color": 14212824,
+              "map": true
+            }
+          ]
+        }
+      },
+      "overflow": false,
+      "paintedPixels": {
+        "samples": 13010,
+        "colors": 2755,
+        "luminanceVariance": 166.93874948402663,
+        "painted": true
+      }
+    },
+    {
+      "width": 568,
+      "height": 320,
+      "touch": true,
+      "quality": "low",
+      "renderer": "webgpu",
+      "labels": [
+        "FOOD",
+        "WOOD",
+        "GOLD",
+        "STONE",
+        "POP"
+      ],
+      "icons": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "aria": [
+        "food: 1021",
+        "wood: 2312",
+        "gold: 78",
+        "stone: 2",
+        "Population: 0 of 0"
+      ],
+      "bar": {
+        "left": 8,
+        "right": 462,
+        "width": 454
+      },
+      "items": [
+        {
+          "left": 8,
+          "right": 50.59375,
+          "width": 42.59375
+        },
+        {
+          "left": 111.46875,
+          "right": 156.3125,
+          "width": 44.84375
+        },
+        {
+          "left": 217.171875,
+          "right": 258.5625,
+          "width": 41.390625
+        },
+        {
+          "left": 319.4375,
+          "right": 363.890625,
+          "width": 44.453125
+        },
+        {
+          "left": 424.75,
+          "right": 462,
+          "width": 37.25
+        }
+      ],
+      "deposits": {
+        "gold": {
+          "amount": 4400,
+          "parts": [
+            {
+              "color": 16765550,
+              "map": false
+            },
+            {
+              "color": 13936195,
+              "map": false
+            }
+          ]
+        },
+        "stone": {
+          "amount": 3600,
+          "parts": [
+            {
+              "color": 14212824,
+              "map": true
+            }
+          ]
+        }
+      },
+      "overflow": false,
+      "paintedPixels": {
+        "samples": 4218,
+        "colors": 1103,
+        "luminanceVariance": 163.84600457303986,
+        "painted": true
+      }
+    },
+    {
+      "width": 740,
+      "height": 360,
+      "touch": true,
+      "quality": "medium",
+      "renderer": "webgl",
+      "labels": [
+        "FOOD",
+        "WOOD",
+        "GOLD",
+        "STONE",
+        "POP"
+      ],
+      "icons": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "aria": [
+        "food: 1021",
+        "wood: 2312",
+        "gold: 78",
+        "stone: 2",
+        "Population: 0 of 0"
+      ],
+      "bar": {
+        "left": 8,
+        "right": 634,
+        "width": 626
+      },
+      "items": [
+        {
+          "left": 8,
+          "right": 50.59375,
+          "width": 42.59375
+        },
+        {
+          "left": 154.46875,
+          "right": 199.3125,
+          "width": 44.84375
+        },
+        {
+          "left": 303.171875,
+          "right": 344.5625,
+          "width": 41.390625
+        },
+        {
+          "left": 448.4375,
+          "right": 492.890625,
+          "width": 44.453125
+        },
+        {
+          "left": 596.75,
+          "right": 634,
+          "width": 37.25
+        }
+      ],
+      "deposits": {
+        "gold": {
+          "amount": 4400,
+          "parts": [
+            {
+              "color": 16765550,
+              "map": false
+            },
+            {
+              "color": 13936195,
+              "map": false
+            }
+          ]
+        },
+        "stone": {
+          "amount": 3600,
+          "parts": [
+            {
+              "color": 14212824,
+              "map": true
+            }
+          ]
+        }
+      },
+      "overflow": false,
+      "paintedPixels": {
+        "samples": 6216,
+        "colors": 1530,
+        "luminanceVariance": 140.41868440418693,
+        "painted": true
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

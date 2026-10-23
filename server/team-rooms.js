@@ -44,7 +44,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     }
     for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!entities.some(entity=>entity.id===id))entities.push({...e});}
     data.entities=entities.map(e=>({...e,owner:mapOwner(e.owner)}));
-    data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
+    data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
     data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.visible=Array.from(visible);data.explored=Array.from(explored);data.stats=custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
     data.ended=sim.ended?{...sim.ended,won:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
@@ -67,6 +67,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(event.type==='trained'||event.type==='stat-trained')room.stats[event.entity.owner].trained++;
       if(event.type==='complete'||event.type==='stat-complete')room.stats[event.entity.owner].built++;
       if(event.type==='notice')send(room.players.find(p=>p.side===event.owner)?.ws,{type:'error',message:event.message});
+      if(event.type==='donation')for(const side of [event.from,event.to])send(room.players.find(p=>p.side===side)?.ws,{type:'donation',from:room.sim.players[event.from].name,to:room.sim.players[event.to].name,resource:event.resource,amount:event.amount});
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
       if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
@@ -93,6 +94,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       case 'formation':if(['square','line','column'].includes(args[0]))s.players[owner].formation=args[0];break;
       case 'stance':s.setStance(ids(args[0]),args[1]==='hold'?'hold':'aggressive',owner);break;
       case 'trade':if(['food','wood','stone'].includes(args[0]))s.trade(args[0],!!args[1],owner);break;
+      case 'donateResources':if(custom(room)&&Number.isInteger(args[1])&&args[1]>=0&&args[1]<s.players.length){const recipient=orderFor(room,owner)[args[1]];if(!s.donateResources(owner,recipient,args[2],args[3]))send(player.ws,{type:'error',message:'Resource gift could not be sent. Check your balance and ally.'});}break;
       case 'demolish':if(owns(args[0]))s.demolish(args[0],owner);break;
       case 'cancelQueue':if(owns(args[0])&&Number.isInteger(args[1])&&args[1]>=0&&args[1]<s.get(args[0]).queue.length)s.cancelQueue(args[0],args[1],owner);break;
       case 'resign':if(custom(room)){s.resign(owner);player.conceded=true;}break;

@@ -4,6 +4,7 @@ import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staff
 import {orderSiegeAssault} from './ai-siege.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 import {closestCandidates} from './closest-candidates.js';
+import {gatheringRange,gatheringPathRange} from './work-ranges.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -127,8 +128,8 @@ export function installCommanderAI(Simulation){
     for(const type of types){const sources=closestCandidates(this.entities,5,
       t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1)&&!economicDanger(state,t,0,memory),
       source=>distance(e,source));
-      for(const source of sources){const route=this.pathTo(e,source);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>source.r+e.r+1.1)continue;
-        e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=0;return;
+      for(const source of sources){const range=gatheringPathRange(e,source),route=this.pathTo(e,source,range);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>gatheringRange(e,source))continue;
+        e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=range;return;
       }
     }e.order=null;e.path=[];
   };

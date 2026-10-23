@@ -20,7 +20,7 @@ export function installFrontiers(Simulation){
         this.addUnit('galley',owner,sign*9,owner===0?14:-14);this.addUnit('transport',owner,sign*10,owner===0?34:-34);
         boat.order={type:'gather',target:null};
       }
-      for(let i=0;i<12;i++){const fish=this.addResource('food',(this.rng()-.5)*17,-66+i*12,2200);fish.water=true;fish.r=2.1;}
+      for(let i=0;i<12;i++){const fish=this.addNaturalResource('food',(this.rng()-.5)*17,-66+i*12,2200);fish.water=true;fish.r=2.1;}
       for(const e of this.entities.filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=this.maxHP(e);e.hp=e.maxHp;}
       for(const boat of this.entities.filter(e=>e.type==='fishingboat'))this.assignWorker(boat);
       this.updateFog();

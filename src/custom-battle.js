@@ -39,7 +39,7 @@ function startingDeposits(sim,base,owner){
         type!=='food'&&e.kind==='unit'&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+2 ||
         e.kind==='resource'&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+2
       ))))continue;
-      for(const point of points){const deposit=sim.addResource(type,point.x,point.z,type==='food'?500:2200);deposit.startDeposit=owner;}
+      for(const point of points){const deposit=sim.addNaturalResource(type,point.x,point.z,type==='food'?500:2200);deposit.startDeposit=owner;}
       break;
     }
   }
@@ -70,11 +70,11 @@ function initializeBattle(sim){
   for(let i=0;i<scattered;i++){
     const x=(sim.rng()-.5)*(sim.worldSize-16),z=(sim.rng()-.5)*(sim.worldSize-16);
     if(sim.isWater(x,z)||reservedStartingLand(sim,x,z)||sim.startClearing(x,z)||sim.entities.some(e=>e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+6))continue;
-    sim.addResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2400:300);
+    sim.addNaturalResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2400:300);
   }
   plantStartingForests(sim);
   if(sim.options.map==='coast'){
-    for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
+    for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addNaturalResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
   for(let owner=0;owner<sim.players.length;owner++)sim.assignEconomy(owner);
   for(const unit of sim.entities.filter(e=>e.type==='fishingboat'))sim.assignWorker(unit);
@@ -83,6 +83,13 @@ function initializeBattle(sim){
 
 export function installCustomBattle(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tickAI=p.tickAI,checkVictory=p.checkVictory,serialize=p.serialize,restore=Simulation.restore,hurt=p.hurt,emit=p.emit;
+  p.donateResources=function(from,to,type,amount){
+    if(this.options.mode!=='custom'||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
+    const sender=this.players[from],recipient=this.players[to];
+    if(!sender||!recipient||sender.defeated||recipient.defeated||!this.allied(from,to)||!Number.isFinite(sender.resources[type])||sender.resources[type]<amount||!Number.isFinite(recipient.resources[type]))return false;
+    sender.resources[type]-=amount;recipient.resources[type]+=amount;
+    this.emit('donation',{from,to,resource:type,amount});return true;
+  };
   p.initialize=function(){if(this.options.mode==='custom')initializeBattle(this);else initialize.call(this);};
   p.tickAI=function(){if(this.options.mode!=='custom')return tickAI.call(this);for(let owner=1;owner<this.players.length;owner++)if(!this.players[owner].defeated)tickAI.call(this,owner);};
   p.tickCustomAI=function(dt){for(let owner=0;owner<this.players.length;owner++){

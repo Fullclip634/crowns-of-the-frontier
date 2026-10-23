@@ -34,7 +34,7 @@ export function ensureModels(view){
   if(view.modelsReady)return;view.modelsReady=true;const m=view.materials;
   Object.assign(m,{leather:standard(0x594334),pants:standard(0x535c4a),hair:standard(0x47372b),straw:standard(0xbda270),horse:standard(0x76513a),mane:standard(0x342b28),steel:standard(0xb5c0c0,{metalness:.85,roughness:.3}),slate:standard(0x47576a),brick:standard(0x967255),grain:standard(0xd7b65b),fruit:standard(0x9e4240),canvas:standard(0xd0c4a6),glow:standard(0xcd6229,{emissive:0xff6d26,emissiveIntensity:1.8}),relic:standard(0x55cdb5,{emissive:0x287b67,emissiveIntensity:.65,metalness:.55,roughness:.18})});
   m.brick.map=m.stone.map;m.brick.bumpMap=m.stone.bumpMap;m.brick.bumpScale=.1;m.snow=standard(0xe3e9e5);
-  m.rock=standard(0xa3aca3);m.oreRock=standard(0x737a68);
+  m.rock=standard(0xa3aca3);m.oreRock=standard(0xd4a643,{metalness:.3,roughness:.63});m.oreGold=standard(0xffd26e,{metalness:.72,roughness:.3});
   const capsule=new THREE.CapsuleGeometry(.5,.5,2,8);capsule.scale(1,2/3,1);
   Object.assign(view.geo,{capsule,anatomy:new THREE.SphereGeometry(1,10,7),foliageNear:new THREE.IcosahedronGeometry(1,1),foliageFar:new THREE.IcosahedronGeometry(1,0),grain3d:new THREE.OctahedronGeometry(1),limb:new THREE.CylinderGeometry(.86,1,1,7),cloth3d:closedCloth(),arch3d:archGeometry(),roof3d:gableGeometry(),hull3d:hullGeometry(),wheel3d:new THREE.TorusGeometry(.5,.09,5,16).rotateY(Math.PI/2),ring3d:new THREE.TorusGeometry(1,.075,5,20),rock3d:new THREE.DodecahedronGeometry(1,0),helmet3d:new THREE.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.68),dome3d:new THREE.SphereGeometry(1,16,8,0,Math.PI*2,0,Math.PI/2)});
   // These props can share materials with baked-color Blender meshes. Supply a

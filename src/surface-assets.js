@@ -49,7 +49,10 @@ export function applySurfaceMaterials(view){
   bind(m.stone,'stone',0xe5e0d4);bind(m.brick,'stone',0xb8947b);
   bind(m.plaster,'plaster',0xe5dbbf);
   bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
-  bind(m.rock,'boulder',0xd8ded8);bind(m.oreRock,'boulder',0x9d9c88);
+  bind(m.rock,'boulder',0xd8ded8);bind(m.oreRock,'boulder',0xd4a643);
+  // The grey boulder albedo hides gold at low detail; preserve its relief while
+  // tinting the ore body itself. Gold veins use a separate metallic material.
+  if(m.oreRock){m.oreRock.map=null;m.oreRock.roughnessMap=null;m.oreRock.metalness=.3;m.oreRock.roughness=.63;m.oreRock.needsUpdate=true;}
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 

@@ -22,9 +22,18 @@ test('eight human commanders ready, receive private team perspectives, reconnect
   for(let i=0;i<8;i++){
     const state=beginnings[i].state;assert.equal(state.players[0].name,i===0?'Host':`Commander ${i+1}`);assert.equal(state.entities.filter(e=>e.hp>0&&e.owner===0&&e.kind==='unit').length,9);assert.equal(state.visible.length,40000);
     assert.equal(state.options.aiPace,'patient');
-    assert.ok(state.players.slice(1).every(player=>Object.values(player.resources).every(value=>value===0)));assert.equal(state.aiStates,null);assert.equal(state.commanderAI,null);assert.deepEqual(state.teamAlarms,{});
+    for(const player of state.players.slice(1)){const owner=room.sim.players.findIndex(value=>value.name===player.name);assert.notEqual(owner,-1);if(room.sim.allied(i,owner))assert.deepEqual(player.resources,room.sim.players[owner].resources,`allied supplies are visible to ${state.players[0].name}`);else assert.ok(Object.values(player.resources).every(value=>value===0),'enemy supplies remain private');}assert.equal(state.aiStates,null);assert.equal(state.commanderAI,null);assert.deepEqual(state.teamAlarms,{});
     assert.equal(state.entities.filter(e=>e.hp>0&&e.kind==='unit'&&state.players[e.owner]?.team!==state.players[0].team).length,0);
   }
+  for(const player of players)player.inbox.items=[];
+  const donor=room.sim.players[0].resources.wood,receiver=room.sim.players[1].resources.wood,enemyTreasury={...room.sim.players[4].resources};
+  host.send({type:'action',method:'donateResources',args:[0,1,'wood',125]});
+  await until(()=>room.sim.players[0].resources.wood===donor-125&&room.sim.players[1].resources.wood===receiver+125);
+  await until(()=>players[0].inbox.items.some(message=>message.type==='donation')&&players[1].inbox.items.some(message=>message.type==='donation'));
+  assert.deepEqual(room.sim.players[4].resources,enemyTreasury,'enemy treasuries cannot be changed by an allied gift');
+  assert.ok(players[0].inbox.items.some(message=>message.type==='donation'&&message.from==='Host'&&message.to==='Commander 2'&&message.amount===125&&message.resource==='wood'));
+  assert.ok(players[1].inbox.items.some(message=>message.type==='donation'&&message.from==='Host'&&message.to==='Commander 2'&&message.amount===125&&message.resource==='wood'));
+  host.send({type:'action',method:'donateResources',args:[0,4,'gold',100]});assert.match((await host.inbox.next('error')).message,/gift could not be sent/);assert.equal(room.sim.players[4].resources.gold,enemyTreasury.gold);
   for(const player of players)player.inbox.items=[];
   room.sim.teamAlarms={private:{owner:1,base:123,x:20,z:25,at:0,intensity:40}};
   room.sim.emit('ally-support',{owner:1,ally:0,count:4,x:room.sim.players[0].start.x,z:room.sim.players[0].start.z});

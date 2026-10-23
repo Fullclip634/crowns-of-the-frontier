@@ -70,6 +70,15 @@ function regionsFor(sim,grid){
   }grid.pathRegions=labels;return labels;
 }
 
+function finishResourceApproach(sim,grid,unit,target,range,route){
+  if(target.kind!=='resource'||target.type!=='wood'||!(range>0)||unit.pathStatus!=='ready')return route;
+  const last=route.at(-1)||unit,distance=Math.hypot(last.x-target.x,last.z-target.z);if(distance<=range+.000001||distance>range+1.5)return route;
+  const point={x:target.x+(last.x-target.x)*range/distance,z:target.z+(last.z-target.z)*range/distance},limit=sim.halfWorld-3;
+  // A coarse cell center can sit just outside axe reach. Finish within that
+  // navigable space; never shorten the route through a resource or a wall.
+  if(Math.abs(point.x)<=limit&&Math.abs(point.z)<=limit&&clearSegment(sim,grid,last,point))route.push(point);return route;
+}
+
 export function findPath(sim,e,dest,range=0){
   const grid=unitNavigationGrid(sim,e),size=sim.gridSize||80,half=sim.halfWorld||80;
   const nearest=(cell,point,labels=null,region=0)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region))return cell;let best=null,score=Infinity;
@@ -77,7 +86,7 @@ export function findPath(sim,e,dest,range=0){
   const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x],a=nearest(sim.cell(e.x,e.z),e);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
   const traffic=crowdCosts(sim,e);
   const start=a.z*size+a.x,area=range>0&&Number.isFinite(dest.r);let end=b.z*size+b.x;
-  if(!area&&start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
+  if(!area&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
   if(!traffic&&exact&&clearSegment(sim,grid,e,dest)){e.pathStatus='ready';return[{x:dest.x,z:dest.z}];}
   const labels=regionsFor(sim,grid);let goals=null;
   // A mine, drop site or combat target can be approached from multiple sides.
@@ -88,7 +97,7 @@ export function findPath(sim,e,dest,range=0){
       if(!grid[id]&&labels[id]===labels[start]&&Math.abs(wx)<=half-3&&Math.abs(wz)<=half-3&&Math.hypot(wx-dest.x,wz-dest.z)<=range)goals.add(id);
     }if(!goals.size)goals=null;
   }
-  if(!goals&&start===end){e.pathStatus='ready';return[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}];}
+  if(!goals&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
   if(!goals&&labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
   const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={size,came:new Int32Array(size*size),cost:new Float32Array(size*size),closed:new Uint8Array(size*size)});
   const came=scratch.came.fill(-1),cost=scratch.cost.fill(Infinity),closed=scratch.closed.fill(0),open=new MinHeap();
@@ -98,5 +107,5 @@ export function findPath(sim,e,dest,range=0){
     closed[current]=1;const x=current%size,z=Math.floor(current/size);
     for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||closed[id]||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(n<cost[id]){cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
   }
-  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return result;
+  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return finishResourceApproach(sim,grid,e,dest,range,result);
 }

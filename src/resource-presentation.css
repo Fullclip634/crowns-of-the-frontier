@@ -1,0 +1,20 @@
+#hud .resource{grid-template-columns:25px auto;grid-template-rows:12px 20px;column-gap:7px;align-items:center}
+#hud .resource-icon{grid-column:1;grid-row:1 / 3;display:grid;place-items:center;width:22px;height:22px}
+#hud .resource-icon svg{display:block;width:100%;height:100%}
+#hud .resource-icon.wood{color:#b58d66}
+#hud .resource-icon.population-icon{color:#b8c5ad}
+#hud .resource small{grid-column:2;grid-row:1;display:block;margin:0;font-size:8px;letter-spacing:.7px;line-height:1;color:#b8c7b0;white-space:nowrap}
+#hud .resource strong{grid-column:2;grid-row:2;line-height:1.1;white-space:nowrap}
+@media (pointer:coarse) and (max-height:520px) and (orientation:landscape),
+       (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+  #hud .resource{display:grid;grid-template-columns:16px auto;grid-template-rows:11px 15px;column-gap:3px;row-gap:0}
+  #hud .resource-icon{width:16px;height:16px}
+  #hud .resource small{display:block;font-size:8px;letter-spacing:.1px;color:#d2dbc9}
+  #hud .resource strong{font-size:12px}
+}
+@media (pointer:coarse) and (max-width:600px) and (orientation:portrait){
+  #hud .resource{grid-template-columns:14px auto;column-gap:2px}
+  #hud .resource-icon{width:14px;height:14px}
+  #hud .resource small{font-size:7px}
+  #hud .resource strong{font-size:clamp(9px,3vw,11px)}
+}

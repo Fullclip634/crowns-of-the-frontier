@@ -29,7 +29,7 @@ export async function verifyForestActions(page,output){
   }
   await page.evaluate(async()=>{
     const v=frontier.view,s=frontier.sim;s.options.map='highlands';s.entities=[];s.time=.4;
-    const wood=s.addResource('wood',-10,2,300),gold=s.addResource('gold',-3,2,300),food=s.addResource('food',4,2,300),house=s.addBuilding('house',0,11,3);house.progress=.35;
+    const wood=s.addResource('wood',-10,1.55,300),gold=s.addResource('gold',-3,2,300),food=s.addResource('food',4,2,300),house=s.addBuilding('house',0,11,3);house.progress=.35;
     for(const [target,type,x]of [[wood,'gather',-10],[gold,'gather',-3],[food,'gather',4],[house,'build',11]]){const e=s.addUnit('villager',0,x,-.5);e.order={type,target:target.id};e.heading=0;e.work=.4;e.carry=1;}
     const sword=s.addUnit('swordsman',0,0,-8);sword.cooldown=.9;sword.order={type:'attack',target:wood.id};
     v.attach(s);v.focus(0,0);v.zoom=28;v.tilt=.65;v.angle=Math.PI;v.settings.reducedMotion=false;v.updateCamera();await qaDraw();

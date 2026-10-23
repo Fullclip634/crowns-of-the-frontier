@@ -10,6 +10,7 @@ import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
 import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
+import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -91,16 +92,17 @@ export class Simulation {
       const nx=clamp(x*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75),nz=clamp(z*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75);
       if(type==='wood'&&reservedStartingLand(this,nx,nz))continue;
       if(this.entities.some(e=>e.kind==='building'&&distance(e,{x:nx,z:nz})<e.r+3)||this.isWater(nx,nz)||this.startClearing(nx,nz))continue;
-      this.addResource(type,nx,nz,type==='wood'?220:type==='food'?350:1800);
+      this.addNaturalResource(type,nx,nz,type==='wood'?220:type==='food'?350:1800);
     }
-    for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addResource('wood',x,z,240);}
-    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addResource('wood',x,z,260);}
-    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addResource(i%2?'stone':'gold',x,z,2200);}
+    for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addNaturalResource('wood',x,z,240);}
+    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addNaturalResource('wood',x,z,260);}
+    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26,-23],[3,1],[28,25]])this.addShrine(x,z);}
     plantStartingForests(this);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
   addResource(type,x,z,amount){const e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;return e;}
+  addNaturalResource(type,x,z,baseAmount){return this.addResource(type,x,z,baseAmount*2);}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
   maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];return d.hp*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
   addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type];const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);connectWall(e,this.entities);this.revision++;this.emit('spawn',{entity:e});return e;}
@@ -278,8 +280,8 @@ export class Simulation {
         if(e.orders.length){this.finishOrder(e);return;}
         if(this.players[e.owner].controller==='ai'||e.owner>0&&this.players[e.owner].controller!=='human'){this.assignWorker(e);return;}
         const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1)).sort((a,b)=>distance(e,a)-distance(e,b));
-        for(const resource of sources){const route=this.pathTo(e,resource);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>resource.r+e.r+1.1)continue;
-          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=0;return;
+        for(const resource of sources){const range=gatheringPathRange(e,resource),route=this.pathTo(e,resource,range);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>gatheringRange(e,resource))continue;
+          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=range;return;
         }
       }
       if(order.type==='build'&&e.type==='villager'&&(order.wallConstruction||this.entities.some(wall=>wall.id===order.target&&wall.type==='wall'&&wall.owner===e.owner)))this.finishWallOrder(e,this.entities.find(wall=>wall.id===order.target));else this.finishOrder(e);return;
@@ -302,7 +304,7 @@ export class Simulation {
         e.heading=Math.atan2(drop.x-e.x,drop.z-e.z);
         this.players[e.owner].resources[e.carryType||type]+=e.carry;this.emit('gathered',{owner:e.owner,amount:e.carry,resource:e.carryType||type});if(e.owner===0){this.stats.gathered+=e.carry;this.tutorialFlags.gather=true;}e.carry=0;e.carryType=null;order.returning=false;e.path=[];e.repath=0;return;
       }
-      if(distance(e,target)>target.r+e.r+1.1){this.move(e,target,dt,target.r+e.r+.75);return;}
+      if(distance(e,target)>gatheringRange(e,target)){this.move(e,target,dt,gatheringApproach(e,target));return;}
       e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*this.faction(e.owner).gather*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
       if(target.amount!==undefined){target.amount-=n;if(target.amount<=0){target.hp=0;this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}}

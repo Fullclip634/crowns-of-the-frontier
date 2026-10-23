@@ -8,6 +8,7 @@ export class LanClient {
       if(data.type==='begin'){this.active=true;this.code=data.code;this.callbacks.begin(data.state);this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
       if(data.type==='chat')this.callbacks.chat?.(data.message);
       if(data.type==='chat-error')this.callbacks.chatError?.(data.message);
+      if(data.type==='donation')this.callbacks.donation?.(data);
       if(data.type==='state')this.callbacks.state(data.state,data.effects,data.waiting);
       if(data.type==='error'){if(!this.active&&this.intent?.type==='resume'){this.session=null;try{sessionStorage.removeItem('crowns-lan');}catch{}}this.callbacks.notice(data.message);}
       if(data.type==='closed'){this.leave();this.callbacks.closed?.();this.callbacks.notice(data.message);}
@@ -19,6 +20,6 @@ export class LanClient {
   send(message){if(this.socket?.readyState===WebSocket.OPEN){this.socket.send(JSON.stringify(message));return true;}return false;}
   chat(text,channel,requestId){return this.send({type:'chat',text,channel,requestId});}
   action(method,args){const normalized=args.map(arg=>arg?.id!==undefined?arg.id:arg);this.send({type:'action',method,args:normalized});return true;}
-  bind(sim){for(const method of ['build','buildWallLine','train','research','cancelQueue','trade','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign','townBell','returnToWork','seekShelter'])sim[method]=(...args)=>{if(method==='buildWallLine')return this.action(method,[args[0]?.x,args[0]?.z,args[1]?.x,args[1]?.z,args[2]]);if(['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return this.action(method,args);};}
+  bind(sim){for(const method of ['build','buildWallLine','train','research','cancelQueue','trade','donateResources','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign','townBell','returnToWork','seekShelter'])sim[method]=(...args)=>{if(method==='buildWallLine')return this.action(method,[args[0]?.x,args[0]?.z,args[1]?.x,args[1]?.z,args[2]]);if(method==='donateResources')return this.send({type:'action',method,args});if(['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return this.action(method,args);};}
   leave(){this.leaving=true;this.active=false;clearTimeout(this.reconnectTimer);this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;this.callbacks.chatReset?.();try{sessionStorage.removeItem('crowns-lan');}catch{}}
 }

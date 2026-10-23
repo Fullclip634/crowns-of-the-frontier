@@ -60,7 +60,7 @@ export function plantStartingForests(sim) {
         if(bases.some(other=>other!==base&&(Math.hypot(nx-other.x,nz-other.z)<INNER||Math.hypot(nx-other.x,nz-other.z)<RESERVED&&inLane(sim,other,nx,nz))))continue;
         if(sim.startClearing(nx,nz)||obstacles.some(e=>Math.hypot(e.x-nx,e.z-nz)<e.r+(e.kind==='building'?3:e.kind==='unit'?2:2.1)))continue;
         if(sim.entities.some(e=>e.type==='wood'&&Math.hypot(e.x-nx,e.z-nz)<1.8))continue;
-        const tree=sim.addResource('wood',nx,nz,300);tree.startForest=base.owner;planted++;
+        const tree=sim.addNaturalResource('wood',nx,nz,300);tree.startForest=base.owner;planted++;
       }
     }
   }

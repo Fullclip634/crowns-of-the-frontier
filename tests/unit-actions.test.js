@@ -9,7 +9,7 @@ import {bindWorkerToolJoints} from '../src/worker-tool-rig.js';
 import {animatePart,beginJointPose,endJointPose} from '../src/world-polish.js';
 import {entityPerspective} from '../server/entity-perspective.js';
 
-function fixture(){const resource={id:2,type:'wood',kind:'resource',amount:100,hp:1,x:0,z:2.2,r:1.1},unit={id:1,type:'villager',kind:'unit',owner:1,hp:40,x:0,z:0,r:.65,work:.4,order:{type:'gather',target:2},carry:2},sim={time:.4,get:id=>id===2?resource:id===1?unit:null};return {resource,unit,sim,view:{sim,clock:4},actions:new UnitActions()};}
+function fixture(){const resource={id:2,type:'wood',kind:'resource',amount:100,hp:1,x:0,z:2.05,r:1.1},unit={id:1,type:'villager',kind:'unit',owner:1,hp:40,x:0,z:0,r:.65,work:.4,order:{type:'gather',target:2},carry:2},sim={time:.4,get:id=>id===2?resource:id===1?unit:null};return {resource,unit,sim,view:{sim,clock:4},actions:new UnitActions()};}
 test('work actions start only at a live resource or unfinished building and fade when work stops',()=>{
   const f=fixture(),{unit,resource,view,actions}=f;assert.equal(workTarget(view,unit),resource);assert.equal(actions.update(view,unit,.2).task,'wood');
   for(const change of [{moving:true},{x:100},{hp:0},{embarked:1},{order:{type:'gather',target:2,returning:true}},{cooldown:.5}])assert.equal(workTarget(view,{...unit,...change}),null);

@@ -43,6 +43,19 @@ test('alliances prevent automatic and explicit friendly damage while allowing he
   const gate=s.addBuilding('gate',1,30,25,true),c=s.cell(gate.x,gate.z);assert.equal(s.grid(0)[c.z*s.gridSize+c.x],0);assert.equal(s.grid(2)[c.z*s.gridSize+c.x],1);
   assert.equal(s.guard([a.id],ally.id),true);assert.equal(s.guard([a.id],enemy.id),false);
 });
+
+test('allied resource gifts transfer the exact integer amount and reject enemies, invalid amounts and ended games',()=>{
+  const s=make({slots:battlePreset('4v4')}),events=[];s.on(event=>events.push(event));
+  const before={from:s.players[0].resources.wood,to:s.players[1].resources.wood};
+  assert.equal(s.donateResources(0,1,'wood',125),true);
+  assert.equal(s.players[0].resources.wood,before.from-125);assert.equal(s.players[1].resources.wood,before.to+125);
+  assert.deepEqual(events.at(-1),{type:'donation',from:0,to:1,resource:'wood',amount:125});
+  const enemy=s.players[4].resources.gold;
+  for(const [from,to,type,amount]of [[0,4,'gold',100],[0,0,'wood',1],[0,1,'iron',1],[0,1,'wood',0],[0,1,'wood',1.5],[0,1,'wood',1000001],[0,1,'wood',s.players[0].resources.wood+1]])assert.equal(s.donateResources(from,to,type,amount),false);
+  assert.equal(s.players[4].resources.gold,enemy);
+  s.end(false,'test');assert.equal(s.donateResources(0,1,'wood',1),false);
+  const ordinary=new Simulation({mode:'skirmish',seed:512});assert.equal(ordinary.donateResources(0,1,'wood',1),false);
+});
 test('shared vision reveals allies but never distant opponents, and can be disabled',()=>{
   const s=make(),ally=s.players[1].start,enemy=s.players[2].start;s.updateFog();assert.equal(s.isVisible(ally.x,ally.z),true);assert.equal(s.isVisible(enemy.x,enemy.z),false);
   s.options.shareVision=false;s.updateFog();assert.equal(s.isVisible(ally.x,ally.z),false);

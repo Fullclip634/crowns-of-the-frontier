@@ -9,6 +9,8 @@ import './style.css';
 import './interface.css';
 import './phone-hud.css';
 import './wall-placement.css';
+import './resource-presentation.css';
+import './alliance-ui.css';
 import {WallPlacement,wallPlacementPlan} from './wall-placement.js';
 import {WallPreview} from './wall-preview.js';
 import {mechanicalUnit} from './maintenance.js';
@@ -29,7 +31,8 @@ import {productionBuildings,trainingBuildings,trainAcrossBuildings} from './prod
 import {FRAME_RATES,normalizeFrameRate,targetFrameRate,FramePacer} from './frame-pacing.js';
 import {SimulationPacer,SIMULATION_STEP} from './simulation-pacing.js';
 import {installGameUpdates} from './game-updates.js';
-import {resourceAmount} from './ui-format.js';
+import {resourceBarMarkup} from './resource-bar.js';
+import {allianceMarkup,refreshAllianceModal} from './alliance-ui.js';
 import {registerOfflineGame} from './offline-registration.js';
 import {graphicsSelection,applyGraphicsChoice,rendererStatus} from './graphics-settings.js';
 import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery-ui.js';
@@ -64,7 +67,7 @@ document.querySelector('#app').innerHTML=`
     <footer class="landing-footer"><span>ECONOMY · WARFARE · EMPIRE</span><span>Made for mouse & touch <span class="tiny-diamond">◆</span> Best played in landscape</span></footer>
   </div>
   <div id="hud" class="hidden">
-    <header class="game-header"><button class="game-brand" data-action="pause" title="Pause / menu (Esc)"><span>♜</span> CROWNS</button><div id="resource-bar"></div><div class="time-controls"><span id="age-label"></span><span id="game-time">00:00</span><button data-action="production" id="production-toggle" aria-label="Production overview" aria-expanded="false" title="Production overview (P)">P<span id="production-count" class="production-count hidden">0</span></button><button data-action="speed" id="speed-button" title="Game speed">1×</button><button data-action="pause" title="Pause / menu (Esc)" aria-label="Pause">Ⅱ</button></div></header>
+    <header class="game-header"><button class="game-brand" data-action="pause" title="Pause / menu (Esc)"><span>♜</span> CROWNS</button><div id="resource-bar"></div><div class="time-controls"><span id="age-label"></span><span id="game-time">00:00</span><button data-action="alliance" id="alliance-toggle" class="hidden" aria-label="Allies and resource gifts" title="Allies and resource gifts">⇄</button><button data-action="production" id="production-toggle" aria-label="Production overview" aria-expanded="false" title="Production overview (P)">P<span id="production-count" class="production-count hidden">0</span></button><button data-action="speed" id="speed-button" title="Game speed">1×</button><button data-action="pause" title="Pause / menu (Esc)" aria-label="Pause">Ⅱ</button></div></header>
     <aside id="objectives" class="objective-panel"></aside><div id="alert-line"></div>${battleChatMarkup()}
     <nav class="camera-controls" aria-label="Battlefield camera"><button data-action="camera-left" aria-label="Rotate camera left" title="Rotate left (Q)">↶</button><button data-action="camera-right" aria-label="Rotate camera right" title="Rotate right (E)">↷</button><button data-action="camera-closer" aria-label="Zoom in" title="Zoom in">+</button><button data-action="camera-farther" aria-label="Zoom out" title="Zoom out">−</button><button data-action="camera-view" aria-label="Change camera view" title="Change camera angle (V)"><span id="camera-view-label">Perspective</span></button><button data-action="camera-panels" aria-label="Toggle battlefield panels" aria-pressed="false" title="Show or hide battlefield panels">□</button><button id="deselect-control" class="hidden" data-action="deselect" aria-label="Deselect units and buildings" title="Deselect without stopping their orders">×<span>Deselect</span></button><button data-action="weather" aria-label="Change weather" title="Change weather"><span id="weather-label">Clear</span></button><button data-action="camera-options" aria-label="More camera options" aria-expanded="false">⋯</button></nav>
     <div id="health-layer"></div><div id="selection-box"></div><div id="toasts" aria-live="polite"></div>
@@ -75,6 +78,7 @@ document.querySelector('#app').innerHTML=`
 `;
 
 let selectionKey='',productionKey='',objectiveKey='',productionOpen=false;
+let allianceRecipient=null;
 let modalOpener=null;
 let tacticalMode=null;
 let unloadMode=false;
@@ -132,7 +136,7 @@ function setSelection(ids){selectionKey='';selection=[...new Set(ids)].filter(id
 function selected(){return selection.map(id=>sim.get(id)).filter(Boolean);}
 function workers(){return selected().filter(e=>e.owner===0&&e.type==='villager').map(e=>e.id);}
 function updateCameraLabel(){const label=$('#camera-view-label');if(label)label.textContent=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).label;}
-function closeModal(){if(view?.graphicsFatal&&modal==='graphics-recovery')return;if(modal==='pause'||modal==='settings-game'||modal==='help-game'||modal==='codex-game'||modal==='tree-game'||modal==='journal-game')paused=false;modal=null;$('#modal-root').innerHTML='';const opener=modalOpener;modalOpener=null;if(opener?.isConnected&&opener.getClientRects().length)opener.focus({preventScroll:true});}
+function closeModal(){if(view?.graphicsFatal&&modal==='graphics-recovery')return;if(modal==='pause'||modal==='settings-game'||modal==='help-game'||modal==='codex-game'||modal==='tree-game'||modal==='journal-game'||modal==='alliance')paused=false;modal=null;$('#modal-root').innerHTML='';const opener=modalOpener;modalOpener=null;if(opener?.isConnected&&opener.getClientRects().length)opener.focus({preventScroll:true});}
 function showModal(content,kind='info',wide=false){chat.close(false);if(!modal)modalOpener=document.activeElement;edgeScroll.reset();modal=kind;$('#modal-root').innerHTML=`<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true"><button class="modal-close" data-action="close" aria-label="Close dialog">×</button>${content}</section></div>`;const dialog=$('#modal-root .modal'),heading=dialog.querySelector('h2');if(heading){heading.id='dialog-heading';dialog.setAttribute('aria-labelledby',heading.id);}if(kind==='end')dialog.classList.add('result-dialog');if(kind==='settings'||kind==='settings-game')appendKeyboardSettings($('#modal-root'),settings.bindings);if(kind==='help'||kind==='help-game')$('#modal-root .help-grid').after(Object.assign(document.createElement('section'),{className:'current-controls',innerHTML:'<h3>Your active keyboard controls</h3>'+activeControlsMarkup(settings.bindings)}));$('#modal-root').querySelector('button')?.focus({preventScroll:true});}
 function showSetup(mode){if(mode==='custom')return showCustomBattle();const m=MODES.find(m=>m.id===mode)||MISSIONS.find(m=>m.id===mode);showModal(`<div class="eyebrow">${m.chapter?`CHAPTER ${m.chapter} · THE FRONTIER CHRONICLES`:m.label}</div><h2>${m.name}</h2><p class="modal-intro">${m.desc}</p><div class="setup-grid"><div><label class="field-label" for="faction">YOUR CIVILIZATION</label><select id="faction">${Object.entries(FACTIONS).map(([id,f])=>`<option value="${id}" ${id===setupOptions.faction?'selected':''}>${f.name}</option>`).join('')}</select><div id="faction-description" class="faction-description"></div></div><div><label class="field-label" for="difficulty">CHALLENGE</label><select id="difficulty">${Object.entries(DIFFICULTIES).map(([id,d])=>`<option value="${id}" ${id===setupOptions.difficulty?'selected':''}>${d.name}</option>`).join('')}</select><div id="difficulty-description" class="faction-description"></div></div><div><label class="field-label" for="map">BATTLEFIELD</label><select id="map" ${m.map?'disabled':''}>${Object.entries(MAPS).map(([id,map])=>`<option value="${id}" ${id===(m.map||setupOptions.map)?'selected':''}>${map.name}</option>`).join('')}</select></div><div><label class="field-label" for="seed">WORLD SEED</label><input id="seed" type="number" min="1" max="999999999" value="${m.seed||setupOptions.seed}"></div></div><div class="mission-brief"><span>VICTORY CONDITION</span><p>${m.objective}</p><small>${m.time||'A campaign chapter'} · Mouse & touch supported</small></div><button class="primary full" data-start="${mode}">${mode==='tutorial'?'Start the tutorial':'Enter the frontier'} <span>➜</span></button>`, 'setup');updateSetupDescriptions();}
 function updateSetupDescriptions(){if($('#faction')){$('#faction-description').textContent=FACTIONS[$('#faction').value].desc;$('#difficulty-description').textContent=DIFFICULTIES[$('#difficulty').value].desc;}}
@@ -152,6 +156,7 @@ function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!=
   if(e.type==='kingdom-defeated')toast(`${e.name} has been eliminated.${e.owner===0?' You can watch your allies continue.':''}`);
   if(e.type==='remnants-revealed')toast(`${e.name}: the last buildings are marked on the radar.`);
   if(e.type==='ally-support'&&sim.allied(0,e.ally))toast(`${sim.players[e.owner]?.name||'Your ally'} is sending ${e.count} reinforcements to ${e.ally===0?'your base':sim.players[e.ally]?.name||'an allied base'}.`);
+  if(e.type==='donation'&&(e.from===0||e.to===0)){toast(e.from===0?`Sent ${e.amount} ${e.resource} to ${sim.players[e.to].name}.`:`${sim.players[e.from].name} sent you ${e.amount} ${e.resource}.`);renderHUD();refreshAllianceModal(modal==='alliance'?$('#modal-root'):null,sim,allianceRecipient);}
   if(e.type==='complete'){toast(`${BUILDINGS[e.entity.type].name} completed.`);audio.play('complete');renderSelection();}
   if(e.type==='trained'&&e.entity.owner===0){audio.play('complete');if(e.entity.type==='villager'&&!e.entity.order)sim.assignWorker(e.entity);}
   if(e.type==='research'){toast(e.tech==='age'?`${AGES[e.age]} reached. New troops and buildings unlocked.`:`${TECHS[e.tech].name} completed.`);audio.play('complete');renderSelection();}
@@ -285,7 +290,8 @@ function renderSelection(){if(!playing)return;selection=selection.filter(id=>{co
   if(mine&&first.kind==='building'&&(first.type!=='towncenter'||sim.owned(0,'building','towncenter').length>1))panel.innerHTML+=`<button class="demolish" data-demolish="${first.id}">${first.progress<1?'Cancel construction (70% refund)':'Demolish (20% refund)'}</button>`;
   }finally{updateSelectionLive(panel,list);restorePosition();}
 }
-function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('context-command',!!buildType||attackMove||!!tacticalMode||unloadMode);const p=sim.players[0];$('#resource-bar').innerHTML=['food','wood','gold','stone'].map(r=>`<div class="resource" role="group" aria-label="${r}: ${Math.floor(p.resources[r])}" title="${r}: ${Math.floor(p.resources[r])}"><span class="resource-icon ${r}">${ICONS[r]}</span><strong>${resourceAmount(p.resources[r])}</strong><small>${r==='wood'?'TIMBER':r.toUpperCase()}</small></div>`).join('')+`<div class="resource population ${sim.population(0)>=sim.capacity(0)?'full-pop':''}"><span class="resource-icon">♟</span><strong>${sim.population(0)}<i>/${sim.capacity(0)}</i></strong><small>POPULATION</small></div>`;
+function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('context-command',!!buildType||attackMove||!!tacticalMode||unloadMode);const p=sim.players[0];$('#resource-bar').innerHTML=resourceBarMarkup(p,sim.population(0),sim.capacity(0));
+  $('#alliance-toggle').classList.toggle('hidden',sim.options.mode!=='custom'||!sim.players.some((player,i)=>i!==0&&sim.allied(0,i)&&!player.defeated));
   $('#age-label').textContent=AGES[p.age];$('#game-time').textContent=formatTime(sim.time);if(net.active)$('#control-hint').textContent=`ROOM ${net.code} · ${net.ping}ms`;$('#speed-button').textContent=`${speed}×`;
   const m=MODES.find(m=>m.id===sim.options.mode)||sim.mission;let objective=m.objective;
   if(sim.options.mode==='tutorial')objective=sim.tutorialObjectives().map((o,i)=>`<div class="lesson ${o.done?'done':''}"><span>${o.done?'✓':i+1}</span>${o.text}</div>`).join('');
@@ -305,6 +311,8 @@ function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){const layer=$('#health-layer');let html='';for(const e of sim.entities){if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))continue;if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)continue;const p=view.project(e);if(p.visible&&p.x>0&&p.x<innerWidth&&p.y>50&&p.y<innerHeight-100)html+=`<div class="world-health ${sim.hostile(0,e.owner)?'rival':''}" style="left:${p.x}px;top:${p.y}px"><i style="width:${e.hp/e.maxHp*100}%"></i>${e.kind==='building'&&e.progress<1?`<small>${Math.floor(e.progress*100)}%</small>`:''}</div>`;}layer.innerHTML=html;}
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
+  if(name==='alliance'){showAlliance();return;}
+  if(name==='send-donation'){sendAllianceGift();return;}
   if(name==='wall-build'){confirmWallPlacement();return;}
   if(name==='wall-reset'){wallDraft.clear();view?.wallPreview?.hide();updateWallPlacement(true);return;}
   if(name==='wall-pan'){wallDraft.togglePan();edgeScroll.reset();view?.hideGhost();updateWallPlacement(true);return;}
@@ -338,6 +346,24 @@ function action(name){
   if(name==='patrol'||name==='guard'){cancelBuild();attackMove=false;$('#attackmove').classList.remove('active');tacticalMode=tacticalMode===name?null:name;$('#order-hint').textContent=tacticalMode==='guard'?'Choose a friendly unit or building to protect.':tacticalMode==='patrol'?'Choose the other end of the patrol route.':'Select units to issue orders.';return;}if(name==='stop'){tacticalMode=null;attackMove=false;$('#attackmove').classList.remove('active');sim.stop(selection);return;}if(name==='auto-work'){for(const e of selected().filter(e=>e.type==='villager')){e.order=null;sim.assignWorker(e);}toast('Villagers assigned to nearby resources.');return;}
   if(name==='attackmove'){tacticalMode=null;attackMove=!attackMove;$('#attackmove').classList.toggle('active',attackMove);$('#order-hint').textContent=attackMove?'Choose a destination. Troops will fight enemies along the way.':'Select units to issue orders.';}
 }
+function showAlliance(){
+  if(!playing||sim.options.mode!=='custom')return;
+  const allies=sim.players.map((player,i)=>i).filter(i=>i!==0&&sim.allied(0,i)&&!sim.players[i].defeated);
+  if(!allies.length)return toast('No active ally can receive supplies.','warning');
+  if(!allies.includes(allianceRecipient))allianceRecipient=allies[0];
+  paused=true;showModal(allianceMarkup(sim,allianceRecipient),'alliance',true);$('#modal-root .modal').classList.add('alliance-dialog');
+  refreshAllianceModal($('#modal-root'),sim,allianceRecipient);
+}
+function sendAllianceGift(){
+  const root=$('#modal-root'),type=root.querySelector('#donation-resource')?.value,amount=Number(root.querySelector('#donation-amount')?.value),feedback=root.querySelector('#alliance-feedback');
+  if(!feedback)return;
+  refreshAllianceModal(root,sim,allianceRecipient);
+  if(root.querySelector('[data-action=send-donation]').disabled){feedback.textContent='Choose an active ally and an amount you can afford.';return;}
+  if(net.active&&net.socket?.readyState!==WebSocket.OPEN){feedback.textContent='Connection interrupted. Wait for the room to reconnect.';return;}
+  const accepted=sim.donateResources(0,allianceRecipient,type,amount);
+  feedback.textContent=accepted?net.active?'Gift sent. Waiting for the shared battlefield to update.':`Sent ${amount} ${type}.`:'The gift could not be sent.';
+  refreshAllianceModal(root,sim,allianceRecipient);renderHUD();
+}
 let hudTouch=null,recentHudTouch=null;
 const touchHud=$('#hud');
 touchHud.addEventListener('pointerdown',event=>{if(event.pointerType!=='touch')return;const button=event.target.closest('button');hudTouch=button&&!button.disabled?{id:event.pointerId,button,x:event.clientX,y:event.clientY,at:performance.now()}:null;});
@@ -350,6 +376,7 @@ touchHud.addEventListener('pointerup',event=>{const touch=hudTouch;hudTouch=null
 document.addEventListener('click',event=>{const el=event.target.closest('button,a[data-action]');if(!el)return;
   if(event.isTrusted&&recentHudTouch&&performance.now()-recentHudTouch.at<1000&&(event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents)&&Math.hypot(event.clientX-recentHudTouch.x,event.clientY-recentHudTouch.y)<20){recentHudTouch=null;event.preventDefault();return;}
   if(el.dataset.battlePreset)showCustomBattle(el.dataset.battlePreset);
+  if(el.dataset.donationTarget){allianceRecipient=Number(el.dataset.donationTarget);const feedback=$('#alliance-feedback');if(feedback)feedback.textContent='';refreshAllianceModal($('#modal-root'),sim,allianceRecipient);}
   if(el.dataset.focusKingdom){const player=sim.players[Number(el.dataset.focusKingdom)];if(player?.start)view.focus(player.start.x,player.start.z);}
   if(el.dataset.action)action(el.dataset.action);
   if(el.dataset.demolish){sim.demolish(Number(el.dataset.demolish));selectionKey='';renderSelection();}
@@ -372,6 +399,8 @@ document.addEventListener('click',event=>{const el=event.target.closest('button,
   if(el.dataset.productionSelect){const b=sim.get(Number(el.dataset.productionSelect));if(b?.owner===0){setSelection([b.id]);view.focus(b.x,b.z);if(touchDevice&&productionOpen)action('production');}}
   if(el.dataset.productionGroup){setSelection(productionBuildings(sim).filter(b=>el.dataset.productionGroup==='all'||b.type===el.dataset.productionGroup).map(b=>b.id));if(touchDevice&&productionOpen)action('production');}
 });
+ document.addEventListener('input',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);});
+ document.addEventListener('change',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);});
 document.addEventListener('change',event=>{updateSetupDescriptions();if(modal==='custom-setup'){customDraft=updateBattlePreview($('#modal-root'));try{localStorage.setItem('crowns-custom-setup',JSON.stringify(customDraft));}catch{}}if(event.target.id==='lobby-slot')net.send({type:'slot',slot:Number(event.target.value)});});
 document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();if(key==='escape'&&chat.opened){event.preventDefault();chat.close();return;}if(key==='escape'&&modal){event.preventDefault();closeModal();return;}if(['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)||event.target.isContentEditable)return;if(!playing)return;if((key===' '||key==='enter')&&event.target.closest('button,a,summary'))return;if(key==='escape'&&$('#objectives').contains(event.target)&&$('#objectives').classList.contains('objectives-expanded')){event.preventDefault();action('objectives-expand');$('#objectives .objective-toggle').focus({preventScroll:true});return;}if(key==='enter'&&net.active&&!modal&&!event.target.closest('button,a')){event.preventDefault();chat.open(true);return;}if(chat.opened)return;
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(key))event.preventDefault();
@@ -468,13 +497,13 @@ function showLan(error=''){if(net.active)return showPause();showModal(`<div clas
 function connectLan(host){const name=$('#lan-name').value.trim()||'Commander',faction=$('#lan-faction').value,mode=$('#lan-mode').value,map=$('#lan-map').value,room=$('#lan-code').value.trim().toUpperCase();if(!host&&!/^[A-Z0-9]{6}$/.test(room))return showLan('Enter the six-character room code.');
   const message=host?{type:'create',name,faction,options:{mode,map,seed:Math.floor(Math.random()*999999)}}:{type:'join',name,faction,code:room,slot:Number($('#lan-slot').value)};if(net.socket)net.leave();showModal('<div class="eyebrow">PREPARING THE FRONTIER</div><h2>Connecting…</h2><p class="modal-intro">Contacting the multiplayer server. A free hosted server may take a moment to wake up.</p><button class="secondary" data-action="lan-leave">Cancel</button>','lan');net.connect(message);}
 const net=new LanClient({
-  chatSession:(code,session)=>chat.session(code,session),chat:message=>chat.receive(message),chatError:message=>chat.error(message),connection:connected=>chat.connection(connected),chatReset:()=>chat.reset(),
+  chatSession:(code,session)=>chat.session(code,session),chat:message=>chat.receive(message),chatError:message=>chat.error(message),donation:gift=>toast(`${gift.from} sent ${gift.amount} ${gift.resource} to ${gift.to}.`),connection:connected=>chat.connection(connected),chatReset:()=>chat.reset(),
   closed:()=>{if(playing)menuReturn();else closeModal();},
   notice:message=>{toast(message,'warning');if(!net.active&&modal==='lan'){if(!$('#lan-name'))showLan(message);else{let error=$('#modal-root .network-error');if(!error){error=document.createElement('p');error.className='modal-intro network-error';error.setAttribute('role','status');$('#modal-root h2').after(error);}error.textContent=message;}}},
   lobby:room=>{net.code=room.code;net.ready=room.selfReady;if(net.active)return;showModal(roomLobbyMarkup(room),'lan-lobby',true);},
   begin:state=>{startGame(state.options,state);net.bind(sim);const tc=sim.owned(0,'building','towncenter')[0];if(tc)view.focus(tc.x,tc.z);toast(`Connected to room ${net.code}. Human commanders and AI kingdoms share this battlefield.`);},
   state:(state,effects,waiting)=>{if(!playing||!net.active)return;const old=new Map(sim.entities.map(e=>[e.id,e]));const resources=state.compactResources?sim.entities.filter(e=>e.kind==='resource'):[];for(const update of state.resourceUpdates||[]){const e=resources.find(resource=>resource.id===update.id);if(e)Object.assign(e,update);}
-    view.networkSnapshotAt=performance.now();sim.visualProjectiles=state.visualProjectiles||[];sim.entities=[...state.entities,...resources].map(e=>{const previous=old.get(e.id);if(e.kind==='unit'&&previous){e.renderFromX=previous.renderX??previous.x;e.renderFromZ=previous.renderZ??previous.z;e.snapshotAt=performance.now();}return e;});sim.index=new Map(sim.entities.map(e=>[e.id,e]));for(const key of ['players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners'])sim[key]=state[key];sim.explored=Uint8Array.from(state.explored);sim.visible=Uint8Array.from(state.visible);sim.revision++;sim.grids={};view.pruneMissing();view.updateFog();for(const effect of effects)onEvent(effect);if(waiting)$('#alert-line').innerHTML='WAITING FOR THE OTHER COMMANDER TO RECONNECT';else if($('#alert-line').textContent.includes('WAITING'))$('#alert-line').innerHTML='';renderHUD();renderSelection();if(sim.ended&&modal!=='end')showEnd(sim.ended);},
+    view.networkSnapshotAt=performance.now();sim.visualProjectiles=state.visualProjectiles||[];sim.entities=[...state.entities,...resources].map(e=>{const previous=old.get(e.id);if(e.kind==='unit'&&previous){e.renderFromX=previous.renderX??previous.x;e.renderFromZ=previous.renderZ??previous.z;e.snapshotAt=performance.now();}return e;});sim.index=new Map(sim.entities.map(e=>[e.id,e]));for(const key of ['players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners'])sim[key]=state[key];sim.explored=Uint8Array.from(state.explored);sim.visible=Uint8Array.from(state.visible);sim.revision++;sim.grids={};view.pruneMissing();view.updateFog();for(const effect of effects)onEvent(effect);if(waiting)$('#alert-line').innerHTML='WAITING FOR THE OTHER COMMANDER TO RECONNECT';else if($('#alert-line').textContent.includes('WAITING'))$('#alert-line').innerHTML='';renderHUD();renderSelection();if(modal==='alliance')refreshAllianceModal($('#modal-root'),sim,allianceRecipient);if(sim.ended&&modal!=='end')showEnd(sim.ended);},
 });
 if(import.meta.env.PROD){
   const updates=installGameUpdates({buildId:document.querySelector('meta[name="frontier-build"]')?.content||'',canRefresh:()=>!net.active,
