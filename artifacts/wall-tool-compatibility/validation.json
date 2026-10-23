@@ -1,0 +1,104 @@
+{
+  "startedAt": "2026-10-23T03:54:00.034Z",
+  "environment": "Owned headless Chrome D3D11, GPU blocklist override; functional mouse/touch and shader validation, not physical phone performance.",
+  "wallTool": {
+    "mode": "compatibility",
+    "cases": [
+      {
+        "width": 568,
+        "height": 320,
+        "input": "touch",
+        "draftDoesNotSpend": true,
+        "wallDragLocksCamera": true,
+        "selectionPreserved": true,
+        "explicitPan": true,
+        "twoEndpointTaps": true,
+        "resetDoesNotSpend": true,
+        "confirmedWalls": 7,
+        "constructionOrderIssued": true,
+        "normalPan": true,
+        "pinchZoomWithoutRotation": true,
+        "qualities": [],
+        "blocked": {
+          "segments": 7,
+          "blocked": 3,
+          "unaffordable": 0,
+          "drawCalls": 3,
+          "from": {
+            "x": -9.000030183875285,
+            "z": 33.999877465927725
+          },
+          "to": {
+            "x": 8.09996981080366,
+            "z": 34.00030405725694
+          }
+        },
+        "pixels": {
+          "samples": 3762,
+          "colors": 1054,
+          "luminanceVariance": 830.9701963501593,
+          "painted": true
+        },
+        "layout": {
+          "rect": {
+            "x": 8,
+            "y": 52,
+            "width": 552,
+            "height": 79,
+            "top": 52,
+            "right": 560,
+            "bottom": 131,
+            "left": 8
+          },
+          "buttons": [
+            {
+              "text": "Build wall",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Reset",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Move map",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Cancel",
+              "height": 44,
+              "reachable": true
+            }
+          ],
+          "overflow": false,
+          "objectivesHidden": true,
+          "mapVisible": true
+        },
+        "notification": {
+          "panelBottom": 131,
+          "toastTop": 137
+        }
+      }
+    ],
+    "messages": [
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      }
+    ],
+    "simulationTimeFrozen": true,
+    "buildId": "1792727091819",
+    "compatibility": {
+      "active": true,
+      "features": []
+    }
+  },
+  "buildId": "1792727091819",
+  "passed": true
+}

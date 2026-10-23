@@ -1,0 +1,96 @@
+{
+  "startedAt": "2026-10-23T03:50:02.419Z",
+  "environment": "Owned headless Chrome D3D11, GPU blocklist override; functional mouse/touch and shader validation, not physical phone performance.",
+  "wallTool": {
+    "mode": "webgl",
+    "cases": [
+      {
+        "width": 568,
+        "height": 320,
+        "input": "touch",
+        "draftDoesNotSpend": true,
+        "wallDragLocksCamera": true,
+        "selectionPreserved": true,
+        "explicitPan": true,
+        "twoEndpointTaps": true,
+        "resetDoesNotSpend": true,
+        "confirmedWalls": 7,
+        "constructionOrderIssued": true,
+        "normalPan": true,
+        "pinchZoomWithoutRotation": true,
+        "qualities": [],
+        "blocked": {
+          "segments": 7,
+          "blocked": 3,
+          "unaffordable": 0,
+          "drawCalls": 3,
+          "from": {
+            "x": -9.000030183875273,
+            "z": 33.99987746592772
+          },
+          "to": {
+            "x": 8.099969810803673,
+            "z": 34.00030405725699
+          }
+        },
+        "pixels": {
+          "samples": 3762,
+          "colors": 1142,
+          "luminanceVariance": 627.6605471740095,
+          "painted": true
+        },
+        "layout": {
+          "rect": {
+            "x": 8,
+            "y": 52,
+            "width": 552,
+            "height": 79,
+            "top": 52,
+            "right": 560,
+            "bottom": 131,
+            "left": 8
+          },
+          "buttons": [
+            {
+              "text": "Build wall",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Reset",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Move map",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Cancel",
+              "height": 44,
+              "reachable": true
+            }
+          ],
+          "overflow": false,
+          "objectivesHidden": true,
+          "mapVisible": true
+        },
+        "notification": {
+          "panelBottom": 131,
+          "toastTop": 137
+        }
+      }
+    ],
+    "messages": [
+      {
+        "type": "warning",
+        "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+      }
+    ],
+    "simulationTimeFrozen": true,
+    "buildId": "1792727091819"
+  },
+  "buildId": "1792727091819",
+  "passed": true
+}

@@ -1,0 +1,326 @@
+{
+  "startedAt": "2026-10-23T03:45:04.239Z",
+  "environment": "Owned headless Chrome D3D11, GPU blocklist override; functional mouse/touch and shader validation, not physical phone performance.",
+  "wallTool": {
+    "mode": "default",
+    "cases": [
+      {
+        "width": 1366,
+        "height": 768,
+        "input": "mouse",
+        "draftDoesNotSpend": true,
+        "wallDragLocksCamera": true,
+        "selectionPreserved": true,
+        "explicitPan": true,
+        "twoEndpointTaps": true,
+        "resetDoesNotSpend": true,
+        "confirmedWalls": 7,
+        "constructionOrderIssued": true,
+        "normalPan": false,
+        "pinchZoomWithoutRotation": false,
+        "qualities": [
+          {
+            "quality": "high",
+            "ok": true,
+            "actual": "high",
+            "fatal": null,
+            "preview": {
+              "segments": 7,
+              "blocked": 0,
+              "unaffordable": 0,
+              "drawCalls": 3,
+              "from": {
+                "x": -9.00002408908816,
+                "z": 19.999903646265857
+              },
+              "to": {
+                "x": 8.099975910252812,
+                "z": 20.00005377523118
+              }
+            },
+            "visible": true
+          },
+          {
+            "quality": "medium",
+            "ok": true,
+            "actual": "medium",
+            "fatal": null,
+            "preview": {
+              "segments": 7,
+              "blocked": 0,
+              "unaffordable": 0,
+              "drawCalls": 3,
+              "from": {
+                "x": -9.00002408908816,
+                "z": 19.999903646265857
+              },
+              "to": {
+                "x": 8.099975910252812,
+                "z": 20.00005377523118
+              }
+            },
+            "visible": true
+          },
+          {
+            "quality": "low",
+            "ok": true,
+            "actual": "low",
+            "fatal": null,
+            "preview": {
+              "segments": 7,
+              "blocked": 0,
+              "unaffordable": 0,
+              "drawCalls": 3,
+              "from": {
+                "x": -9.00002408908816,
+                "z": 19.999903646265857
+              },
+              "to": {
+                "x": 8.099975910252812,
+                "z": 20.00005377523118
+              }
+            },
+            "visible": true
+          }
+        ],
+        "blocked": {
+          "segments": 7,
+          "blocked": 3,
+          "unaffordable": 0,
+          "drawCalls": 3,
+          "from": {
+            "x": -9.000031049371303,
+            "z": 33.99987690487074
+          },
+          "to": {
+            "x": 8.099968945298835,
+            "z": 34.000303849016234
+          }
+        },
+        "pixels": {
+          "samples": 21646,
+          "colors": 2541,
+          "luminanceVariance": 491.6627079249274,
+          "painted": true
+        },
+        "layout": {
+          "rect": {
+            "x": 16,
+            "y": 66,
+            "width": 410,
+            "height": 92,
+            "top": 66,
+            "right": 426,
+            "bottom": 158,
+            "left": 16
+          },
+          "buttons": [
+            {
+              "text": "Build wall",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Reset",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Move map",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Cancel",
+              "height": 44,
+              "reachable": true
+            }
+          ],
+          "overflow": false,
+          "objectivesHidden": true,
+          "mapVisible": true
+        },
+        "notification": {
+          "panelBottom": 158,
+          "toastTop": 129
+        }
+      },
+      {
+        "width": 740,
+        "height": 360,
+        "input": "touch",
+        "draftDoesNotSpend": true,
+        "wallDragLocksCamera": true,
+        "selectionPreserved": true,
+        "explicitPan": true,
+        "twoEndpointTaps": true,
+        "resetDoesNotSpend": true,
+        "confirmedWalls": 7,
+        "constructionOrderIssued": true,
+        "normalPan": true,
+        "pinchZoomWithoutRotation": true,
+        "qualities": [],
+        "blocked": {
+          "segments": 7,
+          "blocked": 3,
+          "unaffordable": 0,
+          "drawCalls": 3,
+          "from": {
+            "x": -9.000029417134122,
+            "z": 33.999876754241825
+          },
+          "to": {
+            "x": 8.09997057750817,
+            "z": 34.00030481227978
+          }
+        },
+        "pixels": {
+          "samples": 6216,
+          "colors": 1362,
+          "luminanceVariance": 586.9102247330657,
+          "painted": true
+        },
+        "layout": {
+          "rect": {
+            "x": 8,
+            "y": 52,
+            "width": 724,
+            "height": 79,
+            "top": 52,
+            "right": 732,
+            "bottom": 131,
+            "left": 8
+          },
+          "buttons": [
+            {
+              "text": "Build wall",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Reset",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Move map",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Cancel",
+              "height": 44,
+              "reachable": true
+            }
+          ],
+          "overflow": false,
+          "objectivesHidden": true,
+          "mapVisible": true
+        },
+        "notification": {
+          "panelBottom": 131,
+          "toastTop": 137
+        }
+      },
+      {
+        "width": 568,
+        "height": 320,
+        "input": "touch",
+        "draftDoesNotSpend": true,
+        "wallDragLocksCamera": true,
+        "selectionPreserved": true,
+        "explicitPan": true,
+        "twoEndpointTaps": true,
+        "resetDoesNotSpend": true,
+        "confirmedWalls": 7,
+        "constructionOrderIssued": true,
+        "normalPan": true,
+        "pinchZoomWithoutRotation": true,
+        "qualities": [],
+        "blocked": {
+          "segments": 7,
+          "blocked": 3,
+          "unaffordable": 0,
+          "drawCalls": 3,
+          "from": {
+            "x": -9.000030183875285,
+            "z": 33.999877465927725
+          },
+          "to": {
+            "x": 8.09996981080366,
+            "z": 34.00030405725694
+          }
+        },
+        "pixels": {
+          "samples": 3762,
+          "colors": 1050,
+          "luminanceVariance": 827.0202734947397,
+          "painted": true
+        },
+        "layout": {
+          "rect": {
+            "x": 8,
+            "y": 52,
+            "width": 552,
+            "height": 79,
+            "top": 52,
+            "right": 560,
+            "bottom": 131,
+            "left": 8
+          },
+          "buttons": [
+            {
+              "text": "Build wall",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Reset",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Move map",
+              "height": 44,
+              "reachable": true
+            },
+            {
+              "text": "Cancel",
+              "height": 44,
+              "reachable": true
+            }
+          ],
+          "overflow": false,
+          "objectivesHidden": true,
+          "mapVisible": true
+        },
+        "notification": {
+          "panelBottom": 131,
+          "toastTop": 137
+        }
+      }
+    ],
+    "messages": [
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      }
+    ],
+    "simulationTimeFrozen": true,
+    "buildId": "1792727091819"
+  },
+  "buildId": "1792727091819",
+  "passed": true
+}

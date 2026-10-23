@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-10-23T03:54:43.862Z",
+  "buildId": "1792727091819",
+  "tests": {
+    "total": 445,
+    "passed": 445,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "browserCases": {
+    "native": [
+      "1366x768 mouse",
+      "740x360 touch",
+      "568x320 touch"
+    ],
+    "strictCompatibility": [
+      "568x320 touch"
+    ],
+    "webgl": [
+      "568x320 touch"
+    ]
+  },
+  "strictWebGPUCompatibility": {
+    "active": true,
+    "optionalFeatures": []
+  },
+  "bundle": {
+    "main": "/assets/index-C_EVVxms.js",
+    "mainSHA256": "534cfe1410ce031ee89f63365023030705684023799d74a6468dfa1b391dce18",
+    "node": "render-nodes-6PTaoUij.js",
+    "nodeSHA256": "77e3472ddfaec47b6aaadb8f4a576225c1298d71d90b19902594f1ac01b87ce0",
+    "style": "index-DM7vCEO0.css",
+    "styleSHA256": "6558b100f9798538062c62794991f17b478e4554dd82801cfe113af1fe9f183a",
+    "trees": "frontier-trees-CjWiv_VI.glb",
+    "treesSHA256": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543"
+  },
+  "sourceSHA256": {
+    "src/main.js": "71400f482796f4bc3a305305234b548e3f2b87b32af3c929ba387eed2fd34ef7",
+    "src/compact-hud.js": "9185df38192178d9c2bc5bc41836d8a5852b7917bfa60e378ad453ea034d68e8",
+    "src/wall-placement.js": "b6be6f37ef4e3f19149533476efd162591e97ae404f21c3b83f35591a70f4deb",
+    "src/wall-preview.js": "b6c912624e3e839c7d0e4b1582c9e1a2f6c2eeab0d772797a7a730936ce07fac",
+    "src/wall-placement.css": "e9f664cbfb91a451206a61c5fa194b86c9921872844510d1ec2d753d25bad3bc",
+    "src/data.js": "0625b1fb1408735b4f25aa80115d10bdd92a6435598dd599755bccb82f124f54",
+    "tests/wall-placement.test.js": "2011cfe77cc844c42b3a963448777cedade9653aa7118c4ff3666863d2ade771",
+    "scripts/wall-placement-qa.mjs": "89f59d03f400a6249517452097400efaef95d5af1bcb5641f7e2fa5f302f1eb8",
+    "WALL_PLACEMENT.md": "d3a76679df2c8847f68053a67da7bfb3220e237d95901affe4084d83cbf87e98"
+  },
+  "browserReports": [
+    "artifacts/wall-tool-default/validation.json",
+    "artifacts/wall-tool-compatibility/validation.json",
+    "artifacts/wall-tool-webgl/validation.json"
+  ],
+  "checks": {
+    "draftNeverSpends": true,
+    "buildRequiresConfirmation": true,
+    "realWallsMatchPreview": true,
+    "blockedAndUnpaidLinesDisabled": true,
+    "desktopAndTouchGestures": true,
+    "panModeAndPinchNoRotation": true,
+    "buttonsAtLeast44Pixels": true,
+    "phoneBattlefieldSpace": true,
+    "notificationsDoNotCoverControls": true,
+    "paintedFramesAllBackends": true
+  },
+  "limitations": [
+    "Emulated phone layouts and host browser GPU checks are not physical-device frame-rate or complete-match validation.",
+    "Server-authoritative multiplayer wall construction is covered by the existing multiplayer wall test; the new phone toolbar was tested offline in the browser.",
+    "The overall 3D RTS completion goal remains active."
+  ]
+}

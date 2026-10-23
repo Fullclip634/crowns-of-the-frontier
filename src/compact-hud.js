@@ -44,3 +44,12 @@ export function watchObjectiveLayout(root){
   const observer=win.ResizeObserver?new win.ResizeObserver(fit):null;observer?.observe(hud);win.addEventListener('resize',fit);fit();
   return ()=>{observer?.disconnect();win.removeEventListener('resize',fit);};
 }
+
+// Notifications sit below the actual wall toolbar, including wrapped text
+// on small screens. Observe layout changes instead of measuring every frame.
+export function watchPlacementLayout(root){
+  const panel=root.querySelector('#placement-controls'),hud=root.querySelector('#hud'),win=root.defaultView;
+  const fit=()=>{if(!panel.getClientRects().length)return;const bottom=Math.ceil(panel.getBoundingClientRect().bottom)+'px';if(hud.style.getPropertyValue('--wall-controls-bottom')!==bottom)hud.style.setProperty('--wall-controls-bottom',bottom);};
+  const observer=win.ResizeObserver?new win.ResizeObserver(fit):null;observer?.observe(panel);win.addEventListener('resize',fit);fit();
+  return ()=>{observer?.disconnect();win.removeEventListener('resize',fit);};
+}
