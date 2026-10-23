@@ -11,18 +11,21 @@ export function battlePreset(preset='2v2'){
   return Array.from({length:8},(_,i)=>({enabled:i<n,name:i===0?'Your kingdom':`Kingdom ${i+1}`,faction:['alder','sun','raven'][i%3],team:preset.startsWith('ffa')?i+1:i<split?1:2,difficulty:'normal'}));
 }
 export function normalizeBattle(options){
-  const raw=Array.isArray(options.slots)?options.slots:battlePreset(),slots=raw.slice(0,8).map((slot,i)=>({...slot,slotNumber:slot.slotNumber||i+1})).filter((slot,i)=>i===0||slot.enabled!==false).map((slot,i)=>({
+  const raw=Array.isArray(options.slots)?options.slots:battlePreset(),source=raw.slice(0,8).map((slot,i)=>({...slot,slotNumber:slot.slotNumber||i+1}));
+  const spectator=!options.multiplayer&&(options.spectator===true||Number(options.playerSlot)===0),chosen=spectator?-1:source.findIndex(slot=>slot.slotNumber===Number(options.playerSlot));
+  if(chosen>0)source.unshift(...source.splice(chosen,1));
+  const slots=source.filter((slot,i)=>i===0||slot.enabled!==false).map((slot,i)=>({
     name:String(slot.name||(i===0?'Your kingdom':`Kingdom ${i+1}`)).trim().slice(0,24)||`Kingdom ${i+1}`,
-    faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
+    faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:spectator?'ai':i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
   }));
   if(slots.length<2)throw new Error('Enable at least one opposing kingdom.');
   if(slots.every(slot=>slot.team===slots[0].team))throw new Error('Place at least one kingdom on a different team.');
   const mapSize=BATTLE_SIZES[options.mapSize]?options.mapSize:'vast';
-  return {...options,mode:'custom',slots,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:[80,120,160].includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
+  return {...options,mode:'custom',slots,playerSlot:spectator?0:slots[0].slotNumber,spectator,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:[80,120,160].includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
 }
 export function battleSpawns(slots,worldSize){
-  const ordered=slots.map((slot,i)=>({team:slot.team,i})).sort((a,b)=>a.team-b.team||a.i-b.i),human=ordered.findIndex(slot=>slot.i===0),r=worldSize*.34,result=[];
-  ordered.forEach((slot,index)=>{const angle=Math.PI*.75+(index-human)*Math.PI*2/slots.length;let x=Math.cos(angle)*r,z=Math.sin(angle)*r;if(Math.abs(x)<38)x=x<0?-38:38;result[slot.i]={x,z};});return result;
+  const ordered=slots.map((slot,i)=>({team:slot.team,slotNumber:slot.slotNumber||i+1,i})).sort((a,b)=>a.team-b.team||a.slotNumber-b.slotNumber),anchor=ordered.reduce((best,slot,index)=>slot.slotNumber<ordered[best].slotNumber?index:best,0),r=worldSize*.34,result=[];
+  ordered.forEach((slot,index)=>{const angle=Math.PI*.75+(index-anchor)*Math.PI*2/slots.length;let x=Math.cos(angle)*r,z=Math.sin(angle)*r;if(Math.abs(x)<38)x=x<0?-38:38;result[slot.i]={x,z};});return result;
 }
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
 
@@ -47,8 +50,9 @@ function startingDeposits(sim,base,owner){
 
 function initializeBattle(sim){
   sim.aiStates={};sim.spawnPositions=battleSpawns(sim.options.slots,sim.worldSize);sim.revealedOwners=[];
+  const kingdoms=sim.players.map((player,owner)=>({player,owner})).sort((a,b)=>sim.options.slots[a.owner].slotNumber-sim.options.slots[b.owner].slotNumber);
   sim.players.forEach((player,owner)=>{player.start=sim.spawnPositions[owner];});
-  sim.players.forEach((player,owner)=>{
+  kingdoms.forEach(({player,owner})=>{
     player.start=sim.spawnPositions[owner];player.battleStats=emptyStats();player.age=sim.options.startAge;player.aiClock=-owner*.25;player.defeated=false;
     player.resources=sim.options.resourceLevel==='rich'?{food:1600,wood:1600,gold:900,stone:900}:{food:550,wood:650,gold:250,stone:300};
     const {x,z}=player.start;
@@ -59,10 +63,10 @@ function initializeBattle(sim){
     if(player.age>=1)sim.addBuilding('range',owner,x+1,z-14,true);
     if(player.age>=2){sim.addBuilding('stable',owner,x-15,z-1,true);sim.addBuilding('blacksmith',owner,x+19,z+15,true);}
   });
-  if(sim.options.map==='coast')sim.players.forEach((player,owner)=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
+  if(sim.options.map==='coast')kingdoms.forEach(({player,owner})=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
     sim.addBuilding('dock',owner,mid+sign*20,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
   });
-  sim.players.forEach((player,owner)=>{
+  kingdoms.forEach(({player,owner})=>{
     // Each settlement receives the same seeded local deposits, independent of difficulty.
     startingDeposits(sim,player.start,owner);
   });
@@ -82,7 +86,7 @@ function initializeBattle(sim){
 }
 
 export function installCustomBattle(Simulation){
-  const p=Simulation.prototype,initialize=p.initialize,tickAI=p.tickAI,checkVictory=p.checkVictory,serialize=p.serialize,restore=Simulation.restore,hurt=p.hurt,emit=p.emit;
+  const p=Simulation.prototype,initialize=p.initialize,tickAI=p.tickAI,checkVictory=p.checkVictory,updateFog=p.updateFog,serialize=p.serialize,restore=Simulation.restore,hurt=p.hurt,emit=p.emit;
   p.donateResources=function(from,to,type,amount){
     if(this.options.mode!=='custom'||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
     const sender=this.players[from],recipient=this.players[to];
@@ -98,6 +102,7 @@ export function installCustomBattle(Simulation){
     if(!tc){const worker=this.owned(owner,'unit','villager').find(e=>e.order?.type!=='build');if(worker&&!this.owned(owner,'building','towncenter').length)for(let i=0;i<16;i++){const angle=i*2.4,r=12+Math.floor(i/4)*6,x=player.start.x+Math.cos(angle)*r,z=player.start.z+Math.sin(angle)*r;if(this.buildValid('towncenter',x,z,owner)){this.build('towncenter',x,z,[worker.id],owner);break;}}this.assignEconomy(owner);continue;}
     tickAI.call(this,owner);
   }};
+  p.updateFog=function(){updateFog.call(this);if(this.options.mode==='custom'&&this.options.spectator){this.visible.fill(1);this.explored.fill(1);}};
   p.eliminateKingdom=function(owner,reason){
     const player=this.players[owner];if(!player||player.defeated)return;player.defeated=true;
     for(const e of this.owned(owner).filter(e=>e.kind==='unit'||e.kind==='building')){e.hp=0;if(e.queue)e.queue=[];player.battleStats.lost++;this.emit('death',{entity:e});}
@@ -117,7 +122,7 @@ export function installCustomBattle(Simulation){
       }
     }
     const team=this.players[0].team,allies=this.players.filter(player=>player.team===team&&!player.defeated),enemies=this.players.filter(player=>player.team!==team&&!player.defeated);
-    if(this.options.multiplayer){const teams=[...new Set(this.players.filter(player=>!player.defeated).map(player=>player.team))];if(teams.length<=1){this.end(teams[0]===team,teams.length?'The last surviving alliance controls the battlefield.':'Every kingdom has been eliminated.');this.ended.winningTeam=teams[0]??null;}return;}
+    if(this.options.multiplayer||this.options.spectator){const teams=[...new Set(this.players.filter(player=>!player.defeated).map(player=>player.team))];if(teams.length<=1){const won=teams[0]===team&&!this.options.spectator,reason=teams.length?'The last surviving alliance controls the battlefield.':'Every kingdom has been eliminated.';this.ended={won,reason,winningTeam:teams[0]??null,...(this.options.spectator?{spectator:true}:{})};this.emit('end',this.ended);}return;}
     if(!allies.length)this.end(false,'Every kingdom in your alliance has been eliminated.');else if(!enemies.length)this.end(true,'Your alliance has eliminated every opposing kingdom.');
   };
   p.hurt=function(target,amount,attacker){const before=target.hp,alive=before>0;hurt.call(this,target,amount,attacker);recordBaseAlarm(this,target,attacker,Math.max(0,before-target.hp));if(this.options.mode==='custom'&&alive&&target.hp<=0){if(target.owner>=0)this.players[target.owner].battleStats.lost++;if(attacker?.owner>=0)this.players[attacker.owner].battleStats.kills++;}};

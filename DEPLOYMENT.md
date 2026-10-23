@@ -14,6 +14,11 @@ This is a free hobby/testing deployment, with limited server CPU. Eight large ki
 
 The free deployment defaults to Singapore for Philippine players and one simultaneous multiplayer room to fit the small server. A room still supports up to eight kingdoms. Solo games run on each player's device and do not consume multiplayer rooms. `MAX_ROOMS` can be changed later after measuring server capacity. No account secrets or payment information are stored in the deployment file.
 
+When everyone explicitly leaves a match, its room slot is available immediately.
+Interrupted commanders keep the existing two-minute reconnect window. Connected
+spectators keep their match; expired pre-game guests free their human slots, and
+an expired lobby host closes the lobby with a notice. See [room lifecycle checks](ROOM_LIFECYCLE.md).
+
 Sources checked 10 October 2026: [free-tier limits](https://render.com/docs/free), [WebSocket support](https://render.com/docs/websocket), [Blueprint configuration](https://render.com/docs/blueprint-spec).
 
 ## Verify the published game

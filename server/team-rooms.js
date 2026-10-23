@@ -22,12 +22,17 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   const observing=(room,side)=>custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
   const humanSlots=room=>custom(room)?room.options.slots.map((slot,i)=>slot.controller==='human'?i:-1).filter(i=>i>=0):[0,1];
   const connected=player=>player.ws?.readyState===1;
+  const releaseVacantRoom=room=>{if(rooms.get(room.code)!==room||!room.players.length||room.players.some(player=>connected(player)||!player.conceded))return false;rooms.delete(room.code);return true;};
   const requiredPlayers=room=>room.players.filter(player=>!player.conceded&&!room.sim?.players[player.side]?.defeated);
   const waiting=room=>requiredPlayers(room).some(player=>!connected(player));
   const canStart=room=>humanSlots(room).every(side=>room.players.some(player=>player.side===side&&connected(player)&&player.ready));
   function lobby(room){
     const slots=custom(room)?room.options.slots.map((slot,side)=>({...slot,side,participant:room.players.find(p=>p.side===side)?.name||null,ready:room.players.find(p=>p.side===side)?.ready||false})):[];
     for(const player of room.players)send(player.ws,{type:'lobby',code:room.code,host:player.host,selfSide:player.side,selfReady:player.ready,canStart:canStart(room),slots,players:room.players.map(p=>({side:p.side,name:p.name,faction:p.faction,ready:p.ready,connected:connected(p)})),options:room.options});
+  }
+  function closeLobby(room,message,leaving=null){
+    if(rooms.get(room.code)!==room)return;rooms.delete(room.code);
+    for(const player of room.players)if(player!==leaving){send(player.ws,{type:'closed',message});player.ws?.close(1000,'Room closed');}
   }
   const orderFor=(room,side)=>[side,...room.sim.players.map((_,i)=>i).filter(i=>i!==side)];
   function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false){
@@ -144,7 +149,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',message:'That network session has ended.'});
         player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
       }
-      if(!player||!room)return;
+      if(!player||!room||player.ws!==ws||rooms.get(room.code)!==room)return;
       if(message.type==='visibility-resync'){if(player.ws===ws&&room.sim&&custom(room)&&player.protocol>=2)player.visibilityResync=true;return;}
       if(message.type==='chat'){
         if(!room.sim||player.ws!==ws||!rooms.has(room.code))return;
@@ -158,16 +163,20 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(message.type==='start'&&player.host&&!room.sim){if(canStart(room))start(room);else send(ws,{type:'error',message:'Every human slot must be connected and ready before starting.'});}
       if(message.type==='action'){const args=message.args,valid=value=>typeof value==='number'?Number.isFinite(value)&&Math.abs(value)<1e9:Array.isArray(value)?value.length<=180&&value.every(valid):value==null||['string','boolean'].includes(typeof value);if(Array.isArray(args)&&args.every(valid))action(player,room,message);}
       if(message.type==='leave'){
-        if(room.sim){concede(room,player,'Commander left the battle.');player.ws=null;}
-        else if(player.host){for(const other of room.players)if(other!==player)send(other.ws,{type:'closed',message:'The host closed this room.'});rooms.delete(room.code);}
+        if(room.sim){concede(room,player,'Commander left the battle.');player.ws=null;releaseVacantRoom(room);}
+        else if(player.host)closeLobby(room,'The host closed this room.',player);
         else{room.players=room.players.filter(p=>p!==player);lobby(room);}
-        player=null;
+        player=null;room=null;
       }
     }catch{send(ws,{type:'error',message:'The command could not be processed. Check the battle settings and try again.'});}});
-    ws.on('close',()=>{if(player&&player.ws===ws){player.ws=null;player.disconnected=Date.now();if(!room.sim)player.ready=false;if(room)lobby(room);}});
+    ws.on('close',()=>{if(player&&player.ws===ws){player.ws=null;if(!player.conceded)player.disconnected=Date.now();if(!room.sim)player.ready=false;if(rooms.get(room.code)===room&&!releaseVacantRoom(room))lobby(room);}});
   });
   let snapshotClock=0;const timer=setInterval(()=>{snapshotClock++;for(const room of rooms.values()){
-    for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000)concede(room,player,'Commander did not reconnect.');
+    let lobbyChanged=false;
+    for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000){concede(room,player,'Commander did not reconnect.');if(!room.sim&&!player.host){room.players=room.players.filter(other=>other!==player);lobbyChanged=true;}}
+    if(!room.sim&&room.players.some(player=>player.host&&player.conceded)){closeLobby(room,'The host did not reconnect. Create or join another room.');continue;}
+    if(lobbyChanged)lobby(room);
+    if(releaseVacantRoom(room))continue;
     if(room.sim&&!waiting(room))room.sim.tick(.1);
     if(room.sim&&snapshotClock%2===0){for(const player of room.players){
       if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner),observer=observing(room,player.side);

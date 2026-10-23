@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation,distance} from '../src/simulation.js';
-import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor,BATTLE_SIZES} from '../src/custom-battle.js';
+import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor,BATTLE_SIZES,battleSpawns} from '../src/custom-battle.js';
+import {forestSettlements} from '../src/starting-forests.js';
 import {weatherAt} from '../src/weather.js';
+import {customBattleMarkup} from '../src/custom-battle-ui.js';
 const make=(options={})=>new Simulation({mode:'custom',seed:512,...options});
 const destroy=(sim,owner,kind='building')=>{for(const e of sim.owned(owner,kind))e.hp=0;sim.revision++;sim.checkVictory();};
 
@@ -18,6 +20,30 @@ test('custom defaults are vast, team-aware, and do not silently accept an empty 
   const s=make();assert.equal(s.worldSize,480);assert.equal(s.gridSize,240);assert.equal(s.players.length,4);assert.ok(s.allied(0,1));assert.ok(s.hostile(0,2));assert.ok(s.hostile(2,0));assert.equal(s.options.victory,'annihilation');
   assert.throws(()=>normalizeBattle({slots:[{team:1},{team:1}]}),/different team/);
   const slots=battlePreset('4v4');slots[2].enabled=false;const a=make({slots}),b=Simulation.restore(a.serialize());assert.equal(a.players[2].color,PLAYER_COLORS[3]);assert.deepEqual(a.players.map(p=>p.color),b.players.map(p=>p.color));
+});
+test('solo commanders can choose a kingdom slot and keep its authored starting position',()=>{
+  const slots=battlePreset('2v2'),defaultBattle=make({slots}),selected=make({slots,playerSlot:3});
+  assert.equal(selected.options.playerSlot,3);assert.equal(selected.options.spectator,false);assert.equal(selected.options.slots[0].slotNumber,3);assert.equal(selected.options.slots[0].controller,'human');
+  assert.deepEqual(selected.players[0].start,defaultBattle.spawnPositions[2]);
+  for(const slot of selected.options.slots.slice(1))assert.equal(slot.controller,'ai');
+  const defaultForest=forestSettlements(defaultBattle).find(base=>base.slotNumber===3),selectedForest=forestSettlements(selected).find(base=>base.slotNumber===3);
+  const coords=sim=>sim.entities.filter(e=>e.kind==='resource'&&e.startForest===sim.options.slots.findIndex(slot=>slot.slotNumber===3)).map(e=>[e.x,e.z]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  assert.ok(defaultForest&&selectedForest);assert.deepEqual(coords(selected),coords(defaultBattle),'changing the human slot keeps each physical starting grove in place');
+});
+test('custom battle setup exposes a direct all-AI spectator role choice',()=>{
+  const markup=customBattleMarkup({map:'highlands',mapSize:'vast',startAge:0,resourceLevel:'standard',populationLimit:80,seed:512,victory:'annihilation',shareVision:true,revealRemnants:true,aiPace:'balanced',slots:battlePreset('2v2'),playerSlot:1});
+  assert.match(markup,/id="custom-player-slot"/);assert.match(markup,/Watch AI · Spectator/);assert.match(markup,/data-play-slot="1"/);assert.match(markup,/aria-label="Play as kingdom slot 3"/);
+});
+test('AI spectator mode runs every enabled kingdom as AI, reveals the map, and watches the final team win',()=>{
+  const sim=make({slots:battlePreset('2v2'),playerSlot:0}),events=[];sim.on(event=>events.push(event));
+  assert.equal(sim.options.spectator,true);assert.equal(sim.options.playerSlot,0);assert.ok(sim.players.every(player=>player.controller==='ai'));
+  sim.updateFog();assert.ok(sim.visible.every(value=>value===1));assert.ok(sim.explored.every(value=>value===1));
+  const distant=sim.players[2].start;assert.equal(sim.canSee(0,{...distant,r:2}),false,'spectator vision does not leak into AI scouting');
+  for(let i=0;i<40;i++)sim.tick(.1);assert.ok(sim.aiStates[0]?.decision>0,'the selected kingdom is actually played by its AI');
+  const restored=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.equal(restored.options.spectator,true);assert.ok(restored.players.every(player=>player.controller==='ai'));assert.ok(restored.visible.every(value=>value===1));
+  destroy(sim,0);assert.equal(sim.ended,null,'the battle continues after the observer kingdom is eliminated');destroy(sim,2);assert.equal(sim.ended,null);destroy(sim,3);
+  assert.deepEqual(sim.ended,{won:false,reason:'The last surviving alliance controls the battlefield.',winningTeam:1,spectator:true});
+  assert.equal(events.filter(event=>event.type==='end').length,1);assert.equal(events.find(event=>event.type==='end').spectator,true);
 });
 test('eight kingdoms have distinct dry starts and local resources on every large biome',()=>{
   for(const map of ['highlands','desert','winter','canyon','valley','rivers','coast']){

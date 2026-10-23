@@ -194,6 +194,16 @@
   .selection-panel .selection-title h3{font-size:16px}
   .command-panel .control-hint{display:none}
 }
+
+/* Read-only custom battles keep the map, camera, and kingdom roster available. */
+.ai-spectator .command-panel,.ai-spectator #production-toggle,.ai-spectator #alliance-toggle,.ai-spectator #production-panel,.ai-spectator #build-panel,.ai-spectator #placement-controls{display:none!important}
+.ai-spectator .spectator-banner{border:1px solid var(--line);padding:9px 16px;color:var(--gold);font-size:10px;letter-spacing:1.4px;white-space:nowrap}
+.ai-spectator .game-bottomline>span:last-child{display:none}
+.battle-slot{grid-template-columns:48px 1.25fr .8fr 1.4fr .75fr 1fr}
+.battle-slot-number{width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:2px solid #203528;cursor:pointer;touch-action:manipulation}
+.battle-slot-number.selected{outline:2px solid var(--gold);outline-offset:2px}
+.battle-slot.player-slot{border-color:#d5bd7b}
+@media(max-width:899px){.battle-slot{grid-template-columns:48px 1.2fr 1fr}.battle-slot-number{width:44px;height:44px}}
 .camera-controls button[data-action=camera-options]{display:none}
 .objective-panel{pointer-events:auto;max-height:calc(100dvh - 350px);overflow:auto}
 .objective-panel:not(.objectives-expanded){width:150px;padding:3px}
