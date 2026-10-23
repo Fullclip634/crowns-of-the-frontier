@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {Simulation} from '../src/simulation.js';
 import {constructionPreservesArmyRoutes} from '../src/commander-ai.js';
 import {battlePreset} from '../src/custom-battle.js';
@@ -40,6 +41,14 @@ test('custom AI skips the audited mine site that overlaps a spearman and chooses
   const site=sim.commanderBuild('mine',{x:target.x-4,z:target.z},owner);
   assert.ok(site);assert.ok(Math.hypot(site.x-target.x,site.z-target.z)>.01);
   assert.equal(sim.pathTo(unit,unit.order,1.4).length>0,true);assert.equal(unit.pathStatus,'ready');
+});
+
+test('the restored audited trap fixture lets a spearman route out of a mine foundation',()=>{
+  const snapshot=JSON.parse(fs.readFileSync(new URL('./fixtures/ai-construction-trap-save.json',import.meta.url),'utf8')),sim=Simulation.restore(snapshot),unit=sim.get(1463),mine=sim.get(1459);
+  assert.ok(unit&&mine,'the fixture must retain the audited spearman and mine');
+  assert.ok(Math.hypot(unit.x-mine.x,unit.z-mine.z)<mine.r+.9,'the spearman starts inside the mine clearance');
+  const path=sim.pathTo(unit,{x:101,z:125},1.4);
+  assert.equal(unit.pathStatus,'ready');assert.ok(path.length);assert.ok(Math.hypot(path.at(-1).x-101,path.at(-1).z-125)<2);
 });
 
 test('custom AI reinforcements stay routable through the audited early-game barracks and mine layout',()=>{
