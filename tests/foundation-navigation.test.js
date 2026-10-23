@@ -60,6 +60,15 @@ test('a trapped unit cannot bypass a connected wall spanning the map',()=>{
   const gate=sim.addBuilding('gate',1,0,20,true),cell=sim.cell(gate.x,gate.z),grid=unitNavigationGrid(sim,unit);assert.equal(grid[cell.z*sim.gridSize+cell.x],1,'enemy gates are never an escape exception');
 });
 
+test('a unit inside a building clearance escapes even when its rounded navigation cell is open',()=>{
+  const sim=new Simulation({mode:'custom',map:'highlands',seed:512,mapSize:'vast',slots:battlePreset('2v2')}),unit=sim.addUnit('spearman',3,124.39982668964461,102.39982668964454);
+  sim.addBuilding('mine',3,123.28876849395338,100.25172564898419);
+  sim.tick(.1);assert.ok(sim.entityBuckets,'exercise the live spatial-index lookup');
+  const cell=sim.cell(unit.x,unit.z),normal=sim.grid(3);assert.equal(normal[cell.z*sim.gridSize+cell.x],0,'this reproduces the open-cell edge case');
+  assert.notEqual(unitNavigationGrid(sim,unit),normal,'nearby building overlap must activate the local escape grid');
+  const route=sim.pathTo(unit,{x:101,z:125},1.4);assert.equal(unit.pathStatus,'ready');assert.ok(route.length);
+});
+
 test('escape grids share work inside one building, remain bounded and invalidate after construction changes',()=>{
   const sim=fixture(),first=sim.addUnit('spearman',0,0,20),second=sim.addUnit('spearman',0,.5,20),house=sim.addBuilding('house',0,0,20),grid=unitNavigationGrid(sim,first);
   assert.equal(unitNavigationGrid(sim,second),grid);

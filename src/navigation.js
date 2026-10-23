@@ -1,15 +1,24 @@
 import {blockWallConnections} from './walls.js';
 import {BUILDINGS} from './data.js';
 const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const MAX_BUILDING_RADIUS=Math.max(...Object.values(BUILDINGS).map(definition=>definition.r||0));
+
+function containingBuildings(sim,unit){
+  const buckets=sim.entityBuckets,cellSize=sim.entitySpatial?.cellSize||8,reach=MAX_BUILDING_RADIUS+.9,candidates=[];
+  if(buckets){
+    for(let x=Math.floor((unit.x-reach)/cellSize);x<=Math.floor((unit.x+reach)/cellSize);x++)for(let z=Math.floor((unit.z-reach)/cellSize);z<=Math.floor((unit.z+reach)/cellSize);z++)for(const entity of buckets.get(x)?.get(z)||[])if(entity.kind==='building')candidates.push(entity);
+  }else candidates.push(...sim.entities);
+  return candidates.filter(entity=>entity.hp>0&&entity.kind==='building'&&!['farm','wall','gate'].includes(entity.type)&&Math.hypot(entity.x-unit.x,entity.z-unit.z)<entity.r+.9);
+}
 
 // A foundation can cover a unit already standing there. Let that unit leave
 // the containing ordinary buildings, without opening them for other troops.
 export function unitNavigationGrid(sim,unit,normalOverride=null){
   const naval=!!sim.unitDefinition(unit).naval,normal=normalOverride||sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
-  if(naval||!normal[cell.z*size+cell.x])return normal;
-  const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
-  const containing=buildings.filter(e=>!['wall','gate'].includes(e.type)&&Math.hypot(e.x-unit.x,e.z-unit.z)<e.r+.9);
+  if(naval)return normal;
+  const containing=containingBuildings(sim,unit);
   if(!containing.length)return normal;
+  const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
   const key=`escape:${sim.players[unit.owner].team??unit.owner}:${containing.map(e=>e.id).join(',')}`,cache=normalOverride?null:(sim.unitEscapeGrids??=new Map());
   const stored=cache?.get(key);if(stored?.source===normal)return stored.data;
   const ignored=new Set(containing),others=buildings.filter(e=>!ignored.has(e)),data=normal.slice(),base=sim.grids.landBase.data;

@@ -41,3 +41,14 @@ test('custom AI skips the audited mine site that overlaps a spearman and chooses
   assert.ok(site);assert.ok(Math.hypot(site.x-target.x,site.z-target.z)>.01);
   assert.equal(sim.pathTo(unit,unit.order,1.4).length>0,true);assert.equal(unit.pathStatus,'ready');
 });
+
+test('custom AI reinforcements stay routable through the audited early-game barracks and mine layout',()=>{
+  const sim=new Simulation({mode:'custom',map:'highlands',seed:512,mapSize:'vast',slots:battlePreset('2v2'),populationLimit:80,aiPace:'balanced'});
+  sim.players[0].controller='ai';const blocked=[];sim.on(event=>{if(event.type==='order-blocked'&&event.entity.owner===3)blocked.push(event.entity.id);});
+  while(sim.time<30)sim.tick(.1);
+  const unit=sim.owned(3,'unit','spearman')[0],mine=sim.owned(3,'building','mine').find(building=>Math.hypot(building.x-123.28876849395338,building.z-100.25172564898419)<.1);
+  assert.ok(unit&&mine,'the deterministic fixture must produce the audited reinforcement and mine');
+  assert.ok(Math.hypot(unit.x-mine.x,unit.z-mine.z)>=mine.r+.9,'the reinforcement spawns outside the mine clearance');
+  const route=sim.pathTo(unit,{x:101,z:125},1.4);assert.equal(unit.pathStatus,'ready');assert.ok(route.length);
+  assert.equal(blocked.includes(unit.id),false,'the reinforcement must not emit the audited blocked order');
+});

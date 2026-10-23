@@ -38,7 +38,7 @@ export function installFrontiers(Simulation){
     return shore&&!this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+BUILDINGS.dock.r+.8);
   };
   p.spawnPoint=function(building,naval=false){const grid=this.grid(building.owner,naval);let best=null,score=Infinity;
-    for(let x=-14;x<=14;x+=2)for(let z=-14;z<=14;z+=2){const point={x:building.x+x,z:building.z+z},cell=this.cell(point.x,point.z),n=Math.hypot(x,z);if(n>=building.r+1&&Math.abs(point.x)<=this.halfWorld-3&&Math.abs(point.z)<=this.halfWorld-3&&!grid[cell.z*this.gridSize+cell.x]&&n<score){best=point;score=n;}}return best;
+    for(let x=-14;x<=14;x+=2)for(let z=-14;z<=14;z+=2){const sample={x:building.x+x,z:building.z+z},cell=this.cell(sample.x,sample.z),point={x:cell.x*2-this.halfWorld+1,z:cell.z*2-this.halfWorld+1},n=distance(point,building);if(n>=building.r+1&&Math.abs(point.x)<=this.halfWorld-3&&Math.abs(point.z)<=this.halfWorld-3&&!grid[cell.z*this.gridSize+cell.x]&&n<score){best=point;score=n;}}return best;
   };
   p.tickBuilding=function(e,dt){const before=this.nextId;original.tickBuilding.call(this,e,dt);for(let id=before;id<this.nextId;id++){const unit=this.get(id);if(unit?.kind!=='unit')continue;if(unit.owner>0)this.emit('stat-trained',{entity:unit});const spawn=this.spawnPoint(e,!!UNITS[unit.type].naval);if(spawn){unit.x=spawn.x;unit.z=spawn.z;unit.path=[];}
       if(unit.type==='fishingboat')this.assignWorker(unit);
