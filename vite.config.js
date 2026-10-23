@@ -2,6 +2,7 @@ import {defineConfig} from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import {Script} from 'node:vm';
+import {writeReleaseManifest} from './server/release.js';
 let outputDirectory='dist';
 const buildId=String(Date.now());
 export default defineConfig({
@@ -16,5 +17,6 @@ export default defineConfig({
     new Script(source,{filename:'sw.js'});
     fs.writeFileSync(path.join(outputDirectory,'sw.js'),source);
     fs.writeFileSync(path.join(outputDirectory,'version.json'),JSON.stringify({buildId,version:JSON.parse(fs.readFileSync('package.json','utf8')).version}));
+    writeReleaseManifest(outputDirectory,{buildId,version:JSON.parse(fs.readFileSync('package.json','utf8')).version,commit:process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA,files:['/index.html','/manifest.webmanifest','/icon.svg','/sw.js','/version.json',...assets,...fonts]});
   }}],
 });

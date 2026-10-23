@@ -1,22 +1,21 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import http from 'node:http';
 import WebSocket from 'ws';
 import {chromium} from 'playwright-core';
-import {attachRooms} from '../server/rooms.js';
+import {createGameServer} from '../server/http-app.js';
 import {battlePreset} from '../src/custom-battle.js';
 
 // A rendered production client plus a real legacy WebSocket host, isolated from
 // public rooms. Viewport emulation is not a physical-phone performance result.
-const root=path.resolve(process.env.QA_GAME_DIST||'dist'),out=path.resolve('artifacts/visibility-multiplayer');fs.mkdirSync(out,{recursive:true});
-const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json'};
-const server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname,file=path.resolve(root,'.'+(pathname==='/'?'/index.html':decodeURIComponent(pathname)));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});fs.createReadStream(file).pipe(res);});
-const service=attachRooms(server),errors=[],report={passed:false,scope:'Production browser with emulated landscape phone and desktop sizes; local WebSocket match, not hosted capacity or physical-device FPS evidence',checks:[]};let browser,page,host;
+const root=path.resolve(process.env.QA_GAME_DIST||'dist'),out=path.resolve(process.env.QA_VISIBILITY_OUTPUT||'artifacts/visibility-multiplayer');fs.mkdirSync(out,{recursive:true});
+const {server,rooms:service,readiness}=createGameServer({root});assert.ok(readiness.ready,readiness.failures.join(', '));
+const errors=[],report={passed:false,scope:'Production browser with emulated landscape phone and desktop sizes; local WebSocket match, not hosted capacity or physical-device FPS evidence',checks:[]};let browser,page,host;
 const guard=setTimeout(()=>{console.error('Visibility browser QA exceeded eight minutes');process.exit(1);},480000);
 class Inbox {constructor(ws){this.items=[];this.waiters=[];ws.on('message',raw=>{const packet=JSON.parse(raw),index=this.waiters.findIndex(waiter=>waiter.type===packet.type);if(index<0){if(packet.type!=='state')this.items.push(packet);}else{const [waiter]=this.waiters.splice(index,1);clearTimeout(waiter.timer);waiter.resolve(packet);}});}next(type){const index=this.items.findIndex(packet=>packet.type===type);if(index>=0)return Promise.resolve(this.items.splice(index,1)[0]);return new Promise((resolve,reject)=>{const waiter={type,resolve,timer:setTimeout(()=>reject(new Error('Missing '+type)),15000)};this.waiters.push(waiter);});}}
 try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}/`;
+  report.health=await (await fetch(base+'health')).json();assert.equal(report.health.ok,true);
   host=new WebSocket(base.replace('http:','ws:')+'socket');const inbox=new Inbox(host);await new Promise((resolve,reject)=>{host.once('open',resolve);host.once('error',reject);});
   const slots=battlePreset('4v4');slots[1].controller='human';host.send(JSON.stringify({type:'create',name:'Legacy host',options:{mode:'custom',map:'highlands',mapSize:'huge',startAge:1,seed:512,slots}}));
   const session=await inbox.next('session');
@@ -33,6 +32,7 @@ try{
   });
   await page.goto(base+'?renderer=webgl',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view&&!frontier.view.graphicsLoading);
   report.buildId=await page.locator('meta[name="frontier-build"]').getAttribute('content');report.browser=await page.evaluate(()=>navigator.userAgent);
+  assert.equal(report.health.release.buildId,report.buildId);
   await page.evaluate(()=>frontier.action('lan'));await page.locator('#lan-name').fill('Phone commander');await page.locator('#lan-code').fill(session.code);await page.locator('#lan-slot').selectOption('2');await page.locator('[data-action=lan-join]').tap();await page.waitForSelector('#room-code');await page.locator('[data-action=lan-ready]').tap();
   while(!(await inbox.next('lobby')).canStart){}host.send(JSON.stringify({type:'start'}));await inbox.next('begin');const room=service.rooms.get(session.code),sim=room.sim;sim.tick=()=>{};
   await page.waitForFunction(()=>frontier.playing&&frontier.sim.players[0].name==='Phone commander'&&window.__fogQA.deltaPackets>2);

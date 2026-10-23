@@ -16,6 +16,33 @@ The free deployment defaults to Singapore for Philippine players and one simulta
 
 Sources checked 10 October 2026: [free-tier limits](https://render.com/docs/free), [WebSocket support](https://render.com/docs/websocket), [Blueprint configuration](https://render.com/docs/blueprint-spec).
 
+## Verify the published game
+
+`npm run build` generates `dist/release.json` with the build ID, main-script hash,
+required files and deployment commit when the host supplies it. Run the build
+before `npm start`. The Node server validates that package at startup and refuses
+to start if files are missing, the entry was replaced, update metadata disagrees,
+or the build commit differs from the deployed commit. `/health` returns uncached
+commit/build details for a valid package.
+
+After a deployment reports success, verify the actual served game:
+
+```powershell
+node --use-system-ca scripts/verify-release.mjs https://YOUR_SERVICE.onrender.com YOUR_40_CHARACTER_COMMIT_SHA
+```
+
+This checks the server's reported revision, release manifest, HTML, update version
+and main-script bytes. A successful hosting status alone is insufficient. If the
+old game is still served, check the service's repository, linked branch, root
+directory, build/start commands and current live deploy in Render's dashboard.
+Use the repository root, `npm ci --include=dev && npm run build`, and `npm start`.
+The exact tested frontend hash and a real multiplayer smoke test provide stronger
+evidence than revision metadata alone.
+
+Render supplies [`RENDER_GIT_COMMIT` at build and runtime](https://render.com/docs/environment-variables)
+and uses [HTTP health checks](https://render.com/docs/health-checks) to decide
+whether a new instance is ready. See [readiness design and checks](RELEASE_READINESS.md).
+
 ## Optional Netlify frontend
 
 Netlify can host solo/AI gameplay with the included [netlify.toml](netlify.toml): build `npm run build`, publish `dist`. A static-only build reports that online multiplayer is unavailable while solo modes continue working.

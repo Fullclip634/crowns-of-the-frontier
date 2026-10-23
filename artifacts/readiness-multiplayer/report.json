@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "scope": "Production browser with emulated landscape phone and desktop sizes; local WebSocket match, not hosted capacity or physical-device FPS evidence",
+  "checks": [
+    "Huge eight-kingdom production client applies negotiated deltas alongside a legacy host",
+    "Allied scout reveals then hides an enemy while retaining explored terrain",
+    "Actual browser detects an omitted state, requests one resync and restores resource amounts",
+    "Reload/rejoin installs a fresh full baseline and preserves paid training"
+  ],
+  "health": {
+    "ok": true,
+    "service": "crowns-of-the-frontier",
+    "release": {
+      "commit": null,
+      "expectedCommit": null,
+      "buildId": "1792789898992",
+      "version": "2.6.1",
+      "main": "/assets/index-B6m4gkSm.js",
+      "snapshotProtocol": 2
+    }
+  },
+  "buildId": "1792789898992",
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "viewports": [
+    {
+      "width": 844,
+      "height": 390,
+      "overflow": false,
+      "fatal": null,
+      "screenshot": "844x390.png"
+    },
+    {
+      "width": 568,
+      "height": 320,
+      "overflow": false,
+      "fatal": null,
+      "screenshot": "568x320.png"
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "fatal": null,
+      "screenshot": "1366x768.png"
+    }
+  ],
+  "runtime": {
+    "backend": "webgl",
+    "quality": "low",
+    "fatal": null,
+    "deltaPackets": 26,
+    "programFailures": 0
+  },
+  "errors": []
+}

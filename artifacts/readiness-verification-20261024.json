@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-10-23T21:13:30.858Z",
+  "buildId": "1792789898992",
+  "tests": {
+    "command": "npm test",
+    "total": 486,
+    "passed": 486,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 148765.2067
+  },
+  "build": {
+    "passed": true,
+    "manifestValidated": true,
+    "requiredFiles": 57,
+    "main": "/assets/index-B6m4gkSm.js",
+    "mainSHA256": "dae5aebdb9a8b19e118adf8446d3efb3640bc404d4a039dddb9020b23a2639d3",
+    "gameplayEntryUnchangedFromVisibilityRelease": true,
+    "oversizedJavaScriptWarning": true
+  },
+  "browser": {
+    "report": "artifacts/readiness-multiplayer/report.json",
+    "passed": true,
+    "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "productionHTTPApp": true,
+    "buildId": "1792789898992",
+    "checks": [
+      "Huge eight-kingdom production client applies negotiated deltas alongside a legacy host",
+      "Allied scout reveals then hides an enemy while retaining explored terrain",
+      "Actual browser detects an omitted state, requests one resync and restores resource amounts",
+      "Reload/rejoin installs a fresh full baseline and preserves paid training"
+    ]
+  },
+  "sourceHashes": {
+    "server/index.js": "bf5a248eea527fe4284b4c404b4ce4965eebbcd2cb9ee0bdec66b07ad6c482b2",
+    "server/http-app.js": "bb89ae52ee1f77f339842c824fcab4fa4ee9ec21e3397cb75caaddf37173dff3",
+    "server/release.js": "b66f4086eaabb1cff753c40afa0494a992f7a9a338bf9878ab232471edb35999",
+    "vite.config.js": "1428737e5286beb18d5ce7cc487ccea4f2f8f5cc10b9fd099b2b668b1f7a2575",
+    "scripts/verify-release.mjs": "6205abd5f279c6dddcf5cb7455d3d64339dcbc7512aeabaa8aa13fcee013cf01",
+    "scripts/visibility-multiplayer-qa.mjs": "bf9edfaf3e41750f0f56e9e8fbf09e9dcaea097e8c673cb3501d8f16e536eb84",
+    "tests/release.test.js": "5260d0c191658a4a3efd4a1fdc0bbd01469a26278560cafc971ad1142a6e7422"
+  },
+  "localLogHashes": {
+    "artifacts/readiness-regression-20261024.log": "02577ce871f8af3bfb67e40cfa70c8147bd06d359358bd03558bc4a8d89e74a3",
+    "artifacts/readiness-build-20261024.log": "6d9267fe4fbbc704e0425d2db351f2a95fdb01b36b6128a284ab886b8abb256e",
+    "artifacts/readiness-browser-20261024.log": "a4685702de61880251e204177fff8ec8dc7e3f6bd8529fdbdbe693785836fe7a"
+  },
+  "localScreenshotHashes": {
+    "artifacts/readiness-multiplayer/844x390.png": "a61a36c879254406f4f2f8d5e67fb910f2c19a60be14cce0244ecd9b16ef3242",
+    "artifacts/readiness-multiplayer/568x320.png": "8be6306fdc5d01a6042f1200c0e78e187e3fa2c2d8d295ad389a7fc106447ed3",
+    "artifacts/readiness-multiplayer/1366x768.png": "3ffb8c468e7ada9a271ab5431b5b0f0f3755230f4e34aae8cd306f86a375557d"
+  },
+  "scope": "Local package/readiness and emulated-browser evidence. Public revision still requires verify-release and actual multiplayer checks; no physical-device or whole-game completion claim."
+}

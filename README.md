@@ -63,7 +63,7 @@ The server runs the simulation and checks command ownership. Each player sees th
 
 Choose **Custom battle**. Enable two to eight kingdoms, set their civilizations and team numbers, and choose a difficulty for each AI. Matching team numbers are allies. Presets include 2v2, 3v3, 4v4, 1v3, and four/eight-way free-for-all. Without other people, all remaining enabled kingdoms are AI, including your allies.
 
-**Huge** is the default: a 400 × 400 battlefield, 6.25 times the area of a classic map. Large is 320 × 320 and Spacious is 240 × 240. Choose any of the seven biomes, a seed, starting age, starting resources, population cap, shared allied vision, and victory rule. Coast battles begin in at least the Feudal Age and include harbors, fishing boats and transports.
+**Vast** is the default: a 480 × 480 battlefield, nine times the area of a classic map. Epic is 560 × 560, Huge is 400 × 400, Large is 320 × 320 and Spacious is 240 × 240. Choose any of the seven biomes, a seed, starting age, starting resources, population cap, shared allied vision, and victory rule. Coast battles begin in at least the Feudal Age and include harbors, fishing boats and transports.
 
 The default victory rule is **destroy all opposing buildings**, including walls and unfinished foundations. Losing a capital alone does not eliminate a kingdom; surviving villagers can rebuild. Other rules require the last town center to fall, or require every opposing unit and building to be defeated. The final few buildings can be revealed after a capital falls to help finish the war. Battles develop through real paid gathering, construction, upgrades and armies; their length depends on the battle rather than a forced minimum timer.
 
