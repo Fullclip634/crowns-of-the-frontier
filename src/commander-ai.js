@@ -5,6 +5,7 @@ import {orderSiegeAssault} from './ai-siege.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 import {closestCandidates} from './closest-candidates.js';
 import {gatheringRange,gatheringPathRange} from './work-ranges.js';
+import {buildingPlacementGrid,findPath} from './navigation.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -15,6 +16,33 @@ const stateFor=(sim,owner)=>sim.options.mode==='custom'?(sim.aiStates[owner]??={
 const military=unit=>unit.kind==='unit'&&!unit.embarked&&!['worker','fisher','quest'].includes(UNITS[unit.type].role)&&!['king','scout','transport'].includes(unit.type);
 const power=unit=>UNITS[unit.type].damage*(unit.hp/unit.maxHp)*(UNITS[unit.type].role==='siege'?.65:1);
 const countQueued=(sim,type,owner=1)=>sim.owned(owner,'building').reduce((n,b)=>n+b.queue.filter(q=>q.kind==='unit'&&q.type===type).length,0);
+
+function pointSegmentDistance(point,start,end){
+  const dx=end.x-start.x,dz=end.z-start.z,length=dx*dx+dz*dz,t=length?Math.max(0,Math.min(1,((point.x-start.x)*dx+(point.z-start.z)*dz)/length)):0;
+  return Math.hypot(point.x-start.x-dx*t,point.z-start.z-dz*t);
+}
+
+export function constructionPreservesArmyRoutes(sim,type,x,z,owner,excludedUnitId=null){
+  const definition=BUILDINGS[type];if(!definition||type==='farm'||type==='gate')return true;
+  const point={x,z},clearance=definition.r+1.65;
+  const armies=sim.entities.filter(unit=>unit.hp>0&&unit.kind==='unit'&&!unit.embarked&&!UNITS[unit.type].naval&&military(unit)&&sim.allied(owner,unit.owner)&&unit.id!==excludedUnitId);
+  const impacted=[];
+  for(const unit of armies){
+    if(distance(unit,point)<definition.r+(unit.r||.65)+.12)return false;
+    const order=unit.order;if(!order||!['move','attackmove','patrol'].includes(order.type)||!Number.isFinite(order.x)||!Number.isFinite(order.z))continue;
+    const route=[{x:unit.x,z:unit.z},...(unit.path||[])];let hit=distance(unit,point)<clearance+8;
+    for(let i=1;!hit&&i<route.length;i++)hit=pointSegmentDistance(point,route[i-1],route[i])<clearance;
+    if(hit)impacted.push({unit,destination:{x:order.x,z:order.z}});
+  }
+  if(!impacted.length)return true;
+  const grid=buildingPlacementGrid(sim,type,x,z,owner);
+  for(const {unit,destination} of impacted){
+    const oldStatus=unit.pathStatus;findPath(sim,unit,destination,1.4);const previouslyReachable=unit.pathStatus==='ready';
+    if(previouslyReachable){findPath(sim,unit,destination,1.4,grid);const remainsReachable=unit.pathStatus==='ready';unit.pathStatus=oldStatus;if(!remainsReachable)return false;}
+    else unit.pathStatus=oldStatus;
+  }
+  return true;
+}
 
 function customNavy(sim,owner,visible,known,army,tc){
   const dock=sim.owned(owner,'building','dock').find(b=>b.progress>=1);
@@ -138,7 +166,7 @@ export function installCommanderAI(Simulation){
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
     const worker=closestCandidates(this.owned(owner,'unit','villager'),1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion,w=>distance(w,near||tc))[0];if(!worker)return false;
     for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
-      if(!this.buildValid(type,point.x,point.z,owner))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
+      if(!this.buildValid(type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
       return this.build(type,point.x,point.z,[worker.id],owner);
     }return false;
   };

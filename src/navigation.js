@@ -1,16 +1,17 @@
 import {blockWallConnections} from './walls.js';
+import {BUILDINGS} from './data.js';
 const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 
 // A foundation can cover a unit already standing there. Let that unit leave
 // the containing ordinary buildings, without opening them for other troops.
-export function unitNavigationGrid(sim,unit){
-  const naval=!!sim.unitDefinition(unit).naval,normal=sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
+export function unitNavigationGrid(sim,unit,normalOverride=null){
+  const naval=!!sim.unitDefinition(unit).naval,normal=normalOverride||sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
   if(naval||!normal[cell.z*size+cell.x])return normal;
   const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
   const containing=buildings.filter(e=>!['wall','gate'].includes(e.type)&&Math.hypot(e.x-unit.x,e.z-unit.z)<e.r+.9);
   if(!containing.length)return normal;
-  const key=`escape:${sim.players[unit.owner].team??unit.owner}:${containing.map(e=>e.id).join(',')}`,cache=sim.unitEscapeGrids??=new Map();
-  const stored=cache.get(key);if(stored?.source===normal)return stored.data;
+  const key=`escape:${sim.players[unit.owner].team??unit.owner}:${containing.map(e=>e.id).join(',')}`,cache=normalOverride?null:(sim.unitEscapeGrids??=new Map());
+  const stored=cache?.get(key);if(stored?.source===normal)return stored.data;
   const ignored=new Set(containing),others=buildings.filter(e=>!ignored.has(e)),data=normal.slice(),base=sim.grids.landBase.data;
   for(const building of containing){
     const a=sim.cell(building.x-building.r-.3,building.z-building.r-.3),b=sim.cell(building.x+building.r+.3,building.z+building.r+.3);
@@ -21,8 +22,17 @@ export function unitNavigationGrid(sim,unit){
     }
   }
   blockWallConnections(sim,data);data.navigationKey=key;
-  cache.delete(key);cache.set(key,{source:normal,data});while(cache.size>16)cache.delete(cache.keys().next().value);
+  if(cache){cache.delete(key);cache.set(key,{source:normal,data});while(cache.size>16)cache.delete(cache.keys().next().value);}
   return data;
+}
+
+// Build a temporary movement grid for AI placement checks without modifying
+// the live simulation revision or invalidating every unit's cached route.
+export function buildingPlacementGrid(sim,type,x,z,owner){
+  const definition=BUILDINGS[type],grid=sim.grid(owner).slice();if(!definition||type==='farm'||type==='gate')return grid;
+  const size=sim.gridSize,a=sim.cell(x-definition.r-.3,z-definition.r-.3),b=sim.cell(x+definition.r+.3,z+definition.r+.3);
+  for(let cz=a.z;cz<=b.z;cz++)for(let cx=a.x;cx<=b.x;cx++)if(Math.hypot(cx*2-sim.halfWorld+1-x,cz*2-sim.halfWorld+1-z)<definition.r+.9)grid[cz*size+cx]=1;
+  return grid;
 }
 
 function crowdCosts(sim,unit){
@@ -79,8 +89,8 @@ function finishResourceApproach(sim,grid,unit,target,range,route){
   if(Math.abs(point.x)<=limit&&Math.abs(point.z)<=limit&&clearSegment(sim,grid,last,point))route.push(point);return route;
 }
 
-export function findPath(sim,e,dest,range=0){
-  const grid=unitNavigationGrid(sim,e),size=sim.gridSize||80,half=sim.halfWorld||80;
+export function findPath(sim,e,dest,range=0,normalOverride=null){
+  const grid=unitNavigationGrid(sim,e,normalOverride),size=sim.gridSize||80,half=sim.halfWorld||80;
   const nearest=(cell,point,labels=null,region=0)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region))return cell;let best=null,score=Infinity;
     for(let radius=1;radius<12;radius++){for(let z=Math.max(0,cell.z-radius);z<=Math.min(size-1,cell.z+radius);z++)for(let x=Math.max(0,cell.x-radius);x<=Math.min(size-1,cell.x+radius);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1,n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<radius*2)return best;}return best;};
   const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x],a=nearest(sim.cell(e.x,e.z),e);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
