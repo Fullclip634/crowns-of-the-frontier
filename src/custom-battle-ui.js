@@ -1,6 +1,7 @@
 import {AGES,MAPS,FACTIONS,DIFFICULTIES} from './data.js';
 import {BATTLE_SIZES,VICTORY_RULES,PLAYER_COLORS,battleSpawns,normalizeBattle} from './custom-battle.js';
 import {AI_PACES} from './allied-ai.js';
+import {terrainBiome} from './terrain-biomes.js';
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const options=(entries,current)=>entries.map(([value,label])=>`<option value="${value}" ${String(current)===String(value)?'selected':''}>${esc(label)}</option>`).join('');
 const color=owner=>'#'+PLAYER_COLORS[owner].toString(16).padStart(6,'0');
@@ -15,7 +16,7 @@ export function readBattleSetup(root=document){
 export function updateBattlePreview(root=document){
   const draft=readBattleSetup(root),canvas=root.querySelector('#battle-preview'),ctx=canvas.getContext('2d'),size=canvas.width;
   root.querySelectorAll('.battle-slot').forEach((row,i)=>{const active=draft.slots[i].enabled;row.classList.toggle('closed',!active);row.querySelectorAll('input,select').forEach(input=>{if(!input.id.includes('-type-'))input.disabled=!active||input.id.includes('-difficulty-')&&draft.slots[i].controller==='human';});});
-  ctx.fillStyle={winter:'#b7c4b2',desert:'#a89773',canyon:'#8a7b67'}[draft.map]||'#667e50';ctx.fillRect(0,0,size,size);
+  ctx.fillStyle=draft.map==='winter'?'#b7c4b2':terrainBiome(draft.map).map;ctx.fillRect(0,0,size,size);
   if(['coast','valley','rivers'].includes(draft.map)){ctx.strokeStyle='#70a9b0';ctx.lineWidth=draft.map==='coast'?21:8;for(const offset of draft.map==='rivers'?[-15,15]:[0]){ctx.beginPath();for(let y=0;y<=size;y+=4){const x=size/2+offset+Math.sin(y*.08)*4;if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}}
   const warning=root.querySelector('.custom-validation'),launch=root.querySelector('[data-action=custom-start]');
   try{

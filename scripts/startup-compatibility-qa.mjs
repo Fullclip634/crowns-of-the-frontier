@@ -23,9 +23,23 @@ try{
   await page.waitForURL(url=>url.searchParams.get('renderer')==='webgl');await page.waitForFunction(()=>window.frontier?.view);
   report.startup=await page.evaluate(()=>({renderer:document.documentElement.dataset.renderer,loads:Number(sessionStorage.getItem('qa-loads')),fatal:frontier.view.graphicsFatal||null,dialog:!!document.querySelector('[data-action="reload-battlefield"]'),quality:frontier.view.settings.quality}));
   assert.deepEqual(report.startup,{renderer:'webgl',loads:2,fatal:null,dialog:false,quality:'low'});
+  if(process.env.QA_GRAPHICS_REPORTS==='1'){
+    await page.evaluate(()=>frontier.action('settings'));await page.locator('.graphics-support summary').click();
+    report.diagnostics=JSON.parse(await page.locator('#graphics-report').inputValue());
+    assert.equal(report.diagnostics.current.active,'webgl');assert.equal(report.diagnostics.lastFailure.active,'webgpu');assert.equal(report.diagnostics.lastFailure.phase,'landing');assert.equal(report.diagnostics.lastFailure.failure.message,'QA injected native startup failure');
+    await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.qaCopiedReport=text;}}}));
+    await page.locator('[data-action="copy-graphics-report"]').click();assert.deepEqual(JSON.parse(await page.evaluate(()=>qaCopiedReport)),report.diagnostics);
+    await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('QA denied clipboard');}}}));
+    await page.locator('[data-action="copy-graphics-report"]').click();report.manualCopy=await page.locator('#graphics-report').evaluate(field=>({selected:field.selectionEnd-field.selectionStart,length:field.value.length,selectable:getComputedStyle(field).userSelect,overflow:document.documentElement.scrollWidth>innerWidth}));
+    assert.equal(report.manualCopy.selected,report.manualCopy.length);assert.equal(report.manualCopy.selectable,'text');assert.equal(report.manualCopy.overflow,false);
+    await page.screenshot({path:path.join(path.dirname(output),'graphics-support-568x320.png')});await page.evaluate(()=>frontier.action('close'));
+  }
   await page.goto(base.href,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view);
   report.reopen=await page.evaluate(()=>({renderer:document.documentElement.dataset.renderer,loads:Number(sessionStorage.getItem('qa-loads')),query:new URL(location.href).searchParams.get('renderer')}));
   assert.deepEqual(report.reopen,{renderer:'webgl',loads:3,query:null});
+  if(process.env.QA_GRAPHICS_REPORTS==='1'){
+    await page.evaluate(()=>frontier.action('settings'));const retained=JSON.parse(await page.locator('#graphics-report').inputValue());assert.equal(retained.lastFailure.failure.message,'QA injected native startup failure');await page.evaluate(()=>frontier.action('close'));report.failureRetainedAfterReopen=true;
+  }
   await page.evaluate(()=>frontier.start({mode:'sandbox',map:'highlands',seed:512}));
   report.smallPhone=(await capturePaintedBattlefield(page,path.join(path.dirname(output),'compatible-568x320.png'))).pixels;
   await page.setViewportSize({width:740,height:360});report.phone=(await capturePaintedBattlefield(page,path.join(path.dirname(output),'compatible-740x360.png'))).pixels;
@@ -38,10 +52,21 @@ try{
   await page.locator('[data-action="reload-battlefield"]').waitFor();
   report.matchHeld=await page.evaluate(()=>({native:new URL(location.href).searchParams.get('renderer')==='webgpu',playing:frontier.playing,paused:frontier.paused,loads:Number(sessionStorage.getItem('qa-loads')),seed:frontier.sim.options.seed}));
   assert.deepEqual(report.matchHeld,{native:true,playing:true,paused:true,loads:4,seed:713});
+  if(process.env.QA_GRAPHICS_REPORTS==='1'){const failure=JSON.parse(await page.locator('#graphics-report').inputValue()).lastFailure;assert.equal(failure.phase,'battle');assert.equal(failure.failure.message,'QA injected in-match failure');report.battleFailureReported=true;}
   await page.locator('[data-action="reload-battlefield"]').click();await page.waitForURL(url=>url.searchParams.get('renderer')==='webgl');await page.waitForFunction(()=>window.frontier?.view);
   await page.locator('[data-action="resume"]').click();await page.waitForFunction(()=>frontier.playing);
   report.resumed=await page.evaluate(()=>({renderer:document.documentElement.dataset.renderer,seed:frontier.sim.options.seed,fatal:frontier.view.graphicsFatal||null}));
   assert.deepEqual(report.resumed,{renderer:'webgl',seed:713,fatal:null});
+  if(process.env.QA_GRAPHICS_REPORTS==='1'){
+    await page.close();const unsupported=await context.newPage();report.unsupportedMessages=[];
+    unsupported.on('pageerror',error=>report.unsupportedMessages.push({type:'pageerror',text:error.stack}));unsupported.on('console',message=>{if(['warning','error'].includes(message.type()))report.unsupportedMessages.push({type:message.type(),text:message.text()});});
+    await unsupported.addInitScript(()=>{Object.defineProperty(Navigator.prototype,'gpu',{get:()=>undefined,configurable:true});const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return ['webgl2','webgl','experimental-webgl'].includes(type)?null:get.call(this,type,...args);};});
+    await unsupported.goto(base.href,{waitUntil:'domcontentloaded'});await unsupported.waitForFunction(()=>window.frontier&&!frontier.view);await unsupported.locator('.graphics-support summary').click();
+    const captured=JSON.parse(await unsupported.locator('#graphics-report').inputValue());assert.equal(captured.lastFailure.phase,'initialization');assert.match(captured.lastFailure.failure.message,/WebGL context/);
+    await unsupported.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.qaCopiedReport=text;}}}));await unsupported.locator('[data-action="copy-graphics-report"]').click();assert.deepEqual(JSON.parse(await unsupported.evaluate(()=>qaCopiedReport)),captured);
+    assert.deepEqual(report.unsupportedMessages.filter(message=>message.type==='pageerror'),[]);report.unsupportedReportCopy=true;
+    await unsupported.screenshot({path:path.join(path.dirname(output),'graphics-unavailable-report-568x320.png')});
+  }
   const expected=text=>/powerPreference option|QA injected native startup failure|QA injected in-match failure/.test(text)||text==='THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.'
     ||text.startsWith('THREE.WebGLProgram: Program Info Log:')&&text.includes('warning X4122:')&&!text.includes('error ');
   assert.deepEqual(report.messages.filter(message=>message.type==='pageerror'||!expected(message.text)),[]);

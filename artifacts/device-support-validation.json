@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-10-23T02:09:39.979Z",
+  "buildId": "1792717593749",
+  "tests": {
+    "total": 439,
+    "passed": 439,
+    "failed": 0
+  },
+  "productionBuild": true,
+  "mainBundle": "/assets/index-DvLG7eFu.js",
+  "mainSHA256": "1ae16cb6b3cec687b45e194f8055aa80a093c52b483dfdf7323525c340112883",
+  "sourceSHA256": {
+    "src/compatibility-depth.js": "57323395e9224a8411036ddc59787c1d3d2f6f52727ebe36a67fbdfa0ae5e904",
+    "src/graphics-reports.js": "7a12253ae2065697280ba102411b4395748d741dfe628b5e9bca969a42825335",
+    "src/terrain-biomes.js": "6f6cc8b9633a4e4d300fa6609a3f4b6651034143d39514e229cea010daadce6d",
+    "src/custom-battle-ui.js": "0633301a0a2659bea6ccc7e3a9a896a7f4ce5d64af309b2d76fe4d5ee5f2039a",
+    "src/data.js": "09e33c0a4cce0cecb081e0ae3f812d18dd9774880b71e8e2381f7952b97276b1",
+    "src/graphics-recovery-ui.js": "12f53e27f235c95f7dc43218c9b4b1e3e55d939d925f8a836897071b7f611ca8",
+    "src/ground-cover.js": "085f7ff752adf21383f0db75682085f18e755e923e16c7f1ab71a655d84ba1a9",
+    "src/interface.css": "b72bf05e8d0e0aee8fbc3df7bb2e16d2cf597fada0253ce0fd406770579f57e0",
+    "src/landscape.js": "19a18ae39ea1b197dc0d5ff53453852a66ce063dd1c07504449d101bb7e6dd6f",
+    "src/main.js": "48f0253ae4672126c967fff97ace7894ff7c1e492c8d11f07eefee5816067b54",
+    "src/minimap.js": "a1729898a43a12385081a00974625ce869c6681eb9153ac601ddfa2678fb57c2",
+    "src/render-context.js": "539df2f32d8c8ee293bcca85c4492f2bdc2616e0ed7f7ff28e113e0c1e1d47ad",
+    "src/render-nodes.js": "2d78e2f15ba13135a8fadf3ca7f2202ff21c18bd08ee7ec15b608ed441ab9658",
+    "src/terrain-details.js": "3e482dd87f9074dd785d5a760e563a72dab85db3f9f936c9a5cc50098ba8f486",
+    "src/terrain-layout.js": "d221dbf81892fc8c12a1d27d7fa6151176f13ef904d497f19da8bf29b2bef475",
+    "src/terrain-surface.js": "2e3d08d2c699083e12483a66b89023e58189e3fff1441795d07470e6ba6a3cec",
+    "src/world.js": "44eafe46639b03e4e551f2428d7be64ded3cde16616c1540d7f50bb1e1bd2052",
+    "tests/compatibility-depth.test.js": "dc935a12d7b0d835930596391da096eb9d2bf7d977e24c0292bce9db582b127e",
+    "tests/graphics-reports.test.js": "6010226a0aef41e4dfe703e0d0cf0170921dd75556062eb7c6df22b0d8ca048a",
+    "tests/green-terrain.test.js": "6f6f09df2c3ac5b7ad760f76107a9d472effa756ca53646496bef21d3725df0f",
+    "scripts/renderer-qa.mjs": "eed453cc41685b72ea7f9386f2f40d87c951e236e1f50825b17d8a5200c622fe",
+    "scripts/startup-compatibility-qa.mjs": "f8151b68851a7c53d6944a4d2361ccf384af480f90b66b9d38243fb9115f8027",
+    "scripts/webgpu-compatibility-probe.mjs": "267706f01d716055cbbc773d6c8638de20d61e98c0459a9450e5b01268ae9bef",
+    "scripts/green-terrain-qa.mjs": "7f1ba20f83d17f234738540dbbed69d0cb11cd0caae6b81376c1f3933927303b",
+    "WEBGPU_AND_TERRAIN.md": "8436ba525d88a5b0a4b094eff180e525a3a9065b4b8bbe1f0b4ff43ac1651e87"
+  },
+  "browserReports": [
+    "artifacts/device-support-default-phone/validation.json",
+    "artifacts/device-support-compatibility-phone/validation.json",
+    "artifacts/device-support-webgl-phone/validation.json",
+    "artifacts/device-support-recovery-chrome-d3d11/validation.json"
+  ],
+  "checks": {
+    "coreWebGPU": true,
+    "realCompatibilityDeviceWithoutOptionalFeatures": true,
+    "androidShadowPath": true,
+    "classicWebGL": true,
+    "terrainMapPresetCases": 42,
+    "allSevenBalancedTerrainCapturesVisuallyReviewed": true,
+    "phoneBattlefieldsPainted": true,
+    "originalFailureRetainedInTab": true,
+    "clipboardAndManualCopy": true,
+    "unsupportedGraphicsReport": true,
+    "activeMatchSaveReloadResume": true
+  },
+  "limitations": [
+    "Native testing uses an isolated host GPU-blocklist override; strict Compatibility Mode uses an actual feature-restricted host device with an Android user agent.",
+    "WebGL functional testing uses software rendering. Emulated phone viewports are not physical-device or FPS tests.",
+    "This fixes a reproduced shader defect without proving it was the sole cause of the reported laptop or Infinix Note 7 failure. Physical-device retry remains required.",
+    "More grass may use existing instance capacity on formerly arid maps; no unchanged frame-time or universal performance claim.",
+    "The broader RTS development goal remains active; this milestone does not establish AAA parity or zero defects."
+  ]
+}

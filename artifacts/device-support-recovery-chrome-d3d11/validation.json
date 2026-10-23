@@ -1,0 +1,162 @@
+{
+  "startedAt": "2026-10-23T02:03:07.641Z",
+  "browser": "155.0.8059.80",
+  "harness": "chrome-d3d11",
+  "gpuBlocklistOverride": true,
+  "softwareRendering": false,
+  "limitations": "Emulated phone layout and injected native failure; not a physical Infinix test or an FPS benchmark.",
+  "messages": [
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected native startup failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected in-match failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    }
+  ],
+  "buildId": "1792717593749",
+  "startup": {
+    "renderer": "webgl",
+    "loads": 2,
+    "fatal": null,
+    "dialog": false,
+    "quality": "low"
+  },
+  "diagnostics": {
+    "current": {
+      "version": 1,
+      "capturedAt": "2026-10-23T02:03:58.857Z",
+      "buildId": "1792717593749",
+      "phase": "landing",
+      "requested": "webgl",
+      "active": "webgl",
+      "quality": "low",
+      "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "secure": true,
+      "viewport": {
+        "width": 568,
+        "height": 320,
+        "pixelRatio": 1
+      },
+      "gpu": {
+        "compatibilityMode": null,
+        "limits": {
+          "maxTextureDimension2D": null,
+          "maxBufferSize": null,
+          "maxStorageBuffersPerShaderStage": null,
+          "maxSampledTexturesPerShaderStage": null,
+          "maxBindGroups": null
+        }
+      },
+      "failure": null
+    },
+    "lastFailure": {
+      "version": 1,
+      "capturedAt": "2026-10-23T02:03:23.453Z",
+      "buildId": "1792717593749",
+      "phase": "landing",
+      "requested": "webgpu",
+      "active": "webgpu",
+      "quality": "low",
+      "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "secure": true,
+      "viewport": {
+        "width": 568,
+        "height": 320,
+        "pixelRatio": 1
+      },
+      "gpu": {
+        "compatibilityMode": false,
+        "limits": {
+          "maxTextureDimension2D": 8192,
+          "maxBufferSize": 268435456,
+          "maxStorageBuffersPerShaderStage": 8,
+          "maxSampledTexturesPerShaderStage": 16,
+          "maxBindGroups": 4
+        }
+      },
+      "failure": {
+        "type": "GPUValidationError",
+        "message": "QA injected native startup failure"
+      }
+    }
+  },
+  "manualCopy": {
+    "selected": 1609,
+    "length": 1609,
+    "selectable": "text",
+    "overflow": false
+  },
+  "reopen": {
+    "renderer": "webgl",
+    "loads": 3,
+    "query": null
+  },
+  "failureRetainedAfterReopen": true,
+  "smallPhone": {
+    "samples": 4218,
+    "colors": 2033,
+    "luminanceVariance": 357.38030806129973,
+    "painted": true
+  },
+  "phone": {
+    "samples": 6216,
+    "colors": 2777,
+    "luminanceVariance": 360.7030531518694,
+    "painted": true
+  },
+  "matchHeld": {
+    "native": true,
+    "playing": true,
+    "paused": true,
+    "loads": 4,
+    "seed": 713
+  },
+  "battleFailureReported": true,
+  "resumed": {
+    "renderer": "webgl",
+    "seed": 713,
+    "fatal": null
+  },
+  "unsupportedMessages": [
+    {
+      "type": "warning",
+      "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+    },
+    {
+      "type": "error",
+      "text": "Error: THREE.WebGLRenderer: Error creating WebGL context.\n    at new Bx (http://127.0.0.1:59950/assets/three-BZyEHKkA.js:4220:24930)\n    at ya (http://127.0.0.1:59950/assets/index-DvLG7eFu.js:203:14624)\n    at pf (http://127.0.0.1:59950/assets/index-DvLG7eFu.js:203:14887)\n    at http://127.0.0.1:59950/assets/index-DvLG7eFu.js:221:1403"
+    }
+  ],
+  "unsupportedReportCopy": true,
+  "passed": true
+}

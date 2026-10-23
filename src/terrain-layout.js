@@ -17,8 +17,8 @@ export function terrainWeights(land,x,y,z,normalY=1){
     const distance=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend)-channel.width;
     if(distance>=0)bank=Math.max(bank,1-smooth(.2,4,distance));
   }
-  const arid=['desert','canyon'].includes(land.map),rock=Math.min(.94,.12*patch+smooth(.025,.19,slope)*.75+smooth(5,15,y)*.35)*(1-road*.9)*(1-bank*.6);
-  const soil=Math.min(.95,Math.max(road*.95,bank*.75,(arid?.48:.12)+patch*.17))*(1-rock);
+  const winter=land.map==='winter',rock=Math.min(.94,.12*patch+smooth(.025,.19,slope)*.75+smooth(5,15,y)*.35)*(1-road*.9)*(1-bank*.6);
+  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),(winter?.12:.04)+patch*(winter?.17:.08)))*(1-rock);
   return {grass:Math.max(0,1-soil-rock),soil,rock};
 }
 

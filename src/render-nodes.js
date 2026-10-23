@@ -1,7 +1,20 @@
 import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial} from 'three';
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial} from 'three/webgpu';
+import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+
+const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
+  const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
+  const phi=interleavedGradientNoise(screenCoordinate.xy).mul(6.28318530718),samples=[];
+  for(let i=0;i<5;i++){
+    const coords=shadowCoord.xy.add(vogelDiskSample(i,5,phi).mul(spread));let depth=texture(depthTexture,coords);
+    if(depthTexture.isArrayTexture)depth=depth.depth(depthLayer);
+    samples.push(builder.renderer.reversedDepthBuffer?step(depth,shadowCoord.z):step(shadowCoord.z,depth));
+  }
+  return samples.reduce((sum,sample)=>sum.add(sample)).mul(.2);
+});
+export function configureDirectionalShadow(light,renderer){return configureCompatibilityShadow(light,renderer,compatibilityPCF);}
 
 // r180's node copy preserves its graph but omits MeshStandardMaterial's PBR
 // properties. Keep maps, colors and surface values when creating independent
@@ -28,7 +41,8 @@ const weighted=(u,roles,coords,weights,suffix='')=>roles.map((role,i)=>sample(u[
 export function terrain(material,u){
   const coords=[uv().mul(value(u.scale,'vec3').x),uv().mul(value(u.scale,'vec3').y),uv().mul(value(u.scale,'vec3').z)];
   const weights=Fn(()=>{const base=max(varying(attribute('terrainMix','vec3')),vec3(0));const road=sample(u.roads).r;const blend=mix(base,vec3(0,1,0),road.mul(.94));return blend.div(max(dot(blend,vec3(1)),.001));})();
-  const color=weighted(u,['grass','soil','rock'],coords,weights).mul(value(u.tint,'color'));
+  const color=sample(u.grass,coords[0]).rgb.mul(value(u.grassTint,'color')).mul(weights.x)
+    .add(sample(u.soil,coords[1]).rgb.mul(weights.y)).add(sample(u.rock,coords[2]).rgb.mul(weights.z)).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
   if(u.grassNormal.value)material.normalNode=normalMap(weighted(u,['grass','soil','rock'],coords,weights,'Normal'),vec2(.35));
   if(u.grassArm.value)material.roughnessNode=materialRoughness.mul(clamp(weighted(u,['grass','soil','rock'],coords,weights,'Arm').g,.25,1));

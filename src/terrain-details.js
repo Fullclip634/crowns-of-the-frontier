@@ -21,7 +21,7 @@ export class TerrainDetails{
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.98;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const arid=['desert','canyon'].includes(land.map),palette=land.map==='winter'?[0xc3cbc5,0xe0e4db,0xa7b4a9]:arid?[0xd7c4a4,0xc8b69a,0xe1d0b0]:[0xc4c8b5,0xd8cfb6,0xaeb9a2];
+    const palette=land.map==='winter'?[0xc3cbc5,0xe0e4db,0xa7b4a9]:[0xb9c1ac,0xcad0bf,0x98a58d];
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
       if(y<.2||roadDistance(x,z,land)<2)continue;

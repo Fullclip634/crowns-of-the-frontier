@@ -15,9 +15,10 @@ const knownWarning=text=>/powerPreference option|WebGPU could not start; using W
   ||text.startsWith('THREE.WebGLProgram: Program Info Log:')&&text.includes('warning X4122:')&&!text.includes('error ');
 try{
   for(const mode of (process.env.QA_RENDERERS||'webgl,webgpu,fallback').split(',')){
-    assert.ok(['webgl','webgpu','fallback','default','default-fallback','default-no-adapter'].includes(mode));
+    assert.ok(['webgl','webgpu','compatibility','fallback','default','default-fallback','default-no-adapter'].includes(mode));
     console.log('Renderer check '+mode);
-    const context=await browser.newContext({viewport:{width:800,height:500},hasTouch:true,serviceWorkers:'allow'});
+    const context=await browser.newContext({viewport:{width:800,height:500},hasTouch:true,serviceWorkers:'allow',...(mode==='compatibility'?{userAgent:'Mozilla/5.0 (Linux; Android 10; TestDevice) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36'}:{})});
+    if(mode==='compatibility'){const {restrictWebGPUFeatures}=await import('./webgpu-compatibility-probe.mjs');await restrictWebGPUFeatures(context);}
     const page=await context.newPage();page.setDefaultTimeout(240000);page.setDefaultNavigationTimeout(90000);
     const nodeRequests=[];page.on('request',request=>{if(/\/render-nodes-[^/]+\.js(?:\?|$)/.test(request.url()))nodeRequests.push(request.url());});
     page.on('pageerror',error=>report.messages.push({mode,type:'pageerror',text:error.stack}));
@@ -25,11 +26,15 @@ try{
     if(['fallback','default-fallback'].includes(mode))await page.addInitScript(()=>Object.defineProperty(Navigator.prototype,'gpu',{get:()=>undefined,configurable:true}));
     if(mode==='default-no-adapter')await page.addInitScript(()=>{window.qaAdapterRequests=0;Object.defineProperty(Navigator.prototype,'gpu',{get:()=>({requestAdapter:async()=>{window.qaAdapterRequests++;return null;}}),configurable:true});});
     await page.addInitScript(()=>localStorage.setItem('crowns-settings',JSON.stringify({quality:'low',autoQuality:false,frameRate:'30',fog:false,weather:'clear',lighting:'day',volume:0,music:false})));
-    const url=new URL(process.env.QA_URL||'http://localhost:4173/');if(mode.startsWith('default'))url.searchParams.delete('renderer');else url.searchParams.set('renderer',mode==='fallback'?'webgpu':mode);
+    const url=new URL(process.env.QA_URL||'http://localhost:4173/');if(mode.startsWith('default'))url.searchParams.delete('renderer');else url.searchParams.set('renderer',['fallback','compatibility'].includes(mode)?'webgpu':mode);
     await page.goto(url.href,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.frontier?.view);
     report.buildId??=await page.locator('meta[name="frontier-build"]').getAttribute('content');
-    const expected=['webgpu','default'].includes(mode)?'webgpu':'webgl';assert.equal(await page.evaluate(()=>document.documentElement.dataset.renderer),expected);
+    const expected=['webgpu','default','compatibility'].includes(mode)?'webgpu':'webgl';assert.equal(await page.evaluate(()=>document.documentElement.dataset.renderer),expected);
     const check={mode,expected,url:page.url(),queryRenderer:await page.evaluate(()=>new URLSearchParams(location.search).get('renderer')),nativeModuleRequests:nodeRequests.length,qualities:[]};report.checks.push(check);
+    if(mode==='compatibility'){
+      check.compatibility=await page.evaluate(()=>({active:frontier.view.renderer.backend.compatibilityMode,features:[...frontier.view.renderer.backend.device.features],userAgent:navigator.userAgent}));
+      assert.equal(check.compatibility.active,true);assert.deepEqual(check.compatibility.features,[]);
+    }
     if(mode==='default-no-adapter')assert.equal(check.nativeModuleRequests,0,'Rejected adapters must reach compatibility graphics before loading the node engine.');
     if(mode.startsWith('default'))assert.equal(check.queryRenderer,null);
     if(mode==='default-no-adapter'){check.adapterRequests=await page.evaluate(()=>qaAdapterRequests);assert.ok(check.adapterRequests>0);}
@@ -46,7 +51,10 @@ try{
     for(const quality of ['high','medium','low']){
       const result=await page.evaluate(async quality=>{
         const v=frontier.view,s=frontier.sim,before=JSON.stringify(s.serialize());v.render=qaRender;
-        const applied=await v.quality(quality);await new Promise(resolve=>setTimeout(resolve,500));v.render=()=>false;await qaDraw();
+        let faultWatch,deadline,applied;
+        try{applied=await Promise.race([v.quality(quality),new Promise((_,reject)=>{faultWatch=setInterval(()=>{if(v.graphicsFatal)reject(new Error('GPU failure during '+quality+': '+v.graphicsFatal.type+' '+v.graphicsFatal.message));},50);deadline=setTimeout(()=>reject(new Error('Graphics preparation timed out: '+quality)),120000);})]);}
+        finally{clearInterval(faultWatch);clearTimeout(deadline);}
+        await new Promise(resolve=>setTimeout(resolve,500));v.render=()=>false;await qaDraw();
         return {quality,applied,actual:v.renderQuality,sameMatch:s===frontier.sim&&JSON.stringify(s.serialize())===before,valid:v.graphicsSceneValid,fatal:v.graphicsFatal,flight:v.renderFlight&&{...v.renderFlight},surfaces:v.surfaceDiagnostics,drawn:v.unitRenderDiagnostics.drawn,indexedUnits:[...v.unitBatches].flatMap(([type,batch])=>batch.parts.filter(part=>part.userData.rigidRig).map(part=>({type,vertices:part.geometry.attributes.position.count,indices:part.geometry.index?.count||0})))};
       },quality);check.qualities.push(result);console.log(JSON.stringify(result));
       assert.ok(result.applied&&result.actual===quality&&result.sameMatch&&result.valid&&!result.fatal&&result.drawn===4);
@@ -64,6 +72,7 @@ try{
     });
     const f=check.features;assert.ok(f.construction&&f.clipping&&f.completed&&f.weather.rain>0&&f.lighting.night>.9&&f.portrait.ready&&!f.portrait.disabled&&f.portrait.width>0);assert.ok(f.ghost.every(m=>m.color===0xee816a&&m.alpha===.38));
     if(process.env.QA_FOREST_ACTIONS==='1'){const {verifyForestActions}=await import('./forest-actions-qa.mjs');check.forestActions=await verifyForestActions(page,output);}
+    if(process.env.QA_GREEN_MAPS==='1'){const {verifyGreenTerrain}=await import('./green-terrain-qa.mjs');check.greenMaps=await verifyGreenTerrain(page,output);}
     await page.setViewportSize({width:740,height:360});await settleBattlefieldResize(page);
     check.phone=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:frontier.view.renderer.domElement.getBoundingClientRect().toJSON()}));assert.ok(check.phone.scroll<=check.phone.width&&check.phone.canvas.width>=check.phone.width-1);
     const image=path.join(path.dirname(output),'renderer-'+mode+'-landscape.png');check.phone.pixels=(await capturePaintedBattlefield(page,image,{manual:true})).pixels;

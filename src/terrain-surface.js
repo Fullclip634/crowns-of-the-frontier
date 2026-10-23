@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {roadDistance} from './terrain-layout.js';
+import {terrainBiome} from './terrain-biomes.js';
 
 function roadMask(land){
   roadDistance(0,0,land);const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
@@ -14,7 +15,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   const soil=surfaces.soil||grass,rock=surfaces.rock||grass,normal=quality!=='low'&&grass.normal;
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
-  const arid=['desert','canyon'].includes(land.map),amount=land.map==='winter'?.22:arid?.43:.82;
+  const amount=land.map==='winter'?.22:.78;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];
   const uniforms={
@@ -22,7 +23,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
     grassNormal:{value:normal||null},soilNormal:{value:normal?(soil.normal||grass.normal):null},rockNormal:{value:normal?(rock.normal||grass.normal):null},
     grassArm:{value:quality==='high'?grass.arm||null:null},soilArm:{value:quality==='high'?soil.arm||grass.arm||null:null},rockArm:{value:quality==='high'?rock.arm||grass.arm||null:null},
     scale:{value:new THREE.Vector3(land.renderSize/(dimensions.grass||2),land.renderSize/(dimensions.soil||1.3),land.renderSize/(dimensions.rock||90))},
-    amount:{value:amount},tint:{value:new THREE.Color(arid?0xd5b58d:land.map==='winter'?0xe3e8de:0xdbe1c6)},
+    amount:{value:amount},tint:{value:new THREE.Color(land.map==='winter'?0xe3e8de:0xe0e5d8)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},
     roads:{value:roads},
   };
   material.frontierTerrainUniforms=uniforms;
@@ -46,13 +47,14 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       uniform sampler2D frontierTerrainroads;
       uniform vec3 frontierTerrainscale;
       uniform vec3 frontierTerraintint;
+      uniform vec3 frontierTerraingrassTint;
       uniform float frontierTerrainamount;\n`+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       vec3 terrainBlend = max(vTerrainMix, vec3(0.0));
       float terrainRoad = texture2D(frontierTerrainroads, vMapUv).r;
       terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), terrainRoad * 0.94);
       terrainBlend /= max(dot(terrainBlend, vec3(1.0)), 0.001);
-      vec3 terrainColor = texture2D(frontierTerraingrass, vMapUv * frontierTerrainscale.x).rgb * terrainBlend.x
+      vec3 terrainColor = texture2D(frontierTerraingrass, vMapUv * frontierTerrainscale.x).rgb * frontierTerraingrassTint * terrainBlend.x
         + texture2D(frontierTerrainsoil, vMapUv * frontierTerrainscale.y).rgb * terrainBlend.y
         + texture2D(frontierTerrainrock, vMapUv * frontierTerrainscale.z).rgb * terrainBlend.z;
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount);`);

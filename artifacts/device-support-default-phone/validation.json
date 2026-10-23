@@ -1,0 +1,669 @@
+{
+  "startedAt": "2026-10-23T01:10:36.592Z",
+  "environment": {
+    "browser": "155.0.8059.80",
+    "harness": "chrome-d3d11",
+    "softwareRendering": false,
+    "gpuBlocklistOverride": true,
+    "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+  },
+  "checks": [
+    {
+      "mode": "default",
+      "expected": "webgpu",
+      "url": "http://127.0.0.1:64767/",
+      "queryRenderer": null,
+      "nativeModuleRequests": 1,
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 15,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 14,
+            "compressedMipBytes": 19573792,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 6388,
+              "indices": 10644
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 5380,
+              "indices": 9072
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 3740,
+              "indices": 8826
+            }
+          ]
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 20,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 10,
+            "compressedMipBytes": 13981280,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4800,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4080,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 25,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 7,
+            "compressedMipBytes": 9786896,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4876,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4156,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        }
+      ],
+      "status": "WebGPU is active.",
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "greenMaps": [
+        {
+          "map": "highlands",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3884,
+            "luminanceVariance": 599.671668866903,
+            "painted": true
+          }
+        },
+        {
+          "map": "valley",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3848,
+            "luminanceVariance": 562.8648859251571,
+            "painted": true
+          }
+        },
+        {
+          "map": "rivers",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5583403896257968,
+            0.25818285291079235
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3782,
+            "luminanceVariance": 566.1395711167434,
+            "painted": true
+          }
+        },
+        {
+          "map": "desert",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3277780980458375,
+            0.5840784178830671,
+            0.23839757380151394
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3764,
+            "luminanceVariance": 614.3794218721732,
+            "painted": true
+          }
+        },
+        {
+          "map": "canyon",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5209955731953768,
+            0.24620132669705552
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 4103,
+            "luminanceVariance": 595.4443310428587,
+            "painted": true
+          }
+        },
+        {
+          "map": "coast",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3049873140591091,
+            0.5840784178830671,
+            0.2541520943200296
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 2944,
+            "luminanceVariance": 382.83614956321344,
+            "painted": true
+          }
+        },
+        {
+          "map": "winter",
+          "quality": "high",
+          "actual": "high",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            1,
+            1,
+            1
+          ],
+          "coverCapacity": 4320,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3537,
+            "luminanceVariance": 3860.9841673510855,
+            "painted": true
+          }
+        },
+        {
+          "map": "highlands",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-highlands-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3836,
+            "luminanceVariance": 539.6940570603392,
+            "painted": true
+          }
+        },
+        {
+          "map": "valley",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-valley-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3715,
+            "luminanceVariance": 508.3299406174069,
+            "painted": true
+          }
+        },
+        {
+          "map": "rivers",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5583403896257968,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-rivers-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3667,
+            "luminanceVariance": 513.218614680582,
+            "painted": true
+          }
+        },
+        {
+          "map": "desert",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3277780980458375,
+            0.5840784178830671,
+            0.23839757380151394
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-desert-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3700,
+            "luminanceVariance": 561.3521305220502,
+            "painted": true
+          }
+        },
+        {
+          "map": "canyon",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5209955731953768,
+            0.24620132669705552
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-canyon-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3995,
+            "luminanceVariance": 530.3387700903281,
+            "painted": true
+          }
+        },
+        {
+          "map": "coast",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3049873140591091,
+            0.5840784178830671,
+            0.2541520943200296
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-coast-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 2863,
+            "luminanceVariance": 353.0054732867884,
+            "painted": true
+          }
+        },
+        {
+          "map": "winter",
+          "quality": "medium",
+          "actual": "medium",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            1,
+            1,
+            1
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": "artifacts\\device-support-default-phone\\terrain-winter-medium.png",
+          "pixels": {
+            "samples": 9120,
+            "colors": 3640,
+            "luminanceVariance": 3849.182892920595,
+            "painted": true
+          }
+        },
+        {
+          "map": "highlands",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3446,
+            "luminanceVariance": 360.379459016307,
+            "painted": true
+          }
+        },
+        {
+          "map": "valley",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5711248294565854,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3315,
+            "luminanceVariance": 340.5740836871182,
+            "painted": true
+          }
+        },
+        {
+          "map": "rivers",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.29613827078752575,
+            0.5583403896257968,
+            0.25818285291079235
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3284,
+            "luminanceVariance": 343.3751540204976,
+            "painted": true
+          }
+        },
+        {
+          "map": "desert",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3277780980458375,
+            0.5840784178830671,
+            0.23839757380151394
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3293,
+            "luminanceVariance": 378.46849628421205,
+            "painted": true
+          }
+        },
+        {
+          "map": "canyon",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3094689228067428,
+            0.5209955731953768,
+            0.24620132669705552
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 3574,
+            "luminanceVariance": 359.4530435634333,
+            "painted": true
+          }
+        },
+        {
+          "map": "coast",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            0.3049873140591091,
+            0.5840784178830671,
+            0.2541520943200296
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 2584,
+            "luminanceVariance": 209.93001777803784,
+            "painted": true
+          }
+        },
+        {
+          "map": "winter",
+          "quality": "low",
+          "actual": "low",
+          "active": "webgpu",
+          "fatal": null,
+          "grassTint": [
+            1,
+            1,
+            1
+          ],
+          "coverCapacity": 1800,
+          "coverDrawCalls": 1,
+          "image": null,
+          "pixels": {
+            "samples": 9120,
+            "colors": 2938,
+            "luminanceVariance": 3733.4477525946604,
+            "painted": true
+          }
+        }
+      ],
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        },
+        "pixels": {
+          "samples": 6216,
+          "colors": 2367,
+          "luminanceVariance": 3313.4496769906,
+          "painted": true
+        }
+      },
+      "smallPhone": {
+        "width": 568,
+        "height": 320,
+        "scroll": 568,
+        "pixels": {
+          "samples": 4218,
+          "colors": 1778,
+          "luminanceVariance": 3369.1713832883506,
+          "painted": true
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "mode": "default",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "default",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    }
+  ],
+  "buildId": "1792717593749",
+  "passed": true
+}

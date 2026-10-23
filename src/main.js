@@ -31,6 +31,7 @@ import {graphicsSelection,applyGraphicsChoice,rendererStatus} from './graphics-s
 import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery-ui.js';
 import {graphicsNeedsReload} from './graphics-failure.js';
 import {preferredRenderer,compatibleGraphicsURL,startupCompatibilityURL} from './graphics-compatibility.js';
+import {graphicsReport,rememberGraphicsFailure,readGraphicsFailure,graphicsSupportMarkup,copyGraphicsReport} from './graphics-reports.js';
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
 import {releaseRenderers} from './render-lifecycle.js';
@@ -82,7 +83,14 @@ const bootButtons=[...document.querySelectorAll('#landing button')];for(const bu
 const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
 const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
 const requestedRenderer=preferredRenderer(location.href,graphicsSession);
-let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>console.warn('WebGPU could not start; using WebGL 2:',error.message)});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;}
+let lastGraphicsFailure=readGraphicsFailure(graphicsSession);
+function currentGraphicsReport(failure=null,phase=playing?'battle':'landing'){
+  const renderer=view?.renderer||startupRenderer;
+  return graphicsReport({buildId:document.querySelector('meta[name="frontier-build"]')?.content||'development',phase,requested:requestedRenderer,active:renderer?rendererBackend(renderer):'unavailable',quality:view?.renderQuality||settings.quality,browser:navigator.userAgent,secure:globalThis.isSecureContext===true,viewport:{width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},renderer,failure});
+}
+function recordGraphicsFailure(failure,phase){lastGraphicsFailure=rememberGraphicsFailure(graphicsSession,currentGraphicsReport(failure,phase));}
+function graphicsSupport(){return graphicsSupportMarkup({current:currentGraphicsReport(),lastFailure:lastGraphicsFailure});}
+let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>{recordGraphicsFailure(error,'initialization');console.warn('WebGPU could not start; using WebGL 2:',error.message);}});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;recordGraphicsFailure(error,'initialization');}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // A missing/old catalogue must not silently replace the promised Blender art.
 for(;!startupFailure;){
@@ -102,10 +110,11 @@ for(;!startupFailure;){
     await new Promise(resolve=>{bootStatus.querySelector('button').onclick=resolve;});bootStatus.textContent='Preparing your kingdom…';
   }
 }
-try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);watchRendererDevice(view);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
+try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);watchRendererDevice(view);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
+  if(!startupFailure)recordGraphicsFailure(error,'scene-startup');
   releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
   const failure=document.createElement('div');failure.className='modal-backdrop';failure.style.position='fixed';failure.style.zIndex='100';
-  failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs a supported 3D graphics API (WebGPU or WebGL 2). Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button></div>`;
+  failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs a supported 3D graphics API (WebGPU or WebGL 2). Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button>${graphicsSupport()}</div>`;
   document.body.append(failure);failure.querySelector('button').focus();console.error(error);
 }
 bootStatus.remove();for(const button of bootButtons)button.disabled=!view;
@@ -165,6 +174,7 @@ function showSettings(){
       <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft contacts</option>
     </select><p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality. Tree shapes stay consistent in every preset.</p>
     <p id="renderer-status" class="settings-note">${esc(rendererStatus({requested:requestedRenderer,active:rendererBackend(view.renderer),secure:globalThis.isSecureContext!==false}))}</p>
+    ${graphicsSupport()}
     <label class="field-label" for="frame-rate">FRAME RATE TARGET</label><select id="frame-rate">${Object.entries(FRAME_RATES).map(([id,name])=>`<option value="${id}" ${settings.frameRate===id?'selected':''}>${name}</option>`).join('')}</select>
     <label class="field-label" for="camera-preset">CAMERA VIEW</label><select id="camera-preset">${Object.entries(CAMERA_PRESETS).map(([id,p])=>`<option value="${id}" ${settings.cameraPreset===id?'selected':''}>${p.label}</option>`).join('')}</select>
     <label class="toggle"><input id="edge-scroll" type="checkbox" ${settings.edgeScroll?'checked':''}> Mouse edge scrolling</label>
@@ -274,6 +284,7 @@ function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){const layer=$('#health-layer');let html='';for(const e of sim.entities){if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))continue;if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)continue;const p=view.project(e);if(p.visible&&p.x>0&&p.x<innerWidth&&p.y>50&&p.y<innerHeight-100)html+=`<div class="world-health ${sim.hostile(0,e.owner)?'rival':''}" style="left:${p.x}px;top:${p.y}px"><i style="width:${e.hp/e.maxHp*100}%"></i>${e.kind==='building'&&e.progress<1?`<small>${Math.floor(e.progress*100)}%</small>`:''}</div>`;}layer.innerHTML=html;}
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
+  if(name==='copy-graphics-report'){copyGraphicsReport(document,navigator.clipboard);return;}
   if(name==='retry-battlefield'){retryBattlefield();return;}
   if(name==='reload-battlefield'){if(playing&&!net.active&&!sim.options.multiplayer&&!saveGame(true)){const note=$('#graphics-recovery-note');if(note)note.textContent=graphicsNeedsReload(view?.graphicsFatal)?'Your kingdom could not be saved. Keep this page open and free browser storage before trying Save and reload again.':'Your kingdom could not be saved. Keep this page open and try graphics again, or free browser storage before reloading.';return;}if(graphicsNeedsReload(view?.graphicsFatal)){location.replace(compatibleGraphicsURL(location.href,graphicsSession));}else location.reload();return;}audio.unlock();
   if(name==='retry-graphics'){location.reload();return;}
@@ -379,7 +390,7 @@ function syncGraphicsRecovery(){
     if(compatible){renderClosed=true;$('#graphics-status').textContent='Opening compatible graphics…';$('#graphics-status').classList.remove('hidden');location.replace(compatible);return true;}
     const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
-    showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
+    showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError,support:graphicsSupport()}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
   }else if(graphicsRecoveryUi){
     const state=graphicsRecoveryUi;graphicsRecoveryUi=null;
     if(modal==='graphics-recovery'){closeModal();paused=state.wasPaused;toast('The battlefield is restored.');}

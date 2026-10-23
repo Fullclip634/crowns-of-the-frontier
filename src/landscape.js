@@ -9,6 +9,7 @@ import {WATER_WAVE_BOUND} from './water-waves.js';
 import {prepareTerrainGeometry} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
+import {terrainBiome} from './terrain-biomes.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
@@ -71,16 +72,15 @@ export class Landscape {
 function groundMap(landscape){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1536;
   const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2;
-  const colors={highlands:['#6e844a','#8f9959','#506f3a'],valley:['#718b4d','#a39d66','#486c3d'],rivers:['#71854d','#9c985f','#4a6b3e'],desert:['#b7a17a','#c7b68d','#998258'],winter:['#c5d0c3','#e1e3d5','#95ac9a'],canyon:['#9b866c','#b8a183','#726d52'],coast:['#768c52','#aaa271','#53783f']};
-  const palette=colors[landscape.map]||colors.highlands;
+  const winter=landscape.map==='winter',palette=terrainBiome(landscape.map).ground;
   ctx.fillStyle=palette[0];ctx.fillRect(0,0,1536,1536);
   for(let i=0;i<160;i++){
     const x=rng()*1536,y=rng()*1536,r=30+rng()*150,g=ctx.createRadialGradient(x,y,0,x,y,r);
     g.addColorStop(0,palette[i%3]+'80');g.addColorStop(1,palette[i%3]+'00');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
   }
-  for(let i=0;i<38000;i++){ctx.fillStyle=i%2?'#d6cf9320':'#2f492220';ctx.fillRect(rng()*1536,rng()*1536,1+rng()*3,1+rng()*4);}
+  for(let i=0;i<38000;i++){ctx.fillStyle=winter?(i%2?'#d6cf9320':'#2f492220'):(i%2?'#b8c9a822':'#254d2a1a');ctx.fillRect(rng()*1536,rng()*1536,1+rng()*3,1+rng()*4);}
   for(const channel of landscape.channels()){
-    ctx.lineWidth=(channel.width*2+8)*1536/size;ctx.strokeStyle=landscape.map==='winter'?'#b2b8aa':'#aa9a72';ctx.lineCap='round';ctx.beginPath();
+    ctx.lineWidth=(channel.width*2+(winter?8:4))*1536/size;ctx.strokeStyle=winter?'#b2b8aa':'#7b876b';ctx.lineCap='round';ctx.beginPath();
     for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;ctx.lineTo((x+half)/size*1536,(z+half)/size*1536);}ctx.stroke();
   }
   for(const town of landscape.settlements){ctx.lineWidth=3*1536/size;ctx.strokeStyle='#b0a078';ctx.lineCap='round';ctx.beginPath();const end=landscape.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0};for(const point of [town,{x:town.x+(end.x-town.x)*.3,z:town.z+(end.z-town.z)*.3},end])ctx.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);ctx.stroke();}

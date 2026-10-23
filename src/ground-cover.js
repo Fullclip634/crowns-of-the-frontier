@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {roadDistance} from './terrain-layout.js';
+import {terrainBiome} from './terrain-biomes.js';
 
 export function grassTuftGeometry(){
   const vertices=[],indices=[],uv=[];
@@ -29,16 +30,16 @@ export class GroundCover{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
-    const winter=land.map==='winter',arid=['desert','canyon'].includes(land.map);
+    const winter=land.map==='winter';
     const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=winter?[0xb7c6a7,0xc6c9aa,0x9cae83]:arid?[0xa59562,0xb7ab7c,0x858b55]:[0x829954,0x9aa966,0x71834c];
+    const palette=terrainBiome(land.map).grass;
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<1.7||winter&&rng()<.5||arid&&rng()<.35)continue;
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.65+rng()*.8)*(arid?.7:1),color:palette[i%3],shade:.88+rng()*.18});
+      if(y<.2||roadDistance(x,z,land)<1.7||winter&&rng()<.5)continue;
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.65+rng()*.8,color:palette[i%3],shade:.88+rng()*.18});
     }
     this.update(true,true);
   }

@@ -36,6 +36,7 @@ function holdRenderer(view,failure){
   view.graphicsSceneValid=false;
   if(view.graphicsFatal?.deviceLost||view.graphicsFatal?.backendError&&!failure.deviceLost)return;
   view.graphicsFatal={...failure,quality:view.renderQuality};
+  try{view.onGraphicsFailure?.(view.graphicsFatal);}catch{}
 }
 
 export function watchRendererDevice(view){

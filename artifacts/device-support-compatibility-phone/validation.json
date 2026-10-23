@@ -1,0 +1,231 @@
+{
+  "startedAt": "2026-10-23T01:07:07.817Z",
+  "environment": {
+    "browser": "155.0.8059.80",
+    "harness": "chrome-d3d11",
+    "softwareRendering": false,
+    "gpuBlocklistOverride": true,
+    "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+  },
+  "checks": [
+    {
+      "mode": "compatibility",
+      "expected": "webgpu",
+      "url": "http://127.0.0.1:54939/?renderer=webgpu",
+      "queryRenderer": "webgpu",
+      "nativeModuleRequests": 1,
+      "qualities": [
+        {
+          "quality": "high",
+          "applied": true,
+          "actual": "high",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 9,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 21,
+            "compressed": 0,
+            "compressedMipBytes": 0,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 16,
+            "evicted": 0,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 6388,
+              "indices": 10644
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 5380,
+              "indices": 9072
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 3740,
+              "indices": 8826
+            }
+          ]
+        },
+        {
+          "quality": "medium",
+          "applied": true,
+          "actual": "medium",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 14,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 17,
+            "compressed": 0,
+            "compressedMipBytes": 0,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 8,
+            "evicted": 4,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4800,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4080,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        },
+        {
+          "quality": "low",
+          "applied": true,
+          "actual": "low",
+          "sameMatch": true,
+          "valid": true,
+          "fatal": null,
+          "flight": {
+            "pending": 0,
+            "submitted": 19,
+            "skipped": 0,
+            "failed": 0
+          },
+          "surfaces": {
+            "source": "Poly Haven CC0",
+            "loaded": 7,
+            "compressed": 0,
+            "compressedMipBytes": 0,
+            "codecFallbacks": 0,
+            "codecPending": 0,
+            "anisotropy": 4,
+            "evicted": 10,
+            "pending": 0
+          },
+          "drawn": 4,
+          "indexedUnits": [
+            {
+              "type": "ram:standard",
+              "vertices": 4876,
+              "indices": 8628
+            },
+            {
+              "type": "catapult:standard",
+              "vertices": 4156,
+              "indices": 7440
+            },
+            {
+              "type": "archer:standard",
+              "vertices": 1154,
+              "indices": 2562
+            }
+          ]
+        }
+      ],
+      "compatibility": {
+        "active": true,
+        "features": [],
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; TestDevice) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+      },
+      "status": "WebGPU is active.",
+      "features": {
+        "construction": true,
+        "clipping": true,
+        "completed": true,
+        "ghost": [
+          {
+            "alpha": 0.38,
+            "color": 15630698
+          }
+        ],
+        "weather": {
+          "type": "storm",
+          "rain": 240,
+          "snow": 0,
+          "ripples": 12,
+          "clouds": 10,
+          "drawCalls": 3
+        },
+        "lighting": {
+          "mode": "night",
+          "night": 1,
+          "twilight": 0,
+          "label": "Night"
+        },
+        "portrait": {
+          "ready": true,
+          "disabled": false,
+          "width": 42
+        }
+      },
+      "phone": {
+        "width": 740,
+        "scroll": 740,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 740,
+          "height": 360,
+          "top": 0,
+          "right": 740,
+          "bottom": 360,
+          "left": 0
+        },
+        "pixels": {
+          "samples": 756,
+          "colors": 368,
+          "luminanceVariance": 44.34925359032542,
+          "painted": true
+        }
+      },
+      "smallPhone": {
+        "width": 568,
+        "height": 320,
+        "scroll": 568,
+        "pixels": {
+          "samples": 342,
+          "colors": 163,
+          "luminanceVariance": 245.19732567285558,
+          "painted": true
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "mode": "compatibility",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "compatibility",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    }
+  ],
+  "buildId": "1792717593749",
+  "passed": true
+}

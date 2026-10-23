@@ -1,0 +1,75 @@
+{
+  "startedAt": "2026-10-23T00:56:10.845Z",
+  "environment": {
+    "browser": "155.0.8059.80",
+    "harness": "chrome-d3d11",
+    "softwareRendering": false,
+    "gpuBlocklistOverride": true,
+    "purpose": "Functional verification; not a frame-rate benchmark or proof of default driver eligibility."
+  },
+  "checks": [
+    {
+      "mode": "compatibility",
+      "expected": "webgpu",
+      "url": "http://127.0.0.1:55467/?renderer=webgpu",
+      "queryRenderer": "webgpu",
+      "nativeModuleRequests": 1,
+      "qualities": [],
+      "compatibility": {
+        "active": true,
+        "features": [],
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; TestDevice) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+      },
+      "status": "WebGPU is active."
+    }
+  ],
+  "messages": [
+    {
+      "mode": "compatibility",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "compatibility",
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2353): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2355): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2359): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2360): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2361): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2362): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    },
+    {
+      "mode": "compatibility",
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Async render pipeline creation failed (renderPipeline_MeshStandardNodeMaterial_2363): textureLoad can not be used with depth textures in compatibility mode in stage (Fragment), entry point \"main\"\n - While validating fragment stage ([ShaderModule \"fragment\"], entryPoint: \"main\").\n - While validating fragment state.\n"
+    }
+  ],
+  "buildId": "1792716898077",
+  "failure": "page.evaluate: Error: Graphics preparation timed out: high\n    at eval (eval at evaluate (:370:30), <anonymous>:4:272)\n    at C:\\New\\Age_Of_Emprire\\scripts\\renderer-qa.mjs:52:31"
+}

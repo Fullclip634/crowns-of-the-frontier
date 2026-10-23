@@ -1,10 +1,11 @@
 import {WORLD} from './data.js';
 import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
+import {terrainBiome} from './terrain-biomes.js';
 
 export function drawMinimap(canvas,sim,view,settings){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
-  ctx.clearRect(0,0,size,size);ctx.fillStyle={desert:'#8e8968',winter:'#b8c5b8',canyon:'#9a8875'}[sim.options.map]||'#6e7c59';ctx.fillRect(0,0,size,size);
+  ctx.clearRect(0,0,size,size);ctx.fillStyle=terrainBiome(sim.options.map).map;ctx.fillRect(0,0,size,size);
   // Water must be drawn before ships and resources, using the same channels as the 3D map.
   for(const channel of view.landscape.channels()){
     ctx.strokeStyle='#72a3a5';ctx.lineWidth=channel.width*2*scale;ctx.lineCap='butt';ctx.beginPath();
