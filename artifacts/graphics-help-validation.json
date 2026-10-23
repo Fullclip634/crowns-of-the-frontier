@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-10-23T02:53:26.437Z",
+  "buildId": "1792723433240",
+  "tests": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "scope": "Focused graphics reports, settings, recovery and compatibility tests. The previous full regression suite passed 439 tests in commit 61990c6."
+  },
+  "productionBuild": true,
+  "mainBundle": "/assets/index-D3-njldX.js",
+  "mainSHA256": "cfe62c1b74a3e4646536c8b92fbb6fcace652d52e7f7bd9b94a23559ed90f530",
+  "unchangedWebGPUChunk": {
+    "name": "render-nodes-CHbFT1i6.js",
+    "sha256": "effe091c7d87408481144839dcaf5ca994121672d1519565231001b0e754aa95"
+  },
+  "sourceSHA256": {
+    "src/graphics-reports.js": "33dfd58601a8e55325100c31062a596c23b17b5e4b7b16ab08f197ea93628445",
+    "src/interface.css": "a3fded581a8d20f934811567b339525048d6273a95fb3e4d0ce5ea21a7944d8f",
+    "src/compact-hud.js": "43fc8af0d7f3e3e1102658deb02a1151f68cc2b9d95cb729cde89bbd5e0ea80c",
+    "src/main.js": "2b53e33b50635cc14ddea8ba4d13ef819618779be0d7606cb0149ac48f77169b",
+    "src/style.css": "c8548cc2d094a49767923dfd43d0bea72abebf63afe18dc9c3b8ec1b3859cbf9",
+    "src/phone-hud.css": "0a53a5f36ee39cc3cf2c37774ba78c61b08f393196e09336f33b5630b1599848",
+    "tests/graphics-reports.test.js": "887595d90704ee93afaee3db076614b08cea65eaaec55afe89b015079241be54",
+    "scripts/startup-compatibility-qa.mjs": "f7cc294cc4624b44329cb17ed9d6111686375e27cf11852150229c0fefdab635",
+    "scripts/objective-panel-qa.mjs": "7e85c6ccdf1c8e9ac73648aa6b7e90e78ef91d63bb480f3f8cd8b679c8b9368c",
+    "WEBGPU_AND_TERRAIN.md": "f2a0b324e3f5b68570886fd4c8bc29a49ff01cb16a15fc40f4f32a31dbb77f92"
+  },
+  "browserReport": "artifacts/graphics-help-recovery-chrome-d3d11/validation.json",
+  "checks": {
+    "rawReportHiddenUntilRequested": true,
+    "copyDoesNotRevealJSON": true,
+    "manualCopyRevealsAndSelectsDetails": true,
+    "unsupportedReportCopy": true,
+    "desktopObjectivesCloseAndReopen": true,
+    "desktopKeyboardActivationAndEscape": true,
+    "phoneObjectivesCloseAndReopen": true,
+    "stickyCloseForEightKingdomRoster": true,
+    "selectionCameraAndMinimapPreserved": true,
+    "paintedDesktopAndPhoneBattlefields": true,
+    "matchRecoveryAndResume": true
+  },
+  "physicalPhoneReport": {
+    "model": "Infinix Note 7",
+    "browser": "Chrome",
+    "renderer": "WebGPU active",
+    "source": "User report after deployment of 61990c6",
+    "frameRateMeasured": false,
+    "fullMatchStabilityVerified": false
+  },
+  "limitations": [
+    "Browser phone layouts are emulated; this is not physical-device performance or complete-match validation.",
+    "This follow-up modifies interface markup, styles and input handling. The shader implementation is unchanged from the previous verified release.",
+    "Blender worker tool/contact work remains in progress; the overall RTS goal is active."
+  ]
+}

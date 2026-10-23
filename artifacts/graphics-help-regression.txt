@@ -1,0 +1,27 @@
+✔ new tabs prefer WebGPU while an actual compatible recovery is remembered in the current tab (4.8546ms)
+✔ native first-frame failures automatically open a compatible context instead of requiring a recovery dialog (1.4226ms)
+✔ startup recovery never reloads over a match, a room connection, an open menu or an artwork failure (1.7962ms)
+✔ blocked browser storage still permits a compatible reload and explicit renderer selection (1.0879ms)
+✔ a partial scene failure rebuilds the previous visuals without changing match data or camera (9.4442ms)
+✔ recovery rebuilds the current match if a new match replaced the original while shaders were pending (0.4885ms)
+✔ superseded scene preparation rolls back before the newer replacement starts (30.5354ms)
+✔ a later failed load cannot replace the stable target baseline while an earlier compilation is held (2.9362ms)
+✔ persistent rebuild failure holds invalid graphics and a successful retry clears the fatal state (1.7883ms)
+✔ leaving the page releases a pending transition without rebuilding a disposed battlefield (2.4599ms)
+✔ a native failure report survives compatible reload with its original build, quality and device limits (14.081ms)
+✔ support reports retain bounded graphics evidence without events, match data, addresses or credentials (1.188ms)
+✔ corrupt, oversized or blocked storage cannot break startup or erase an in-memory failure report (1.5278ms)
+✔ failure callbacks capture only latched errors and do not interrupt engine diagnostics when storage fails (1.0196ms)
+✔ graphics help keeps technical details closed, copies without opening them and reveals them for manual copying (1.3538ms)
+✔ renderer status explains default native fallback, insecure origins and explicit compatibility (1.084ms)
+✔ an explicit quality stays fixed under frame pressure while automatic graphics remain opt-in (1.0351ms)
+✔ automatic native graphics account for held GPU submissions at both frame targets (2.4985ms)
+✔ native pressure windows reset during graphics work and tolerate replaced counters (0.7507ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1049.3475

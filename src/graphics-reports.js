@@ -30,11 +30,11 @@ export function readGraphicsFailure(storage){
 const escape=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function graphicsSupportMarkup({current,lastFailure}){
   const report=JSON.stringify({current:normalize(current),lastFailure:lastFailure?normalize(lastFailure):null},null,2);
-  return `<details class="graphics-support"><summary>Graphics support report</summary><p class="settings-note">Includes browser, graphics limits and the last graphics error from this tab. Nothing is sent automatically.</p><label class="field-label" for="graphics-report">REPORT</label><textarea id="graphics-report" readonly spellcheck="false">${escape(report)}</textarea><button class="secondary full" data-action="copy-graphics-report">Copy report</button><p id="graphics-report-status" class="settings-note" role="status" aria-live="polite"></p></details>`;
+  return `<details class="graphics-support"><summary>Graphics help</summary><p class="settings-note">If you need help with graphics, copy this report to include with your message. Nothing is sent automatically.</p><button class="secondary full" data-action="copy-graphics-report">Copy report</button><p id="graphics-report-status" class="settings-note" role="status" aria-live="polite"></p><details class="graphics-report-details"><summary>View technical details</summary><label class="field-label" for="graphics-report">GRAPHICS REPORT</label><textarea id="graphics-report" readonly spellcheck="false">${escape(report)}</textarea></details></details>`;
 }
 
 export async function copyGraphicsReport(root,clipboard){
   const field=root.querySelector('#graphics-report'),status=root.querySelector('#graphics-report-status');if(!field)return false;
   try{if(!clipboard?.writeText)throw Error('Clipboard unavailable');await clipboard.writeText(field.value);if(status)status.textContent='Report copied. You can paste it into your bug report.';return true;}
-  catch{field.focus();field.select();field.setSelectionRange(0,field.value.length);if(status)status.textContent='Select and copy the report above. Your browser did not allow automatic copying.';return false;}
+  catch{const details=field.closest?.('.graphics-report-details');if(details)details.open=true;field.focus();field.select();field.setSelectionRange(0,field.value.length);if(status)status.textContent='Select and copy the report in technical details. Your browser did not allow automatic copying.';return false;}
 }

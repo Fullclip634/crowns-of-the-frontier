@@ -2,11 +2,12 @@
 /* Dragging or holding game labels must not start the browser's text selection. */
 html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .graphics-support{margin:12px 0;min-width:0;border:1px solid #b6a16b44;padding:10px;border-radius:3px}
-.graphics-support summary{cursor:pointer;min-height:32px;display:list-item;color:var(--gold);font-size:12px}
-.graphics-support textarea[readonly]{display:block;width:100%;max-width:100%;height:140px;resize:vertical;margin:8px 0;font:11px/1.45 monospace;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;overflow:auto}
+.graphics-support summary{cursor:pointer;min-height:44px;display:list-item;color:var(--gold);font-size:12px}
+.graphics-report-details{margin-top:8px}
+.graphics-support textarea[readonly]{display:block;width:100%;max-width:100%;height:140px;resize:vertical;margin:8px 0;background:#10271f;color:#d2dfcd;border:1px solid #b6a16b66;font:12px/1.45 monospace;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;overflow:auto}
 input:not([readonly]):not([disabled]),textarea:not([readonly]):not([disabled]),[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 :root{--control-height:44px;--focus-color:#f4d58f;--text-secondary:#c5d2bb}
-button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--focus-color);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--focus-color);outline-offset:2px}
 .landing{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
 .modal{border-radius:6px;border-color:#8f9c6b66;background:linear-gradient(140deg,#213a30,#142a23);scroll-padding:16px;overscroll-behavior:contain}
 .modal h2{text-wrap:balance;max-width:calc(100% - 26px)}

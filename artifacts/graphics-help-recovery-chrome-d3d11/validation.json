@@ -1,0 +1,330 @@
+{
+  "startedAt": "2026-10-23T02:45:02.663Z",
+  "browser": "155.0.8059.80",
+  "harness": "chrome-d3d11",
+  "gpuBlocklistOverride": true,
+  "softwareRendering": false,
+  "limitations": "Emulated phone layout and injected native failure; not a physical Infinix test or an FPS benchmark.",
+  "messages": [
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected native startup failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "warning",
+      "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGPURenderer: Uncaptured undefined GPUValidationError: QA injected in-match failure"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+    }
+  ],
+  "buildId": "1792723433240",
+  "startup": {
+    "renderer": "webgl",
+    "loads": 2,
+    "fatal": null,
+    "dialog": false,
+    "quality": "low"
+  },
+  "diagnostics": {
+    "current": {
+      "version": 1,
+      "capturedAt": "2026-10-23T02:46:56.072Z",
+      "buildId": "1792723433240",
+      "phase": "landing",
+      "requested": "webgl",
+      "active": "webgl",
+      "quality": "low",
+      "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "secure": true,
+      "viewport": {
+        "width": 568,
+        "height": 320,
+        "pixelRatio": 1
+      },
+      "gpu": {
+        "compatibilityMode": null,
+        "limits": {
+          "maxTextureDimension2D": null,
+          "maxBufferSize": null,
+          "maxStorageBuffersPerShaderStage": null,
+          "maxSampledTexturesPerShaderStage": null,
+          "maxBindGroups": null
+        }
+      },
+      "failure": null
+    },
+    "lastFailure": {
+      "version": 1,
+      "capturedAt": "2026-10-23T02:45:14.342Z",
+      "buildId": "1792723433240",
+      "phase": "landing",
+      "requested": "webgpu",
+      "active": "webgpu",
+      "quality": "low",
+      "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "secure": true,
+      "viewport": {
+        "width": 568,
+        "height": 320,
+        "pixelRatio": 1
+      },
+      "gpu": {
+        "compatibilityMode": false,
+        "limits": {
+          "maxTextureDimension2D": 8192,
+          "maxBufferSize": 268435456,
+          "maxStorageBuffersPerShaderStage": 8,
+          "maxSampledTexturesPerShaderStage": 16,
+          "maxBindGroups": 4
+        }
+      },
+      "failure": {
+        "type": "GPUValidationError",
+        "message": "QA injected native startup failure"
+      }
+    }
+  },
+  "compactHelp": {
+    "hiddenInSettings": true,
+    "hiddenInHelp": true,
+    "hiddenAfterCopy": true,
+    "explicitViewAndClose": true,
+    "revealedForManualCopy": true,
+    "hiddenDuringUnsupportedCopy": true
+  },
+  "manualCopy": {
+    "selected": 1609,
+    "length": 1609,
+    "selectable": "text",
+    "overflow": false
+  },
+  "reopen": {
+    "renderer": "webgl",
+    "loads": 3,
+    "query": null
+  },
+  "failureRetainedAfterReopen": true,
+  "smallPhone": {
+    "samples": 4218,
+    "colors": 2050,
+    "luminanceVariance": 350.0234520662789,
+    "painted": true
+  },
+  "phone": {
+    "samples": 6216,
+    "colors": 2773,
+    "luminanceVariance": 359.243279611439,
+    "painted": true
+  },
+  "matchHeld": {
+    "native": true,
+    "playing": true,
+    "paused": true,
+    "loads": 4,
+    "seed": 713
+  },
+  "battleFailureReported": true,
+  "resumed": {
+    "renderer": "webgl",
+    "seed": 713,
+    "fatal": null
+  },
+  "inMatchHelpKeyboard": true,
+  "unsupportedMessages": [
+    {
+      "type": "warning",
+      "text": "WebGPU could not start; using WebGL 2: WebGPU is unavailable in this browser or connection."
+    },
+    {
+      "type": "error",
+      "text": "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+    },
+    {
+      "type": "error",
+      "text": "Error: THREE.WebGLRenderer: Error creating WebGL context.\n    at new Bx (http://127.0.0.1:55860/assets/three-BZyEHKkA.js:4220:24930)\n    at ya (http://127.0.0.1:55860/assets/index-D3-njldX.js:203:14624)\n    at pf (http://127.0.0.1:55860/assets/index-D3-njldX.js:203:14887)\n    at http://127.0.0.1:55860/assets/index-D3-njldX.js:221:1403"
+    }
+  ],
+  "unsupportedReportCopy": true,
+  "objectives": {
+    "desktop": [
+      {
+        "mode": "tutorial",
+        "width": 1366,
+        "height": 768,
+        "closedAfterHudRefresh": true,
+        "keyboard": true,
+        "selectionAndCameraPreserved": true,
+        "minimapVisible": true,
+        "pixels": {
+          "samples": 21646,
+          "colors": 5993,
+          "luminanceVariance": 437.76121544297075,
+          "painted": true
+        },
+        "button": {
+          "height": 44,
+          "top": 86,
+          "panelTop": 85,
+          "panelBottom": 378,
+          "hudTop": 496,
+          "reachable": true
+        },
+        "scroll": {
+          "scrollable": false,
+          "top": 0
+        }
+      },
+      {
+        "mode": "custom",
+        "width": 1024,
+        "height": 600,
+        "closedAfterHudRefresh": true,
+        "keyboard": true,
+        "selectionAndCameraPreserved": true,
+        "minimapVisible": true,
+        "pixels": {
+          "samples": 9476,
+          "colors": 3750,
+          "luminanceVariance": 485.2015978375093,
+          "painted": true
+        },
+        "button": {
+          "height": 44,
+          "top": 86,
+          "panelTop": 85,
+          "panelBottom": 350,
+          "hudTop": 362,
+          "reachable": true
+        },
+        "scroll": {
+          "scrollable": true,
+          "top": 203
+        }
+      },
+      {
+        "mode": "campaign1",
+        "width": 1366,
+        "height": 768,
+        "closedAfterHudRefresh": true,
+        "keyboard": true,
+        "selectionAndCameraPreserved": true,
+        "minimapVisible": true,
+        "pixels": {
+          "samples": 21646,
+          "colors": 5924,
+          "luminanceVariance": 445.47837932251605,
+          "painted": true
+        },
+        "button": {
+          "height": 44,
+          "top": 86,
+          "panelTop": 85,
+          "panelBottom": 314,
+          "hudTop": 496,
+          "reachable": true
+        },
+        "scroll": {
+          "scrollable": false,
+          "top": 0
+        }
+      }
+    ],
+    "phone": [
+      {
+        "mode": "custom",
+        "width": 568,
+        "height": 320,
+        "closedAfterHudRefresh": true,
+        "keyboard": false,
+        "selectionAndCameraPreserved": true,
+        "minimapVisible": true,
+        "pixels": {
+          "samples": 4218,
+          "colors": 1816,
+          "luminanceVariance": 328.5145699466457,
+          "painted": true
+        },
+        "button": {
+          "height": 44,
+          "top": 53,
+          "panelTop": 52,
+          "panelBottom": 216,
+          "hudTop": 228,
+          "reachable": true
+        },
+        "scroll": {
+          "scrollable": true,
+          "top": 300
+        }
+      },
+      {
+        "mode": "tutorial",
+        "width": 740,
+        "height": 360,
+        "closedAfterHudRefresh": true,
+        "keyboard": false,
+        "selectionAndCameraPreserved": true,
+        "minimapVisible": true,
+        "pixels": {
+          "samples": 6216,
+          "colors": 2504,
+          "luminanceVariance": 399.8913712358808,
+          "painted": true
+        },
+        "button": {
+          "height": 44,
+          "top": 53,
+          "panelTop": 52,
+          "panelBottom": 250,
+          "hudTop": 268,
+          "reachable": true
+        },
+        "scroll": {
+          "scrollable": false,
+          "top": 0
+        }
+      }
+    ],
+    "messages": [
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      }
+    ]
+  },
+  "passed": true
+}

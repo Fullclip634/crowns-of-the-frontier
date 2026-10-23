@@ -32,9 +32,10 @@ test('failure callbacks capture only latched errors and do not interrupt engine 
   view.onGraphicsFailure=()=>{throw Error('Storage failed');};view.renderer.onDeviceLost({message:'Lost later'});assert.equal(view.graphicsFatal.deviceLost,true);
 });
 
-test('the expanded support report escapes untrusted driver text and remains intentionally copyable',async()=>{
+test('graphics help keeps technical details closed, copies without opening them and reveals them for manual copying',async()=>{
   const current=report({message:'</textarea><script>alert(1)</script>'}),html=graphicsSupportMarkup({current,lastFailure:current});assert.ok(!html.includes('<script>'));assert.match(html,/&lt;\/textarea&gt;/);assert.match(html,/readonly/);
-  let copied,selected=0;const field={value:'Graphics report',focus(){selected++;},select(){selected++;},setSelectionRange(start,end){assert.equal(start,0);assert.equal(end,this.value.length);selected++;}},status={},root={querySelector:selector=>selector==='#graphics-report'?field:status};
-  assert.equal(await copyGraphicsReport(root,{writeText:async text=>{copied=text;}}),true);assert.equal(copied,field.value);assert.equal(selected,0);
-  assert.equal(await copyGraphicsReport(root,{writeText:async()=>{throw Error('Denied');}}),false);assert.equal(selected,3);assert.match(status.textContent,/Select and copy/);
+  assert.match(html,/<summary>Graphics help<\/summary>/);assert.match(html,/<details class="graphics-report-details"><summary>View technical details<\/summary>/);assert.ok(!/<details[^>]*\bopen\b/.test(html));
+  let copied,selected=0;const details={open:false},field={value:'Graphics report',closest:()=>details,focus(){selected++;},select(){selected++;},setSelectionRange(start,end){assert.equal(start,0);assert.equal(end,this.value.length);selected++;}},status={},root={querySelector:selector=>selector==='#graphics-report'?field:status};
+  assert.equal(await copyGraphicsReport(root,{writeText:async text=>{copied=text;}}),true);assert.equal(copied,field.value);assert.equal(selected,0);assert.equal(details.open,false);
+  assert.equal(await copyGraphicsReport(root,{writeText:async()=>{throw Error('Denied');}}),false);assert.equal(selected,3);assert.equal(details.open,true);assert.match(status.textContent,/Select and copy/);
 });

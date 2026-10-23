@@ -29,7 +29,18 @@ export function toggleMinimapSize(root){
 }
 
 export function resetCompactHud(root){
+  const compactObjectives=typeof matchMedia==='function'&&matchMedia('(pointer:coarse) and (max-height:520px) and (orientation:landscape), (pointer:coarse) and (max-width:600px) and (orientation:portrait)').matches;
+  root.querySelector('#objectives')?.classList.toggle('objectives-expanded',!compactObjectives);
   closeCompactCommands(root);root.querySelector('#selection-panel').classList.remove('selection-expanded');root.querySelector('.map-panel').classList.remove('map-expanded');
   for(const button of root.querySelectorAll('[data-action=map-expand]')){button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Expand minimap');}
   root.querySelector('.camera-controls').classList.remove('options-open');root.querySelector('[data-action=camera-options]').setAttribute('aria-expanded','false');
+}
+
+// Size the scrollable panel from the actual HUD, including taller selections
+// and expanded minimaps, without reading layout in the render loop.
+export function watchObjectiveLayout(root){
+  const panel=root.querySelector('#objectives'),hud=root.querySelector('.bottom-hud'),win=root.defaultView;
+  const fit=()=>{if(!panel.getClientRects().length||!hud.getClientRects().length)return;const height=Math.max(44,Math.floor(hud.getBoundingClientRect().top-panel.getBoundingClientRect().top-12))+'px';if(panel.style.maxHeight!==height)panel.style.maxHeight=height;};
+  const observer=win.ResizeObserver?new win.ResizeObserver(fit):null;observer?.observe(hud);win.addEventListener('resize',fit);fit();
+  return ()=>{observer?.disconnect();win.removeEventListener('resize',fit);};
 }
