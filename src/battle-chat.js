@@ -1,8 +1,9 @@
 import {CHAT_LENGTH,CHAT_HISTORY,cleanChatText} from './chat-protocol.js';
+import {uiIcon} from './ui-icons.js';
 import './battle-chat.css';
 
-export function battleChatMarkup(){return `<button id="chat-toggle" type="button" hidden aria-label="Open battle chat" aria-controls="battle-chat" aria-expanded="false"><span>Chat</span><span id="chat-unread" hidden></span></button>
-  <section id="battle-chat" hidden aria-label="Battle chat"><header><strong>Battle chat</strong><button id="chat-close" type="button" aria-label="Close battle chat">×</button></header>
+export function battleChatMarkup(){return `<button id="chat-toggle" type="button" hidden aria-label="Open battle chat" aria-controls="battle-chat" aria-expanded="false">${uiIcon('message-square')}<span>Chat</span><span id="chat-unread" hidden></span></button>
+  <section id="battle-chat" hidden aria-label="Battle chat"><header><strong>Battle chat</strong><button id="chat-close" type="button" aria-label="Close battle chat">${uiIcon('x')}</button></header>
   <div id="chat-messages" role="log" aria-label="Battle messages" aria-live="polite" aria-relevant="additions"></div>
   <form id="chat-form"><label class="chat-sr" for="chat-channel">Message audience</label><select id="chat-channel"><option value="all">All</option><option value="team">Team</option></select><label class="chat-sr" for="chat-input">Message</label><input id="chat-input" type="text" maxlength="${CHAT_LENGTH}" placeholder="Write a message…" autocomplete="off" enterkeyhint="send"><button id="chat-send" type="submit">Send</button></form>
   <p id="chat-status" role="status">All: everyone in this battle.</p></section>`;}

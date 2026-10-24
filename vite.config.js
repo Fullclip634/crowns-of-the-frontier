@@ -13,10 +13,10 @@ export default defineConfig({
     const assets=fs.readdirSync(path.join(outputDirectory,'assets')).map(f=>'/assets/'+f);
     const fonts=fs.existsSync(path.join(outputDirectory,'fonts'))?fs.readdirSync(path.join(outputDirectory,'fonts')).map(f=>'/fonts/'+f):[];
     const version='frontier-'+assets.join('').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,0);
-    const source=fs.readFileSync('scripts/sw-template.js','utf8').replace('__CACHE__',JSON.stringify(version)).replace('__FILES__',JSON.stringify(['/', '/index.html','/manifest.webmanifest','/icon.svg',...assets,...fonts]));
+    const source=fs.readFileSync('scripts/sw-template.js','utf8').replace('__CACHE__',JSON.stringify(version)).replace('__FILES__',JSON.stringify(['/', '/index.html','/manifest.webmanifest','/icon.svg','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/ICON_LICENSES.txt',...assets,...fonts]));
     new Script(source,{filename:'sw.js'});
     fs.writeFileSync(path.join(outputDirectory,'sw.js'),source);
     fs.writeFileSync(path.join(outputDirectory,'version.json'),JSON.stringify({buildId,version:JSON.parse(fs.readFileSync('package.json','utf8')).version}));
-    writeReleaseManifest(outputDirectory,{buildId,version:JSON.parse(fs.readFileSync('package.json','utf8')).version,commit:process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA,files:['/index.html','/manifest.webmanifest','/icon.svg','/sw.js','/version.json',...assets,...fonts]});
+    writeReleaseManifest(outputDirectory,{buildId,version:JSON.parse(fs.readFileSync('package.json','utf8')).version,commit:process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA,files:['/index.html','/manifest.webmanifest','/icon.svg','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/ICON_LICENSES.txt','/sw.js','/version.json',...assets,...fonts]});
   }}],
 });

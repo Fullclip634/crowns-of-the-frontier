@@ -74,7 +74,7 @@ export const MISSIONS = [
 ];
 export function seededRandom(seed){let s=seed>>>0;const rng=()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};Object.defineProperty(rng,'state',{get:()=>s,set:value=>s=value>>>0});return rng;}
 export function formatTime(t){return `${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;}
-export function costText(cost){return Object.entries(cost).map(([r,n])=>`${ICONS[r]} ${Math.ceil(n)}`).join('  ');}
+export function costText(cost){return Object.entries(cost).map(([r,n])=>`${Math.ceil(n)} ${r[0].toUpperCase()+r.slice(1)}`).join(' · ');}
 export function availableTo(definition,faction){return !!definition&&(!definition.faction||definition.faction===faction);}
 
 Object.assign(UNITS,{

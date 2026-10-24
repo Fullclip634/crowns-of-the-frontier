@@ -7,3 +7,5 @@ export function resourceAmount(value){
   if(!Number.isFinite(amount))return '—';
   return Math.abs(amount)>=10000?compactAmount.format(amount):String(amount);
 }
+export function setUIText(element,value){const text=String(value);if(element.textContent!==text)element.textContent=text;}
+export function difficultyLabel(id,name){const level={story:'Beginner',normal:'Standard',hard:'Hard',brutal:'Expert'}[id];return level?`${level} — ${name}`:name;}

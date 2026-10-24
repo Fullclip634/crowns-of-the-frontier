@@ -1,0 +1,23 @@
+{
+  "sourceSHA256": "e0ee55e6232e9c5edf643dced851f30e3d8bf85f86b5fb82e986e45caeee6755",
+  "files": [
+    {
+      "file": "apple-touch-icon.png",
+      "size": 180,
+      "bytes": 5041,
+      "sha256": "0dbdc4183d86966892237503c850952c756a873013529bfe49008060b27b8207"
+    },
+    {
+      "file": "icon-192.png",
+      "size": 192,
+      "bytes": 4752,
+      "sha256": "2ffa7fdd9b5f34e2a8ebfbf7bb4935ec24d939659dede55c653d20dfe593858d"
+    },
+    {
+      "file": "icon-512.png",
+      "size": 512,
+      "bytes": 15139,
+      "sha256": "50f7dd9ce4d8766964cabbe90d7be05dd85d8b91ed8fb7b4e59990e17f862c13"
+    }
+  ]
+}

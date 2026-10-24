@@ -1,0 +1,3 @@
+# Provenance hashes are calculated from these vector source bytes.
+src/ui-art/icons.svg text eol=lf
+public/icon.svg text eol=lf

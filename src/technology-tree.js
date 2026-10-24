@@ -1,4 +1,5 @@
-import {AGES,UNITS,BUILDINGS,TECHS,FACTIONS,ICONS,AGE_COSTS,availableTo,costText} from './data.js';
+import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
+import {AGES,UNITS,BUILDINGS,TECHS,FACTIONS,AGE_COSTS,availableTo,costText} from './data.js';
 export function technologyState(sim,type,kind,faction){
   const d=(kind==='unit'?UNITS:TECHS)[type];if(!availableTo(d,faction))return {status:'other civilization',site:null};
   if(!sim||sim.players[0].faction!==faction)return {status:`${AGES[d.age]} · ${d.at.map(t=>BUILDINGS[t].name).join(' / ')}`,site:null};
@@ -21,8 +22,8 @@ export function technologyTreeMarkup(sim,faction){
     return `<section class="tree-age"><h3><span>${index+1}</span>${age}</h3>${index>0?`<p class="tree-age-cost">Advance at town center<br>${costText(AGE_COSTS[index-1])}</p>`:'<p class="tree-age-cost">Your starting age</p>'}${entries.map(({id,d,kind})=>{
       const state=technologyState(sim,id,kind,faction),level=kind==='tech'&&sim?.players[0].faction===faction?(sim.players[0].tech[id]||0):0;
       const cost=kind==='tech'?Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,n*(Math.min(level,d.max-1)+1)])):d.cost;
-      return `<article class="tree-card ${d.faction?'signature':''}"><div><span>${ICONS[id]||'✧'}</span><strong>${d.name}</strong></div><small>${d.faction?'Civilization exclusive · ':''}${kind==='tech'?`Technology · ${level}/${d.max}`:'Unit'} · ${d.time}s</small><p>${d.desc}</p><div class="tree-prerequisite">${d.at.map(t=>BUILDINGS[t].name).join(' / ')}</div><div class="tree-cost">${costText(cost)}</div><button ${state.site?'':'disabled'} data-tree-${kind}="${id}" data-building="${state.site?.id||''}">${state.status}</button></article>`;
+      return `<article class="tree-card ${d.faction?'signature':''}"><div><span>${ICONS[id]||uiIcon('age')}</span><strong>${d.name}</strong></div><small>${d.faction?'Civilization exclusive · ':''}${kind==='tech'?`Technology · ${level}/${d.max}`:'Unit'} · ${d.time}s</small><p>${d.desc}</p><div class="tree-prerequisite">${d.at.map(t=>BUILDINGS[t].name).join(' / ')}</div><div class="tree-cost">${costText(cost)}</div><button ${state.site?'':'disabled'} data-tree-${kind}="${id}" data-building="${state.site?.id||''}">${state.status}</button></article>`;
     }).join('')}</section>`;
   }).join('');
-  return `<div class="eyebrow">PLAN YOUR KINGDOM</div><h2>Technology tree.</h2><p class="modal-intro">${FACTIONS[faction].name} · ${FACTIONS[faction].desc}</p><nav class="tree-factions" aria-label="View a civilization">${Object.entries(FACTIONS).map(([id,f])=>`<button data-tree-faction="${id}" class="${id===faction?'active':''}">${f.name}</button>`).join('')}</nav><p class="tree-note">Unlocks progress from left to right. Train or research directly when your kingdom meets the requirements. Select another civilization to compare its choices.</p><div class="technology-tree">${groups}</div>`;
+  return `<div class="eyebrow">PLAN YOUR KINGDOM</div><h2>Technology tree</h2><p class="modal-intro">${FACTIONS[faction].name} · ${FACTIONS[faction].desc}</p><nav class="tree-factions" aria-label="View a civilization">${Object.entries(FACTIONS).map(([id,f])=>`<button data-tree-faction="${id}" class="${id===faction?'active':''}">${f.name}</button>`).join('')}</nav><p class="tree-note">Unlocks progress from left to right. Train or research directly when your kingdom meets the requirements. Select another civilization to compare its choices.</p><div class="technology-tree">${groups}</div>`;
 }
