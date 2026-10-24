@@ -105,7 +105,8 @@ export function navigationRegions(sim,grid){
 }
 
 function finishResourceApproach(sim,grid,unit,target,range,route){
-  if(target.kind!=='resource'||!['wood','gold','stone'].includes(target.type)||!(range>0)||unit.pathStatus!=='ready')return route;
+  const resource=target.kind==='resource'&&['wood','gold','stone','food'].includes(target.type)&&!target.water,farm=target.kind==='building'&&target.type==='farm';
+  if(!(resource||farm)||!(range>0)||unit.pathStatus!=='ready')return route;
   const last=route.at(-1)||unit,distance=Math.hypot(last.x-target.x,last.z-target.z);if(distance<=range+.000001||distance>range+1.5)return route;
   const point={x:target.x+(last.x-target.x)*range/distance,z:target.z+(last.z-target.z)*range/distance},limit=sim.halfWorld-3;
   // A coarse cell center can sit just outside tool reach. Finish within that

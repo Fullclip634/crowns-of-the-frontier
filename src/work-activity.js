@@ -2,6 +2,10 @@
 // target ID, route or future order to another commander.
 import {gatheringRange} from './work-ranges.js';
 import {constructionFace} from './construction-contact.js';
+export function foodWorkStyle(target){
+  if(target?.kind==='building'&&target.type==='farm')return 'harvest';
+  return target?.kind==='resource'&&target.type==='food'&&!target.water?'forage':null;
+}
 export function workingTarget(sim,e){
   if(e.type!=='villager'||e.moving||e.cooldown>0||e.order?.returning||e.embarked||e.hp<=0)return null;
   const order=e.order;if(!['gather','build','repair'].includes(order?.type))return null;
