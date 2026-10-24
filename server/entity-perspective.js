@@ -7,7 +7,7 @@ export function entityPerspective(sim,side,entity){
  const object={...entity,path:[],orders:[]};
  if(entity.owner<0||entity.owner===side)return object;
  delete object.workStyle;
- if(entity.kind==='unit'&&['gather','build','repair'].includes(entity.order?.type)){const target=workingTarget(sim,entity);object.activity=entity.order.type;object.working=!!target;const style=foodWorkStyle(target);if(style)object.workStyle=style;}
+ if(entity.kind==='unit'&&['gather','build','repair'].includes(entity.order?.type)){const target=workingTarget(sim,entity);object.activity=entity.order.type;object.working=!!target;const style=entity.order.type==='gather'?foodWorkStyle(target):null;if(style)object.workStyle=style;}
  delete object.order;delete object.rally;delete object.shelterWork;object.queue=[];
  if(object.garrison){object.garrisonCount=garrisonCount(sim,entity);delete object.garrison;}
  if(object.passengers){object.passengerCount=object.passengers.length;delete object.passengers;}

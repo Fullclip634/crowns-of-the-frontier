@@ -47,6 +47,7 @@ test('food subtype is visible only during actual work and observers animate the 
   const observed=entityPerspective(s,0,w);assert.equal(observed.working,true);assert.equal(observed.workStyle,style);assert.equal(observed.order,undefined);assert.deepEqual(observed.orders,[]);assert.deepEqual(observed.path,[]);
   const own=new UnitActions().update(view,w,.2),other=new UnitActions().update(view,observed,.2);assert.equal(own.style,style);assert.equal(own.task,'food');assert.deepEqual(other,own);
   for(const change of [{moving:true},{x:100},{hp:0},{embarked:5},{cooldown:.5},{order:{...w.order,returning:true}}]){const e={...w,...change,workStyle:style},hidden=entityPerspective(s,0,e);assert.equal(hidden.working,false);assert.equal(hidden.workStyle,undefined);}
+  if(style==='harvest'){food.progress=.5;const builder={...w,z:24.08,order:{type:'build',target:food.id}},observedBuilder=entityPerspective(s,0,builder);assert.equal(observedBuilder.working,true);assert.equal(observedBuilder.activity,'build');assert.equal(observedBuilder.workStyle,undefined,'constructing a farm does not advertise harvesting');food.progress=1;}
   const actions=new UnitActions();actions.update(view,w,.2);food.amount=0;if(style==='harvest')food.hp=0;for(let n=0;n<20;n++)actions.update(view,w,.1);assert.equal(actions.get(w.id).style,null);assert.equal(actions.get(w.id).task,null);
  }
 });
