@@ -1,3 +1,5 @@
+import {terrainMeadow} from './terrain-fields.js';
+
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 
 export function roadDistance(x,z,land){
@@ -12,7 +14,7 @@ export function roadDistance(x,z,land){
 
 export function terrainWeights(land,x,y,z,normalY=1){
   const road=1-smooth(1.2,2.8,roadDistance(x,z,land)),slope=1-Math.max(0,normalY);
-  const patch=.5+.5*Math.sin(x*.064+land.phase)*Math.cos(z*.053-land.phase);
+  const patch=terrainMeadow(x,z,land.phase);
   let bank=0;for(const channel of land.channels()){
     const distance=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend)-channel.width;
     if(distance>=0)bank=Math.max(bank,1-smooth(.2,4,distance));

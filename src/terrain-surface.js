@@ -24,6 +24,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
     grassArm:{value:quality==='high'?grass.arm||null:null},soilArm:{value:quality==='high'?soil.arm||grass.arm||null:null},rockArm:{value:quality==='high'?rock.arm||grass.arm||null:null},
     scale:{value:new THREE.Vector3(land.renderSize/(dimensions.grass||2),land.renderSize/(dimensions.soil||1.3),land.renderSize/(dimensions.rock||90))},
     amount:{value:amount},tint:{value:new THREE.Color(land.map==='winter'?0xe3e8de:0xe0e5d8)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},
+    macroReference:{value:new THREE.Color(terrainBiome(land.map).ground[0])},macroStrength:{value:land.map==='winter'?0:1},
     roads:{value:roads},
   };
   material.frontierTerrainUniforms=uniforms;
@@ -48,13 +49,16 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       uniform vec3 frontierTerrainscale;
       uniform vec3 frontierTerraintint;
       uniform vec3 frontierTerraingrassTint;
+      uniform vec3 frontierTerrainmacroReference;
+      uniform float frontierTerrainmacroStrength;
       uniform float frontierTerrainamount;\n`+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       vec3 terrainBlend = max(vTerrainMix, vec3(0.0));
       float terrainRoad = texture2D(frontierTerrainroads, vMapUv).r;
       terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), terrainRoad * 0.94);
       terrainBlend /= max(dot(terrainBlend, vec3(1.0)), 0.001);
-      vec3 terrainColor = texture2D(frontierTerraingrass, vMapUv * frontierTerrainscale.x).rgb * frontierTerraingrassTint * terrainBlend.x
+      vec3 terrainMacro = mix(vec3(1.0), clamp(diffuseColor.rgb / frontierTerrainmacroReference, vec3(0.72), vec3(1.22)), frontierTerrainmacroStrength);
+      vec3 terrainColor = texture2D(frontierTerraingrass, vMapUv * frontierTerrainscale.x).rgb * frontierTerraingrassTint * terrainMacro * terrainBlend.x
         + texture2D(frontierTerrainsoil, vMapUv * frontierTerrainscale.y).rgb * terrainBlend.y
         + texture2D(frontierTerrainrock, vMapUv * frontierTerrainscale.z).rgb * terrainBlend.z;
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount);`);
@@ -75,7 +79,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       roughnessFactor *= clamp(terrainRoughness, 0.25, 1.0);
       #endif`);
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v2:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v3:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled natural grass, soil and rocky terrain';
   material.needsUpdate=true;
 }

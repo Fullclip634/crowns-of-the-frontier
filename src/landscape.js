@@ -10,6 +10,8 @@ import {prepareTerrainGeometry} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainBiome} from './terrain-biomes.js';
+import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
+import {terrainMeadow} from './terrain-fields.js';
 import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 
@@ -42,14 +44,17 @@ export class Landscape {
   }
   geometry(size=this.renderSize,segments=160,offset=0){
     const geo=new THREE.PlaneGeometry(size,size,segments,segments);geo.rotateX(-Math.PI/2);
-    const pos=geo.getAttribute('position');
-    for(let i=0;i<pos.count;i++)pos.setY(i,this.heightAt(pos.getX(i),pos.getZ(i))+offset);
-    if(size===this.renderSize&&offset===0){this.grid={segments,size,heights:Float32Array.from({length:pos.count},(_,i)=>pos.getY(i))};}
+    const pos=geo.getAttribute('position'),uv=geo.getAttribute('uv'),axis=size===this.renderSize?terrainGridAxis(size,segments):null;
+    for(let i=0;i<pos.count;i++){
+      const x=axis?axis[i%(segments+1)]:pos.getX(i),z=axis?axis[Math.floor(i/(segments+1))]:pos.getZ(i);
+      pos.setXYZ(i,x,this.heightAt(x,z)+offset,z);uv.setXY(i,(x+size/2)/size,1-(z+size/2)/size);
+    }
+    if(size===this.renderSize&&offset===0){this.grid={segments,size,axis,heights:Float32Array.from({length:pos.count},(_,i)=>pos.getY(i))};}
     pos.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingBox();geo.computeBoundingSphere();return geo;
   }
   surfaceHeightAt(x,z){
     const grid=this.grid;if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize)return this.heightAt(x,z);
-    const xx=(x+this.worldSize)/grid.size*grid.segments,zz=(z+this.worldSize)/grid.size*grid.segments,ix=Math.min(grid.segments-1,Math.floor(xx)),iz=Math.min(grid.segments-1,Math.floor(zz)),u=xx-ix,v=zz-iz,stride=grid.segments+1,a=iz*stride+ix;
+    const xx=terrainGridCoordinate(x,grid),zz=terrainGridCoordinate(z,grid),ix=Math.min(grid.segments-1,Math.floor(xx)),iz=Math.min(grid.segments-1,Math.floor(zz)),u=xx-ix,v=zz-iz,stride=grid.segments+1,a=iz*stride+ix;
     const h00=grid.heights[a],h10=grid.heights[a+1],h01=grid.heights[a+stride],h11=grid.heights[a+stride+1];
     return u+v<=1?h00+u*(h10-h00)+v*(h01-h00):h11+(1-u)*(h01-h11)+(1-v)*(h10-h11);
   }
@@ -88,11 +93,13 @@ function groundMap(landscape){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1536;
   const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2;
   const winter=landscape.map==='winter',palette=terrainBiome(landscape.map).ground;
-  ctx.fillStyle=palette[0];ctx.fillRect(0,0,1536,1536);
-  for(let i=0;i<160;i++){
-    const x=rng()*1536,y=rng()*1536,r=30+rng()*150,g=ctx.createRadialGradient(x,y,0,x,y,r);
-    g.addColorStop(0,palette[i%3]+'80');g.addColorStop(1,palette[i%3]+'00');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+  const field=document.createElement('canvas');field.width=field.height=256;const fieldContext=field.getContext('2d'),pixels=fieldContext.createImageData(256,256),colors=palette.map(hex=>[1,3,5].map(at=>parseInt(hex.slice(at,at+2),16)));
+  for(let row=0;row<256;row++)for(let column=0;column<256;column++){
+    const value=terrainMeadow((column+.5)/256*size-half,(row+.5)/256*size-half,landscape.phase),a=value<.5?colors[2]:colors[0],b=value<.5?colors[0]:colors[1],blend=value<.5?value*2:(value-.5)*2,index=(row*256+column)*4;
+    for(let component=0;component<3;component++)pixels.data[index+component]=a[component]+(b[component]-a[component])*blend;
+    pixels.data[index+3]=255;
   }
+  fieldContext.putImageData(pixels,0,0);ctx.drawImage(field,0,0,1536,1536);
   for(let i=0;i<38000;i++){ctx.fillStyle=winter?(i%2?'#d6cf9320':'#2f492220'):(i%2?'#b8c9a822':'#254d2a1a');ctx.fillRect(rng()*1536,rng()*1536,1+rng()*3,1+rng()*4);}
   for(const channel of landscape.channels()){
     ctx.lineWidth=(channel.width*2+(winter?8:4))*1536/size;ctx.strokeStyle=winter?'#b2b8aa':'#7b876b';ctx.lineCap='round';ctx.beginPath();

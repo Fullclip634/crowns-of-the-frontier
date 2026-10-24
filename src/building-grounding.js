@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {terrainGridCoordinate} from './terrain-grid.js';
 const originals=new WeakMap();
 
 export function syncFoundationMaterials(view){
@@ -13,8 +14,8 @@ export function syncFoundationMaterials(view){
 export function terrainFloor(landscape,minX,maxX,minZ,maxZ){
   const grid=landscape.grid;
   if(grid){
-    const cell=grid.size/grid.segments,origin=-grid.size/2,clamp=value=>Math.max(0,Math.min(grid.segments,value));
-    const fromX=clamp(Math.floor((minX-origin)/cell)),toX=clamp(Math.ceil((maxX-origin)/cell)),fromZ=clamp(Math.floor((minZ-origin)/cell)),toZ=clamp(Math.ceil((maxZ-origin)/cell));
+    const clamp=value=>Math.max(0,Math.min(grid.segments,value));
+    const fromX=clamp(Math.floor(terrainGridCoordinate(minX,grid))),toX=clamp(Math.ceil(terrainGridCoordinate(maxX,grid))),fromZ=clamp(Math.floor(terrainGridCoordinate(minZ,grid))),toZ=clamp(Math.ceil(terrainGridCoordinate(maxZ,grid)));
     let minimum=Infinity;
     for(let z=fromZ;z<=toZ;z++)for(let x=fromX;x<=toX;x++)minimum=Math.min(minimum,grid.heights[z*(grid.segments+1)+x]);
     return minimum;
