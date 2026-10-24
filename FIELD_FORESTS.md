@@ -1,0 +1,13 @@
+# Grouped field forests
+
+Fresh custom battles, standard modes and campaign settlements now compose their scattered field wood into connected groves. Irregular lobes and seeded branching vary the outlines. Small placement jitter avoids identical trunk alignments while preserving dense, harvestable woodlines. Starting groves retain their positions and tree identities.
+
+Composition repositions the existing field trees after starting forests are planted. It does not add trees, refill resources, replace IDs, move gold/stone/food, consume the simulation random stream or change the tree meshes. Existing saves retain their exact original locations and depleted amounts; they are never regrouped on load. Start a new battle to use the new layout.
+
+Placement keeps building and troop clearance, starting build space, starting entrances, dry land, bridge/harbor clearings and gaps between independent groves. Constrained maps can extend an accepted grove or an existing starting woodline instead of leaving small remnants scattered alone. A local spatial index bounds placement queries. Composition runs at map creation, with no new per-frame system, scene meshes or forest draw batches.
+
+`tests/field-forests.test.js` checks resource identities/counts/amounts, non-wood placement, deterministic results without advancing the live RNG, connected groups, open eight-kingdom routes across seven biomes and three custom sizes for two seeds, and exact saved-layout preservation. Existing starting-forest tests cover additional seeds/sizes, settlement supply, army exits, clear starting units, construction space, harvesting and multiplayer save behavior. An additional direct gather check walked a villager from its base to a grouped field tree and harvested six wood through normal orders in 19.5 simulated seconds.
+
+The production-browser comparison used a paused, fresh eight-kingdom Vast Highlands map with seed 512. Before composition, 497 of 583 field trees lacked another tree within 3.5 world units; afterward none did. The comparison retained 2,085 total entities, 1,779 trees, 1,067,400 natural wood supply and the identical simulation RNG state. The native WebGPU reference frame used 23 draw calls before and after; visible tree counts were 691 and 697. This is one rendering observation, not a sustained FPS measurement.
+
+Highlands and Winter produced painted captures at native WebGPU High (1366 by 768) and emulated WebGL Performance (568 by 320). All four scenes had zero isolated field trees, no page errors and no horizontal overflow. All 529 local tests and the production build pass. The broader visual-quality and physical-device performance requirements remain active in [QUALITY_TARGETS.md](QUALITY_TARGETS.md).

@@ -7,6 +7,7 @@ import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle
 import {SpatialBuckets} from './spatial-buckets.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
+import {groupFieldForests} from './field-forests.js';
 import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
 import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
@@ -101,6 +102,7 @@ export class Simulation {
     if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26,-23],[3,1],[28,25]])this.addShrine(x,z);}
     plantStartingForests(this);
+    groupFieldForests(this);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
   addResource(type,x,z,amount){const e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;return e;}

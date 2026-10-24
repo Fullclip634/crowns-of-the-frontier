@@ -1,6 +1,7 @@
 import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.js';
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
+import {groupFieldForests} from './field-forests.js';
 
 export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'},vast:{name:'Vast',size:480,desc:'9× standard area'},epic:{name:'Epic',size:560,desc:'12.25× standard area'}};
 export const PLAYER_COLORS=[0x48abc2,0xe07566,0xe6c064,0x73b67b,0xb98ed2,0x66cec0,0xe69b58,0xc3cdd5];
@@ -77,6 +78,7 @@ function initializeBattle(sim){
     sim.addNaturalResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2400:300);
   }
   plantStartingForests(sim);
+  groupFieldForests(sim);
   if(sim.options.map==='coast'){
     for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addNaturalResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
