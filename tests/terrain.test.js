@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
-import {prepareTerrainGeometry,terrainWeights,roadDistance} from '../src/terrain-layout.js';
+import {prepareTerrainGeometry,terrainWeights,roadDistance,terrainRoadPaths} from '../src/terrain-layout.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {TerrainDetails,pebbleGeometry} from '../src/terrain-details.js';
 import {terrainRelief} from '../src/terrain-relief.js';
@@ -20,11 +20,32 @@ test('terrain material transitions preserve roads and form normalized finite wei
     const land=new Landscape(512,map,400),geometry=land.geometry(800,112),prepared=prepareTerrainGeometry(geometry,land);
     assert.equal(prepared.weights.length,geometry.attributes.position.count*3);assert.ok(prepared.diagnostics.heightRange.max-prepared.diagnostics.heightRange.min>15);
     for(let i=0;i<prepared.weights.length;i+=3){const values=prepared.weights.slice(i,i+3);assert.ok(values.every(value=>Number.isFinite(value)&&value>=0&&value<=1));assert.ok(Math.abs(values[0]+values[1]+values[2]-1)<1e-6);}
-    const town=land.settlements[0],end=land.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0},x=(town.x+end.x)/2,z=(town.z+end.z)/2;
-    assert.ok(roadDistance(x,z,land)<1e-8);assert.ok(terrainWeights(land,x,1,z,1).soil>.85);
+    const town=land.settlements[0],path=terrainRoadPaths(land)[0],point=path.points[Math.floor(path.points.length/2)];
+    assert.ok(roadDistance(point.x,point.z,land)<1e-8);assert.ok(terrainWeights(land,point.x,1,point.z,1).soil>.85);
     assert.ok(terrainWeights(land,60,8,60,.65).rock>terrainWeights(land,60,1,60,1).rock);
     assert.equal(land.heightAt(town.x,town.z),.65,'settlement construction keeps a flat starting area');geometry.dispose();
   }
+});
+
+test('seeded roads meander naturally while keeping their drawn and painted paths aligned',()=>{
+  for(const map of ['highlands','canyon','coast','rivers','valley','winter','desert'])for(const seed of [512,2026]){
+    const land=new Landscape(seed,map,560,[{x:-140,z:140},{x:140,z:-140}]),paths=terrainRoadPaths(land);
+    assert.equal(paths.length,2);assert.strictEqual(terrainRoadPaths(land),paths,'material, dirt and vegetation reuse the same seeded paths');
+    for(const path of paths){
+      const direct=Math.hypot(path.end.x-path.start.x,path.end.z-path.start.z),length=path.segments.reduce((sum,s)=>sum+Math.sqrt(s.length),0);let farthest=0;
+      assert.equal(path.points.length,path.segments.length+1);assert.deepEqual(path.points[0],path.start);assert.deepEqual(path.points.at(-1),path.end);
+      assert.ok(length>direct*1.002&&length<direct*1.12,'the route curves gently instead of adding artificial switchbacks');
+      for(const point of path.points){
+        const t=Math.max(0,Math.min(1,((point.x-path.start.x)*(path.end.x-path.start.x)+(point.z-path.start.z)*(path.end.z-path.start.z))/(direct*direct)));
+        farthest=Math.max(farthest,Math.hypot(point.x-path.start.x-t*(path.end.x-path.start.x),point.z-path.start.z-t*(path.end.z-path.start.z)));
+        assert.ok(Number.isFinite(point.x)&&Number.isFinite(point.z));assert.ok(roadDistance(point.x,point.z,land)<1e-8);assert.ok(terrainWeights(land,point.x,.65,point.z,1).soil>.85);
+      }
+      assert.ok(farthest>1.5&&farthest<12,'meanders stay broad and modest across map sizes');
+      assert.ok(path.segments.every(s=>s.length>0&&Number.isFinite(s.length)));
+    }
+  }
+  const first=new Landscape(512,'highlands',560),differentSeed=new Landscape(91,'highlands',560);
+  assert.notDeepEqual(terrainRoadPaths(first)[0].points,terrainRoadPaths(differentSeed)[0].points,'world seed varies the scenery without using simulation randomness');
 });
 
 test('solid terrain pebbles are bounded, seeded, hidden by fog and cleared beneath live foundations',()=>{

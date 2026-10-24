@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainBiome} from './terrain-biomes.js';
@@ -105,7 +105,7 @@ function groundMap(landscape){
     ctx.lineWidth=(channel.width*2+(winter?8:4))*1536/size;ctx.strokeStyle=winter?'#b2b8aa':'#7b876b';ctx.lineCap='round';ctx.beginPath();
     for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;ctx.lineTo((x+half)/size*1536,(z+half)/size*1536);}ctx.stroke();
   }
-  for(const town of landscape.settlements){ctx.lineWidth=3*1536/size;ctx.strokeStyle='#b0a078';ctx.lineCap='round';ctx.beginPath();const end=landscape.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0};for(const point of [town,{x:town.x+(end.x-town.x)*.3,z:town.z+(end.z-town.z)*.3},end])ctx.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);ctx.stroke();}
+  for(const road of terrainRoadPaths(landscape)){ctx.lineWidth=3*1536/size;ctx.strokeStyle='#b0a078';ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();for(const point of road.points)ctx.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);ctx.stroke();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
 }
 

@@ -1,14 +1,26 @@
-import {terrainMeadow} from './terrain-fields.js';
+import {terrainMeadow,terrainNoise} from './terrain-fields.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 
+export function terrainRoadPaths(land){
+  return land.roadPaths??=(land.settlements.map(town=>{
+    const end=land.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0},dx=end.x-town.x,dz=end.z-town.z,length=Math.hypot(dx,dz)||1;
+    const phase=Math.floor(land.phase*1048576),seed=terrainNoise(town.x*.037+18,town.z*.037-9,phase),wave=terrainNoise(town.x*.052-11,town.z*.052+7,phase^0x4ad7);
+    const amplitude=Math.min(9,Math.max(3,length*.035))*(.82+Math.abs(seed)*.2),side=seed<0?-1:1,count=Math.max(12,Math.min(28,Math.ceil(length/14))),points=[],segments=[];
+    for(let i=0;i<=count;i++){
+      const t=i/count,envelope=Math.sin(Math.PI*t),lateral=envelope*(side*amplitude+Math.sin(t*Math.PI*2+wave*1.6)*Math.min(2.4,amplitude*.28));
+      points.push(i===0?{x:town.x,z:town.z}:i===count?{x:end.x,z:end.z}:{x:town.x+dx*t-dz/length*lateral,z:town.z+dz*t+dx/length*lateral});
+    }
+    for(let i=0;i<count;i++){
+      const a=points[i],b=points[i+1],sx=b.x-a.x,sz=b.z-a.z;segments.push({x:a.x,z:a.z,dx:sx,dz:sz,length:sx*sx+sz*sz||1});
+    }
+    return {start:town,end,points,segments};
+  }));
+}
+
 export function roadDistance(x,z,land){
-  land.roads??=land.settlements.map(town=>{
-    const end=land.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0};
-    const dx=end.x-town.x,dz=end.z-town.z;return {x:town.x,z:town.z,dx,dz,length:dx*dx+dz*dz||1};
-  });
   let distance=Infinity;
-  for(const road of land.roads){const t=Math.max(0,Math.min(1,((x-road.x)*road.dx+(z-road.z)*road.dz)/road.length));distance=Math.min(distance,Math.hypot(x-road.x-t*road.dx,z-road.z-t*road.dz));}
+  for(const path of terrainRoadPaths(land))for(const road of path.segments){const t=Math.max(0,Math.min(1,((x-road.x)*road.dx+(z-road.z)*road.dz)/road.length));distance=Math.min(distance,Math.hypot(x-road.x-t*road.dx,z-road.z-t*road.dz));}
   return distance;
 }
 

@@ -1,3 +1,17 @@
+## 25 October 2026 — Curved natural settlement roads across rolling terrain
+
+The roads stretching from settlements across the terrain now curve naturally to
+follow the landscape rather than cutting across hills in ruler-straight lines.
+Both the drawn canvas texture and the 3D material mask derive from shared,
+seeded meanders (`terrainRoadPaths`) that preserve consistent grass clearing,
+dirt blending, and stone foundation boundaries without adding extra draw calls
+or terrain triangles.
+
+Verified: **551 serial tests**, zero regressions, production build, and all 7
+biome maps ('highlands', 'canyon', 'coast', 'rivers', 'valley', 'winter',
+'desert') across multiple seeds. Meander lengths stay gently bounded (between
+1.002× and 1.12× direct distance) with continuous analytic road distances.
+
 ## 22 October 2026 — WebGPU on the normal game URL
 
 The normal game address now prefers native WebGPU automatically. Players no

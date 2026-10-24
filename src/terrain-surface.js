@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
-import {roadDistance} from './terrain-layout.js';
+import {terrainRoadPaths} from './terrain-layout.js';
 import {terrainBiome} from './terrain-biomes.js';
 
 function roadMask(land){
-  roadDistance(0,0,land);const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
+  const paths=terrainRoadPaths(land),canvas=document.createElement('canvas');canvas.width=canvas.height=512;
   const ctx=canvas.getContext('2d'),half=land.renderSize/2;ctx.fillStyle='#000';ctx.fillRect(0,0,512,512);ctx.strokeStyle='#fff';ctx.lineWidth=3*512/land.renderSize;ctx.lineCap='round';
-  for(const road of land.roads){ctx.beginPath();ctx.moveTo((road.x+half)/land.renderSize*512,(road.z+half)/land.renderSize*512);ctx.lineTo((road.x+road.dx+half)/land.renderSize*512,(road.z+road.dz+half)/land.renderSize*512);ctx.stroke();}
+  for(const road of paths){ctx.beginPath();for(const point of road.points)ctx.lineTo((point.x+half)/land.renderSize*512,(point.z+half)/land.renderSize*512);ctx.stroke();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.NoColorSpace;return texture;
 }
 
