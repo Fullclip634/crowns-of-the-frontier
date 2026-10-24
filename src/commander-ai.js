@@ -44,11 +44,11 @@ export function constructionPreservesArmyRoutes(sim,type,x,z,owner,excludedUnitI
   return true;
 }
 
-const BLOCKED_RETRY_SECONDS=30;
+const BLOCKED_RETRY_SECONDS=30,BLOCKED_TARGET_TOLERANCE=12;
 export function shouldRetryBlockedOrder(sim,unit,x,z){
   if(unit.pathStatus!=='blocked')return true;
   if(!Number.isFinite(unit.blockedAt)||sim.time-unit.blockedAt>=BLOCKED_RETRY_SECONDS)return true;
-  return Math.hypot((unit.pathTargetX??Infinity)-x,(unit.pathTargetZ??Infinity)-z)>2;
+  return Math.hypot((unit.pathTargetX??Infinity)-x,(unit.pathTargetZ??Infinity)-z)>BLOCKED_TARGET_TOLERANCE;
 }
 
 function customNavy(sim,owner,visible,known,army,tc){

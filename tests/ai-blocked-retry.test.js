@@ -8,7 +8,8 @@ test('AI pauses retrying the same blocked destination until the retry window exp
   const sim=new Simulation({mode:'sandbox',seed:512}),unit=sim.addUnit('spearman',0,0,1);
   sim.time=100;unit.pathStatus='blocked';unit.blockedAt=90;unit.pathTargetX=10;unit.pathTargetZ=20;
   assert.equal(shouldRetryBlockedOrder(sim,unit,10,20),false);
-  assert.equal(shouldRetryBlockedOrder(sim,unit,14,20),true);
+  assert.equal(shouldRetryBlockedOrder(sim,unit,18,20),false);
+  assert.equal(shouldRetryBlockedOrder(sim,unit,25,20),true);
   unit.blockedAt=70;assert.equal(shouldRetryBlockedOrder(sim,unit,10,20),true);
 });
 
