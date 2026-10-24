@@ -44,6 +44,13 @@ export function constructionPreservesArmyRoutes(sim,type,x,z,owner,excludedUnitI
   return true;
 }
 
+const BLOCKED_RETRY_SECONDS=30;
+export function shouldRetryBlockedOrder(sim,unit,x,z){
+  if(unit.pathStatus!=='blocked')return true;
+  if(!Number.isFinite(unit.blockedAt)||sim.time-unit.blockedAt>=BLOCKED_RETRY_SECONDS)return true;
+  return Math.hypot((unit.pathTargetX??Infinity)-x,(unit.pathTargetZ??Infinity)-z)>2;
+}
+
 function customNavy(sim,owner,visible,known,army,tc){
   const dock=sim.owned(owner,'building','dock').find(b=>b.progress>=1);
   if(dock&&dock.queue.length<2){const count=type=>sim.owned(owner,'unit',type).length+countQueued(sim,type,owner),warships=count('galley')+count('warship'),transports=count('transport'),type=transports<1?'transport':warships<2?(sim.players[owner].age>=3?'warship':'galley'):count('fishingboat')<3?'fishingboat':transports<2&&army.length>20?'transport':warships<6?(sim.players[owner].age>=3?'warship':'galley'):null;if(type)sim.train(dock.id,type);}
@@ -237,7 +244,8 @@ export function installCommanderAI(Simulation){
     const threats=baseThreats,fieldEnemies=visible.filter(e=>e.kind==='unit'&&military(e)&&(defendedBases.some(base=>distance(e,base)<60)||landArmy.some(unit=>distance(e,unit)<25)));
     const ownPower=landArmy.reduce((n,e)=>n+power(e),0),enemyPower=fieldEnemies.reduce((n,e)=>n+power(e),0),wounded=landArmy.filter(e=>e.hp<e.maxHp*.28);
     const retreats=new Map();
-    for(const unit of wounded){let retreat=this.options.mode!=='custom'&&this.options.map==='coast'&&unit.x<0?{x:-23,z:35}:{x:tc.x+8,z:tc.z-6};if(this.options.mode==='custom'&&this.options.map==='coast'){const base=protectedBases.filter(e=>Math.sign(e.x)===Math.sign(unit.x)&&distance(e,unit)<75).sort((a,b)=>distance(a,unit)-distance(b,unit))[0];retreat=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(unit.z*.03)*2+Math.sign(unit.x)*22,z:unit.z+Math.sign(tc.z-unit.z)*9};}
+    for(const unit of wounded){let retreat=this.options.mode!=='custom'&&this.options.map==='coast'&&unit.x<0?{x:-23,z:35}:{x:tc.x+8,z:tc.z-6};if(this.options.mode==='custom'&&this.options.map==='coast'){const base=protectedBases.filter(e=>Math.sign(e.x)===Math.sign(unit.x)&&distance(e,unit)<75).sort((a,b)=>distance(a,unit)-distance(b,unit))[0];      retreat=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(unit.z*.03)*2+Math.sign(unit.x)*22,z:unit.z+Math.sign(tc.z-unit.z)*9};}
+      if(!shouldRetryBlockedOrder(this,unit,retreat.x,retreat.z))continue;
       if(!unit.order&&unit.aiResting&&distance(unit,retreat)<12)continue;
       unit.aiResting=true;
       if(unit.order?.type==='move'&&unit.order.aiRetreat&&distance(unit.order,retreat)<=12)continue;
@@ -258,14 +266,14 @@ export function installCommanderAI(Simulation){
       if(this.options.mode==='custom'&&this.options.map==='coast')coastalArmyOrders(this,owner,fighters,visible,knownBuildings,phase,tc,state);
       else if(phase==='attack'||phase==='defend'){
         const guardCount=this.options.mode==='custom'&&phase==='attack'?Math.min(6,Math.max(2,Math.floor(fighters.length*.15))):0;
-        const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege').sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
-        const assault=fighters.filter(e=>!ids.has(e.id));this.command(assault.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
+        const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege'&&shouldRetryBlockedOrder(this,e,tc.x+8,tc.z-6)).sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
+        const assault=fighters.filter(e=>!ids.has(e.id)&&shouldRetryBlockedOrder(this,e,target.x,target.z));this.command(assault.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
         if(phase==='attack')orderSiegeAssault(this,owner,assault,visible,target);
         if(guards.length)this.command(guards.map(e=>e.id),{type:'attackmove',x:tc.x+8,z:tc.z-6});state.homeGuard=guards.map(e=>e.id);
       }
       else if(this.options.mode!=='custom'&&this.options.map==='coast'){
-        for(const sign of [-1,1]){const rally=sign<0?{x:-24,z:30}:target;this.command(fighters.filter(unit=>Math.sign(unit.x)===sign&&distance(unit,rally)>12).map(unit=>unit.id),{type:'move',...rally});}
-      }else this.command(fighters.filter(unit=>distance(unit,target)>12).map(unit=>unit.id),{type:'move',x:target.x,z:target.z});
+        for(const sign of [-1,1]){const rally=sign<0?{x:-24,z:30}:target;this.command(fighters.filter(unit=>Math.sign(unit.x)===sign&&distance(unit,rally)>12&&shouldRetryBlockedOrder(this,unit,rally.x,rally.z)).map(unit=>unit.id),{type:'move',...rally});}
+      }else this.command(fighters.filter(unit=>distance(unit,target)>12&&shouldRetryBlockedOrder(this,unit,target.x,target.z)).map(unit=>unit.id),{type:'move',x:target.x,z:target.z});
       const siege=fighters.find(e=>UNITS[e.type].role==='siege'),escort=siege||fighters[0];if(escort)for(const healer of ready.filter(e=>e.type==='monk'&&e.order?.type!=='board'&&(this.options.map!=='coast'||e.x*escort.x>0)))this.guard([healer.id],escort.id,false,owner);
       state.target={x:target.x,z:target.z,lastSeen:target.lastSeen??this.time};
       if(phase==='attack')state.firstAttackAt??=this.time;
