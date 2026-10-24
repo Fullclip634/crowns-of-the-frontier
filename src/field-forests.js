@@ -13,7 +13,7 @@ function buckets(){
 // Starting groves, resource identities/amounts and the simulation RNG stay intact.
 export function groupFieldForests(sim){
   const trees=sim.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='wood'&&e.startForest===undefined);
-  if(!trees.length)return {trees:0,groups:0,moved:0,remaining:0};
+  if(!trees.length)return {trees:0,groups:0,singles:0,moved:0,remaining:0};
   const moving=new Set(trees),fixed=buckets(),placed=buckets(),bases=forestSettlements(sim).map(base=>({...base,entrances:forestEntrances(sim,base)}));
   for(const entity of sim.entities)if(entity.hp>0&&!entity.embarked&&!moving.has(entity))fixed.add(entity);
   const random=seededRandom((sim.options.seed||0)+63893),half=sim.halfWorld,positions=[],groves=[];
@@ -37,7 +37,8 @@ export function groupFieldForests(sim){
       if(!old){
         if(u*u+v*v>edge*edge||!clear(point.x,point.z))continue;
         if(placed.near(point.x,point.z,6).some(p=>p.grove!==existing&&Math.hypot(p.x-point.x,p.z-point.z)<6))continue;
-        points.push({x:point.x+(random()-.5)*.14,z:point.z+(random()-.5)*.14});
+        const jittered={x:point.x+(random()-.5)*.14,z:point.z+(random()-.5)*.14};
+        points.push(clear(jittered.x,jittered.z)?jittered:{x:point.x,z:point.z});
       }
       for(const [x,z]of [[2,0],[-2,0],[0,2],[0,-2]])frontier.push({x:point.x+x,z:point.z+z});
     }
@@ -47,8 +48,17 @@ export function groupFieldForests(sim){
   const candidates=trees.map(tree=>({x:snap(tree.x),z:snap(tree.z)}));
   for(let i=0;i<800;i++)candidates.push({x:snap((random()-.5)*(sim.worldSize-12)),z:snap((random()-.5)*(sim.worldSize-12))});
   for(let i=candidates.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}
+  // A few isolated trees break up open country without recreating the old
+  // scattered resource field. Reserve their clearance before growing groves.
+  const singleTarget=Math.min(48,Math.floor(trees.length*.05));let singles=0;
+  for(const point of candidates){
+    if(singles>=singleTarget)break;
+    if(!clear(point.x,point.z)||placed.near(point.x,point.z,14).some(p=>Math.hypot(p.x-point.x,p.z-point.z)<14))continue;
+    commit([{...point}],[]);singles++;
+  }
   for(const center of candidates){
     const remaining=trees.length-positions.length;if(!remaining)break;
+    if(remaining<8&&groves.length)break;
     if(!clear(center.x,center.z)||placed.near(center.x,center.z,12).some(p=>Math.hypot(p.x-center.x,p.z-center.z)<12))continue;
     let wanted=Math.min(remaining,26+Math.floor(random()*16));if(remaining-wanted<8)wanted=remaining;
     const points=grow(center,wanted);if(points.length<Math.min(8,remaining))continue;
@@ -70,5 +80,5 @@ export function groupFieldForests(sim){
   const moved=Math.min(positions.length,trees.length);
   for(let i=0;i<moved;i++){trees[i].x=positions[i].x;trees[i].z=positions[i].z;}
   if(moved){sim.revision++;sim.grids={};}
-  return {trees:trees.length,groups:groves.length,moved,remaining:trees.length-moved};
+  return {trees:trees.length,groups:groves.length,singles,moved,remaining:trees.length-moved};
 }
