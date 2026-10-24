@@ -31,7 +31,12 @@ export class WorldInteractions {
           this.stumpSlots[stumpCount++]=e.id;
         }continue;
       }
-      if(e.kind==='resource'&&['gold','stone'].includes(e.type)&&e.hp>0){const node=v.nodes.get(e.id);if(node)node.scale.setScalar(.48+.52*Math.min(1,e.amount/(e.initialAmount||Math.max(e.amount,1800))));}
+      if(e.kind==='resource'&&['gold','stone'].includes(e.type)&&e.hp>0){
+        const node=v.nodes.get(e.id);
+        // Erode the exposed height, keeping the bedrock footprint aligned with
+        // navigation and the miner's approach throughout the deposit's life.
+        if(node)node.scale.set(1,.85+.15*Math.max(0,Math.min(1,e.amount/(e.initialAmount||Math.max(e.amount,1800)))),1);
+      }
       if(e.hp<=0||e.type!=='villager'||e.embarked)continue;
       const shown=menu||e.owner===0||v.sim.isVisible(e.x,e.z);if(!shown)continue;
       if(!e.moving&&['gather','build','repair'].includes(e.order?.type)){const target=v.sim.get(e.order.target);if(target)e.heading=Math.atan2(target.x-e.x,target.z-e.z);}

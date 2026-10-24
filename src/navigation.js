@@ -90,10 +90,10 @@ export function navigationRegions(sim,grid){
 }
 
 function finishResourceApproach(sim,grid,unit,target,range,route){
-  if(target.kind!=='resource'||target.type!=='wood'||!(range>0)||unit.pathStatus!=='ready')return route;
+  if(target.kind!=='resource'||!['wood','gold','stone'].includes(target.type)||!(range>0)||unit.pathStatus!=='ready')return route;
   const last=route.at(-1)||unit,distance=Math.hypot(last.x-target.x,last.z-target.z);if(distance<=range+.000001||distance>range+1.5)return route;
   const point={x:target.x+(last.x-target.x)*range/distance,z:target.z+(last.z-target.z)*range/distance},limit=sim.halfWorld-3;
-  // A coarse cell center can sit just outside axe reach. Finish within that
+  // A coarse cell center can sit just outside tool reach. Finish within that
   // navigable space; never shorten the route through a resource or a wall.
   if(Math.abs(point.x)<=limit&&Math.abs(point.z)<=limit&&clearSegment(sim,grid,last,point))route.push(point);return route;
 }

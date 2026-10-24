@@ -4,6 +4,19 @@ import * as THREE from 'three';
 import {WorldInteractions} from '../src/world-interactions.js';
 import {prepareViewport} from '../src/render-batches.js';
 
+test('depleting ore keeps its navigable footprint, ground position and resource quantities',()=>{
+  const nodes=new Map(),entities=['gold','stone'].map((type,id)=>({id,kind:'resource',type,hp:1,x:0,z:0,amount:1200,initialAmount:1200}));
+  const view={scene:new THREE.Scene(),geo:{box:new THREE.BoxGeometry(),cylinder:new THREE.CylinderGeometry(),rock3d:new THREE.DodecahedronGeometry(),capsule:new THREE.CapsuleGeometry()},materials:Object.fromEntries(['wood','canvas','gold','stone','trunk'].map(role=>[role,new THREE.MeshStandardMaterial()])),nodes,clock:0,sim:{entities,isVisible:()=>true,isExplored:()=>true}};
+  for(const e of entities){const node=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.5,3.4));node.geometry.translate(0,.75,0);node.position.set(4,2,8);nodes.set(e.id,node);}
+  const interactions=new WorldInteractions(view);
+  for(const fraction of [1,.5,.05,.00001]){
+    for(const e of entities)e.amount=e.initialAmount*fraction;
+    interactions.update(.016,false);
+    for(const e of entities){const node=nodes.get(e.id),bounds=new THREE.Box3().setFromObject(node),size=bounds.getSize(new THREE.Vector3());assert.ok(Math.abs(size.x-3.4)<1e-6&&Math.abs(size.z-3.4)<1e-6,'workers keep the same rock footprint to approach');assert.ok(size.y>1.2&&size.y<=1.5,'the pick still has an exposed face to strike');assert.equal(bounds.min.y,2,'depletion remains grounded');assert.equal(e.amount,1200*fraction);}
+  }
+  interactions.dispose();for(const node of nodes.values()){node.geometry.dispose();node.material.dispose();}for(const geometry of Object.values(view.geo))geometry.dispose();for(const material of Object.values(view.materials))material.dispose();
+});
+
 test('harvested remains reuse stationary poses while fog, removal and movement repack correct instances',()=>{
   const first={id:1,type:'wood',hp:0,x:1,z:2},second={id:2,type:'wood',hp:0,x:8,z:3},worker={id:3,kind:'unit',type:'villager',hp:10,x:4,z:5,carry:18,carryType:'wood',owner:0};
   let reveal=false,samples=0;

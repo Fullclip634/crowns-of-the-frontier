@@ -31,6 +31,16 @@ test('large combat armies retain no work states and changing a unit role clears 
   for(let id=1;id<=1280;id++)actions.update(view,{id,type:id%2?'knight':'archer',moving:true},1/60);assert.equal(actions.states.size,0);
 });
 
+test('visible gold and stone miners share their close-range animation with observers without exposing commands',()=>{
+  for(const type of ['gold','stone']){
+    const {unit,resource,sim,view}=fixture();resource.type=type;resource.r=1.7;resource.z=2.75;unit.gatherType=type;
+    const local=new UnitActions(),remote=new UnitActions(),observed=entityPerspective(sim,0,unit);
+    assert.equal(observed.working,true);assert.equal(observed.order,undefined);assert.deepEqual(observed.orders,[]);
+    const own=local.update(view,unit,.2),other=remote.update(view,observed,.2);assert.equal(own.task,'mine');assert.deepEqual(other,own);
+    resource.z=3.1;assert.equal(workTarget(view,unit),null);assert.equal(entityPerspective(sim,0,unit).working,false);
+  }
+});
+
 test('Blender tool grips stay attached to the hands through chopping, mining and construction in all detail tiers',async()=>{
   for(const tier of ['near','balanced','low']){
     const bytes=await fs.readFile(new URL('../src/assets3d/frontier-'+tier+'.glb',import.meta.url)),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');

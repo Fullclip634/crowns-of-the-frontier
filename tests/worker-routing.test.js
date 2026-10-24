@@ -9,6 +9,19 @@ function advance(sim,worker,crowd,seconds){const buckets=new SpatialBuckets(4);s
   for(let i=0;i<seconds*10;i++){buckets.reset();for(const unit of [worker,...crowd])buckets.add(unit);const before={x:worker.x,z:worker.z};sim.tickUnit(worker,.1);assert.ok(distance(worker,before)<1,'workers must walk rather than teleport');sim.time+=.1;}
 }
 
+test('human and AI mining crews share a close deposit and deliver repeated loads without losing resources',()=>{
+  for(const type of ['gold','stone'])for(const owner of [0,1]){
+    const sim=fixture('highlands'),ore=sim.addResource(type,.25,20.75,4000),mine=sim.addBuilding('mine',owner,-12,20,true),bank=sim.players[owner].resources[type];
+    const workers=Array.from({length:10},(_,i)=>{const a=i*Math.PI/5,w=sim.addUnit('villager',owner,ore.x+Math.sin(a)*9,ore.z+Math.cos(a)*9);w.order={type:'gather',target:ore.id};w.gatherType=type;return w;});
+    const buckets=new SpatialBuckets(4);sim.unitBuckets=buckets.columns;
+    for(let n=0;n<600;n++){buckets.reset();for(const w of workers)buckets.add(w);for(const w of workers)sim.tickUnit(w,.1);sim.time+=.1;}
+    const delivered=sim.players[owner].resources[type]-bank,carried=workers.reduce((n,w)=>n+w.carry,0);
+    assert.ok(delivered>180,'the crew makes multiple deliveries');assert.ok(workers.every(w=>w.work>20&&w.order?.target===ore.id),'every miner keeps working');
+    assert.ok(Math.abs(4000-ore.amount-delivered-carried)<.0001,'all mined resources are carried or deposited exactly once');
+    assert.equal(sim.events.some(event=>event.type==='order-blocked'),false);assert.equal(sim.nearestDrop(workers[0],type),mine);
+  }
+});
+
 test('a woodcutter finishes the last half-meter of its route and deposits the harvested load',()=>{
   const sim=fixture(),worker=sim.addUnit('villager',0,52.541230840764094,166.97878982412027),camp=sim.addBuilding('camp',0,41.650936932135785,164.63988958019442,true);
   for(const [type,x,z]of [['wood',58.57524120947346,158.21050303289667],['wood',55.923047764226794,164.90249879052863],['wood',62.084043003153056,165.07145553221926],['wood',57.52924586646259,156.53674270119518],['wood',60.369679236318916,161.70476312935352],['wood',57.06997075583786,166.93519118893892],['wood',57.12025169702247,164.39547680690885],['food',49.457710763206705,171.72234100406058],['food',49.87375002913177,168.02266054111533],['food',45.54878494492732,173.64010115060955],['food',51.30487139383331,172.57929874234833],['food',49.268441177206114,167.86912339786068],['food',48.96046050195582,170.4359127865173]])sim.addResource(type,x,z,300);
