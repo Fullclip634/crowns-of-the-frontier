@@ -11,7 +11,8 @@ import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {authoredAssetState,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
-import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix} from './render-batches.js';
+import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix,prepareViewport} from './render-batches.js';
+import {sceneNodeFor,releaseSceneNode} from './scene-nodes.js';
 import {installBattleRemains} from './battle-remains.js';
 import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './surface-assets.js';
 import {mergeUnitModel} from './unit-palette.js';
@@ -87,9 +88,9 @@ export class WorldView {
     for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];
     sim.players.forEach((player,i)=>this.teamMaterials[i].color.setHex(player.color??FACTIONS[player.faction].color));
-    this.buildLandscape(sim);this.buildForest(sim);
-    for(const e of sim.entities)if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood')&&(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))this.createNode(e);
-    this.updateFog();this.focus(-37,30);this.zoom=58;this.updateCamera();
+    this.buildLandscape(sim);const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);prepareViewport(this);this.buildForest(sim);
+    for(const e of sim.entities)if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));
+    this.updateFog();
     trimAuthoredAssets(this);
   }
   makeRiver(center=0,width=5){const vertices=[],indices=[];for(let i=0;i<=80;i++){const z=-80+i*2,x=center+Math.sin(z*.045)*(width===5?4:3);vertices.push(x-width,.08,z,x+width,.08,z);if(i<80){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();this.terrain.add(new THREE.Mesh(geo,this.materials.water));
@@ -190,12 +191,9 @@ export class WorldView {
     for(const e of this.sim.entities){let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
         if(e.hp<=0&&this.treeIndices.has(e.id)){const i=this.treeIndices.get(e.id),dummy=new THREE.Object3D();dummy.scale.set(0,0,0);dummy.updateMatrix();this.treeTrunks.setMatrixAt(i,dummy.matrix);this.treeLeaves.setMatrixAt(i*2,dummy.matrix);this.treeLeaves.setMatrixAt(i*2+1,dummy.matrix);this.treeTrunks.instanceMatrix.needsUpdate=true;this.treeLeaves.instanceMatrix.needsUpdate=true;this.treeIndices.delete(e.id);}continue;
       }
-      if(e.hp>0&&node?.userData.batch&&node.userData.unitVariant!==workerVisualTask(this,e)){
-        const {batch,index}=node.userData;batch.ids[index]=null;batch.free.push(index);
-        this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);
-      }
-      if(e.hp<=0){if(node){if(node.userData.batch){const {batch,index}=node.userData;batch.ids[index]=null;batch.free.push(index);}this.releaseNode(node);this.objects.remove(node);this.nodes.delete(e.id);}continue;}
-      const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));if(!node&&(!visible||e.embarked))continue;if(!node)node=this.createNode(e);node.visible=visible&&!e.embarked;
+      const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));node=sceneNodeFor(this,e,visible);if(!node)continue;
+      if(node.userData.batch&&node.userData.unitVariant!==workerVisualTask(this,e)){releaseSceneNode(this,e,node);node=this.createNode(e);}
+      node.visible=visible&&!e.embarked;
       const position=renderPosition(this,e),rx=position.x,rz=position.z,heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,ground=this.entityHeight(e,rx,rz),gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;e.renderX=rx;e.renderZ=rz;
       if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){

@@ -6,6 +6,7 @@ import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 import {closestCandidates} from './closest-candidates.js';
 import {gatheringRange,gatheringPathRange} from './work-ranges.js';
 import {buildingPlacementGrid,findPath} from './navigation.js';
+import {fortifyKingdomWalls,fortificationReserved} from './ai-fortifications.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
@@ -173,7 +174,7 @@ export function installCommanderAI(Simulation){
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
     const worker=closestCandidates(this.owned(owner,'unit','villager'),1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion,w=>distance(w,near||tc))[0];if(!worker)return false;
     for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
-      if(!this.buildValid(type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
+      if(!this.buildValid(type,point.x,point.z,owner)||fortificationReserved(this,type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
       return this.build(type,point.x,point.z,[worker.id],owner);
     }return false;
   };
@@ -209,6 +210,7 @@ export function installCommanderAI(Simulation){
       const base=towns.filter(b=>b.progress>=1).sort((a,b)=>buildings.filter(f=>f.type==='farm'&&distance(f,a)<30).length-buildings.filter(f=>f.type==='farm'&&distance(f,b)<30).length)[0];this.commanderBuild('farm',base,owner);
     }
     fortifySettlements(this,state,owner,workers,buildings,baseThreats);
+    fortifyKingdomWalls(this,state,owner,workers,this.owned(owner,'building'),baseThreats);
     const priorities=['barracks',...(player.age>=1?['range','stable','blacksmith','market']:[]),...(player.age>=2?['workshop','monastery']:[])];
     for(const type of priorities)if(!buildings.some(b=>b.type===type)){if(this.commanderBuild(type,null,owner))break;}
     if(this.time-state.lastRebalance>15){state.lastRebalance=this.time;for(const worker of workers.filter(w=>w.order?.type==='gather'&&!w.carry&&!w.aiFleeing).slice(0,2))this.assignWorker(worker);}

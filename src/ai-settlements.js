@@ -1,4 +1,5 @@
 import {BUILDINGS,UNITS} from './data.js';
+import {fortificationReserved} from './ai-fortifications.js';
 
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const centers=(sim,owner)=>sim.owned(owner,'building','towncenter');
@@ -41,7 +42,7 @@ function expansionCandidates(sim,state,owner){
     if(value<900)continue;
     for(let i=0;i<16;i++){
       const angle=i*Math.PI/4,r=i<8?14:22,point={x:source.x+Math.cos(angle)*r,z:source.z+Math.sin(angle)*r};
-      if(friendly.some(base=>distance(base,point)<44)||Math.min(...own.map(base=>distance(base,point)))>105||economicDanger(state,point,12)||!sim.buildValid('towncenter',point.x,point.z,owner))continue;
+      if(friendly.some(base=>distance(base,point)<44)||Math.min(...own.map(base=>distance(base,point)))>105||economicDanger(state,point,12)||!sim.buildValid('towncenter',point.x,point.z,owner)||fortificationReserved(sim,'towncenter',point.x,point.z,owner))continue;
       // Water-separated sites need an actual land route; expansion does not
       // assume a transport, create a distant foundation, or teleport builders.
       candidates.push({...point,source:source.id,score:value/(35+Math.min(...own.map(base=>distance(base,point))))});
@@ -59,7 +60,7 @@ export function manageExpansion(sim,state,owner,workers,threats){
     const worker=sim.get(plan.worker);
     if(!worker||worker.owner!==owner||worker.aiFleeing||sim.time>plan.until||threats.length||economicDanger(state,plan,8)||distance(worker,plan)>12&&!worker.order?.aiExpansion){release();return;}
     if(distance(worker,plan)>12)return;
-    if(!sim.canSee(owner,plan)||!sim.buildValid('towncenter',plan.x,plan.z,owner)){release();return;}
+    if(!sim.canSee(owner,plan)||!sim.buildValid('towncenter',plan.x,plan.z,owner)||fortificationReserved(sim,'towncenter',plan.x,plan.z,owner)){release();return;}
     if(!sim.canAfford(sim.cost(BUILDINGS.towncenter.cost,owner,'building'),owner))return;
     const site=sim.build('towncenter',plan.x,plan.z,[worker.id],owner);if(!site)return;
     const helpers=workers.filter(w=>w!==worker&&!busy(w)&&!w.aiFleeing).sort((a,b)=>distance(a,site)-distance(b,site)).slice(0,2);

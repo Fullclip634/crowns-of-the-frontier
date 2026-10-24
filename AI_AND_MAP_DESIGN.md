@@ -34,4 +34,4 @@ AI kingdoms shelter threatened nearby workers and send them back after the local
 
 The official [Age of Empires II defense guide](https://www.ageofempires.com/learn-to-play/defending-your-empires-aoe2/) describes sheltering villagers in town centers and the resulting defensive arrows. The official [resource-control guide](https://www.ageofempires.com/learn-to-play/control-resources-aoe2/) discusses villagers retreating into defensive buildings. These inform the mechanic, rather than supplying this game's numerical balance.
 
-The garrison checkpoint and `artifacts/garrison-release-validation.json` record achieved verification. Physical devices, wider human balance, automatic AI wall/gate construction, and overall release readiness remain outstanding.
+The garrison checkpoint and `artifacts/garrison-release-validation.json` record achieved verification. Physical devices, wider human balance, and overall release readiness remain outstanding. Automatic AI gate and wall planning is described in [AI_FORTIFICATIONS.md](AI_FORTIFICATIONS.md).
