@@ -19,9 +19,12 @@ export function terrainRoadPaths(land){
 }
 
 export function roadDistance(x,z,land){
-  let distance=Infinity;
-  for(const path of terrainRoadPaths(land))for(const road of path.segments){const t=Math.max(0,Math.min(1,((x-road.x)*road.dx+(z-road.z)*road.dz)/road.length));distance=Math.min(distance,Math.hypot(x-road.x-t*road.dx,z-road.z-t*road.dz));}
-  return distance;
+  let squaredDistance=Infinity;
+  for(const path of terrainRoadPaths(land))for(const road of path.segments){
+    const t=Math.max(0,Math.min(1,((x-road.x)*road.dx+(z-road.z)*road.dz)/road.length)),dx=x-road.x-t*road.dx,dz=z-road.z-t*road.dz;
+    squaredDistance=Math.min(squaredDistance,dx*dx+dz*dz);
+  }
+  return Math.sqrt(squaredDistance);
 }
 
 export function terrainWeights(land,x,y,z,normalY=1){

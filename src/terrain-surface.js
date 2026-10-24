@@ -5,7 +5,7 @@ import {terrainBiome} from './terrain-biomes.js';
 
 function roadMask(land){
   const paths=terrainRoadPaths(land),canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-  const ctx=canvas.getContext('2d'),half=land.renderSize/2;ctx.fillStyle='#000';ctx.fillRect(0,0,512,512);ctx.strokeStyle='#fff';ctx.lineWidth=3*512/land.renderSize;ctx.lineCap='round';
+  const ctx=canvas.getContext('2d'),half=land.renderSize/2;ctx.fillStyle='#000';ctx.fillRect(0,0,512,512);ctx.strokeStyle='#fff';ctx.lineWidth=3*512/land.renderSize;ctx.lineCap='round';ctx.lineJoin='round';
   for(const road of paths){ctx.beginPath();for(const point of road.points)ctx.lineTo((point.x+half)/land.renderSize*512,(point.z+half)/land.renderSize*512);ctx.stroke();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.NoColorSpace;return texture;
 }
