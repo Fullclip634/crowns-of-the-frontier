@@ -50,10 +50,11 @@ function scaffold(view,e){
 export function installRealm3D(WorldView){
   const p=WorldView.prototype,attach=p.attach,render=p.render,effect=p.effect,burst=p.burst;
   p.attach=function(sim){
+    const sameSimulation=this.sim===sim;
     this.hideGhost();this.ghost.userData.type=null;
     this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions);this.foundationHeights=new Map();this.forest=[];this.forestLodState=new Map();this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
-    attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
+    attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
   p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);this.materials.leaf.color.setHex(this.sim.options.map==='winter'?0x74836e:0x5c743d);this.materials.leafDark.color.setHex(this.sim.options.map==='winter'?0x364d40:0x3e5732);buildLandscape(this);};
   p.buildForest=function(){buildForest(this);};

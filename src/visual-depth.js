@@ -89,10 +89,11 @@ export function updateContacts(view,menu){
 export function installVisualDepth(WorldView){
   const p=WorldView.prototype,attach=p.attach,render=p.render,house=p.houseModel,makeUnit=p.makeUnit;
   p.attach=function(sim){
+    const sameSimulation=this.sim===sim;
     this.contactCache=new Map();this.contactPrunedAt=0;
     if(!this.polished){decorateMaterials(this);this.polished=true;}
     if(!this.depthInitialized){initializeDepth(this);this.depthInitialized=true;}
-    attach.call(this,sim);this.setCameraPreset(this.settings.cameraPreset,true);
+    attach.call(this,sim);if(!sameSimulation)this.setCameraPreset(this.settings.cameraPreset,true);
   };
   p.houseModel=function(g,team,x,z,s=1){
     house.call(this,g,team,x,z,s);const m=this.materials;

@@ -4,6 +4,7 @@ import {battleChatMarkup,BattleChatPanel} from './battle-chat.js';
 import {WEATHER_NAMES} from './weather.js';
 import {LIGHTING_MODES} from './day-night.js';
 import {battlePreset,normalizeBattle} from './custom-battle.js';
+import {isSpectatingAI,spectatorActionAllowed} from './spectator-controls.js';
 import {customBattleMarkup,readBattleSetup,updateBattlePreview,battleObjectiveMarkup,battleResultMarkup,roomLobbyMarkup} from './custom-battle-ui.js';
 import './style.css';
 import './interface.css';
@@ -132,7 +133,7 @@ audio.setCombatListener(createCombatListener(view,()=>playing&&!paused&&!modal&&
 $('#resume').classList.toggle('hidden',!readLocalSave());
 const edgeScroll=new EdgeScroll();
 
-const isAISpectator=()=>!!(sim?.options.mode==='custom'&&sim.options.spectator&&!sim.options.multiplayer);
+const isAISpectator=()=>isSpectatingAI(playing,sim);
 function toast(message,tone=''){ const el=document.createElement('div');el.className=`toast ${tone}`;el.textContent=message;$('#toasts').append(el);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();setTimeout(()=>el.remove(),4800);}
 function setSelection(ids){selectionKey='';selection=[...new Set(ids)].filter(id=>{const e=sim.get(id);return e&&!e.embarked;});view.selection=new Set(selection);$('#selection-panel').scrollTop=0;$('#selection-panel').classList.remove('selection-expanded');audio.play('select');renderSelection();}
 function selected(){return selection.map(id=>sim.get(id)).filter(Boolean);}
@@ -316,7 +317,7 @@ function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){const layer=$('#health-layer');let html='';for(const e of sim.entities){if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))continue;if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)continue;const p=view.project(e);if(p.visible&&p.x>0&&p.x<innerWidth&&p.y>50&&p.y<innerHeight-100)html+=`<div class="world-health ${sim.hostile(0,e.owner)?'rival':''}" style="left:${p.x}px;top:${p.y}px"><i style="width:${e.hp/e.maxHp*100}%"></i>${e.kind==='building'&&e.progress<1?`<small>${Math.floor(e.progress*100)}%</small>`:''}</div>`;}layer.innerHTML=html;}
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
 function action(name){
-  if(isAISpectator()&&!['pause','close','save','menu','restart','settings','help','fullscreen','camera-left','camera-right','camera-closer','camera-farther','camera-view','camera-panels','camera-options','weather','home','army','idle','deselect','speed','objectives-expand','inspect','map-expand','dismiss-rotate'].includes(name))return;
+  if(isAISpectator()&&!spectatorActionAllowed(name))return;
   if(name==='alliance'){showAlliance();return;}
   if(name==='send-donation'){sendAllianceGift();return;}
   if(name==='wall-build'){confirmWallPlacement();return;}

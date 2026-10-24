@@ -76,7 +76,7 @@ export class WorldView {
     for(const sign of [1,-1]){ctx.strokeStyle='#ab9d78';ctx.lineWidth=20;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(((-39*sign+80)/160)*1024,((30*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((24*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((0+80)/160)*1024);ctx.stroke();}
     const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;return texture;
   }
-  attach(sim){this.sim=sim;
+  attach(sim){const camera=this.sim===sim?{target:this.target.clone(),zoom:this.zoom,angle:this.angle,tilt:this.tilt}:null;this.sim=sim;
     this.wallVisuals?.dispose();this.wallVisuals=null;
     this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;
@@ -88,7 +88,7 @@ export class WorldView {
     for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];
     sim.players.forEach((player,i)=>this.teamMaterials[i].color.setHex(player.color??FACTIONS[player.faction].color));
-    this.buildLandscape(sim);const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);prepareViewport(this);this.buildForest(sim);
+    this.buildLandscape(sim);if(camera){this.target.copy(camera.target);this.zoom=camera.zoom;this.angle=camera.angle;this.tilt=camera.tilt;this.updateCamera();}else{const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);}prepareViewport(this);this.buildForest(sim);
     for(const e of sim.entities)if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));
     this.updateFog();
     trimAuthoredAssets(this);
