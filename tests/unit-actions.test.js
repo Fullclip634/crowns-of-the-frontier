@@ -13,7 +13,7 @@ function fixture(){const resource={id:2,type:'wood',kind:'resource',amount:100,h
 test('work actions start only at a live resource or unfinished building and fade when work stops',()=>{
   const f=fixture(),{unit,resource,view,actions}=f;assert.equal(workTarget(view,unit),resource);assert.equal(actions.update(view,unit,.2).task,'wood');
   for(const change of [{moving:true},{x:100},{hp:0},{embarked:1},{order:{type:'gather',target:2,returning:true}},{cooldown:.5}])assert.equal(workTarget(view,{...unit,...change}),null);
-  resource.amount=0;assert.equal(workTarget(view,unit),null);resource.type='house';resource.kind='building';resource.progress=.5;resource.maxHp=100;unit.order={type:'build',target:2};assert.equal(actions.update(view,unit,.2).task,'build');
+  resource.amount=0;assert.equal(workTarget(view,unit),null);resource.type='house';resource.kind='building';resource.progress=.5;resource.maxHp=100;unit.order={type:'build',target:2};assert.equal(workTarget(view,unit),null);resource.z=2.68;assert.equal(actions.update(view,unit,.2).task,'build');
   resource.progress=1;resource.hp=100;assert.equal(workTarget(view,unit),null);for(let i=0;i<20;i++)actions.update(view,unit,.1);assert.equal(actions.get(unit.id).task,null);
   unit.carry=10;unit.moving=true;assert.equal(actions.update(view,unit,.2).task,'carry');unit.carry=0;unit.type='monk';unit.moving=false;unit.cooldown=1;assert.equal(actions.update(view,unit,.2).task,'heal');
   actions.prune({get:()=>null});assert.equal(actions.states.size,0);

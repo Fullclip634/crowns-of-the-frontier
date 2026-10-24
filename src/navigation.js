@@ -2,6 +2,7 @@ import {blockWallConnections} from './walls.js';
 import {BUILDINGS} from './data.js';
 const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 const MAX_BUILDING_RADIUS=Math.max(...Object.values(BUILDINGS).map(definition=>definition.r||0));
+const constructionGrids=new WeakMap();
 
 function containingBuildings(sim,unit){
   const buckets=sim.entityBuckets,cellSize=sim.entitySpatial?.cellSize||8,reach=MAX_BUILDING_RADIUS+.9,candidates=[];
@@ -42,6 +43,20 @@ export function buildingPlacementGrid(sim,type,x,z,owner){
   const size=sim.gridSize,a=sim.cell(x-definition.r-.3,z-definition.r-.3),b=sim.cell(x+definition.r+.3,z+definition.r+.3);
   for(let cz=a.z;cz<=b.z;cz++)for(let cx=a.x;cx<=b.x;cx++)if(Math.hypot(cx*2-sim.halfWorld+1-x,cz*2-sim.halfWorld+1-z)<definition.r+.9)grid[cz*size+cx]=1;
   return grid;
+}
+
+// The last, geometry-checked construction step may enter a cell whose centre
+// is covered only by the target's coarse radius. Every other obstacle remains.
+export function constructionNavigationGrid(sim,target,owner){
+  const normal=sim.grid(owner);let cache=constructionGrids.get(target);if(!cache){cache=new WeakMap();constructionGrids.set(target,cache);}const stored=cache.get(normal);if(stored)return stored;
+  const data=normal.slice(),base=sim.grids.landBase.data,size=sim.gridSize,others=sim.entities.filter(e=>e!==target&&e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,owner)));
+  const a=sim.cell(target.x-target.r-2,target.z-target.r-2),b=sim.cell(target.x+target.r+2,target.z+target.r+2);
+  for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++){
+    const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,id=z*size+x;
+    if(Math.hypot(wx-target.x,wz-target.z)>=target.r+.9)continue;
+    data[id]=base[id]||others.some(e=>Math.hypot(wx-e.x,wz-e.z)<e.r+.9)?1:0;
+  }
+  blockWallConnections(sim,data);data.navigationKey='construction:'+target.id+':'+sim.revision;cache.set(normal,data);return data;
 }
 
 function crowdCosts(sim,unit){

@@ -12,6 +12,8 @@ import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
 import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
+import {constructionFace,constructionHeading} from './construction-contact.js';
+import {approachConstruction} from './construction-approach.js';
 import {bridgeFootprint,clearSavedBridgeResources} from './bridge-layout.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
@@ -198,13 +200,13 @@ export class Simulation {
   }
   unitDefinition(e){return UNITS[e.type];}
   pathTo(e,dest,range=0){return findPath(this,e,dest,range);}
-  move(e,dest,dt,stop=0){if(distance(e,dest)<=Math.max(stop,.65)){e.stuckTime=0;return true;}e.repath-=dt;
-    const grid=unitNavigationGrid(this,e),navigationKey=grid.navigationKey||'',rangeChanged=(e.pathRange??0)!==stop,targetChanged=e.pathTargetId!==dest.id;let navigationChanged=(e.pathNavigationKey||'')!==navigationKey;
+  move(e,dest,dt,stop=0,precise=false,normalOverride=null){if(distance(e,dest)<=Math.max(stop,precise?.05:.65)){e.stuckTime=0;return true;}e.repath-=dt;
+    const grid=unitNavigationGrid(this,e,normalOverride),navigationKey=grid.navigationKey||'',targetId=dest.id??null,rangeChanged=(e.pathRange??0)!==stop,targetChanged=e.pathTargetId!==targetId;let navigationChanged=(e.pathNavigationKey||'')!==navigationKey;
     if(e.path.length&&(e.pathRevision!==this.revision||navigationChanged)){let previous=e,clear=true;for(const point of e.path){if(!clearSegment(this,grid,previous,point)){clear=false;break;}previous=point;}if(clear){e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;navigationChanged=false;}}
     if(!e.path.length&&e.pathStatus==='blocked'&&e.pathRevision===this.revision&&e.repath>0&&!navigationChanged&&!rangeChanged&&!targetChanged){this.blockedMovement(e,dt);return false;}
-    if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||rangeChanged||targetChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=this.pathTo(e,dest,stop);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;e.pathTargetId=dest.id;e.pathRange=stop;}
+    if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||rangeChanged||targetChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=normalOverride?findPath(this,e,dest,stop,normalOverride):this.pathTo(e,dest,stop);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;e.pathTargetId=targetId;e.pathRange=stop;}
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
-    if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
+    if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,precise?.05:1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
     const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);const step=Math.min(len,speed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
     let nx=e.x+dx/len*step,nz=e.z+dz/len*step;
     const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4);
@@ -218,7 +220,7 @@ export class Simulation {
       if(!grid[horizontal.z*this.gridSize+horizontal.x])e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);else if(!grid[vertical.z*this.gridSize+vertical.x])e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);else{e.path=[];e.repath=0;}
     }
     e.moving=Math.hypot(e.x-oldX,e.z-oldZ)>.015;if(e.moving)e.stuckTime=0;else this.blockedMovement(e,dt);
-    e.heading=Math.atan2(dx,dz);return distance(e,dest)<=Math.max(stop,1.5);
+    e.heading=Math.atan2(dx,dz);return distance(e,dest)<=Math.max(stop,precise?.05:1.5);
   }
   blockedMovement(e,dt){e.stuckTime=(e.stuckTime||0)+dt;if(e.stuckTime>2&&e.pathStatus!=='blocked'){e.path=[];e.repath=0;}
     if(e.stuckTime<6)return;e.pathStatus='blocked';e.blockedAt=this.time;e.stuckTime=0;
@@ -276,7 +278,7 @@ export class Simulation {
     }
     if(!order)return;
     if(order.type==='attack'||order.type==='heal'){this.finishOrder(e);return;}
-    if(order.type==='move'||order.type==='attackmove'){if(this.move(e,order,dt,1.4))this.finishOrder(e);return;}
+    if(order.type==='move'||order.type==='attackmove'){const precise=order.type==='move'&&order.aiFortification===true;if(this.move(e,order,dt,precise?0:1.4,precise))this.finishOrder(e);return;}
     if(order.type==='patrol'){if(this.move(e,order,dt,1.4)){if(e.orders.length)this.finishOrder(e);else{[order.x,order.originX]=[order.originX,order.x];[order.z,order.originZ]=[order.originZ,order.z];e.path=[];e.repath=0;}}return;}
     if(order.type==='guard'){const ally=this.get(order.target);if(!ally||!this.allied(ally.owner,e.owner)){this.finishOrder(e);return;}const point=formationSlot(this,e,{x:ally.x+(order.offsetX||0),z:ally.z+(order.offsetZ||0)});if(distance(e,point)>3)this.move(e,point,dt,2);return;}
     let target=this.get(order.target);if(!target&&order.type==='gather'&&e.carry>0){order.returning=true;target={kind:'resource',type:e.carryType};}if(!target){
@@ -292,8 +294,10 @@ export class Simulation {
     }
     if(order.type==='build'||order.type==='repair'){
       if(e.type!=='villager'||(order.type==='build'?target.kind!=='building'||target.owner!==e.owner:!repairableTarget(target)||!this.allied(target.owner,e.owner))){this.finishOrder(e);return;}
-      if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}
-      e.heading=Math.atan2(target.x-e.x,target.z-e.z);
+      if(target.progress>=1&&target.hp>=target.maxHp){if(order.type==='build'&&target.type==='wall')this.finishWallOrder(e,target);else this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};return;}
+      const face=target.kind==='building'?constructionFace(e,target):-1;
+      if(target.kind==='building'){if(face<0){approachConstruction(this,e,target,dt);return;}e.heading=constructionHeading(target,face);}
+      else{if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}e.heading=Math.atan2(target.x-e.x,target.z-e.z);}
       if(target.progress<1){const delta=dt/BUILDINGS[target.type].time;target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
       else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}}

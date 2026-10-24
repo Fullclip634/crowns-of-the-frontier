@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {renderPosition,smoothHeading} from './motion-smoothing.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
+import {constructionFace,constructionHeading} from './construction-contact.js';
 
 export function cargoGeometry(view,type){
   const parts=[],add=(geometry,x,y,z,sx,sy,sz,angle=0)=>{const copy=geometry.clone();copy.scale(sx,sy,sz);copy.rotateZ(angle);copy.translate(x,y,z);parts.push(copy);};
@@ -39,7 +40,7 @@ export class WorldInteractions {
       }
       if(e.hp<=0||e.type!=='villager'||e.embarked)continue;
       const shown=menu||e.owner===0||v.sim.isVisible(e.x,e.z);if(!shown)continue;
-      if(!e.moving&&['gather','build','repair'].includes(e.order?.type)){const target=v.sim.get(e.order.target);if(target)e.heading=Math.atan2(target.x-e.x,target.z-e.z);}
+      if(!e.moving&&['gather','build','repair'].includes(e.order?.type)){const target=v.sim.get(e.order.target);if(target){const face=e.order.type!=='gather'&&target.kind==='building'?constructionFace(e,target):-1;e.heading=face>=0?constructionHeading(target,face):Math.atan2(target.x-e.x,target.z-e.z);}}
       if(!e.carry||!this.cargo[e.carryType]||counts[e.carryType]>=512)continue;
       const position=renderPosition(v,e),x=position.x,z=position.z,ground=v.entityHeight(e,x,z);
       if(!nearViewport(v,x,ground+1.24,z,4)){culledCargo++;continue;}
