@@ -3,6 +3,7 @@ import {applyTerrainShading} from './terrain-surface.js';
 import surfaceManifest from './assets3d/textures/manifest.json' with {type:'json'};
 import {SurfaceResidency,surfaceKeys,surfacePins} from './surface-residency.js';
 import {loadCompressedSurface,surfaceCodecState} from './surface-codecs.js';
+import {characterSurfaceKinds} from './character-surfaces.js';
 
 const files={
   grass:{color:new URL('./assets3d/textures/leafy_grass_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/leafy_grass_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/leafy_grass_arm.jpg',import.meta.url).href},
@@ -22,19 +23,22 @@ const compressed={
   rock:{color:new URL('./assets3d/textures/ktx2/rocky_terrain_02_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rocky_terrain_02_arm.ktx2',import.meta.url).href},
   boulder:{color:new URL('./assets3d/textures/ktx2/rock_01_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rock_01_arm.ktx2',import.meta.url).href},
 };
+const characterFiles={color:new URL('./assets3d/characters/character-color.png',import.meta.url).href,normal:new URL('./assets3d/characters/character-normal-roughness.png',import.meta.url).href};
 const surfaces={},cache=new SurfaceResidency({loaded(key,map){const [role,kind]=key.split(':');(surfaces[role]??={})[kind]=map;},removed(key,map){const [role,kind]=key.split(':');if(surfaces[role]?.[kind]===map)delete surfaces[role][kind];}});
 async function texture(role,kind,renderer){
-  return cache.load(role+':'+kind,async()=>{const map=await loadCompressedSurface(compressed[role]?.[kind],renderer)||await new THREE.TextureLoader().loadAsync(files[role][kind]);
+  return cache.load(role+':'+kind,async()=>{const map=await loadCompressedSurface(compressed[role]?.[kind],renderer)||await new THREE.TextureLoader().loadAsync((role==='character'?characterFiles:files[role])[kind]);
     map.colorSpace=kind==='color'?THREE.SRGBColorSpace:THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.flipY=false;map.anisotropy=4;
+    if(role==='character'){map.flipY=true;map.wrapS=map.wrapT=THREE.ClampToEdgeWrapping;map.premultiplyAlpha=false;}
     return map;
   });
 }
 export async function loadSurfaceAssets(quality,renderer){
   const kinds=quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color'];
-  await Promise.all(Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind,renderer))));
+  await Promise.all([...Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind,renderer))),...characterSurfaceKinds(quality).map(kind=>texture('character',kind,renderer))]);
   if(quality==='medium')await Promise.all(['stone','wood','plaster'].map(role=>texture(role,'arm',renderer)));
 }
-export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
+export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',characters:{source:'Original Blender artwork',atlases:Object.keys(surfaces.character||{})},loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
+export function characterSurfaceMaps(){return surfaces.character||{};}
 
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
@@ -64,6 +68,7 @@ export function applyGroundSurface(material,land,quality){
 export function retainedSurfaceTextures(){return cache.textures();}
 export function trimSurfaceAssets(view){
   const needed=surfaceKeys(view.renderQuality||view.settings.quality,Object.keys(files));
+  for(const quality of [view.renderQuality||view.settings.quality,view.graphicsLoading].filter(Boolean))for(const kind of characterSurfaceKinds(quality))needed.add('character:'+kind);
   if(view.graphicsLoading)for(const key of surfaceKeys(view.graphicsLoading,Object.keys(files)))needed.add(key);
   const result=cache.trim(needed,surfacePins(view));view.surfaceDiagnostics={...view.surfaceDiagnostics,...surfaceAssetState(),evicted:result.evicted,pending:result.pending};return result;
 }

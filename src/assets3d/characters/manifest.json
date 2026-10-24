@@ -1,0 +1,91 @@
+{
+  "revision": "field-surfaces-v1",
+  "authoring": "Blender 4.5.14 LTS",
+  "license": "Original project artwork",
+  "width": 512,
+  "height": 512,
+  "core": 224,
+  "padding": 16,
+  "columns": 2,
+  "rows": 2,
+  "roles": [
+    {
+      "role": "cloth",
+      "tile": 0,
+      "normalLength": [
+        0.9952058792114258,
+        1.0049245357513428
+      ],
+      "colorRange": [
+        0.9372549653053284,
+        0.9725490808486938
+      ],
+      "roughnessRange": [
+        0.8549020290374756,
+        0.9568628072738647
+      ]
+    },
+    {
+      "role": "leather",
+      "tile": 1,
+      "normalLength": [
+        0.9947730302810669,
+        1.005536437034607
+      ],
+      "colorRange": [
+        0.9098039865493774,
+        0.9647059440612793
+      ],
+      "roughnessRange": [
+        0.6549019813537598,
+        0.7490196228027344
+      ]
+    },
+    {
+      "role": "metal",
+      "tile": 2,
+      "normalLength": [
+        0.9955766201019287,
+        1.0044959783554077
+      ],
+      "colorRange": [
+        0.9529412388801575,
+        0.9803922176361084
+      ],
+      "roughnessRange": [
+        0.3137255012989044,
+        0.40000003576278687
+      ]
+    },
+    {
+      "role": "skin",
+      "tile": 3,
+      "normalLength": [
+        0.9957001805305481,
+        1.0043121576309204
+      ],
+      "colorRange": [
+        0.960784375667572,
+        0.988235354423523
+      ],
+      "roughnessRange": [
+        0.5490196347236633,
+        0.6352941393852234
+      ]
+    }
+  ],
+  "files": {
+    "character-color": {
+      "file": "character-color.png",
+      "bytes": 156541,
+      "sha256": "776b3bdcc96a8e96bc813ee264dd4e87442543b52a0b13e24787bb2780ead6e8"
+    },
+    "character-normal-roughness": {
+      "file": "character-normal-roughness.png",
+      "bytes": 583125,
+      "sha256": "745512936704317a534603147077852722708f05aa200cd2b3ba153e77b34f7a"
+    }
+  },
+  "normalConvention": "OpenGL tangent +Y; roughness in alpha",
+  "baked": true
+}

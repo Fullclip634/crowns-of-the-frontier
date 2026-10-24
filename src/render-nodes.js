@@ -2,7 +2,7 @@ import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial} from 'thre
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial} from 'three/webgpu';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -58,8 +58,19 @@ export function unitPalette(material,u){
     const mask=attribute('unitTeamMask','float');
     return mask.greaterThan(1.5).select(roofs.element(owner),mask.greaterThan(.5).select(teams.element(owner),vec3(1)));
   })().toVarying();
-  material.colorNode=materialColor.rgb.mul(team).mul(surface.z.greaterThan(.5).select(sample(u.wood).rgb,vec3(1)));
-  material.roughnessNode=clamp(surface.x,.04,1);material.metalnessNode=clamp(surface.y,0,1);
+  const tile=clamp(floor(surface.z.add(.5)).sub(2),0,3),repeats=tile.lessThan(.5).select(6,tile.lessThan(1.5).select(4,tile.lessThan(2.5).select(2,10)));
+  const coords=vec2(tile.mod(2),floor(tile.div(2))).mul(256).add(16).add(fract(uv().mul(repeats)).mul(224)).div(512);
+  const character=surface.z.greaterThan(1.5).and(value(u.characterReady).greaterThan(.5)),wood=surface.z.greaterThan(.5).and(surface.z.lessThan(1.5));
+  const tint=Fn(()=>{const color=vec3(1).toVar();If(character,()=>{color.assign(sample(u.characterColor,coords).rgb);}).ElseIf(wood,()=>{color.assign(sample(u.wood).rgb);});return color;})();
+  material.colorNode=materialColor.rgb.mul(team).mul(tint);
+  material.roughnessNode=clamp(surface.x,.04,1);material.metalnessNode=clamp(surface.y,0,1);material.normalNode=null;
+  if(u.characterNormal.value){
+    const detail=character.select(float(1).sub(smoothstep(18,44,positionView.length())),0);
+    const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.12,.3);
+    const micro=Fn(()=>{const result=vec4(.5,.5,1,surface.x).toVar();If(active,()=>{result.assign(sample(u.characterNormal,coords,flat));});return result;})();
+    material.roughnessNode=clamp(mix(surface.x,micro.a,amount),.04,1);
+    material.normalNode=normalMap(micro.rgb,vec2(strength.mul(amount)));
+  }
   material.needsUpdate=true;
 }
 

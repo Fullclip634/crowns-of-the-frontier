@@ -215,8 +215,9 @@ test('joint palette batching preserves team colors, metal, cloth and solid anima
     const assets=await catalogue('low'),view=fixture(assets);
     for(const type of ['villager','knight','archer','galley']){
       const e={kind:'unit',id:54,type,owner:7,moving:true},raw=unitModel(view,e),before=new THREE.Box3().setFromObject(raw),old=view.mergeModel(unitModel(view,e)),packed=mergeUnitModel(view,raw);
-      let prior=0,count=0,metal=false;old.traverse(part=>{if(part.isMesh)prior++;});
-      packed.traverse(part=>{if(!part.isMesh)return;count++;if(part.material.transparent)return;const surface=part.geometry.attributes.unitSurface;assert.equal(surface.count,part.geometry.attributes.position.count);assert.ok(part.geometry.attributes.color.array.every(Number.isFinite));for(let i=0;i<surface.count;i++)if(surface.getY(i)>.3)metal=true;});
+      let prior=0,count=0,metal=false;const modes=new Set();old.traverse(part=>{if(part.isMesh)prior++;});
+      packed.traverse(part=>{if(!part.isMesh)return;count++;if(part.material.transparent)return;const surface=part.geometry.attributes.unitSurface;assert.equal(surface.count,part.geometry.attributes.position.count);assert.ok(part.geometry.attributes.color.array.every(Number.isFinite));for(let i=0;i<surface.count;i++){if(surface.getY(i)>.3)metal=true;modes.add(surface.getZ(i));}});
+      if(type==='villager')for(const mode of [2,3,4,5])assert.ok(modes.has(mode),'merged workers preserve every character surface role');
       solid(packed);const after=new THREE.Box3().setFromObject(packed);assert.ok(before.min.distanceTo(after.min)<.001);assert.ok(before.max.distanceTo(after.max)<.001);assert.ok(count<prior*.8,`${type} draws fewer surfaces`);
       if(type==='knight')assert.ok(metal);
       let moving;packed.traverse(part=>{if(part.userData.motion?.type==='arm')moving=part;});
