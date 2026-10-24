@@ -3,7 +3,7 @@ import {fortificationReserved} from './ai-fortifications.js';
 
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const centers=(sim,owner)=>sim.owned(owner,'building','towncenter');
-const busy=worker=>worker.embarked||['build','repair','garrison'].includes(worker.order?.type);
+const busy=worker=>worker.embarked||worker.order?.aiFortification||['build','repair','garrison'].includes(worker.order?.type);
 const hostileMemory=(state)=>Object.values(state.known||{});
 
 // Decisions use observed resource quantities and last-seen enemy positions.

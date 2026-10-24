@@ -1,0 +1,11 @@
+# Accidental zoom during battle
+
+The battlefield no longer changes camera distance in response to a two-finger gesture. Multi-touch cancels the pending tap or drag until all fingers are released, so the gesture cannot also place a building, order units or pan the camera. The camera buttons and deliberate desktop wheel input remain available. Trackpad pinch represented as Ctrl-wheel is prevented from zooming either the browser or the battlefield.
+
+The page declares a fixed-scale game viewport. CSS excludes native pinch/double-tap zoom while retaining vertical panel scrolling. During an active battle, including its paused dialogs, capture listeners cancel native gesture events and multi-touch browser defaults using non-passive handlers. Focusable touch inputs use at least 16px text to avoid the small-field focus zoom reported on iPhones. The phone help now describes the camera buttons instead of pinch zoom.
+
+Implementation references are Apple's [Safari gesture event guidance](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/HandlingEvents/HandlingEvents.html), MDN's [touch-action documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action), and [touch event guidance](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events). These inform browser gesture handling; they do not prove physical-device compatibility.
+
+`tests/battle-zoom-guard.test.js` checks native gestures, multi-touch, zoom shortcuts, inactive-menu behavior, ordinary input and listener cleanup. Actual Chromium touch-emulation checks at 568 by 320 and 667 by 375 drove two-finger input through the browser's touch protocol. Page scale stayed 1, camera distance and target stayed unchanged, and unit orders were preserved. Single-finger panning and deliberate camera-button zoom worked. Both WebGL scenes painted, touch settings used 16px text, and there was no horizontal overflow or page error.
+
+Physical iPhone Safari remains a required device check. Browsers and operating-system accessibility controls can override page viewport preferences; do not claim that page code can disable every system magnification feature.
