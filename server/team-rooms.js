@@ -16,7 +16,8 @@ const snapshotCommit=Symbol('snapshotCommit');
 export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS||'').split(',').map(value=>value.trim()).filter(Boolean),maxRooms=Math.max(1,Math.min(8,Number(process.env.MAX_ROOMS)||8)),heartbeatInterval=20000}={}){
   const wss=new WebSocketServer({noServer:true,maxPayload:24000,perMessageDeflate:{threshold:1024,serverNoContextTakeover:true,zlibDeflateOptions:{level:1}}}),rooms=new Map();
   server.on('upgrade',(req,socket,head)=>{if(req.url!=='/socket'||!originAllowed(req.headers.origin,req.headers.host,allowedOrigins)){socket.destroy();return;}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
-  const send=(ws,message)=>{if(ws?.readyState!==1)return false;if(ws.bufferedAmount>=4000000){ws.terminate();return false;}if(message.type==='state'&&ws.bufferedAmount>=1000000)return false;ws.send(JSON.stringify(message));return true;};
+  const canSend=(ws,type)=>{if(ws?.readyState!==1)return false;if(ws.bufferedAmount>=4000000){ws.terminate();return false;}return type!=='state'||ws.bufferedAmount<1000000;};
+  const send=(ws,message)=>{if(!canSend(ws,message.type))return false;ws.send(JSON.stringify(message));return true;};
   const commitSnapshot=(room,side,state)=>{const commit=state?.[snapshotCommit];if(!commit)return;if(commit.visibility)room.visibility[side]=commit.visibility;for(const [id,value]of commit.resources)room.resources[side].set(id,value);};
   const custom=room=>room.options.mode==='custom';
   const observing=(room,side)=>custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
@@ -43,7 +44,24 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     else for(let cell=0;cell<visible.length;cell++)if(visible[cell])explored[cell]=1;
     return visible;
   }
-  function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false,frameVisible=null){
+  function rememberBuilding(room,side,entity,object=null,cache=null){
+    const known=room.known[side];
+    // Detached observations are read-only and can be shared within this frame.
+    // Each commander's map retains its own older observation when vision ends.
+    if(entity.hp>0){let memory=cache?.get(entity.id);if(!memory){memory=JSON.parse(JSON.stringify(object||entityPerspective(room.sim,side,entity)));cache?.set(entity.id,memory);}known.set(entity.id,memory);}
+    else known.delete(entity.id);
+  }
+  function observeHeldState(room,side,visible,observer,memoryCache){
+    const sim=room.sim,known=room.known[side],alive=new Set(),shown=e=>{const cell=sim.cell(e.x,e.z);return !!visible[cell.z*sim.gridSize+cell.x];};
+    for(const entity of sim.entities){
+      if(entity.kind!=='building')continue;
+      if(entity.hp>0)alive.add(entity.id);
+      if(entity.owner!==side&&(observer||shown(entity)))rememberBuilding(room,side,entity,null,memoryCache);
+    }
+    // Seeing empty ground must also clear an older remembered building.
+    for(const [id,entity]of known)if(shown(entity)&&!alive.has(id))known.delete(id);
+  }
+  function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false,frameVisible=null,memoryCache=null){
     const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
     const explored=room.explored[side],visible=frameVisible||visibilityFor(sim,side,explored,observer),shown=e=>{const cell=sim.cell(e.x,e.z);return !!visible[cell.z*sim.gridSize+cell.x];};
     const data=compact?{time:sim.time,wave:sim.wave,nextWave:sim.nextWave,hold:sim.hold,enemyHold:sim.enemyHold,wonderTime:sim.wonderTime}:sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
@@ -54,9 +72,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(e.embarked&&e.owner!==side&&!observer)continue;
       if(e.owner===side||e.kind==='shrine'||shown(e)||observer){
         const object=entityPerspective(sim,side,e);
-        // Fog memory must own nested data such as wall links. A live array
-        // would reveal a new connection after this building leaves vision.
-        if(e.kind==='building'&&e.owner!==side){if(e.hp>0)known.set(e.id,JSON.parse(JSON.stringify(object)));else known.delete(e.id);}
+        if(e.kind==='building'&&e.owner!==side)rememberBuilding(room,side,e,object,memoryCache);
         object.owner=mapOwner(object.owner);
         entities.push(object);
       }
@@ -191,10 +207,14 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     if(lobbyChanged)lobby(room);
     if(releaseVacantRoom(room))continue;
     if(room.sim&&!waiting(room))room.sim.tick(.1);
-    if(room.sim&&snapshotClock%2===0){const visionCache=new Map();for(const player of room.players){
-      if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner),observer=observing(room,player.side);
+    if(room.sim&&snapshotClock%2===0){const visionCache=new Map(),memoryCache=new Map();for(const player of room.players){
+      if(!connected(player))continue;const observer=observing(room,player.side),visible=frameVisibility(room,player.side,observer,visionCache);
+      // Preserve scouting during congestion without preparing discarded actor,
+      // resource, effect and fog-delta packets for this connection.
+      if(!canSend(player.ws,'state')){observeHeldState(room,player.side,visible,observer,memoryCache);continue;}
+      const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner);
       const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
-      const visible=frameVisibility(room,player.side,observer,visionCache),state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync,visible);
+      const state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync,visible,memoryCache);
       if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);
