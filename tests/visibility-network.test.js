@@ -13,13 +13,13 @@ class Inbox {
   next(type){const index=this.items.findIndex(packet=>packet.type===type);if(index>=0)return Promise.resolve(this.items.splice(index,1)[0]);return new Promise((resolve,reject)=>{const waiter={type,resolve,timer:setTimeout(()=>reject(new Error(`Missing ${type}`)),7000)};this.waiters.push(waiter);});}
   clear(){this.items=this.items.filter(packet=>packet.type!=='state');}
 }
-async function fixture(t){
+async function fixture(t,shareVision=true){
   const server=http.createServer(),service=attachRooms(server),clients=[];
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(async()=>{for(const client of clients)client.terminate();service.close();await new Promise(resolve=>server.close(resolve));});
   const connect=async()=>{const ws=new WebSocket(`ws://127.0.0.1:${server.address().port}/socket`),inbox=new Inbox(ws);clients.push(ws);await new Promise(resolve=>ws.once('open',resolve));return {ws,inbox,send:packet=>ws.send(JSON.stringify(packet))};};
   const host=await connect(),slots=battlePreset('4v4');slots[1].controller='human';
-  host.send({type:'create',protocol:2,options:{mode:'custom',map:'highlands',mapSize:'huge',seed:512,slots}});
+  host.send({type:'create',protocol:2,options:{mode:'custom',map:'highlands',mapSize:'huge',seed:512,shareVision,slots}});
   const session=await host.inbox.next('session'),legacy=await connect();
   legacy.send({type:'join',code:session.code,slot:2});const guestSession=await legacy.inbox.next('session');legacy.send({type:'ready',ready:true});
   while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});
@@ -30,6 +30,36 @@ async function fixture(t){
   return {room,host,legacy,connect,session,guestSession,receiver,begin,oldBegin};
 }
 async function applyNext(client,receiver){const state=(await client.inbox.next('state')).state;assert.ok(receiver.read(state),'every accepted snapshot follows the last delivered baseline');return state;}
+async function atTime(client,time,receiver=null){let state;do{state=receiver?await applyNext(client,receiver):(await client.inbox.next('state')).state;}while(state.time<time);return state;}
+
+test("shared current vision preserves each commander's separate exploration history",async t=>{
+  const {room,host,legacy,receiver}=await fixture(t),unseen=[];
+  for(let cell=0;cell<receiver.visible.length&&unseen.length<2;cell++)if(!receiver.explored[cell]&&!room.explored[1][cell])unseen.push(cell);
+  assert.equal(unseen.length,2);room.explored[0][unseen[0]]=1;room.explored[1][unseen[1]]=1;room.sim.time++;
+  await atTime(host,room.sim.time,receiver);const other=await atTime(legacy,room.sim.time);
+  assert.deepEqual(other.visible,[...receiver.visible]);
+  assert.equal(receiver.explored[unseen[0]],1);assert.equal(receiver.explored[unseen[1]],0);
+  assert.equal(other.explored[unseen[1]],1);assert.equal(other.explored[unseen[0]],0);
+});
+
+test("allied commanders with shared vision disabled cannot see one another's scouting",async t=>{
+  const {room,host,legacy,receiver}=await fixture(t,false),sim=room.sim,scout=sim.owned(1,'unit','scout')[0],enemy=sim.owned(4,'unit','scout')[0];
+  scout.x=0;scout.z=0;enemy.x=2;enemy.z=0;sim.time++;sim.revision++;sim.updateFog();
+  const own=await atTime(host,sim.time,receiver),ally=await atTime(legacy,sim.time),cell=sim.cell(0,0),index=cell.z*sim.gridSize+cell.x;
+  assert.equal(receiver.visible[index],0);assert.equal(ally.visible[index],1);
+  assert.equal(own.entities.some(e=>e.id===enemy.id),false);assert.ok(ally.entities.some(e=>e.id===enemy.id));
+});
+
+test('remembered enemy walls keep their last observed connections until the area is scouted again',async t=>{
+  const {room,host,receiver}=await fixture(t),sim=room.sim,scout=sim.owned(0,'unit','scout')[0],home={x:scout.x,z:scout.z},wall=sim.addBuilding('wall',4,0,0,true);
+  const advance=()=>{sim.time++;sim.revision++;sim.updateFog();return atTime(host,sim.time,receiver);};
+  scout.x=0;scout.z=0;let state=await advance();assert.deepEqual(state.entities.find(e=>e.id===wall.id).wallLinks,[]);
+  Object.assign(scout,home);state=await advance();const cell=sim.cell(0,0);assert.equal(receiver.visible[cell.z*sim.gridSize+cell.x],0);
+  const neighbor=sim.addBuilding('wall',4,2.85,0,true);assert.ok(wall.wallLinks.includes(neighbor.id));state=await advance();
+  assert.deepEqual(state.entities.find(e=>e.id===wall.id).wallLinks,[],'hidden construction cannot mutate fog memory');
+  assert.equal(state.entities.some(e=>e.id===neighbor.id),false);
+  scout.x=0;scout.z=0;state=await advance();assert.ok(state.entities.find(e=>e.id===wall.id).wallLinks.includes(neighbor.id));assert.ok(state.entities.some(e=>e.id===neighbor.id));
+});
 
 test('negotiated fog updates preserve allied scouting, private enemies and legacy clients on a Huge eight-kingdom map',async t=>{
   const {room,host,legacy,receiver,begin,oldBegin}=await fixture(t),sim=room.sim;

@@ -35,9 +35,17 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     for(const player of room.players)if(player!==leaving){send(player.ws,{type:'closed',message});player.ws?.close(1000,'Room closed');}
   }
   const orderFor=(room,side)=>[side,...room.sim.players.map((_,i)=>i).filter(i=>i!==side)];
-  function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false){
+  function frameVisibility(room,side,observer,cache){
+    const key=observer?'observer':custom(room)&&room.sim.options.shareVision?`team:${room.sim.players[side].team}`:`side:${side}`,explored=room.explored[side];
+    let visible=cache.get(key);
+    if(!visible){visible=visibilityFor(room.sim,side,explored,observer);cache.set(key,visible);}
+    else if(observer)explored.fill(1);
+    else for(let cell=0;cell<visible.length;cell++)if(visible[cell])explored[cell]=1;
+    return visible;
+  }
+  function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false,frameVisible=null){
     const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
-    const explored=room.explored[side],visible=visibilityFor(sim,side,explored,observer),shown=e=>!!visible[sim.cell(e.x,e.z).z*sim.gridSize+sim.cell(e.x,e.z).x];
+    const explored=room.explored[side],visible=frameVisible||visibilityFor(sim,side,explored,observer),shown=e=>{const cell=sim.cell(e.x,e.z);return !!visible[cell.z*sim.gridSize+cell.x];};
     const data=compact?{time:sim.time,wave:sim.wave,nextWave:sim.nextWave,hold:sim.hold,enemyHold:sim.enemyHold,wonderTime:sim.wonderTime}:sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
     data.projectiles=[];data.nextProjectileId=0;
     data.visualProjectiles=projectileVisualEvents(sim.projectiles,sim.time).map(event=>combatPerspective(sim,side,event,{observer})).filter(Boolean).map(event=>({...event,entity:{...event.entity,owner:mapOwner(event.entity.owner)},target:{...event.target,owner:mapOwner(event.target.owner)}}));
@@ -46,19 +54,23 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(e.embarked&&e.owner!==side&&!observer)continue;
       if(e.owner===side||e.kind==='shrine'||shown(e)||observer){
         const object=entityPerspective(sim,side,e);
-        if(e.kind==='building'&&e.owner!==side){if(e.hp>0)known.set(e.id,{...object});else known.delete(e.id);}
+        // Fog memory must own nested data such as wall links. A live array
+        // would reveal a new connection after this building leaves vision.
+        if(e.kind==='building'&&e.owner!==side){if(e.hp>0)known.set(e.id,JSON.parse(JSON.stringify(object)));else known.delete(e.id);}
+        object.owner=mapOwner(object.owner);
         entities.push(object);
       }
     }
-    for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!entities.some(entity=>entity.id===id))entities.push({...e});}
-    data.entities=entities.map(e=>({...e,owner:mapOwner(e.owner)}));
+    const shownIds=new Set(entities.map(entity=>entity.id));
+    for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!shownIds.has(id))entities.push({...e,owner:mapOwner(e.owner)});}
+    data.entities=entities;
     data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
     data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
     data.ended=sim.ended?{...sim.ended,won:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
     if(data.ended)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
     const resourceChanges=[];
-    if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities.filter(e=>e.kind==='resource'&&(shown(e)||observer))){const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
+    if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities){if(e.kind!=='resource'||!observer&&!shown(e))continue;const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
     const previous=compact&&deltaVisibility&&!forceVisibility?room.visibility[side]:null,sequence=previous?previous.sequence+1:0;
     const delta=previous?createVisibilityDelta(previous.visible,previous.explored,visible,explored,sequence):null;
     // Large reveals (for example observer mode) can be cheaper as full grids.
@@ -66,9 +78,10 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     else{data.visible=Array.from(visible);data.explored=Array.from(explored);if(deltaVisibility)data.visibilitySequence=sequence;}
     const state=compact?{}:data;
     if(compact)for(const key of ['entities','players','time','wave','nextWave','hold','enemyHold','wonderTime','stats','ended','revealedOwners','visualProjectiles','projectiles','nextProjectileId','visible','explored','visibilitySequence','visibilityDelta','compactResources','resourceUpdates','aiStates','commanderAI','teamAlarms','intel'])if(key in data)state[key]=data[key];
-    const snapshot=JSON.parse(JSON.stringify(state));
-    Object.defineProperty(snapshot,snapshotCommit,{value:{visibility:deltaVisibility?{visible:visible.slice(),explored:explored.slice(),sequence}:null,resources:resourceChanges}});
-    return snapshot;
+    // send() serializes synchronously before the simulation can advance.
+    // Only fog memory and committed baselines outlive this outgoing object.
+    Object.defineProperty(state,snapshotCommit,{value:{visibility:deltaVisibility?{visible:visible.slice(),explored:explored.slice(),sequence}:null,resources:resourceChanges}});
+    return state;
   }
   function start(room){
     room.chat=new BattleChat();
@@ -178,10 +191,10 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     if(lobbyChanged)lobby(room);
     if(releaseVacantRoom(room))continue;
     if(room.sim&&!waiting(room))room.sim.tick(.1);
-    if(room.sim&&snapshotClock%2===0){for(const player of room.players){
+    if(room.sim&&snapshotClock%2===0){const visionCache=new Map();for(const player of room.players){
       if(!connected(player))continue;const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner),observer=observing(room,player.side);
       const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
-      const state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync);
+      const visible=frameVisibility(room,player.side,observer,visionCache),state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync,visible);
       if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);
