@@ -1,5 +1,11 @@
 import {UNITS} from './data.js';
 import {releaseDelay} from './combat-timing.js';
+import {archeryJointRotation} from './archery-pose.js';
+
+export function combatJointRotation(entity,joint,offset,output){
+  if(archeryJointRotation(entity,joint,offset,output))return true;
+  const angle=combatJointAngle(entity,joint,offset);if(angle===null)return false;output.x=angle;output.y=output.z=0;return true;
+}
 
 // Keep drawing/releasing a bow distinct from melee swings. The same cooldown
 // state animates local and observed network units, without per-bone messages.

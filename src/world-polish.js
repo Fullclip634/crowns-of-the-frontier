@@ -1,7 +1,8 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
-import {combatJointAngle} from './combat-poses.js';
+import {combatJointRotation} from './combat-poses.js';
+import {bowPartPose} from './archery-pose.js';
 import {siegeArmAngle,combatRenderOffset} from './combat-timing.js';
 import {actionJointRotation} from './unit-actions.js';
 
@@ -96,7 +97,7 @@ function jointAngle(view,m,e){
   return 0;
 }
 function jointRotation(view,joint,e,matrix){
-  const combat=combatJointAngle(e,joint,combatRenderOffset(view));if(combat!==null)return matrix.makeRotationX(combat);
+  const combat=view.combatAngles??={x:0,y:0,z:0};if(combatJointRotation(e,joint,combatRenderOffset(view),combat))return matrix.makeRotationFromEuler((view.combatEuler??=new THREE.Euler()).set(combat.x,combat.y,combat.z));
   const action=view.unitActions?.get(e.id),angles=view.actionAngles??={x:0,y:0,z:0};
   if(actionJointRotation(action,joint,angles))return matrix.makeRotationFromEuler((view.actionEuler??=new THREE.Euler()).set(angles.x,angles.y,angles.z));
   return matrix.makeRotationX(jointAngle(view,joint,e));
@@ -108,6 +109,7 @@ export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=
 
 export function animatePart(view,part,e,matrix){
   const m=part.userData.motion;if(!m)return matrix;
+  if(m.type==='bow'){const pose=bowPartPose(view,m,e,matrix,combatRenderOffset(view));if(pose)return pose;}
   const result=view.poseMatrix??=new THREE.Matrix4(),rotation=view.poseRotation??=new THREE.Matrix4();result.copy(matrix);
   if(m.type==='ram'){const translation=part.userData.ramTranslation??=new THREE.Matrix4();translation.makeTranslation(0,0,e.cooldown>0?Math.sin(e.cooldown*8)*.25:0);return result.multiply(translation);}
   if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint,forward:new THREE.Matrix4().makeTranslation(...joint.pivot),back:new THREE.Matrix4().makeTranslation(-joint.pivot[0],-joint.pivot[1],-joint.pivot[2])});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);}part.userData.poseChain=chain;}

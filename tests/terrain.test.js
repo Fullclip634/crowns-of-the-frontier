@@ -15,6 +15,19 @@ test('playable land has broad rolling elevation at Epic size while capitals reta
   }
 });
 
+test('open midfield keeps visible rolling landforms on every map while start pads stay level',()=>{
+  for(const map of ['highlands','winter','desert','canyon','valley','rivers','coast']){
+    const starts=[{x:-81.6,z:81.6},{x:81.6,z:-81.6}],land=new Landscape(512,map,240,starts);let minimum=Infinity,maximum=-Infinity,samples=0;
+    for(let z=-48;z<=48;z+=4)for(let x=-48;x<=48;x+=4){
+      if(land.channels().some(channel=>Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend)<channel.width+6))continue;
+      const height=land.heightAt(x,z);assert.ok(Number.isFinite(height));minimum=Math.min(minimum,height);maximum=Math.max(maximum,height);samples++;
+    }
+    assert.ok(samples>300,map+' retains a useful open midfield sample');
+    assert.ok(maximum-minimum>5,map+' gives the battlefield visible elevation variation instead of a flat plain');
+    for(const start of starts)assert.equal(land.heightAt(start.x,start.z),.65,map+' keeps its town-center clearing level');
+  }
+});
+
 test('terrain material transitions preserve roads and form normalized finite weights over all biomes',()=>{
   for(const map of ['highlands','winter','desert','canyon','valley','rivers','coast']){
     const land=new Landscape(512,map,400),geometry=land.geometry(800,112),prepared=prepareTerrainGeometry(geometry,land);

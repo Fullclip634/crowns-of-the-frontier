@@ -6,7 +6,7 @@ import {attackFlight,updateFlight,releaseEffect,FlightEffects,ImpactEffects} fro
 test('projectiles follow raised, interpolated weapon positions and turn along their arc',()=>{
   const view={entityHeight:e=>e.kind==='building'?4:2},archer={kind:'unit',type:'archer',x:0,z:0,renderX:1,renderZ:2},target={kind:'unit',type:'swordsman',x:1,z:12};
   const shot={...attackFlight(view,archer,target),object:new THREE.Object3D()};
-  assert.equal(shot.kind,'arrow');assert.ok(Math.abs(shot.from.y-3.95)<1e-8);assert.ok(Math.abs(shot.from.x-.52)<1e-8);assert.ok(shot.from.z>2);assert.equal(shot.to.y,3.35);
+  assert.equal(shot.kind,'arrow');assert.ok(Math.abs(shot.from.y-4.1)<1e-8,'archer release starts at the aimed nock height');assert.ok(Math.abs(shot.from.x-.875)<1e-8,'the interpolated bowstring release remains attached to the drawing hand');assert.ok(Math.abs(shot.from.z-2.525)<1e-8);assert.equal(shot.to.y,3.35);
   updateFlight(shot,0);assert.ok(shot.object.position.distanceTo(shot.from)<1e-8);const rotation=shot.object.quaternion.clone();
   updateFlight(shot,.5);assert.ok(shot.object.position.y>(shot.from.y+shot.to.y)/2);updateFlight(shot,1);assert.ok(shot.object.position.distanceTo(shot.to)<1e-8);assert.ok(rotation.angleTo(shot.object.quaternion)>.05);
   for(const type of ['catapult','warship','galley','tower','swordsman']){

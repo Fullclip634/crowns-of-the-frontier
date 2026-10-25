@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 17637156,
-    "low": 4276936,
-    "balanced": 13072612
+    "near": 17661760,
+    "low": 4303080,
+    "balanced": 13002844
   },
   "source": "Original Blender crop fields composed with unchanged original models.",
   "stage": "full",
@@ -521,8 +521,8 @@
   "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
   "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedSourceHashes": {
-    "near": "24a553253620cdcdbf725e3c76b41a58944f76344ca208a9110be3865138262f",
-    "low": "b306ebe63a96a9ce388561f0d2d41202e1b361199cff964264e063113582ec7d",
+    "near": "59a8f20cbb7039339900f12b3576f1fc0e4173d30385b84e870014da4cf72dfc",
+    "low": "462b1d7a478710ecdb20214cfe966c960f1bd2e9e2a658e668bd56804de1e689",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "farmRevision": "field-crops-v1",
@@ -536,23 +536,23 @@
     "near": "f960e26cf9d2578222c50785f33b3f02aec0ce0a926c06ae48f175d6e2a965c8"
   },
   "balancedFoliage": "volumetric-tips-v1",
-  "balancedEncoding": "Floating-point positions and UVs; source-preserving normals and colors; retained compact surfaces; no additional triangle simplification.",
+  "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1329,
-    "visibleTriangles": 661355,
+    "meshes": 1341,
+    "visibleTriangles": 661707,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
-    "maxNormalDegrees": 0.012546962601735412,
+    "maxNormalDegrees": 0.0038601816402106938,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17360436,
-    "candidateBytes": 13072612,
-    "referenceDecodedBufferBytes": 36960832,
-    "candidateDecodedBufferBytes": 33418672,
-    "referenceSHA256": "b5743d66d75f903a547ca8db187c08640dab9fea2e17dcbcc2931fa11d9f8728",
-    "candidateSHA256": "8d0a1d4dbd5ce363ea96ea4a9486b9caac9aadb77cdbb1b2a0596907444bd5df"
+    "referenceBytes": 17382460,
+    "candidateBytes": 13002844,
+    "referenceDecodedBufferBytes": 36986344,
+    "candidateDecodedBufferBytes": 33234716,
+    "referenceSHA256": "80824e81175deb3bbd39c2cd3378a841b6f4a9118853cf36cffed261f287c945",
+    "candidateSHA256": "f9fc2dd3546c2e933dbb4d708185d8ed47d996cc73d33d46176d1bd04c1b6d56"
   },
   "windmillRevision": "axle-clearance-v1",
   "windmillSourceSHA256": "a25f4624fef138173a51da6fb7c39fd6f5e65a41a24d8bac97fb3128a0d50a25",
@@ -582,5 +582,6 @@
     }
   },
   "workerToolRevision": "craft-tools-v1",
-  "figureRevision": "field-forms-v1"
+  "figureRevision": "field-forms-v1",
+  "bowRevision": "drawn-bows-v1"
 }

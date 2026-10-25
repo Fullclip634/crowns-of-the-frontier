@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS} from './data.js';
 import {siegeArmAngle,projectileTargetHeight} from './combat-timing.js';
+import {bowArcher,bowReleasePoint} from './archery-pose.js';
 
 const clamp=(value,lo,hi)=>Math.max(lo,Math.min(hi,value));
 const buildingHeight=type=>({tower:6.2,keep:7.5,towncenter:5.8,wall:2.4,gate:3.8}[type]||2.6);
@@ -20,6 +21,7 @@ export function attackFlight(view,entity,target,arrowIndex=0,event={}){
   const localX=kind==='arrow'&&entity.kind==='unit'&&!def?.naval?-.48:entity.kind==='building'&&arrowIndex>0?(arrowIndex%2?-1:1)*Math.ceil(arrowIndex/2)*.55:0;
   const forward=entity.kind==='building'?Math.min(2,entity.r||1):def?.naval?1.7:entity.type==='catapult'?1.1:.65;
   const from=new THREE.Vector3(x+Math.cos(heading)*localX+Math.sin(heading)*forward,ground+height,z-Math.sin(heading)*localX+Math.cos(heading)*forward);
+  if(bowArcher(entity)){const p=bowReleasePoint;from.set(x+Math.cos(heading)*p.x+Math.sin(heading)*p.z,ground+p.y,z-Math.sin(heading)*p.x+Math.cos(heading)*p.z);}
   if(entity.type==='catapult'&&event.pendingImpact){
     const angle=siegeArmAngle(entity),y=1.33*Math.cos(angle)+2.66*Math.sin(angle)+2.8,offset=1.33*Math.sin(angle)-2.66*Math.cos(angle);
     from.set(x+Math.sin(heading)*offset,ground+y,z+Math.cos(heading)*offset);
