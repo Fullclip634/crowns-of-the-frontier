@@ -66,6 +66,17 @@ export class Landscape {
     const outer=span.center+Math.sign(x-span.center)*(span.halfLength+3),blend=smooth(0,3,distance-span.halfLength);
     return Math.max(this.surfaceHeightAt(x,z),bridgeArtwork.baseHeight+(this.surfaceHeightAt(outer,z)-bridgeArtwork.baseHeight)*blend);
   }
+  walkableSampleAt(x,z,output){
+    const span=bridgeAt(this.map,x,z,3),grid=this.grid;
+    if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize||span&&Math.abs(z)<=bridgeArtwork.roadHalfWidth+1e-6){
+      output.height=this.walkableHeightAt(x,z);output.dx=(this.walkableHeightAt(x+.05,z)-this.walkableHeightAt(x-.05,z))/.1;output.dz=(this.walkableHeightAt(x,z+.05)-this.walkableHeightAt(x,z-.05))/.1;return output;
+    }
+    const xx=terrainGridCoordinate(x,grid),zz=terrainGridCoordinate(z,grid),ix=Math.min(grid.segments-1,Math.floor(xx)),iz=Math.min(grid.segments-1,Math.floor(zz)),u=xx-ix,v=zz-iz,stride=grid.segments+1,a=iz*stride+ix;
+    const h00=grid.heights[a],h10=grid.heights[a+1],h01=grid.heights[a+stride],h11=grid.heights[a+stride+1],width=grid.axis?grid.axis[ix+1]-grid.axis[ix]:grid.size/grid.segments,depth=grid.axis?grid.axis[iz+1]-grid.axis[iz]:grid.size/grid.segments;
+    if(u+v<=1){output.height=h00+u*(h10-h00)+v*(h01-h00);output.dx=(h10-h00)/width;output.dz=(h01-h00)/depth;}
+    else{output.height=h11+(1-u)*(h01-h11)+(1-v)*(h10-h11);output.dx=(h11-h01)/width;output.dz=(h11-h10)/depth;}
+    return output;
+  }
   rayPoint(ray){
     // Sample the actual triangulated surface; never command on an invisible y=0 plane.
     let previous=null;

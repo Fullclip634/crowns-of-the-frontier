@@ -4,6 +4,20 @@ import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
 import {terrainGridCoordinate} from '../src/terrain-grid.js';
 
+test('combined walking samples match rendered triangle height and normal, including dry bridge lanes',()=>{
+  for(const segments of [112,160])for(const map of ['highlands','rivers']){
+    const land=new Landscape(91,map,560),geometry=land.geometry(land.renderSize,segments),material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),mesh=new THREE.Mesh(geometry,material),ray=new THREE.Raycaster(),sample={};mesh.updateMatrixWorld();
+    for(const [x,z]of [[-141.17,89.13],[33.1,55.7],[179.1,-91.3],[-91.3,179.1]]){
+      ray.set(new THREE.Vector3(x,100,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObject(mesh)[0];assert.ok(hit);assert.equal(land.walkableSampleAt(x,z,sample),sample);
+      assert.ok(Math.abs(sample.height-hit.point.y)<1e-5);const normal=new THREE.Vector3(-sample.dx,1,-sample.dz).normalize();assert.ok(normal.dot(hit.face.normal)>.999999,'the sampled foot plane follows the actual triangle');
+    }
+    if(map==='rivers')for(const center of [-19,19])for(const x of [center-10,center,center+10]){
+      land.walkableSampleAt(x,0,sample);assert.equal(sample.height,land.walkableHeightAt(x,0));assert.ok(Number.isFinite(sample.dx)&&Number.isFinite(sample.dz));assert.ok(Math.abs(sample.dz)<1e-5,'the arched road remains level across its width');
+    }
+    geometry.dispose();material.dispose();
+  }
+});
+
 test('terrain concentrates the existing vertex budget inside the battlefield and retains world-space texture coordinates',()=>{
   for(const worldSize of [160,320,400,560])for(const segments of [112,160]){
     const land=new Landscape(512,'highlands',worldSize),geometry=land.geometry(),full=land.geometry(land.renderSize,segments),p=full.attributes.position,uv=full.attributes.uv,axis=land.grid.axis;

@@ -3,6 +3,7 @@ import {animatePart,beginJointPose,endJointPose} from './world-polish.js';
 import {writeRigidPose,finishRigidFrame} from './rig-batches.js';
 import {releasePreparedPrograms} from './shader-preparation.js';
 import {canSubmitFrame,submittedFrame} from './render-flight.js';
+import {prepareFootPlacement} from './foot-placement.js';
 
 // Keep allocation slots stable while packing only the current visible poses.
 // Picking uses the packed IDs, never the allocator's potentially empty slots.
@@ -14,6 +15,7 @@ export function prepareViewport(view){
 
 export function beginUnitFrame(view,refreshViewport=true){
   view.jointPoseDiagnostics={computed:0,reused:0};
+  view.footDiagnostics={computed:0,reused:0,samples:0};
   if(refreshViewport)prepareViewport(view);
   for(const batch of view.unitBatches.values()){batch.renderIds.length=0;for(const part of batch.parts)part.userData.ownerChanged=false;}
 }
@@ -41,9 +43,10 @@ export function writeUnitPose(view,batch,e,matrix,shown){
   if(!nearViewport(view,position.x,position.y,position.z))return false;
   const index=batch.renderIds.length;
   batch.renderIds.push(e.id);
-  beginJointPose(view,e,matrix);
+  const body=prepareFootPlacement(view,batch,e,matrix);beginJointPose(view,e,body);
   try{for(const part of batch.parts){
-    if(part.userData.rigidRig)writeRigidPose(part,index,e,matrix);else part.setMatrixAt(index,animatePart(view,part,e,matrix));const owner=part.geometry.getAttribute('instanceOwner'),value=e.owner||0;
+    const root=view.materials?.shadow&&part.material===view.materials.shadow?matrix:body;
+    if(part.userData.rigidRig)writeRigidPose(part,index,e,root);else part.setMatrixAt(index,animatePart(view,part,e,root));const owner=part.geometry.getAttribute('instanceOwner'),value=e.owner||0;
     if(owner&&owner.getX(index)!==value){owner.setX(index,value);part.userData.ownerChanged=true;}
   }}finally{endJointPose(view);}
   return true;

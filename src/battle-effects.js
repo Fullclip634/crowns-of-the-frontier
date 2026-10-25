@@ -4,6 +4,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS} from './data.js';
 import {siegeArmAngle,projectileTargetHeight} from './combat-timing.js';
 import {bowArcher,bowReleasePoint} from './archery-pose.js';
+import {visualBodyOffset} from './foot-placement.js';
 
 const clamp=(value,lo,hi)=>Math.max(lo,Math.min(hi,value));
 const buildingHeight=type=>({tower:6.2,keep:7.5,towncenter:5.8,wall:2.4,gate:3.8}[type]||2.6);
@@ -16,7 +17,7 @@ export function attackFlight(view,entity,target,arrowIndex=0,event={}){
   const x=entity.renderX??entity.x,z=entity.renderZ??entity.z;
   const tx=target.renderX??target.x,tz=target.renderZ??target.z;
   const distance=Math.hypot(tx-x,tz-z),heading=Math.atan2(tx-x,tz-z);
-  const ground=view.entityHeight(entity,x,z),targetGround=view.entityHeight(target,tx,tz);
+  const ground=view.entityHeight(entity,x,z)+(entity.kind==='unit'?visualBodyOffset(view,entity):0),targetGround=view.entityHeight(target,tx,tz)+(target.kind==='unit'?visualBodyOffset(view,target):0);
   const height=entity.kind==='building'?buildingHeight(entity.type):def?.naval?2.1:entity.type==='catapult'?3.3:1.95;
   const localX=kind==='arrow'&&entity.kind==='unit'&&!def?.naval?-.48:entity.kind==='building'&&arrowIndex>0?(arrowIndex%2?-1:1)*Math.ceil(arrowIndex/2)*.55:0;
   const forward=entity.kind==='building'?Math.min(2,entity.r||1):def?.naval?1.7:entity.type==='catapult'?1.1:.65;

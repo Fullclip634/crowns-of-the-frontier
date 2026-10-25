@@ -23,6 +23,7 @@ import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
 import {UnitActions} from './unit-actions.js';
+import {pruneFootPlacements,visualBodyOffset} from './foot-placement.js';
 import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
@@ -81,6 +82,7 @@ export class WorldView {
     this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;
     this.locomotion??=new UnitLocomotion();this.locomotion.clear();this.locomotionPrunedAt=0;
+    this.footPoses=new Map();this.footPoseEntity=null;
     this.unitActions??=new UnitActions();this.unitActions.clear();
     for(const batch of this.unitBatches.values())for(const part of batch.parts){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();
     const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
@@ -207,11 +209,12 @@ export class WorldView {
       if(e.type==='mill')node.traverse(child=>{if(child.userData.windmill)child.rotation.z=this.clock*.4;});
       node.traverse(child=>{if(child.userData.flag)child.rotation.y=Math.sin(this.clock*2+e.id)*.08;if(e.kind==='shrine'&&child.material===this.materials.gold){child.position.y=Math.sin(this.clock*1.4)*.22;child.rotation.y=this.clock*.4;}});
     }
-    for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target);}}else f.time+=dt;const t=f.time/f.duration;if(t>=1){if(f.impact)this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
+    for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=dt;const t=f.time/f.duration;if(t>=1){if(f.impact)this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
     let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smoke.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smoke.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smoke);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
+    this.interactions?.alignCargoFeet();
     endUnitFrame(this);
-    if(this.clock-this.locomotionPrunedAt>2){this.locomotion.prune(this.sim);this.unitActions.prune(this.sim);this.locomotionPrunedAt=this.clock;}
+    if(this.clock-this.locomotionPrunedAt>2){this.locomotion.prune(this.sim);this.unitActions.prune(this.sim);pruneFootPlacements(this,this.sim);this.locomotionPrunedAt=this.clock;}
     this.wallVisuals??=new WallVisuals(this);this.wallVisuals.update(menu);
     scheduleShadows(this);
     this.renderer.render(this.scene,this.camera);

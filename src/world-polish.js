@@ -5,6 +5,7 @@ import {combatJointRotation} from './combat-poses.js';
 import {bowPartPose} from './archery-pose.js';
 import {siegeArmAngle,combatRenderOffset} from './combat-timing.js';
 import {actionJointRotation} from './unit-actions.js';
+import {footPartPose} from './foot-placement.js';
 
 function texture(kind){const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=kind==='stone'?'#bdb8ac':kind==='roof'?'#d9d5cf':'#a98c67';ctx.fillRect(0,0,256,256);
   if(kind==='stone'){for(let row=0;row<8;row++)for(let col=-1;col<9;col++){const x=col*40+(row%2)*20,y=row*32;ctx.fillStyle=`rgb(${165+Math.random()*35},${162+Math.random()*32},${147+Math.random()*30})`;ctx.fillRect(x+2,y+2,36,28);ctx.strokeStyle='#8b897c';ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,36,28);ctx.fillStyle='#dbd5c477';ctx.fillRect(x+3,y+3,34,2);}}
@@ -105,11 +106,12 @@ function jointRotation(view,joint,e,matrix){
 export function beginJointPose(view,entity,matrix){
   view.jointPoseEpoch=(view.jointPoseEpoch||0)+1;view.jointPoseEntity=entity;view.jointPoseRoot=matrix;
 }
-export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=null;}
+export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=null;view.footPoseEntity=null;}
 
 export function animatePart(view,part,e,matrix){
   const m=part.userData.motion;if(!m)return matrix;
   if(m.type==='bow'){const pose=bowPartPose(view,m,e,matrix,combatRenderOffset(view));if(pose)return pose;}
+  const feet=footPartPose(view,m,e,matrix);if(feet)return feet;
   const result=view.poseMatrix??=new THREE.Matrix4(),rotation=view.poseRotation??=new THREE.Matrix4();result.copy(matrix);
   if(m.type==='ram'){const translation=part.userData.ramTranslation??=new THREE.Matrix4();translation.makeTranslation(0,0,e.cooldown>0?Math.sin(e.cooldown*8)*.25:0);return result.multiply(translation);}
   if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint,forward:new THREE.Matrix4().makeTranslation(...joint.pivot),back:new THREE.Matrix4().makeTranslation(-joint.pivot[0],-joint.pivot[1],-joint.pivot[2])});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);}part.userData.poseChain=chain;}

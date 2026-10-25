@@ -1,4 +1,5 @@
 import {UNITS} from './data.js';
+export const HUMAN_STRIDE=2.05;
 
 // Rendering-only gait history follows travelled distance, not a fixed wall clock.
 // This keeps faster upgrades, slow siege and interpolated network motion coherent.
@@ -7,7 +8,7 @@ export class UnitLocomotion{
   clear(){this.states.clear();}
   get(id){return this.states.get(id);}
   update(e,x,z,dt){
-    let state=this.states.get(e.id);const definition=UNITS[e.type]||{},cavalry=definition.role==='cavalry',period=cavalry?3.4:2.05;
+    let state=this.states.get(e.id);const definition=UNITS[e.type]||{},cavalry=definition.role==='cavalry',period=cavalry?3.4:HUMAN_STRIDE;
     if(!state){state={x,z,phase:(e.id*.7)%(Math.PI*2),wheel:0,blend:0,bob:0};this.states.set(e.id,state);return state;}
     const elapsed=Math.max(0,dt),distance=Math.hypot(x-state.x,z-state.z),teleported=distance>Math.max(3,(definition.speed||4)*elapsed*4);
     state.x=x;state.z=z;
