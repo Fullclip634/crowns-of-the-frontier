@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {sampleWaterWave,waterMotionScale,WATER_WAVE_BOUND} from '../src/water-waves.js';
-import {configureWaterSurface,animateWaterSurface} from '../src/water-surface.js';
+import {configureWaterSurface,configureWaterPalette,WATER_PALETTES,animateWaterSurface} from '../src/water-surface.js';
 import {Landscape} from '../src/landscape.js';
 import {forestTransform} from '../src/realm-3d.js';
 import {weatherAt} from '../src/weather.js';
@@ -38,6 +38,18 @@ test('Balanced and High coastal meshes resolve waves with a bounded budget and u
 });
 
 function fixture(){const material=new THREE.MeshStandardMaterial({color:0x6a9fa6,transparent:true,opacity:.85});configureWaterSurface(material);return {material,view:{materials:{water:material},settings:{quality:'medium'},clock:2,scene:{background:new THREE.Color(0xc4d9df)},sun:{intensity:2.7},hemi:{intensity:.9},waterMeshes:[{}],weatherState:weatherAt(512,'coast',97,'clear')}};}
+
+test('river palettes remain earthy at every quality and map changes reuse the existing shader uniforms',()=>{
+  const {material,view}=fixture(),shallow=material.frontierWaterShallow,deep=material.frontierWaterDeep;
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader);
+  for(const map of ['valley','rivers','coast','valley'])for(const quality of ['low','medium','high']){
+    configureWaterPalette(material,map);view.settings.quality=quality;animateWaterSurface(view);
+    const palette=WATER_PALETTES[map==='coast'?'coast':'river'];assert.equal(deep.value.getHex(),palette.deep);assert.equal(shallow.value.getHex(),palette.shallow);assert.equal(material.opacity,palette.opacity);
+    assert.equal(shader.uniforms.frontierWaterShallow,shallow);assert.equal(shader.uniforms.frontierWaterDeep,deep);
+    if(map!=='coast'){assert.ok(deep.value.g>deep.value.b&&deep.value.r>deep.value.b*.6);assert.ok(shallow.value.r>shallow.value.b&&shallow.value.g>shallow.value.b);}
+  }
+  material.dispose();
+});
 
 test('the material keeps one shared uniform set and disposes the obsolete stripe map once',()=>{
   const material=new THREE.MeshStandardMaterial(),map=new THREE.CanvasTexture({width:1,height:1});let disposed=0,previous=0;map.addEventListener('dispose',()=>disposed++);material.map=map;material.onBeforeCompile=function(shader){assert.equal(this,material);previous++;shader.uniforms.existing={value:7};};

@@ -1,5 +1,6 @@
 import {blockWallConnections} from './walls.js';
 import {BUILDINGS} from './data.js';
+import {blockBridgeNavigation,bridgeNavigationGrid,bridgeStepClear,bridgePointClear,bridgeUnitClearance,BRIDGE_CLEARANCE} from './bridge-navigation.js';
 const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 const MAX_BUILDING_RADIUS=Math.max(...Object.values(BUILDINGS).map(definition=>definition.r||0));
 const constructionGrids=new WeakMap();
@@ -15,8 +16,8 @@ function containingBuildings(sim,unit){
 // A foundation can cover a unit already standing there. Let that unit leave
 // the containing ordinary buildings, without opening them for other troops.
 export function unitNavigationGrid(sim,unit,normalOverride=null){
-  const naval=!!sim.unitDefinition(unit).naval,normal=normalOverride||sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
-  if(naval)return normal;
+  const naval=!!sim.unitDefinition(unit).naval,source=normalOverride||sim.grid(unit.owner,naval),cell=sim.cell(unit.x,unit.z),size=sim.gridSize;
+  if(naval)return source;const normal=bridgeNavigationGrid(sim,unit,source);
   const containing=containingBuildings(sim,unit);
   if(!containing.length)return normal;
   const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
@@ -31,7 +32,7 @@ export function unitNavigationGrid(sim,unit,normalOverride=null){
       data[id]=others.some(e=>Math.hypot(wx-e.x,wz-e.z)<e.r+.9)?1:0;
     }
   }
-  blockWallConnections(sim,data);data.navigationKey=key;
+  blockWallConnections(sim,data);blockBridgeNavigation(sim,data,bridgeUnitClearance(unit));data.bridgeClearance=normal.bridgeClearance;data.navigationKey=key;
   if(cache){cache.delete(key);cache.set(key,{source:normal,data});while(cache.size>16)cache.delete(cache.keys().next().value);}
   return data;
 }
@@ -85,6 +86,7 @@ export class MinHeap {
 // Visit every crossed cell, including both neighbors at a diagonal corner.
 // A clear straight segment avoids running A* for open ground and short trips.
 export function clearSegment(sim,grid,from,to){
+  if(!grid.naval&&!bridgeStepClear(sim.options?.map,from.x,from.z,to.x,to.z,grid.bridgeClearance||BRIDGE_CLEARANCE))return false;
   const size=sim.gridSize,half=sim.halfWorld,start=sim.cell(from.x,from.z),end=sim.cell(to.x,to.z);
   let x=start.x,z=start.z;const dx=to.x-from.x,dz=to.z-from.z,sx=Math.sign(dx),sz=Math.sign(dz),tx=dx?2/Math.abs(dx):Infinity,tz=dz?2/Math.abs(dz):Infinity;
   let nextX=dx?((x+(sx>0?1:0))*2-half-from.x)/dx:Infinity,nextZ=dz?((z+(sz>0?1:0))*2-half-from.z)/dz:Infinity;
@@ -116,9 +118,11 @@ function finishResourceApproach(sim,grid,unit,target,range,route){
 
 export function findPath(sim,e,dest,range=0,normalOverride=null){
   const grid=unitNavigationGrid(sim,e,normalOverride),size=sim.gridSize||80,half=sim.halfWorld||80;
-  const nearest=(cell,point,labels=null,region=0)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region))return cell;let best=null,score=Infinity;
-    for(let radius=1;radius<12;radius++){for(let z=Math.max(0,cell.z-radius);z<=Math.min(size-1,cell.z+radius);z++)for(let x=Math.max(0,cell.x-radius);x<=Math.min(size-1,cell.x+radius);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1,n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<radius*2)return best;}return best;};
-  const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x],a=nearest(sim.cell(e.x,e.z),e);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
+  const radius=bridgeUnitClearance(e),naval=!!sim.unitDefinition(e).naval,pointClear=point=>naval||bridgePointClear(sim.options?.map,point.x,point.z,radius);
+  const accessible=(x,z,escape)=>naval||bridgePointClear(sim.options?.map,x,z,radius)&&(!escape||bridgeStepClear(sim.options?.map,e.x,e.z,x,z,radius));
+  const nearest=(cell,point,labels=null,region=0,escape=false)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region)&&accessible(cell.x*2-half+1,cell.z*2-half+1,escape))return cell;let best=null,score=Infinity;
+    for(let ring=1;ring<12;ring++){for(let z=Math.max(0,cell.z-ring);z<=Math.min(size-1,cell.z+ring);z++)for(let x=Math.max(0,cell.x-ring);x<=Math.min(size-1,cell.x+ring);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1;if(!accessible(wx,wz,escape))continue;const n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<ring*2)return best;}return best;};
+  const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x]&&pointClear(dest),startCell=sim.cell(e.x,e.z),a=nearest(startCell,e,null,0,true);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
   const traffic=crowdCosts(sim,e);
   const start=a.z*size+a.x,area=range>0&&Number.isFinite(dest.r);let end=b.z*size+b.x;
   if(!area&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
@@ -142,5 +146,5 @@ export function findPath(sim,e,dest,range=0,normalOverride=null){
     closed[current]=1;const x=current%size,z=Math.floor(current/size);
     for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||closed[id]||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(n<cost[id]){cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
   }
-  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};return finishResourceApproach(sim,grid,e,dest,range,result);
+  e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};if(a.x!==startCell.x||a.z!==startCell.z)result.unshift({x:a.x*2-half+1,z:a.z*2-half+1});return finishResourceApproach(sim,grid,e,dest,range,result);
 }

@@ -1,11 +1,12 @@
 import {UNITS} from './data.js';
+import {bridgeNavigationGrid,bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 const clamp=(sim,n)=>Math.max(-sim.halfWorld+3,Math.min(sim.halfWorld-3,n));
 
 // Resolve formation slots on the unit's own movement surface. This keeps edge
 // slots out of foundations and water without sending land troops across a sea.
 export function formationSlot(sim,unit,point,reserved=[]){
-  const size=sim.gridSize,half=sim.halfWorld,grid=sim.grid(unit.owner,!!UNITS[unit.type].naval),cell=sim.cell(point.x,point.z);
-  const available=(x,z)=>!reserved.some(other=>Math.hypot(x-other.x,z-other.z)<Math.max(1.4,(unit.r+(other.r||.65))*1.05));
+  const size=sim.gridSize,half=sim.halfWorld,naval=!!UNITS[unit.type].naval,source=sim.grid(unit.owner,naval),grid=naval?source:bridgeNavigationGrid(sim,unit,source),cell=sim.cell(point.x,point.z);
+  const available=(x,z)=>(naval||bridgePointClear(sim.options?.map,x,z,bridgeUnitClearance(unit)))&&!reserved.some(other=>Math.hypot(x-other.x,z-other.z)<Math.max(1.4,(unit.r+(other.r||.65))*1.05));
   if(!grid[cell.z*size+cell.x]&&available(point.x,point.z))return {x:clamp(sim,point.x),z:clamp(sim,point.z)};
   let best=null,score=Infinity;
   for(let r=1;r<=4;r++)for(let z=Math.max(0,cell.z-r);z<=Math.min(size-1,cell.z+r);z++)for(let x=Math.max(0,cell.x-r);x<=Math.min(size-1,cell.x+r);x++){

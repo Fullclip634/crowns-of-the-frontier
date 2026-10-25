@@ -4,7 +4,7 @@ import {seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
 import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
-import {configureWaterSurface,animateWaterSurface} from './water-surface.js';
+import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
 import {prepareTerrainGeometry,terrainRoadPaths} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
@@ -12,7 +12,7 @@ import {terrainRelief} from './terrain-relief.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
 import {terrainMeadow} from './terrain-fields.js';
-import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork} from './bridge-layout.js';
+import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
@@ -31,12 +31,12 @@ export class Landscape {
       if(d<channel.width)h=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
       const span=bridgeSpans(this.map).find(span=>span.center===channel.center);
-      if(span){const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(11.2,18,Math.abs(z));h+=(bridgeArtwork.baseHeight-h)*bank*across;}
+      if(span){const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(bridgeOuterHalfWidth,bridgeOuterHalfWidth+6.8,Math.abs(z));h+=(bridgeArtwork.baseHeight-h)*bank*across;}
     }
     // Keep every terrain triangle adjacent to the crossing below its lowest
     // paving. The collar covers the coarsest supported grid at every quality.
     const collar=Math.max(2,this.renderSize/112+1);
-    for(const span of bridgeSpans(this.map)){const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(11.2+collar,15.2+collar,Math.abs(z));h-=Math.max(0,h-(bridgeArtwork.baseHeight-.35))*along*across;}
+    for(const span of bridgeSpans(this.map)){const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(bridgeOuterHalfWidth+collar,bridgeOuterHalfWidth+4+collar,Math.abs(z));h-=Math.max(0,h-(bridgeArtwork.baseHeight-.35))*along*across;}
     const edge=Math.max(Math.abs(x),Math.abs(z)),rise=smooth(this.half-4,this.half+30,edge);
     const ridges=7+Math.pow(Math.sin(x*.043+p)*Math.cos(z*.037-p),2)*18+Math.sin((x+z)*.07)*2;
     h+=rise*ridges;
@@ -60,7 +60,7 @@ export class Landscape {
   }
   walkableHeightAt(x,z){
     const span=bridgeAt(this.map,x,z,3);
-    if(!span||Math.abs(z)>bridgeArtwork.roadHalfWidth+1e-6)return this.surfaceHeightAt(x,z);
+    if(!span||Math.abs(z)>bridgeRoadHalfWidth+1e-6)return this.surfaceHeightAt(x,z);
     const distance=Math.abs(x-span.center);
     if(distance<=span.halfLength)return bridgeDeckHeight(span,x);
     const outer=span.center+Math.sign(x-span.center)*(span.halfLength+3),blend=smooth(0,3,distance-span.halfLength);
@@ -68,7 +68,7 @@ export class Landscape {
   }
   walkableSampleAt(x,z,output){
     const span=bridgeAt(this.map,x,z,3),grid=this.grid;
-    if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize||span&&Math.abs(z)<=bridgeArtwork.roadHalfWidth+1e-6){
+    if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize||span&&Math.abs(z)<=bridgeRoadHalfWidth+1e-6){
       output.height=this.walkableHeightAt(x,z);output.dx=(this.walkableHeightAt(x+.05,z)-this.walkableHeightAt(x-.05,z))/.1;output.dz=(this.walkableHeightAt(x,z+.05)-this.walkableHeightAt(x,z-.05))/.1;return output;
     }
     const xx=terrainGridCoordinate(x,grid),zz=terrainGridCoordinate(z,grid),ix=Math.min(grid.segments-1,Math.floor(xx)),iz=Math.min(grid.segments-1,Math.floor(zz)),u=xx-ix,v=zz-iz,stride=grid.segments+1,a=iz*stride+ix;
@@ -135,6 +135,7 @@ export function buildLandscape(view){
   const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;
   view.waterMeshes=[];
   configureWaterSurface(view.materials.water);
+  configureWaterPalette(view.materials.water,land.map);
   for(const channel of land.channels()){
     const water=new THREE.Mesh(land.waterGeometry(channel,view.settings.quality),view.materials.water);water.userData.channel=channel;view.terrain.add(water);view.waterMeshes.push(water);
   }

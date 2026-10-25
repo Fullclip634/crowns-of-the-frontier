@@ -25,7 +25,6 @@ function barkTexture(){
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=4;return map;
 }
 export function decorateMaterials(view){view.materials.stone.map=texture('stone');view.materials.wood.map=texture('wood');view.materials.trunk.map=barkTexture();view.materials.trunk.roughness=.98;view.roofMaterials=view.teamMaterials.map((m,i)=>{const roof=m.clone();roof.map=texture('roof');view.materials['teamRoof'+i]=roof;return roof;});
-  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const c=canvas.getContext('2d');c.fillStyle='#87b6b2';c.fillRect(0,0,128,128);for(let i=0;i<30;i++){c.strokeStyle=i%2?'#ccdfd63c':'#3d7c8940';c.beginPath();c.moveTo(0,i*5);c.bezierCurveTo(30,i*5-6,80,i*5+6,128,i*5);c.stroke();}const t=new THREE.CanvasTexture(canvas);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;view.materials.water.map=t;view.materials.water.color.setHex(0x89b8bd);
 }
 
 export function shipModel(view,e){const g=new THREE.Group(),m=view.materials,team=view.teamMaterials[e.owner],heavy=e.type==='warship',scale=heavy?1.35:1;

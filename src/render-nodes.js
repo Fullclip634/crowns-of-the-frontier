@@ -134,7 +134,7 @@ export function water(material){
   const waveNormal=Fn(()=>{normalLocal.assign(normalize(vec3(wave.y.negate(),1,wave.z.negate())));return displaced;})();
   material.positionNode=waveNormal;
   const absorption=float(1).sub(exp(max(bank.x,0).mul(-1.8)));
-  material.colorNode=materialColor.rgb.mul(mix(vec3(.72,.95,.88),vec3(.22,.58,.72),absorption));
+  material.colorNode=materialColor.rgb.mul(mix(value(material.frontierWaterShallow,'color'),value(material.frontierWaterDeep,'color'),absorption));
   material.opacityNode=materialOpacity.mul(mix(.45,1,absorption));
   material.normalNode=Fn(()=>{
     const distortion=detail.greaterThan(.5).select(noise(xz.mul(.28).add(vec2(time.mul(.06),time.mul(-.04)))).sub(.5).mul(4),0);
@@ -154,7 +154,7 @@ export function water(material){
       const cells=noise(xz.mul(1.7).add(vec2(time.mul(.18),time.mul(-.12))));
       const wash=sin(dot(xz,vec2(.23,.54)).add(time.mul(.7))).mul(.12).add(cells.sub(.5).mul(.18));
       const foam=float(1).sub(smoothstep(.06,.48,bank.y.add(wash))).mul(smoothstep(.22,.8,cells));
-      color.assign(mix(color,vec3(.77,.85,.81).mul(light),foam.mul(.68)));
+      color.assign(mix(color,vec3(.72,.75,.63).mul(light),foam.mul(.28)));
     });
     return vec4(color,output.a);
   })();

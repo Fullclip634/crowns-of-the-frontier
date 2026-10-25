@@ -14,7 +14,8 @@ import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './m
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
 import {constructionFace,constructionHeading} from './construction-contact.js';
 import {approachConstruction} from './construction-approach.js';
-import {bridgeFootprint,clearSavedBridgeResources} from './bridge-layout.js';
+import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
+import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -57,7 +58,7 @@ export class Simulation {
   hostile(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&!this.allied(a,b)&&!this.players[b].defeated;}
   difficulty(owner=1){return this.players[owner]?.difficulty||this.options.difficulty;}
   startClearing(x,z){
-    if(bridgeFootprint(this.options.map,x,z,3))return true;
+    if(bridgeFootprint(this.options.map,x,z,8))return true;
     const custom=this.options.mode==='custom';if(custom?this.players.some(player=>player.start&&Math.hypot(x-player.start.x,z-player.start.z-16)<11):Math.min(Math.hypot(x+36,z-49),Math.hypot(x-36,z+49))<12)return true;
     if(this.options.map!=='coast')return false;
     return custom?this.players.some(player=>player.start&&Math.hypot(x-Math.sin(player.start.z*.03)*2-Math.sign(player.start.x)*20,z-player.start.z)<8):Math.min(Math.hypot(x+19,z-25),Math.hypot(x-19,z+25))<8;
@@ -183,13 +184,13 @@ export class Simulation {
     }
   }
   stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
-  isWater(x,z){if(Math.abs(z)<=9)return false;if(this.options.map==='valley')return Math.abs(x-Math.sin(z*.045)*4)<5;if(this.options.map==='rivers')return [-19,19].some(center=>Math.abs(x-center-Math.sin(z*.045)*3)<4);return false;}
+  isWater(x,z){if(Math.abs(z)<=bridgeRoadHalfWidth-.6)return false;if(this.options.map==='valley')return Math.abs(x-Math.sin(z*.045)*4)<5;if(this.options.map==='rivers')return [-19,19].some(center=>Math.abs(x-center-Math.sin(z*.045)*3)<4);return false;}
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
     const size=this.gridSize,teamKey='team-'+(this.players[owner].team??owner);if(this.grids[teamKey]?.revision===this.revision){this.grids[owner]=this.grids[teamKey];return this.grids[owner].data;}
     if(this.grids.landBase?.revision!==this.revision){const base=new Uint8Array(size*size);for(let z=0;z<size;z++)for(let x=0;x<size;x++)if(this.isWater(x*CELL-this.halfWorld+1,z*CELL-this.halfWorld+1))base[z*size+x]=1;
       for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
-      this.grids.landBase={revision:this.revision,data:base};
+      blockBridgeNavigation(this,base);this.grids.landBase={revision:this.revision,data:base};
     }
     const data=this.grids.landBase.data.slice();
     for(const e of this.entities)if(e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&this.allied(e.owner,owner))){
@@ -214,10 +215,10 @@ export class Simulation {
       const neighbors=column.get(bz+oz);if(!neighbors)continue;
       for(const other of neighbors){if(other===e||other.embarked||!!UNITS[other.type].naval!==!!d.naval)continue;const sx=nx-other.x,sz=nz-other.z,min=(e.r+other.r)*.8;if(sx*sx+sz*sz>=min*min)continue;const sep=Math.hypot(sx,sz);if(sep<min&&sep>.01){nx+=sx/sep*(min-sep)*.2;nz+=sz/sep*(min-sep)*.2;}}
     }}
-    const c=this.cell(nx,nz),current=this.cell(e.x,e.z),oldX=e.x,oldZ=e.z;
-    if(!grid[c.z*this.gridSize+c.x]||grid[current.z*this.gridSize+current.x]){e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);}else{
+    const c=this.cell(nx,nz),current=this.cell(e.x,e.z),oldX=e.x,oldZ=e.z,radius=bridgeUnitClearance(e),map=this.options.map;
+    if((!grid[c.z*this.gridSize+c.x]||grid[current.z*this.gridSize+current.x])&&(d.naval||bridgeStepClear(map,e.x,e.z,nx,nz,radius))){e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);}else{
       const horizontal=this.cell(nx,e.z),vertical=this.cell(e.x,nz);
-      if(!grid[horizontal.z*this.gridSize+horizontal.x])e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);else if(!grid[vertical.z*this.gridSize+vertical.x])e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);else{e.path=[];e.repath=0;}
+      if(!grid[horizontal.z*this.gridSize+horizontal.x]&&(d.naval||bridgeStepClear(map,e.x,e.z,nx,e.z,radius)))e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);else if(!grid[vertical.z*this.gridSize+vertical.x]&&(d.naval||bridgeStepClear(map,e.x,e.z,e.x,nz,radius)))e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);else{e.path=[];e.repath=0;}
     }
     e.moving=Math.hypot(e.x-oldX,e.z-oldZ)>.015;if(e.moving)e.stuckTime=0;else this.blockedMovement(e,dt);
     e.heading=Math.atan2(dx,dz);return distance(e,dest)<=Math.max(stop,precise?.05:1.5);
@@ -398,8 +399,8 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
-  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};clearSavedBridgeResources(s);s.updateFog();return s;}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
+  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};clearSavedBridgeResources(s);restoreBridgeOccupants(s,data.bridgeRoadHalfWidth);s.updateFog();return s;}
 }
 
 installFrontiers(Simulation);

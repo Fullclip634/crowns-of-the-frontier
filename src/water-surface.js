@@ -1,24 +1,42 @@
 import {nodeRuntime} from './render-runtime.js';
 import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
+export const WATER_PALETTES=Object.freeze({
+  river:Object.freeze({shallow:0x838268,deep:0x344f3f,opacity:.94}),
+  coast:Object.freeze({shallow:0x82978a,deep:0x365c5c,opacity:.9})
+});
+
+export function configureWaterPalette(material,map){
+  const palette=WATER_PALETTES[map==='coast'?'coast':'river'];
+  material.color.setHex(0xffffff);
+  material.frontierWaterShallow.value.setHex(palette.shallow);
+  material.frontierWaterDeep.value.setHex(palette.deep);
+  material.opacity=palette.opacity;
+}
+
 // Moving volume and slope normals stay on the GPU. Depth tint and a cheap sky
 // approximation use existing terrain/light data without extra scene captures.
 export function configureWaterSurface(material){
   if(material.frontierWaveTime)return;
   const time=material.frontierWaveTime={value:0};
   const sky=material.frontierWaterSky={value:material.color.clone().setHex(0xc4d9df)};
+  const shallow=material.frontierWaterShallow={value:material.color.clone()};
+  const deep=material.frontierWaterDeep={value:material.color.clone()};
   const ripples=material.frontierWaterRipples={value:.075};
   const detail=material.frontierWaterDetail={value:1};
   const motion=material.frontierWaterMotion={value:1};
   const light=material.frontierWaterLight={value:1};
   if(material.map?.isCanvasTexture){material.map.dispose();material.map=null;}
-  material.metalness=0;material.roughness=.28;
+  configureWaterPalette(material,'river');
+  material.metalness=0;material.roughness=.34;
   if(material.isNodeMaterial){nodeRuntime().water(material);return;}
   const previous=material.onBeforeCompile;
   material.onBeforeCompile=(shader,renderer)=>{
     previous.call(material,shader,renderer);
     shader.uniforms.frontierWaterTime=time;
     shader.uniforms.frontierWaterSky=sky;
+    shader.uniforms.frontierWaterShallow=shallow;
+    shader.uniforms.frontierWaterDeep=deep;
     shader.uniforms.frontierWaterRipples=ripples;
     shader.uniforms.frontierWaterDetail=detail;
     shader.uniforms.frontierWaterMotion=motion;
@@ -39,6 +57,8 @@ export function configureWaterSurface(material){
       vFrontierWaterXZ = transformed.xz;
       vFrontierWaterBank = vec2(frontierWaterDepth, frontierWaterShore);`);
     shader.fragmentShader=`uniform vec3 frontierWaterSky;
+      uniform vec3 frontierWaterShallow;
+      uniform vec3 frontierWaterDeep;
       uniform float frontierWaterTime;
       uniform float frontierWaterRipples;
       uniform float frontierWaterDetail;
@@ -60,7 +80,7 @@ export function configureWaterSurface(material){
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
       float frontierDepth = max(0.0, vFrontierWaterBank.x);
       float frontierAbsorption = 1.0 - exp(-frontierDepth * 1.8);
-      diffuseColor.rgb *= mix(vec3(0.72, 0.95, 0.88), vec3(0.22, 0.58, 0.72), frontierAbsorption);
+      diffuseColor.rgb *= mix(frontierWaterShallow, frontierWaterDeep, frontierAbsorption);
       diffuseColor.a *= mix(0.45, 1.0, frontierAbsorption);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       if (frontierWaterRipples > 0.0) {
@@ -87,13 +107,12 @@ export function configureWaterSurface(material){
         float frontierCells = frontierWaterNoise(vFrontierWaterXZ * 1.7 + frontierDrift);
         float frontierWash = 0.12 * sin(dot(vFrontierWaterXZ, vec2(0.23, 0.54)) + frontierWaterTime * 0.7) + (frontierCells - 0.5) * 0.18;
         float frontierFoam = (1.0 - smoothstep(0.06, 0.48, vFrontierWaterBank.y + frontierWash)) * smoothstep(0.22, 0.8, frontierCells);
-        vec3 frontierFoamColor = vec3(0.77, 0.85, 0.81) * frontierWaterLight;
-        outgoingLight = mix(outgoingLight, frontierFoamColor, frontierFoam * 0.68);
+        vec3 frontierFoamColor = vec3(0.72, 0.75, 0.63) * frontierWaterLight;
+        outgoingLight = mix(outgoingLight, frontierFoamColor, frontierFoam * 0.28);
       }
       #include <opaque_fragment>`);
   };
-  material.metalness=0;material.roughness=.28;
-  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v6';material.needsUpdate=true;
+  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v7';material.needsUpdate=true;
 }
 
 export function animateWaterSurface(view){

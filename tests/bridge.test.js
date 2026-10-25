@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
 import {WorldView} from '../src/world.js';
 import {loadBridgeArtwork,buildBridges} from '../src/bridge-art.js';
-import {bridgeSpans,bridgeFootprint,bridgeArtwork} from '../src/bridge-layout.js';
+import {bridgeSpans,bridgeFootprint,bridgeArtwork,bridgeWidthScale,bridgeRoadHalfWidth} from '../src/bridge-layout.js';
 import {Simulation} from '../src/simulation.js';
 
 async function fixture(map,size=160,segments=112){
@@ -20,7 +20,8 @@ test('the actual Blender bridge and approach ramps match walking and command hei
   for(const [map,size,segments]of [['valley',160,112],['valley',400,112],['rivers',160,160],['rivers',640,112],['rivers',640,160]]){
     const view=await fixture(map,size,segments),ray=new THREE.Raycaster();
     assert.equal(view.bridgeMeshes.length,bridgeSpans(map).length);assert.equal(view.bridgeDiagnostics.source,'Blender');assert.ok(view.bridgeDiagnostics.draws<=view.bridgeMeshes.length*3);assert.ok(view.bridgeDiagnostics.triangles<view.bridgeMeshes.length*16000);
-    for(const span of bridgeSpans(map))for(const z of [-8.5,0,8.5])for(let offset=-span.halfLength-3;offset<=span.halfLength+3;offset+=.37){
+    assert.equal(view.bridgeDiagnostics.clearWidth,13.6);
+    for(const span of bridgeSpans(map))for(const z of [-bridgeRoadHalfWidth+.8,0,bridgeRoadHalfWidth-.8])for(let offset=-span.halfLength-3;offset<=span.halfLength+3;offset+=.37){
       const x=span.center+offset;ray.set(new THREE.Vector3(x,20,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects([...view.bridgeMeshes,view.groundSurface],true)[0];assert.ok(hit,`${map} has solid paving at ${x}, ${z}`);
       if(Math.abs(offset)<=span.halfLength)assert.notEqual(hit.object,view.groundSurface,'the rendered terrain cannot cover the bridge road');
       assert.ok(Math.abs(hit.point.y-view.landscape.walkableHeightAt(x,z))<.085,`${map} feet and road agree at ${x}, ${z}: mesh ${hit.point.y}, walking ${view.landscape.walkableHeightAt(x,z)}`);
@@ -34,13 +35,13 @@ test('bridge arches remain open above the continuous riverbed while the masonry 
   assert.ok(view.landscape.surfaceHeightAt(0,0)<0,'the old raised land dam is gone');
   for(const [x,y]of [[0,.5],[-8,.1],[8,.1]]){ray.set(new THREE.Vector3(x,y,15),new THREE.Vector3(0,0,-1));assert.equal(ray.intersectObjects(view.bridgeMeshes,true).length,0,'water can be seen through the actual arch geometry');}
   ray.set(new THREE.Vector3(4.425,.3,15),new THREE.Vector3(0,0,-1));assert.ok(ray.intersectObjects(view.bridgeMeshes,true).length>0,'the pier has real volume');
-  for(const z of [-9.9,9.9]){ray.set(new THREE.Vector3(0,20,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(view.bridgeMeshes,true)[0];assert.ok(hit&&hit.point.y>3.2,`both parapets rise above the road: ${z}, ${hit?.point.y}`);}
+  for(const z of [-9.9*bridgeWidthScale,9.9*bridgeWidthScale]){ray.set(new THREE.Vector3(0,20,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(view.bridgeMeshes,true)[0];assert.ok(hit&&hit.point.y>3.2,`both parapets rise above the road: ${z}, ${hit?.point.y}`);}
 });
 
 test('fresh river maps keep natural obstacles and new construction off the bridge while armies can cross',()=>{
   for(const map of ['valley','rivers'])for(const seed of [1,512,2026]){
     const sim=new Simulation({mode:'custom',map,mapSize:'huge',seed});
-    assert.equal(sim.entities.filter(e=>e.kind==='resource'&&!e.water&&bridgeFootprint(map,e.x,e.z,3)).length,0,'seeded resources leave bridge approaches clear');
+    assert.equal(sim.entities.filter(e=>e.kind==='resource'&&!e.water&&bridgeFootprint(map,e.x,e.z,8)).length,0,'seeded resources leave room to turn into the bridge approaches');
     sim.entities=[];sim.index=new Map();sim.revision++;sim.grids={};sim.visible.fill(1);
     for(const span of bridgeSpans(map))for(const type of ['house','wall','gate','dock'])assert.equal(sim.buildValid(type,span.center,0,0),false,'structures cannot intersect bridge masonry');
     const first=bridgeSpans(map)[0],unit=sim.addUnit('scout',0,first.center-first.halfLength-7,0),destination=first.center+first.halfLength+7;
