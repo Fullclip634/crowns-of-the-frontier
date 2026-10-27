@@ -18,7 +18,7 @@ export function customBattleMarkup(draft){
 
 export function readBattleSetup(root=document){
   const get=id=>root.querySelector('#'+id),playerSlot=Number(get('custom-player-slot').value),spectator=playerSlot===0;
-  const slots=Array.from({length:8},(_,i)=>{const type=get(`custom-type-${i}`),selected=!spectator&&playerSlot===i+1;return {name:get(`custom-name-${i}`).value,enabled:i===0||selected||type?.value!=='closed',controller:spectator?'ai':selected||type?.value==='human'?'human':'ai',faction:get(`custom-faction-${i}`).value,team:Number(get(`custom-team-${i}`).value),difficulty:get(`custom-difficulty-${i}`).value};});
+  const slots=Array.from({length:8},(_,i)=>{const type=get(`custom-type-${i}`),selected=!spectator&&playerSlot===i+1;return {name:get(`custom-name-${i}`).value,enabled:selected||type?.value!=='closed',controller:spectator?'ai':selected||type?.value==='human'?'human':'ai',faction:get(`custom-faction-${i}`).value,team:Number(get(`custom-team-${i}`).value),difficulty:get(`custom-difficulty-${i}`).value};});
   return {mode:'custom',slots,playerSlot,spectator,aiPace:get('custom-pace').value,map:get('custom-map').value,mapSize:get('custom-size').value,startAge:Number(get('custom-age').value),resourceLevel:get('custom-resources').value,populationLimit:Number(get('custom-population').value),seed:Math.max(1,Math.min(999999999,Math.abs(Number(get('custom-seed').value))||2026)),victory:get('custom-victory').value,shareVision:get('custom-vision').checked,revealRemnants:get('custom-remnants').checked};
 }
 

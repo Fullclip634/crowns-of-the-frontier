@@ -13,9 +13,10 @@ export function battlePreset(preset='2v2'){
 }
 export function normalizeBattle(options){
   const raw=Array.isArray(options.slots)?options.slots:battlePreset(),source=raw.slice(0,8).map((slot,i)=>({...slot,slotNumber:slot.slotNumber||i+1}));
-  const spectator=!options.multiplayer&&(options.spectator===true||Number(options.playerSlot)===0),chosen=spectator?-1:source.findIndex(slot=>slot.slotNumber===Number(options.playerSlot));
+  const spectator=!options.multiplayer&&(options.spectator===true||Number(options.playerSlot)===0),requested=Number(options.playerSlot),chosen=spectator?-1:requested>0?source.findIndex(slot=>slot.slotNumber===requested):source.findIndex(slot=>slot.enabled!==false);
+  if(!spectator&&(chosen<0||source[chosen].enabled===false))throw new Error('Choose an enabled kingdom to play.');
   if(chosen>0)source.unshift(...source.splice(chosen,1));
-  const slots=source.filter((slot,i)=>i===0||slot.enabled!==false).map((slot,i)=>({
+  const slots=source.filter(slot=>slot.enabled!==false).map((slot,i)=>({
     name:String(slot.name||(i===0?'Your kingdom':`Kingdom ${i+1}`)).trim().slice(0,24)||`Kingdom ${i+1}`,
     faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:spectator?'ai':i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
   }));

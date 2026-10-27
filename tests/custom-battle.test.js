@@ -4,7 +4,7 @@ import {Simulation,distance} from '../src/simulation.js';
 import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor,BATTLE_SIZES,battleSpawns} from '../src/custom-battle.js';
 import {forestSettlements} from '../src/starting-forests.js';
 import {weatherAt} from '../src/weather.js';
-import {customBattleMarkup} from '../src/custom-battle-ui.js';
+import {customBattleMarkup,readBattleSetup} from '../src/custom-battle-ui.js';
 const make=(options={})=>new Simulation({mode:'custom',seed:512,...options});
 const destroy=(sim,owner,kind='building')=>{for(const e of sim.owned(owner,kind))e.hp=0;sim.revision++;sim.checkVictory();};
 
@@ -33,6 +33,29 @@ test('solo commanders can choose a kingdom slot and keep its authored starting p
 test('custom battle setup exposes a direct all-AI spectator role choice',()=>{
   const markup=customBattleMarkup({map:'highlands',mapSize:'vast',startAge:0,resourceLevel:'standard',populationLimit:80,seed:512,victory:'annihilation',shareVision:true,revealRemnants:true,aiPace:'balanced',slots:battlePreset('2v2'),playerSlot:1});
   assert.match(markup,/id="custom-player-slot"/);assert.match(markup,/Watch AI · Spectator/);assert.match(markup,/data-play-slot="1"/);assert.match(markup,/aria-label="Play as kingdom slot 3"/);
+});
+test('closed first slot stays closed for spectators and commanders in another slot',()=>{
+  const slots=battlePreset('2v2');slots[0].enabled=false;
+  for(const playerSlot of [0,3]){
+    const sim=make({slots,playerSlot});assert.deepEqual(sim.options.slots.map(slot=>slot.slotNumber),playerSlot===0?[2,3,4]:[3,2,4]);
+    assert.ok(sim.players.every(player=>player.slotNumber!==1));assert.equal(sim.players.length,3);
+    if(playerSlot===0)assert.ok(sim.players.every(player=>player.controller==='ai'));
+    else{assert.equal(sim.players[0].slotNumber,3);assert.equal(sim.players[0].controller,'human');}
+    const loaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.deepEqual(loaded.options.slots.map(slot=>slot.slotNumber),sim.options.slots.map(slot=>slot.slotNumber));
+  }
+  assert.throws(()=>normalizeBattle({slots,playerSlot:1}),/enabled kingdom/);
+  assert.throws(()=>normalizeBattle({slots,playerSlot:9}),/enabled kingdom/);
+  assert.equal(normalizeBattle({slots}).slots[0].slotNumber,2,'older setups without a selected slot use an enabled kingdom');
+});
+test('reading setup preserves a closed first slot and its reopened state',()=>{
+  const fields=new Map(),set=(id,value)=>fields.set(id,{value,checked:!!value});
+  for(let i=0;i<8;i++)for(const [name,value] of [['name',`Kingdom ${i+1}`],['type',i===0?'closed':i<4?'ai':'closed'],['faction','alder'],['team',i<2?'1':'2'],['difficulty','normal']])set(`custom-${name}-${i}`,value);
+  for(const [name,value] of [['player-slot','0'],['pace','balanced'],['map','highlands'],['size','vast'],['age','0'],['resources','standard'],['population','80'],['seed','512'],['victory','annihilation'],['vision',true],['remnants',true]])set(`custom-${name}`,value);
+  const root={querySelector:selector=>fields.get(selector.slice(1))||null};let draft=readBattleSetup(root);
+  assert.equal(draft.spectator,true);assert.equal(draft.slots[0].enabled,false);assert.equal(normalizeBattle(draft).slots.length,3);
+  fields.get('custom-type-0').value='ai';draft=readBattleSetup(root);assert.equal(draft.slots[0].enabled,true);assert.equal(normalizeBattle(draft).slots.length,4);
+  fields.get('custom-player-slot').value='3';fields.get('custom-type-0').value='closed';fields.delete('custom-type-2');draft=readBattleSetup(root);
+  assert.equal(draft.slots[0].enabled,false);assert.equal(draft.slots[2].controller,'human');assert.equal(normalizeBattle(draft).slots[0].slotNumber,3);
 });
 test('AI spectator mode runs every enabled kingdom as AI, reveals the map, and watches the final team win',()=>{
   const sim=make({slots:battlePreset('2v2'),playerSlot:0}),events=[];sim.on(event=>events.push(event));
