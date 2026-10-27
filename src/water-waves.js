@@ -1,11 +1,11 @@
 // One wave definition keeps physical displacement, slope normals and bounds in
 // agreement. Weather changes only the visual surface, never simulation rules.
 const waves=Object.freeze([
-  Object.freeze({amplitude:.035,x:.9,z:.36,speed:1.3,sine:true}),
-  Object.freeze({amplitude:.02,x:0,z:.65,speed:-1,sine:false}),
+  Object.freeze({amplitude:.05,x:.9,z:.36,speed:1.3,sine:true}),
+  Object.freeze({amplitude:.025,x:0,z:.65,speed:-1,sine:false}),
 ]);
 const clamp=value=>Math.max(0,Math.min(1,Number(value)||0));
-export const WATER_WAVE_BOUND=.085;
+export const WATER_WAVE_BOUND=.11;
 export const waterMotionScale=amount=>1+.45*clamp(amount);
 export function sampleWaterWave(x,z,time,shore=Infinity,amount=0){
   const t=clamp(shore),fade=t*t*(3-2*t),scale=fade*waterMotionScale(amount);let height=0,dx=0,dz=0;

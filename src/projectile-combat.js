@@ -14,8 +14,12 @@ function release(sim,shot){
   const def=source.kind==='building'?BUILDINGS[source.type]:UNITS[source.type],range=source.kind==='building'?def.range+target.r:Math.max(def.range+(def.role==='ranged'?sim.players[source.owner].tech.ranged:0)+target.r,target.kind==='building'?target.r+3:0);
   if(distance(source,target)>range+.15)return false;
   source.heading=Math.atan2(target.x-source.x,target.z-source.z);
-  shot.stage='flight';shot.entity=actor(source);shot.victim=actor(target);shot.aim={x:target.x,z:target.z};shot.damage=sim.attackDamage(source,target);shot.siege=siegeProjectile(source);shot.releasedAt=sim.time;shot.duration=flightDuration(source,distance(source,target));shot.impactAt=sim.time+shot.duration;
-  shot.bonus=[];
+  shot.stage='flight';shot.entity=actor(source);shot.victim=actor(target);shot.aim={x:target.x,z:target.z};
+  // Divide the existing building damage across its visible base volley; the
+  // faster reload strengthens defenses without multiplying damage per arrow.
+  const baseArrows=source.kind==='building'?Math.max(1,def.volley||1):1;
+  shot.damage=sim.attackDamage(source,target)/baseArrows;shot.siege=siegeProjectile(source);shot.releasedAt=sim.time;shot.duration=flightDuration(source,distance(source,target));shot.impactAt=sim.time+shot.duration;
+  shot.bonus=Array(baseArrows-1).fill(shot.damage);
   if(source.kind==='building'&&GARRISONS[source.type])for(let i=0;i<garrisonArrows(sim,source);i++){
     const armor=target.kind==='unit'?sim.unitArmor(target):5,damage=GARRISONS[source.type].damage*(1+(sim.players[source.owner].tech.fortification||0)*.15);shot.bonus.push(Math.max(1,damage-armor));
   }

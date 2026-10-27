@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {Simulation} from '../src/simulation.js';
 import {FACTIONS} from '../src/data.js';
-import {WallPlacement,wallPlacementPlan} from '../src/wall-placement.js';
+import {WallPlacement,wallPlacementPlan,wallPointerPoint} from '../src/wall-placement.js';
+import {wallTreeConnections} from '../src/walls.js';
 import {WallPreview} from '../src/wall-preview.js';
 import {wallConnections} from '../src/walls.js';
 
@@ -14,6 +15,12 @@ function fixture(faction='alder'){
   const worker=sim.addUnit('villager',0,0,16);return {sim,worker};
 }
 function plan(sim,worker,from={x:0,z:20},to={x:20,z:20}){const draft=new WallPlacement();draft.drag(from,to);return wallPlacementPlan(sim,draft,[worker.id]);}
+
+test('clicking a visible tree canopy anchors the wall at its trunk instead of the ground behind it',()=>{
+  const tree={kind:'resource',type:'wood',hp:1,x:3,z:4},view={pick:()=>tree,groundPoint:()=>({x:10,z:11})};
+  assert.deepEqual(wallPointerPoint(view,50,60),{x:3,z:4});
+  for(const target of [null,{...tree,hp:0},{...tree,type:'stone'},{...tree,water:true}]){view.pick=()=>target;assert.deepEqual(wallPointerPoint(view,50,60),{x:10,z:11});}
+});
 
 test('wall drafts copy finite endpoints, preserve them while moving the map, and reset without commands',()=>{
   const draft=new WallPlacement(),start={x:0,z:20};assert.equal(draft.point({x:NaN,z:1}),false);assert.equal(draft.start,null);
@@ -38,6 +45,26 @@ test('wall previews extend either endpoint of an existing wall and join two ends
   }
   const {sim,worker}=fixture(),a=sim.addBuilding('wall',0,0,20,true),b=sim.addBuilding('wall',0,17.1,20,true),p=plan(sim,worker,a,b);
   assert.equal(p.canBuild,true,p.message);assert.equal(p.count,5);const before=sim.players[0].resources.stone,built=sim.buildWallLine(p.from,p.to,[worker.id]);assert.equal(built.length,5);assert.equal(before-sim.players[0].resources.stone,p.cost.stone);assert.equal(wallConnections(sim.entities).length,6);assert.ok(b.wallLinks.includes(built.at(-1).id));
+});
+
+test('dragged walls snap to both trees and retain their natural end caps until trees are felled',()=>{
+  const {sim,worker}=fixture(),left=sim.addResource('wood',-10,20,600),right=sim.addResource('wood',10,20,600);
+  const p=plan(sim,worker,left,right);assert.equal(p.canBuild,true,p.message);assert.match(p.message,/both trees/);
+  const before=sim.players[0].resources.stone,built=sim.buildWallLine(p.from,p.to,[worker.id]);
+  assert.equal(built.length,p.count);assert.deepEqual(built.map(({x,z})=>({x,z})),p.segments.map(({x,z})=>({x,z})));assert.equal(before-sim.players[0].resources.stone,p.cost.stone);
+  for(const wall of built)wall.progress=1;
+  let links=wallTreeConnections(sim.entities);assert.equal(links.length,2);assert.deepEqual(new Set(links.map(link=>link.b.id)),new Set([left.id,right.id]));
+  const restored=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.equal(wallTreeConnections(restored.entities).length,2);
+  left.hp=0;sim.revision++;links=wallTreeConnections(sim.entities);assert.equal(links.length,1);assert.equal(links[0].b.id,right.id,'the felled trunk no longer supplies invisible collision or masonry');
+});
+
+test('a dragged line joins an existing wall to a tree in either direction',()=>{
+  for(const reversed of [false,true]){
+    const {sim,worker}=fixture(),wall=sim.addBuilding('wall',0,0,20,true),tree=sim.addResource('wood',15,20,600);
+    const p=plan(sim,worker,reversed?tree:wall,reversed?wall:tree);assert.equal(p.canBuild,true,p.message);
+    const built=sim.buildWallLine(p.from,p.to,[worker.id]);assert.equal(built.length,p.count);assert.ok(wall.wallLinks.includes(built.at(-1).id));
+    assert.ok(wallTreeConnections(sim.entities).some(link=>link.b.id===tree.id));
+  }
 });
 
 test('blocked, unseen, water and out of bounds sections cannot be confirmed as a full line',()=>{

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation,distance} from '../src/simulation.js';
+import {BUILDINGS} from '../src/data.js';
 import {GARRISONS,garrisonCount,garrisonArrows} from '../src/garrison.js';
 import {shelterControls} from '../src/garrison-ui.js';
 import {attackFlight} from '../src/battle-effects.js';
@@ -21,9 +22,21 @@ test('Town Bell walks villagers into real shelter with bounded capacity, without
 test('castles and towers have their own capacities and add real defensive arrow damage',()=>{
   for(const type of ['towncenter','keep','tower']){
     const {sim,site,workers}=fixture(type),enemy=sim.addUnit('knight',1,site.x+12,site.z),normal=sim.attackDamage(site,enemy);sim.seekShelter(workers.map(w=>w.id),site.id);enter(sim,workers);
-    assert.equal(garrisonCount(sim,site),GARRISONS[type].capacity);const hp=enemy.hp,events=[];sim.on(e=>{if(e.type==='attack')events.push(e);});sim.hit(site,enemy);assert.equal(enemy.hp,hp,'A defensive volley deals damage on arrival');assert.equal(events.length,1+garrisonArrows(sim,site));sim.time+=sim.projectiles[0].duration;sim.tickProjectiles();assert.ok(hp-enemy.hp>normal);
+    assert.equal(garrisonCount(sim,site),GARRISONS[type].capacity);const hp=enemy.hp,events=[];sim.on(e=>{if(e.type==='attack')events.push(e);});sim.hit(site,enemy);assert.equal(enemy.hp,hp,'A defensive volley deals damage on arrival');assert.equal(events.length,BUILDINGS[type].volley+garrisonArrows(sim,site));sim.time+=sim.projectiles[0].duration;sim.tickProjectiles();assert.ok(hp-enemy.hp>normal);
     const after=enemy.hp;sim.hit(site,enemy);assert.equal(enemy.hp,after,'one volley per actual building cooldown');
   }
+});
+
+test('every defensive building fires a faster multi-arrow base volley and saves it in flight',()=>{
+  for(const type of ['towncenter','tower','keep']){
+    const {sim,site}=fixture(type),enemy=sim.addUnit('knight',1,site.x+12,site.z),damage=sim.attackDamage(site,enemy),events=[];
+    sim.on(event=>{if(event.type==='attack'&&event.entity.id===site.id)events.push(event);});sim.hit(site,enemy);
+    assert.equal(events.length,BUILDINGS[type].volley);assert.ok(site.cooldown<1.6);assert.equal(site.cooldown,BUILDINGS[type].reload);
+    const shot=sim.projectiles[0];assert.equal(shot.bonus.length+1,BUILDINGS[type].volley);assert.ok(Math.abs(shot.damage+shot.bonus.reduce((sum,n)=>sum+n,0)-damage)<1e-8);
+    const restored=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.equal(restored.projectiles.length,1,'base arrows survive save and reconnect');
+    const victim=restored.get(enemy.id),hp=victim.hp;restored.time+=shot.duration;restored.tickProjectiles();assert.ok(Math.abs(hp-victim.hp-damage)<1e-8);
+  }
+  assert.ok(BUILDINGS.keep.volley>BUILDINGS.tower.volley&&BUILDINGS.tower.volley>BUILDINGS.towncenter.volley);
 });
 
 test('shelter reservations reject foreign troops, soldiers, unfinished sites and unreachable shores',()=>{

@@ -17,7 +17,7 @@ export const UNITS = {
   king:{name:'Sovereign',desc:'Your irreplaceable ruler in Crownfall mode. Protect the sovereign at all costs.',cost:{},hp:360,damage:15,armor:4,range:2,speed:4.2,time:0,age:2,at:[],role:'infantry',vision:20},
 };
 export const BUILDINGS = {
-  towncenter:{name:'Town center',desc:'The heart of your settlement. Trains workers and scouts, advances ages, and receives all resources.',cost:{wood:300,stone:200},hp:2600,r:5,time:65,age:0,cap:15,drop:['food','wood','gold','stone'],damage:13,range:16},
+  towncenter:{name:'Town center',desc:'The heart of your settlement. Trains workers and scouts, advances ages, and receives all resources.',cost:{wood:300,stone:200},hp:2600,r:5,time:65,age:0,cap:15,drop:['food','wood','gold','stone'],damage:13,range:16,volley:2,reload:1.2},
   house:{name:'House',desc:'Adds 10 population capacity.',cost:{wood:55},hp:450,r:2.3,time:18,age:0,cap:10},
   farm:{name:'Farm',desc:'Renewable food source. Assign a villager to harvest.',cost:{wood:65},hp:250,r:3,time:12,age:0,resource:'food'},
   mill:{name:'Mill',desc:'Nearby food drop-off. Reduces walking time for farmers and foragers.',cost:{wood:90},hp:550,r:2.5,time:22,age:0,drop:['food']},
@@ -29,8 +29,8 @@ export const BUILDINGS = {
   workshop:{name:'Siege workshop',desc:'Builds battering rams and trebuchets.',cost:{wood:220,gold:100},hp:1200,r:3.8,time:40,age:2},
   blacksmith:{name:'Blacksmith',desc:'Researches weapons, armor, and ranged upgrades.',cost:{wood:160},hp:900,r:2.8,time:30,age:1},
   market:{name:'Market',desc:'Exchange resources for gold, or buy supplies. Economic research is available here.',cost:{wood:180},hp:900,r:3.4,time:32,age:1},
-  tower:{name:'Watchtower',desc:'Automatically fires on enemies. Provides excellent vision.',cost:{wood:90,stone:130},hp:1400,r:2,time:35,age:1,damage:18,range:20,vision:27},
-  keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:80,age:2,damage:35,range:23,cap:20,vision:30},
+  tower:{name:'Watchtower',desc:'Automatically fires on enemies. Provides excellent vision.',cost:{wood:90,stone:130},hp:1400,r:2,time:35,age:1,damage:18,range:20,vision:27,volley:3,reload:1.1},
+  keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:80,age:2,damage:35,range:23,cap:20,vision:30,volley:5,reload:1},
   wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:1},
   gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:1},
   monastery:{name:'Monastery',desc:'Trains healers. Heal wounded troops between engagements.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},

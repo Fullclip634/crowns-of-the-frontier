@@ -13,7 +13,7 @@ test('wave normals agree with numerical surface derivatives and settle at both n
     const actual=sampleWaterWave(x,z,time,shore,wet),dx=(sampleWaterWave(x+step,z,time,shore,wet).height-sampleWaterWave(x-step,z,time,shore,wet).height)/(2*step),dz=(sampleWaterWave(x,z+step,time,shore,wet).height-sampleWaterWave(x,z-step,time,shore,wet).height)/(2*step),expected=new THREE.Vector3(-dx,1,-dz).normalize();
     assert.ok(expected.distanceTo(new THREE.Vector3(...actual.normal))<1e-8);assert.ok(Math.abs(Math.hypot(...actual.normal)-1)<1e-12);assert.ok(Math.abs(actual.height)<WATER_WAVE_BOUND);
     if(shore===0){assert.equal(Math.abs(actual.height),0);assert.deepEqual(actual.normal.map(value=>value||0),[0,1,0]);}
-    if(wet===0&&shore>=1)assert.ok(Math.abs(actual.height-(.035*Math.sin(x*.9+z*.36+time*1.3)+.02*Math.cos(z*.65-time)))<1e-12,'calm-water displacement retains its established profile');
+    if(wet===0&&shore>=1)assert.ok(Math.abs(actual.height-(.05*Math.sin(x*.9+z*.36+time*1.3)+.025*Math.cos(z*.65-time)))<1e-12,'calm-water displacement follows the shared wave profile');
   }
 });
 

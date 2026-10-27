@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {Simulation,distance} from '../src/simulation.js';
-import {WALL_SPACING,wallLinePoints,wallConnections} from '../src/walls.js';
+import {WALL_SPACING,wallLinePoints,wallConnections,wallTreeConnections} from '../src/walls.js';
+import {WallPlacement,wallPlacementPlan} from '../src/wall-placement.js';
 import {WallVisuals} from '../src/wall-visuals.js';
 import {clearSegment} from '../src/navigation.js';
 import {battlePreset} from '../src/custom-battle.js';
@@ -22,6 +23,19 @@ test('paid wall lines stop at the first obstruction or budget limit and extend e
   const walls=sim.buildWallLine({x:0,z:20},{x:30,z:20},[worker.id]);assert.equal(walls.length,3);assert.ok(walls.every(wall=>wall.x<house.x));assert.equal(sim.players[0].resources.stone,before-22*walls.length);assert.equal(worker.order.target,walls[0].id);assert.equal(worker.orders.length,walls.length-1);
   const extended=sim.buildWallLine(walls[0],{x:-12,z:20},[worker.id]);assert.equal(extended.length,4);assert.ok(walls[0].wallLinks.includes(extended[0].id));
   const low=fixture(),builder=low.addUnit('villager',0,0,15);low.players[0].resources.stone=44;assert.equal(low.buildWallLine({x:0,z:20},{x:30,z:20},[builder.id]).length,2);assert.equal(low.players[0].resources.stone,0);
+});
+
+test('a tree-anchored wall blocks real enemy routes and felling trees creates a real breach',()=>{
+  const sim=fixture(),worker=sim.addUnit('villager',0,0,14),trees=[];
+  for(let x=-80;x<=80;x+=2)if(x<=-10||x>=10)trees.push(sim.addResource('wood',x,20,600));
+  const left=trees.find(tree=>tree.x===-10),right=trees.find(tree=>tree.x===10),draft=new WallPlacement();draft.drag(left,right);
+  const plan=wallPlacementPlan(sim,draft,[worker.id]);assert.equal(plan.canBuild,true,plan.message);
+  const walls=sim.buildWallLine(plan.from,plan.to,[worker.id]);assert.equal(walls.length,plan.count);assert.equal(wallTreeConnections(sim.entities).length,2);
+  const enemy=sim.addUnit('spearman',1,-11,14),destination={x:-11,z:26};sim.pathTo(enemy,destination);assert.equal(enemy.pathStatus,'blocked','the connected forest and walls close the crossing');
+  left.hp=0;trees.find(tree=>tree.x===-12).hp=0;sim.revision++;sim.grids={};assert.equal(wallTreeConnections(sim.entities).length,1);
+  sim.pathTo(enemy,destination);assert.equal(enemy.pathStatus,'ready','the cleared trees leave a genuine opening');
+  let arrived=false;for(let i=0;i<200;i++){sim.time+=.1;if(sim.move(enemy,destination,.1,0,true)){arrived=true;break;}}
+  assert.ok(arrived,'the enemy can walk through the harvested breach');
 });
 
 test('wall turns retain their actual neighbors and a destroyed corner remains a breach after reload',()=>{

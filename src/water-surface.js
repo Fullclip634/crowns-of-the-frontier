@@ -120,7 +120,7 @@ export function animateWaterSurface(view){
   const time=view.materials.water.frontierWaveTime;if(time)time.value=still?0:view.clock;
   const sky=view.materials.water.frontierWaterSky;if(sky&&view.scene.background?.isColor)sky.value.copy(view.scene.background);
   const wet=Math.max(0,Math.min(1,view.weatherState?.amount||0));
-  const ripples=view.materials.water.frontierWaterRipples;if(ripples)ripples.value=(view.settings.quality==='low'?.035:.06)*(still?0:1+wet*.35);
+  const ripples=view.materials.water.frontierWaterRipples;if(ripples)ripples.value=(view.settings.quality==='low'?.045:.075)*(still?0:1+wet*.35);
   const detail=view.materials.water.frontierWaterDetail;if(detail)detail.value=still||view.settings.quality==='low'?0:1;
   const motion=view.materials.water.frontierWaterMotion;if(motion)motion.value=waterMotionScale(wet);
   const light=view.materials.water.frontierWaterLight;if(light)light.value=Math.max(.18,Math.min(1,((view.sun?.intensity??2.7)+(view.hemi?.intensity??.9)*.45)/3.105));

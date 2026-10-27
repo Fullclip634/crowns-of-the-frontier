@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {wallConnections} from './walls.js';
+import {wallConnections,wallTreeConnections} from './walls.js';
 import {markInstancePrefix} from './render-batches.js';
 import {terrainFloor} from './building-grounding.js';
 
@@ -15,12 +15,12 @@ export class WallVisuals{
     const dx=end.x-start.x,dz=end.z-start.z,len=Math.hypot(dx,dz);if(len<.01)return;const index=mesh.count++,cx=(start.x+end.x)/2,cz=(start.z+end.z)/2;
     this.matrix.set(dx,0,-dz/len*depth,cx,groundB-groundA,height,0,(groundA+groundB)/2+y,dz,0,dx/len*depth,cz,0,0,0,1);mesh.setMatrixAt(index,this.matrix);mesh.userData.wallIds[index]=link.a.type==='wall'?link.a.id:link.b.id;
   }
-  update(menu){const v=this.view;if(this.revision!==v.sim.revision||this.entities!==v.sim.entities){this.links=wallConnections(v.sim.entities).filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
+  update(menu){const v=this.view;if(this.revision!==v.sim.revision||this.entities!==v.sim.entities){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
-    const shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z),signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress,link.b.progress).toFixed(3)}`).join('|');
+    const shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z),signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}`).join('|');
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}
     let visible=0;
-    for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress,link.b.progress);if(progress<=0)continue;visible++;
+    for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress??1,link.b.progress??1);if(progress<=0)continue;visible++;
       const ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,start={x:link.start.x-dx*.08,z:link.start.z-dz*.08},end={x:link.end.x+dx*.08,z:link.end.z+dz*.08};
       this.piece(this.stone,link,start,end,ga,gb,1.67*progress,3.55*progress,1.47);
       const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12,depth=Math.max(.42,Math.max(ga,gb)+.29-floor);

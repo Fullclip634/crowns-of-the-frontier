@@ -4,6 +4,7 @@ import http from 'node:http';
 import WebSocket from 'ws';
 import {attachRooms} from '../server/rooms.js';
 import {battlePreset} from '../src/custom-battle.js';
+import {wallTreeConnections} from '../src/walls.js';
 class Inbox{
   constructor(ws){this.items=[];this.waiters=[];ws.on('message',raw=>{const message=JSON.parse(raw),index=this.waiters.findIndex(w=>w.type===message.type);if(index>=0){const [waiter]=this.waiters.splice(index,1);clearTimeout(waiter.timer);waiter.resolve(message);}else this.items.push(message);});}
   next(type){const i=this.items.findIndex(message=>message.type===type);if(i>=0)return Promise.resolve(this.items.splice(i,1)[0]);return new Promise((resolve,reject)=>{const waiter={type,resolve,timer:setTimeout(()=>reject(new Error('Missing '+type)),8000)};this.waiters.push(waiter);});}
@@ -102,6 +103,25 @@ test('multiplayer wall drags finish the paid connected line and reject foreign w
     for(let step=0;step<2000&&walls.some(wall=>wall.progress<1);step++)tick.call(sim,.1);
     assert.ok(walls.every(wall=>wall.progress===1),'all planted lines and individual sections finish after canceling the current wall, without another click');
     tick.call(sim,.1);tick.call(sim,.1);assert.notEqual(worker.order?.type,'build');assert.equal(worker.orders.length,0);
+  }finally{sim.tick=tick;}
+});
+
+test('multiplayer builds a tree-anchored wall and sends the full defensive volley',async t=>{
+  const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[1].controller='human';
+  const host=await connect();host.send({type:'create',name:'Host',options:{mode:'custom',map:'highlands',seed:512,startAge:1,slots}});const session=await host.inbox.next('session');
+  const ally=await connect();ally.send({type:'join',name:'Ally',slot:2,code:session.code});await ally.inbox.next('session');ally.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await ally.inbox.next('begin');
+  const sim=service.rooms.get(session.code).sim,tick=sim.tick;sim.tick=()=>{};
+  try{
+    const tc=sim.owned(0,'building','towncenter')[0],worker=sim.owned(0,'unit','villager')[0];sim.entities=[tc,worker];sim.index=new Map(sim.entities.map(entity=>[entity.id,entity]));sim.revision++;sim.grids={};
+    const center={x:tc.x+20,z:tc.z-10},left=sim.addResource('wood',center.x-10,center.z,600),right=sim.addResource('wood',center.x+10,center.z,600);
+    worker.x=center.x;worker.z=center.z-4;sim.players[0].resources.stone=2000;sim.updateFog();
+    host.send({type:'action',method:'buildWallLine',args:[left.x+2.425,left.z,right.x-2.425,right.z,[worker.id]]});
+    await until(()=>sim.owned(0,'building','wall').length===6);const walls=sim.owned(0,'building','wall');assert.equal(wallTreeConnections(sim.entities).length,2);
+    for(const wall of walls)wall.progress=1;
+    const keep=sim.addBuilding('keep',0,center.x,center.z-10,true),enemy=sim.addUnit('knight',2,center.x+8,center.z-10);sim.updateFog();host.inbox.items=[];sim.hit(keep,enemy);
+    await until(()=>host.inbox.items.some(message=>message.type==='state'&&message.effects.filter(event=>event.type==='attack'&&event.entity?.id===keep.id).length===5));
+    const effects=host.inbox.items.find(message=>message.type==='state'&&message.effects.filter(event=>event.type==='attack'&&event.entity?.id===keep.id).length===5).effects.filter(event=>event.type==='attack'&&event.entity?.id===keep.id);
+    assert.deepEqual(effects.map(event=>event.garrisonArrow),[0,1,2,3,4]);assert.equal(sim.projectiles[0].bonus.length,4);
   }finally{sim.tick=tick;}
 });
 

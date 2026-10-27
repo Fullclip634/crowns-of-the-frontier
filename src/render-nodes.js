@@ -129,7 +129,7 @@ export function water(material){
   const shore=attribute('frontierWaterShore','float'),bank=varying(vec2(attribute('frontierWaterDepth','float'),shore));
   const xz=varying(positionGeometry.xz),a=positionGeometry.x.mul(.9).add(positionGeometry.z.mul(.36)).add(time.mul(1.3)),b=positionGeometry.z.mul(.65).sub(time);
   const fade=smoothstep(0,1,shore).mul(motion);
-  const wave=vec3(sin(a).mul(.035).add(cos(b).mul(.02)),cos(a).mul(.0315),cos(a).mul(.0126).sub(sin(b).mul(.013))).mul(fade);
+  const wave=vec3(sin(a).mul(.05).add(cos(b).mul(.025)),cos(a).mul(.045),cos(a).mul(.018).sub(sin(b).mul(.01625))).mul(fade);
   const displaced=positionGeometry.add(vec3(0,wave.x,0));
   const waveNormal=Fn(()=>{normalLocal.assign(normalize(vec3(wave.y.negate(),1,wave.z.negate())));return displaced;})();
   material.positionNode=waveNormal;

@@ -5,7 +5,7 @@ import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
 import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle.js';
 import {SpatialBuckets} from './spatial-buckets.js';
-import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints} from './walls.js';
+import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints,wallEndpointTree} from './walls.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {installGarrison} from './garrison.js';
@@ -13,7 +13,8 @@ import {installProjectileCombat} from './projectile-combat.js';
 import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
 import {constructionFace,constructionHeading} from './construction-contact.js';
-import {approachConstruction} from './construction-approach.js';
+import {approachConstruction,approachMelee} from './construction-approach.js';
+import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading} from './melee-contact.js';
 import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
@@ -124,7 +125,7 @@ export class Simulation {
   buildValid(type,x,z,owner=0){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
-    return !this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+d.r+(type==='wall'&&e.type==='wall'?-.3:.8));
+    return !this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<(type==='wall'&&e.kind==='resource'&&e.type==='wood'?e.r+.8:e.r+d.r+(type==='wall'&&e.type==='wall'?-.3:.8)));
   }
   build(type,x,z,workerIds,owner=0,append=false){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
     const workers=workerIds.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.type==='villager'&&!e.embarked);if(!workers.length)return this.fail('Select a villager to construct buildings.',owner);
@@ -135,8 +136,10 @@ export class Simulation {
   buildWallLine(from,to,workerIds,owner=0,requireVisibility=false){
     if(!from||!to||![from.x,from.z,to.x,to.z].every(Number.isFinite)||[from.x,from.z,to.x,to.z].some(n=>Math.abs(n)>this.halfWorld))return[];
     const existing=this.owned(owner,'building','wall').filter(e=>distance(e,from)<1.8).sort((a,b)=>distance(a,from)-distance(b,from))[0],start=existing||from,built=[];
-    const points=wallLinePoints(start,to);
+    const endWall=this.owned(owner,'building','wall').filter(e=>e!==existing&&distance(e,to)<1.8).sort((a,b)=>distance(a,to)-distance(b,to))[0];
+    const exact=!!wallEndpointTree(this,start)&&!!(wallEndpointTree(this,to)||endWall),points=wallLinePoints(start,to,exact);
     for(let i=existing?1:0;i<points.length;i++){const point=points[i];if(requireVisibility&&!this.canSee(owner,point)){this.fail('Construct walls within your visible territory.',owner);break;}
+      if(endWall&&distance(point,endWall)<1.8&&built.length&&distance(built.at(-1),endWall)<=3.35)break;
       const wall=this.build('wall',point.x,point.z,workerIds,owner,built.length>0);if(!wall)break;wall.wallRun=existing?.wallRun||built[0]?.id||wall.id;wall.wallIndex=(existing?.wallIndex||0)+built.length+1;built.push(wall);
     }return built;
   }
@@ -274,6 +277,11 @@ export class Simulation {
     let combat=null;
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
     else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type)))combat=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&['unit','building'].includes(t.kind)&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!order||order.type!=='guard'||distance(t,this.get(order.target)||e)<18),e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0),d.role==='siege'?27:13),true);
+    if(combat&&meleeBuildingAttack(e,combat)){
+      const gap=meleeSurfaceDistance(e,combat);
+      if(gap>meleeReach(e)||gap<0){if(e.stance!=='hold'||order?.type==='attack')approachMelee(this,e,combat,dt);}
+      else{e.heading=meleeHeading(e,combat);this.hit(e,combat);}return;
+    }
     if(combat){const range=Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0)+combat.r,combat.kind==='building'?combat.r+3:0);
       if(distance(e,combat)>range){if(e.stance!=='hold'||order?.type==='attack')this.move(e,combat,dt,range);}else{e.heading=Math.atan2(combat.x-e.x,combat.z-e.z);this.hit(e,combat);}return;
     }
