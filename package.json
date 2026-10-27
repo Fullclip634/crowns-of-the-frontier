@@ -11,6 +11,7 @@
     "art:bridge": "node scripts/blender/build-bridge.mjs",
     "art:materials": "node --use-system-ca scripts/vendor-materials.mjs",
     "art:characters": "node scripts/blender/build-character-surfaces.mjs",
+    "art:horse": "node scripts/blender/build-horse-legs.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
     "start": "node server/index.js"

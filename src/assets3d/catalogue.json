@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 17661760,
-    "low": 4303080,
-    "balanced": 13002844
+    "near": 17667504,
+    "low": 4318316,
+    "balanced": 13012140
   },
   "source": "Original Blender crop fields composed with unchanged original models.",
   "stage": "full",
@@ -521,8 +521,8 @@
   "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
   "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedSourceHashes": {
-    "near": "59a8f20cbb7039339900f12b3576f1fc0e4173d30385b84e870014da4cf72dfc",
-    "low": "462b1d7a478710ecdb20214cfe966c960f1bd2e9e2a658e668bd56804de1e689",
+    "near": "d27d325c291a6aef0085389a7c03ca7f7a9e9e2737ce86c1a1ab36850e7adb5d",
+    "low": "d6af7185a2d8a95f174aae35d1f0362007698ed815427007476feabb29cabb7b",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "farmRevision": "field-crops-v1",
@@ -540,19 +540,19 @@
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1341,
-    "visibleTriangles": 661707,
+    "meshes": 1353,
+    "visibleTriangles": 663267,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0038601816402106938,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17382460,
-    "candidateBytes": 13002844,
-    "referenceDecodedBufferBytes": 36986344,
-    "candidateDecodedBufferBytes": 33234716,
-    "referenceSHA256": "80824e81175deb3bbd39c2cd3378a841b6f4a9118853cf36cffed261f287c945",
-    "candidateSHA256": "f9fc2dd3546c2e933dbb4d708185d8ed47d996cc73d33d46176d1bd04c1b6d56"
+    "referenceBytes": 17392224,
+    "candidateBytes": 13012140,
+    "referenceDecodedBufferBytes": 36990904,
+    "candidateDecodedBufferBytes": 33239076,
+    "referenceSHA256": "405749a645d0a9d0b2a2d87e2ec59dc6ae82dc15f2a73a2f6807d131e1579499",
+    "candidateSHA256": "1e6975e74c8f4b207ebcd5984d19ed318e306a6f4f5b0ed65567da0abdb56c1b"
   },
   "windmillRevision": "axle-clearance-v1",
   "windmillSourceSHA256": "a25f4624fef138173a51da6fb7c39fd6f5e65a41a24d8bac97fb3128a0d50a25",
@@ -583,5 +583,6 @@
   },
   "workerToolRevision": "craft-tools-v1",
   "figureRevision": "field-forms-v1",
-  "bowRevision": "drawn-bows-v1"
+  "bowRevision": "drawn-bows-v1",
+  "horseLegRevision": "articulated-hooves-v1"
 }

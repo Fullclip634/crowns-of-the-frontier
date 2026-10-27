@@ -1,5 +1,6 @@
 import {Matrix4,Vector3,Quaternion} from 'three';
 import {HUMAN_STRIDE} from './locomotion.js';
+import {prepareMountedFooting,mountedPartPose} from './mounted-footing.js';
 
 // Released adult figure joints. Boots and calf cuffs meet at the ankle; their
 // source geometry is retained and only the boot's motion chain gains a joint.
@@ -37,13 +38,14 @@ function around(parent,pivot,quaternion,output){
 
 export function prepareFootPlacement(view,batch,entity,matrix){
   view.footPoseEntity=null;
+  if(batch.model3d?.terrainHorse)return prepareMountedFooting(view,batch,entity,matrix);
   if(!batch.model3d?.terrainFeet||!view.landscape||!view.groundHeight||view.disableFootPlacement||entity.embarked||entity.hp<=0)return matrix;
   const gait=view.locomotion?.get(entity.id),phase=gait?.phase||0,blend=clamp(gait?.blend||0,0,1),m=matrix.elements,x=m[12],z=m[14],y=m[13],cos=m[0],sin=m[8];
   // Unit roots are upright rigid transforms. Other inspection transforms retain
   // their existing pose instead of interpreting their scale as terrain slope.
   if(Math.abs(m[5]-1)>1e-5||Math.abs(cos*cos+sin*sin-1)>1e-5||Math.abs(m[10]-cos)>1e-5||Math.abs(m[2]+sin)>1e-5||Math.abs(m[1])+Math.abs(m[4])+Math.abs(m[6])+Math.abs(m[9])>1e-5)return matrix;
   const states=view.footPoses??=new Map();let pose=states.get(entity.id);
-  if(!pose){pose={root:new Matrix4(),feet:[-1,1].map(side=>({side,x:side*.18,z:.025,y:0,lift:0,nx:0,ny:1,nz:0,sample:{height:0,dx:0,dz:0},leg:new Matrix4(),knee:new Matrix4(),ankle:new Matrix4(),clamp:0}))};states.set(entity.id,pose);}
+  if(!pose||pose.kind==='horse'){pose={root:new Matrix4(),feet:[-1,1].map(side=>({side,x:side*.18,z:.025,y:0,lift:0,nx:0,ny:1,nz:0,sample:{height:0,dx:0,dz:0},leg:new Matrix4(),knee:new Matrix4(),ankle:new Matrix4(),clamp:0}))};states.set(entity.id,pose);}
   view.footPoseEntity=entity;
   if(pose.landscape===view.landscape&&pose.grid===view.landscape.grid&&pose.x===x&&pose.z===z&&pose.y===y&&pose.cos===cos&&pose.sin===sin&&pose.phase===phase&&pose.blend===blend){if(view.footDiagnostics)view.footDiagnostics.reused++;return pose.root;}
   pose.landscape=view.landscape;pose.grid=view.landscape.grid;pose.x=x;pose.z=z;pose.y=y;pose.cos=cos;pose.sin=sin;pose.phase=phase;pose.blend=blend;
@@ -68,6 +70,7 @@ export function prepareFootPlacement(view,batch,entity,matrix){
 }
 
 export function footPartPose(view,joint,entity,matrix){
+  if(joint.type==='horseleg'||joint.type==='horseknee'||joint.type==='horsehoof')return mountedPartPose(view,joint,entity,matrix);
   if(view.footPoseEntity!==entity||view.jointPoseEntity!==entity||joint.riding||joint.type!=='leg'&&joint.type!=='knee'&&joint.type!=='ankle')return null;
   const pose=view.footPoses.get(entity.id);return matrix===pose.root?pose.feet[joint.side<0?0:1][joint.type]:null;
 }

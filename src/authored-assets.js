@@ -4,6 +4,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import manifest from './assets3d/catalogue.json' with {type:'json'};
 import {bindWorkerToolJoints} from './worker-tool-rig.js';
 import {bindFootJoints} from './foot-placement.js';
+import {bindMountedFootRig} from './mounted-footing.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -137,6 +138,7 @@ function cloneAsset(view,key,owner=0){
   const root=template.clone(true);
   if(key.startsWith('unit:villager'))bindWorkerToolJoints(root);
   const terrainFeet=key.startsWith('unit:')&&bindFootJoints(root);
+  const terrainHorse=key.startsWith('unit:')&&bindMountedFootRig(root);
   view.authoredGeometry??=new Set();
   root.traverse(part=>{
     if(part.userData.assetBody)root.userData.body=part;
@@ -154,7 +156,7 @@ function cloneAsset(view,key,owner=0){
     part.castShadow=true;part.receiveShadow=true;
     view.authoredGeometry.add(part.geometry);
   });
-  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),authored:true,detail:key.startsWith('tree:')&&active.trees?'shared':active.detail};
+  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),...(terrainHorse?{terrainHorse:true}:{}),authored:true,detail:key.startsWith('tree:')&&active.trees?'shared':active.detail};
   view.artDiagnostics=authoredAssetState();
   return root;
 }

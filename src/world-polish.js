@@ -77,7 +77,7 @@ export function installWorldPolish(WorldView){const p=WorldView.prototype,base={
 function jointAngle(view,m,e){
   const gait=view.locomotion?.get(e.id),phase=gait?.phase??view.clock*8.5+e.id*.7,blend=gait?.blend??Number(!!e.moving),walk=Math.sin(phase)*(m.side??1)*blend;
   if(m.type==='wheel')return gait?.wheel??(e.moving?view.clock*5:0);
-  if(m.type==='horseleg')return Math.sin(phase+(m.pivot[2]>0?Math.PI:0))*(m.side??1)*blend*.5;
+  if(m.type==='horseleg')return Math.sin(phase)*(m.side??1)*blend*.5;
   if(m.type==='knee')return m.riding?Math.sin(phase)*blend*.035:Math.max(0,-walk)*.65;
   if(m.type==='leg')return m.riding?Math.sin(phase)*blend*.025:walk*.46;
   if(m.type==='torso')return blend>.01?walk*.022:Math.sin(view.clock*1.7+e.id)*.009;

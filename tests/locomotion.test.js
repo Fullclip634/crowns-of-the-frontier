@@ -35,7 +35,7 @@ test('wheels preserve their stopped orientation, siege does not bounce and motio
 
 test('horse legs use diagonal pairs and troop strides keep rigid articulated transforms',()=>{
   const e={id:7,type:'knight',moving:true},gait=new UnitLocomotion();gait.update(e,0,0,0);gait.update(e,0,.3,.1);const view={clock:1,locomotion:gait},matrix=new THREE.Matrix4();
-  const pose=(side,z)=>animatePart(view,{userData:{motion:{type:'horseleg',pivot:[0,1,z],side}}},e,matrix).clone();
-  const rightRear=pose(1,-.5),leftFront=pose(-1,.5),leftRear=pose(-1,-.5);assert.ok(Math.abs(rightRear.elements[6]-leftFront.elements[6])<1e-10);assert.ok(Math.abs(rightRear.elements[6]+leftRear.elements[6])<1e-10);
-  for(const result of [rightRear,leftFront,leftRear]){assert.ok(result.elements.every(Number.isFinite));assert.ok(Math.abs(result.determinant()-1)<1e-10);}
+  const pose=(x,z)=>animatePart(view,{userData:{motion:{type:'horseleg',pivot:[x,1,z],side:Math.sign(x)*(z>0?1:-1)}}},e,matrix).clone();
+  const leftRear=pose(-.3,-.58),rightFront=pose(.3,.59),leftFront=pose(-.3,.59);assert.ok(Math.abs(leftRear.elements[6]-rightFront.elements[6])<1e-10);assert.ok(Math.abs(leftRear.elements[6]+leftFront.elements[6])<1e-10);
+  for(const result of [leftRear,rightFront,leftFront]){assert.ok(result.elements.every(Number.isFinite));assert.ok(Math.abs(result.determinant()-1)<1e-10);}
 });
