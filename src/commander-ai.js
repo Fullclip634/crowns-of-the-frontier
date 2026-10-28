@@ -195,7 +195,7 @@ export function installCommanderAI(Simulation){
     manageExpansion(this,state,owner,workers,baseThreats);
     if(this.options.map==='coast'&&!buildings.some(site=>site.type==='dock')){const z=player.start?.z??tc.z;this.commanderBuild('dock',{x:Math.sin(z*.03)*2+Math.sign(tc.x)*20,z},owner);}
     const ageCost=AGE_COSTS[player.age];
-    const populationLimit=this.options.populationLimit||160,ageWorkerThreshold=Math.min(12,Math.max(4,Math.floor(populationLimit*.4)));
+    const populationLimit=this.options.populationLimit||160,ageWorkerThreshold=Math.min(12,Math.max(8,Math.floor(populationLimit*.4)));
     state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor(populationLimit*.5))};
     if(this.capacity(owner)<(this.options.populationLimit||160)&&this.capacity(owner)-this.population(owner)-this.reservedPopulation(owner)<6&&!buildings.some(b=>b.type==='house'&&b.progress<1))this.commanderBuild('house',null,owner);
     for(const town of towns.filter(b=>b.progress>=1))if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&town.queue.length<2)this.train(town.id,'villager');
