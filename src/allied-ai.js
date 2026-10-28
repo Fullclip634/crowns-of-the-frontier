@@ -15,9 +15,11 @@ export function customAttackTarget(sim,owner,state,tc,knownBuildings){
 export const AI_PACES={balanced:{name:'Balanced · build up, then battle',factor:1,army:1},patient:{name:'Grand war · longer buildup',factor:1.5,army:1.3},aggressive:{name:'Aggressive · early pressure',factor:0,army:.65}};
 export function customOpening(sim,owner,profile){
   const pace=AI_PACES[sim.options.aiPace]||AI_PACES.balanced,difficulty=sim.difficulty(owner),age=sim.options.startAge||0;
-  if(!pace.factor)return {earliest:DIFFICULTIES[difficulty].attack,army:Math.min(profile.raid,6+sim.players[owner].age*3),workers:0,age:0};
+  // Small battles must leave room for workers, support and the coastal fleet.
+  const limit=sim.options.populationLimit||80,armyBudget=limit<80?Math.max(4,Math.floor(limit*.4)-(sim.options.map==='coast'?11:0)):Infinity;
+  if(!pace.factor)return {earliest:DIFFICULTIES[difficulty].attack,army:Math.min(armyBudget,profile.raid,6+sim.players[owner].age*3),workers:0,age:0};
   const floor={story:420,normal:300,hard:240,brutal:210}[difficulty];
-  return {earliest:Math.max(DIFFICULTIES[difficulty].attack,floor*[1,.7,.45,.3][age]*pace.factor),army:Math.ceil(profile.raid*pace.army),workers:age>=2?12:16,age:1};
+  return {earliest:Math.max(DIFFICULTIES[difficulty].attack,floor*[1,.7,.45,.3][age]*pace.factor),army:Math.min(armyBudget,Math.ceil(profile.raid*pace.army)),workers:age>=2?12:16,age:1};
 }
 
 // A teammate's damage report shares the threatened base, not hidden enemy data.

@@ -15,14 +15,14 @@ async function until(predicate){const deadline=Date.now()+4000;while(!predicate(
 
 test('eight human commanders ready, receive private team perspectives, reconnect, and win as an alliance',async t=>{
   const {service,connect}=await fixture(t),players=[],sessions=[],slots=battlePreset('4v4').map(slot=>({...slot,controller:'human'}));
-  const host=await connect();players.push(host);host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',mapSize:'huge',seed:512,slots,aiPace:'patient'}});const session=await host.inbox.next('session');sessions.push(session);const code=session.code;
+  const host=await connect();players.push(host);host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',mapSize:'huge',seed:512,slots,aiPace:'patient',populationLimit:40}});const session=await host.inbox.next('session');sessions.push(session);const code=session.code;
   for(let i=1;i<8;i++){const player=await connect();players.push(player);player.send({type:'join',name:`Commander ${i+1}`,faction:['alder','sun','raven'][i%3],code});sessions.push(await player.inbox.next('session'));}
   host.send({type:'start'});assert.match((await host.inbox.next('error')).message,/ready/);
   for(const player of players)player.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});
   const beginnings=await Promise.all(players.map(player=>player.inbox.next('begin'))),room=service.rooms.get(code);assert.equal(room.sim.players.length,8);assert.equal(room.sim.worldSize,400);
   for(let i=0;i<8;i++){
     const state=beginnings[i].state;assert.equal(state.players[0].name,i===0?'Host':`Commander ${i+1}`);assert.equal(state.entities.filter(e=>e.hp>0&&e.owner===0&&e.kind==='unit').length,9);assert.equal(state.visible.length,40000);
-    assert.equal(state.options.aiPace,'patient');
+    assert.equal(state.options.aiPace,'patient');assert.equal(state.options.populationLimit,40);assert.equal(room.sim.capacity(i),35,'housing capacity remains separate from the chosen army cap');
     for(const player of state.players.slice(1)){const owner=room.sim.players.findIndex(value=>value.name===player.name);assert.notEqual(owner,-1);if(room.sim.allied(i,owner))assert.deepEqual(player.resources,room.sim.players[owner].resources,`allied supplies are visible to ${state.players[0].name}`);else assert.ok(Object.values(player.resources).every(value=>value===0),'enemy supplies remain private');}assert.equal(state.aiStates,null);assert.equal(state.commanderAI,null);assert.deepEqual(state.teamAlarms,{});
     assert.equal(state.entities.filter(e=>e.hp>0&&e.kind==='unit'&&state.players[e.owner]?.team!==state.players[0].team).length,0);
   }

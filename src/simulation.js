@@ -146,7 +146,8 @@ export class Simulation {
   train(buildingId,type){const b=this.get(buildingId),d=UNITS[type];if(!b||b.kind!=='building'||b.progress<1||!d||!d.at.includes(b.type))return false;
     const owner=b.owner,p=this.players[owner];if(p.age<d.age)return this.fail('This troop requires a later age.',owner);
     if(!availableTo(d,p.faction))return this.fail('This troop belongs to another civilization.',owner);
-    if(this.population(owner)+this.reservedPopulation(owner)>=this.capacity(owner))return this.fail('Population limit reached. Build another house.',owner);
+    const capacity=this.capacity(owner);
+    if(this.population(owner)+this.reservedPopulation(owner)>=capacity)return this.fail(capacity>=(this.options.populationLimit||160)?`Population limit reached (${this.options.populationLimit||160} per kingdom).`:'Housing capacity reached. Build another house.',owner);
     if(b.queue.length>=8)return this.fail('Training queue is full.',owner);
     if(!this.spend(d.cost,owner))return this.fail('Not enough resources.',owner);
     b.queue.push({kind:'unit',type,remaining:d.time,total:d.time,cost:{...d.cost}});return true;
