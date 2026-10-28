@@ -18,8 +18,8 @@ test('lower population choices survive setup, hosting and normalization without 
   assert.match(customBattleMarkup(draft),/<option value="80" selected>/);
 });
 
-test('20, 40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
-  for(const limit of [20,40,60]){
+test('10, 20, 40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
+  for(const limit of [10,20,40,60]){
     const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',seed:512,populationLimit:limit});
     for(const owner of [0,1]){
       const town=sim.owned(owner,'building','towncenter')[0];sim.players[owner].resources={food:10000,wood:10000,gold:10000,stone:10000};
@@ -41,6 +41,23 @@ test('AI kingdoms at the 20 cap can begin aging up on land and coastal maps',()=
     for(let tick=0;tick<12;tick++)sim.tickCustomAI(1);
     assert.equal(sim.players[owner].agePending,true,`${map}: the AI reaches its age-up threshold with eight starting workers`);
     assert.ok(sim.population(owner)<=20,`${map}: the AI remains within its chosen cap`);
+  }
+});
+
+test('10 population starts leave training room at every age and AI can afford its opening requirements',()=>{
+  for(const map of ['highlands','coast'])for(const startAge of [0,1,2,3]){
+    const sim=new Simulation({mode:'custom',map,mapSize:'spacious',seed:512,populationLimit:10,startAge,slots:battlePreset('2v2')});
+    for(let owner=0;owner<sim.players.length;owner++){
+      assert.ok(sim.population(owner)<10,`${map}, age ${startAge}: starting units leave room to train`);
+      assert.equal(sim.capacity(owner),10);
+    }
+    const opening=customOpening(sim,1,AI_PROFILES.normal);
+    assert.ok(opening.workers<=sim.owned(1,'unit','villager').length,'opening economy threshold is reachable');
+    if(startAge===0&&map==='highlands'){
+      sim.players[1].resources={food:5000,wood:5000,gold:5000,stone:5000};sim.time=80;
+      for(let i=0;i<12;i++)sim.tickCustomAI(1);
+      assert.equal(sim.players[1].agePending,true,'small AI economies can advance their age');
+    }
   }
 });
 
