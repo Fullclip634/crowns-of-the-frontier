@@ -197,6 +197,9 @@ export class WorldView {
       const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));node=sceneNodeFor(this,e,visible);if(!node)continue;
       if(node.userData.batch&&node.userData.unitVariant!==workerVisualTask(this,e)){releaseSceneNode(this,e,node);node=this.createNode(e);}
       node.visible=visible&&!e.embarked;
+      // Hidden and embarked units keep their authoritative simulation state;
+      // their render-only gait and work poses can wait until they are visible.
+      if(e.kind==='unit'&&(!visible||e.embarked))continue;
       const position=renderPosition(this,e),rx=position.x,rz=position.z,heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,ground=this.entityHeight(e,rx,rz),gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;e.renderX=rx;e.renderZ=rz;
       if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){

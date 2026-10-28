@@ -19,8 +19,8 @@ test('moonlight stays readable, retains lightning and restores daylight resource
 });
 
 test('tree distance detail is stable across camera jitter and graphics changes',()=>{
-  let state=treeDetail(41,'high');assert.ok(state.near);
-  for(const quality of ['low','medium','high']){state=treeDetail(34,quality,state);assert.ok(state.near,'changing presets preserves hysteresis');}
-  state=treeDetail(32,'low',state);assert.equal(state.near,false);
-  for(const quality of ['high','medium','low']){state=treeDetail(39,quality,state);assert.equal(state.near,false);assert.ok(treeDetail(40,quality,state).near);assert.equal(treeDetail(20,quality,state).near,false);}
+  let state=treeDetail(55,'high');assert.ok(state.near);
+  for(const quality of ['low','medium','high']){state=treeDetail(46,quality,state);assert.ok(state.near,'changing presets preserves hysteresis');}
+  state=treeDetail(44,'low',state);assert.equal(state.near,false);
+  for(const quality of ['high','medium','low']){state=treeDetail(53,quality,state);assert.equal(state.near,false);assert.ok(treeDetail(54,quality,state).near);assert.equal(treeDetail(20,quality,state).near,false);}
 });
