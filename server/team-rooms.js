@@ -121,7 +121,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
       if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
-    for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
+    for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
   }
   function action(player,room,message){
     const s=room.sim;if(!s||s.ended||s.players[player.side]?.defeated||waiting(room))return;
@@ -178,8 +178,8 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         send(ws,{type:'session',code:room.code,token:player.token});lobby(room);return;
       }
       if(message.type==='resume'&&!player){
-        room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',message:'That network session has ended.'});
-        player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
+        room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',code:'session-ended',message:'That network session has ended.'});
+        player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
       }
       if(!player||!room||player.ws!==ws||rooms.get(room.code)!==room)return;
       if(message.type==='visibility-resync'){if(player.ws===ws&&room.sim&&custom(room)&&player.protocol>=2)player.visibilityResync=true;return;}
