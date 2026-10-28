@@ -3,7 +3,7 @@ import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 
-export const POPULATION_LIMITS=Object.freeze([20,40,60,80,120,160]);
+export const POPULATION_LIMITS=Object.freeze([40,60,80,120,160]);
 
 export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'},vast:{name:'Vast',size:480,desc:'9× standard area'},epic:{name:'Epic',size:560,desc:'12.25× standard area'}};
 export const PLAYER_COLORS=[0x48abc2,0xe07566,0xe6c064,0x73b67b,0xb98ed2,0x66cec0,0xe69b58,0xc3cdd5];

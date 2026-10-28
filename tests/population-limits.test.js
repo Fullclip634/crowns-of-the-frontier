@@ -16,10 +16,14 @@ test('lower population choices survive setup, hosting and normalization without 
   }
   assert.equal(normalizeBattle(draft).populationLimit,80);assert.equal(normalizeBattle({...draft,populationLimit:1}).populationLimit,80);
   assert.match(customBattleMarkup(draft),/<option value="80" selected>/);
+  for(const removed of [10,20]){
+    assert.equal(normalizeBattle({...draft,populationLimit:removed}).populationLimit,80);
+    assert.doesNotMatch(customBattleMarkup(draft),new RegExp(`<option value="${removed}"`));
+  }
 });
 
-test('20, 40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
-  for(const limit of [20,40,60]){
+test('40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
+  for(const limit of [40,60]){
     const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',seed:512,populationLimit:limit});
     for(const owner of [0,1]){
       const town=sim.owned(owner,'building','towncenter')[0];sim.players[owner].resources={food:10000,wood:10000,gold:10000,stone:10000};
@@ -31,16 +35,6 @@ test('20, 40 and 60 unit caps include queued troops, apply to every kingdom and 
     }
     const loaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.equal(loaded.options.populationLimit,limit);assert.equal(loaded.capacity(1),limit);
     sim.owned(0,'unit')[0].hp=0;assert.equal(sim.train(sim.owned(0,'building','towncenter')[0].id,'villager'),true,'casualties free an actual population slot');
-  }
-});
-
-test('AI kingdoms at the 20 cap can begin aging up on land and coastal maps',()=>{
-  for(const map of ['highlands','coast']){
-    const sim=new Simulation({mode:'custom',map,mapSize:'spacious',seed:512,populationLimit:20,slots:battlePreset('2v2')}),owner=1;
-    sim.players[owner].resources={food:5000,wood:5000,gold:5000,stone:5000};sim.time=80;
-    for(let tick=0;tick<12;tick++)sim.tickCustomAI(1);
-    assert.equal(sim.players[owner].agePending,true,`${map}: the AI reaches its age-up threshold with eight starting workers`);
-    assert.ok(sim.population(owner)<=20,`${map}: the AI remains within its chosen cap`);
   }
 });
 
