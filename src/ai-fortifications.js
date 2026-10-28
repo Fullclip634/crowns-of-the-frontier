@@ -140,14 +140,14 @@ export function planFortification(sim,state,owner,base,buildings){
 }
 
 export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
-  const player=sim.players[owner];
-  if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<18||threats.length||sim.time<180||sim.time<(state.nextFortification||0))return false;
+  const player=sim.players[owner],populationLimit=sim.options.populationLimit||160,fortificationWorkers=Math.min(18,Math.floor(populationLimit*.45)),perimeterWorkers=Math.min(24,Math.floor(populationLimit*.5));
+  if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<fortificationWorkers||threats.length||sim.time<180||sim.time<(state.nextFortification||0))return false;
   if(sim.difficulty(owner)==='story'&&(player.age<2||sim.time<420))return false;
   state.fortifications??=[];
   state.fortifications=state.fortifications.filter(plan=>sim.get(plan.base)?.owner===owner);
   if(state.fortifications.some(plan=>plan.pieces.some(piece=>{const building=sim.get(piece.id);return building&&building.progress<1;})))return false;
   let plan=state.fortifications.find(plan=>sim.time>=(plan.retryAt||0)&&plan.pieces.some(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)));
-  if(!plan&&workers.length>=24&&sim.time>=300&&sim.time>=(state.nextPerimeter||0)){
+  if(!plan&&workers.length>=perimeterWorkers&&sim.time>=300&&sim.time>=(state.nextPerimeter||0)){
     state.nextPerimeter=sim.time+60;
     for(const existing of state.fortifications){
       const upgraded=planPerimeterUpgrade(sim,existing,owner);

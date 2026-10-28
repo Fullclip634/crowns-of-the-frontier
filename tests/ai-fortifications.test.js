@@ -8,8 +8,8 @@ import {wallConnections} from '../src/walls.js';
 import {staffSettlements} from '../src/ai-settlements.js';
 import {fortificationRoutesSafe,planFortification,planPerimeterUpgrade,fortifyKingdomWalls,fortificationReserved} from '../src/ai-fortifications.js';
 
-function fixture(){
-  const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'large',slots:battlePreset('2v2'),startAge:2,seed:512});
+function fixture({populationLimit=80}={}){
+  const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'large',slots:battlePreset('2v2'),startAge:2,populationLimit,seed:512});
   sim.entities=[];sim.index=new Map();sim.grids={};sim.revision++;sim.time=240;sim.tickCustomAI=()=>{};
   const owner=1,base=sim.addBuilding('towncenter',owner,-40,0,true);
   sim.addBuilding('towncenter',0,-75,-50,true);sim.addBuilding('towncenter',2,65,65,true);sim.addBuilding('towncenter',3,80,50,true);
@@ -115,6 +115,15 @@ test('a developed AI upgrades its paid front into a closed perimeter with two us
   }
   const rear=plan.pieces.find(piece=>piece.type==='gate'&&piece.id!==gate.id);
   assert.equal(fortificationReserved(restored,'house',rear.x-normal.x*8,rear.z-normal.z*8,owner),true,'economic construction preserves the rear gate road');
+});
+
+test('a 40 population AI can finish its front walls and upgrade to a perimeter with its 20-worker budget',()=>{
+  const {sim,owner,workers,state}=fixture({populationLimit:40});
+  assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
+  advanceWalls(sim,owner,900);
+  const plan=state.fortifications[0];
+  assert.equal(plan.layout,'perimeter');assert.equal(plan.pieces.filter(piece=>piece.type==='gate').length,2);
+  assert.ok(plan.pieces.every(piece=>sim.get(piece.id)?.progress===1),'AI builders complete the expanded perimeter');
 });
 
 test('perimeter upgrades retain scouting and economic requirements',()=>{

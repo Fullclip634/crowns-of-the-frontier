@@ -140,7 +140,13 @@ $('#resume').classList.toggle('hidden',!readLocalSave());
 const edgeScroll=new EdgeScroll();
 
 const isAISpectator=()=>isSpectatingAI(playing,sim);
-function toast(message,tone=''){ const el=document.createElement('div');el.className=`toast ${tone}`;el.textContent=message;$('#toasts').append(el);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();setTimeout(()=>el.remove(),4800);}
+function toast(message,tone=''){
+  const root=$('#toasts'),text=String(message),existing=[...root.children].find(el=>el.dataset.toastTone===tone&&el.textContent===text);
+  if(existing){clearTimeout(existing.dismissTimer);existing.dismissTimer=setTimeout(()=>existing.remove(),4800);return existing;}
+  const el=document.createElement('div');el.className=`toast ${tone}`;el.dataset.toastTone=tone;el.textContent=text;el.dismissTimer=setTimeout(()=>el.remove(),4800);root.append(el);
+  while(root.children.length>3){const oldest=root.firstElementChild;clearTimeout(oldest.dismissTimer);oldest.remove();}
+  return el;
+}
 function setSelection(ids){selectionKey='';selection=[...new Set(ids)].filter(id=>{const e=sim.get(id);return e&&!e.embarked;});view.selection=new Set(selection);$('#selection-panel').scrollTop=0;$('#selection-panel').classList.remove('selection-expanded');audio.play('select');renderSelection();}
 function selected(){return selection.map(id=>sim.get(id)).filter(Boolean);}
 function workers(){return selected().filter(e=>e.owner===0&&e.type==='villager').map(e=>e.id);}
