@@ -63,6 +63,24 @@ test('new settlements receive defenses and attacks on remote economy count as ba
   assert.ok(distance(enemy,tc)>30);assert.ok(settlementThreats(sim,owner,[enemy],sim.owned(owner,'building')).includes(enemy));
 });
 
+test('an attacked outer wall is defended only against observed enemies near a current alarm',()=>{
+  const {sim,owner,tc}=fixture();for(const site of sim.owned(owner,'building'))if(site.id!==tc.id)site.hp=0;sim.revision++;
+  const wall=sim.addBuilding('wall',owner,tc.x+38,tc.z,true),enemy=sim.addUnit('ram',2,wall.x+5,wall.z);sim.hurt(wall,40,enemy);
+  const buildings=sim.owned(owner,'building');assert.ok(distance(enemy,tc)>30);assert.ok(settlementThreats(sim,owner,[enemy],buildings).includes(enemy),'an observed siege engine at the perimeter counts as a home threat');
+  assert.deepEqual(settlementThreats(sim,owner,[],buildings),[],'an alarm cannot reveal a hidden attacker');
+  const alarm=Object.values(sim.teamAlarms)[0];alarm.owner=0;assert.deepEqual(settlementThreats(sim,owner,[enemy],buildings),[],'another kingdom’s alarm is not a home threat');alarm.owner=owner;
+  tc.hp=0;assert.deepEqual(settlementThreats(sim,owner,[enemy],buildings),[],'a destroyed anchor does not preserve the defense zone');tc.hp=tc.maxHp;
+  sim.time+=31;assert.deepEqual(settlementThreats(sim,owner,[enemy],buildings),[],'old damage reports do not create a permanent broad defense area');
+});
+
+test('the normal AI decision defends its own attacked perimeter instead of marching away',()=>{
+  const {sim,owner,tc,state}=fixture();for(const site of sim.owned(owner,'building'))if(site.id!==tc.id)site.hp=0;sim.revision++;
+  const wall=sim.addBuilding('gate',owner,tc.x+38,tc.z,true),enemy=sim.addUnit('ram',2,wall.x+5,wall.z);
+  const army=Array.from({length:14},(_,i)=>sim.addUnit('swordsman',owner,wall.x-8+i%4*2,wall.z+5+Math.floor(i/4)*2));
+  sim.hurt(wall,40,enemy);assert.ok(sim.canSee(owner,enemy));sim.tickCustomAI(4);assert.equal(state.phase,'defend');
+  assert.ok(army.some(unit=>unit.order?.type==='attackmove'&&Math.hypot(unit.order.x-enemy.x,unit.order.z-enemy.z)<12),'home troops receive a real defensive order');
+});
+
 test('raided workers retreat through real orders and return to work after danger clears',()=>{
   const {sim,owner,state,workers,tc}=fixture(),worker=workers[0],enemy=sim.addUnit('knight',2,worker.x+4,worker.z),before={...sim.players[owner].resources},position={x:worker.x,z:worker.z};
   protectWorkers(sim,state,owner,[worker],sim.owned(owner,'building'),[enemy]);assert.equal(worker.order?.aiEvade,true);assert.ok(worker.aiFleeing>sim.time);assert.deepEqual({x:worker.x,z:worker.z},position);assert.deepEqual(sim.players[owner].resources,before);

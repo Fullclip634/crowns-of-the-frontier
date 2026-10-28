@@ -28,7 +28,8 @@ export function economicDanger(state,point,margin=0,memory=hostileMemory(state))
 
 export function settlementThreats(sim,owner,visible,buildings){
   const assets=buildings.filter(b=>b.progress>=1&&!['wall','gate','house'].includes(b.type));
-  return visible.filter(enemy=>enemy.kind==='unit'&&UNITS[enemy.type]?.damage>0&&!UNITS[enemy.type].naval&&assets.some(base=>distance(enemy,base)<(base.type==='towncenter'?30:22)));
+  const perimeter=Object.values(sim.teamAlarms||{}).filter(alarm=>alarm.owner===owner&&sim.time-alarm.at>=0&&sim.time-alarm.at<=30&&Number.isFinite(alarm.siteX)&&Number.isFinite(alarm.siteZ)&&buildings.some(base=>base.hp>0&&base.id===alarm.base));
+  return visible.filter(enemy=>enemy.kind==='unit'&&UNITS[enemy.type]?.damage>0&&!UNITS[enemy.type].naval&&(assets.some(base=>distance(enemy,base)<(base.type==='towncenter'?30:22))||perimeter.some(alarm=>Math.hypot(enemy.x-alarm.siteX,enemy.z-alarm.siteZ)<26)));
 }
 
 function expansionCandidates(sim,state,owner){
