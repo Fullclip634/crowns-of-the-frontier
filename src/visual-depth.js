@@ -57,7 +57,7 @@ function initializeDepth(view){
 
 export function contactPose(view,e,x,z,radius,ground){
   const cache=view.contactCache??=new Map(),previous=cache.get(e.id);
-  if(previous&&previous.x===x&&previous.z===z&&previous.radius===radius)return previous;
+  if(previous?.matrix&&previous.x===x&&previous.z===z&&previous.radius===radius)return previous;
   ground??=view.groundHeight(x,z);
   const dummy=view.contactDummy;
   dummy.position.set(x,ground+.035,z);
@@ -77,8 +77,13 @@ export function updateContacts(view,menu){
     const radius=e.type==='wood'?2.2:e.kind==='unit'?Math.max(.55,e.r||.5):(e.r||1.5)*1.05;
     const position=renderPosition(view,e),x=position.x,z=position.z,previous=view.contactCache?.get(e.id),unchanged=previous&&previous.x===x&&previous.z===z&&previous.radius===radius;
     const ground=unchanged?previous.ground:view.groundHeight(x,z);
-    if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){culled++;continue;}
-    const pose=unchanged?previous:contactPose(view,e,x,z,radius,ground);if(unchanged)reused++;else computed++;
+    if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){
+      // Keep only height data until the object enters view. Idle offscreen
+      // objects can reuse this without allocating a matrix or sampling normals.
+      if(!unchanged)(view.contactCache??=new Map()).set(e.id,{x,z,radius,ground,matrix:null});
+      culled++;continue;
+    }
+    const ready=unchanged&&previous.matrix,pose=ready?previous:contactPose(view,e,x,z,radius,ground);if(ready)reused++;else computed++;
     if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}count++;
   }
   if(view.clock-(view.contactPrunedAt||0)>2){for(const id of view.contactCache?.keys()||[])if(!view.sim.get(id))view.contactCache.delete(id);view.contactPrunedAt=view.clock;}
