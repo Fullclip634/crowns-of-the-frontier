@@ -27,6 +27,9 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   const requiredPlayers=room=>room.players.filter(player=>!player.conceded&&!room.sim?.players[player.side]?.defeated);
   const waiting=room=>requiredPlayers(room).some(player=>!connected(player));
   const canStart=room=>humanSlots(room).every(side=>room.players.some(player=>player.side===side&&connected(player)&&player.ready));
+  function restoreLobbySlot(room,side){
+    const saved=room.slotDefaults?.[side],slot=room.options.slots?.[side];if(!room.sim&&saved&&slot){slot.name=saved.name;slot.faction=saved.faction;}
+  }
   function lobby(room){
     const slots=custom(room)?room.options.slots.map((slot,side)=>({...slot,side,participant:room.players.find(p=>p.side===side)?.name||null,ready:room.players.find(p=>p.side===side)?.ready||false})):[];
     for(const player of room.players)send(player.ws,{type:'lobby',code:room.code,host:player.host,selfSide:player.side,selfReady:player.ready,canStart:canStart(room),slots,players:room.players.map(p=>({side:p.side,name:p.name,faction:p.faction,ready:p.ready,connected:connected(p)})),options:room.options});
@@ -161,7 +164,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         const input=message.options||{},base={map:MAPS[input.map]?input.map:'highlands',seed:Number.isFinite(input.seed)?input.seed:2026};let options;
         if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<2)return send(ws,{type:'error',message:'Choose at least two human slots for a multiplayer room.'});}
         else options={...base,mode:['skirmish','regicide','dominion','wonder','tides'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
-        room={code:code(),options,players:[],created:now};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
+        room={code:code(),options,players:[],created:now,slotDefaults:options.mode==='custom'?options.slots.map(({name,faction})=>({name,faction})):null};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
         player={side:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomBytes(16).toString('hex'),ws};room.players.push(player);
         if(custom(room)){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
         send(ws,{type:'session',code:room.code,token:player.token});lobby(room);return;
@@ -188,13 +191,13 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
         return;
       }
       if(message.type==='ready'&&!room.sim){player.ready=!!message.ready;lobby(room);}
-      if(message.type==='slot'&&!room.sim&&custom(room)&&!player.host){const side=room.options.slots.findIndex(slot=>slot.slotNumber===Number(message.slot));if(humanSlots(room).includes(side)&&!room.players.some(p=>p!==player&&p.side===side)){player.side=side;player.ready=false;room.options.slots[side].name=player.name;room.options.slots[side].faction=player.faction;lobby(room);}}
+      if(message.type==='slot'&&!room.sim&&custom(room)&&!player.host){const side=room.options.slots.findIndex(slot=>slot.slotNumber===Number(message.slot));if(humanSlots(room).includes(side)&&!room.players.some(p=>p!==player&&p.side===side)){restoreLobbySlot(room,player.side);player.side=side;player.ready=false;room.options.slots[side].name=player.name;room.options.slots[side].faction=player.faction;lobby(room);}}
       if(message.type==='start'&&player.host&&!room.sim){if(canStart(room))start(room);else send(ws,{type:'error',message:'Every human slot must be connected and ready before starting.'});}
       if(message.type==='action'){const args=message.args,valid=value=>typeof value==='number'?Number.isFinite(value)&&Math.abs(value)<1e9:Array.isArray(value)?value.length<=180&&value.every(valid):value==null||['string','boolean'].includes(typeof value);if(Array.isArray(args)&&args.every(valid))action(player,room,message);}
       if(message.type==='leave'){
         if(room.sim){concede(room,player,'Commander left the battle.');player.ws=null;releaseVacantRoom(room);}
         else if(player.host)closeLobby(room,'The host closed this room.',player);
-        else{room.players=room.players.filter(p=>p!==player);lobby(room);}
+        else{restoreLobbySlot(room,player.side);room.players=room.players.filter(p=>p!==player);lobby(room);}
         player=null;room=null;
       }
     }catch{send(ws,{type:'error',message:'The command could not be processed. Check the battle settings and try again.'});}});
@@ -202,7 +205,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
   });
   let snapshotClock=0;const timer=setInterval(()=>{snapshotClock++;for(const room of rooms.values()){
     let lobbyChanged=false;
-    for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000){concede(room,player,'Commander did not reconnect.');if(!room.sim&&!player.host){room.players=room.players.filter(other=>other!==player);lobbyChanged=true;}}
+    for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000){concede(room,player,'Commander did not reconnect.');if(!room.sim&&!player.host){restoreLobbySlot(room,player.side);room.players=room.players.filter(other=>other!==player);lobbyChanged=true;}}
     if(!room.sim&&room.players.some(player=>player.host&&player.conceded)){closeLobby(room,'The host did not reconnect. Create or join another room.');continue;}
     if(lobbyChanged)lobby(room);
     if(releaseVacantRoom(room))continue;

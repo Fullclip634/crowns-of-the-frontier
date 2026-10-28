@@ -71,6 +71,22 @@ test('custom rooms mix humans and AI, preserve assigned slots, and treat leaving
   guest.send({type:'leave'});await until(()=>room.sim.players[4].defeated);assert.equal(room.sim.ended,null);const before=room.sim.time;await until(()=>room.sim.time>before);
 });
 
+test('changing or leaving a lobby slot restores its configured kingdom identity',async t=>{
+  const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[1].controller='human';slots[2].controller='human';
+  slots[1].name='Northern realm';slots[1].faction='sun';slots[2].name='Southern realm';slots[2].faction='alder';
+  const host=await connect();host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,slots}});const session=await host.inbox.next('session');
+  const guest=await connect();guest.send({type:'join',name:'Guest',faction:'raven',slot:2,code:session.code});const guestSession=await guest.inbox.next('session');
+  const room=service.rooms.get(session.code);assert.equal(room.options.slots[1].name,'Guest');
+  host.inbox.items=[];guest.send({type:'slot',slot:3});await until(()=>room.players.find(player=>player.name==='Guest')?.side===2);
+  assert.equal(room.options.slots[1].name,'Northern realm');assert.equal(room.options.slots[1].faction,'sun');assert.equal(room.options.slots[2].name,'Guest');
+  await until(()=>host.inbox.items.some(message=>message.type==='lobby'&&message.slots[1].name==='Northern realm'&&message.slots[1].participant===null));
+  guest.ws.terminate();await until(()=>!room.players.find(player=>player.name==='Guest')?.ws);assert.equal(room.options.slots[2].name,'Guest','a disconnected guest keeps their reserved identity while reconnecting');
+  const rejoined=await connect();rejoined.send({...guestSession,type:'resume'});await rejoined.inbox.next('lobby');assert.equal(room.options.slots[2].name,'Guest');
+  rejoined.send({type:'leave'});await until(()=>room.players.length===1);assert.equal(room.options.slots[2].name,'Southern realm');assert.equal(room.options.slots[2].faction,'alder');assert.equal(room.options.slots[0].name,'Host');
+  const expired=await connect();expired.send({type:'join',name:'Visitor',faction:'raven',slot:2,code:session.code});await expired.inbox.next('session');expired.ws.terminate();await until(()=>!room.players.find(player=>player.name==='Visitor')?.ws);
+  room.players.find(player=>player.name==='Visitor').disconnected=Date.now()-120001;await until(()=>room.players.length===1);assert.equal(room.options.slots[1].name,'Northern realm');assert.equal(room.options.slots[1].faction,'sun');
+});
+
 test('network shelter enforces ownership, keeps occupants and return jobs private, and releases actual villagers',async t=>{
   const {service,connect}=await fixture(t),slots=battlePreset('2v2');slots[2].controller='human';const host=await connect();host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',seed:512,slots}});const session=await host.inbox.next('session'),guest=await connect();guest.send({type:'join',name:'Enemy',slot:3,code:session.code});await guest.inbox.next('session');guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await guest.inbox.next('begin');
   const sim=service.rooms.get(session.code).sim,tick=sim.tick;sim.tick=()=>{};
