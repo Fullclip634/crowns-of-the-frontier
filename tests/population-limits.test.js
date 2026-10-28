@@ -18,8 +18,8 @@ test('lower population choices survive setup, hosting and normalization without 
   assert.match(customBattleMarkup(draft),/<option value="80" selected>/);
 });
 
-test('40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
-  for(const limit of [40,60]){
+test('20, 40 and 60 unit caps include queued troops, apply to every kingdom and survive saving',()=>{
+  for(const limit of [20,40,60]){
     const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',seed:512,populationLimit:limit});
     for(const owner of [0,1]){
       const town=sim.owned(owner,'building','towncenter')[0];sim.players[owner].resources={food:10000,wood:10000,gold:10000,stone:10000};
@@ -34,6 +34,16 @@ test('40 and 60 unit caps include queued troops, apply to every kingdom and surv
   }
 });
 
+test('AI kingdoms at the 20 cap can begin aging up on land and coastal maps',()=>{
+  for(const map of ['highlands','coast']){
+    const sim=new Simulation({mode:'custom',map,mapSize:'spacious',seed:512,populationLimit:20,slots:battlePreset('2v2')}),owner=1;
+    sim.players[owner].resources={food:5000,wood:5000,gold:5000,stone:5000};sim.time=80;
+    for(let tick=0;tick<12;tick++)sim.tickCustomAI(1);
+    assert.equal(sim.players[owner].agePending,true,`${map}: the AI reaches its age-up threshold with eight starting workers`);
+    assert.ok(sim.population(owner)<=20,`${map}: the AI remains within its chosen cap`);
+  }
+});
+
 test('a full 40 population AI can launch its longer-buildup offensive instead of waiting for an impossible army',()=>{
   for(const map of ['highlands','coast']){
   const slots=battlePreset('2v2').map(slot=>({...slot,difficulty:'brutal'})),sim=new Simulation({mode:'custom',map,mapSize:'spacious',seed:512,startAge:2,populationLimit:40,aiPace:'patient',slots}),owner=1,town=sim.owned(owner,'building','towncenter')[0];
@@ -43,6 +53,6 @@ test('a full 40 population AI can launch its longer-buildup offensive instead of
   if(map==='coast'){for(const [type,count]of [['warship',6],['transport',2],['fishingboat',3]])for(let i=0;i<count;i++)sim.addUnit(type,owner,0,town.z-10-i*4);sim.addUnit('monk',owner,town.x+9,town.z+9);}
   sim.addUnit('monk',owner,town.x+9,town.z+9);assert.equal(sim.population(owner),40);
   sim.time=700;sim.tickCustomAI(5);assert.equal(sim.aiStates[owner].phase,'attack',map);if(map==='highlands')assert.ok(sim.aiStates[owner].homeGuard.length>=2);
-  for(const limit of [40,60]){sim.options.populationLimit=limit;sim.options.map='coast';assert.ok(customOpening(sim,owner,AI_PROFILES.brutal).army<=limit-Math.floor(limit*.5)-12,'coastal forces also fit beside workers, ships and support');}
+  for(const limit of [20,40,60])for(const map of ['highlands','coast']){sim.options.populationLimit=limit;sim.options.map=map;const opening=customOpening(sim,owner,AI_PROFILES.brutal);assert.ok(opening.workers<=Math.floor(limit*.5),'the AI attack can reach its worker requirement');assert.ok(opening.army<=Math.max(4,Math.floor(limit*.4)-(map==='coast'?11:0)),'the opening army scales to the selected cap');}
   }
 });

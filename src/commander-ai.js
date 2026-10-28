@@ -195,11 +195,12 @@ export function installCommanderAI(Simulation){
     manageExpansion(this,state,owner,workers,baseThreats);
     if(this.options.map==='coast'&&!buildings.some(site=>site.type==='dock')){const z=player.start?.z??tc.z;this.commanderBuild('dock',{x:Math.sin(z*.03)*2+Math.sign(tc.x)*20,z},owner);}
     const ageCost=AGE_COSTS[player.age];
-    state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=12&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor((this.options.populationLimit||160)*.5))};
+    const populationLimit=this.options.populationLimit||160,ageWorkerThreshold=Math.min(12,Math.max(8,Math.floor(populationLimit*.4)));
+    state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor(populationLimit*.5))};
     if(this.capacity(owner)<(this.options.populationLimit||160)&&this.capacity(owner)-this.population(owner)-this.reservedPopulation(owner)<6&&!buildings.some(b=>b.type==='house'&&b.progress<1))this.commanderBuild('house',null,owner);
     for(const town of towns.filter(b=>b.progress>=1))if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&town.queue.length<2)this.train(town.id,'villager');
     if(this.time>12&&!this.owned(owner,'unit','scout').length&&!countQueued(this,'scout',owner)&&tc.queue.length<3)this.train(tc.id,'scout');
-    if(ageCost&&!player.agePending&&workers.length>=12&&this.canAfford(ageCost,owner))this.research(tc.id,'age');
+    if(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&this.canAfford(ageCost,owner))this.research(tc.id,'age');
     // Build actual drop-offs near the sources workers use, then diversify paid production.
     for(const [type,resource]of [['camp','wood'],['mine','gold'],['mine','stone']]){
       const active=workers.find(w=>w.gatherType===resource&&w.order?.type==='gather'),source=active&&this.get(active.order.target);
@@ -217,7 +218,7 @@ export function installCommanderAI(Simulation){
     const plan=armyPlan(this,state,owner);
     for(const b of buildings.filter(b=>b.progress>=1&&b.queue.length<2)){
       const type=chooseArmyUnit(this,b,state,owner,plan);if(!type)continue;
-      if(this.options.mode==='custom'&&this.options.map==='coast'){const navy=this.owned(owner,'unit').filter(e=>UNITS[e.type].naval).length+buildings.reduce((n,site)=>n+site.queue.filter(q=>q.kind==='unit'&&UNITS[q.type]?.naval).length,0),reserve=Math.max(0,9-navy);if(this.population(owner)+this.reservedPopulation(owner)+(UNITS[type].pop||1)>this.capacity(owner)-reserve)continue;}
+      if(this.options.mode==='custom'&&this.options.map==='coast'){const navy=this.owned(owner,'unit').filter(e=>UNITS[e.type].naval).length+buildings.reduce((n,site)=>n+site.queue.filter(q=>q.kind==='unit'&&UNITS[q.type]?.naval).length,0),fleetGoal=Math.min(9,Math.max(4,Math.floor((this.options.populationLimit||160)*.25))),reserve=Math.max(0,fleetGoal-navy);if(this.population(owner)+this.reservedPopulation(owner)+(UNITS[type].pop||1)>this.capacity(owner)-reserve)continue;}
       const reserve=state.budget.savingAge?{food:Math.min(ageCost.food*.35,player.resources.food),gold:Math.min(ageCost.gold*.35,player.resources.gold)}:{};
       if(state.expansion)for(const [resource,amount] of Object.entries(this.cost(BUILDINGS.towncenter.cost,owner,'building')))reserve[resource]=Math.max(reserve[resource]||0,amount);
       if(Object.entries(UNITS[type].cost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
