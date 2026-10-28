@@ -25,16 +25,18 @@ export function recordBaseAlarm(sim,target,attacker,damage){
   if(sim.options.mode!=='custom'||target.owner<0||!attacker||!sim.hostile(target.owner,attacker.owner)||damage<=0)return;
   if(target.kind!=='building'&&UNITS[target.type]?.role!=='worker')return;
   const sites=sim.owned(target.owner,'building').filter(b=>b.progress>=1&&!['wall','gate','farm'].includes(b.type));
-  const base=sites.filter(b=>distance(b,target)<24).sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,target)-(b.type==='towncenter'?-20:0)-distance(b,target))[0];
+  const perimeter=target.kind==='building'&&['wall','gate'].includes(target.type),radius=perimeter?48:24;
+  const base=sites.filter(b=>distance(b,target)<radius).sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,target)-(b.type==='towncenter'?-20:0)-distance(b,target))[0];
   if(!base)return;
   sim.teamAlarms??={};const key=target.owner+':'+base.id,old=sim.teamAlarms[key];
-  sim.teamAlarms[key]={owner:target.owner,base:base.id,x:base.x,z:base.z,at:sim.time,intensity:Math.min(500,(old&&sim.time-old.at<20?old.intensity:0)+damage)};
+  sim.teamAlarms[key]={owner:target.owner,base:base.id,x:base.x,z:base.z,...(perimeter?{siteX:target.x,siteZ:target.z}:{}),at:sim.time,intensity:Math.min(500,(old&&sim.time-old.at<20?old.intensity:0)+damage)};
 }
 
 export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   if(sim.options.mode!=='custom'||sim.players[owner].controller!=='ai')return new Set();
   sim.teamAlarms??={};for(const [key,alarm] of Object.entries(sim.teamAlarms))if(sim.time-alarm.at>90||!sim.get(alarm.base)?.hp)delete sim.teamAlarms[key];
-  const dangers=base=>visible.filter(e=>e.hp>0&&e.kind==='unit'&&UNITS[e.type]?.damage>0&&!UNITS[e.type].naval&&sim.hostile(owner,e.owner)&&distance(e,base)<34);
+  const alertPoint=(base,alarm)=>Number.isFinite(alarm?.siteX)&&Number.isFinite(alarm?.siteZ)?{x:alarm.siteX,z:alarm.siteZ,r:1}:base;
+  const dangers=(base,alarm)=>{const site=alertPoint(base,alarm);return visible.filter(e=>e.hp>0&&e.kind==='unit'&&UNITS[e.type]?.damage>0&&!UNITS[e.type].naval&&sim.hostile(owner,e.owner)&&(distance(e,site)<34||distance(e,base)<34));};
   for(const base of sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&['towncenter','keep','dock'].includes(e.type)&&e.owner!==owner&&sim.allied(owner,e.owner)&&sim.canSee(owner,e))){
     const attackers=dangers(base).filter(e=>e.type!=='scout');
     if(attackers.length>=2||attackers.some(e=>UNITS[e.type].role==='siege')){const key=base.owner+':'+base.id;sim.teamAlarms[key]={owner:base.owner,base:base.id,x:base.x,z:base.z,at:sim.time,intensity:Math.max(attackers.length*25,sim.teamAlarms[key]?.intensity||0)};}
@@ -48,15 +50,15 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
   }
   const sameShore=(unit,base)=>sim.options.map!=='coast'||Math.sign(unit.x)===Math.sign(base.x);
   const relief=(base,alarm)=>{
-    const available=combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,base)),attackers=dangers(base),urgent=base.hp<base.maxHp*.6||(alarm?.intensity||0)>=Math.max(100,base.maxHp*.1)||attackers.length>=6;
+    const available=combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,base)),attackers=dangers(base,alarm),urgent=base.hp<base.maxHp*.6||(alarm?.intensity||0)>=Math.max(100,base.maxHp*.1)||attackers.length>=6;
     const average=available.reduce((sum,unit)=>sum+strength(unit),0)/Math.max(1,available.length),needed=attackers.length?Math.ceil(attackers.reduce((sum,enemy)=>sum+strength(enemy),0)*1.25/Math.max(1,average)):Math.ceil((alarm?.intensity||0)/30)+1;
     const count=Math.min(available.length,Math.max(2,Math.ceil(combat.length*(urgent?.65:.45))));
     return {available,urgent,count:Math.min(count,Math.max(2,urgent?count:needed))};
   };
-  const destination=base=>{
-    const attackers=dangers(base).sort((a,b)=>(distance(a,base)-(UNITS[a.type].role==='siege'?14:0))-(distance(b,base)-(UNITS[b.type].role==='siege'?14:0)));
+  const destination=(base,alarm)=>{
+    const site=alertPoint(base,alarm),attackers=dangers(base,alarm).sort((a,b)=>(distance(a,site)-(UNITS[a.type].role==='siege'?14:0))-(distance(b,site)-(UNITS[b.type].role==='siege'?14:0)));
     if(attackers.length)return {x:attackers[0].x,z:attackers[0].z,engaging:true};
-    const d=Math.max(1,distance(tc,base));return {x:base.x+(tc.x-base.x)/d*(base.r+5),z:base.z+(tc.z-base.z)/d*(base.r+5),engaging:false};
+    const d=Math.max(1,distance(tc,site));return {x:site.x+(tc.x-site.x)/d*(site.r+5),z:site.z+(tc.z-site.z)/d*(site.r+5),engaging:false};
   };
   const routeFor=(units,point)=>{
     for(const unit of units.slice(0,4)){const path=sim.pathTo(unit,point);if(unit.pathStatus==='blocked'||!path.length||distance(path.at(-1),point)>10)continue;let length=0,last=unit;for(const waypoint of path){length+=distance(last,waypoint);last=waypoint;}return {unit,length};}return null;
@@ -73,11 +75,12 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
     const recalled=duty.units.filter(id=>reserve.has(id));if(recalled.length){sim.command(recalled,{type:'move',x:tc.x+8,z:tc.z-6});duty.units=duty.units.filter(id=>!reserve.has(id));}
     if(!base?.hp||!sim.allied(owner,duty.ally)||!duty.units.some(id=>fieldFighter(sim.get(id)))||sim.time>duty.until)release();
     else{
+      if(alarm){if(Number.isFinite(alarm.siteX)&&Number.isFinite(alarm.siteZ)){duty.siteX=alarm.siteX;duty.siteZ=alarm.siteZ;}else{delete duty.siteX;delete duty.siteZ;}}
       if(alarm&&sim.time-alarm.at<20)duty.until=Math.max(duty.until,sim.time+25);
-      const arrived=duty.units.some(id=>distance(sim.get(id),base)<20),danger=dangers(base).length>0;
+      const attention=alarm||duty,arrived=duty.units.some(id=>distance(sim.get(id),alertPoint(base,attention))<20),danger=dangers(base,attention).length>0;
       if(arrived&&!danger&&(!alarm||sim.time-alarm.at>18))release();
       else{
-        const point=destination(base),plan=relief(base,alarm),fighters=duty.units.filter(id=>fieldFighter(sim.get(id)));
+        const point=destination(base,attention),plan=relief(base,attention),fighters=duty.units.filter(id=>fieldFighter(sim.get(id)));
         if(alarm&&sim.time-alarm.at<30&&sim.time-(duty.lastReinforce??-10)>=6&&fighters.length<plan.count){
           const additions=plan.available.filter(unit=>!duty.units.includes(unit.id)).sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count-fighters.length),route=routeFor(additions,point);duty.lastReinforce=sim.time;
           if(route){const ids=additions.map(unit=>unit.id);sim.command(ids,{type:'attackmove',x:point.x,z:point.z});duty.units.push(...ids);duty.until=Math.max(duty.until,sim.time+route.length/Math.min(...additions.map(unit=>UNITS[unit.type].speed))*1.5+30);sim.emit('ally-support',{owner,ally:duty.ally,count:ids.length,x:base.x,z:base.z});}
@@ -87,12 +90,12 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
     }
   }
   if(duty||sim.time-(state.lastSupport??-40)<8)return new Set(duty?.units||[]);
-  const arrival=alarm=>Math.min(...combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,alarm)).map(unit=>distance(unit,alarm)/UNITS[unit.type].speed));
+  const arrival=alarm=>{const site=alertPoint(alarm,alarm);return Math.min(...combat.filter(unit=>!reserve.has(unit.id)&&sameShore(unit,alarm)).map(unit=>distance(unit,site)/UNITS[unit.type].speed));};
   const candidates=Object.values(sim.teamAlarms).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&Number.isFinite(arrival(alarm))).sort((a,b)=>(arrival(a)-a.intensity*.025)-(arrival(b)-b.intensity*.025));
   // An urgent but unreachable base must not starve other allies of help.
   // Check candidates in priority order and commit only a viable assignment.
   for(const alarm of candidates){
-    const base=sim.get(alarm.base),point=destination(base),plan=relief(base,alarm);if(plan.count<2)continue;
+    const base=sim.get(alarm.base),point=destination(base,alarm),plan=relief(base,alarm);if(plan.count<2)continue;
     const group=plan.available.sort((a,b)=>distance(a,point)/UNITS[a.type].speed-distance(b,point)/UNITS[b.type].speed).slice(0,plan.count);
     // Validate one leader before dispatch; the regular movement system then routes
     // every real unit, including friendly gates and bridges, without teleporting.
@@ -100,7 +103,7 @@ export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
     const healer=ready.find(u=>u.owner===owner&&u.type==='monk'&&!u.embarked&&u.hp>u.maxHp*.5&&u.order?.type!=='board'&&sameShore(u,base)&&distance(u,point)<Math.max(240,distance(route.unit,point)+30)),units=group.map(u=>u.id);
     sim.command(units,{type:'attackmove',x:point.x,z:point.z});if(healer){sim.guard([healer.id],route.unit.id,false,owner);units.push(healer.id);}
     const travel=route.length/Math.min(...group.map(unit=>UNITS[unit.type].speed));
-    state.support={ally:alarm.owner,base:alarm.base,units,...point,until:sim.time+travel*1.5+30,lastOrder:sim.time,lastReinforce:sim.time};state.lastSupport=sim.time;
+    state.support={ally:alarm.owner,base:alarm.base,units,...(Number.isFinite(alarm.siteX)&&Number.isFinite(alarm.siteZ)?{siteX:alarm.siteX,siteZ:alarm.siteZ}:{}),...point,until:sim.time+travel*1.5+30,lastOrder:sim.time,lastReinforce:sim.time};state.lastSupport=sim.time;
     sim.emit('ally-support',{owner,ally:alarm.owner,count:units.length,x:base.x,z:base.z});
     return new Set(units);
   }

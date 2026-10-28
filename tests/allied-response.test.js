@@ -72,3 +72,60 @@ test('relief reaches a real raid, inflicts ordinary combat damage and preserves 
 test('free-for-all kingdoms do not receive former allies as reinforcements',()=>{
  const {sim,tc,enemy,army,state,owner}=scenario();sim.players[owner].team=3;assert.equal(alliedSupport(sim,owner,state,army,[enemy],tc,[]).size,0);assert.equal(state.support,undefined);
 });
+
+test('allies reinforce an attacked outer wall without learning an unseen attacker',()=>{
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
+ for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;sim.time=100;
+ const wall=sim.addBuilding('wall',0,base.x+38,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z),army=Array.from({length:14},(_,i)=>sim.addUnit('spearman',1,wall.x+14+i%4*2,wall.z-8+Math.floor(i/4)*2)),state=sim.aiStates[1]={};
+ sim.hurt(wall,40,attacker);const alarm=Object.values(sim.teamAlarms||{})[0];assert.ok(alarm,'damage to a wall covering the base raises an alarm');assert.equal(alarm.base,base.id);assert.equal(alarm.siteX,wall.x);assert.equal(alarm.siteZ,wall.z);assert.equal('attacker' in alarm,false);
+ const sent=alliedSupport(sim,1,state,army,[],tc,[]);assert.ok(sent.size>=2);assert.equal(state.support.engaging,false);assert.ok(Math.hypot(state.support.x-wall.x,state.support.z-wall.z)<10,'unseen threats rally toward the attacked wall');
+ assert.notDeepEqual([state.support.x,state.support.z],[attacker.x,attacker.z],'an allied alarm does not reveal hidden enemy coordinates');
+ sim.time+=3;assert.ok(sim.canSee(1,attacker),'nearby allied troops actually see the siege');alliedSupport(sim,1,state,army,[attacker],tc,[]);assert.equal(state.support.engaging,true);assert.deepEqual([state.support.x,state.support.z],[attacker.x,attacker.z],'visible siege is engaged at the wall');
+ const saved=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.deepEqual(saved.teamAlarms,sim.teamAlarms);assert.deepEqual(saved.aiStates[1]?.support,sim.aiStates[1]?.support);
+});
+
+test('a relief mission retains its wall destination when a single alarm ages out',()=>{
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
+ for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;sim.time=100;
+ const wall=sim.addBuilding('wall',0,base.x+38,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z),army=Array.from({length:14},(_,i)=>sim.addUnit('spearman',1,wall.x+24+i%4*2,wall.z-25+Math.floor(i/4)*2)),state=sim.aiStates[1]={};
+ sim.hurt(wall,40,attacker);const sent=alliedSupport(sim,1,state,army,[],tc,[]);assert.ok(sent.size>=2);state.support.until=sim.time+200;
+ for(const id of sent){const unit=sim.get(id);unit.x=wall.x+35;unit.z=wall.z+25;}sim.revision++;sim.time+=91;alliedSupport(sim,1,state,army,[],tc,[]);
+ assert.ok(state.support,'the mission keeps its travel allowance');assert.equal(Object.keys(sim.teamAlarms).length,0);assert.ok(Math.hypot(state.support.x-wall.x,state.support.z-wall.z)<10,'an aged alarm does not send relief back to the capital');
+ const saved=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));assert.equal(saved.aiStates[1].support.siteX,wall.x);assert.equal(saved.aiStates[1].support.siteZ,wall.z);
+});
+
+test('damage to an isolated wall does not summon an army from a distant base',()=>{
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0];
+ for(const e of sim.owned(0,'building'))if(e.id!==base.id)e.hp=0;sim.revision++;sim.time=100;
+ const wall=sim.addBuilding('wall',0,base.x+70,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z);sim.hurt(wall,40,attacker);assert.equal(Object.keys(sim.teamAlarms||{}).length,0);
+});
+
+test('allied troops reach and defeat siege attacking an outer wall through ordinary combat',()=>{
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
+ for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;for(const player of sim.players)player.controller='human';sim.players[1].controller='ai';sim.time=100;
+ const wall=sim.addBuilding('wall',0,base.x+38,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z),army=Array.from({length:16},(_,i)=>sim.addUnit('swordsman',1,wall.x+15+i%4*2,wall.z-8+Math.floor(i/4)*2));
+ sim.command([attacker.id],{type:'attack',target:wall.id});const state=sim.aiStates[1]={};let next=0,firstAttack=null,damage=0;
+ sim.on(event=>{if(event.type==='attack'&&event.entity?.owner===1&&event.target?.id===attacker.id){firstAttack??=sim.time;damage+=event.damage||0;}});
+ sim.tickCustomAI=()=>{if(sim.time<next)return;next=sim.time+1;sim.updateFog();const visible=sim.entities.filter(e=>e.hp>0&&sim.hostile(1,e.owner)&&sim.canSee(1,e));alliedSupport(sim,1,state,army.filter(e=>e.hp>0),visible,tc,[]);};
+ for(let i=0;i<500&&sim.get(attacker.id)&&sim.get(wall.id);i++)sim.tick(.1);
+ assert.ok(firstAttack!==null,'real troops engage the ram');assert.ok(damage>0);assert.equal(sim.get(attacker.id),null,'the ram is defeated');assert.ok(sim.get(wall.id),'the defended wall survives');
+});
+
+test('outer-wall alarms work across team sizes, map sizes, and biomes',()=>{
+ for(const [preset,map,mapSize] of [['2v2','winter','spacious'],['3v3','canyon','large'],['4v4','highlands','huge']]){
+  const sim=new Simulation({mode:'custom',map,mapSize,startAge:1,seed:512,shareVision:false,slots:battlePreset(preset)}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
+  for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;sim.time=100;
+  const sign=base.x<0?1:-1,wall=sim.addBuilding('gate',0,base.x+sign*38,base.z,true),attacker=sim.addUnit('ram',sim.players.findIndex((_,i)=>sim.hostile(0,i)),wall.x+sign*5,wall.z);
+  const army=Array.from({length:12},(_,i)=>sim.addUnit('spearman',1,wall.x+sign*(14+i%4*2),wall.z-8+Math.floor(i/4)*2)),state={};sim.hurt(wall,40,attacker);
+  const sent=alliedSupport(sim,1,state,army,[],tc,[]);assert.ok(sent.size>=2,`${preset} on ${map} sends real relief`);assert.equal(state.support.ally,0);assert.ok(Math.hypot(state.support.x-wall.x,state.support.z-wall.z)<10);
+ }
+});
+
+test('the normal custom AI tick dispatches reinforcements against an outer-wall raid',()=>{
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0];
+ for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;for(const player of sim.players)player.controller='human';sim.players[1].controller='ai';sim.time=100;
+ const wall=sim.addBuilding('wall',0,base.x+38,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z),army=Array.from({length:16},(_,i)=>sim.addUnit('swordsman',1,wall.x+15+i%4*2,wall.z-8+Math.floor(i/4)*2)),notices=[];
+ sim.on(event=>{if(event.type==='ally-support')notices.push(event);});sim.command([attacker.id],{type:'attack',target:wall.id});
+ for(let i=0;i<500&&sim.get(attacker.id)&&sim.get(wall.id);i++)sim.tick(.1);
+ assert.ok(notices.some(event=>event.owner===1&&event.ally===0&&event.count>=2),'the real AI tick requests allied support');assert.ok(attacker.hp<attacker.maxHp,'normal combat damages the siege engine');assert.ok(army.some(unit=>unit.hp>0));
+});
