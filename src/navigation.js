@@ -102,7 +102,12 @@ export function clearSegment(sim,grid,from,to){
 export function navigationRegions(sim,grid){
   if(grid.pathRegions)return grid.pathRegions;const size=sim.gridSize,labels=new Uint16Array(grid.length),queue=sim.regionQueue?.length===grid.length?sim.regionQueue:(sim.regionQueue=new Uint32Array(grid.length));let region=0;
   for(let first=0;first<grid.length;first++)if(!grid[first]&&!labels[first]){region++;let read=0,write=1;queue[0]=first;labels[first]=region;
-    while(read<write){const id=queue[read++],x=id%size,z=Math.floor(id/size);for(const next of [x>0?id-1:-1,x<size-1?id+1:-1,z>0?id-size:-1,z<size-1?id+size:-1])if(next>=0&&!grid[next]&&!labels[next]){labels[next]=region;queue[write++]=next;}}
+    while(read<write){const id=queue[read++],x=id%size,z=Math.floor(id/size);let next;
+      if(x>0){next=id-1;if(!grid[next]&&!labels[next]){labels[next]=region;queue[write++]=next;}}
+      if(x<size-1){next=id+1;if(!grid[next]&&!labels[next]){labels[next]=region;queue[write++]=next;}}
+      if(z>0){next=id-size;if(!grid[next]&&!labels[next]){labels[next]=region;queue[write++]=next;}}
+      if(z<size-1){next=id+size;if(!grid[next]&&!labels[next]){labels[next]=region;queue[write++]=next;}}
+    }
   }grid.pathRegions=labels;return labels;
 }
 
