@@ -39,9 +39,10 @@ test('raycasting follows stored articulated poses and packed IDs after repacking
 
 test('unchanged poses skip uploads while moved and repacked rows update color and shadow data exactly',()=>{
   const f=fixture(),rig=f.mesh.userData.rigidRig,e={id:7,type:'spearman',moving:false},root=new THREE.Matrix4().makeTranslation(4.1,2,1);
-  writeRigidPose(f.mesh,0,e,root);assert.equal(finishRigidFrame(f.mesh,1).uploaded,16*2*64);
+  let marks=0;const mark=rig.dirtyRows.add.bind(rig.dirtyRows);rig.dirtyRows.add=index=>{marks++;return mark(index);};
+  writeRigidPose(f.mesh,0,e,root);assert.equal(marks,1,'one changed pose marks its GPU row once across all joints and components');assert.equal(finishRigidFrame(f.mesh,1).uploaded,16*2*64);
   rig.texture.onUpdate();const version=rig.texture.version;
-  writeRigidPose(f.mesh,0,e,root);assert.equal(finishRigidFrame(f.mesh,1).uploaded,0);assert.equal(rig.texture.version,version,'Float32 rounding does not turn an unchanged pose into an upload');
+  writeRigidPose(f.mesh,0,e,root);assert.equal(marks,1,'unchanged poses do not mark a row');assert.equal(finishRigidFrame(f.mesh,1).uploaded,0);assert.equal(rig.texture.version,version,'Float32 rounding does not turn an unchanged pose into an upload');
   writeRigidPose(f.mesh,3,{...e,id:11},root.clone().setPosition(8,2,1));
   assert.equal(finishRigidFrame(f.mesh,4).uploaded,2*64);assert.deepEqual(rig.texture.updateRanges,[{start:3*2*16,count:2*16}]);
   // A skipped draw must keep its pending row when the next field frame writes a

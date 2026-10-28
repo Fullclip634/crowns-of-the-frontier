@@ -328,7 +328,7 @@ export class Simulation {
     }
   }
   tickBuilding(e,dt){if(e.progress<1)return;e.cooldown=Math.max(0,e.cooldown-dt);const d=BUILDINGS[e.type];
-    if(d.damage){const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building'),d.range,true);if(enemy)this.hit(e,enemy);}
+    if(d.damage&&e.cooldown<=0){const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building'),d.range,true);if(enemy)this.hit(e,enemy);}
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;q.remaining-=dt;
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
       if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}

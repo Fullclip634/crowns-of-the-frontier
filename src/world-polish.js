@@ -107,23 +107,32 @@ export function beginJointPose(view,entity,matrix){
 }
 export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=null;view.footPoseEntity=null;}
 
+function aroundJoint(parent,joint,rotation,output){
+  // T(pivot) * R * T(-pivot), with one matrix product instead of three.
+  const m=rotation.elements,[x,y,z]=joint.pivot;
+  m[12]=x-m[0]*x-m[4]*y-m[8]*z;
+  m[13]=y-m[1]*x-m[5]*y-m[9]*z;
+  m[14]=z-m[2]*x-m[6]*y-m[10]*z;
+  return output.multiplyMatrices(parent,rotation);
+}
+
 export function animatePart(view,part,e,matrix){
   const m=part.userData.motion;if(!m)return matrix;
   if(m.type==='bow'){const pose=bowPartPose(view,m,e,matrix,combatRenderOffset(view));if(pose)return pose;}
   const feet=footPartPose(view,m,e,matrix);if(feet)return feet;
-  const result=view.poseMatrix??=new THREE.Matrix4(),rotation=view.poseRotation??=new THREE.Matrix4();result.copy(matrix);
-  if(m.type==='ram'){const translation=part.userData.ramTranslation??=new THREE.Matrix4();translation.makeTranslation(0,0,e.cooldown>0?Math.sin(e.cooldown*8)*.25:0);return result.multiply(translation);}
-  if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint,forward:new THREE.Matrix4().makeTranslation(...joint.pivot),back:new THREE.Matrix4().makeTranslation(-joint.pivot[0],-joint.pivot[1],-joint.pivot[2])});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);}part.userData.poseChain=chain;}
+  const result=view.poseMatrix??=new THREE.Matrix4(),rotation=view.poseRotation??=new THREE.Matrix4();
+  if(m.type==='ram'){const translation=part.userData.ramTranslation??=new THREE.Matrix4();translation.makeTranslation(0,0,e.cooldown>0?Math.sin(e.cooldown*8)*.25:0);return result.copy(matrix).multiply(translation);}
+  if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);}part.userData.poseChain=chain;}
   if(view.jointPoseEntity===e&&view.jointPoseRoot===matrix){
     const cache=view.jointPoseCache??=new Map();let parent=matrix;
     for(const pose of part.userData.poseChain){
       let entry=cache.get(pose.key);if(!entry){entry={epoch:-1,matrix:new THREE.Matrix4()};cache.set(pose.key,entry);}
-      if(entry.epoch!==view.jointPoseEpoch){jointRotation(view,pose.joint,e,rotation);entry.matrix.copy(parent).multiply(pose.forward).multiply(rotation).multiply(pose.back);entry.epoch=view.jointPoseEpoch;if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.computed++;}
+      if(entry.epoch!==view.jointPoseEpoch){jointRotation(view,pose.joint,e,rotation);aroundJoint(parent,pose.joint,rotation,entry.matrix);entry.epoch=view.jointPoseEpoch;if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.computed++;}
       else if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.reused++;
       parent=entry.matrix;
     }
     return parent;
   }
-  for(const pose of part.userData.poseChain){jointRotation(view,pose.joint,e,rotation);result.multiply(pose.forward).multiply(rotation).multiply(pose.back);}
+  result.copy(matrix);for(const pose of part.userData.poseChain){jointRotation(view,pose.joint,e,rotation);aroundJoint(result,pose.joint,rotation,result);}
   return result;
 }

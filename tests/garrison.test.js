@@ -13,6 +13,13 @@ function fixture(type='towncenter'){
 }
 function enter(sim,workers){for(const u of workers)if(u.order?.type==='garrison')sim.tickUnit(u,.1);}
 
+test('reloading defenses skip searches while training continues and acquire a live target as soon as ready',()=>{
+  const {sim,site}=fixture('tower'),enemy=sim.addUnit('knight',1,site.x+8,site.z);site.cooldown=.25;site.queue=[{kind:'unit',type:'villager',remaining:5}];
+  let queries=0;const nearest=sim.nearest.bind(sim);sim.nearest=(...args)=>{queries++;return nearest(...args);};
+  sim.tickBuilding(site,.1);sim.tickBuilding(site,.1);assert.equal(queries,0);assert.ok(Math.abs(site.queue[0].remaining-4.8)<1e-8);assert.equal(sim.projectiles?.length||0,0);
+  sim.tickBuilding(site,.1);assert.equal(queries,1);assert.equal(sim.projectiles[0].target,enemy.id);assert.equal(site.cooldown,BUILDINGS.tower.reload);
+});
+
 test('Town Bell walks villagers into real shelter with bounded capacity, without changing resources or population',()=>{
   const {sim,site,workers}=fixture(),before={...sim.players[0].resources},pop=sim.population(0);assert.equal(sim.seekShelter(workers.map(w=>w.id),site.id),15);assert.equal(garrisonCount(sim,site),0);
   enter(sim,workers);assert.equal(garrisonCount(sim,site),15);assert.equal(garrisonArrows(sim,site),5);assert.equal(sim.population(0),pop);assert.deepEqual(sim.players[0].resources,before);

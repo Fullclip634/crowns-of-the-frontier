@@ -21,7 +21,7 @@ test('offscreen contacts skip terrain normals and use the current interpolated p
   view.localMotion.capture(sim);unit.x=1;sim.time=.1;view.localMotion.commit(sim);prepareViewport(view);updateContacts(view,false);
   assert.equal(view.contactShadows.count,1);assert.equal(samples,6,'one offscreen height sample, without its four normal samples');assert.deepEqual(view.contactDiagnostics,{visible:1,culled:1,computed:1,reused:0,cached:1,matrixUploadBytes:64});
   const matrix=new THREE.Matrix4();view.contactShadows.getMatrixAt(0,matrix);assert.equal(matrix.elements[12],.5,'shadow uses this frame interpolation, not the previous renderX');
-  updateContacts(view,false);assert.equal(samples,7,'stationary visible contact is fully reused');assert.equal(view.contactDiagnostics.reused,1);
+  const version=view.contactShadows.instanceMatrix.version;updateContacts(view,false);assert.equal(samples,7,'stationary visible contact is fully reused');assert.equal(view.contactDiagnostics.reused,1);assert.equal(view.contactDiagnostics.matrixUploadBytes,0);assert.equal(view.contactShadows.instanceMatrix.version,version,'unchanged shadows do not request a GPU upload');
   unit.hp=0;camera.position.set(500,30,40);camera.lookAt(500,0,0);prepareViewport(view);updateContacts(view,false);assert.equal(view.contactShadows.count,1);view.contactShadows.getMatrixAt(0,matrix);assert.equal(matrix.elements[12],500,'newly visible objects receive their complete pose');
   hidden.embarked=true;updateContacts(view,false);assert.equal(view.contactShadows.count,0);
   view.contactShadows.geometry.dispose();view.contactShadows.material.dispose();view.contactShadows.dispose();

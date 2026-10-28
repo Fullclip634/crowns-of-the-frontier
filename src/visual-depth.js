@@ -68,7 +68,7 @@ export function contactPose(view,e,x,z,radius,ground){
 }
 
 export function updateContacts(view,menu){
-  const mesh=view.contactShadows;let count=0,culled=0,computed=0,reused=0;
+  const mesh=view.contactShadows,slots=view.contactSlots??=[];let count=0,culled=0,computed=0,reused=0,firstChanged=Infinity,lastChanged=-1;
   for(const e of view.sim.entities){
     if(count===1024)break;
     if(e.hp<=0||e.embarked||e.water||UNITS[e.type]?.naval||e.type==='farm'||(e.kind==='building'&&e.progress===0))continue;
@@ -79,11 +79,12 @@ export function updateContacts(view,menu){
     const ground=unchanged?previous.ground:view.groundHeight(x,z);
     if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){culled++;continue;}
     const pose=unchanged?previous:contactPose(view,e,x,z,radius,ground);if(unchanged)reused++;else computed++;
-    mesh.setMatrixAt(count++,pose.matrix);
+    if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}count++;
   }
   if(view.clock-(view.contactPrunedAt||0)>2){for(const id of view.contactCache?.keys()||[])if(!view.sim.get(id))view.contactCache.delete(id);view.contactPrunedAt=view.clock;}
-  mesh.count=count;markInstancePrefix(mesh,count);
-  view.contactDiagnostics={visible:count,culled,computed,reused,cached:view.contactCache?.size||0,matrixUploadBytes:count*64};
+  mesh.count=count;slots.length=count;let matrixUploadBytes=0;
+  if(lastChanged>=0){mesh.instanceMatrix.addUpdateRange(firstChanged*16,(lastChanged-firstChanged+1)*16);mesh.instanceMatrix.needsUpdate=true;matrixUploadBytes=(lastChanged-firstChanged+1)*64;}
+  view.contactDiagnostics={visible:count,culled,computed,reused,cached:view.contactCache?.size||0,matrixUploadBytes};
 }
 
 export function installVisualDepth(WorldView){

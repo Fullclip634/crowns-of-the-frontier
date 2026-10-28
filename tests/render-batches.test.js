@@ -4,6 +4,15 @@ import * as THREE from 'three';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame} from '../src/render-batches.js';
 import {animatePart} from '../src/world-polish.js';
 
+test('joint pivot optimization matches independent translated rotations with nested and scaled roots',()=>{
+  const parent={type:'sail',pivot:[.4,1.7,-.2],side:1},child={type:'oar',pivot:[-1.2,.8,.6],side:-1,parent},part={userData:{motion:child}},entity={id:9,moving:true,type:'galley'},view={clock:0};
+  for(let frame=0;frame<60;frame++){
+    view.clock=frame*.017;const root=new THREE.Matrix4().compose(new THREE.Vector3(13,2,-8),new THREE.Quaternion().setFromEuler(new THREE.Euler(.1,.8,-.2)),new THREE.Vector3(1.3,.8,1.1)),expected=root.clone();
+    for(const [joint,angle]of [[parent,Math.sin(view.clock*1.5+entity.id)*.035],[child,Math.sin(view.clock*3+entity.id)*.18*child.side]])expected.multiply(new THREE.Matrix4().makeTranslation(...joint.pivot)).multiply(new THREE.Matrix4().makeRotationX(angle)).multiply(new THREE.Matrix4().makeTranslation(...joint.pivot.map(n=>-n)));
+    const actual=animatePart(view,part,entity,root);for(let i=0;i<16;i++)assert.ok(Math.abs(actual.elements[i]-expected.elements[i])<1e-12);
+  }
+});
+
 test('unit poses pack visible IDs despite freed slots, fog and embarked troops',()=>{
   const camera=new THREE.PerspectiveCamera(45,1,.1,200);camera.position.set(0,30,40);camera.lookAt(0,0,0);
   const batch={ids:[41,null,73,84],free:[1],renderIds:[],parts:[new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial(),10)]};

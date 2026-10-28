@@ -25,6 +25,7 @@ import {UnitLocomotion} from './locomotion.js';
 import {UnitActions} from './unit-actions.js';
 import {pruneFootPlacements,visualBodyOffset} from './foot-placement.js';
 import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
+import {animateSceneDecorations} from './scene-animation.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
@@ -201,13 +202,12 @@ export class WorldView {
       if(node.userData.batch){
         node.position.set(rx,ground,rz);node.rotation.y=heading;
         if(!visible||e.embarked||!nearViewport(this,rx,ground,rz,13)){node.visible=false;continue;}
-        const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true);
+        const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true);continue;
       }
       if(!visible||e.embarked)continue;
       node.position.set(rx,ground,rz);if(e.kind==='unit'){node.rotation.y=heading;const body=node.userData.body;if(body){body.position.y=e.moving?Math.sin(this.clock*10+e.id)*.065:0;if(e.type==='villager'&&e.order?.type==='gather'&&!e.moving)body.rotation.z=Math.sin(this.clock*6)*.08;else body.rotation.z=0;}}
       if(e.kind==='building'){node.scale.y=1;if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);}if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
-      if(e.type==='mill')node.traverse(child=>{if(child.userData.windmill)child.rotation.z=this.clock*.4;});
-      node.traverse(child=>{if(child.userData.flag)child.rotation.y=Math.sin(this.clock*2+e.id)*.08;if(e.kind==='shrine'&&child.material===this.materials.gold){child.position.y=Math.sin(this.clock*1.4)*.22;child.rotation.y=this.clock*.4;}});
+      animateSceneDecorations(this,node,e);
     }
     for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=dt;const t=f.time/f.duration;if(t>=1){if(f.impact)this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
     let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smoke.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smoke.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smoke);

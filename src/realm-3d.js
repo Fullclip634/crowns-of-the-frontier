@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {entityGroundHeight} from './entity-ground.js';
 import {nodeRuntime,standardMaterial} from './render-runtime.js';
 import {treeDetail} from './tree-lod.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
@@ -65,7 +66,7 @@ export function installRealm3D(WorldView){
   p.entityHeight=function(e,x=e.x,z=e.z){
     if(e.water||UNITS[e.type]?.naval)return .08;
     if(e.kind==='building'){if(!this.foundationHeights.has(e.id))this.foundationHeights.set(e.id,foundation(this,e));return this.foundationHeights.get(e.id);}
-    return this.groundHeight(x,z);
+    return entityGroundHeight(this,e,x,z);
   };
   p.forestFog=function(menu=false){
     const dx=this.camera.position.x-this.target.x,dz=this.camera.position.z-this.target.z,length2=dx*dx+dz*dz;
