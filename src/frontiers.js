@@ -1,7 +1,24 @@
 import {UNITS,BUILDINGS,DIFFICULTIES,TECHS} from './data.js';
 import {disembarkSlots} from './disembark.js';
 import {bridgeFootprint} from './bridge-layout.js';
+import {navigationRegions} from './navigation.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+// The closest clear cell can be a pocket enclosed by later construction.
+// Prefer an exit that shares the town center's navigation region.
+function townCenterRegion(sim,grid,labels,owner){
+  const center=sim.owned(owner,'building','towncenter').find(building=>building.hp>0&&building.progress>=1);
+  if(!center)return 0;
+  const cell=sim.cell(center.x,center.z),size=sim.gridSize,limit=Math.ceil(center.r)+6;
+  for(let ring=1;ring<=limit;ring++){
+    const counts=new Map();let found=false;
+    for(let z=cell.z-ring;z<=cell.z+ring;z++)for(let x=cell.x-ring;x<=cell.x+ring;x++){
+      if(x<0||z<0||x>=size||z>=size||Math.max(Math.abs(x-cell.x),Math.abs(z-cell.z))!==ring)continue;
+      const id=z*size+x;if(grid[id])continue;const label=labels[id];counts.set(label,(counts.get(label)||0)+1);found=true;
+    }
+    if(found){let best=0,most=0;for(const [label,count]of counts)if(count>most){best=label;most=count;}return best;}
+  }
+  return 0;
+}
 
 export function installFrontiers(Simulation){
   const p=Simulation.prototype,original={};
@@ -37,8 +54,9 @@ export function installFrontiers(Simulation){
     let shore=false;for(let i=0;i<16;i++)if(this.isWater(x+Math.cos(i*Math.PI/8)*7,z+Math.sin(i*Math.PI/8)*7))shore=true;
     return shore&&!this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+BUILDINGS.dock.r+.8);
   };
-  p.spawnPoint=function(building,naval=false){const grid=this.grid(building.owner,naval);let best=null,score=Infinity;
-    for(let x=-14;x<=14;x+=2)for(let z=-14;z<=14;z+=2){const sample={x:building.x+x,z:building.z+z},cell=this.cell(sample.x,sample.z),point={x:cell.x*2-this.halfWorld+1,z:cell.z*2-this.halfWorld+1},n=distance(point,building);if(n>=building.r+1&&Math.abs(point.x)<=this.halfWorld-3&&Math.abs(point.z)<=this.halfWorld-3&&!grid[cell.z*this.gridSize+cell.x]&&n<score){best=point;score=n;}}return best;
+  p.spawnPoint=function(building,naval=false){const grid=this.grid(building.owner,naval);let best=null,score=Infinity,connected=null,connectedScore=Infinity;
+    const labels=naval?null:navigationRegions(this,grid),region=labels?townCenterRegion(this,grid,labels,building.owner):0,candidates=new Map();
+    for(let x=-14;x<=14;x+=2)for(let z=-14;z<=14;z+=2){const sample={x:building.x+x,z:building.z+z},cell=this.cell(sample.x,sample.z),point={x:cell.x*2-this.halfWorld+1,z:cell.z*2-this.halfWorld+1},n=distance(point,building),id=cell.z*this.gridSize+cell.x,valid=n>=building.r+1&&Math.abs(point.x)<=this.halfWorld-3&&Math.abs(point.z)<=this.halfWorld-3&&!grid[id];if(!valid)continue;if(n<score){best=point;score=n;}if(labels){const label=labels[id],entry=candidates.get(label);if(entry){entry.count++;if(n<entry.distance){entry.point=point;entry.distance=n;}}else candidates.set(label,{count:1,point,distance:n});}if(region&&labels[id]===region&&n<connectedScore){connected=point;connectedScore=n;}}if(connected)return connected;if(labels&&candidates.size){let chosen=null;for(const entry of candidates.values())if(!chosen||entry.count>chosen.count||entry.count===chosen.count&&entry.distance<chosen.distance)chosen=entry;return chosen.point;}return best;
   };
   p.tickBuilding=function(e,dt){const before=this.nextId;original.tickBuilding.call(this,e,dt);for(let id=before;id<this.nextId;id++){const unit=this.get(id);if(unit?.kind!=='unit')continue;if(unit.owner>0)this.emit('stat-trained',{entity:unit});const spawn=this.spawnPoint(e,!!UNITS[unit.type].naval);if(spawn){unit.x=spawn.x;unit.z=spawn.z;unit.path=[];}
       if(unit.type==='fishingboat')this.assignWorker(unit);

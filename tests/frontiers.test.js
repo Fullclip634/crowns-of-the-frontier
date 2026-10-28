@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/simulation.js';
-import {MinHeap} from '../src/navigation.js';
+import {MinHeap,navigationRegions} from '../src/navigation.js';
 import {battlePreset} from '../src/custom-battle.js';
 const advance=(s,t)=>{for(let i=0;i<t*10;i++)s.tick(.1);};
 test('heap returns priorities in ascending order',()=>{const heap=new MinHeap();heap.push(1,8);heap.push(2,2);heap.push(3,5);assert.deepEqual([heap.pop(),heap.pop(),heap.pop()],[2,3,1]);});
@@ -12,6 +12,22 @@ test('trained land units spawn on clear navigation-cell centers outside nearby f
   assert.equal(spawn.x,cell.x*2-sim.halfWorld+1);assert.equal(spawn.z,cell.z*2-sim.halfWorld+1);assert.equal(grid[cell.z*sim.gridSize+cell.x],0);
   assert.ok(Math.hypot(spawn.x-mine.x,spawn.z-mine.z)>=mine.r+.9,'spawn point must clear the building footprint');
   const unit=sim.addUnit('spearman',3,spawn.x,spawn.z),base=sim.owned(3,'building','towncenter')[0],route=sim.pathTo(unit,base,base.r+3);assert.equal(unit.pathStatus,'ready');assert.ok(route.length);
+});
+test('trained units exit through the town-center region instead of a closer enclosed pocket',()=>{
+  const sim=new Simulation({mode:'custom',map:'highlands',seed:512,mapSize:'vast',slots:battlePreset('4v4')}),owner=5,size=sim.gridSize,grid=new Uint8Array(size*size);
+  sim.entities=[];sim.index=null;sim.revision++;
+  const tc=sim.addBuilding('towncenter',owner,163.2,0,true),range=sim.addBuilding('range',owner,175.2,0,true),pocket=[[179,3],[181,1],[181,3]].map(([x,z])=>sim.cell(x,z)),center=sim.cell(179,3);
+  for(let z=center.z-2;z<=center.z+2;z++)for(let x=center.x-2;x<=center.x+2;x++)grid[z*size+x]=1;
+  for(const cell of pocket)grid[cell.z*size+cell.x]=0;
+  sim.grid=()=>grid;
+  const spawn=sim.spawnPoint(range),labels=navigationRegions(sim,grid),spawnCell=sim.cell(spawn.x,spawn.z),tcCell=sim.cell(tc.x,tc.z);
+  assert.notEqual(labels[spawnCell.z*size+spawnCell.x],labels[pocket[0].z*size+pocket[0].x],'spawn must leave the enclosed cell pocket');
+  assert.equal(labels[spawnCell.z*size+spawnCell.x],labels[tcCell.z*size+tcCell.x],'spawn must share the town center region');
+  const unit=sim.addUnit('spearman',owner,spawn.x,spawn.z),route=sim.pathTo(unit,{x:150,z:20});
+  assert.equal(unit.pathStatus,'ready');assert.ok(route.length);
+  tc.hp=0;
+  const fallback=sim.spawnPoint(range),fallbackCell=sim.cell(fallback.x,fallback.z);
+  assert.notEqual(labels[fallbackCell.z*size+fallbackCell.x],labels[pocket[0].z*size+pocket[0].x],'a destroyed town center must not restore the enclosed pocket');
 });
 test('transports board land units, move on water, unload on shore, and reject remote landings',()=>{const s=new Simulation({mode:'tides'});s.tickAI=()=>{};const ship=s.owned(0,'unit','transport')[0];ship.x=-10;ship.z=34;const unit=s.addUnit('spearman',0,-16,34);s.command([unit.id],{type:'board',target:ship.id});advance(s,2);assert.equal(unit.embarked,true);assert.equal(ship.passengers.length,1);assert.equal(s.unload(ship.id,60,34),false);assert.equal(s.unload(ship.id,-18,34),true);assert.equal(unit.embarked,false);assert.equal(s.isWater(unit.x,unit.z),false);});
 test('sinking transports also defeats their embarked troops',()=>{const s=new Simulation({mode:'tides'}),ship=s.owned(0,'unit','transport')[0],unit=s.addUnit('spearman',0,ship.x-5,ship.z);unit.embarked=true;unit.transport=ship.id;ship.passengers=[unit.id];s.hurt(ship,ship.hp+1,s.owned(1,'unit','galley')[0]);assert.equal(unit.hp,0);});
