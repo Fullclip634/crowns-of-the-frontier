@@ -1,3 +1,22 @@
+## 29 October 2026 — Index client resource deltas and merge snapshots once
+
+The client merges incoming actors and retained resources with indexed lookups
+instead of scanning every resource for each delta. It builds entity maps without
+temporary entry-pair arrays and gives all interpolated units one packet-arrival
+timestamp. Full snapshots still replace resources; new troops are not tweened
+from unrelated positions.
+
+Verified: 15 client, visibility, interpolation and merge tests; production build;
+an 844-by-390 touch-browser session with a second human socket connection,
+30 real resource updates, preserved resource references, forced fog/resource
+resync and 18 interpolated units sharing a finite timestamp. No browser errors;
+the phone screenshot was inspected. The larger two-browser regression timed out
+opening its second page before a match started, so it supplies no pass evidence.
+
+A synthetic 1,280-unit/2,100-resource merge benchmark matched before/after data.
+Median batches of 50 merges changed from 40.96 to 25.66 ms with 20 updates and
+139.90 to 30.40 ms with 1,500 updates. These measure the merge step, not device FPS.
+
 ## 29 October 2026 — Copy only public foreign-entity fields
 
 Snapshot preparation omits private order, route, AI and passenger fields while
