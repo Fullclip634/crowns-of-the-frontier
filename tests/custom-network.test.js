@@ -13,6 +13,21 @@ async function fixture(t){const server=http.createServer(),service=attachRooms(s
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function until(predicate){const deadline=Date.now()+4000;while(!predicate()){assert.ok(Date.now()<deadline,'authoritative command should complete');await pause(25);}}
 
+for(const mode of ['skirmish','custom'])test(`${mode} snapshots omit dead-unit history while retaining death effects, losses and reconnect state`,async t=>{
+  const {service,connect}=await fixture(t),host=await connect(),slots=battlePreset('2v2').map((slot,i)=>({...slot,controller:i<2?'human':'ai'}));
+  host.send({type:'create',protocol:2,name:'Host',options:{mode,map:'highlands',mapSize:'spacious',seed:512,slots}});const session=await host.inbox.next('session'),guest=await connect();
+  guest.send({type:'join',protocol:2,name:'Guest',code:session.code});await guest.inbox.next('session');host.send({type:'ready',ready:true});guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}host.send({type:'start'});await host.inbox.next('begin');await guest.inbox.next('begin');
+  const room=service.rooms.get(session.code),sim=room.sim;sim.tick=()=>{};const base=sim.owned(0,'building','towncenter')[0];
+  const archive=[];for(let i=0;i<100;i++){const unit=sim.addUnit('spearman',0,base.x,base.z);unit.hp=0;archive.push(unit.id);}room.effects=[];
+  const victim=sim.addUnit('spearman',0,base.x+8,base.z+8),survivor=sim.owned(0,'unit','villager')[0],attacker=sim.owned(mode==='custom'?2:1,'unit')[0];host.inbox.items=[];
+  let packet;do{packet=await host.inbox.next('state');}while(!packet.state.entities.some(e=>e.id===victim.id));
+  sim.hurt(victim,victim.maxHp+1,attacker);
+  do{packet=await host.inbox.next('state');}while(!packet.effects.some(e=>e.type==='death'&&e.entity.id===victim.id));
+  assert.equal(packet.state.entities.some(e=>e.kind==='unit'&&e.hp<=0),false);assert.ok(packet.state.entities.some(e=>e.id===survivor.id));assert.ok(packet.state.stats.lost>=1);assert.equal(packet.effects.find(e=>e.type==='death'&&e.entity.id===victim.id).entity.x,victim.x);
+  host.ws.terminate();await until(()=>!room.players[0].ws);const resumed=await connect();resumed.send({...session,type:'resume',protocol:2});const restored=(await resumed.inbox.next('begin')).state;
+  assert.equal(restored.entities.some(e=>e.kind==='unit'&&e.hp<=0),false);assert.ok(restored.entities.some(e=>e.id===survivor.id));assert.ok(restored.stats.lost>=1);assert.ok(archive.every(id=>sim.entities.some(e=>e.id===id&&e.hp<=0)),'snapshot filtering leaves authoritative history intact');
+});
+
 test('eight human commanders ready, receive private team perspectives, reconnect, and win as an alliance',async t=>{
   const {service,connect}=await fixture(t),players=[],sessions=[],slots=battlePreset('4v4').map(slot=>({...slot,controller:'human'}));
   const host=await connect();players.push(host);host.send({type:'create',name:'Host',faction:'alder',options:{mode:'custom',map:'highlands',mapSize:'huge',seed:512,slots,aiPace:'patient',populationLimit:40}});const session=await host.inbox.next('session');sessions.push(session);const code=session.code;

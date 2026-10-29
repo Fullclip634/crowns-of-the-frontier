@@ -72,6 +72,9 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     data.visualProjectiles=projectileVisualEvents(sim.projectiles,sim.time).map(event=>combatPerspective(sim,side,event,{observer})).filter(Boolean).map(event=>({...event,entity:{...event.entity,owner:mapOwner(event.entity.owner)},target:{...event.target,owner:mapOwner(event.target.owner)}}));
     for(const e of sim.entities){
       if(e.kind==='resource'){if(!compact)entities.push({...e});continue;}
+      // Actor snapshots are complete lists. Missing units are removed by the
+      // client; death effects and accumulated battle statistics travel separately.
+      if(e.kind==='unit'&&e.hp<=0)continue;
       if(e.embarked&&e.owner!==side&&!observer)continue;
       if(e.owner===side||e.kind==='shrine'||shown(e)||observer){
         const object=entityPerspective(sim,side,e);

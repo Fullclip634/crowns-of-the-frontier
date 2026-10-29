@@ -1,3 +1,28 @@
+## 29 October 2026 — Omit historical dead units from actor snapshots
+
+A fresh Normal 4v4 Vast highlands AI run reached the 1,200-second diagnostic
+limit with all kingdoms active. All eight reached Imperial Age and completed
+second town centers. Military base damage began at 340.3 seconds, and assigned
+relief troops dealt actual damage near allies. The run ended at its time limit,
+not a victory. Its final authoritative state contained 574 living and 1,201 dead
+units, exposing an accumulating snapshot cost.
+
+Complete outgoing actor lists now omit dead units. Death effects and loss totals
+remain separate, and authoritative history is preserved. Verified: 24 network,
+projectile, visibility, remains and cleanup tests; production build. New classic
+and custom-room regressions cover 100 historical corpses, a fresh death effect,
+surviving actors, loss statistics and a full reconnect.
+
+An eight-client frozen fixture with 1,280 living and 2,560 dead units sent 320
+updates in each eight-second sample. Mean decoded JSON changed from 502,487 to
+201,847 bytes per update; server CPU changed from 3,953 to 2,218 ms. Those are
+snapshot-only measurements with external test clients, before WebSocket
+compression, not internet bandwidth or rendered FPS. Long-session simulation
+history/memory and broader AI/human balance remain open.
+
+The preceding 05e2bdd workflow passed on GitHub and Render health reported the
+same expected commit before this change was published.
+
 ## 29 October 2026 — Reuse snapshot indexes for visual cleanup
 
 Multiplayer passes its freshly merged entity index to visual cleanup, avoiding

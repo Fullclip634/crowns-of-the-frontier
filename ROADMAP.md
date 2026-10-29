@@ -1,6 +1,6 @@
 # Crowns of the Frontier: quality roadmap
 
-Reviewed 13 October 2026 against the version 2.6.1 source and current verification scripts. The user's quality goal explicitly includes design, style and UI/UX throughout the system. Recent implemented work includes compact phone panels, original camera-local combat audio, saved moonlit/day-cycle lighting, stable tree detail, shoreline shading and articulated troop draw reduction. The complete goal is still open.
+Updated 29 October 2026 against the version 2.6.1 source and current verification scripts. The user's quality goal explicitly includes design, style and UI/UX throughout the system. Recent implemented work includes compact phone panels, original camera-local combat audio, saved moonlit/day-cycle lighting, stable tree detail, shoreline shading and articulated troop draw reduction. The complete goal is still open.
 
 This is an ordered development proposal, not a claim that its milestones have been implemented. The current game is a playable beta. A world-class assessment needs independent player feedback, reliable performance, strong content, and sustained quality across complete matches.
 
@@ -13,10 +13,19 @@ This is an ordered development proposal, not a claim that its milestones have be
 - Classic two-player and custom mixed human/AI Wi-Fi rooms with authoritative commands, team perspectives, readiness and reconnection. Rooms are held in server memory; they are not a public matchmaking service.
 - Seeded volumetric weather, pooled effects, optional audio/lightning and quality budgets.
 - Rooted and wind-animated trees, winter snowcaps, harvested tree falls/stumps, batched carried supplies, ore depletion, and age-specific town-center architecture. Huge-map fog and grass cover the full playable area.
-- Render deployment configuration for one game/multiplayer service, plus optional Netlify static hosting and a separate secure multiplayer endpoint. Hosting variants have local browser coverage. The user reports a Render deployment; public deployed-version and operational checks remain unverified.
+- Render deployment configuration for one game/multiplayer service, plus optional Netlify static hosting and a separate secure multiplayer endpoint. Hosting variants have local browser coverage. Published revisions have been checked against public CI results, Render health, app assets and WebSocket pings; each new revision still needs its own deployment verification.
 - Mouse edge scrolling, corner scrolling, cursor arrows, keyboard controls, camera inspection, and landscape touch input.
 - Square radar with a rectangular camera locator and mouse/touch dragging. Global production overview, selection across completed production buildings, balanced training batches, and cancel/refund controls.
 - Existing automated simulation/graphics/network checks and browser verification. Physical-device performance, balance, and extensive human playtesting remain unverified.
+
+## 29 October verification progress
+
+- Recorded foundation/navigation regressions, production exits, queued walls, shared visibility and private reconnect state have automated coverage. This does not close every routing or online-reliability gate.
+- Offline installation is staged at approximately 23.51 MB; optional graphics are cached after first use. Low and previously used High quality passed offline reload/play with the local origin server stopped.
+- Recent measured work reduces target-search square roots, fog-circle work, private snapshot copying, client resource-delta scans, redundant fog uploads and repeated visual-cleanup scans. See [release checks](RELEASE_CHECKS.md) for the scope and limitations of each result.
+- A fresh Normal 4v4 Vast highlands battle ran for 1,200 simulated seconds with ordinary AI economies and combat. All eight kingdoms reached Imperial Age and completed second town centers; military base damage began at 340.3 seconds. Relief units dealt actual damage near protected allies, and garrison defense operated. Every alliance was still active at the diagnostic limit, which does not prove a completed match or human balance.
+- That run retained 1,201 dead units alongside 574 living units in authoritative history. Snapshot filtering now omits dead unit actors while preserving death events, battle statistics and reconnect state. Long-session authoritative history/memory still requires attention.
+- Physical-device acceptance, natural human campaign playthroughs, broad balance and mission review, and clean Blender asset regeneration remain open. Passing technical checks is not a whole-game quality score.
 
 ## Version 2.5 art, AI and performance progress
 
