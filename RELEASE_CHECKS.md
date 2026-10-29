@@ -1,3 +1,26 @@
+## 29 October 2026 — Staged offline install and runtime quality caching
+
+Service-worker installation now precaches only the app shell, Low catalogue,
+shared trees, bridge, Low color surfaces, character color, decoder and fonts
+(**23.51 MB / 39 requests**) instead of every hashed asset (**70.48 MB**). High and
+Balanced catalogues, normal/arm maps and KTX2 color surfaces are fetched on
+first use and stored in the same versioned cache, so they remain available
+offline after that quality has actually been used. Low offline still falls back
+to the precached color JPEGs when KTX2 is unsupported. `/version.json` continues
+to bypass the cache for update checks.
+
+Verified: **6 focused tests** for asset selection, runtime caching and offline
+registration, plus a production build. Physical-device download/startup timing
+and the hosted Render revision remain open.
+
+The texture filter applies only within `/assets/`, preserving both fonts whose
+filenames contain `normal`. The canonical browser regression passed Low offline
+reload/play, runtime caching of High assets, and High offline reload/play with
+the origin server stopped and no unexpected browser errors. The test preserves
+the selected graphics quality between reloads and uses a private preview on
+port 4174. This verifies a local desktop browser; physical phone coverage remains
+open.
+
 ## 25 October 2026 — Curved natural settlement roads across rolling terrain
 
 The roads stretching from settlements across the terrain now curve naturally to

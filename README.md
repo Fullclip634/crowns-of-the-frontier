@@ -174,7 +174,9 @@ node scripts/battle-benchmark.mjs
 node scripts/regression-browser.mjs
 ```
 
-The production output is in `dist/`. Deploy it to a static web host. The generated service worker caches the game and its bundled assets for offline use after the first successful visit over HTTPS (or localhost). The web app manifest requests fullscreen landscape when installed. Browser support for fullscreen, installation, and orientation locking varies. Fonts and their licenses are bundled locally. No game assets depend on a third-party CDN.
+The production output is in `dist/`. Deploy it to a static web host. After installation over HTTPS (or localhost), the service worker stores the app shell and Low-quality assets for offline play. Balanced and High assets are cached when first used online; load a quality before relying on it offline. The web app manifest requests fullscreen landscape when installed. Browser support for fullscreen, installation, and orientation locking varies. Fonts and their licenses are bundled locally. No game assets depend on a third-party CDN.
+
+`offline-qa.mjs` starts its own production preview on port 4174 (`QA_OFFLINE_PORT` overrides it), stops the server to verify offline play, and restores it to download optional quality assets.
 
 The browser QA scripts use a locally installed Microsoft Edge. `regression-browser.mjs` runs camera, radar, production, controls, campaigns, 3D models, offline play and custom multiplayer checks sequentially, recording results in `artifacts/release-browser-checks.json`. `custom-multiplayer-qa.mjs` starts an isolated service so its surrender/reconnect tests cannot alter live rooms. Older `release-qa.mjs` tests a classic room and defaults to port 4180; set `QA_URL` to another server URL as needed. `npm test` includes real WebSocket checks for fair starts, ownership, fog, readiness, mixed AI/humans, disconnects and restoration. Emulation does not substitute for testing on physical phones. See [release evidence](RELEASE_CHECKS.md).
 
