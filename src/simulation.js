@@ -1,3 +1,4 @@
+import {retireDeadUnits} from './dead-unit-cleanup.js';
 import {revealVisionCircle} from './vision-circle.js';
 import {installFrontiers} from './frontiers.js';
 import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
@@ -414,6 +415,7 @@ export class Simulation {
     this.tickShrines(dt);
     if(this.options.mode==='wonder'){for(let owner=0;owner<2;owner++){if(this.owned(owner,'building','wonder').some(e=>e.progress>=1))this.wonderTime[owner]+=dt;else this.wonderTime[owner]=0;if(this.wonderTime[owner]>=240)this.end(owner===0,owner===0?'Your monument will stand for a thousand years.':'The rival monument secured their legacy.');}}
     this.fogClock+=dt;if(this.fogClock>.5){this.updateFog();this.fogClock=0;}this.checkVictory();
+    retireDeadUnits(this);
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
