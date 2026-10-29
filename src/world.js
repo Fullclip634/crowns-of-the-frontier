@@ -200,11 +200,14 @@ export class WorldView {
       // Hidden and embarked units keep their authoritative simulation state;
       // their render-only gait and work poses can wait until they are visible.
       if(e.kind==='unit'&&(!visible||e.embarked))continue;
-      const position=renderPosition(this,e),rx=position.x,rz=position.z,heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,ground=this.entityHeight(e,rx,rz),gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;e.renderX=rx;e.renderZ=rz;
+      const position=renderPosition(this,e),rx=position.x,rz=position.z,ground=this.entityHeight(e,rx,rz);e.renderX=rx;e.renderZ=rz;
+      // Keep positions current for projectiles, picking and camera focus while
+      // skipping animation poses for batched troops outside the viewport.
+      if(node.userData.batch&&!nearViewport(this,rx,ground,rz,13)){node.visible=false;node.position.set(rx,ground,rz);node.rotation.y=e.heading||0;continue;}
+      const heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;
       if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){
         node.position.set(rx,ground,rz);node.rotation.y=heading;
-        if(!visible||e.embarked||!nearViewport(this,rx,ground,rz,13)){node.visible=false;continue;}
         const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true);continue;
       }
       if(!visible||e.embarked)continue;

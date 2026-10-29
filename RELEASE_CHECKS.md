@@ -1,3 +1,17 @@
+## 29 October 2026 — Cull offscreen troop animation before posing
+
+Batched troops outside the camera viewport now skip gait and work-action
+updates while retaining current render positions for projectiles and picking.
+The camera uses the same culling radius as before.
+
+Verified: 18 focused rendering, motion, gait and action tests; production build;
+338-unit browser scene with unchanged 120 drawn units, 197 calls and 992,002
+triangles. Panning to another kingdom drew 51 units; returning restored 120
+with finite instance matrices. The screenshot was visually inspected.
+Median render time was essentially unchanged (23.5 to 23.7 ms); p95 changed
+from 29.3 to 28.1 ms in this desktop sample. These paused-simulation render
+measurements do not establish full-match FPS or physical-phone performance.
+
 ## 29 October 2026 — Staged offline install and runtime quality caching
 
 Service-worker installation now precaches only the app shell, Low catalogue,
