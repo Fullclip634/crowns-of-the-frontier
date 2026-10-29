@@ -1,3 +1,17 @@
+## 29 October 2026 — Copy only public foreign-entity fields
+
+Snapshot preparation omits private order, route, AI and passenger fields while
+copying a foreign entity, instead of copying and then deleting them. Own command
+data, observed worker activity and live shelter/passenger counts are preserved.
+
+Verified: 19,552 before/after entity views matched across eight commanders in a
+saved battle. A frozen eight-client fixture with 3,380 entities sent 320 state
+updates in each eight-second sample. Server CPU was 2,688 and 2,781 ms in baseline
+samples versus 2,313 ms after the change; network payload size was effectively
+unchanged. This measures snapshot preparation/transport, not live simulation or
+device frame rate. Privacy, visibility, reconnect and congestion tests cover the
+relevant multiplayer behavior.
+
 ## 29 October 2026 — Reuse exact fog-of-war circle spans
 
 Local and multiplayer visibility use cached integer row widths instead of
