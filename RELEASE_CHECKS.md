@@ -1,3 +1,16 @@
+## 29 October 2026 — Reuse exact fog-of-war circle spans
+
+Local and multiplayer visibility use cached integer row widths instead of
+repeating circular distance tests for every revealed cell. Exploration history,
+map-edge clipping, allied vision and observer visibility retain their rules.
+
+Verified: 25 visibility, custom-battle and real multiplayer tests; exact mask
+comparison across multiple map sizes, radii and edges; identical serialized
+battle states in four alternating before/after 200-tick runs. An isolated
+1,000-call fog benchmark changed from 714 to 494 ms (about 31% less CPU time).
+Full-tick median changed from 5.41 to 5.19 ms in the desktop fixture. These are
+local CPU measurements, not an all-device FPS claim.
+
 ## 29 October 2026 — Reduce target-search square roots
 
 Nearest-target queries now reject candidates outside the current surface-distance

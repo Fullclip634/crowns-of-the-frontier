@@ -1,3 +1,4 @@
+import {revealVisionCircle} from './vision-circle.js';
 import {installFrontiers} from './frontiers.js';
 import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
 import {installTactics,formationSlot} from './tactics.js';
@@ -385,7 +386,7 @@ export class Simulation {
   }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
-  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){const r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18,c=this.cell(e.x,e.z),rc=Math.ceil(r/2);for(let z=Math.max(0,c.z-rc);z<=Math.min(this.gridSize-1,c.z+rc);z++)for(let x=Math.max(0,c.x-rc);x<=Math.min(this.gridSize-1,c.x+rc);x++)if((x-c.x)**2+(z-c.z)**2<=rc*rc){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
+  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){const r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18,c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
     for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
   }
   tutorialObjectives(){return [

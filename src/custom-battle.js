@@ -1,3 +1,4 @@
+import {revealVisionCircle} from './vision-circle.js';
 import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.js';
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
@@ -142,7 +143,7 @@ export function installCustomBattle(Simulation){
 export function visibilityFor(sim,owner,explored,observer=false){
   const size=sim.gridSize,visible=new Uint8Array(size*size);
   if(observer){visible.fill(1);explored.fill(1);return visible;}
-  const reveal=(e,r)=>{const c=sim.cell(e.x,e.z),rc=Math.ceil(r/2);for(let z=Math.max(0,c.z-rc);z<=Math.min(size-1,c.z+rc);z++)for(let x=Math.max(0,c.x-rc);x<=Math.min(size-1,c.x+rc);x++)if((x-c.x)**2+(z-c.z)**2<=rc*rc){visible[z*size+x]=1;explored[z*size+x]=1;}};
+  const reveal=(e,r)=>{const c=sim.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(visible,explored,size,c.x,c.z,rc);};
   for(const e of sim.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||sim.options.mode==='custom'&&sim.options.shareVision&&sim.allied(owner,e.owner))){if(e.kind==='unit')reveal(e,UNITS[e.type].vision);else if(e.kind==='building'&&e.progress>0)reveal(e,BUILDINGS[e.type].vision||18);else if(e.kind==='shrine')reveal(e,18);}
   for(const side of sim.revealedOwners||[])for(const e of sim.owned(side,'building'))reveal(e,e.r+4);
   return visible;
