@@ -1,3 +1,21 @@
+## 29 October 2026 — Reuse snapshot indexes for visual cleanup
+
+Multiplayer passes its freshly merged entity index to visual cleanup, avoiding
+a second full entity scan and temporary filtered arrays/ID set. Dead and missing
+nodes retain their disposal and batch-slot rules; callers without an index use
+the entity-list path.
+
+Verified: seven scene-cleanup, residency and snapshot-merge tests; production
+build; a real 844-by-390 touch-browser multiplayer/resync check confirmed two
+indexed cleanup calls, resource identity, resource updates and valid interpolated
+units with no browser errors. A synthetic 6,000-entity/200-node benchmark used
+39–56 ms per 100 old cleanup calls versus 0.22–2.46 ms with the existing index.
+This measures cleanup alone and excludes building the already-available index.
+It does not establish device frame rate.
+
+The preceding 59a0b4c workflow completed successfully on GitHub and Render health
+reported that same expected revision before this change was published.
+
 ## 29 October 2026 — Reuse fog pixels and skip unchanged texture updates
 
 The fog canvas reuses its ImageData buffer, initializes the fixed RGB tint once,

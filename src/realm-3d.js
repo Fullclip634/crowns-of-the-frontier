@@ -90,9 +90,9 @@ export function installRealm3D(WorldView){
     node.traverse(mesh=>{if(!mesh.isMesh)return;if(!sharedGeometry.has(mesh.geometry))mesh.geometry.dispose();if(!sharedMaterials.has(mesh.material))mesh.material.dispose();});
     this.foundationHeights.delete(node.userData.entity);
   };
-  p.pruneMissing=function(){
-    const present=new Set(this.sim.entities.filter(e=>e.hp>0).map(e=>e.id));
-    for(const [id,node]of this.nodes)if(!present.has(id)){
+  p.pruneMissing=function(presentIndex=null){
+    const present=presentIndex?null:new Set(this.sim.entities.filter(e=>e.hp>0).map(e=>e.id));
+    for(const [id,node]of this.nodes)if(presentIndex?!(presentIndex.get(id)?.hp>0):!present.has(id)){
       if(node.userData.batch){const {batch,index}=node.userData;batch.ids[index]=null;batch.free.push(index);}
       this.releaseNode(node);node.removeFromParent();this.nodes.delete(id);
     }
