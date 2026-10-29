@@ -1,3 +1,21 @@
+## 29 October 2026 — Reuse fog pixels and skip unchanged texture updates
+
+The fog canvas reuses its ImageData buffer, initializes the fixed RGB tint once,
+and requests a texture update only when an alpha value or map dimensions change.
+Tree visibility refreshes still run through the existing render extension.
+
+Verified: 11 fog-pixel, visibility-protocol and rendering tests; production build;
+phone-size multiplayer browser checks with no errors. Twenty unchanged real
+browser updates retained the image and texture version; revealing and restoring
+an unseen cell changed the version and actual canvas alpha as expected. Resource
+deltas and forced resync also passed in that session. This reduces redundant
+work without establishing a device FPS gain.
+
+Before this change was published, release 81c132e was confirmed green on its
+public GitHub Actions page and live on Render with matching health revision,
+expected app asset, HTTP checks and a WebSocket ping. GitHub API checks were
+rate limited; these checks used no API credentials.
+
 ## 29 October 2026 — Index client resource deltas and merge snapshots once
 
 The client merges incoming actors and retained resources with indexed lookups

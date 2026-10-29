@@ -1,3 +1,4 @@
+import {updateFogTexture} from './fog-texture.js';
 import {installWorldPolish} from './world-polish.js';
 import {installVisualDepth} from './visual-depth.js';
 import {installRealm3D} from './realm-3d.js';
@@ -149,7 +150,7 @@ export class WorldView {
     if(e.owner===0){const r=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=.13;r.scale.setScalar(e.r+(.6));r.visible=false;r.userData.selection=true;g.add(r);g.userData.ring=r;}
     return g;
   }
-  updateFog(){const size=this.sim.gridSize;if(this.fogCanvas.width!==size)this.fogCanvas.width=this.fogCanvas.height=size;const image=this.fogCtx.createImageData(size,size);for(let i=0;i<size*size;i++){const p=i*4;image.data[p]=19;image.data[p+1]=32;image.data[p+2]=30;image.data[p+3]=this.sim.visible[i]?0:this.sim.explored[i]?100:197;}this.fogCtx.putImageData(image,0,0);this.fogTexture.needsUpdate=true;}
+  updateFog(){return updateFogTexture(this);}
   groundPoint(clientX,clientY){const rect=this.renderer.domElement.getBoundingClientRect();this.mouse.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.mouse,this.camera);const point=this.landscape?this.landscape.rayPoint(this.raycaster.ray):this.raycaster.ray.intersectPlane(this.plane,new THREE.Vector3());return point&&insideMap(point.x,point.z,this.sim?.worldSize||WORLD)?point:null;}
   pick(clientX,clientY){this.groundPoint(clientX,clientY);const hits=this.raycaster.intersectObjects(this.objects.children,true);for(const hit of hits){let id=hit.object.userData.entity;if(hit.object.userData.treeIds)id=hit.object.userData.treeIds[hit.instanceId];if(hit.object.userData.unitIds)id=hit.object.userData.unitIds[hit.instanceId];if(hit.object.userData.wallIds)id=hit.object.userData.wallIds[hit.instanceId];const e=this.sim.get(id);if(e&&(e.owner===0||this.sim.isVisible(e.x,e.z)))return e;}return pickFruitVolume(this);}
   project(e){const x=e.renderX??e.x,z=e.renderZ??e.z,v=new THREE.Vector3(x,this.entityHeight(e,x,z)+(e.kind==='building'?7:UNITS[e.type]?.naval?5:3),z).project(this.camera),rect=this.renderer.domElement.getBoundingClientRect();return {x:rect.left+(v.x+1)*rect.width/2,y:rect.top+(1-v.y)*rect.height/2,visible:v.z>-1&&v.z<1};}
