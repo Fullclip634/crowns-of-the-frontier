@@ -18,6 +18,13 @@ test('target queries retain surface distances, containing buildings, strict rang
   assert.equal(sim.nearest(source,e=>e.id===1,8),entities[1]);assert.equal(sim.nearest(source,e=>e.id===2,8),entities[2]);assert.equal(sim.nearest(source,e=>e.id===5,8),null);
 });
 
+test('nearest rejects candidates outside the current radius before evaluating their predicate',()=>{
+  const source={id:0,hp:10,x:0,z:0,r:.5},near={id:1,hp:10,x:3,z:0,r:1},far={id:2,hp:10,x:12,z:0,r:1},sim=Object.create(Simulation.prototype),visited=[];
+  sim.entities=[source,near,far];
+  assert.equal(sim.nearest(source,target=>{visited.push(target.id);return true;},5),near);
+  assert.deepEqual(visited,[near.id]);
+});
+
 test('combat targeting excludes scenery while retaining the same spatial order and live deaths',()=>{
   const sim=new Simulation({mode:'sandbox',seed:512});sim.stop(sim.owned(0,'unit').map(e=>e.id));const archer=sim.addUnit('archer',0,7.95,30),enemy=sim.addUnit('spearman',1,15.95,30);enemy.stance='hold';sim.addResource('gold',10,30,300);sim.tick(.1);
   const predicate=t=>sim.hostile(archer.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building');

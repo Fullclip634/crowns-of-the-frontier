@@ -113,7 +113,7 @@ export function installFrontiers(Simulation){
       const cell=Math.floor(e.x/16)+':'+Math.floor(e.z/16);if(!sight.buckets.has(cell))sight.buckets.set(cell,[]);sight.buckets.get(cell).push(e);sight.range=Math.max(sight.range,e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18);
     }this.sightCache.teams.set(key,sight);}
     const range=sight.range+(entity.r||0)+2;
-    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++)for(const source of sight.buckets.get(x+':'+z)||[])if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?UNITS[source.type].vision:BUILDINGS[source.type].vision||18)+(entity.r||0))return true;return false;
+    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++){const sources=sight.buckets.get(x+':'+z);if(!sources)continue;for(const source of sources)if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?UNITS[source.type].vision:BUILDINGS[source.type].vision||18)+(entity.r||0))return true;}return false;
   };
   p.tickAI=function(){if(this.options.multiplayer)return;original.tickAI.call(this);if(['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival)return;
     const player=this.players[1],tc=this.owned(1,'building','towncenter')[0];if(!tc)return;
