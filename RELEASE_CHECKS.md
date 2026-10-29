@@ -1,3 +1,15 @@
+## 29 October 2026 — Reduce target-search square roots
+
+Nearest-target queries now reject candidates outside the current surface-distance
+bound before calculating a square root. Candidate order, predicates, footprint
+radii and the final strict distance comparison are preserved.
+
+Verified: 29 targeting, spatial-index, obstacle and garrison tests. Four
+alternating before/after runs of the crowded battle (200 ticks each) produced
+identical serialized-state hashes. Median CPU tick time changed from 6.12 to
+5.79 ms and p95 from 19.57 to 16.03 ms in this sample. These are simulation-only
+measurements on one desktop fixture, not an FPS or all-device guarantee.
+
 ## 29 October 2026 — Cull offscreen troop animation before posing
 
 Batched troops outside the camera viewport now skip gait and work-action

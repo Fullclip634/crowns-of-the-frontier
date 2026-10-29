@@ -233,7 +233,14 @@ export class Simulation {
     if(e.owner===0&&this.time-(this.lastBlockedNotice??-10)>4){this.lastBlockedNotice=this.time;this.emit('notice',{owner:0,message:'A unit cannot reach its destination. Choose another route or open the obstruction.',tone:'warning'});}
     this.emit('order-blocked',{entity:e});const target=this.get(e.order?.target);if(e.order?.type==='build'&&e.type==='villager'&&target?.type==='wall')this.finishWallOrder(e,target,true);else this.finishOrder(e);
   }
-  nearest(e,predicate,max=Infinity,combatOnly=false){let best=null,d=max;const consider=target=>{if(target.hp<=0||target===e||combatOnly&&target.kind!=='unit'&&target.kind!=='building'||!predicate(target))return;const len=distance(e,target)-target.r;if(len<d){d=len;best=target;}};
+  nearest(e,predicate,max=Infinity,combatOnly=false){let best=null,d=max;const consider=target=>{
+      if(target.hp<=0||target===e||combatOnly&&target.kind!=='unit'&&target.kind!=='building'||!predicate(target))return;
+      // Reject distant candidates before the square root. A small margin keeps
+      // rounding at the boundary subject to the original strict comparison.
+      const dx=e.x-target.x,dz=e.z-target.z,reach=d+target.r+1e-9;
+      if(reach<0||dx*dx+dz*dz>reach*reach)return;
+      const len=Math.hypot(dx,dz)-target.r;if(len<d){d=len;best=target;}
+    };
     if(Number.isFinite(max)&&this.entityBuckets){const range=max+(this.maxEntityRadius||8)+2;for(let x=Math.floor((e.x-range)/8);x<=Math.floor((e.x+range)/8);x++){const column=this.entityBuckets.get(x);if(!column)continue;for(let z=Math.floor((e.z-range)/8);z<=Math.floor((e.z+range)/8);z++){const bucket=column.get(z),candidates=combatOnly?bucket?.combat:bucket;if(candidates)for(const target of candidates)consider(target);}}}else for(const target of this.entities)consider(target);return best;}
   nearestDrop(e,resource,naval=false){
     if(this.dropCache?.revision!==this.revision||this.dropCache.entities!==this.entities){
