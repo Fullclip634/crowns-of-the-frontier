@@ -15,7 +15,9 @@ export class WallVisuals{
     const dx=end.x-start.x,dz=end.z-start.z,len=Math.hypot(dx,dz);if(len<.01)return;const index=mesh.count++,cx=(start.x+end.x)/2,cz=(start.z+end.z)/2;
     this.matrix.set(dx,0,-dz/len*depth,cx,groundB-groundA,height,0,(groundA+groundB)/2+y,dz,0,dx/len*depth,cz,0,0,0,1);mesh.setMatrixAt(index,this.matrix);mesh.userData.wallIds[index]=link.a.type==='wall'?link.a.id:link.b.id;
   }
-  update(menu){const v=this.view;if(this.revision!==v.sim.revision||this.entities!==v.sim.entities){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
+  update(menu){const v=this.view,fogVersion=v.fogTexture?.version??0;const revisionChanged=this.revision!==v.sim.revision||this.entities!==v.sim.entities;
+    if(revisionChanged){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
+    if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
     const shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z),signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}`).join('|');
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}

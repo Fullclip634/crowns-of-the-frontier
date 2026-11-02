@@ -47,3 +47,27 @@ test('impact pools bound retained GPU objects, dispose overflow and release shar
   assert.equal(pool.retained.size,pool.limit);assert.equal(materials,24);assert.equal(meshes,24);assert.equal(burstGeometry,0);assert.equal(ringGeometry,0);
   pool.dispose();pool.dispose();assert.equal(materials,72);assert.equal(meshes,60);assert.equal(burstGeometry,1);assert.equal(ringGeometry,1);assert.equal(pool.retained.size,0);assert.throws(()=>pool.acquire('burst'),/disposed/);
 });
+
+test('kinetic combat vfx pools support directional sparks and ground crater decals', () => {
+  const pool = new ImpactEffects(), scene = new THREE.Scene();
+  const sparks = pool.acquire('sparks', 0xffd700);
+  const crater = pool.acquire('crater');
+  scene.add(sparks, crater);
+
+  assert.equal(sparks.isInstancedMesh, true);
+  assert.equal(sparks.count, 12);
+  assert.equal(sparks.userData.velocities.length, 12);
+  assert.equal(crater.isMesh, true);
+  assert.equal(crater.material.opacity, 0.7);
+
+  releaseEffect({ object: sparks, recycle: m => pool.release(m) });
+  releaseEffect({ object: crater, recycle: m => pool.release(m) });
+  assert.equal(scene.children.length, 0);
+
+  const reusedSparks = pool.acquire('sparks', 0xffffff);
+  assert.equal(reusedSparks, sparks);
+  pool.release(reusedSparks);
+
+  pool.dispose();
+  assert.throws(() => pool.acquire('sparks'), /disposed/);
+});

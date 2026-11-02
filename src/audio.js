@@ -1,6 +1,7 @@
 import {installSoundscape} from './soundscape.js';
 import {installWeatherAudio} from './weather-audio.js';
 import {installCombatAudio} from './combat-audio.js';
+import {installVoiceSystem} from './voice-system.js';
 export class AudioEngine {
   constructor(settings){this.settings=settings;this.context=null;this.musicTimer=0;this.note=0;}
   unlock(){
@@ -24,3 +25,4 @@ export class AudioEngine {
 installSoundscape(AudioEngine);
 installCombatAudio(AudioEngine);
 installWeatherAudio(AudioEngine);
+installVoiceSystem(AudioEngine);

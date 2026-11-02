@@ -5,12 +5,28 @@ import {terrainBiome} from './terrain-biomes.js';
 
 export function drawMinimap(canvas,sim,view,settings){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
-  ctx.clearRect(0,0,size,size);ctx.fillStyle=terrainBiome(sim.options.map).map;ctx.fillRect(0,0,size,size);
-  // Water must be drawn before ships and resources, using the same channels as the 3D map.
-  for(const channel of view.landscape.channels()){
-    ctx.strokeStyle='#72a3a5';ctx.lineWidth=channel.width*2*scale;ctx.lineCap='butt';ctx.beginPath();
-    for(let z=-half;z<=half;z+=2){const x=coord(channel.center+Math.sin(z*channel.frequency)*channel.bend),y=coord(z);if(z===-half)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();
-    if(sim.options.map!=='coast'){ctx.fillStyle='#ac9b75';ctx.fillRect(coord(channel.center-channel.width-3),coord(-7.75),(channel.width+3)*2*scale,15.5*scale);}
+  const baseKey=`${sim.options.map}:${size}:${worldSize}`;
+  if(canvas.cachedBaseKey!==baseKey&&typeof document!=='undefined'){
+    try{
+      const baseCanvas=document.createElement('canvas');baseCanvas.width=size;baseCanvas.height=size;
+      const bctx=baseCanvas.getContext('2d');bctx.fillStyle=terrainBiome(sim.options.map).map;bctx.fillRect(0,0,size,size);
+      for(const channel of view.landscape?.channels?.()||[]){
+        bctx.strokeStyle='#72a3a5';bctx.lineWidth=channel.width*2*scale;bctx.lineCap='butt';bctx.beginPath();
+        for(let z=-half;z<=half;z+=2){const x=coord(channel.center+Math.sin(z*channel.frequency)*channel.bend),y=coord(z);if(z===-half)bctx.moveTo(x,y);else bctx.lineTo(x,y);}bctx.stroke();
+        if(sim.options.map!=='coast'){bctx.fillStyle='#ac9b75';bctx.fillRect(coord(channel.center-channel.width-3),coord(-7.75),(channel.width+3)*2*scale,15.5*scale);}
+      }
+      canvas.cachedBase=baseCanvas;canvas.cachedBaseKey=baseKey;
+    }catch{}
+  }
+  ctx.clearRect(0,0,size,size);
+  if(canvas.cachedBase)ctx.drawImage(canvas.cachedBase,0,0);
+  else{
+    ctx.fillStyle=terrainBiome(sim.options.map).map;ctx.fillRect(0,0,size,size);
+    for(const channel of view.landscape?.channels?.()||[]){
+      ctx.strokeStyle='#72a3a5';ctx.lineWidth=channel.width*2*scale;ctx.lineCap='butt';ctx.beginPath();
+      for(let z=-half;z<=half;z+=2){const x=coord(channel.center+Math.sin(z*channel.frequency)*channel.bend),y=coord(z);if(z===-half)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();
+      if(sim.options.map!=='coast'){ctx.fillStyle='#ac9b75';ctx.fillRect(coord(channel.center-channel.width-3),coord(-7.75),(channel.width+3)*2*scale,15.5*scale);}
+    }
   }
   for(const e of sim.entities){
     if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;

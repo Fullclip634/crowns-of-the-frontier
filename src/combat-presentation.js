@@ -23,6 +23,7 @@ export function installCombatPresentation(WorldView){
       const point=event.target;if(!point||point.owner!==0&&!this.sim.isVisible(point.x,point.z))return;
       prepareViewport(this);if(!nearViewport(this,point.x,this.entityHeight(point)+1,point.z,5))return;
       const before=this.fx.length;this.burst(point.x,point.z,event.siege?0xb5aa95:point.kind==='building'?0xc3a17a:0xd9d7bd,event.siege?1.6:.24);
+      if(event.siege){this.sparks?.(point.x,this.entityHeight(point)+.4,point.z,0xffd68a,1.2);this.crater?.(point.x,point.z,1.6);}
       for(let i=before;i<this.fx.length;i++)this.fx[i].object.position.y=this.entityHeight(point)+projectileTargetHeight(point,event.siege);
       return;
     }

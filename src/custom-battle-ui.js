@@ -47,7 +47,39 @@ export function battleObjectiveMarkup(sim){
 
 export function battleResultMarkup(sim){
   if(sim.options.mode!=='custom')return '';
-  return `<div class="battle-result-table"><table><caption>Kingdom results</caption><thead><tr><th>Kingdom</th><th>Team</th><th>Defeated</th><th>Gathered</th></tr></thead><tbody>${sim.players.map(player=>`<tr><th>${esc(player.name)}</th><td>${player.team}</td><td>${player.battleStats.kills}</td><td>${Math.floor(player.battleStats.gathered)}</td></tr>`).join('')}</tbody></table></div>`;
+  const players=sim.players||[];
+  const maxGathered=Math.max(1,...players.map(p=>p.battleStats?.gathered||0));
+  const maxKills=Math.max(1,...players.map(p=>p.battleStats?.kills||0));
+  const tableRows=players.map(player=>`<tr><th>${esc(player.name)}</th><td>${player.team}</td><td>${player.battleStats.kills}</td><td>${Math.floor(player.battleStats.gathered)}</td></tr>`).join('');
+  const cards=players.map((player,i)=>{
+    const s=player.battleStats||{};
+    const kd=s.lost>0?(s.kills/s.lost).toFixed(1):s.kills;
+    const isTopGather=s.gathered===maxGathered&&maxGathered>0;
+    const isTopKills=s.kills===maxKills&&maxKills>0;
+    const colorHex='#'+(player.color?player.color.toString(16).padStart(6,'0'):PLAYER_COLORS[i]?.toString(16).padStart(6,'0')||'c5ae76');
+    const badge=isTopKills?'<span class="analytics-badge badge-warlord">⚔️ Warlord</span>':isTopGather?'<span class="analytics-badge badge-economy">🌾 Hegemon</span>':!player.defeated?'<span class="analytics-badge badge-survivor">🛡️ Survivor</span>':'';
+    const gatherPct=Math.round((s.gathered/maxGathered)*100);
+    const killPct=Math.round((s.kills/maxKills)*100);
+    return `<article class="analytics-card ${player.defeated?'defeated':''}">
+      <div class="analytics-card-header">
+        <i class="analytics-dot" style="background:${colorHex}"></i>
+        <strong>${esc(player.name)}</strong>
+        <span class="analytics-team">Team ${player.team}</span>
+        ${badge}
+      </div>
+      <div class="analytics-bars">
+        <div class="analytics-bar-row">
+          <small>Gathered (${Math.floor(s.gathered)})</small>
+          <div class="analytics-bar-track"><div class="analytics-bar-fill gold-bar" style="width:${gatherPct}%"></div></div>
+        </div>
+        <div class="analytics-bar-row">
+          <small>Kills (${s.kills} · KD ${kd})</small>
+          <div class="analytics-bar-track"><div class="analytics-bar-fill red-bar" style="width:${killPct}%"></div></div>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+  return `<div class="battle-result-table"><table><caption>Kingdom results</caption><thead><tr><th>Kingdom</th><th>Team</th><th>Defeated</th><th>Gathered</th></tr></thead><tbody>${tableRows}</tbody></table></div><div class="battle-analytics-panel"><div class="analytics-heading"><span>TACTICAL ASSESSMENT &amp; PERFORMANCE</span></div><div class="analytics-grid">${cards}</div></div>`;
 }
 
 export function roomLobbyMarkup(room){
