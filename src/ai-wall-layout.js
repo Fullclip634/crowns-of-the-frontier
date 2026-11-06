@@ -45,24 +45,16 @@ export function* adaptivePerimeterLayouts(sim,plan,owner){
     }
     return null;
   };
-  for(const back of [12,14,16,18,20,22])for(const backAcross of [0,-3,3,-6,6]){
+  for(const allowNatural of [false,true])for(const back of [12,14,16,18,20,22])for(const backAcross of [0,-3,3,-6,6]){
     if(depth-back*WALL_SPACING>-9)continue;
     const gate={type:'gate',x:front.x+tangent.x*backAcross*WALL_SPACING-normal.x*back*WALL_SPACING,z:front.z+tangent.z*backAcross*WALL_SPACING-normal.z*back*WALL_SPACING,angle};
     if(!sim.canSee(owner,gate)||!sim.buildValid('gate',gate.x,gate.z,owner))continue;
-    // Natural obstacles are only useful at the end of a paid front. A tree
-    // replacing an interior section leaves a two-section gap, so route around
-    // it and keep the perimeter fully paid and connected.
-    const left=route(-1,back,backAcross,false),right=route(1,back,backAcross,false);if(!left||!right)continue;
-    const across=piece=>(piece.x-front.x)*tangent.x+(piece.z-front.z)*tangent.z;
-    const pieces=[],push=piece=>{if(piece&&!pieces.some(existing=>Math.hypot(existing.x-piece.x,existing.z-piece.z)<.01))pieces.push({...piece});};
-    const frontGate=plan.pieces.find(piece=>piece.type==='gate')||plan.pieces[0],frontWalls=plan.pieces.filter(piece=>piece.type==='wall');
-    push(frontGate);
-    for(const piece of frontWalls.filter(piece=>across(piece)>0).sort((a,b)=>across(a)-across(b)))push(piece);
-    for(const piece of right.slice(1))push(piece);
-    push(gate);
-    for(const piece of left.slice(1).reverse())push(piece);
-    for(const piece of frontWalls.filter(piece=>across(piece)<0).sort((a,b)=>Math.abs(across(b))-Math.abs(across(a))))push(piece);
-    for(let index=0;index<pieces.length;index++){const piece=pieces[index];if(piece.type==='gate')continue;const next=pieces[(index+1)%pieces.length],dx=next.x-piece.x,dz=next.z-piece.z;if(Math.hypot(dx,dz)>1e-6)piece.angle=-Math.atan2(dz,dx);}
+    const left=route(-1,back,backAcross,allowNatural),right=route(1,back,backAcross,allowNatural);if(!left||!right)continue;
+    const pieces=plan.pieces.map(piece=>({...piece}));pieces.push(gate);
+    for(const flank of [left,right])for(let i=1;i<flank.length;i++){
+      const p={...flank[i]},next=flank[i+1]||p,previous=flank[i-1];p.angle=-Math.atan2(next.z-previous.z,next.x-previous.x);
+      if(!pieces.some(piece=>Math.hypot(piece.x-p.x,piece.z-p.z)<.01))pieces.push(p);
+    }
     yield {...plan,layout:'perimeter',pieces};
   }
 }
@@ -76,16 +68,10 @@ export function perimeterLayout(plan,widthSteps,depthSteps){
     const previous=plan.pieces.find(piece=>piece.type===type&&Math.hypot(piece.x-point.x,piece.z-point.z)<.01);
     if(previous)Object.assign(point,previous);pieces.push(point);
   };
-  // Emit the ring in walking order. Construction then starts at the front
-  // gate and proceeds around the perimeter instead of planting the rear gate
-  // before the walls that must meet it.
-  add('gate',0,0);
-  for(let i=2;i<=widthSteps;i++)add('wall',i*WALL_SPACING,0);
-  for(let i=1;i<depthSteps;i++)add('wall',widthSteps*WALL_SPACING,i*WALL_SPACING,angle+Math.PI/2);
-  for(let i=widthSteps;i>=2;i--)add('wall',i*WALL_SPACING,depthSteps*WALL_SPACING);
-  add('gate',0,depthSteps*WALL_SPACING);
-  for(let i=2;i<=widthSteps;i++)add('wall',-i*WALL_SPACING,depthSteps*WALL_SPACING);
-  for(let i=depthSteps-1;i>=1;i--)add('wall',-widthSteps*WALL_SPACING,i*WALL_SPACING,angle+Math.PI/2);
-  for(let i=widthSteps;i>=2;i--)add('wall',-i*WALL_SPACING,0);
+  for(const back of [0,depthSteps*WALL_SPACING]){
+    add('gate',0,back);
+    for(const sign of [-1,1])for(let i=2;i<=widthSteps;i++)add('wall',sign*i*WALL_SPACING,back);
+  }
+  for(const sign of [-1,1])for(let i=1;i<depthSteps;i++)add('wall',sign*widthSteps*WALL_SPACING,i*WALL_SPACING,angle+Math.PI/2);
   return {...plan,layout:'perimeter',pieces};
 }

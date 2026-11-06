@@ -1,5 +1,5 @@
 import {BUILDINGS,UNITS} from './data.js';
-import {WALL_SPACING,connectWall,linkPlannedWalls} from './walls.js';
+import {WALL_SPACING,connectWall} from './walls.js';
 import {clearSegment,findPath,unitNavigationGrid,navigationRegions} from './navigation.js';
 import {perimeterLayout,adaptivePerimeterLayouts,naturalWallAnchor} from './ai-wall-layout.js';
 
@@ -32,16 +32,12 @@ export function fortificationReserved(sim,type,x,z,owner){
 // Validate a complete, linked layout on private scratch state before paying for
 // its first foundation. Walls stay solid; only allied gates provide passage.
 function plannedSimulation(sim,plan,owner){
-  const entities=sim.entities.map(entity=>['wall','gate'].includes(entity.type)?{...entity,wallLinks:[...(entity.wallLinks||[])]}:entity),nodes=[];
-  for(const [index,piece]of plan.pieces.entries()){
-    const existing=sim.get(piece.id);
-    if(existing){nodes.push(entities.find(entity=>entity.id===existing.id)||null);continue;}
-    if(naturalWallAnchor(sim,piece)){nodes.push(null);continue;}
+  const entities=sim.entities.map(entity=>['wall','gate'].includes(entity.type)?{...entity,wallLinks:[...(entity.wallLinks||[])]}:entity),added=[];
+  for(const [index,piece]of plan.pieces.entries())if(!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)){
     const entity={...piece,id:-index-1,owner,kind:'building',hp:1,r:BUILDINGS[piece.type].r,wallAngle:piece.angle??plan.angle,wallLinks:[]};
-    entities.push(entity);nodes.push(entity);
+    entities.push(entity);added.push(entity);
   }
-  for(const entity of nodes)if(entity&&entity.id<0)connectWall(entity,entities);
-  if(plan.layout==='perimeter')linkPlannedWalls(entities,nodes);
+  for(const entity of added)connectWall(entity,entities);
   const preview=Object.create(sim);
   Object.assign(preview,{entities,index:new Map(entities.map(entity=>[entity.id,entity])),grids:{},unitEscapeGrids:new Map(),pathScratch:null,regionQueue:null,entityBuckets:null,unitBuckets:null});
   return preview;
@@ -70,27 +66,14 @@ export function fortificationRoutesSafe(sim,plan,owner,displaced=null,currentPie
   const unitPreview=currentPiece?plannedSimulation(sim,{...plan,pieces:[currentPiece]},owner):preview;
   const walls=(currentPiece?[currentPiece]:plan.pieces).filter(piece=>piece.type==='wall'&&!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));
   for(const unit of sim.entities){
-    if(unit.hp<=0||unit.kind!=='unit'||unit.embarked||UNITS[unit.type].naval||!sim.allied(owner,unit.owner))continue;
-    const blocked=walls.some(wall=>distance(unit,wall)<BUILDINGS.wall.r+unit.r+.12);
-    if(blocked||(distance(unit,gate)<=48&&routable(sim,unit,outside)&&!routable(unitPreview,unit,outside))){
+    if(unit.hp<=0||unit.kind!=='unit'||unit.embarked||UNITS[unit.type].naval||!sim.allied(owner,unit.owner)||distance(unit,gate)>48)continue;
+    if(walls.some(wall=>distance(unit,wall)<BUILDINGS.wall.r+unit.r+.12)||routable(sim,unit,outside)&&!routable(unitPreview,unit,outside)){
       if(displaced&&unit.owner===owner&&unit.type==='villager')displaced.push(unit.id);return false;
     }
   }
   for(const building of sim.entities){
     if(building.hp<=0||building.kind!=='building'||building.progress<1||!sim.allied(owner,building.owner)||distance(building,gate)>48||!Object.values(UNITS).some(unit=>!unit.naval&&unit.at.includes(building.type)))continue;
     const origin=preview.spawnPoint(building);if(!origin||!routable(preview,{...probe,owner:building.owner,...origin},outside))return false;
-  }
-  // A closed ring must stop enemies from every approach, not just the gate road.
-  if(plan.layout==='perimeter'&&!currentPiece){
-    const enemy=sim.players.findIndex((_,index)=>sim.hostile(owner,index));
-    if(enemy>=0){
-      const radius=plan.pieces.reduce((far,piece)=>Math.max(far,distance(base,piece)),0)+12;
-      for(let index=0;index<8;index++){
-        const angle=index*Math.PI/4,x=base.x+Math.sin(angle)*radius,z=base.z+Math.cos(angle)*radius;
-        if(Math.abs(x)>sim.halfWorld-3||Math.abs(z)>sim.halfWorld-3||sim.isWater(x,z))continue;
-        if(routable(preview,{type:'spearman',owner:enemy,r:.65,x,z},inside))return false;
-      }
-    }
   }
   return true;
 }
@@ -99,14 +82,12 @@ export function planPerimeterUpgrade(sim,plan,owner){
   const base=sim.get(plan.base);if(!base||plan.layout==='perimeter'||plan.pieces.some(piece=>!sim.get(piece.id)||sim.get(piece.id).progress<1))return null;
   const depth=(plan.pieces[0].x-base.x)*Math.sin(plan.angle)+(plan.pieces[0].z-base.z)*Math.cos(plan.angle);
   function* candidates(){
-    for(const width of [5,6])for(const length of [12,14,16,18])if(depth-length*WALL_SPACING<=-9)yield perimeterLayout(plan,width,length);
+    for(const width of [5,6,7])for(const length of [14,16,18])if(depth-length*WALL_SPACING<=-9)yield perimeterLayout(plan,width,length);
     yield* adaptivePerimeterLayouts(sim,plan,owner);
   }
   for(const candidate of candidates()){
-    if(candidate.pieces.length>64)continue;
     const missing=candidate.pieces.filter(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));
-    if(!affordable(sim,owner,totalCost(sim,owner,missing)))continue;
-    if(missing.some(piece=>!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)))continue;
+    if(!affordable(sim,owner,totalCost(sim,owner,missing))||missing.some(piece=>!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)))continue;
     if(!fortificationRoutesSafe(sim,candidate,owner))continue;
     const enemy=sim.players.findIndex((_,i)=>sim.hostile(owner,i));if(enemy<0)continue;
     const gate=candidate.pieces[0],normal={x:Math.sin(candidate.angle),z:Math.cos(candidate.angle)},inside={x:gate.x-normal.x*9,z:gate.z-normal.z*9},outside={x:gate.x+normal.x*9,z:gate.z+normal.z*9};
@@ -118,25 +99,16 @@ export function planPerimeterUpgrade(sim,plan,owner){
   return null;
 }
 
-function releaseFortificationMoves(sim,owner){
-  for(const worker of sim.owned(owner,'unit','villager')){
-    const order=worker.order;if(!order?.aiFortification)continue;
-    if(worker.pathStatus!=='blocked'&&sim.time-(order.aiFortificationAt??sim.time)<20)continue;
-    worker.order=null;worker.path=[];worker.pathStatus='idle';worker.stuckTime=0;
-  }
-}
-
 function clearWorkerSites(sim,plan,owner,workers,displaced=[],currentPiece=null){
-  releaseFortificationMoves(sim,owner);
   const walls=(currentPiece?[currentPiece]:plan.pieces).filter(piece=>piece.type==='wall'&&!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));
   const blocked=workers.filter(worker=>displaced.includes(worker.id)||walls.some(wall=>distance(worker,wall)<BUILDINGS.wall.r+worker.r+.12));
   if(!blocked.length)return false;
   const base=sim.get(plan.base),points=[],future=plannedSimulation(sim,plan,owner),gate=plan.pieces[0],outside={x:gate.x+Math.sin(plan.angle)*9,z:gate.z+Math.cos(plan.angle)*9};
   for(const radius of [10,13,16])for(let i=0;i<16;i++){const angle=i*Math.PI/8;points.push({x:base.x+Math.sin(angle)*radius,z:base.z+Math.cos(angle)*radius});}
   for(const worker of blocked){
-    if(worker.embarked||worker.aiFleeing||worker.order?.aiExpansion||['build','repair','garrison'].includes(worker.order?.type))continue;
+    if(!available(worker))continue;
     const grid=unitNavigationGrid(sim,worker),target=points.filter(point=>{const cell=sim.cell(point.x,point.z);return !grid[cell.z*sim.gridSize+cell.x]&&walls.every(wall=>distance(point,wall)>BUILDINGS.wall.r+worker.r+.5);}).sort((a,b)=>distance(worker,a)-distance(worker,b)).find(point=>routable(sim,worker,point)&&routable(future,{...worker,...point},outside));
-    if(target&&(!worker.order?.aiFortification||distance(worker.order,target)>2))sim.command([worker.id],{type:'move',x:target.x,z:target.z,aiFortification:true,aiFortificationAt:sim.time});
+    if(target)sim.command([worker.id],{type:'move',x:target.x,z:target.z,aiFortification:true});
   }
   return blocked.some(worker=>worker.order?.aiFortification);
 }
@@ -171,11 +143,10 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
   const player=sim.players[owner],populationLimit=sim.options.populationLimit||160,fortificationWorkers=Math.min(18,Math.floor(populationLimit*.45)),perimeterWorkers=Math.min(24,Math.floor(populationLimit*.5));
   if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<fortificationWorkers||threats.length||sim.time<180||sim.time<(state.nextFortification||0))return false;
   if(sim.difficulty(owner)==='story'&&(player.age<2||sim.time<420))return false;
-  releaseFortificationMoves(sim,owner);
   state.fortifications??=[];
   state.fortifications=state.fortifications.filter(plan=>sim.get(plan.base)?.owner===owner);
   if(state.fortifications.some(plan=>plan.pieces.some(piece=>{const building=sim.get(piece.id);return building&&building.progress<1;})))return false;
-  let plan=state.fortifications.find(plan=>plan.pieces.some(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)));
+  let plan=state.fortifications.find(plan=>sim.time>=(plan.retryAt||0)&&plan.pieces.some(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)));
   if(!plan&&workers.length>=perimeterWorkers&&sim.time>=300&&sim.time>=(state.nextPerimeter||0)){
     state.nextPerimeter=sim.time+60;
     for(const existing of state.fortifications){
@@ -192,26 +163,20 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
     }
     if(!plan)return false;
   }
-  if(plan.layout==='perimeter')linkPlannedWalls(sim.entities,plan.pieces.map(piece=>sim.get(piece.id)||null));
-  let piece=null;
-  for(const candidate of plan.pieces.filter(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece))){
-    if(!affordable(sim,owner,sim.cost(BUILDINGS[candidate.type].cost,owner,'building')))continue;
-    if(!sim.canSee(owner,candidate)||!sim.buildValid(candidate.type,candidate.x,candidate.z,owner)){plan.retryAt=sim.time+30;continue;}
-    if(clearWorkerSites(sim,plan,owner,workers,[],candidate)){state.nextFortification=sim.time+1;return false;}
-    const displaced=[];
-    if(!fortificationRoutesSafe(sim,plan,owner,displaced,candidate)){
-      if(clearWorkerSites(sim,plan,owner,workers,displaced,candidate)){state.nextFortification=sim.time+1;return false;}
-      plan.retryAt=sim.time+30;continue;
-    }
-    piece=candidate;break;
+  const piece=plan.pieces.find(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));if(!piece)return false;
+  if(clearWorkerSites(sim,plan,owner,workers,[],piece)){state.nextFortification=sim.time+1;return false;}
+  const cost=sim.cost(BUILDINGS[piece.type].cost,owner,'building');
+  if(!affordable(sim,owner,cost)||!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)){plan.retryAt=sim.time+30;state.nextFortification=sim.time+3;return false;}
+  const displaced=[];
+  if(!fortificationRoutesSafe(sim,plan,owner,displaced,piece)){
+    if(clearWorkerSites(sim,plan,owner,workers,displaced,piece)){state.nextFortification=sim.time+1;return false;}
+    plan.retryAt=sim.time+30;state.nextFortification=sim.time+3;return false;
   }
-  if(!piece){state.nextFortification=sim.time+3;return false;}
   const builders=workers.filter(available).sort((a,b)=>distance(a,piece)-distance(b,piece));
   const worker=builders.find(worker=>routable(sim,worker,piece));if(!worker){plan.retryAt=sim.time+20;return false;}
   const builderIds=[worker.id];
-  if(plan.layout==='perimeter')for(const helper of builders.filter(other=>other.id!==worker.id&&routable(sim,other,piece)).slice(0,2))builderIds.push(helper.id);
+  if(plan.layout==='perimeter'){const helper=builders.find(other=>other.id!==worker.id&&routable(sim,other,piece));if(helper)builderIds.push(helper.id);}
   const building=sim.build(piece.type,piece.x,piece.z,builderIds,owner);if(!building)return false;
   building.wallAngle=piece.angle??plan.angle;piece.id=building.id;delete plan.retryAt;state.nextFortification=sim.time+3;
-  if(plan.layout==='perimeter')linkPlannedWalls(sim.entities,plan.pieces.map(piece=>sim.get(piece.id)||null));
   return true;
 }
