@@ -7,7 +7,10 @@ import {closestCandidates} from './closest-candidates.js';
 import {gatheringRange,gatheringPathRange} from './work-ranges.js';
 import {buildingPlacementGrid,findPath} from './navigation.js';
 import {fortifyKingdomWalls,fortificationReserved} from './ai-fortifications.js';
+import {healableUnit,mechanicalUnit} from './maintenance.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+const WOUNDED_HP=.28,SIEGE_WOUNDED_HP=.5,RECOVERY_RELEASE_SECONDS=60,RECOVERY_RELEASE_HP=.4;
+const isWounded=unit=>unit.hp<unit.maxHp*(mechanicalUnit(unit)?SIEGE_WOUNDED_HP:WOUNDED_HP);
 export const AI_PROFILES={
   story:{workers:20,raid:8,retreat:.9,memory:70},normal:{workers:30,raid:10,retreat:.7,memory:100},
   hard:{workers:40,raid:13,retreat:.6,memory:130},brutal:{workers:48,raid:16,retreat:.5,memory:160},
@@ -228,6 +231,17 @@ export function installCommanderAI(Simulation){
       if(player.tech[tech]>=Math.min(TECHS[tech].max,player.age+1))continue;
       const site=buildings.find(b=>b.progress>=1&&!b.queue.length&&TECHS[tech].at.includes(b.type));if(site&&this.canAfford(Object.fromEntries(Object.entries(TECHS[tech].cost).map(([r,c])=>[r,c*(player.tech[tech]+1)])),owner)){this.research(site.id,tech);break;}
     }
+    const damagedSiege=this.owned(owner,'unit').filter(unit=>unit.hp>0&&!unit.embarked&&mechanicalUnit(unit)&&unit.hp<unit.maxHp*.8).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);
+    let siegeRepairs=workers.filter(worker=>worker.order?.type==='repair'&&mechanicalUnit(this.get(worker.order.target))).length;
+    for(const target of damagedSiege){
+      if(siegeRepairs>=2)break;
+      if(workers.some(worker=>worker.order?.type==='repair'&&worker.order.target===target.id))continue;
+      if(visible.some(enemy=>enemy.kind==='unit'&&this.hostile(owner,enemy.owner)&&distance(enemy,target)<18))continue;
+      const worker=workers.find(candidate=>!candidate.embarked&&!['build','repair','garrison'].includes(candidate.order?.type)&&!candidate.aiFleeing&&!candidate.order?.aiExpansion&&!candidate.order?.aiFortification);
+      if(!worker)break;
+      if(UNITS[target.type].naval&&distance(worker,target)>target.r+3)continue;
+      this.command([worker.id],{type:'repair',target:target.id});siegeRepairs++;
+    }
     for(const building of buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*.65)){
       if(workers.some(w=>w.order?.type==='repair'&&w.order.target===building.id))continue;
       const worker=workers.find(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification);if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
@@ -245,17 +259,31 @@ export function installCommanderAI(Simulation){
     const protectedBases=this.options.mode==='custom'?this.entities.filter(e=>e.hp>0&&e.type==='towncenter'&&this.allied(owner,e.owner)):[tc];
     const defendedBases=this.options.mode==='custom'?protectedBases.filter(base=>base.owner===owner):protectedBases;
     const threats=baseThreats,fieldEnemies=visible.filter(e=>e.kind==='unit'&&military(e)&&(defendedBases.some(base=>distance(e,base)<60)||landArmy.some(unit=>distance(e,unit)<25)));
-    const ownPower=landArmy.reduce((n,e)=>n+power(e),0),enemyPower=fieldEnemies.reduce((n,e)=>n+power(e),0),wounded=landArmy.filter(e=>e.hp<e.maxHp*.28);
+    const ownPower=landArmy.reduce((n,e)=>n+power(e),0),enemyPower=fieldEnemies.reduce((n,e)=>n+power(e),0),recovering=landArmy.filter(isWounded);
+    for(const unit of landArmy){
+      if(unit.aiResting&&!isWounded(unit)){delete unit.aiResting;delete unit.aiRestingSince;delete unit.aiRecoveryReleased;}
+      else if(unit.aiResting&&this.time-(unit.aiRestingSince??this.time)>=RECOVERY_RELEASE_SECONDS&&(unit.hp>=unit.maxHp*RECOVERY_RELEASE_HP||threats.length)){delete unit.aiResting;delete unit.aiRestingSince;unit.aiRecoveryReleased=true;}
+      if(unit.aiRecoveryReleased&&unit.hp>=unit.maxHp*.6)delete unit.aiRecoveryReleased;
+    }
+    const wounded=recovering.filter(unit=>!unit.aiRecoveryReleased);
     const retreats=new Map();
     for(const unit of wounded){let retreat=this.options.mode!=='custom'&&this.options.map==='coast'&&unit.x<0?{x:-23,z:35}:{x:tc.x+8,z:tc.z-6};if(this.options.mode==='custom'&&this.options.map==='coast'){const base=protectedBases.filter(e=>Math.sign(e.x)===Math.sign(unit.x)&&distance(e,unit)<75).sort((a,b)=>distance(a,unit)-distance(b,unit))[0];      retreat=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(unit.z*.03)*2+Math.sign(unit.x)*22,z:unit.z+Math.sign(tc.z-unit.z)*9};}
       if(!shouldRetryBlockedOrder(this,unit,retreat.x,retreat.z))continue;
       if(!unit.order&&unit.aiResting&&distance(unit,retreat)<12)continue;
-      unit.aiResting=true;
+      unit.aiResting=true;unit.aiRestingSince??=this.time;
       if(unit.order?.type==='move'&&unit.order.aiRetreat&&distance(unit.order,retreat)<=12)continue;
       const key=retreat.x.toFixed(1)+':'+retreat.z.toFixed(1);if(!retreats.has(key))retreats.set(key,{point:retreat,units:[]});retreats.get(key).units.push(unit.id);
     }
     for(const retreat of retreats.values())this.command(retreat.units,{type:'move',...retreat.point,aiRetreat:true});
-    const healthy=landArmy.filter(e=>!wounded.includes(e)&&e.order?.type!=='board'),support=alliedSupport(this,owner,state,healthy,visible,tc,threats),ready=healthy.filter(e=>!support.has(e.id)),knownBuildings=Object.values(state.known).filter(e=>e.kind==='building');
+    const recoveryTargets=landArmy.filter(unit=>healableUnit(unit)&&unit.hp<unit.maxHp*.65&&(wounded.includes(unit)||protectedBases.some(base=>distance(base,unit)<30))).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id),recoveryHealers=new Set();
+    for(const healer of this.owned(owner,'unit','monk').filter(unit=>!unit.embarked&&!isWounded(unit)&&unit.order?.type!=='board')){
+      const current=healer.order?.type==='heal'?this.get(healer.order.target):null;
+      if(healableUnit(current)&&this.allied(owner,current.owner)&&current.hp<current.maxHp){recoveryHealers.add(healer.id);const index=recoveryTargets.indexOf(current);if(index>=0)recoveryTargets.splice(index,1);continue;}
+      if(!recoveryTargets.length)break;
+      const index=recoveryTargets.findIndex(target=>this.options.map!=='coast'||Math.sign(target.x)===Math.sign(healer.x));if(index<0)continue;
+      const [target]=recoveryTargets.splice(index,1);this.command([healer.id],{type:'heal',target:target.id});recoveryHealers.add(healer.id);
+    }
+    const healthy=landArmy.filter(e=>!wounded.includes(e)&&e.order?.type!=='board'),support=alliedSupport(this,owner,state,healthy.filter(e=>!recoveryHealers.has(e.id)),visible,tc,threats),ready=healthy.filter(e=>!support.has(e.id)&&!recoveryHealers.has(e.id)),knownBuildings=Object.values(state.known).filter(e=>e.kind==='building');
     const opening=this.options.mode==='custom'?customOpening(this,owner,profile):null,offensiveReady=!opening||this.time>=opening.earliest&&player.age>=opening.age&&workers.length>=opening.workers;
     let phase='muster',target={x:tc.x-12,z:tc.z+9};
     if(threats.length){phase='defend';target=threats.sort((a,b)=>distance(a,tc)-distance(b,tc))[0];}

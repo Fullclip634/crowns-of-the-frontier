@@ -37,6 +37,21 @@ export function connectWall(e,entities){
   }
 }
 
+// A planned perimeter has an exact ring order. Rebuild only those intended
+// links so construction order can never leave a gate choking on a diagonal
+// chord or a corner with three neighbours.
+export function linkPlannedWalls(entities,nodes){
+  const alive=nodes.filter(node=>node&&node.hp>0),ids=new Set(alive.map(node=>node.id));
+  for(const node of alive)node.wallLinks=(node.wallLinks||[]).filter(id=>!ids.has(id));
+  for(let index=0;index<nodes.length;index++){
+    const a=nodes[index],b=nodes[(index+1)%nodes.length];if(!a||!b||a.id===b.id||a.hp<=0||b.hp<=0)continue;
+    if(length(a,b)>(a.type==='gate'||b.type==='gate'?6.5:3.35)+1e-6)continue;
+    a.wallLinks??=[];b.wallLinks??=[];
+    if(!a.wallLinks.includes(b.id))a.wallLinks.push(b.id);
+    if(!b.wallLinks.includes(a.id))b.wallLinks.push(a.id);
+  }
+}
+
 export function restoreWallLinks(entities){
   const legacy=entities.filter(e=>fortification(e)&&!Array.isArray(e.wallLinks));for(const e of legacy)e.wallLinks=[];for(const e of legacy)connectWall(e,entities);
 }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {Simulation,distance} from '../src/simulation.js';
-import {WALL_SPACING,wallLinePoints,wallConnections,wallTreeConnections} from '../src/walls.js';
+import {WALL_SPACING,wallLinePoints,wallConnections,wallTreeConnections,linkPlannedWalls} from '../src/walls.js';
 import {WallPlacement,wallPlacementPlan} from '../src/wall-placement.js';
 import {WallVisuals} from '../src/wall-visuals.js';
 import {clearSegment} from '../src/navigation.js';
@@ -36,6 +36,18 @@ test('a tree-anchored wall blocks real enemy routes and felling trees creates a 
   sim.pathTo(enemy,destination);assert.equal(enemy.pathStatus,'ready','the cleared trees leave a genuine opening');
   let arrived=false;for(let i=0;i<200;i++){sim.time+=.1;if(sim.move(enemy,destination,.1,0,true)){arrived=true;break;}}
   assert.ok(arrived,'the enemy can walk through the harvested breach');
+});
+
+test('a planned ring rebuilds exact neighbours and removes diagonal shortcuts',()=>{
+  const sim=fixture(),coords=[[2.85,0],[5.7,0],[5.7,2.85],[5.7,5.7],[2.85,5.7],[0,5.7],[0,2.85],[0,0]],nodes=coords.map(([x,z],i)=>sim.addBuilding(i?'wall':'gate',0,x,z,true));
+  for(const wall of nodes){wall.wallLinks=[];}nodes[0].wallLinks.push(nodes[4].id);nodes[4].wallLinks.push(nodes[0].id);
+  linkPlannedWalls(sim.entities,nodes);
+  for(const node of nodes)assert.equal(node.wallLinks.length,2,'each ring piece keeps exactly its two neighbours');
+  assert.ok(!nodes[0].wallLinks.includes(nodes[4].id),'a diagonal shortcut is not part of the ring');
+  assert.equal(wallConnections(sim.entities).length,nodes.length);
+  assert.equal(clearSegment(sim,sim.grid(0),{x:2.85,z:-2},{x:2.85,z:2}),true,'allies cross the planned gate');
+  assert.equal(clearSegment(sim,sim.grid(1),{x:2.85,z:-2},{x:2.85,z:2}),false,'enemies cannot cross the planned gate');
+  assert.equal(clearSegment(sim,sim.grid(0),{x:-2,z:2.85},{x:2.85,z:2.85}),false,'walls still block away from the gate');
 });
 
 test('wall turns retain their actual neighbors and a destroyed corner remains a breach after reload',()=>{

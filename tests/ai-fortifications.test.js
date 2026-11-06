@@ -4,7 +4,7 @@ import {Simulation} from '../src/simulation.js';
 import {battlePreset} from '../src/custom-battle.js';
 import {BUILDINGS} from '../src/data.js';
 import {clearSegment,findPath} from '../src/navigation.js';
-import {wallConnections} from '../src/walls.js';
+import {wallConnections,linkPlannedWalls} from '../src/walls.js';
 import {staffSettlements} from '../src/ai-settlements.js';
 import {fortificationRoutesSafe,planFortification,planPerimeterUpgrade,fortifyKingdomWalls,fortificationReserved} from '../src/ai-fortifications.js';
 
@@ -83,10 +83,11 @@ test('AI economic construction preserves planned wall footprints and the gate ap
   advanceWalls(sim,owner,300);assert.ok(plan.pieces.every(piece=>sim.get(piece.id)?.progress===1));
 });
 
-test('a later obstruction pauses a saved wall plan and construction resumes after the footprint clears',()=>{
+test('a later obstruction blocks only that wall while construction continues around it',()=>{
   const {sim,owner,workers,state}=fixture();fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]);advanceWalls(sim,owner,35);
-  const plan=state.fortifications[0],piece=plan.pieces.find(piece=>!sim.get(piece.id)),obstruction=sim.addBuilding('house',0,piece.x,piece.z,true);
-  advanceWalls(sim,owner,65);assert.ok(plan.retryAt>0);assert.equal(sim.get(piece.id),null);assert.equal(state.fortifications.length,1);
+  const plan=state.fortifications[0],piece=plan.pieces.find(piece=>!sim.get(piece.id)),obstruction=sim.addBuilding('house',0,piece.x,piece.z,true),builtBefore=new Set(plan.pieces.filter(piece=>sim.get(piece.id)?.progress===1).map(piece=>piece.id));
+  advanceWalls(sim,owner,65);assert.equal(sim.get(piece.id),null);assert.equal(state.fortifications.length,1);
+  assert.ok(plan.pieces.some(piece=>!builtBefore.has(piece.id)&&sim.get(piece.id)?.progress===1),'builders continue with the next reachable foundation');
   obstruction.hp=0;sim.revision++;advanceWalls(sim,owner,280);assert.ok(plan.pieces.every(piece=>sim.get(piece.id)?.progress===1));
 });
 
@@ -101,9 +102,15 @@ test('a developed AI upgrades its paid front into a closed perimeter with two us
   const missing=upgrade.pieces.filter(piece=>!sim.get(piece.id)),expectedStone=2500-missing.reduce((sum,piece)=>sum+sim.cost(BUILDINGS[piece.type].cost,owner,'building').stone,0);
   const gate=upgrade.pieces[0],normal={x:Math.sin(upgrade.angle),z:Math.cos(upgrade.angle)},inside={x:gate.x-normal.x*9,z:gate.z-normal.z*9};
   assert.equal(fortifyKingdomWalls(sim,state,owner,sim.owned(owner,'unit','villager'),sim.owned(owner,'building'),[]),true);
-  assert.equal(state.fortifications[0].layout,'perimeter');assert.equal(sim.owned(owner,'unit','villager').filter(worker=>worker.order?.target===state.fortifications[0].pieces.find(piece=>!paid.includes(piece.id)&&piece.id)?.id).length,2);
+  assert.equal(state.fortifications[0].layout,'perimeter');
+  const nextPiece=state.fortifications[0].pieces.find(piece=>!paid.includes(piece.id)&&piece.id);assert.ok(nextPiece);
+  const builders=sim.owned(owner,'unit','villager').filter(worker=>worker.order?.target===nextPiece.id).length;
+  assert.ok(builders>=2&&builders<=4,`perimeter fronts use a small builder crew (${builders})`);
   advanceWalls(sim,owner,120);const restored=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));restored.tickCustomAI=()=>{};advanceWalls(restored,owner,650);
   const plan=restored.aiStates[owner].fortifications[0];assert.ok(plan.pieces.every(piece=>restored.get(piece.id)?.progress===1),'builders finish the saved perimeter');assert.equal(restored.players[owner].resources.stone,expectedStone);
+  const nodes=plan.pieces.map(piece=>restored.get(piece.id));for(const node of nodes)assert.equal(node.wallLinks.length,2,'the completed ring has no dead ends or diagonal chords');assert.equal(wallConnections(restored.entities).length,nodes.length);
+  nodes[0].wallLinks=nodes[0].wallLinks.filter(id=>id!==nodes.at(-1).id);nodes.at(-1).wallLinks=nodes.at(-1).wallLinks.filter(id=>id!==nodes[0].id);
+  linkPlannedWalls(restored.entities,nodes);restored.revision++;restored.grids={};for(const node of nodes)assert.equal(node.wallLinks.length,2,'planned linking repairs the ring after a broken edge');
   for(const opening of plan.pieces.filter(piece=>piece.type==='gate')){
     const from={x:opening.x-normal.x*9,z:opening.z-normal.z*9},to={x:opening.x+normal.x*9,z:opening.z+normal.z*9};
     for(const ally of [0,owner])assert.equal(clearSegment(restored,restored.grid(ally),from,to),true,'both gate roads stay open to allies');
@@ -145,6 +152,14 @@ test('economic construction and abandoned foundations do not steal a worker clea
   assert.deepEqual(workers.map(worker=>worker.order),orders);
 });
 
+test('a stale blocked wall-exit order is released before the next foundation',()=>{
+  const {sim,owner,workers,state}=fixture(),stuck=workers[0];
+  stuck.order={type:'move',x:0,z:0,aiFortification:true,aiFortificationAt:sim.time-30};stuck.pathStatus='blocked';
+  assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
+  assert.ok(!stuck.order?.aiFortification,'a stuck evacuation order cannot permanently exclude a worker');
+  assert.ok(workers.some(worker=>worker.order?.type==='build'),'construction resumes with the released worker');
+});
+
 test('food and gold committed to armies do not freeze a stone-funded wall plan',()=>{
   const {sim,owner,workers,state}=fixture();sim.players[owner].resources.food=0;sim.players[owner].resources.gold=0;
   assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
@@ -155,7 +170,7 @@ test('food and gold committed to armies do not freeze a stone-funded wall plan',
 test('a worker at a distant future wall does not freeze the next safe foundation',()=>{
   const {sim,owner,workers,state}=fixture();fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]);advanceWalls(sim,owner,320);
   sim.players[owner].resources.stone=5000;sim.time=650;const plan=state.fortifications[0],upgrade=planPerimeterUpgrade(sim,plan,owner);assert.ok(upgrade);Object.assign(plan,upgrade);
-  const later=plan.pieces.at(-1),temporary=sim.addUnit('villager',owner,later.x,later.z),next=plan.pieces.find(p=>!sim.get(p.id));
+  const later=plan.pieces.filter(piece=>!sim.get(piece.id)).at(-1),temporary=sim.addUnit('villager',owner,later.x,later.z),next=plan.pieces.find(p=>!sim.get(p.id));
   assert.equal(fortificationRoutesSafe(sim,plan,owner),false);assert.equal(fortificationRoutesSafe(sim,plan,owner,null,next),true,'the next foundation leaves the worker a real exit');
   assert.equal(fortifyKingdomWalls(sim,state,owner,sim.owned(owner,'unit','villager'),sim.owned(owner,'building'),[]),true);assert.ok(sim.get(next.id));assert.ok(temporary.hp>0);
 });

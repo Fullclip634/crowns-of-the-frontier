@@ -25,6 +25,7 @@ import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSI
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
 const CELL=2, GRID=WORLD/CELL;
+const FIELD_RECOVERY_DELAY=8,FIELD_RECOVERY_RADIUS=18,FIELD_RECOVERY_RATE=.015;
 
 export class Simulation {
   constructor(options={}) {
@@ -261,7 +262,7 @@ export class Simulation {
     const armor=target.kind==='unit'?this.unitArmor(target):role==='ranged'?5:1;return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
   }
   unitArmor(e){const d=UNITS[e.type],p=this.players[e.owner];return (d.armor||0)+p.tech.armor*2+(['infantry','spear'].includes(d.role)?(p.tech.shieldDrill||0)*2:0);}
-  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
+  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
     if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type].role==='cavalry'&&this.players[attacker.owner].tech.raidingParties)this.players[attacker.owner].resources.gold+=3;this.emit('death',{entity:target});for(const q of target.queue||[])if(q.kind==='age')this.players[target.owner].agePending=false;}}
   hit(e,target){if(e.cooldown>0||!this.hostile(e.owner,target.owner))return;e.heading=Math.atan2(target.x-e.x,target.z-e.z);const amount=this.attackDamage(e,target);this.hurt(target,amount,e);e.cooldown=e.kind==='building'?1.6:UNITS[e.type].cooldown||1.2;
     if(['catapult','warship'].includes(e.type))for(const nearby of this.entities)if(nearby.hp>0&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&nearby.kind==='unit'&&distance(nearby,target)<4)this.hurt(nearby,amount*.6,e);
@@ -282,6 +283,10 @@ export class Simulation {
     if(!walls.length)e.pathStatus='idle';
   }
   tickUnit(e,dt){e.moving=false;e.cooldown=Math.max(0,e.cooldown-dt);const d=UNITS[e.type],order=e.order;if(order?.type==='attack'&&!d.damage){this.finishOrder(e);return;}
+    if(e.hp>0&&e.hp<e.maxHp&&!e.embarked&&!mechanicalUnit(e)&&this.time-(e.lastDamaged??-Infinity)>=FIELD_RECOVERY_DELAY){
+      const base=this.nearest(e,t=>t.hp>0&&t.kind==='building'&&t.progress>=1&&['towncenter','keep'].includes(t.type)&&this.allied(e.owner,t.owner),FIELD_RECOVERY_RADIUS);
+      if(base)e.hp=Math.min(e.maxHp,e.hp+Math.max(1,e.maxHp*FIELD_RECOVERY_RATE)*dt);
+    }
     if(d.role==='healer'){
       const target=order?.type==='heal'?this.get(order.target):this.nearest(e,t=>this.allied(t.owner,e.owner)&&healableUnit(t)&&t.hp<t.maxHp,12,true);
       if(healableUnit(target)&&this.allied(e.owner,target.owner)&&target.hp<target.maxHp){if(distance(e,target)>d.range+target.r)this.move(e,target,dt,d.range);else if(e.cooldown<=0){target.hp=Math.min(target.maxHp,target.hp+12);e.cooldown=1;this.emit('heal',{entity:e,target});}return;}

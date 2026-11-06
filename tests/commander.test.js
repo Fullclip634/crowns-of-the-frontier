@@ -77,6 +77,38 @@ test('AI repairs its damaged buildings and retreats badly injured troops',()=>{
   s.tickAI();assert.ok(s.owned(1,'unit','villager').some(w=>w.order?.type==='repair'&&w.order.target===tc.id));
   assert.equal(soldier.order.type,'move');assert.ok(distance(soldier.order,tc)<15);
 });
+test('AI monks heal wounded living troops near home instead of escorting the field army over siege engines',()=>{
+  const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];
+  for(const unit of s.owned(owner,'unit')){unit.hp=unit.maxHp;unit.order=null;unit.orders=[];}
+  for(const monk of s.owned(owner,'unit','monk'))s.hurt(monk,monk.hp+1,null);
+  const soldier=s.addUnit('spearman',owner,tc.x+6,tc.z),ram=s.addUnit('ram',owner,tc.x+8,tc.z),monk=s.addUnit('monk',owner,tc.x+3,tc.z);
+  soldier.hp=soldier.maxHp*.2;ram.hp=ram.maxHp*.1;s.time=200;s.tickAI(owner);
+  assert.equal(monk.order?.type,'heal');assert.equal(monk.order.target,soldier.id,'monks prioritize the living wounded troop');
+});
+
+test('AI workers repair damaged siege engines before buildings and cap concurrent siege repairs',()=>{
+  const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];
+  for(let i=0;i<6;i++)s.addUnit('villager',owner,tc.x+4+i%3,tc.z+5);
+  const rams=Array.from({length:3},(_,i)=>s.addUnit('ram',owner,tc.x+10+i*2,tc.z));for(const ram of rams)ram.hp=ram.maxHp*.5;
+  s.time=10;s.tickAI(owner);
+  const repairs=s.owned(owner,'unit','villager').filter(worker=>worker.order?.type==='repair'&&rams.some(ram=>ram.id===worker.order.target));
+  assert.equal(repairs.length,2,'only two workers are diverted to siege repair');
+});
+
+test('AI keeps workers away from siege engines while enemies are nearby',()=>{
+  const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];for(let i=0;i<6;i++)s.addUnit('villager',owner,tc.x+4+i%3,tc.z+5);
+  const ram=s.addUnit('ram',owner,tc.x+10,tc.z),enemy=s.addUnit('spearman',0,tc.x+14,tc.z);ram.hp=ram.maxHp*.5;s.visible.fill(1);
+  s.time=10;s.tickAI(owner);
+  assert.ok(!s.owned(owner,'unit','villager').some(worker=>worker.order?.type==='repair'&&worker.order.target===ram.id));
+  assert.ok(enemy.hp>0);
+});
+
+test('a resting siege engine rejoins after the recovery deadline instead of idling forever',()=>{
+  const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0],ram=s.addUnit('ram',owner,tc.x+6,tc.z);
+  ram.hp=ram.maxHp*.45;s.time=400;ram.aiResting=true;ram.aiRestingSince=339;s.tickAI(owner);
+  assert.equal(ram.aiResting,undefined);assert.equal(ram.aiRecoveryReleased,true);
+});
+
 test('AI transport departure cancels unboarded reservations instead of making infantry chase it across the sea',()=>{
   const s=new Simulation({mode:'tides'}),tc=s.owned(1,'building','towncenter')[0],ship=s.owned(1,'unit','transport')[0],army=s.owned(1,'unit','spearman');
   ship.loadingSince=s.time-30;ship.passengers=army.slice(0,4).map(e=>e.id);for(const e of army.slice(0,4)){e.embarked=true;e.transport=ship.id;}

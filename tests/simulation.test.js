@@ -48,6 +48,16 @@ test('combat destroys units, records kills, and healers restore health',()=>{
   const s=new Simulation({mode:'sandbox'}),spear=s.addUnit('spearman',0,0,0),enemy=s.addUnit('scout',1,1,0);enemy.hp=12;s.command([spear.id],{type:'attack',target:enemy.id});advance(s,1);assert.equal(enemy.hp,0);assert.ok(s.stats.kills>=1);
   spear.hp=20;const monk=s.addUnit('monk',0,2,0);advance(s,3);assert.ok(spear.hp>20);
 });
+test('out-of-combat organic units recover near a friendly town center but siege engines do not',()=>{
+  const s=new Simulation({mode:'sandbox'});s.tickAI=()=>{};const tc=s.owned(0,'building','towncenter')[0];
+  const spear=s.addUnit('spearman',0,tc.x+6,tc.z),far=s.addUnit('spearman',0,tc.x+30,tc.z),ram=s.addUnit('ram',0,tc.x+8,tc.z);
+  s.time=100;s.hurt(spear,1,null);s.hurt(far,1,null);s.hurt(ram,1,null);spear.hp=40;far.hp=40;ram.hp=ram.maxHp*.5;const ramHp=ram.hp;
+  s.time=107;s.tickUnit(spear,1);s.tickUnit(far,1);s.tickUnit(ram,1);assert.equal(spear.hp,40,'recovery waits for the damage delay');assert.equal(far.hp,40);assert.equal(ram.hp,ramHp);
+  s.time=108;s.tickUnit(spear,1);s.tickUnit(far,1);s.tickUnit(ram,1);assert.ok(spear.hp>40,'a quiet unit recovers beside a friendly base');assert.equal(far.hp,40,'recovery is limited to the base radius');assert.equal(ram.hp,ramHp,'siege engines need a worker repair');
+  const dead=s.addUnit('spearman',0,tc.x+4,tc.z);dead.hp=0;s.time=108;s.tickUnit(dead,1);assert.equal(dead.hp,0,'recovery never revives a dead unit');
+  const restored=Simulation.restore(JSON.parse(JSON.stringify(s.serialize())));assert.equal(restored.get(spear.id).lastDamaged,100);
+});
+
 test('pathfinding routes around walls and across the river bridge',()=>{
   const s=new Simulation({mode:'sandbox',map:'valley'});for(let z=-15;z<15;z+=3)s.addBuilding('wall',1,20,z,true);
   const e=s.addUnit('scout',0,15,0),path=s.pathTo(e,{x:26,z:0});assert.ok(path.some(p=>Math.abs(p.z)>14));
