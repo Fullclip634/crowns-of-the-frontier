@@ -53,6 +53,20 @@ test('existing campaign saves retain their legacy rules and do not gain a missin
   const restored=Simulation.restore(data);assert.ok(restored.campaignState.legacy);assert.equal(campaignObjective(restored),null);assert.equal(restored.campaignCheckpoint,null);
   restored.emit('gathered',{owner:0,source:'fishingboat',resource:'food',amount:75});assert.deepEqual(restored.campaignState,{legacy:true});
 });
+test('scripted events fire once, reinforce on dry land, and are not replayed from a save',()=>{
+  const s=quiet('campaign1'),before=s.owned(0,'unit','villager').length;
+  advance(s,46);
+  assert.ok(s.campaignState.fired.includes('c1-foragers'),'the timed event fired');
+  assert.equal(s.owned(0,'unit','villager').length,before+2,'the reinforcement arrived');
+  assert.ok(s.entities.filter(e=>e.kind==='unit').every(e=>!s.isWater(e.x,e.z)),'reinforcements land on dry ground');
+  const history=s.campaignState.history.length;
+  advance(s,6);
+  assert.equal(s.campaignState.history.length,history,'an event only fires once');
+  const restored=Simulation.restore(JSON.parse(JSON.stringify(s.serialize())));
+  assert.deepEqual(restored.campaignState.fired,s.campaignState.fired,'fired events survive a save');
+  advance(restored,10);
+  assert.equal(restored.campaignState.history.length,history,'a restored save does not replay the event');
+});
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){
     const s=new Simulation({mode,difficulty});assert.equal(s.campaignState.stage,0);assert.equal(s.campaignState.history.length,1);assert.ok(s.campaignCheckpoint);assert.ok(JSON.stringify(s.serialize()).length<1000000);

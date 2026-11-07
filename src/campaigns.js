@@ -4,13 +4,38 @@ const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.owned(1,'building','towncenter').length;
 
+// Timed reinforcements and narration. Events fire once, are recorded in the
+// campaign history, survive save/restore through campaignState.fired, and never
+// spawn on water or outside the map.
+function spawnReinforcements(sim,spec){
+  const owner=spec.owner??0,anchor=sim.owned(owner,'building','towncenter')[0];if(!anchor)return 0;
+  const count=Math.max(1,Math.round(spec.count||1)),placed=[];
+  for(let i=0;i<count;i++){
+    let point=null;
+    for(let attempt=0;attempt<24;attempt++){
+      const angle=i*2.4+attempt*.7,radius=anchor.r+5+Math.floor(attempt/8)*3;
+      const x=anchor.x+Math.cos(angle)*radius,z=anchor.z+Math.sin(angle)*radius;
+      if(Math.abs(x)>sim.halfWorld-3||Math.abs(z)>sim.halfWorld-3||sim.isWater(x,z))continue;
+      point={x,z};break;
+    }
+    if(!point)break;
+    placed.push(sim.addUnit(spec.type,owner,point.x,point.z));
+  }
+  return placed.length;
+}
+
+
 export const CAMPAIGN_SCRIPTS={
   campaign1:{speaker:'Marshal Elian',intro:'Our people need a foothold before they need a war. Stock the settlement, raise another roof, and prepare a company to defend it.',
     stages:[
       {title:'A settlement supplied',text:'Gather 250 resources and complete a third house.',done:s=>s.stats.gathered>=250&&completed(s,'house').length>=3,dialogue:'The storehouses are filling. A settlement survives through many hands; keep your workers safe.'},
       {title:'A company assembled',text:'Field six land military units. Scouts and caravans do not count.',done:s=>army(s).length>=6,dialogue:'Your company is ready. Spears stop riders; a mixed army will survive longer than a single line of troops.'},
       {title:'Clear the raider settlement',text:'Destroy the rival town center while protecting your own.',marker:{x:40,z:-34},done:conquered,dialogue:'The first frontier settlement stands. This land now has a future.'},
-    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.owned(0,'unit','villager').length>=8}},
+    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.owned(0,'unit','villager').length>=8},
+    events:[
+      {at:45,id:'c1-foragers',text:'Foragers from the eastern woods ask to join the settlement.',reinforce:{type:'villager',count:2}},
+      {at:100,id:'c1-militia',text:'Farmhands arrive from the outlying steadings with spears and shields.',reinforce:{type:'spearman',count:3}},
+    ]},
   campaign2:{speaker:'Quartermaster Sera',intro:'The eastern garrison has cut the supply road. Take the caravan across the central bridge and establish a safe bridgehead. Its loss ends the mission.',cart:{name:'Bridge caravan',x:-34,z:43},
     stages:[
       {title:'Escort the supplies',text:'Escort the caravan to the marked eastern bridgehead. Keep it alive.',marker:{x:20,z:-8},done:(s,q)=>{const cart=s.get(q.cartId);return cart&&!cart.embarked&&Math.hypot(cart.x-20,cart.z+8)<7;},dialogue:'The supplies have reached the far bank. Establish a position before pushing toward the garrison.'},
@@ -22,7 +47,11 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Raise the stronghold',text:'Complete a castle before the final waves arrive.',done:s=>completed(s,'keep').length>0,dialogue:'Stone is only the beginning. Repair your defenses and keep producing reinforcements.'},
       {title:'Hold through the first assaults',text:'Survive until the fourth wave arrives with a castle standing.',done:s=>s.wave>=4&&completed(s,'keep').length>0,dialogue:'The early attacks were a test. Siege engines will follow; meet them outside your walls when you can.'},
       {title:'The last bastion',text:'Survive all eight waves, eliminate the attackers, and keep a castle standing.',done:s=>s.wave>=8&&!s.owned(1,'unit').length&&completed(s,'keep').length>0,dialogue:'The last warband has broken. Your stronghold has earned its name.'},
-    ],optional:{text:'End with ten villagers alive to rebuild the frontier.',done:s=>s.owned(0,'unit','villager').length>=10}},
+    ],optional:{text:'End with ten villagers alive to rebuild the frontier.',done:s=>s.owned(0,'unit','villager').length>=10},
+    events:[
+      {at:55,id:'c3-militia',text:'The outlying farms send spearmen to man the walls.',reinforce:{type:'spearman',count:3}},
+      {at:115,id:'c3-archers',text:'Hunters arrive with bows and a full quiver.',reinforce:{type:'archer',count:2}},
+    ]},
   campaign4:{speaker:'Keeper Nalin',intro:'Three shrines bind this valley together. Claim their ground with military units and defend the approaches. Conquering the rival capital is an alternative path to victory.',alternativeConquest:true,
     stages:[
       {title:'Claim the first shrine',text:'Capture any shrine with land military units.',marker:{x:-26,z:-23},done:s=>s.entities.some(e=>e.kind==='shrine'&&e.owner===0),dialogue:'The first shrine answers your banner. Its gold can sustain the struggle for the others.'},
@@ -34,18 +63,26 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
       {title:'Breach the defenses',text:'Destroy the enemy gatehouse or a section of its starting wall.',marker:{x:36,z:-5},done:(s,q)=>q.defenses.some(id=>!s.get(id)),dialogue:'There is a breach in the line. Reinforce it before sending the siege engines toward the capital.'},
       {title:'End the frontier war',text:'Destroy the rival town center and defend your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The capital has fallen. The frontier war is over, but the work of rebuilding begins.'},
-    ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult'].includes(e.type))}},
+    ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult'].includes(e.type))},
+    events:[
+      {at:70,id:'c5-crews',text:'Siege crews and their escorts arrive from the capital workshops.',reinforce:{type:'spearman',count:3}},
+      {at:140,id:'c5-labour',text:'A labour company arrives to repair engines between assaults.',reinforce:{type:'villager',count:2}},
+    ]},
   campaign6:{speaker:'Admiral Iven',intro:'The final frontier lies beyond the water. Secure a fishing economy, prepare the fleet, then choose a landing force or long-range naval siege.',
     stages:[
       {title:'Secure the fishing grounds',text:'Bring home 150 food with fishing boats.',done:(s,q)=>q.fish>=150,dialogue:'The fishing crews are supplying the fleet. Protect them; ships cannot replace a working economy.'},
       {title:'Choose the invasion',text:'Land four military units on the eastern coast, or field an Imperial siege galleon.',marker:{x:23,z:-24},done:s=>army(s).filter(e=>e.x>17).length>=4||s.owned(0,'unit','warship').length>0,dialogue:'The invasion is underway. Establish a harbor on the far shore or use the fleet to support your land troops.'},
       {title:'Beyond the horizon',text:'Destroy the rival coastal town center. Land troops and naval artillery can both achieve victory.',marker:{x:40,z:-34},done:conquered,dialogue:'The coast is secure. From a frontier village, your kingdom has reached the horizon.'},
-    ],optional:{text:'Complete a harbor on the eastern shore.',done:s=>completed(s,'dock').some(e=>e.x>17)}},
+    ],optional:{text:'Complete a harbor on the eastern shore.',done:s=>completed(s,'dock').some(e=>e.x>17)},
+    events:[
+      {at:60,id:'c6-crews',text:'Fishing crews from the outer banks join the harbour.',reinforce:{type:'villager',count:2}},
+      {at:150,id:'c6-marines',text:'Marines disembark to reinforce the beachhead.',reinforce:{type:'spearman',count:3}},
+    ]},
 };
 
 function initializeStory(sim){
   const script=CAMPAIGN_SCRIPTS[sim.options.mode];if(!script)return;
-  const q=sim.campaignState={stage:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false};
+  const q=sim.campaignState={stage:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[]};
   if(script.cart){const cart=sim.addUnit('cart',0,script.cart.x,script.cart.z);cart.displayName=script.cart.name;q.cartId=cart.id;}
   sim.campaignCheckpoint=null;
 }
@@ -58,6 +95,15 @@ export function installCampaigns(Simulation){
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
   p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
     q.clock+=dt;if(q.clock<.5)return;q.clock=0;
+    q.fired??=[];
+    for(const event of script.events||[]){
+      if(q.fired.includes(event.id)||this.time<event.at)continue;
+      q.fired.push(event.id);
+      if(event.when&&!event.when(this,q))continue;
+      if(event.reinforce)spawnReinforcements(this,event.reinforce);
+      q.history.push({time:this.time,speaker:script.speaker,text:event.text});
+      this.emit('campaign-event',{id:event.id,text:event.text});
+    }
     if(q.cartId&&!this.get(q.cartId)){end.call(this,false,'The supply caravan was lost. Restore a checkpoint or begin the escort again.');return;}
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
     const stage=script.stages[q.stage];if(!stage?.done(this,q))return;
