@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "generatedBy": "scripts/author-audio-samples.mjs",
+  "sampleRate": 22050,
+  "channels": 1,
+  "encoding": "pcm_s16le",
+  "license": "CC0-1.0",
+  "proceduralFallback": true,
+  "cues": {
+    "select": {
+      "file": "select.wav",
+      "group": "ui",
+      "duration": 0.18,
+      "bytes": 7982,
+      "loop": false,
+      "sha256": "111c60d9469061ef1669d25c7e576effd2ca16d04b43432386201c40fdf959b1"
+    },
+    "order": {
+      "file": "order.wav",
+      "group": "ui",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "55e080ab175715a3837225c18ceeebbc3c6adc51b5c9572047f9696e0e242aee"
+    },
+    "coin": {
+      "file": "coin.wav",
+      "group": "ui",
+      "duration": 0.32,
+      "bytes": 14156,
+      "loop": false,
+      "sha256": "a1f770609b897e34832ebbcbf19db8044e2e7e4e2d82234f3bc94153fdc919c8"
+    },
+    "complete": {
+      "file": "complete.wav",
+      "group": "ui",
+      "duration": 0.72,
+      "bytes": 31796,
+      "loop": false,
+      "sha256": "d0c69039baffb7933ccd73c6984ed32c5b8eff3cfa87a20c30adab0cdfd3dcf3"
+    },
+    "alarm": {
+      "file": "alarm.wav",
+      "group": "ui",
+      "duration": 1.3,
+      "bytes": 57374,
+      "loop": false,
+      "sha256": "345c40a429064fac13e842cccaa7fa32e063b2aa80192027babe60f5f9fce25e"
+    },
+    "victory": {
+      "file": "victory.wav",
+      "group": "ui",
+      "duration": 1.6,
+      "bytes": 70604,
+      "loop": false,
+      "sha256": "3daef97aa58ddabbbf622040762e165384271f777cac9fb71101e25af2e374d1"
+    },
+    "metal-0": {
+      "file": "metal-0.wav",
+      "group": "combat",
+      "duration": 0.34,
+      "bytes": 15040,
+      "loop": false,
+      "sha256": "ec4980bae6d55f587d66cf03845ef2c462f72ff0ce47515928e9a026c854eabc"
+    },
+    "metal-1": {
+      "file": "metal-1.wav",
+      "group": "combat",
+      "duration": 0.34,
+      "bytes": 15040,
+      "loop": false,
+      "sha256": "79986e3b636206e62653afa7498e7fff2ea0f2ed8758d5e8520638f02c88372f"
+    },
+    "metal-2": {
+      "file": "metal-2.wav",
+      "group": "combat",
+      "duration": 0.34,
+      "bytes": 15040,
+      "loop": false,
+      "sha256": "743a5342a540e94c7c61218ba59d23ef2eedfe2a28e15082826599ab87acd0df"
+    },
+    "metal-3": {
+      "file": "metal-3.wav",
+      "group": "combat",
+      "duration": 0.34,
+      "bytes": 15040,
+      "loop": false,
+      "sha256": "c76967f6fea55dd02d82a93c33eb8e2fa7741b9827ac79c2048f437944edd4f9"
+    },
+    "arrow-0": {
+      "file": "arrow-0.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "7b81f2dba3a3cdd8271d47a5d225db7de52e19ed7baaa22eeb6fdfb933335e30"
+    },
+    "arrow-1": {
+      "file": "arrow-1.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "df3e6f03791a5f3e0956a7c2b6c45ac61c9be752450b2dfc3299896383c92898"
+    },
+    "arrow-2": {
+      "file": "arrow-2.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "a308ddd6fa41cd9511e65f747693a0d5a5577a337af9d4b6bdd6e9e571ef1817"
+    },
+    "arrow-3": {
+      "file": "arrow-3.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "427232e0af0f73af4cc104c5ef40424fc300dc5797cb1611838cf5656aab86fc"
+    },
+    "wood-0": {
+      "file": "wood-0.wav",
+      "group": "combat",
+      "duration": 0.28,
+      "bytes": 12394,
+      "loop": false,
+      "sha256": "11a4837232bbcc5e7d5990008e7d798d0271e69c0fb781a858d2142aa638f231"
+    },
+    "wood-1": {
+      "file": "wood-1.wav",
+      "group": "combat",
+      "duration": 0.28,
+      "bytes": 12394,
+      "loop": false,
+      "sha256": "faea8d06f9ca89161460b06c44b0d9467a768d3c271fc647ea96c3cd7c723fc5"
+    },
+    "wood-2": {
+      "file": "wood-2.wav",
+      "group": "combat",
+      "duration": 0.28,
+      "bytes": 12394,
+      "loop": false,
+      "sha256": "5d42ce55e686f7db0298ce337a6f9811ad5063aa20232eae7bffe383660ec431"
+    },
+    "wood-3": {
+      "file": "wood-3.wav",
+      "group": "combat",
+      "duration": 0.28,
+      "bytes": 12394,
+      "loop": false,
+      "sha256": "20df674f7505720ae7468cd27c3b1c5f8e195da2cb304472ba514acae849bca4"
+    },
+    "siege-0": {
+      "file": "siege-0.wav",
+      "group": "combat",
+      "duration": 0.7,
+      "bytes": 30914,
+      "loop": false,
+      "sha256": "fb29b8bee660801484588cd7b9c064b64bad9a7937f3639a9856dba6e9406739"
+    },
+    "siege-1": {
+      "file": "siege-1.wav",
+      "group": "combat",
+      "duration": 0.7,
+      "bytes": 30914,
+      "loop": false,
+      "sha256": "abd4389ed45a03eb83d5560b9db6e2c8a57ceb314482bc52326b660421bb391e"
+    },
+    "siege-2": {
+      "file": "siege-2.wav",
+      "group": "combat",
+      "duration": 0.7,
+      "bytes": 30914,
+      "loop": false,
+      "sha256": "826d5629d8aba3dc2d0ca85b8ae4846eece4b6179c925b4fca56fd662ca0c92b"
+    },
+    "siege-3": {
+      "file": "siege-3.wav",
+      "group": "combat",
+      "duration": 0.7,
+      "bytes": 30914,
+      "loop": false,
+      "sha256": "1bd2672cedcbac8a6c14ccec56044b11f991e583be82ea24aa177dd97bb78d49"
+    },
+    "earth-0": {
+      "file": "earth-0.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "45c345b95e2c3f051a03764a1c1018e18977892446791bb944d7e9ab403b3200"
+    },
+    "earth-1": {
+      "file": "earth-1.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "479ffc50af3ab323e210cab3c80cb9a66875f1b1eaa6b1754251f6a7471d2d99"
+    },
+    "earth-2": {
+      "file": "earth-2.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "01ce7c89c2cf012b3a2e0a25d4c5660e0c95da80de7ef8a46beb25ecb50aa86b"
+    },
+    "earth-3": {
+      "file": "earth-3.wav",
+      "group": "combat",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "ae3ed92be5b2918ea08d41dad967d84680949946ab4536be17192ab0bb5cc300"
+    },
+    "horn": {
+      "file": "horn.wav",
+      "group": "voice",
+      "duration": 1.15,
+      "bytes": 50760,
+      "loop": false,
+      "sha256": "9fd54b2a0914562f8fd20c3c177b0ff0b314e263f5b23047b633891c2d93b633"
+    },
+    "rain": {
+      "file": "rain.wav",
+      "group": "weather",
+      "duration": 1.62,
+      "bytes": 71486,
+      "loop": true,
+      "sha256": "e49fc3cfa102dca1842755c7e1df3a08648f463f411e5a840f4ae4c3ac7a91db"
+    },
+    "pad": {
+      "file": "pad.wav",
+      "group": "music",
+      "duration": 2.52,
+      "bytes": 111176,
+      "loop": true,
+      "sha256": "a8798f712ddc2ab64ec0d2e5df550a2d8bc904405a7982df9f0a46f6f2ff420a"
+    }
+  }
+}

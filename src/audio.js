@@ -2,6 +2,7 @@ import {installSoundscape} from './soundscape.js';
 import {installWeatherAudio} from './weather-audio.js';
 import {installCombatAudio} from './combat-audio.js';
 import {installVoiceSystem} from './voice-system.js';
+import {installSampledAudio} from './sampled-audio.js';
 export class AudioEngine {
   constructor(settings){this.settings=settings;this.context=null;this.musicTimer=0;this.note=0;}
   unlock(){
@@ -26,3 +27,6 @@ installSoundscape(AudioEngine);
 installCombatAudio(AudioEngine);
 installWeatherAudio(AudioEngine);
 installVoiceSystem(AudioEngine);
+// Installed last: sampled cues take over only when decoded successfully, and
+// every procedural layer remains the guaranteed fallback.
+installSampledAudio(AudioEngine);

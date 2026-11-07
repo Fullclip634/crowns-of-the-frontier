@@ -1,0 +1,10 @@
+CC0 1.0 Universal (public domain dedication)
+
+All files in /audio/ are original waveforms synthesised by
+scripts/author-audio-samples.mjs for Crowns of the Frontier.
+No third-party recordings, samples or libraries were used. The author
+dedicates these generated audio files to the public domain under CC0 1.0:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The runtime keeps a procedural Web Audio fallback, so the game remains
+fully playable when the sample pack cannot be fetched or decoded.
