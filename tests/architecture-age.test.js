@@ -32,12 +32,10 @@ test('architecture styles are monotonic, bounded and read as progressively heavi
   for(let i=1;i<styles.length;i++){
     assert.ok(styles[i].height>styles[i-1].height);
     assert.ok(styles[i].width>styles[i-1].width);
-    assert.ok(styles[i].ornaments>styles[i-1].ornaments);
     assert.ok(styles[i].tint[0]<styles[i-1].tint[0],'stone darkens with age');
   }
   assert.deepEqual([...styles.map(s=>s.label)].sort(),['castle','feudal','frontier','imperial']);
   for(const style of styles)for(const v of style.tint)assert.ok(v>.7&&v<=1,'tint stays subtle');
-  assert.equal(styles[0].ornaments,0,'Dark Age adds no ornamentation');
 });
 
 test('visual age is per owner and clamped to the four canonical ages',()=>{
@@ -61,51 +59,22 @@ test('a node rebuilds exactly once when its owner advances an age',()=>{
   assert.equal(architectureOutdated({players:[{age:3}]},{...untagged,type:'keep',owner:0},node(2)),true);
 });
 
-test('age detailing reuses shared geometry and one opaque material without new assets',()=>{
-  const box=new THREE.BoxGeometry(1,1,1);
-  box.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(box.attributes.position.count*3).fill(1),3));
-  const stoneDark=new THREE.MeshStandardMaterial({color:0x888888});
-  const view={geo:{box},materials:{stoneDark}};
+test('age styling adds no stray geometry, only massing and an age tag',()=>{
+  // Regression: box "ornaments" used the dark stone material and were darkened
+  // again by the age tint, so they read as black untextured styrofoam cubes
+  // that grew with every age. Age must now be massing plus tint only.
+  const root=new THREE.Group(),base=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial());
+  root.userData.model3d={kind:'building',type:'keep',authored:true};root.add(base);
   const entity={kind:'building',type:'keep',owner:0,r:2.5};
-  const root=new THREE.Group();root.userData.model3d={kind:'building',type:'keep',authored:true};
-  const base=new THREE.Mesh(box,stoneDark);root.add(base);
-  assert.equal(applyArchitectureAge(view,root,entity,0),root);
+  assert.equal(applyArchitectureAge({},root,entity,0),root);
   assert.equal(root.scale.x,1,'Dark Age leaves the authored base untouched');
   assert.equal(root.userData.model3d.architectureAge,undefined);
-  applyArchitectureAge(view,root,entity,3);
-  const ornaments=[];root.traverse(part=>{if(part.userData.architectureDetail)ornaments.push(part);});
-  assert.equal(ornaments.length,architectureStyle(3).ornaments);
+  applyArchitectureAge({},root,entity,3);
+  assert.equal(root.children.length,1,'no extra meshes are attached to the building');
   assert.equal(root.userData.model3d.architectureAge,3);
   assert.equal(root.userData.model3d.architectureLabel,'imperial');
   assert.equal(root.userData.model3d.authored,true,'authored metadata survives styling');
   assert.equal(root.scale.y,architectureStyle(3).height);
-  assert.equal(new Set(ornaments.map(o=>o.geometry)).size,1,'one shared box geometry');
-  assert.equal(new Set(ornaments.map(o=>o.material)).size,1,'one shared opaque material');
-  for(const part of ornaments){
-    assert.ok(part.position.y>0&&part.position.y<3,'ornaments sit on the upper wall, not above the roofline');
-    assert.ok(Math.hypot(part.position.x,part.position.z)>=.5,'ornaments ring the outside of the footprint');
-    assert.ok(part.geometry.attributes.color,'ornaments carry the neutral colour attribute');
-  }
-});
-
-test('age detailing is placed from the model bounds, so small buildings are not buried',()=>{
-  // A fixed 2.6-unit height and a collision-radius ring works for a castle and
-  // disappears inside a house, whose walls are wider than its gameplay radius.
-  const box=new THREE.BoxGeometry(1,1,1);
-  box.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(box.attributes.position.count*3).fill(1),3));
-  const material=new THREE.MeshStandardMaterial();
-  const build=(w,h,d,type)=>{
-    const root=new THREE.Group(),mesh=new THREE.Mesh(box,material);mesh.scale.set(w,h,d);root.add(mesh);
-    applyArchitectureAge({geo:{box},materials:{stoneDark:material}},root,{kind:'building',type,owner:0,r:BUILDINGS[type].r},3);
-    const ornaments=[];root.traverse(part=>{if(part.userData.architectureDetail)ornaments.push(part);});
-    return {root,ornaments,bounds:new THREE.Box3().setFromObject(root)};
-  };
-  const house=build(4,5.6,3.5,'house'),castle=build(9.6,14,9.6,'keep');
-  const ring=model=>Math.hypot(model.ornaments[0].position.x,model.ornaments[0].position.z);
-  assert.ok(ring(house)>2,'a 4-wide house keeps its detailing outside the walls');
-  assert.ok(ring(castle)>ring(house),'a larger building gets a wider ring');
-  assert.ok(house.ornaments[0].position.y<house.bounds.max.y,'house detailing stays below the roofline');
-  assert.ok(castle.ornaments[0].scale.y>house.ornaments[0].scale.y,'larger buildings get proportionally larger detailing');
 });
 
 test('every age-styled building, houses included, packs to one surface and changes with age',async()=>{
