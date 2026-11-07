@@ -7,6 +7,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {composeSharedTrees,sharedTreeKeys} from '../scripts/blender/build-shared-trees.mjs';
 import {validateMeshPrecision} from '../scripts/blender/validate-mesh-precision.mjs';
 import {registerAuthoredAssets,registerSharedTrees,useSharedTrees,clearAuthoredAssets,authoredTree} from '../src/authored-assets.js';
+import {farFootprintScale} from '../src/tree-lod.js';
 
 const read=name=>fs.readFileSync(new URL('../src/assets3d/frontier-'+name+'.glb',import.meta.url));
 const decode=bytes=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
@@ -33,6 +34,23 @@ test('all presets render the same tree geometry for every biome, variant and dis
   }finally{clearAuthoredAssets();const geometries=new Set(),materials=new Set();for(const scene of [...scenes,...trees.templates.values()])scene.traverse(part=>{if(part.isMesh){geometries.add(part.geometry);materials.add(part.material);}});for(const value of [...geometries,...materials])value.dispose();}
 });
 
+test('the shipped far canopy keeps the near footprint and a lobed silhouette',async()=>{
+  // Regression guard. The old far broadleaf was three oversized lobes: 450
+  // triangles and 3.54 units wide against a 4.26-unit near model, which read
+  // as a shrunken ball when zooming out.
+  const trees=registerSharedTrees(await decode(read('trees')));
+  try{
+    const measure=key=>{const root=trees.templates.get(key),size=new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());let tris=0;root.traverse(part=>{if(!part.isMesh)return;const index=part.geometry.index;tris+=(index?index.count:part.geometry.attributes.position.count)/3;});return {width:Math.max(size.x,size.z),height:size.y,tris:Math.round(tris)};};
+    for(const biome of ['highlands','desert'])for(let variant=0;variant<4;variant++){
+      const near=measure(`tree:${biome}:${variant}:near`),far=measure(`tree:${biome}:${variant}:far`);
+      const restored=far.width*farFootprintScale(near.width,far.width);
+      assert.ok(restored>=near.width*.85,`${biome}:${variant} compensation must restore the near footprint`);
+      assert.ok(Math.abs(far.height-near.height)<near.height*.15,`${biome}:${variant} far canopy keeps the near height`);
+      assert.ok(far.tris>=600,`${biome}:${variant} far canopy keeps lobed geometry`);
+      assert.ok(far.tris<near.tris,`${biome}:${variant} far canopy must still cost less than near`);
+    }
+  }finally{clearAuthoredAssets();}
+});
 test('an incomplete shared forest cannot silently fall back to different preset models',async()=>{
   const gltf=await decode(read('trees'));let removed=false;gltf.scene.traverse(node=>{if(!removed&&node.userData.assetKey){delete node.userData.assetKey;removed=true;}});assert.throws(()=>registerSharedTrees(gltf),/incomplete/);
 });

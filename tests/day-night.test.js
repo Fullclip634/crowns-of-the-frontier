@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Color} from 'three';
+import {Color,Matrix4,Quaternion,Vector3} from 'three';
 import {lightingAt,DayNightLighting} from '../src/day-night.js';
-import {treeDetail,farFootprintScale} from '../src/tree-lod.js';
+import {treeDetail,farFootprintScale,footprintScaledMatrix} from '../src/tree-lod.js';
 
 test('lighting modes and the day/night cycle are stable, gradual and independent of simulation randomness',()=>{
   assert.equal(lightingAt(500,'day').night,0);assert.equal(lightingAt(0,'night').night,1);assert.equal(lightingAt(500,'unknown').night,0);
@@ -32,4 +32,13 @@ test('the coarse canopy keeps the near tree footprint instead of shrinking into 
   assert.equal(farFootprintScale(10,1),1.35,'compensation is clamped');
   assert.equal(farFootprintScale(0,0),1,'degenerate bounds fall back to no scaling');
   assert.equal(farFootprintScale(undefined,undefined),1);
+});
+test('the coarse canopy is widened without changing its height or position',()=>{
+  const source=new Matrix4().compose(new Vector3(4,5,6),new Quaternion(),new Vector3(2,3,4));
+  const scaled=footprintScaledMatrix(source,1.5),position=new Vector3(),rotation=new Quaternion(),scale=new Vector3();
+  scaled.decompose(position,rotation,scale);
+  assert.ok(Math.abs(scale.x-3)<1e-9&&Math.abs(scale.z-6)<1e-9,'the footprint widens');
+  assert.ok(Math.abs(scale.y-3)<1e-9,'the height is untouched');
+  assert.deepEqual(position.toArray(),[4,5,6],'the position is untouched');
+  assert.ok(Math.abs(source.elements[0]-2)<1e-9,'the source matrix is not mutated');
 });

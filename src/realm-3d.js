@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {entityGroundHeight} from './entity-ground.js';
 import {nodeRuntime,standardMaterial} from './render-runtime.js';
-import {treeDetail,farFootprintScale} from './tree-lod.js';
+import {treeDetail,farFootprintScale,footprintScaledMatrix} from './tree-lod.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
@@ -48,7 +48,10 @@ function buildForest(view){
     // near one. Restoring its footprint keeps distant trees reading as trees
     // instead of shrinking into a blob.
     const farScale=farFootprintScale(footprint[0],footprint[1]);
-    const farMatrices=matrices.map(matrix=>{const scaled=matrix.clone();for(let i=0;i<12;i++)scaled.elements[i]*=farScale;return scaled;});
+    // Widen the far canopy only. Scaling the whole basis would also stretch the
+    // trunk and make distant trees taller than the near model, which pops at
+    // the swap distance.
+    const farMatrices=matrices.map(matrix=>footprintScaledMatrix(matrix,farScale));
     view.forest.push({entries,sets,matrices,farMatrices});
   }
   view.treeIndices.clear();view.forestFog(true);

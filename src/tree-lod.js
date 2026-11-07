@@ -15,3 +15,11 @@ export function treeDetail(screenHeight,quality,previous){
 export function farFootprintScale(nearWidth,farWidth){
   return Math.max(1,Math.min(1.35,(nearWidth||0)/Math.max(.001,farWidth||0)));
 }
+// Widens a tree instance without touching its height. Elements 0-3 and 8-11 are
+// the X and Z basis columns; 4-7 are the Y column and must stay untouched, or a
+// distant tree becomes taller than the near model and pops at the swap.
+export function footprintScaledMatrix(matrix,scale){
+  const out=matrix.clone();
+  for(const index of [0,1,2,3,8,9,10,11])out.elements[index]*=scale;
+  return out;
+}
