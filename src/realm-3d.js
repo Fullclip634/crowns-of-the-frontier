@@ -12,7 +12,8 @@ import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 import {wallTier} from './fortified-walls.js';
-import {treeBiome} from './terrain-biomes.js';
+import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
+import {architectureOutdated} from './architecture-age.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -29,6 +30,9 @@ function foundation(view,e){
 }
 function buildForest(view){
   view.forest=[];const trees=view.sim.entities.filter(e=>e.type==='wood'&&e.hp>0),rng=seededRandom(view.sim.options.seed+191);
+  // Arid and volcanic frontiers reuse the authored woodland atlas but read as
+  // sparse, stunted scrub; tundra keeps full-height conifers.
+  const canopyScale=isAridBiome(view.sim.options.map)?.62:isSnowBiome(view.sim.options.map)?.92:view.sim.options.map==='woodland'?1.12:1;
   for(let variant=0;variant<4;variant++){
     const entries=trees.filter(e=>e.id%4===variant);if(!entries.length)continue;
     const sets=[];
@@ -37,7 +41,7 @@ function buildForest(view){
       model.traverse(part=>{if(!part.isMesh)return;const mesh=new THREE.InstancedMesh(part.geometry,part.material,entries.length);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};view.objects.add(mesh);parts.push(mesh);});
       sets.push({parts,ids});
     }
-    const matrices=entries.map(e=>{const dummy=new THREE.Object3D();dummy.position.set(e.x,view.landscape.surfaceHeightAt(e.x,e.z),e.z);dummy.rotation.y=rng()*6.28;dummy.scale.setScalar(.75+rng()*.55);dummy.updateMatrix();return dummy.matrix.clone();});
+    const matrices=entries.map(e=>{const dummy=new THREE.Object3D();dummy.position.set(e.x,view.landscape.surfaceHeightAt(e.x,e.z),e.z);dummy.rotation.y=rng()*6.28;dummy.scale.setScalar((.75+rng()*.55)*canopyScale);dummy.updateMatrix();return dummy.matrix.clone();});
     view.forest.push({entries,sets,matrices});
   }
   view.treeIndices.clear();view.forestFog(true);
@@ -59,7 +63,7 @@ export function installRealm3D(WorldView){
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
-  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);const treeKind=treeBiome(this.sim.options.map);this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:treeKind==='desert'?0x8a8752:0x5c743d);this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:treeKind==='desert'?0x4a4830:0x3e5732);buildLandscape(this);};
+  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);const treeKind=treeBiome(this.sim.options.map),dry=isAridBiome(this.sim.options.map)&&this.sim.options.map!=='desert';this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:dry?0x8a7d4c:treeKind==='desert'?0x8a8752:0x5c743d);this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:dry?0x4c4530:treeKind==='desert'?0x4a4830:0x3e5732);buildLandscape(this);};
   p.buildForest=function(){buildForest(this);};
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};
@@ -176,7 +180,7 @@ export function installRealm3D(WorldView){
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     for(const e of this.sim?.entities||[]){
       let node=this.nodes.get(e.id);if(!node)continue;
-      if(e.hp>0&&e.kind==='building'&&((e.type==='towncenter'&&node.userData.model3d.architectureAge!==this.sim.players[e.owner].age)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d.wallTier??'stone')!==wallTier(this.sim,e)))){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
+      if(e.hp>0&&e.kind==='building'&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d.wallTier??'stone')!==wallTier(this.sim,e)))){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
       const gate=node.userData.portcullis;
       if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
       if(gate){const nearby=this.sim.entities.some(u=>u.hp>0&&u.kind==='unit'&&this.sim.allied(u.owner,e.owner)&&!u.embarked&&!UNITS[u.type].naval&&Math.hypot(u.x-e.x,u.z-e.z)<5.5),desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);}

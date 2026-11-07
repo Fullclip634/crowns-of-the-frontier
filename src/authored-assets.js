@@ -7,6 +7,7 @@ import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
+import {isAgeStyled,architectureAge,applyArchitectureAge} from './architecture-age.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -180,6 +181,14 @@ export function authoredBuilding(view,e){
   const faction=view.sim?.players[e.owner]?.faction||'alder';
   const age=e.type==='towncenter'?(view.sim?.players[e.owner]?.age||0):0;
   const root=cloneAsset(view,`building:${e.type}:${faction}:${age}`,e.owner);
+  // Landmark buildings gain age-specific massing and crenellation from their
+  // single authored base; only the Town Center has four Blender variants.
+  // Both paths tag the visual age so the renderer can detect an age advance.
+  if(root){
+    const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):architectureAge(view.sim,e);
+    if(e.type==='towncenter'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
+    if(styledAge>0&&isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
+  }
   if(root&&e.type==='dock')root.traverse(part=>{
     if(!part.userData.dockPier)return;
     let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}

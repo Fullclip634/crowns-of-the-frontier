@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {architectureStyle,isAgeStyled} from './architecture-age.js';
 
 function paletteMaterial(view){
   const m=view.materials;
@@ -107,7 +108,11 @@ const movable=node=>node.userData.gate||node.userData.windmill||node.userData.do
 export function packBuildingModel(view,root,e){
   if(root.userData.structurePacked)return root;
   const palette=paletteMaterial(view),metadata=root.userData.model3d||{};
-  const tier=metadata.wallTier||'stone',fortified=tier==='fortified',tint=fortified?[.80,.84,.90]:[1,1,1],roughnessScale=fortified?1.08:1;
+  const tier=metadata.wallTier||'stone',fortified=tier==='fortified';
+  // The Town Center already has four authored Blender variants; only the
+  // landmarks that reuse a single base receive an age-specific masonry tint.
+  const age=isAgeStyled(e.type)?(metadata.architectureAge||0):0,ageTint=architectureStyle(age).tint;
+  const tint=fortified?[.80,.84,.90]:[ageTint[0],ageTint[1],ageTint[2]],roughnessScale=fortified?1.08:1+age*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();

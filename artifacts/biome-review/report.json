@@ -1,0 +1,33 @@
+{
+  "url": "http://localhost:4173/",
+  "maps": [
+    {
+      "map": "riverland",
+      "biome": "riverland",
+      "entities": 296,
+      "relief": 31.89,
+      "drawCalls": 87,
+      "triangles": 1241498,
+      "finite": true,
+      "lighting": "Day"
+    },
+    {
+      "map": "archipelago",
+      "biome": "archipelago",
+      "entities": 297,
+      "relief": 32.25,
+      "drawCalls": 112,
+      "triangles": 1169370,
+      "finite": true,
+      "lighting": "Day"
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "night": {
+    "label": "Night",
+    "sun": 1.026,
+    "hemi": 0.648,
+    "exposure": 1.4641000000000006
+  }
+}
