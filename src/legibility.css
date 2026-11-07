@@ -1,0 +1,108 @@
+/* Cross-cutting legibility, accessibility and device-matrix layer.
+   Loaded last so its floors win over compact media-query overrides. */
+
+:root{
+  --ui-micro:max(.625rem,10px);
+  --ui-minor:max(.75rem,12px);
+  --ui-touch:44px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+}
+
+/* Text must wrap rather than force a horizontal scrollbar at high zoom. */
+:where(.modal-intro,.mission-brief,.objective-panel p,.selection-panel,.chapter,
+       .build-option,.faction-description,.toast,.help-grid,.game-bottomline){
+  overflow-wrap:anywhere;
+  min-width:0;
+}
+
+/* Compact decorative labels keep their single line but never get clipped
+   mid-word or widen their container once the font floor is applied. */
+:where(.eyebrow,.mode-tag,.brand-sub,.map-heading,.map-footer,.command-heading,
+       .command-buttons span,.selection-title .eyebrow,.selection-title small,
+       .objective-eyebrow,.training-queue>span,.build-option small,.build-footnote,
+       .control-hint,.production-actions small,.chapter small,.landing-footer){
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+}
+
+/* Notch / safe-area support. Additive only - replacing the shorthand padding
+   on these panels would destroy their authored spacing. */
+@supports (padding:env(safe-area-inset-left)){
+  .game-header{padding-inline:calc(20px + var(--safe-left)) calc(20px + var(--safe-right))}
+  .bottom-hud{inset-inline-start:calc(18px + var(--safe-left));inset-inline-end:calc(18px + var(--safe-right));bottom:calc(29px + var(--safe-bottom))}
+  .landing{padding-inline:calc(5vw + var(--safe-left)) calc(5vw + var(--safe-right));padding-bottom:calc(22px + var(--safe-bottom))}
+  #toasts{inset-inline-end:calc(20px + var(--safe-right))}
+}
+
+/* Coarse pointers: no double-tap zoom delay, no 300ms gesture ambiguity. */
+@media (any-pointer:coarse){
+  :where(button,[role="button"],select,input,.chapter,.mode-card,.build-option,.toggle){
+    touch-action:manipulation;
+  }
+}
+
+/* Keyboard and switch-device focus must stay visible on dark UI. */
+:where(button,[role="button"],select,input,a,[tabindex]):focus-visible{
+  outline:2px solid #f0d28a;
+  outline-offset:2px;
+}
+
+/* Respect the user's motion and contrast preferences and the in-game toggles. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+html.reduced-motion *,html.reduced-motion *::before,html.reduced-motion *::after{
+  animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;
+}
+html.high-contrast{
+  --ui-text:#fff8e6;
+  --ui-secondary:#e8dcc0;
+}
+html.high-contrast :where(button,.mode-card,.chapter,.build-option,.resource,.panel){
+  border-color:#f0d28a;
+}
+
+/* Windows High Contrast / forced-colors keeps every control discoverable. */
+@media (forced-colors:active){
+  :where(button,[role="button"],.mode-card,.chapter,.build-option,.resource,.panel,select,input){
+    border:1px solid CanvasText;
+    forced-color-adjust:auto;
+  }
+  .ui-icon{forced-color-adjust:auto}
+  :where(button,[role="button"]):focus-visible{outline:2px solid Highlight;outline-offset:2px}
+}
+
+/* Logical direction support. The game text is English, but an RTL embedding
+   must not leave HUD panels covering the wrong side of the battlefield. */
+html[dir="rtl"] .objective-panel{left:auto;right:12px}
+html[dir="rtl"] .floating-panel{right:auto;left:172px}
+html[dir="rtl"] #toasts{right:auto;left:13px}
+html[dir="rtl"] #alert-line{text-align:left}
+html[dir="rtl"] .game-bottomline{text-align:left}
+html[dir="rtl"] .modal,.modal{text-align:start}
+html[dir="rtl"] .header-links{margin-inline-start:auto}
+html[dir="rtl"] .landing-main{margin-inline-start:0}
+
+/* Ultra-wide and very short desktop windows must not stretch panels into the
+   centre of the battlefield or overlap the header. */
+@media (min-width:1900px){
+  .selection-panel{max-width:min(900px,48vw)}
+  .floating-panel{max-width:min(760px,42vw)}
+}
+@media (max-height:500px) and (min-width:900px){
+  .objective-panel{max-height:calc(100dvh - 110px);overflow:auto}
+  .bottom-hud{max-height:calc(100dvh - 90px)}
+}
+
+/* 125-200% zoom shrinks the CSS viewport. Keep the resource bar wrapping
+   instead of clipping its exact accessible values. */
+@media (max-width:720px){
+  #resource-bar{flex-wrap:wrap;min-width:0}
+  .resource{min-width:0}
+  .resource strong{overflow-wrap:anywhere}
+}

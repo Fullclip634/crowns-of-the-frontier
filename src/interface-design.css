@@ -7,7 +7,7 @@
 .landing>*{flex-shrink:0}
 .landing-header{gap:16px}
 .brand{font-size:16px;letter-spacing:2.2px;gap:12px}
-.brand-sub{font-size:9px;letter-spacing:1.6px}
+.brand-sub{font-size:max(.625rem,10px);letter-spacing:1.6px}
 .crest{width:42px;height:46px}
 .crest .ui-icon{width:28px;height:28px}
 .header-links{gap:12px}
@@ -26,14 +26,14 @@
 .network-entry{display:flex;align-items:center;gap:10px;min-height:44px;font-size:13px;padding:8px 0}
 .network-entry>.ui-icon:last-child{margin-left:auto}
 .network-entry.custom-entry{margin-top:12px;max-width:360px;border:1px solid var(--line);padding:10px 14px;border-radius:4px;background:#263d31}
-.landing-note{letter-spacing:.8px;font-size:9px;margin-top:15px}
+.landing-note{letter-spacing:.8px;font-size:max(.625rem,10px);margin-top:15px}
 .mode-strip{position:static;inset:auto;display:grid;width:auto;max-height:none;gap:0;background:#172d25eb;margin-top:auto;grid-template-columns:repeat(7,minmax(0,1fr));border-radius:5px;overflow:hidden}
 .mode-card{padding:14px;min-width:0;min-height:102px;gap:7px}
 .mode-number{color:var(--gold);line-height:1}
 .mode-title{font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;line-height:1.3}
 .mode-tag{font-size:10px;line-height:1.4;gap:5px;align-items:center;color:var(--ui-secondary)}
 .mode-tag .ui-icon{width:14px;height:14px}
-.landing-footer{font-size:9px;letter-spacing:.5px;margin-top:0;gap:12px;flex-wrap:wrap}
+.landing-footer{font-size:max(.625rem,10px);letter-spacing:.5px;margin-top:0;gap:12px;flex-wrap:wrap}
 .landing-footer button{font-size:11px;min-height:32px;color:var(--ui-secondary)}
 .menu-divider{display:inline-block;height:9px;border-left:1px solid var(--line);margin:0 8px}
 .modal-backdrop{background:#08150dbd}
@@ -84,7 +84,7 @@
 .game-brand>.ui-icon{width:23px;height:23px;color:var(--gold)}
 .game-brand .game-brand-label{font:inherit;color:inherit;letter-spacing:.5px}
 .time-controls button{display:inline-flex;align-items:center;justify-content:center;position:relative;flex-direction:column;gap:2px;width:44px;height:40px}
-.time-controls .header-button-label{font-size:8px;line-height:1;letter-spacing:0}
+.time-controls .header-button-label{font-size:max(.625rem,10px);line-height:1;letter-spacing:0}
 .camera-controls button>.ui-icon{width:20px;height:20px}
 .camera-controls button,.command-buttons button{border-radius:3px}
 .empty-crest>.ui-icon{width:38px;height:38px}
@@ -110,10 +110,10 @@
 @media(max-width:1100px){.mode-strip{grid-template-columns:repeat(4,minmax(0,1fr))}.mode-card{min-height:84px}.landing-main{margin-top:14px}.landing h1{font-size:54px}.scene-caption{display:none}}
 @media(max-width:600px){
   .landing{padding:14px 16px 18px;gap:16px}
-  .brand{font-size:14px;letter-spacing:1.6px;gap:9px}.brand-sub{font-size:8px;letter-spacing:1px}.crest{width:36px;height:40px}
+  .brand{font-size:14px;letter-spacing:1.6px;gap:9px}.brand-sub{font-size:max(.625rem,10px);letter-spacing:1px}.crest{width:36px;height:40px}
   .header-links{gap:4px}.header-links button{padding:8px}.header-links button span,.edition{display:none}
   .landing h1{font-size:46px;letter-spacing:-.8px}.landing .intro{font-size:13px}.main-actions{flex-wrap:wrap}.main-actions>button{flex:1;min-width:120px;justify-content:center;padding:11px 12px;font-size:12px}
-  .landing-note{flex-wrap:wrap;font-size:8px;line-height:1.5}.landing-footer{line-height:1.5}
+  .landing-note{flex-wrap:wrap;font-size:max(.625rem,10px);line-height:1.5}.landing-footer{line-height:1.5}
   .mode-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.mode-card{padding:12px;min-height:86px}.mode-title{font-size:14px}.mode-tag{font-size:10px}
   .modal-backdrop{padding:8px}.modal{padding:22px 18px;max-height:calc(100dvh - 16px);width:100%;border-radius:5px}.modal h2{font-size:26px}
   .modal-close{top:7px;right:7px}.modal .setup-grid{gap:12px}.modal input,.modal select{min-height:44px}.modal-intro{font-size:13px;margin-bottom:18px}
