@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {entityGroundHeight} from './entity-ground.js';
 import {nodeRuntime,standardMaterial} from './render-runtime.js';
-import {treeDetail} from './tree-lod.js';
+import {treeDetail,farFootprintScale} from './tree-lod.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
@@ -35,14 +35,21 @@ function buildForest(view){
   const canopyScale=isAridBiome(view.sim.options.map)?.62:isSnowBiome(view.sim.options.map)?.92:view.sim.options.map==='woodland'?1.12:1;
   for(let variant=0;variant<4;variant++){
     const entries=trees.filter(e=>e.id%4===variant);if(!entries.length)continue;
-    const sets=[];
+    const sets=[],footprint=[];
     for(const far of [false,true]){
       const model=view.mergeModel(treeModel(view,view.sim.options.map,variant,far)),parts=[],ids=[];
+      model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
+      footprint.push(Math.max(size.x,size.z));
       model.traverse(part=>{if(!part.isMesh)return;const mesh=new THREE.InstancedMesh(part.geometry,part.material,entries.length);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};view.objects.add(mesh);parts.push(mesh);});
       sets.push({parts,ids});
     }
     const matrices=entries.map(e=>{const dummy=new THREE.Object3D();dummy.position.set(e.x,view.landscape.surfaceHeightAt(e.x,e.z),e.z);dummy.rotation.y=rng()*6.28;dummy.scale.setScalar((.75+rng()*.55)*canopyScale);dummy.updateMatrix();return dummy.matrix.clone();});
-    view.forest.push({entries,sets,matrices});
+    // The authored far canopy is decimated and can also be smaller than the
+    // near one. Restoring its footprint keeps distant trees reading as trees
+    // instead of shrinking into a blob.
+    const farScale=farFootprintScale(footprint[0],footprint[1]);
+    const farMatrices=matrices.map(matrix=>{const scaled=matrix.clone();for(let i=0;i<12;i++)scaled.elements[i]*=farScale;return scaled;});
+    view.forest.push({entries,sets,matrices,farMatrices});
   }
   view.treeIndices.clear();view.forestFog(true);
 }
@@ -87,7 +94,7 @@ export function installRealm3D(WorldView){
       const along=((e.x-this.target.x)*dx+(e.z-this.target.z)*dz)/length2,side=Math.hypot(e.x-this.target.x-along*dx,e.z-this.target.z-along*dz),lineHeight=this.target.y+(this.camera.position.y-this.target.y)*along;
       const obstructs=!menu&&this.tilt<.61&&along>.12&&along<1&&side<3.2&&lineHeight<this.groundHeight(e.x,e.z)+8;
       const shown=(current?.hp>0||fall)&&!obstructs&&nearViewport(this,e.x,this.groundHeight(e.x,e.z)+3,e.z,14)&&(menu||this.settings.fog===false||this.sim.isExplored(e.x,e.z));
-      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,this.settings.quality,lod.get(e.id)),set=batch.sets[detail.near?0:1],index=set.ids.length;lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,batch.matrices[i],e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base:batch.matrices[i]});}
+      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,this.settings.quality,lod.get(e.id)),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});}
     });for(const set of batch.sets)for(const part of set.parts){part.count=set.ids.length;markInstancePrefix(part);part.boundingSphere=null;}}
   };
   p.foliageFog=function(menu){this.forestFog(menu);};

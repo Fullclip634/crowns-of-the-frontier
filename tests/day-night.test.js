@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Color} from 'three';
 import {lightingAt,DayNightLighting} from '../src/day-night.js';
-import {treeDetail} from '../src/tree-lod.js';
+import {treeDetail,farFootprintScale} from '../src/tree-lod.js';
 
 test('lighting modes and the day/night cycle are stable, gradual and independent of simulation randomness',()=>{
   assert.equal(lightingAt(500,'day').night,0);assert.equal(lightingAt(0,'night').night,1);assert.equal(lightingAt(500,'unknown').night,0);
@@ -19,8 +19,17 @@ test('moonlight stays readable, retains lightning and restores daylight resource
 });
 
 test('tree distance detail is stable across camera jitter and graphics changes',()=>{
-  let state=treeDetail(55,'high');assert.ok(state.near);
-  for(const quality of ['low','medium','high']){state=treeDetail(46,quality,state);assert.ok(state.near,'changing presets preserves hysteresis');}
-  state=treeDetail(44,'low',state);assert.equal(state.near,false);
-  for(const quality of ['high','medium','low']){state=treeDetail(53,quality,state);assert.equal(state.near,false);assert.ok(treeDetail(54,quality,state).near);assert.equal(treeDetail(20,quality,state).near,false);}
+  let state=treeDetail(35,'high');assert.ok(state.near);
+  for(const quality of ['low','medium','high']){state=treeDetail(28,quality,state);assert.ok(state.near,'changing presets preserves hysteresis');}
+  state=treeDetail(27,'low',state);assert.equal(state.near,false);
+  for(const quality of ['high','medium','low']){state=treeDetail(33,quality,state);assert.equal(state.near,false);assert.ok(treeDetail(34,quality,state).near);assert.equal(treeDetail(12,quality,state).near,false);}
+});
+test('the coarse canopy keeps the near tree footprint instead of shrinking into a blob',()=>{
+  // Measured authored widths: highlands variant 0 is 4.26 near vs 3.54 far,
+  // winter variant 0 is 4.95 vs 5.13. The compensation must only ever enlarge.
+  assert.ok(Math.abs(farFootprintScale(4.26,3.54)-1.2034)<1e-3);
+  assert.equal(farFootprintScale(4.95,5.13),1,'a far canopy that is already wide is left alone');
+  assert.equal(farFootprintScale(10,1),1.35,'compensation is clamped');
+  assert.equal(farFootprintScale(0,0),1,'degenerate bounds fall back to no scaling');
+  assert.equal(farFootprintScale(undefined,undefined),1);
 });
