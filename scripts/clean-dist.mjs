@@ -38,6 +38,7 @@ if (referencedGlbs.size < 4) throw new Error(`clean-dist: only ${referencedGlbs.
 
 let removed = 0;
 let reclaimed = 0;
+const skipped = [];
 for (const file of fs.readdirSync(assets)) {
   const isCatalogue = file.startsWith('frontier-') && file.endsWith('.glb');
   const isChunk = file.endsWith('.js');
@@ -46,10 +47,18 @@ for (const file of fs.readdirSync(assets)) {
   const target = path.join(assets, file);
   const stat = fs.statSync(target);
   if (!stat.isFile()) continue;
-  fs.unlinkSync(target);
-  removed += 1;
-  reclaimed += stat.size;
-  console.log(`clean-dist: removed ${file} (${(stat.size / 1048576).toFixed(1)} MB)`);
+  try {
+    fs.unlinkSync(target);
+    removed += 1;
+    reclaimed += stat.size;
+    console.log(`clean-dist: removed ${file} (${(stat.size / 1048576).toFixed(1)} MB)`);
+  } catch (error) {
+    // The host may block deletes behind a guard that can time out. Stale files
+    // are a hygiene problem, never a reason to fail an otherwise good build.
+    skipped.push(file);
+    console.warn(`clean-dist: kept ${file} (${error.code || 'delete blocked'})`);
+  }
 }
 
-console.log(JSON.stringify({ removed, reclaimedMB: Number((reclaimed / 1048576).toFixed(1)), catalogues: referencedGlbs.size }));
+if (skipped.length) console.warn(`clean-dist: ${skipped.length} stale file(s) could not be removed; the next build will retry.`);
+console.log(JSON.stringify({ removed, reclaimedMB: Number((reclaimed / 1048576).toFixed(1)), skipped: skipped.length, catalogues: referencedGlbs.size }));
