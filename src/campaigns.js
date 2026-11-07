@@ -3,6 +3,8 @@ const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.owned(1,'building','towncenter').length;
+const DIFFICULTY_ORDER=['story','normal','hard','brutal'];
+const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficulty)>=DIFFICULTY_ORDER.indexOf(level);
 
 // Timed reinforcements and narration. Events fire once, are recorded in the
 // campaign history, survive save/restore through campaignState.fired, and never
@@ -35,6 +37,7 @@ export const CAMPAIGN_SCRIPTS={
     events:[
       {at:45,id:'c1-foragers',text:'Foragers from the eastern woods ask to join the settlement.',reinforce:{type:'villager',count:2}},
       {at:100,id:'c1-militia',text:'Farmhands arrive from the outlying steadings with spears and shields.',reinforce:{type:'spearman',count:3}},
+      {at:150,id:'c1-raid',minDifficulty:'hard',text:'Raiders are massing beyond the ridge. They have seen your walls go up.',reinforce:{owner:1,type:'spearman',count:2}},
     ]},
   campaign2:{speaker:'Quartermaster Sera',intro:'The eastern garrison has cut the supply road. Take the caravan across the central bridge and establish a safe bridgehead. Its loss ends the mission.',cart:{name:'Bridge caravan',x:-34,z:43},
     stages:[
@@ -51,6 +54,7 @@ export const CAMPAIGN_SCRIPTS={
     events:[
       {at:55,id:'c3-militia',text:'The outlying farms send spearmen to man the walls.',reinforce:{type:'spearman',count:3}},
       {at:115,id:'c3-archers',text:'Hunters arrive with bows and a full quiver.',reinforce:{type:'archer',count:2}},
+      {at:90,id:'c3-sortie',minDifficulty:'brutal',when:s=>s.wave<8,text:'A warband sorties early to test the gate.',reinforce:{owner:1,type:'swordsman',count:2}},
     ]},
   campaign4:{speaker:'Keeper Nalin',intro:'Three shrines bind this valley together. Claim their ground with military units and defend the approaches. Conquering the rival capital is an alternative path to victory.',alternativeConquest:true,
     stages:[
@@ -67,6 +71,7 @@ export const CAMPAIGN_SCRIPTS={
     events:[
       {at:70,id:'c5-crews',text:'Siege crews and their escorts arrive from the capital workshops.',reinforce:{type:'spearman',count:3}},
       {at:140,id:'c5-labour',text:'A labour company arrives to repair engines between assaults.',reinforce:{type:'villager',count:2}},
+      {at:120,id:'c5-sally',minDifficulty:'hard',text:'The garrison sallies out to break the siege train.',reinforce:{owner:1,type:'knight',count:2}},
     ]},
   campaign6:{speaker:'Admiral Iven',intro:'The final frontier lies beyond the water. Secure a fishing economy, prepare the fleet, then choose a landing force or long-range naval siege.',
     stages:[
@@ -98,6 +103,7 @@ export function installCampaigns(Simulation){
     q.fired??=[];
     for(const event of script.events||[]){
       if(q.fired.includes(event.id)||this.time<event.at)continue;
+      if(event.minDifficulty&&!meetsDifficulty(this,event.minDifficulty))continue;
       q.fired.push(event.id);
       if(event.when&&!event.when(this,q))continue;
       if(event.reinforce)spawnReinforcements(this,event.reinforce);

@@ -67,6 +67,16 @@ test('scripted events fire once, reinforce on dry land, and are not replayed fro
   advance(restored,10);
   assert.equal(restored.campaignState.history.length,history,'a restored save does not replay the event');
 });
+test('enemy pressure is gated by difficulty and never fires on story',()=>{
+  const story=quiet('campaign1');advance(story,151);
+  assert.ok(!story.campaignState.fired.includes('c1-raid'),'story difficulty skips the raid');
+  const hard=new Simulation({mode:'campaign1',difficulty:'hard'});hard.tickAI=()=>{};
+  const before=hard.owned(1,'unit','spearman').length;
+  advance(hard,151);
+  assert.ok(hard.campaignState.fired.includes('c1-raid'),'hard difficulty fires the raid');
+  assert.ok(hard.owned(1,'unit','spearman').length>before,'the raiders actually spawn');
+  assert.ok(hard.entities.filter(e=>e.kind==='unit').every(e=>!hard.isWater(e.x,e.z)),'raiders land on dry ground');
+});
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){
     const s=new Simulation({mode,difficulty});assert.equal(s.campaignState.stage,0);assert.equal(s.campaignState.history.length,1);assert.ok(s.campaignCheckpoint);assert.ok(JSON.stringify(s.serialize()).length<1000000);
