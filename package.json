@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && node scripts/clean-dist.mjs",
     "art:build": "node scripts/blender/build.mjs",
     "art:balanced": "node scripts/blender/build-balanced.mjs",
     "art:bridge": "node scripts/blender/build-bridge.mjs",
