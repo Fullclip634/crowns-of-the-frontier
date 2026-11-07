@@ -506,25 +506,13 @@
     }
   ],
   "sizes": {
-    "near": 17667504,
-    "low": 4318316,
-    "balanced": 13012140
+    "near": 16850704,
+    "low": 3998500,
+    "balanced": 13051284
   },
-  "source": "Original Blender crop fields composed with unchanged original models.",
-  "stage": "full",
+  "stage": "",
   "completeCatalogue": true,
-  "resourceRevision": "field-resources-v1",
-  "resourcePatchHashes": {
-    "near": "1f0ed0780388af00a36b91ce0199e866350cdd572a600e4157d8f1ef41d565e7",
-    "low": "ca0408934c0a9e0366bab7cba85ab3b6da65b63d5e6cfdb7759de43eb8e8bba5"
-  },
-  "composition": "Existing compressed geometry preserved; twelve original Blender resource variants replaced.",
-  "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
-  "balancedSourceHashes": {
-    "near": "d27d325c291a6aef0085389a7c03ca7f7a9e9e2737ce86c1a1ab36850e7adb5d",
-    "low": "d6af7185a2d8a95f174aae35d1f0362007698ed815427007476feabb29cabb7b",
-    "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
-  },
+  "source": "Original Blender crop fields composed with unchanged original models.",
   "farmRevision": "field-crops-v1",
   "farmSourceHashes": {
     "low": "f5d50d96386a598f53d8c429e6276f047bc050d108878393e44f6ba86a705cfe",
@@ -532,53 +520,59 @@
   },
   "gateRevision": "gate-footings-v1",
   "gateSourceHashes": {
-    "low": "f2f932cb34b7ffc21079fe9b4b41e4795624c31939cc26caa64cc3733eff5ebb",
-    "near": "f960e26cf9d2578222c50785f33b3f02aec0ce0a926c06ae48f175d6e2a965c8"
+    "low": "5546af3c2ff90432219e28bc9ed6f4a2f5c2c4de850458c46fb6493736c20415",
+    "near": "66f906af6b1e4f14efd63da73d3e5116d809853d4825ee106e5ea67794f5ffb6"
   },
+  "windmillRevision": "axle-clearance-v1",
+  "windmillSourceSHA256": "194531f7c87b7845628393fe2c558bb444c76cf6928ebc45ac36b2a4b9d6b56b",
+  "siegeRevision": "solid-timber-v1",
+  "siegeSourceSHA256": "33273d1ed2b0ada5a9b36f1e7d61057786e92ca88cb874f222dbf9c602a91b3c",
+  "lowContentBudgetBytes": 4325376,
+  "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedFoliage": "volumetric-tips-v1",
   "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1353,
-    "visibleTriangles": 663267,
+    "meshes": 1349,
+    "visibleTriangles": 657566,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0038601816402106938,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17392224,
-    "candidateBytes": 13012140,
-    "referenceDecodedBufferBytes": 36990904,
-    "candidateDecodedBufferBytes": 33239076,
-    "referenceSHA256": "405749a645d0a9d0b2a2d87e2ec59dc6ae82dc15f2a73a2f6807d131e1579499",
-    "candidateSHA256": "1e6975e74c8f4b207ebcd5984d19ed318e306a6f4f5b0ed65567da0abdb56c1b"
+    "referenceBytes": 17382572,
+    "candidateBytes": 13051284,
+    "referenceDecodedBufferBytes": 38768312,
+    "candidateDecodedBufferBytes": 35024124,
+    "referenceSHA256": "bce6e52f153476f037062ff0c4cfc1e720b7c83f59ba981647972d508873beb7",
+    "candidateSHA256": "e37ce4748224bd9bd5c7f06a15eaff13e356e31e36e7d9deb9340abeb4984342"
   },
-  "windmillRevision": "axle-clearance-v1",
-  "windmillSourceSHA256": "a25f4624fef138173a51da6fb7c39fd6f5e65a41a24d8bac97fb3128a0d50a25",
-  "siegeRevision": "solid-timber-v1",
-  "siegeSourceSHA256": "1c12e2d8768911123dea20424c7f12c5dd87bbea044e99ce62d8d8e02441771e",
-  "lowContentBudgetBytes": 4325376,
+  "balancedSourceHashes": {
+    "near": "6bd64d726aaff62293c8c648a996f571ed4318c56789f65ca5c7b076b76185e0",
+    "low": "18dddf4a6b3e7b0bbee2b59e7dd2fe6cb8d5a9c1f7cbf60b526621e5fc699442",
+    "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
+  },
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 2435668,
+    "bytes": 2513564,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "20645fbcdd997f492388a0fe6cc863db1b07a885d65c25d1157c71babf98a543",
+    "sha256": "20c553f59bbe0588c391b50e8f5efdbf8f5526f1af3bb597decc94541e781f3d",
     "precision": {
       "passed": true,
       "models": 24,
       "meshes": 96,
-      "visibleTriangles": 126184,
+      "visibleTriangles": 132470,
       "exactTrianglePositionsAndWinding": true,
       "normalLimitDegrees": 0.05,
       "maxNormalDegrees": 0.003907090598753798,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 14596092,
-      "candidateBytes": 2435668,
-      "referenceDecodedBufferBytes": 38116616,
-      "candidateDecodedBufferBytes": 5708470
+      "referenceBytes": 14361652,
+      "candidateBytes": 2513564,
+      "referenceDecodedBufferBytes": 40204208,
+      "candidateDecodedBufferBytes": 5903458
     }
   },
   "workerToolRevision": "craft-tools-v1",
