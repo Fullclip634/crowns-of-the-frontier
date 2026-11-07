@@ -289,10 +289,13 @@ def author_tree(root):
         winter_boughs(root, height, variant, far, rng)
         return
     crowns = []
-    for i in range(3 if far else 16):
+    # Three oversized lobes read as a smooth ball from a distance. A distant
+    # broadleaf canopy needs more, smaller lobes so its outline stays ragged.
+    far_crowns = 7
+    for i in range(far_crowns if far else 16):
         angle = i * 2.399 + variant
         tier = (i-1) % 3 if i else 0
-        radius = ((.82+rng.random()*.28) if far else (.55+tier*.45+rng.random()*.25))*spread if i else .10
+        radius = ((.52 + tier*.20 + rng.random()*.10) if far else (.55+tier*.45+rng.random()*.25))*spread if i else .10
         location = (math.cos(angle) * radius, math.sin(angle) * radius,
                     height - (.30 if not i else .60+tier*.65))
         junction = (.13, -.06, height*.50)
@@ -301,8 +304,8 @@ def author_tree(root):
         rod_data(vertices, faces, bend, location, .06, .25, 6 if far else 9)
         crowns.append(location)
     make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
-    scale = ((1.4 if far else .92)*spread, (1.25 if far else .83)*spread,
-             (.78 if far else .60) if biome == "desert" else (1.12 if far else .78))
+    scale = ((1.05 if far else .92)*spread, (.95 if far else .83)*spread,
+             (.86 if far else .60) if biome == "desert" else (.90 if far else .78))
     for parity, role in [(0, "leaf"), (1, "leafDark")]:
         vertices, faces = [], []
         for i, center in enumerate(crowns):
