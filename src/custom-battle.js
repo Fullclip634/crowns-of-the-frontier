@@ -3,6 +3,7 @@ import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.j
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
+import {bridgeFootprint} from './bridge-layout.js';
 
 export const POPULATION_LIMITS=Object.freeze([40,60,80,120,160]);
 
@@ -30,7 +31,64 @@ export function normalizeBattle(options){
 }
 export function battleSpawns(slots,worldSize){
   const ordered=slots.map((slot,i)=>({team:slot.team,slotNumber:slot.slotNumber||i+1,i})).sort((a,b)=>a.team-b.team||a.slotNumber-b.slotNumber),anchor=ordered.reduce((best,slot,index)=>slot.slotNumber<ordered[best].slotNumber?index:best,0),r=worldSize*.34,result=[];
-  ordered.forEach((slot,index)=>{const angle=Math.PI*.75+(index-anchor)*Math.PI*2/slots.length;let x=Math.cos(angle)*r,z=Math.sin(angle)*r;if(Math.abs(x)<38)x=x<0?-38:38;result[slot.i]={x,z};});return result;
+  ordered.forEach((slot,index)=>{const angle=Math.PI*.75+(index-anchor)*Math.PI*2/slots.length;result[slot.i]={x:Math.cos(angle)*r,z:Math.sin(angle)*r};});return result;
+}
+// A settlement occupies a town center, four outbuildings, villagers and the
+// starting army. Anything inside this half-extent must be dry, buildable land.
+const SPAWN_HALF_EXTENT=26,SPAWN_PROBE_STEP=4,SPAWN_SEPARATION=40;
+
+// `context` only needs {halfWorld, options:{map}, isWater(x,z)} so the setup
+// preview can validate spawns without constructing a whole simulation.
+function spawnGroundClear(context,x,z,half=SPAWN_HALF_EXTENT){
+  if(!Number.isFinite(x)||!Number.isFinite(z))return false;
+  if(Math.abs(x)>context.halfWorld-half||Math.abs(z)>context.halfWorld-half)return false;
+  for(let dx=-half;dx<=half;dx+=SPAWN_PROBE_STEP){
+    for(let dz=-half;dz<=half;dz+=SPAWN_PROBE_STEP){
+      if(context.isWater(x+dx,z+dz))return false;
+      if(bridgeFootprint(context.options.map,x+dx,z+dz,3))return false;
+    }
+  }
+  return true;
+}
+function nearestGroundSpawn(context,point,taken){
+  // Relax the required footprint only if a map genuinely has no room for it.
+  for(const half of [SPAWN_HALF_EXTENT,18,12,8]){
+    for(let ring=0;ring<=28;ring++){
+      const radius=ring*8,steps=Math.max(1,ring*8);
+      for(let i=0;i<steps;i++){
+        const angle=i*Math.PI*2/steps,x=point.x+Math.cos(angle)*radius,z=point.z+Math.sin(angle)*radius;
+        if(!spawnGroundClear(context,x,z,half))continue;
+        if(taken.some(other=>Math.hypot(other.x-x,other.z-z)<SPAWN_SEPARATION))continue;
+        return {x,z};
+      }
+    }
+  }
+  return null;
+}
+// Starting positions must never sit in a river, lake or coastal channel. The
+// whole formation is rotated first, because a rotation keeps every kingdom
+// equidistant from its neighbours and therefore stays fair; only if no rotation
+// fits does the ring shrink, and only as a last resort does a kingdom move
+// independently to the nearest patch of dry land.
+export function landBattleSpawns(context,slots,worldSize){
+  const base=battleSpawns(slots,worldSize),fits=points=>points.every(point=>spawnGroundClear(context,point.x,point.z));
+  for(let step=0;step<24;step++){
+    const angle=step*Math.PI/12,cos=Math.cos(angle),sin=Math.sin(angle);
+    const rotated=base.map(point=>({x:point.x*cos-point.z*sin,z:point.x*sin+point.z*cos}));
+    if(fits(rotated))return rotated;
+  }
+  for(const factor of [.9,.82,.74,.66,.58,.5]){
+    const scaled=base.map(point=>({x:point.x*factor,z:point.z*factor}));
+    if(fits(scaled))return scaled;
+  }
+  const taken=[];
+  return base.map(point=>{
+    const found=nearestGroundSpawn(context,point,taken)||point;
+    taken.push(found);return found;
+  });
+}
+export function spawnContext(map,worldSize,isWater){
+  return {halfWorld:worldSize/2,options:{map},isWater};
 }
 const emptyStats=()=>({gathered:0,kills:0,lost:0,built:0,trained:0});
 
@@ -54,7 +112,7 @@ function startingDeposits(sim,base,owner){
 }
 
 function initializeBattle(sim){
-  sim.aiStates={};sim.spawnPositions=battleSpawns(sim.options.slots,sim.worldSize);sim.revealedOwners=[];
+  sim.aiStates={};sim.spawnPositions=landBattleSpawns(sim,sim.options.slots,sim.worldSize);sim.revealedOwners=[];
   const kingdoms=sim.players.map((player,owner)=>({player,owner})).sort((a,b)=>sim.options.slots[a.owner].slotNumber-sim.options.slots[b.owner].slotNumber);
   sim.players.forEach((player,owner)=>{player.start=sim.spawnPositions[owner];});
   kingdoms.forEach(({player,owner})=>{

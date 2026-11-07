@@ -15,7 +15,7 @@ const node=(age,type='keep')=>({kind:'building',type,owner:0,r:BUILDINGS[type].r
   userData:{model3d:{architectureAge:age}}});
 
 test('landmark list covers civic, military and economic buildings but not the Town Center or walls',()=>{
-  for(const type of ['keep','tower','barracks','wonder','monastery','market','workshop','stable','range','blacksmith','mill','camp','mine']){
+  for(const type of ['house','keep','tower','barracks','wonder','monastery','market','workshop','stable','range','blacksmith','mill','camp','mine']){
     assert.ok(isAgeStyled(type),type+' is age styled');
     assert.ok(BUILDINGS[type],type+' exists in the building catalogue');
   }
@@ -56,7 +56,7 @@ test('a node rebuilds exactly once when its owner advances an age',()=>{
   assert.equal(architectureOutdated(sim,untagged,node(2)),true,'age advance rebuilds');
   assert.equal(architectureOutdated(sim,{...untagged,type:'towncenter'},node(1)),false);
   assert.equal(architectureOutdated(sim,{...untagged,type:'towncenter'},node(2)),true);
-  assert.equal(architectureOutdated(sim,{...untagged,type:'house'},node(2)),false,'unstyled buildings never rebuild for age');
+  assert.equal(architectureOutdated(sim,{...untagged,type:'farm'},node(2)),false,'unstyled buildings never rebuild for age');
   assert.equal(architectureOutdated(sim,{...untagged,type:'wall'},node(2)),false);
   assert.equal(architectureOutdated({players:[{age:3}]},{...untagged,type:'keep',owner:0},node(2)),true);
 });
@@ -82,12 +82,58 @@ test('age detailing reuses shared geometry and one opaque material without new a
   assert.equal(new Set(ornaments.map(o=>o.geometry)).size,1,'one shared box geometry');
   assert.equal(new Set(ornaments.map(o=>o.material)).size,1,'one shared opaque material');
   for(const part of ornaments){
-    assert.ok(Math.abs(part.position.y)<6,'ornaments stay near the roofline');
-    assert.ok(Math.hypot(part.position.x,part.position.z)>0,'ornaments ring the footprint');
+    assert.ok(part.position.y>0&&part.position.y<3,'ornaments sit on the upper wall, not above the roofline');
+    assert.ok(Math.hypot(part.position.x,part.position.z)>=.5,'ornaments ring the outside of the footprint');
     assert.ok(part.geometry.attributes.color,'ornaments carry the neutral colour attribute');
   }
 });
 
+test('age detailing is placed from the model bounds, so small buildings are not buried',()=>{
+  // A fixed 2.6-unit height and a collision-radius ring works for a castle and
+  // disappears inside a house, whose walls are wider than its gameplay radius.
+  const box=new THREE.BoxGeometry(1,1,1);
+  box.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(box.attributes.position.count*3).fill(1),3));
+  const material=new THREE.MeshStandardMaterial();
+  const build=(w,h,d,type)=>{
+    const root=new THREE.Group(),mesh=new THREE.Mesh(box,material);mesh.scale.set(w,h,d);root.add(mesh);
+    applyArchitectureAge({geo:{box},materials:{stoneDark:material}},root,{kind:'building',type,owner:0,r:BUILDINGS[type].r},3);
+    const ornaments=[];root.traverse(part=>{if(part.userData.architectureDetail)ornaments.push(part);});
+    return {root,ornaments,bounds:new THREE.Box3().setFromObject(root)};
+  };
+  const house=build(4,5.6,3.5,'house'),castle=build(9.6,14,9.6,'keep');
+  const ring=model=>Math.hypot(model.ornaments[0].position.x,model.ornaments[0].position.z);
+  assert.ok(ring(house)>2,'a 4-wide house keeps its detailing outside the walls');
+  assert.ok(ring(castle)>ring(house),'a larger building gets a wider ring');
+  assert.ok(house.ornaments[0].position.y<house.bounds.max.y,'house detailing stays below the roofline');
+  assert.ok(castle.ornaments[0].scale.y>house.ornaments[0].scale.y,'larger buildings get proportionally larger detailing');
+});
+
+test('every age-styled building, houses included, packs to one surface and changes with age',async()=>{
+  const assets=await catalogue();
+  try{
+    for(const type of AGE_STYLED_BUILDINGS){
+      const packed=[];
+      for(const age of [0,3]){
+        const view=fixture(assets,age),entity={kind:'building',type,owner:0,r:BUILDINGS[type].r,x:0,z:0};
+        const raw=buildingModel(view,entity);
+        assert.equal(raw.userData.model3d.authored,true,`${type} uses its authored base`);
+        assert.equal(raw.userData.model3d.architectureAge,age,`${type} tags its visual age`);
+        const model=packBuildingModel(view,raw,entity),meshes=[];
+        model.traverse(part=>{if(part.isMesh)meshes.push(part);});
+        // Moving pivots (the mill rotor, gate portcullis) pack separately, so a
+        // building owns one or two merged surfaces and never one per age.
+        const surfaces=meshes.filter(part=>part.userData.structureSurface).length;
+        assert.ok(surfaces>=1&&surfaces<=2,`${type} keeps a bounded number of merged surfaces`);
+        assert.ok(meshes.length<=8,`${type} keeps its draw batches bounded`);
+        const surface=meshes.find(part=>part.userData.structureSurface);
+        packed.push({size:new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()),colors:Array.from(surface.geometry.attributes.color.array),scale:model.scale.y});
+      }
+      assert.ok(packed[1].size.y>packed[0].size.y,`${type} grows taller in the Imperial Age`);
+      assert.ok(packed[1].scale>packed[0].scale,`${type} carries the age massing`);
+      assert.notDeepEqual(packed[0].colors,packed[1].colors,`${type} changes its masonry tint with age`);
+    }
+  }finally{clearAuthoredAssets();}
+});
 async function catalogue(){
   const bytes=await fs.readFile(new URL('../src/assets3d/frontier-low.glb',import.meta.url));
   const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)

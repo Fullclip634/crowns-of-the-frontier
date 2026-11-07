@@ -73,6 +73,27 @@ test('weather keeps authority over clouds and lightning while night modulates it
   assert.equal(v.materials.structurePalette.frontierUniforms.night.value,0);
 });
 
+test('weather frames never let the night pass compound ambient, exposure, fog or ground bounce',()=>{
+  // WeatherRenderer rewrites every field the night pass modulates. If any one
+  // of them is left holding last frame's night value, the night pass treats it
+  // as this frame's daylight baseline and darkens it again, frame after frame.
+  const v=fixture('night'),lighting=new DayNightLighting(v);
+  const day={background:new Color(0xa5b4ad),sun:new Color(0xffe4bd),hemi:new Color(0xc7def1),ground:new Color(0x52633a),fog:new Color(0xffffff)};
+  const weatherFrame=()=>{
+    v.scene.background.copy(day.background).lerp(new Color(0x637780),.3);
+    v.sun.color.copy(day.sun);v.sun.intensity=2.7*(1-.3*.72);
+    v.hemi.color.copy(day.hemi);v.hemi.intensity=.9-.3*.22;
+    v.hemi.groundColor.copy(day.ground);v.scene.environmentIntensity=.3*(1-.3*.12);
+    v.renderer.toneMappingExposure=1.1;v.fogMesh.material.color.copy(day.fog);
+  };
+  weatherFrame();lighting.update(.016);
+  const first={environment:v.scene.environmentIntensity,exposure:v.renderer.toneMappingExposure,fog:v.fogMesh.material.color.clone(),ground:v.hemi.groundColor.clone()};
+  for(let frame=0;frame<240;frame++){weatherFrame();lighting.update(.016);}
+  assert.ok(Math.abs(v.scene.environmentIntensity-first.environment)<1e-9,'ambient response does not decay');
+  assert.ok(Math.abs(v.renderer.toneMappingExposure-first.exposure)<1e-9,'exposure does not drift');
+  assert.ok(v.fogMesh.material.color.equals(first.fog),'fog overlay is stable');
+  assert.ok(v.hemi.groundColor.equals(first.ground),'ground bounce is stable');
+});
 test('disposal restores every daylight resource including colours and intensities',()=>{
   const v=fixture('night'),before=snapshot(v),hemiColor=v.hemi.color.clone(),ground=v.hemi.groundColor.clone();
   const lighting=new DayNightLighting(v);lighting.update(.016);lighting.dispose();

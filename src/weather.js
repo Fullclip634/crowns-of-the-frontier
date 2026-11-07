@@ -24,7 +24,12 @@ export function weatherAt(seed,map,time,preference='auto'){
 export class WeatherRenderer {
   constructor(view){
     this.view=view;this.seed=view.sim.options.seed;this.map=view.sim.options.map;this.group=new THREE.Group();this.group.name='3D weather';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.tint=new THREE.Color();this.roofs=new Map();this.roofStamp='';this.strength=0;this.cloudiness=0;
-    this.base={background:view.scene.background.clone(),fog:view.scene.fog.color.clone(),sun:view.sun.color.clone(),hemi:view.hemi.color.clone(),ground:view.groundSurface.material.color.clone(),near:115,far:275};
+    this.base={background:view.scene.background.clone(),fog:view.scene.fog.color.clone(),sun:view.sun.color.clone(),hemi:view.hemi.color.clone(),ground:view.groundSurface.material.color.clone(),near:115,far:275,
+      // The night pass modulates these too. Weather must rewrite every field it
+      // owns each frame, otherwise the night pass cannot tell its own output
+      // from this frame's daylight baseline and darkens them again and again.
+      hemiGround:view.hemi.groundColor.clone(),environment:view.scene.environmentIntensity,exposure:view.renderer.toneMappingExposure,
+      fogMesh:view.fogMesh?.material?.color?view.fogMesh.material.color.clone():null};
     this.rain=this.instances(new THREE.CylinderGeometry(.018,.012,1,4),new THREE.MeshBasicMaterial({color:0xbdd1db,transparent:true,opacity:.52,depthWrite:false}),1400);
     this.snow=this.instances(new THREE.IcosahedronGeometry(.11,0),new THREE.MeshBasicMaterial({color:0xe9f1e9,transparent:true,opacity:.8,depthWrite:false}),1000);
     this.ripples=this.instances(new THREE.TorusGeometry(1,.028,3,12).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xb2c7cb,transparent:true,opacity:.2,depthWrite:false}),60);
@@ -47,6 +52,7 @@ export class WeatherRenderer {
     const dark=this.cloudiness*.48,flash=state.flash&&v.settings.lightning!==false&&!v.settings.reducedMotion?1:0;
     v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=this.base.near-this.cloudiness*20;v.scene.fog.far=this.base.far-this.cloudiness*45;
     v.sun.color.copy(this.base.sun).lerp(this.tint.setHex(0xb7cedb),dark);v.sun.intensity=2.7*(1-dark*.72)+flash*2;v.hemi.color.copy(this.base.hemi).lerp(this.tint.setHex(0x9eb4bf),dark);v.hemi.intensity=.9-dark*.22+flash*.3;
+    v.hemi.groundColor.copy(this.base.hemiGround).lerp(this.tint.setHex(0x8b9aa6),dark*.6);v.scene.environmentIntensity=this.base.environment*(1-dark*.12);v.renderer.toneMappingExposure=this.base.exposure;if(this.base.fogMesh&&v.fogMesh?.material)v.fogMesh.material.color.copy(this.base.fogMesh);
     const ground=v.groundSurface.material;ground.color.copy(this.base.ground).multiplyScalar(1-this.strength*.08);ground.roughness=1-this.strength*.2;
     this.daylight.update(dt);
     this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?240:quality==='medium'?700:1400;

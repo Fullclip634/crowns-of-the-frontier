@@ -1,7 +1,8 @@
 import {difficultyLabel} from './ui-format.js';
 import {uiIcon} from './ui-icons.js';
 import {AGES,MAPS,FACTIONS,DIFFICULTIES} from './data.js';
-import {BATTLE_SIZES,POPULATION_LIMITS,VICTORY_RULES,PLAYER_COLORS,battleSpawns,normalizeBattle} from './custom-battle.js';
+import {BATTLE_SIZES,POPULATION_LIMITS,VICTORY_RULES,PLAYER_COLORS,landBattleSpawns,spawnContext,normalizeBattle} from './custom-battle.js';
+import {channelAt} from './map-water.js';
 import {AI_PACES} from './allied-ai.js';
 import {terrainBiome} from './terrain-biomes.js';
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -37,7 +38,7 @@ export function updateBattlePreview(root=document){
   const humanSlots=draft.slots.filter((slot,i)=>slot.enabled&&slot.controller==='human'&&i+1!==draft.playerSlot).length;
   networkNote.textContent=draft.spectator?'Choose a kingdom to host multiplayer.':humanSlots?`${humanSlots} Human ${humanSlots===1?'slot':'slots'} for friends when hosting.`:'Hosting opens one kingdom for a friend.';
   try{
-    const battle=normalizeBattle(draft);if(draft.startAge!==battle.startAge){draft.startAge=battle.startAge;root.querySelector('#custom-age').value=String(battle.startAge);}const spawns=battleSpawns(battle.slots,battle.worldSize),bySlot=new Map(battle.slots.map((slot,i)=>[slot.slotNumber,spawns[i]]));launch.disabled=false;warning.textContent=draft.spectator?'Spectator mode: every enabled kingdom is AI controlled. The battle ends when one team remains.':'Matching team numbers are allies. Different team numbers are enemies.'+(draft.map==='coast'?' Coast battles include ships and start in at least the Feudal Age.':'');
+    const battle=normalizeBattle(draft);if(draft.startAge!==battle.startAge){draft.startAge=battle.startAge;root.querySelector('#custom-age').value=String(battle.startAge);}const spawns=landBattleSpawns(spawnContext(battle.map,battle.worldSize,(x,z)=>channelAt(battle.map,x,z)),battle.slots,battle.worldSize),bySlot=new Map(battle.slots.map((slot,i)=>[slot.slotNumber,spawns[i]]));launch.disabled=false;warning.textContent=draft.spectator?'Spectator mode: every enabled kingdom is AI controlled. The battle ends when one team remains.':'Matching team numbers are allies. Different team numbers are enemies.'+(draft.map==='coast'?' Coast battles include ships and start in at least the Feudal Age.':'');
     draft.slots.forEach((slot,index)=>{if(!slot.enabled)return;const point=bySlot.get(index+1);if(!point)return;const x=(point.x/battle.worldSize+.5)*size,z=(point.z/battle.worldSize+.5)*size;ctx.fillStyle=color(index+1);ctx.beginPath();ctx.arc(x,z,12,0,Math.PI*2);ctx.fill();ctx.strokeStyle=draft.playerSlot===index+1?'#f5e7b4':'#203528';ctx.lineWidth=draft.playerSlot===index+1?3:2;ctx.stroke();ctx.fillStyle='#172b23';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(index+1,x,z);});
     root.querySelector('#battle-summary').textContent=`${battle.slots.length} kingdoms · ${new Set(battle.slots.map(slot=>slot.team)).size} teams · ${BATTLE_SIZES[battle.mapSize].desc}`;root.querySelector('#battle-rule').textContent=VICTORY_RULES[battle.victory].desc;
   }catch(error){launch.disabled=true;host.disabled=true;warning.textContent=error.message;root.querySelector('#battle-summary').textContent='Add an opposing team to begin.';}

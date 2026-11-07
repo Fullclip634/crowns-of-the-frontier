@@ -180,7 +180,7 @@ export function installRealm3D(WorldView){
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     for(const e of this.sim?.entities||[]){
       let node=this.nodes.get(e.id);if(!node)continue;
-      if(e.hp>0&&e.kind==='building'&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d.wallTier??'stone')!==wallTier(this.sim,e)))){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
+      if(e.hp>0&&e.kind==='building'&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e)))){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
       const gate=node.userData.portcullis;
       if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
       if(gate){const nearby=this.sim.entities.some(u=>u.hp>0&&u.kind==='unit'&&this.sim.allied(u.owner,e.owner)&&!u.embarked&&!UNITS[u.type].naval&&Math.hypot(u.x-e.x,u.z-e.z)<5.5),desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);}

@@ -5,6 +5,7 @@ import {battlePreset,normalizeBattle,PLAYER_COLORS,visibilityFor,BATTLE_SIZES,ba
 import {forestSettlements} from '../src/starting-forests.js';
 import {weatherAt} from '../src/weather.js';
 import {customBattleMarkup,readBattleSetup} from '../src/custom-battle-ui.js';
+import {UNITS} from '../src/data.js';
 const make=(options={})=>new Simulation({mode:'custom',seed:512,...options});
 const destroy=(sim,owner,kind='building')=>{for(const e of sim.owned(owner,kind))e.hp=0;sim.revision++;sim.checkVictory();};
 
@@ -134,4 +135,18 @@ test('weather is repeatable, changes over a match, and supports snow, rain and s
   assert.ok(states.includes('clear')&&states.includes('cloudy')&&states.some(type=>['rain','storm'].includes(type)));
   assert.equal(weatherAt(512,'winter',110,'snow').type,'snow');assert.equal(weatherAt(512,'highlands',110,'rain').type,'rain');assert.ok(weatherAt(512,'highlands',16,'storm').flash);
   const s=make(),rng=s.rng.state;for(let i=0;i<100;i++)weatherAt(s.options.seed,s.options.map,i);assert.equal(s.rng.state,rng);
+});
+test('every kingdom starts on dry land on every map that has water',()=>{
+  // Regression: spawns were placed purely by angle with a blind x clamp that
+  // pushed kingdoms into the archipelago channels and the coastal river.
+  const waterMaps=['coast','valley','rivers','riverland','archipelago'];
+  for(const map of waterMaps)for(const mapSize of ['spacious','epic'])for(const preset of ['4v4','ffa8']){
+    const sim=make({map,mapSize,slots:battlePreset(preset),seed:512});
+    const wet=sim.entities.filter(e=>e.hp>0&&(e.kind==='building'||(e.kind==='unit'&&!UNITS[e.type]?.naval))&&sim.isWater(e.x,e.z));
+    assert.equal(wet.length,0,`${map}/${mapSize}/${preset} started ${wet.map(e=>e.type).join(',')} in water`);
+    for(let i=0;i<sim.spawnPositions.length;i++)for(let j=i+1;j<sim.spawnPositions.length;j++){
+      const a=sim.spawnPositions[i],b=sim.spawnPositions[j];
+      assert.ok(Math.hypot(a.x-b.x,a.z-b.z)>30,`${map}/${mapSize}/${preset} kingdoms ${i} and ${j} start on top of each other`);
+    }
+  }
 });

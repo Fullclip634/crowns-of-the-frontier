@@ -7,7 +7,7 @@ import * as THREE from 'three';
 // call and the runtime catalogue validation remains satisfied.
 
 export const AGE_STYLED_BUILDINGS=Object.freeze([
-  'keep','tower','barracks','wonder','monastery','market','workshop','stable','range','blacksmith','mill','camp','mine'
+  'house','keep','tower','barracks','wonder','monastery','market','workshop','stable','range','blacksmith','mill','camp','mine'
 ]);
 export function isAgeStyled(type){return AGE_STYLED_BUILDINGS.includes(type);}
 
@@ -28,21 +28,29 @@ export function architectureOutdated(sim,entity,node){
 }
 
 // Adds a small number of merged stone details that change the silhouette per
-// age without new models, textures or materials.
+// age without new models, textures or materials. Placement is derived from the
+// model's own bounds: a fixed height and radius works for a castle but buries
+// the details inside a house, whose walls are wider than its collision radius.
 export function applyArchitectureAge(view,root,entity,age){
   if(!root||!entity||age<=0)return root;
-  const style=architectureStyle(age),radius=entity.r||2.5,count=style.ornaments;
+  const style=architectureStyle(age),count=style.ornaments;
   root.userData.model3d={...root.userData.model3d,architectureAge:age,architectureLabel:style.label};
   const material=view.materials?.stoneDark||view.materials?.stone;
   if(!material||!view.geo?.box)return root;
+  root.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+  // Fall back to the gameplay radius only when the model reports no bounds.
+  const degenerate=!(size.x>.01||size.y>.01||size.z>.01),fallback=(entity.r||2.5)*2;
+  const width=degenerate?fallback:Math.max(size.x,size.z),height=degenerate?fallback:size.y;
+  const ring=width*.5*1.04,unit=Math.max(.16,height*.055),baseY=height*(.5+age*.03);
   const ornaments=new THREE.Group();
   for(let i=0;i<count;i++){
     const angle=(i/count)*Math.PI*2+Math.PI/count;
     const mesh=new THREE.Mesh(view.geo.box,material);
     // Local coordinates: root.scale already carries the age massing, so the
     // ornaments must not be pre-scaled or they would float above the roofline.
-    mesh.position.set(Math.cos(angle)*radius*.82,2.6+age*.35,Math.sin(angle)*radius*.82);
-    mesh.scale.set(.52+age*.06,.7+age*.18,.52+age*.06);
+    mesh.position.set(Math.cos(angle)*ring,baseY+unit*.5,Math.sin(angle)*ring);
+    mesh.scale.set(unit*(1+age*.12),unit*(1.4+age*.34),unit*(1+age*.12));
     mesh.userData.architectureDetail=true;
     ornaments.add(mesh);
   }
