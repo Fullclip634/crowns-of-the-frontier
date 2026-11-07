@@ -226,9 +226,14 @@ export function installCommanderAI(Simulation){
       if(state.expansion)for(const [resource,amount] of Object.entries(this.cost(BUILDINGS.towncenter.cost,owner,'building')))reserve[resource]=Math.max(reserve[resource]||0,amount);
       if(Object.entries(UNITS[type].cost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
     }
-    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','economy','attack','armor','ranged','husbandry','fortification']){
+    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','economy','attack','armor','ranged','husbandry','fortification','fortifiedWall']){
       if(!availableTo(TECHS[tech],player.faction))continue;
+      // A tech that cannot be researched yet must not consume the single
+      // research slot for this tick and starve the affordable upgrades.
+      if(player.age<TECHS[tech].age)continue;
       if(player.tech[tech]>=Math.min(TECHS[tech].max,player.age+1))continue;
+      // Fortifying an empty kingdom is wasted spending; only upgrade a real perimeter.
+      if(tech==='fortifiedWall'&&!buildings.some(b=>b.type==='wall'||b.type==='gate'))continue;
       const site=buildings.find(b=>b.progress>=1&&!b.queue.length&&TECHS[tech].at.includes(b.type));if(site&&this.canAfford(Object.fromEntries(Object.entries(TECHS[tech].cost).map(([r,c])=>[r,c*(player.tech[tech]+1)])),owner)){this.research(site.id,tech);break;}
     }
     const damagedSiege=this.owned(owner,'unit').filter(unit=>unit.hp>0&&!unit.embarked&&mechanicalUnit(unit)&&unit.hp<unit.maxHp*.8).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);

@@ -5,6 +5,7 @@ import manifest from './assets3d/catalogue.json' with {type:'json'};
 import {bindWorkerToolJoints} from './worker-tool-rig.js';
 import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
+import {wallTier} from './fortified-walls.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -183,6 +184,18 @@ export function authoredBuilding(view,e){
     let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
     part.rotation.y=-angle;
   });
+  // Fortified walls reuse the identical Blender template. The heavier tier is
+  // authored as a transform + baked surface tint, never a new mesh or material.
+  if(root&&(e.type==='wall'||e.type==='gate')){
+    const tier=wallTier(view.sim,e);
+    root.userData.model3d={...root.userData.model3d,wallTier:tier};
+    if(tier==='fortified')root.traverse(part=>{
+      if(!part.isMesh)return;
+      // The portcullis is a separate animated pivot; keep its lift geometry exact.
+      for(let node=part;node&&node!==root;node=node.parent)if(node.userData.gate)return;
+      part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
+    });
+  }
   return root;
 }
 export function authoredResource(view,e){

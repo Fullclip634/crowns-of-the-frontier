@@ -21,6 +21,7 @@ import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading} from '
 import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
+import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './fortified-walls.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
@@ -116,7 +117,7 @@ export class Simulation {
   addResource(type,x,z,amount){const previousRevision=this.revision,e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;recordPlacementAppend(this,e,previousRevision);return e;}
   addNaturalResource(type,x,z,baseAmount){return this.addResource(type,x,z,baseAmount*2);}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
-  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];return d.hp*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
+  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;return base*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
   addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const previousRevision=this.revision,e={id:this.nextId++,kind:'unit',type,owner,x,z,r:UNITS[type].radius??(type==='ram'?1.35:type==='catapult'?1.1:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   population(owner){return this.owned(owner,'unit').length;}
@@ -259,7 +260,7 @@ export class Simulation {
     const other=target.kind==='unit'?UNITS[target.type]:null;if(role==='spear'&&other?.role==='cavalry')n*=3;if(role==='ranged'&&other?.role==='spear')n*=1.5;if(role==='cavalry'&&other?.role==='ranged')n*=1.7;if(role==='siege')n*=target.kind==='building'?3: e.type==='ram'?.22:1;
     if(target.kind==='building'&&role!=='siege')n*=.65;
     if(other?.role==='worker')n*=d.workerBonus||1;
-    const armor=target.kind==='unit'?this.unitArmor(target):role==='ranged'?5:1;return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
+    const armor=target.kind==='unit'?this.unitArmor(target):(role==='ranged'?5:1)+wallArmorBonus(this,target);return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
   }
   unitArmor(e){const d=UNITS[e.type],p=this.players[e.owner];return (d.armor||0)+p.tech.armor*2+(['infantry','spear'].includes(d.role)?(p.tech.shieldDrill||0)*2:0);}
   hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
@@ -349,7 +350,13 @@ export class Simulation {
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;q.remaining-=dt;
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
       if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
-      else{if(q.kind==='age'){p.age++;p.agePending=false;}else p.tech[q.type]++;for(const target of this.owned(e.owner).filter(t=>t.kind==='unit'||t.kind==='building')){const ratio=target.hp/target.maxHp;target.maxHp=this.maxHP(target);target.hp=target.maxHp*ratio;}this.emit('research',{tech:q.type,age:p.age,owner:e.owner});}
+      else{if(q.kind==='age'){p.age++;p.agePending=false;}else p.tech[q.type]++;
+        // A masonry upgrade changes wall geometry as well as health. Bump the
+        // revision so instanced connectors and packed building nodes rebuild.
+        const structural=q.type===FORTIFIED_WALL_TECH;
+        for(const target of this.owned(e.owner).filter(t=>t.kind==='unit'||t.kind==='building')){const ratio=target.hp/target.maxHp;target.maxHp=this.maxHP(target);target.hp=target.maxHp*ratio;}
+        if(structural)this.revision++;
+        this.emit('research',{tech:q.type,age:p.age,owner:e.owner});}
     }
   }
   assignWorker(e){const types=['food','wood','gold','stone'],counts={food:0,wood:0,gold:0,stone:0};for(const worker of this.owned(e.owner,'unit','villager'))if(worker.gatherType in counts)counts[worker.gatherType]++;let type=types.reduce((a,b)=>(counts[a]/(a==='wood'?4:a==='food'?4:a==='gold'?1.5:1))<(counts[b]/(b==='wood'?4:b==='food'?4:b==='gold'?1.5:1))?a:b);

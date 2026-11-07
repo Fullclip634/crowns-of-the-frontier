@@ -3,7 +3,7 @@ export const AGES = ['Frontier Age', 'Feudal Age', 'Castle Age', 'Imperial Age']
 export const RESOURCE = { food: 'Food', wood: 'Timber', gold: 'Gold', stone: 'Stone' };
 export const RELEASE='2.6 - Fieldcraft and controls';
 export const MAPS={highlands:{name:'Emerald highlands',desc:'Balanced forests, fertile fields, and open battlefields.'},valley:{name:'The river crossing',desc:'A winding river divides the frontier. Fight for the central bridge.'},desert:{name:'Sunlit meadows',desc:'Green meadows, scattered leafy trees, and long sight lines.'},winter:{name:'Winterwood',desc:'A snow-covered frontier with abundant northern timber.'},canyon:{name:'The iron frontier',desc:'Green foothills and exposed rock surround valuable central mines.'},rivers:{name:'Twin rivers',desc:'Two waterways and two bridges create a dangerous central corridor.'}};
-export const ICONS = {food:'◒',wood:'♣',gold:'◆',stone:'⬟',pop:'♟',villager:'♟',scout:'♞',spearman:'⚑',archer:'➶',swordsman:'⚔',knight:'♞',ram:'▰',catapult:'☄',monk:'✚',towncenter:'♜',house:'⌂',farm:'▤',mill:'✣',camp:'♣',mine:'⬟',barracks:'⚔',range:'➶',stable:'♞',workshop:'⚙',tower:'♜',keep:'♜',wall:'▥',gate:'⋂',market:'⚖',blacksmith:'⚒',monastery:'✚',wonder:'♛',age:'✧',economy:'♣',attack:'⚔',armor:'⬟',ranged:'➶',fortification:'♜',husbandry:'♞'};
+export const ICONS = {food:'◒',wood:'♣',gold:'◆',stone:'⬟',pop:'♟',villager:'♟',scout:'♞',spearman:'⚑',archer:'➶',swordsman:'⚔',knight:'♞',ram:'▰',catapult:'☄',monk:'✚',towncenter:'♜',house:'⌂',farm:'▤',mill:'✣',camp:'♣',mine:'⬟',barracks:'⚔',range:'➶',stable:'♞',workshop:'⚙',tower:'♜',keep:'♜',wall:'▥',gate:'⋂',market:'⚖',blacksmith:'⚒',monastery:'✚',wonder:'♛',age:'✧',economy:'♣',attack:'⚔',armor:'⬟',ranged:'➶',fortification:'♜',fortifiedWall:'▦',husbandry:'♞'};
 export const UNITS = {
   villager:{name:'Villager',desc:'Builds, repairs, farms, and gathers every resource.',cost:{food:50},hp:55,damage:3,range:1.9,speed:4.1,time:12,age:0,at:['towncenter'],role:'worker',vision:15},
   scout:{name:'Scout',desc:'Fast reconnaissance. Reveals a wide area; weak in battle.',cost:{food:70},hp:85,damage:5,range:2,speed:7.5,time:16,age:0,at:['towncenter','stable'],role:'cavalry',vision:24},
@@ -42,6 +42,7 @@ export const TECHS = {
   armor:{name:'Tempered armor',desc:'+2 armor and +15% maximum health per level.',at:['blacksmith'],cost:{food:100,gold:130},max:3,age:1,time:32},
   ranged:{name:'Bodkin arrows',desc:'+20% ranged attack and +1 range per level.',at:['blacksmith','range'],cost:{wood:120,gold:110},max:3,age:1,time:32},
   fortification:{name:'Masonry',desc:'+30% building health and +15% tower attack per level.',at:['towncenter','keep'],cost:{wood:100,stone:150},max:3,age:1,time:35},
+  fortifiedWall:{name:'Fortified walls',desc:'Reinforce every stone wall and gatehouse with heavier masonry: 4,000 base health and +4 armor. Existing and future defenses are upgraded.',at:['towncenter','keep'],cost:{wood:150,stone:400,gold:250},max:1,age:2,time:55},
   husbandry:{name:'Husbandry',desc:'+20% cavalry movement speed.',at:['stable'],cost:{food:180,gold:80},max:1,age:1,time:30},
 };
 export const AGE_COSTS = [{food:350,gold:150},{food:650,gold:350},{food:1000,gold:650}];

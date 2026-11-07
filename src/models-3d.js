@@ -2,6 +2,7 @@ import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {authoredUnit,authoredBuilding,authoredResource,authoredTree} from './authored-assets.js';
+import {wallTier} from './fortified-walls.js';
 
 const Y=new THREE.Vector3(0,1,0);
 function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
@@ -310,10 +311,12 @@ export function buildingModel(view,e){
     for(const side of [-1,1])for(const yy of [2.7,4.7])b.arch(m.stoneDark,side*1.8,yy,2.92,.72,1.1,.22);
     flag(view,g,team,0,11,0,1.3);
   }else if(type==='wall'){
-    b.box(m.stone,0,1.67,0,2.85,3.55,1.45);for(const x of [-1,0,1])b.box(m.stone,x,3.65,0,.55,.85,1.5);
-    for(const x of [-1.1,1.1])b.box(m.stoneDark,x,1.4,0,.3,3,1.75);b.box(m.stoneDark,0,.3,0,3,.8,2.1);
+    const heavy=wallTier(view.sim,e)==='fortified',s=heavy?1.19:1,w=heavy?1.06:1,d=heavy?1.14:1,body=heavy?m.stoneDark:m.stone;
+    b.box(body,0,1.67*s,0,2.85*w,3.55*s,1.45*d);for(const x of [-1,0,1])b.box(body,x,3.65*s,0,.55*w,.85*s,1.5*d);
+    for(const x of [-1.1,1.1])b.box(m.stoneDark,x,1.4*s,0,.3*w,3*s,1.75*d);b.box(m.stoneDark,0,.3,0,3*w,.8,2.1*d);
   }else if(type==='gate'){
-    turret(view,g,o,-2,0,4.2,.76);turret(view,g,o,2,0,4.2,.76);b.arch(m.stone,0,0,0,4,3.7,1.2);b.box(m.stoneDark,0,3.65,0,4.3,.45,1.35);
+    const heavy=wallTier(view.sim,e)==='fortified',body=heavy?m.stoneDark:m.stone;
+    turret(view,g,o,-2,0,4.2,.76);turret(view,g,o,2,0,4.2,.76);b.arch(body,0,0,0,4,3.7,1.2);b.box(m.stoneDark,0,3.65,0,4.3,.45,1.35);
     const gate=new THREE.Group(),p=builder(view,gate);for(let x=-1.15;x<=1.15;x+=.28)p.rod(m.iron,[x,.15,.05],[x,2.7,.05],.035);for(const yy of [.65,1.45,2.3])p.rod(m.iron,[-1.25,yy,.05],[1.25,yy,.05],.045);
     view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,0,5.2,0,.75,3.65);
   }else if(type==='monastery'){
@@ -337,7 +340,7 @@ export function buildingModel(view,e){
     for(let x=-2.3;x<=2.3;x+=.85){b.box(m.furrow,x,.22,0,.15,.1,5.2);for(let z=-2.2;z<=2.2;z+=.65){b.rod(m.grain,[x,.22,z],[x,.88,z],.018);for(const side of [-1,1])for(let k=0;k<3;k++)b.piece(view.geo.grain3d,m.grain,x+side*.045,.74+k*.065,z,.05,.075,.035);}}
     for(const side of [-1,1]){for(let x=-2.9;x<=2.9;x+=1.45)b.rod(m.wood,[x,0,side*2.9],[x,.85,side*2.9],.045);b.rod(m.wood,[-2.9,.55,side*2.9],[2.9,.55,side*2.9],.04);}
   }else throw new Error('Missing 3D building model: '+type);
-  g.userData.model3d={kind:'building',type,volumetric:true,architectureAge:age,artRevision:'civic-arcades'};return g;
+  g.userData.model3d={kind:'building',type,volumetric:true,architectureAge:age,artRevision:'civic-arcades',wallTier:(type==='wall'||type==='gate')?wallTier(view.sim,e):'stone'};return g;
 }
 
 export function resourceModel(view,e){

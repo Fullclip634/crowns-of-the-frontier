@@ -12,6 +12,7 @@ import {terrainRelief} from './terrain-relief.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
 import {terrainMeadow} from './terrain-fields.js';
+import {terrainClarityPixels} from './terrain-clarity.js';
 import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 
@@ -111,13 +112,29 @@ function groundMap(landscape){
     pixels.data[index+3]=255;
   }
   fieldContext.putImageData(pixels,0,0);ctx.drawImage(field,0,0,1536,1536);
-  for(let i=0;i<38000;i++){ctx.fillStyle=winter?(i%2?'#d6cf9320':'#2f492220'):(i%2?'#b8c9a822':'#254d2a1a');ctx.fillRect(rng()*1536,rng()*1536,1+rng()*3,1+rng()*4);}
+  // Real elevation-derived shading: ridges catch warm light, lee slopes fall
+  // into cool shadow, and steep faces expose bedrock. One merged texture.
+  const clarity=terrainClarityPixels(landscape),res=clarity.resolution;
+  const overlay=document.createElement('canvas');overlay.width=overlay.height=res;const overlayContext=overlay.getContext('2d');
+  overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
+  overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
+  // Coherent, restrained grain: the old 38k single-pixel speckles read as mud.
+  for(let i=0;i<9000;i++){ctx.fillStyle=winter?(i%2?'#d6cf9310':'#2f492210'):(i%2?'#c3d2a912':'#254d2a0e');ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
+  const scale=1536/size;
   for(const channel of landscape.channels()){
-    ctx.lineWidth=(channel.width*2+(winter?8:4))*1536/size;ctx.strokeStyle=winter?'#b2b8aa':'#7b876b';ctx.lineCap='round';ctx.beginPath();
-    for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;ctx.lineTo((x+half)/size*1536,(z+half)/size*1536);}ctx.stroke();
+    const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':'#67795f';ctx.stroke(path);
+    ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':'#7b876b';ctx.stroke(path);
   }
-  for(const road of terrainRoadPaths(landscape)){ctx.lineWidth=3*1536/size;ctx.strokeStyle='#b0a078';ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();for(const point of road.points)ctx.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);ctx.stroke();}
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
+  // Two-tone roads: a soft packed-earth shoulder under a bright, legible tread.
+  for(const road of terrainRoadPaths(landscape)){
+    const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=5.4*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.30)':'rgba(74,62,42,.32)';ctx.stroke(path);
+    ctx.lineWidth=3.1*scale;ctx.strokeStyle=winter?'#cfc8ae':'#c3ae84';ctx.stroke(path);
+  }
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }
 
 function groundRelief(seed){

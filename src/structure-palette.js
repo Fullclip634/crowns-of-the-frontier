@@ -77,7 +77,7 @@ function paletteMaterial(view){
   return material;
 }
 
-function bakeSurface(view,part,matrix){
+function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -88,8 +88,8 @@ function bakeSurface(view,part,matrix){
   const m=view.materials,material=part.material,color=material.color.toArray(),emissive=material.emissive?.toArray()||[0,0,0];
   const mode=[m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
-    colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1);
-    surface[i*3+k]=k===0?material.roughness??.9:k===1?material.metalness??0:mode;
+    colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1)*tint[k];
+    surface[i*3+k]=k===0?Math.min(1,(material.roughness??.9)*roughnessScale):k===1?material.metalness??0:mode;
     emission[i*3+k]=emissive[k]*(material.emissiveIntensity??1);
   }
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
@@ -107,8 +107,9 @@ const movable=node=>node.userData.gate||node.userData.windmill||node.userData.do
 export function packBuildingModel(view,root,e){
   if(root.userData.structurePacked)return root;
   const palette=paletteMaterial(view),metadata=root.userData.model3d||{};
+  const tier=metadata.wallTier||'stone',fortified=tier==='fortified',tint=fortified?[.80,.84,.90]:[1,1,1],roughnessScale=fortified?1.08:1;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
-    view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex()].join(':');
+    view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
   root.updateMatrixWorld(true);
   const pack=(group,path)=>{
@@ -122,7 +123,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld)));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();
