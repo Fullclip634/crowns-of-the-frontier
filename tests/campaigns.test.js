@@ -80,6 +80,16 @@ test('enemy pressure is gated by difficulty and never fires on story',()=>{
   assert.equal(seen.find(event=>event.id==='c1-raid')?.enemy,true,'enemy events are flagged for the UI');
   assert.equal(seen.find(event=>event.id==='c1-foragers')?.enemy,false,'friendly events are flagged as friendly');
 });
+test('branching events follow the optional objective, not just the final medal',()=>{
+  const armed=quiet('campaign5');armed.addUnit('ram',0,-30,50);advance(armed,161);
+  assert.ok(armed.campaignState.fired.includes('c5-engine-intact'),'a surviving engine opens the friendly branch');
+  assert.ok(!armed.campaignState.fired.includes('c5-engine-lost'),'the failure branch does not fire');
+  const unarmed=quiet('campaign5');advance(unarmed,161);
+  assert.ok(!unarmed.campaignState.fired.includes('c5-engine-intact'),'no engine means no friendly branch');
+  assert.ok(!unarmed.campaignState.fired.includes('c5-engine-lost'),'the counterattack branch stays difficulty-gated');
+  assert.equal(unarmed.campaignState.optionalMet,false,'the optional objective is tracked continuously');
+  assert.equal(armed.campaignState.optionalMet,true,'a surviving engine satisfies the optional objective');
+});
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){
     const s=new Simulation({mode,difficulty});assert.equal(s.campaignState.stage,0);assert.equal(s.campaignState.history.length,1);assert.ok(s.campaignCheckpoint);assert.ok(JSON.stringify(s.serialize()).length<1000000);

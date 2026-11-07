@@ -44,7 +44,12 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Escort the supplies',text:'Escort the caravan to the marked eastern bridgehead. Keep it alive.',marker:{x:20,z:-8},done:(s,q)=>{const cart=s.get(q.cartId);return cart&&!cart.embarked&&Math.hypot(cart.x-20,cart.z+8)<7;},dialogue:'The supplies have reached the far bank. Establish a position before pushing toward the garrison.'},
       {title:'Secure the bridgehead',text:'Complete a watchtower east of the river, or move five land military units onto the eastern bank.',marker:{x:20,z:-8},done:s=>completed(s,'tower').some(e=>e.x>10)||army(s).filter(e=>e.x>10).length>=5,dialogue:'The bridgehead is secure. The garrison can no longer isolate our settlement.'},
       {title:'Break the garrison',text:'Reach the Castle Age and destroy the rival town center. Protect the caravan throughout.',marker:{x:40,z:-34},done:s=>s.players[0].age>=2&&conquered(s),dialogue:'The supply road is open. The caravan will carry word of your victory.'},
-    ],optional:{text:'Complete the escort with the caravan above half health.',done:(s,q)=>(s.get(q.cartId)?.hp||0)>s.get(q.cartId)?.maxHp*.5}},
+    ],optional:{text:'Complete the escort with the caravan above half health.',done:(s,q)=>(s.get(q.cartId)?.hp||0)>s.get(q.cartId)?.maxHp*.5},
+    events:[
+      {at:70,id:'c2-bridgehead',text:'Villagers from the far bank volunteer to hold the bridgehead.',reinforce:{type:'spearman',count:2}},
+      {at:140,id:'c2-caravan-intact',when:(s,q)=>q.optionalMet,text:'The caravan is intact, and its guards will fight beside you.',reinforce:{type:'archer',count:2}},
+      {at:140,id:'c2-caravan-hurt',when:(s,q)=>!q.optionalMet,minDifficulty:'hard',text:'Word of a mauled caravan has reached the garrison. They press harder.',reinforce:{owner:1,type:'spearman',count:3}},
+    ]},
   campaign3:{speaker:'Castellan Maera',intro:'The warbands are gathering beyond the ridge. Raise a castle, protect your economy, and prepare for eight assaults.',
     stages:[
       {title:'Raise the stronghold',text:'Complete a castle before the final waves arrive.',done:s=>completed(s,'keep').length>0,dialogue:'Stone is only the beginning. Repair your defenses and keep producing reinforcements.'},
@@ -61,7 +66,10 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Claim the first shrine',text:'Capture any shrine with land military units.',marker:{x:-26,z:-23},done:s=>s.entities.some(e=>e.kind==='shrine'&&e.owner===0),dialogue:'The first shrine answers your banner. Its gold can sustain the struggle for the others.'},
       {title:'Unite the valley',text:'Capture all three shrines at the same time.',marker:{x:3,z:1},done:s=>s.entities.filter(e=>e.kind==='shrine').every(e=>e.owner===0),dialogue:'All three banners fly together. The rival will try to break the weakest position.'},
       {title:'Protect the sacred ground',text:'Hold all three shrines continuously for three minutes, or conquer the rival capital.',done:s=>s.hold>=180,dialogue:'The valley is united, and the shrines stand under your protection.'},
-    ],optional:{text:'Win by shrine control rather than conquest.',done:(s,q)=>q.route!=='conquest'}},
+    ],optional:{text:'Win by shrine control rather than conquest.',done:(s,q)=>q.route!=='conquest'},
+    events:[
+      {at:200,id:'c4-pilgrims',when:s=>s.entities.filter(e=>e.kind==='shrine').every(e=>e.owner===0),text:'Pilgrims bring supplies to a valley united under one banner.',reinforce:{type:'villager',count:2}},
+    ]},
   campaign5:{speaker:'Marshal Elian',intro:'The enemy capital stands behind gates and stone. Bring siege engines, protect their crews, and open a route for the army.',
     stages:[
       {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
@@ -72,6 +80,8 @@ export const CAMPAIGN_SCRIPTS={
       {at:70,id:'c5-crews',text:'Siege crews and their escorts arrive from the capital workshops.',reinforce:{type:'spearman',count:3}},
       {at:140,id:'c5-labour',text:'A labour company arrives to repair engines between assaults.',reinforce:{type:'villager',count:2}},
       {at:120,id:'c5-sally',minDifficulty:'hard',text:'The garrison sallies out to break the siege train.',reinforce:{owner:1,type:'knight',count:2}},
+      {at:160,id:'c5-engine-intact',when:s=>army(s).some(e=>['ram','catapult'].includes(e.type)),text:'Your surviving engine crew trains a second company of guards.',reinforce:{type:'spearman',count:2}},
+      {at:160,id:'c5-engine-lost',when:s=>!army(s).some(e=>['ram','catapult'].includes(e.type)),minDifficulty:'hard',text:'With the siege train broken, the garrison counterattacks in force.',reinforce:{owner:1,type:'knight',count:2}},
     ]},
   campaign6:{speaker:'Admiral Iven',intro:'The final frontier lies beyond the water. Secure a fishing economy, prepare the fleet, then choose a landing force or long-range naval siege.',
     stages:[
@@ -87,7 +97,7 @@ export const CAMPAIGN_SCRIPTS={
 
 function initializeStory(sim){
   const script=CAMPAIGN_SCRIPTS[sim.options.mode];if(!script)return;
-  const q=sim.campaignState={stage:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[]};
+  const q=sim.campaignState={stage:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[]};
   if(script.cart){const cart=sim.addUnit('cart',0,script.cart.x,script.cart.z);cart.displayName=script.cart.name;q.cartId=cart.id;}
   sim.campaignCheckpoint=null;
 }
@@ -100,12 +110,19 @@ export function installCampaigns(Simulation){
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
   p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
     q.clock+=dt;if(q.clock<.5)return;q.clock=0;
-    q.fired??=[];
+    q.fired??=[];q.resolved??=[];
+    // Track the optional objective continuously so later events can branch on
+    // how the mission is actually going, not only on the final medal.
+    q.optionalMet=!!script.optional?.done(this,q);
     for(const event of script.events||[]){
-      if(q.fired.includes(event.id)||this.time<event.at)continue;
+      if(q.resolved.includes(event.id)||this.time<event.at)continue;
       if(event.minDifficulty&&!meetsDifficulty(this,event.minDifficulty))continue;
-      q.fired.push(event.id);
+      // A resolved event is never re-evaluated; only an executed one is
+      // recorded as fired, so tests and the HUD can tell a skipped branch from
+      // a branch that actually happened.
+      q.resolved.push(event.id);
       if(event.when&&!event.when(this,q))continue;
+      q.fired.push(event.id);
       if(event.reinforce)spawnReinforcements(this,event.reinforce);
       q.history.push({time:this.time,speaker:script.speaker,text:event.text});
       this.emit('campaign-event',{id:event.id,text:event.text,enemy:!!event.reinforce&&(event.reinforce.owner??0)!==0});
