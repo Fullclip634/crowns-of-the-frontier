@@ -19,7 +19,6 @@ import './wall-placement.css';
 import './resource-presentation.css';
 import './alliance-ui.css';
 import './interface-design.css';
-import './legibility.css';
 import {WallPlacement,wallPlacementPlan,wallPointerPoint} from './wall-placement.js';
 import {WallPreview} from './wall-preview.js';
 import {mechanicalUnit} from './maintenance.js';
