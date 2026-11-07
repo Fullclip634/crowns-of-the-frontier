@@ -186,6 +186,7 @@ function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!=
   if(e.type==='capture'){toast(e.owner===0?'An ancient shrine is under your control.':'The enemy has captured a shrine.',e.owner===0?'':'warning');audio.play('complete');}
   if(e.type==='attack'||e.type==='projectile-impact'||e.type==='death'||e.type==='heal'){view.effect(e);if(e.type==='attack'){if(e.pendingImpact)audio.combat(e.entity,e.target,['catapult','warship'].includes(e.entity.type)?'wood':'arrow');else audio.play('attack',e.entity,e.target);}if(e.type==='projectile-impact')audio.combat(e.target,e.entity,projectileImpactSound(e));}
   if(e.type==='campaign-stage'){toast(e.text);audio.play('complete');renderHUD();}
+  if(e.type==='campaign-event'){toast(e.text,e.enemy?'warning':'');audio.play(e.enemy?'alarm':'complete');renderHUD();}
   if(e.type==='campaign-checkpoint'){saveGame(true);toast('Campaign checkpoint saved. Restore it from the commander menu.');}
   if(e.type==='end')showEnd(e);
 }

@@ -71,11 +71,14 @@ test('enemy pressure is gated by difficulty and never fires on story',()=>{
   const story=quiet('campaign1');advance(story,151);
   assert.ok(!story.campaignState.fired.includes('c1-raid'),'story difficulty skips the raid');
   const hard=new Simulation({mode:'campaign1',difficulty:'hard'});hard.tickAI=()=>{};
+  const seen=[],original=hard.emit;hard.emit=function(type,data={}){if(type==='campaign-event')seen.push({...data});return original.call(this,type,data);};
   const before=hard.owned(1,'unit','spearman').length;
   advance(hard,151);
   assert.ok(hard.campaignState.fired.includes('c1-raid'),'hard difficulty fires the raid');
   assert.ok(hard.owned(1,'unit','spearman').length>before,'the raiders actually spawn');
   assert.ok(hard.entities.filter(e=>e.kind==='unit').every(e=>!hard.isWater(e.x,e.z)),'raiders land on dry ground');
+  assert.equal(seen.find(event=>event.id==='c1-raid')?.enemy,true,'enemy events are flagged for the UI');
+  assert.equal(seen.find(event=>event.id==='c1-foragers')?.enemy,false,'friendly events are flagged as friendly');
 });
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){

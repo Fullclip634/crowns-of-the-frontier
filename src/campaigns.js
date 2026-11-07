@@ -108,7 +108,7 @@ export function installCampaigns(Simulation){
       if(event.when&&!event.when(this,q))continue;
       if(event.reinforce)spawnReinforcements(this,event.reinforce);
       q.history.push({time:this.time,speaker:script.speaker,text:event.text});
-      this.emit('campaign-event',{id:event.id,text:event.text});
+      this.emit('campaign-event',{id:event.id,text:event.text,enemy:!!event.reinforce&&(event.reinforce.owner??0)!==0});
     }
     if(q.cartId&&!this.get(q.cartId)){end.call(this,false,'The supply caravan was lost. Restore a checkpoint or begin the escort again.');return;}
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
