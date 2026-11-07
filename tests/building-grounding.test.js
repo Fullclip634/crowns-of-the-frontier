@@ -7,6 +7,10 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {BUILDINGS,MAPS} from '../src/data.js';
+import {LEGACY_MEADOW_MAPS} from '../src/terrain-biomes.js';
+// The original 7-map foundation census. New biome kinds are smoke-tested in
+// terrain-biomes.test.js without changing this calibrated regression number.
+const CENSUS_MAPS=[...LEGACY_MEADOW_MAPS,'winter'];
 import {Simulation} from '../src/simulation.js';
 import {Landscape} from '../src/landscape.js';
 import {WorldView} from '../src/world.js';
@@ -39,7 +43,7 @@ for(const detail of ['low','balanced','near'])test(`${detail} foundations close 
   const {gltf,assets}=await catalogue(detail),quality=detail==='near'?'high':detail==='balanced'?'medium':'low',models=[...assets.templates.keys()].filter(key=>key.startsWith('building:')&&!['farm','dock'].includes(key.split(':')[1])),report={detail,models:models.length,maps:7,validSites:0,extended:0,maximumGroundGap:-Infinity};assert.equal(models.length,60);
   const land=new Landscape(512,'canyon'),initial=land.geometry(land.renderSize,quality==='low'?112:160),view=viewFor(land,gltf,quality);initial.dispose();
   try{
-    for(const map of Object.keys(MAPS)){
+    for(const map of CENSUS_MAPS){
       const sim=new Simulation({mode:'sandbox',map,seed:512});sim.entities=[];sim.index=new Map();sim.revision++;sim.visible.fill(1);
       view.landscape=new Landscape(512,map,sim.worldSize,sim.spawnPositions);const ground=view.landscape.geometry(view.landscape.renderSize,quality==='low'?112:160);
       for(const [x,z]of [[-60,-35],[60,-50],[0,40],[45,55],[-15,-55],[-37,30]])for(const key of models){

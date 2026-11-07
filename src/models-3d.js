@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {authoredUnit,authoredBuilding,authoredResource,authoredTree} from './authored-assets.js';
 import {wallTier} from './fortified-walls.js';
+import {treeBiome} from './terrain-biomes.js';
 
 const Y=new THREE.Vector3(0,1,0);
 function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
@@ -365,7 +366,7 @@ export function resourceModel(view,e){
 
 export function treeModel(view,map,variant=0,far=false){
   ensureModels(view);const authored=authoredTree(view,map,variant,far);if(authored)return authored;
-  ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(variant+128),pine=map==='winter',desert=map==='desert';
+  ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(variant+128),kind=treeBiome(map),pine=kind==='winter',desert=kind==='desert';
   b.rod(m.trunk,[0,0,0],[.07,4.5,0],.22);
   if(!far){for(let i=0;i<4;i++){const angle=i*Math.PI/2+variant;b.rod(m.trunk,[0,.4,0],[Math.sin(angle)*.75,.04,Math.cos(angle)*.75],.12);}b.rod(m.trunk,[.02,2.2,0],[.45,4.8,.15],.12);}
   for(let i=0;i<(far?3:pine?4:6);i++){

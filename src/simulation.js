@@ -22,6 +22,9 @@ import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './b
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './fortified-walls.js';
+import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
+import {channelAt} from './map-water.js';
+import {biomeProfile} from './terrain-biomes.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
@@ -109,6 +112,20 @@ export class Simulation {
     for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addNaturalResource('wood',x,z,240);}
     if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addNaturalResource('wood',x,z,260);}
     if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
+    // New biomes carry their own economy: arid/volcanic/highland worlds are
+    // mineral rich and timber poor, woodlands and valleys reverse that. The
+    // amounts use the same seeded RNG, so replays and saves stay deterministic.
+    if(tacticalTerrainEnabled(this.options.map)){
+      const profile=biomeProfile(this.options.map);
+      for(const [type,factor]of [['wood',profile.wood],['food',profile.food],['gold',profile.gold],['stone',profile.stone]]){
+        const extra=Math.round(Math.max(0,factor-1)*26)-Math.round(Math.max(0,1-factor)*10);
+        for(let i=0;i<extra;i++){
+          const x=(this.rng()-.5)*140,z=(this.rng()-.5)*140;
+          if(this.isWater(x,z)||reservedStartingLand(this,x,z)||this.startClearing(x,z)||this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+4))continue;
+          this.addNaturalResource(type,x,z,type==='wood'?220:type==='food'?350:1800);
+        }
+      }
+    }
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26,-23],[3,1],[28,25]])this.addShrine(x,z);}
     plantStartingForests(this);
     groupFieldForests(this);
@@ -193,7 +210,7 @@ export class Simulation {
     }
   }
   stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
-  isWater(x,z){if(Math.abs(z)<=bridgeRoadHalfWidth-.6)return false;if(this.options.map==='valley')return Math.abs(x-Math.sin(z*.045)*4)<5;if(this.options.map==='rivers')return [-19,19].some(center=>Math.abs(x-center-Math.sin(z*.045)*3)<4);return false;}
+  isWater(x,z){if(Math.abs(z)<=bridgeRoadHalfWidth-.6)return false;return channelAt(this.options.map,x,z);}
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
     const size=this.gridSize,teamKey='team-'+(this.players[owner].team??owner);if(this.grids[teamKey]?.revision===this.revision){this.grids[owner]=this.grids[teamKey];return this.grids[owner].data;}
@@ -217,7 +234,11 @@ export class Simulation {
     if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||rangeChanged||targetChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=normalOverride?findPath(this,e,dest,stop,normalOverride):this.pathTo(e,dest,stop);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;e.pathTargetId=targetId;e.pathRange=stop;}
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
     if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,precise?.05:1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
-    const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);const step=Math.min(len,speed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
+    const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);
+    // Steep cliffs slow troops on tactical-terrain maps; legacy maps keep
+    // their published movement speeds.
+    const terrainSpeed=this.tacticalEnabled()&&!d.naval?slopeSpeedFactor(slopeAt(this.options.map,this.options.seed,e.x,e.z,this.tacticalPhase())):1;
+    const step=Math.min(len,speed*terrainSpeed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
     let nx=e.x+dx/len*step,nz=e.z+dz/len*step;
     const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4);
     for(let ox=-1;ox<=1;ox++){const column=this.unitBuckets?.get(bx+ox);if(!column)continue;for(let oz=-1;oz<=1;oz++){
@@ -254,12 +275,22 @@ export class Simulation {
     }
     let best=null,nearest=Infinity;for(const b of this.dropCache.sites.get(e.owner)||[]){if(b.hp<=0||b.progress<1||!BUILDINGS[b.type].drop.includes(resource)||naval&&b.type!=='dock')continue;const d=distance(e,b)-b.r;if(d<nearest){nearest=d;best=b;}}return best;
   }
+  // Tactical elevation is opt-in per map kind: the new cliff biomes get real
+  // high-ground combat, while legacy maps keep their calibrated balance.
+  tacticalPhase(){return this.tacticalPhaseValue??=terrainPhase(this.options.seed);}
+  tacticalEnabled(){return this.options.tacticalTerrain===true||this.options.tacticalTerrain!==false&&tacticalTerrainEnabled(this.options.map);}
+  terrainCombatMultiplier(e,target,role){
+    if(!this.tacticalEnabled()||!e||!target)return 1;
+    const phase=this.tacticalPhase(),a=tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),b=tacticalHeight(this.options.map,this.options.seed,target.x,target.z,phase);
+    return highGroundMultiplier(a,b,{siege:role==='siege'||target.kind==='building'});
+  }
   attackDamage(e,target){const d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type],p=this.players[e.owner],role=d.role;let n=d.damage||0;if(d.naval)n*=1+(p.tech.seamanship||0)*.2;
     if(e.kind==='building')n*=1+p.tech.fortification*.15;
     else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;}
     const other=target.kind==='unit'?UNITS[target.type]:null;if(role==='spear'&&other?.role==='cavalry')n*=3;if(role==='ranged'&&other?.role==='spear')n*=1.5;if(role==='cavalry'&&other?.role==='ranged')n*=1.7;if(role==='siege')n*=target.kind==='building'?3: e.type==='ram'?.22:1;
     if(target.kind==='building'&&role!=='siege')n*=.65;
     if(other?.role==='worker')n*=d.workerBonus||1;
+    n*=this.terrainCombatMultiplier(e,target,role);
     const armor=target.kind==='unit'?this.unitArmor(target):(role==='ranged'?5:1)+wallArmorBonus(this,target);return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
   }
   unitArmor(e){const d=UNITS[e.type],p=this.players[e.owner];return (d.armor||0)+p.tech.armor*2+(['infantry','spear'].includes(d.role)?(p.tech.shieldDrill||0)*2:0);}
@@ -400,7 +431,7 @@ export class Simulation {
   }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
-  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){const r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18,c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
+  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r+=elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
     for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
   }
   tutorialObjectives(){return [

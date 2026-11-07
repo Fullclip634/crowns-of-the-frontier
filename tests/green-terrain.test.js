@@ -1,14 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {terrainBiome} from '../src/terrain-biomes.js';
+import {terrainBiome,LEGACY_MEADOW_MAPS} from '../src/terrain-biomes.js';
 import {terrainWeights,roadDistance} from '../src/terrain-layout.js';
 import {Landscape} from '../src/landscape.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {MAPS} from '../src/data.js';
 
-test('flat non-winter ground is predominantly grass, with green ground cover and readable paths',()=>{
-  for(const map of Object.keys(MAPS).filter(map=>map!=='winter')){
+test('legacy meadow maps keep predominantly grass, green ground cover and readable paths',()=>{
+  // The seven original maps are the green meadow frontier. New biome kinds
+  // deliberately use sand, snow, ash and rock palettes (Goal 3) and are
+  // covered by terrain-biomes.test.js instead.
+  for(const map of LEGACY_MEADOW_MAPS){
     const land=new Landscape(512,map,400),style=terrainBiome(map);let checked=0;
     for(let z=-150;z<=150;z+=30)for(let x=-150;x<=150;x+=30){
       if(roadDistance(x,z,land)<4||land.channels().some(c=>Math.abs(x-c.center-Math.sin(z*c.frequency)*c.bend)<c.width+8))continue;

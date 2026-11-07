@@ -12,6 +12,7 @@ import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 import {wallTier} from './fortified-walls.js';
+import {treeBiome} from './terrain-biomes.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -58,7 +59,7 @@ export function installRealm3D(WorldView){
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
-  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);this.materials.leaf.color.setHex(this.sim.options.map==='winter'?0x74836e:0x5c743d);this.materials.leafDark.color.setHex(this.sim.options.map==='winter'?0x364d40:0x3e5732);buildLandscape(this);};
+  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);const treeKind=treeBiome(this.sim.options.map);this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:treeKind==='desert'?0x8a8752:0x5c743d);this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:treeKind==='desert'?0x4a4830:0x3e5732);buildLandscape(this);};
   p.buildForest=function(){buildForest(this);};
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};

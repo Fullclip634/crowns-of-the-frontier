@@ -2,6 +2,7 @@ import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {DayNightLighting} from './day-night.js';
+import {isSnowBiome,isAridBiome} from './terrain-biomes.js';
 
 export const WEATHER_NAMES={clear:'Clear skies',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snowfall'};
 const clamp=n=>Math.max(0,Math.min(1,n));
@@ -9,12 +10,12 @@ const smooth=n=>{n=clamp(n);return n*n*(3-2*n);};
 
 // Weather uses a separate seeded clock: it never changes economy/combat RNG.
 export function weatherAt(seed,map,time,preference='auto'){
-  time=Math.max(0,time);const cycle=Math.floor(time/210),phase=time%210,rng=seededRandom((seed+cycle*7919+4421)>>>0),wet=rng()<(map==='desert'?.38:.86),storm=rng()<.38;
+  time=Math.max(0,time);const cycle=Math.floor(time/210),phase=time%210,rng=seededRandom((seed+cycle*7919+4421)>>>0),wet=rng()<(isAridBiome(map)?.18:.86),storm=rng()<.38;
   let type='clear',amount=0,cloud=0;
   if(preference!=='auto'&&WEATHER_NAMES[preference]){type=preference;amount=type==='storm'?1:type==='rain'?.7:type==='snow'?.65:0;cloud=type==='clear'?0:type==='cloudy'?.6:.9;}
   else if(phase>=40&&phase<185){
     cloud=smooth((phase-40)/25)*smooth((185-phase)/25)*.9;
-    if(wet&&phase>=75&&phase<155){amount=smooth((phase-75)/14)*smooth((155-phase)/14);type=map==='winter'?'snow':storm?'storm':'rain';amount*=type==='rain'?.7:type==='snow'?.65:1;}else type='cloudy';
+    if(wet&&phase>=75&&phase<155){amount=smooth((phase-75)/14)*smooth((155-phase)/14);type=isSnowBiome(map)?'snow':storm?'storm':'rain';amount*=type==='rain'?.7:type==='snow'?.65:1;}else type='cloudy';
   }
   const flashPhase=((time-16)%43+43)%43,flash=type==='storm'&&amount>.5&&flashPhase<.16;
   return {type,amount,cloud,wind:type==='storm'?3.4:type==='snow'?1.1:1.8,flash,thunderKey:type==='storm'&&amount>.5?Math.floor((time-16)/43):null,time};

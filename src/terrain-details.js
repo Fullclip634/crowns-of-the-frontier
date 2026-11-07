@@ -4,6 +4,7 @@ import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
+import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
 
 export function pebbleGeometry(){
   const geometry=new THREE.IcosahedronGeometry(.35,1),p=geometry.attributes.position;
@@ -22,7 +23,7 @@ export class TerrainDetails{
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.98;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=land.map==='winter'?[0xc3cbc5,0xe0e4db,0xa7b4a9]:[0xb9c1ac,0xcad0bf,0x98a58d];
+    const palette=isSnowBiome(land.map)?[0xc3cbc5,0xe0e4db,0xa7b4a9]:isAridBiome(land.map)?[0xc4a878,0xd8c096,0x9b8158]:isRockyBiome(land.map)?[0x8c8b82,0xa5a49a,0x6b6a62]:terrainBiome(land.map).grass;
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
       if(y<.2||roadDistance(x,z,land)<2||bridgeFootprint(land.map,x,z,3))continue;

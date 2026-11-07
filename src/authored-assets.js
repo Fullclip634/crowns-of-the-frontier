@@ -6,6 +6,7 @@ import {bindWorkerToolJoints} from './worker-tool-rig.js';
 import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
+import {treeBiome} from './terrain-biomes.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -203,6 +204,6 @@ export function authoredResource(view,e){
   return cloneAsset(view,key,Math.max(0,e.owner||0));
 }
 export function authoredTree(view,map,variant,far){
-  const biome=['winter','desert'].includes(map)?map:'highlands';
+  const biome=treeBiome(map);
   return cloneAsset(view,`tree:${biome}:${variant}:${far?'far':'near'}`);
 }

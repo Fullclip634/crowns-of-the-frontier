@@ -3,11 +3,14 @@ import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
 export const WATER_PALETTES=Object.freeze({
   river:Object.freeze({shallow:0x838268,deep:0x344f3f,opacity:.94}),
-  coast:Object.freeze({shallow:0x82978a,deep:0x365c5c,opacity:.9})
+  coast:Object.freeze({shallow:0x82978a,deep:0x365c5c,opacity:.9}),
+  riverland:Object.freeze({shallow:0x7fa29a,deep:0x2f5a58,opacity:.92}),
+  archipelago:Object.freeze({shallow:0x93b6b3,deep:0x2a5c66,opacity:.88}),
+  volcanic:Object.freeze({shallow:0x8a6a54,deep:0x3a2c2a,opacity:.96})
 });
 
 export function configureWaterPalette(material,map){
-  const palette=WATER_PALETTES[map==='coast'?'coast':'river'];
+  const palette=WATER_PALETTES[map]||WATER_PALETTES.river;
   material.color.setHex(0xffffff);
   material.frontierWaterShallow.value.setHex(palette.shallow);
   material.frontierWaterDeep.value.setHex(palette.deep);

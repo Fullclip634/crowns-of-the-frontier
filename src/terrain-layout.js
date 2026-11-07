@@ -1,4 +1,5 @@
 import {terrainMeadow,terrainNoise} from './terrain-fields.js';
+import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 
@@ -34,8 +35,13 @@ export function terrainWeights(land,x,y,z,normalY=1){
     const distance=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend)-channel.width;
     if(distance>=0)bank=Math.max(bank,1-smooth(.2,4,distance));
   }
-  const winter=land.map==='winter',rock=Math.min(.94,.12*patch+smooth(.025,.19,slope)*.75+smooth(5,15,y)*.35)*(1-road*.9)*(1-bank*.6);
-  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),(winter?.12:.04)+patch*(winter?.17:.08)))*(1-rock);
+  const winter=isSnowBiome(land.map),arid=isAridBiome(land.map),rocky=isRockyBiome(land.map);
+  // New terrain kinds get a distinct grass/soil/rock signature instead of the
+  // uniform meadow wash; roads and river banks still win over the base blend.
+  const exposure=(arid?.28:rocky?.34:.12)*patch+smooth(.025,.19,slope)*(rocky?.95:.75)+smooth(5,15,y)*.35;
+  const rock=Math.min(.94,exposure)*(1-road*.9)*(1-bank*.6);
+  const baseSoil=arid?.34:rocky?.18:winter?.12:.04,patchSoil=arid?.3:rocky?.2:winter?.17:.08;
+  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),baseSoil+patch*patchSoil)*(1-rock));
   return {grass:Math.max(0,1-soil-rock),soil,rock};
 }
 

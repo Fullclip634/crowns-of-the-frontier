@@ -10,7 +10,7 @@ import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
-import {terrainBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome} from './terrain-biomes.js';
 import {authoredAssetState,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix,prepareViewport} from './render-batches.js';
 import {sceneNodeFor,releaseSceneNode} from './scene-nodes.js';
@@ -74,7 +74,7 @@ export class WorldView {
     const index=batch.free.length?batch.free.pop():batch.ids.length;batch.ids[index]=e.id;
     const node=new THREE.Group();node.userData.batch=batch;node.userData.index=index;node.userData.model3d=batch.model3d;node.userData.unitVariant=variant;return node;
   }
-  groundTexture(seed,map){const c=document.createElement('canvas');c.width=c.height=1024;const ctx=c.getContext('2d'),rng=seededRandom(seed);ctx.fillStyle=map==='winter'?'#d3dbcd':terrainBiome(map).ground[0];ctx.fillRect(0,0,1024,1024);
+  groundTexture(seed,map){const c=document.createElement('canvas');c.width=c.height=1024;const ctx=c.getContext('2d'),rng=seededRandom(seed);ctx.fillStyle=isSnowBiome(map)?'#d3dbcd':terrainBiome(map).ground[0];ctx.fillRect(0,0,1024,1024);
     for(let i=0;i<65000;i++){const x=rng()*1024,y=rng()*1024;ctx.fillStyle=rng()>.5?'rgba(43,68,35,.075)':'rgba(230,221,168,.07)';ctx.fillRect(x,y,2+rng()*7,2+rng()*7);}
     for(const sign of [1,-1]){ctx.strokeStyle='#ab9d78';ctx.lineWidth=20;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(((-39*sign+80)/160)*1024,((30*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((24*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((0+80)/160)*1024);ctx.stroke();}
     const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;return texture;

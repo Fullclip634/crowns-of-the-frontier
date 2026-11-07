@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {seededRandom} from './data.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {roadDistance} from './terrain-layout.js';
-import {terrainBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome} from './terrain-biomes.js';
 import {bridgeFootprint} from './bridge-layout.js';
 
 export function grassTuftGeometry(){
@@ -31,7 +31,7 @@ export class GroundCover{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
-    const winter=land.map==='winter';
+    const winter=isSnowBiome(land.map);
     const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);

@@ -2,7 +2,14 @@ export const WORLD = 160;
 export const AGES = ['Frontier Age', 'Feudal Age', 'Castle Age', 'Imperial Age'];
 export const RESOURCE = { food: 'Food', wood: 'Timber', gold: 'Gold', stone: 'Stone' };
 export const RELEASE='2.6 - Fieldcraft and controls';
-export const MAPS={highlands:{name:'Emerald highlands',desc:'Balanced forests, fertile fields, and open battlefields.'},valley:{name:'The river crossing',desc:'A winding river divides the frontier. Fight for the central bridge.'},desert:{name:'Sunlit meadows',desc:'Green meadows, scattered leafy trees, and long sight lines.'},winter:{name:'Winterwood',desc:'A snow-covered frontier with abundant northern timber.'},canyon:{name:'The iron frontier',desc:'Green foothills and exposed rock surround valuable central mines.'},rivers:{name:'Twin rivers',desc:'Two waterways and two bridges create a dangerous central corridor.'}};
+export const MAPS={highlands:{name:'Emerald highlands',desc:'Balanced forests, fertile fields, and open battlefields.'},valley:{name:'The river crossing',desc:'A winding river divides the frontier. Fight for the central bridge.'},desert:{name:'Sunlit meadows',desc:'Green meadows, scattered leafy trees, and long sight lines.'},winter:{name:'Winterwood',desc:'A snow-covered frontier with abundant northern timber.'},canyon:{name:'The iron frontier',desc:'Green foothills and exposed rock surround valuable central mines.'},rivers:{name:'Twin rivers',desc:'Two waterways and two bridges create a dangerous central corridor.'},
+  arid:{name:'The amber wastes',desc:'Baked dunes and ochre mesas. Gold and stone are plentiful, timber is scarce, and high ground decides every raid.'},
+  tundra:{name:'Frostmarch',desc:'A pale, frozen frontier. Deep snow, hardy northern timber, and exposed ridges with long sight lines.'},
+  volcanic:{name:'The cinder reach',desc:'Black basalt, ash fields, and jagged cliffs. Rich ore sits behind terrain that punishes careless approaches.'},
+  highland:{name:'The shattered crown',desc:'Towering plateaus and cliff ramps. Holding the high ground is the whole battle.'},
+  woodland:{name:'The deepwood',desc:'Dense old-growth forest with thick timber and short sight lines. Ambush country.'},
+  riverland:{name:'Willow vale',desc:'A lush valley threaded by water. Fertile farms, soft ground, and gentle slopes.'},
+  archipelago:{name:'The sundered isles',desc:'Broken coastal shelves and sandy inlets. Fish-rich shallows and scattered high ground.'}};
 export const ICONS = {food:'◒',wood:'♣',gold:'◆',stone:'⬟',pop:'♟',villager:'♟',scout:'♞',spearman:'⚑',archer:'➶',swordsman:'⚔',knight:'♞',ram:'▰',catapult:'☄',monk:'✚',towncenter:'♜',house:'⌂',farm:'▤',mill:'✣',camp:'♣',mine:'⬟',barracks:'⚔',range:'➶',stable:'♞',workshop:'⚙',tower:'♜',keep:'♜',wall:'▥',gate:'⋂',market:'⚖',blacksmith:'⚒',monastery:'✚',wonder:'♛',age:'✧',economy:'♣',attack:'⚔',armor:'⬟',ranged:'➶',fortification:'♜',fortifiedWall:'▦',husbandry:'♞'};
 export const UNITS = {
   villager:{name:'Villager',desc:'Builds, repairs, farms, and gathers every resource.',cost:{food:50},hp:55,damage:3,range:1.9,speed:4.1,time:12,age:0,at:['towncenter'],role:'worker',vision:15},

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {terrainRoadPaths} from './terrain-layout.js';
-import {terrainBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
 function roadMask(land){
   const paths=terrainRoadPaths(land),canvas=document.createElement('canvas');canvas.width=canvas.height=512;
@@ -15,7 +15,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   const soil=surfaces.soil||grass,rock=surfaces.rock||grass,normal=quality!=='low'&&grass.normal;
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
-  const amount=land.map==='winter'?.22:.78;
+  const snow=isSnowBiome(land.map),arid=isAridBiome(land.map),rocky=isRockyBiome(land.map);
+  const amount=snow?.22:arid?.62:rocky?.88:.78;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];
   const uniforms={
@@ -23,8 +24,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
     grassNormal:{value:normal||null},soilNormal:{value:normal?(soil.normal||grass.normal):null},rockNormal:{value:normal?(rock.normal||grass.normal):null},
     grassArm:{value:quality==='high'?grass.arm||null:null},soilArm:{value:quality==='high'?soil.arm||grass.arm||null:null},rockArm:{value:quality==='high'?rock.arm||grass.arm||null:null},
     scale:{value:new THREE.Vector3(land.renderSize/(dimensions.grass||2),land.renderSize/(dimensions.soil||1.3),land.renderSize/(dimensions.rock||90))},
-    amount:{value:amount},tint:{value:new THREE.Color(land.map==='winter'?0xe3e8de:0xe0e5d8)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},
-    macroReference:{value:new THREE.Color(terrainBiome(land.map).ground[0])},macroStrength:{value:land.map==='winter'?0:1},
+    amount:{value:amount},tint:{value:new THREE.Color(snow?0xe3e8de:arid?0xe8dcc0:rocky?0xd9dcd2:0xe0e5d8)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},
+    macroReference:{value:new THREE.Color(terrainBiome(land.map).ground[0])},macroStrength:{value:snow?0:1},
     roads:{value:roads},
   };
   material.frontierTerrainUniforms=uniforms;

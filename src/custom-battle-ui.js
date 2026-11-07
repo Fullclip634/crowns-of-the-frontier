@@ -26,7 +26,11 @@ export function updateBattlePreview(root=document){
   const draft=readBattleSetup(root),canvas=root.querySelector('#battle-preview'),ctx=canvas.getContext('2d'),size=canvas.width;
   root.querySelectorAll('.battle-slot').forEach((row,i)=>{const active=draft.slots[i].enabled;row.classList.toggle('closed',!active);row.classList.toggle('player-slot',draft.playerSlot===i+1);row.querySelectorAll('input,select').forEach(input=>{if(!input.id.includes('-type-'))input.disabled=!active||input.id.includes('-difficulty-')&&draft.slots[i].controller==='human';});});
   ctx.fillStyle=draft.map==='winter'?'#b7c4b2':terrainBiome(draft.map).map;ctx.fillRect(0,0,size,size);
-  if(['coast','valley','rivers'].includes(draft.map)){ctx.strokeStyle='#70a9b0';ctx.lineWidth=draft.map==='coast'?21:8;for(const offset of draft.map==='rivers'?[-15,15]:[0]){ctx.beginPath();for(let y=0;y<=size;y+=4){const x=size/2+offset+Math.sin(y*.08)*4;if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}}
+  if(['coast','valley','rivers','riverland','archipelago'].includes(draft.map)){
+    const channels={coast:[0],valley:[0],rivers:[-15,15],riverland:[-19,19],archipelago:[-30,30]}[draft.map]||[0];
+    ctx.strokeStyle=draft.map==='volcanic'?'#8a6a54':'#70a9b0';ctx.lineWidth=draft.map==='coast'?21:draft.map==='archipelago'?12:8;
+    for(const offset of channels){ctx.beginPath();for(let y=0;y<=size;y+=4){const x=size/2+offset+Math.sin(y*.08)*4;if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}
+  }
   const warning=root.querySelector('.custom-validation'),launch=root.querySelector('[data-action=custom-start]'),host=root.querySelector('[data-action=custom-host]'),networkNote=root.querySelector('#custom-network-note');
   launch.innerHTML=`${draft.spectator?'Watch AI battle':'Play against AI'} ${uiIcon(draft.spectator?'eye':'play')}`;
   host.disabled=draft.spectator;host.title=draft.spectator?'Choose a kingdom before hosting multiplayer.':'Create a room for friends.';

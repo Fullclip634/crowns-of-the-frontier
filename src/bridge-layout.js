@@ -1,5 +1,5 @@
 import artwork from './assets3d/bridge.json' with {type:'json'};
-const spans={valley:[{center:0,halfLength:13}],rivers:[{center:-19,halfLength:12},{center:19,halfLength:12}]};
+const spans={valley:[{center:0,halfLength:13}],rivers:[{center:-19,halfLength:12},{center:19,halfLength:12}],riverland:[{center:-25,halfLength:12},{center:25,halfLength:12}],archipelago:[{center:-40,halfLength:12},{center:40,halfLength:12}]};
 const noSpans=Object.freeze([]);
 export const bridgeSpans=map=>spans[map]||noSpans;
 // Keep the authored dimensions intact; one placement scale drives art, paving,
