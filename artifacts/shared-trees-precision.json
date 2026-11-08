@@ -2,14 +2,14 @@
   "passed": true,
   "models": 24,
   "meshes": 96,
-  "visibleTriangles": 132470,
+  "visibleTriangles": 147054,
   "exactTrianglePositionsAndWinding": true,
   "normalLimitDegrees": 0.05,
   "maxNormalDegrees": 0.003907090598753798,
   "maxUVError": 0,
   "maxColorError": 0,
-  "referenceBytes": 14361652,
-  "candidateBytes": 2513564,
-  "referenceDecodedBufferBytes": 40204208,
-  "candidateDecodedBufferBytes": 5903458
+  "referenceBytes": 15140572,
+  "candidateBytes": 2656120,
+  "referenceDecodedBufferBytes": 42473732,
+  "candidateDecodedBufferBytes": 6295710
 }
