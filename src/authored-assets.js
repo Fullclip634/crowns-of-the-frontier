@@ -220,11 +220,21 @@ function foundation(view,root,e){
   if(!body||!view.geo?.box||root.userData.foundation)return;
   // Walls, fields and towers are excluded: a wall segment must not gain a
   // skirt, a field is soil rather than masonry, and a tower's own footing is
-  // already authored. The mill is excluded because its blades sweep close to
-  // the front wall, and any plinth that protrudes would clip them.
-  if(['farm','dock','wall','gate','tower','mill'].includes(e.type))return;
+  // already authored. A mill keeps a plinth but one that does not protrude at
+  // all, because its blades sweep close to the front wall.
+  if(['farm','dock','wall','gate','tower'].includes(e.type))return;
+  const overhang=e.type==='mill'?1:1.06;
   root.updateMatrixWorld(true);
-  const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+  // Measure the building only. A rotor or a moving gate sits outside the walls
+  // and would otherwise inflate the plinth until it clipped the blades.
+  const bounds=new THREE.Box3(),part=new THREE.Box3();
+  root.traverse(node=>{
+    if(!node.isMesh||node.userData.windmillMount)return;
+    for(let parent=node;parent&&parent!==root;parent=parent.parent)if(parent.userData?.windmill||parent.userData?.gate)return;
+    bounds.union(part.setFromObject(node));
+  });
+  if(bounds.isEmpty())return;
+  const size=bounds.getSize(new THREE.Vector3());
   if(size.x<.6||size.z<.6)return;
   root.userData.foundation=true;
   // The slab is a child of the root, so it inherits the age massing scale.
@@ -233,7 +243,7 @@ function foundation(view,root,e){
   const sx=root.scale.x||1,sy=root.scale.y||1,sz=root.scale.z||1;
   const slab=new THREE.Mesh(view.geo.box,body);
   slab.position.set((bounds.min.x+bounds.max.x)/2/sx,(bounds.min.y+.10)/sy,(bounds.min.z+bounds.max.z)/2/sz);
-  slab.scale.set(size.x*1.06/sx,.46/sy,size.z*1.06/sz);
+  slab.scale.set(size.x*overhang/sx,.46/sy,size.z*overhang/sz);
   slab.userData.architectureDetail=true;
   root.add(slab);
 }
