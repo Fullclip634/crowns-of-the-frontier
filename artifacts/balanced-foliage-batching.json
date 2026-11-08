@@ -4,42 +4,42 @@
     {
       "key": "tree:highlands:0:near",
       "meshes": 3,
-      "triangles": 6698
+      "triangles": 6772
     },
     {
       "key": "tree:highlands:1:near",
       "meshes": 3,
-      "triangles": 6613
+      "triangles": 6773
     },
     {
       "key": "tree:highlands:2:near",
       "meshes": 3,
-      "triangles": 6748
+      "triangles": 6777
     },
     {
       "key": "tree:highlands:3:near",
       "meshes": 3,
-      "triangles": 6741
+      "triangles": 6779
     },
     {
       "key": "tree:desert:0:near",
       "meshes": 3,
-      "triangles": 6596
+      "triangles": 6772
     },
     {
       "key": "tree:desert:1:near",
       "meshes": 3,
-      "triangles": 6533
+      "triangles": 6765
     },
     {
       "key": "tree:desert:2:near",
       "meshes": 3,
-      "triangles": 6686
+      "triangles": 6786
     },
     {
       "key": "tree:desert:3:near",
       "meshes": 3,
-      "triangles": 6672
+      "triangles": 6768
     }
   ]
 }

@@ -12,12 +12,23 @@ import {animatePart} from '../src/world-polish.js';
 import {UnitActions} from '../src/unit-actions.js';
 import {mergeUnitModel} from '../src/unit-palette.js';
 import {packBuildingModel} from '../src/structure-palette.js';
+import {LOW_CATALOGUE_BUDGET} from '../scripts/blender/content-budget.mjs';
 
 async function catalogue(detail){
   const bytes=await fs.readFile(new URL(`../src/assets3d/frontier-${detail==='high'?'near':'low'}.glb`,import.meta.url));
   const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
     .parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
   return registerAuthoredAssets(gltf,detail,bytes.length);
+}
+// Every authored mesh part, in draw order, with the flag that marks detail the
+// phone catalogue is allowed to omit.
+function meshParts(catalogue){
+  const parts={};
+  for(const [key,root] of catalogue.templates){
+    const list=[];root.traverse(part=>{if(part.isMesh)list.push({name:part.name,nearOnly:!!part.userData.nearOnly});});
+    parts[key]=list;
+  }
+  return parts;
 }
 function fixture(catalogue,faction='alder',owner=0){
   const view=Object.create(WorldView.prototype);
@@ -84,8 +95,10 @@ test('building batching keeps solid bounds, team surfaces and moving pivots whil
 
 test('Blender catalogues cover all civilizations, buildings, troops, resources and forest detail levels',async()=>{
   try{
+    const authoredParts={};
     for(const detail of ['low','high']){
       const assets=await catalogue(detail);assert.equal(assets.templates.size,126);
+      authoredParts[detail]=meshParts(assets);
       const manifest=JSON.parse(await fs.readFile(new URL('../src/assets3d/catalogue.json',import.meta.url),'utf8'));
       assert.deepEqual([...assets.templates.keys()].sort(),manifest.models.map(model=>model.key).sort());
       for(const faction of ['alder','sun','raven']){
@@ -114,6 +127,18 @@ test('Blender catalogues cover all civilizations, buildings, troops, resources a
       solid(resourceModel(view,{kind:'resource',id:52,type:'food',water:true}));
       solid(resourceModel(view,{kind:'shrine',id:53}));
     }
+    // Packing must not delete authored geometry. gltfpack's default error bound
+    // is 1% of the whole scene, which is larger than a gold nugget or a roof
+    // finial, and it silently removed parts from 63 models before the bound was
+    // made explicit. The phone catalogue may only drop parts the author marked
+    // nearOnly; everything else has to reach both tiers.
+    for(const [key,near] of Object.entries(authoredParts.high)){
+      const expected=near.filter(part=>!part.nearOnly).map(part=>part.name).sort();
+      const actual=authoredParts.low[key].map(part=>part.name).sort();
+      assert.deepEqual(actual,expected,`${key} lost authored parts in the phone catalogue`);
+    }
+    for(const key of ['resource:gold:0','resource:gold:1','resource:gold:2','resource:gold:3'])
+      assert.ok(authoredParts.high[key].some(part=>/GoldInclusions$/.test(part.name)),`${key} keeps its metallic inclusions`);
   }finally{clearAuthoredAssets();}
 });
 
@@ -178,9 +203,10 @@ test('phone assets preserve the complete catalogue with smaller download and geo
     const high=await catalogue('high'),low=await catalogue('low');
     assert.deepEqual([...low.templates.keys()].sort(),[...high.templates.keys()].sort());
     assert.ok(low.bytes<high.bytes*.5);assert.ok(triangles(low)<triangles(high)*.6);
-    // Solid timber siege engines add about 70 KiB to the previous 4 MiB roster.
-    // Keep this bounded allowance and the original geometry ratio gate.
-    assert.ok(low.bytes<4.125*1024*1024);
+    // The ceiling covers the complete authored catalogue. It is a download
+    // budget, not a geometry target: the previous 4.125 MiB figure was only
+    // reachable by simplifying away small authored parts.
+    assert.ok(low.bytes<LOW_CATALOGUE_BUDGET);
   }finally{clearAuthoredAssets();}
 });
 

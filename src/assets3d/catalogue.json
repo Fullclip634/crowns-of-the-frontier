@@ -506,11 +506,11 @@
     }
   ],
   "sizes": {
-    "near": 16850704,
-    "low": 3998500,
-    "balanced": 13051284
+    "near": 17678216,
+    "low": 4587472,
+    "balanced": 13658468
   },
-  "stage": "",
+  "stage": "full",
   "completeCatalogue": true,
   "source": "Original Blender crop fields composed with unchanged original models.",
   "farmRevision": "field-crops-v1",
@@ -521,58 +521,58 @@
   "gateRevision": "gate-footings-v1",
   "gateSourceHashes": {
     "low": "5546af3c2ff90432219e28bc9ed6f4a2f5c2c4de850458c46fb6493736c20415",
-    "near": "66f906af6b1e4f14efd63da73d3e5116d809853d4825ee106e5ea67794f5ffb6"
+    "near": "63f2f74f782ab49961537925b77041a93880ae84f0bccea9fcf3cdf2e23d258f"
   },
   "windmillRevision": "axle-clearance-v1",
-  "windmillSourceSHA256": "194531f7c87b7845628393fe2c558bb444c76cf6928ebc45ac36b2a4b9d6b56b",
+  "windmillSourceSHA256": "a7180128c0325ab76c1b96bb73e56f7a059ff9be405c65f23decadec0ad22fcf",
   "siegeRevision": "solid-timber-v1",
-  "siegeSourceSHA256": "33273d1ed2b0ada5a9b36f1e7d61057786e92ca88cb874f222dbf9c602a91b3c",
-  "lowContentBudgetBytes": 4325376,
+  "siegeSourceSHA256": "37c275f60c8c6073c5182f29ff2c207a59574b84ba6e43de2fdfd4ac200ba316",
+  "lowContentBudgetBytes": 4980736,
   "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedFoliage": "volumetric-tips-v1",
   "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1349,
-    "visibleTriangles": 657566,
+    "meshes": 1405,
+    "visibleTriangles": 706222,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0038601816402106938,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17382572,
-    "candidateBytes": 13051284,
-    "referenceDecodedBufferBytes": 38768312,
-    "candidateDecodedBufferBytes": 35024124,
-    "referenceSHA256": "bce6e52f153476f037062ff0c4cfc1e720b7c83f59ba981647972d508873beb7",
-    "candidateSHA256": "e37ce4748224bd9bd5c7f06a15eaff13e356e31e36e7d9deb9340abeb4984342"
+    "referenceBytes": 18234924,
+    "candidateBytes": 13658468,
+    "referenceDecodedBufferBytes": 40522860,
+    "candidateDecodedBufferBytes": 36609616,
+    "referenceSHA256": "cc0a9b36970c143dc59c7722d3efeb2eb4fa5431d1de7d7a8aa1e89e320b0f00",
+    "candidateSHA256": "4fbf922f4e160bd34dad0bc07a4daab54b8abb874fba1400c9701337bea1d137"
   },
   "balancedSourceHashes": {
-    "near": "6bd64d726aaff62293c8c648a996f571ed4318c56789f65ca5c7b076b76185e0",
-    "low": "18dddf4a6b3e7b0bbee2b59e7dd2fe6cb8d5a9c1f7cbf60b526621e5fc699442",
+    "near": "d5ccfb25184747b0a683c416d9b4ac5b9d9008a6a7f2570192011ce350c3d821",
+    "low": "42b576bbe4f498a3a12aa8491a387ef3b5a293c629fac4c37559427815df6b56",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 2513564,
+    "bytes": 2656120,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "20c553f59bbe0588c391b50e8f5efdbf8f5526f1af3bb597decc94541e781f3d",
+    "sha256": "f4f99d22fb55495bee4615085259b0ace6b762ec8346f01113718f2093fc6efd",
     "precision": {
       "passed": true,
       "models": 24,
       "meshes": 96,
-      "visibleTriangles": 132470,
+      "visibleTriangles": 147054,
       "exactTrianglePositionsAndWinding": true,
       "normalLimitDegrees": 0.05,
       "maxNormalDegrees": 0.003907090598753798,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 14361652,
-      "candidateBytes": 2513564,
-      "referenceDecodedBufferBytes": 40204208,
-      "candidateDecodedBufferBytes": 5903458
+      "referenceBytes": 15140572,
+      "candidateBytes": 2656120,
+      "referenceDecodedBufferBytes": 42473732,
+      "candidateDecodedBufferBytes": 6295710
     }
   },
   "workerToolRevision": "craft-tools-v1",

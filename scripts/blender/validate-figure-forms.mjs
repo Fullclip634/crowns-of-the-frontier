@@ -40,7 +40,11 @@ export async function validateFigureCatalogue(directory){
         const offset=riding?.78:0,head=parts.find(part=>part.userData.figurePart?.startsWith('Head')),boots=parts.filter(part=>part.userData.figurePart?.startsWith('Boot'));
         const headBounds=new THREE.Box3().setFromObject(head),bootBounds=new THREE.Box3();for(const boot of boots)bootBounds.union(new THREE.Box3().setFromObject(boot));
         assert.ok(headBounds.max.y>2.4+offset&&headBounds.max.y<2.6+offset,key+' human head proportions');assert.ok(Math.abs(bootBounds.min.y-offset)<.002,key+' boots retain their floor or stirrup height');
-        assert.ok(count<=(detail==='near'?5500:riding?2200:1800),key+' '+detail+' triangle budget: '+count);
+        // Budgets cover restored detail: the Low catalogue no longer lets the
+        // packer delete small authored parts, so a mounted figure keeps the
+        // geometry it was authored with (knight 2,520 triangles against the
+        // previous 2,200 ceiling). Foot figures are unchanged at 1,800.
+        assert.ok(count<=(detail==='near'?5500:riding?2600:1800),key+' '+detail+' triangle budget: '+count);
         if(key.startsWith('unit:villager')){
           const apron=parts.find(part=>part.userData.figurePart?.startsWith('Apron')),shirt=parts.find(part=>part.userData.figurePart?.startsWith('Tunic')),seat=parts.find(part=>part.userData.figurePart?.startsWith('Trousers shaped seat'));
           assert.ok(apron&&shirt&&seat,key+' full clothing forms');

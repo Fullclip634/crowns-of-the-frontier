@@ -22,7 +22,7 @@ for(const detail of ['low','near']){
  await run(optimizer,['-i',path.join(stage,`raw/frontier-${detail}.glb`),'-o',patch,'-cc','-kn','-km','-ke','-kv','-vpf','-vtf'],path.join(stage,detail+'-pack.log'));
  const result=replaceModelPatch(fs.readFileSync(path.join(directory,`frontier-${detail}.glb`)),fs.readFileSync(patch),report.keys);
  assert.equal(result.unchangedModels,124);
- if(detail==='low')assert.ok(result.bytes.length<SOLID_SIEGE_LOW_BUDGET,'Keep the complete Low catalogue within its 4.125 MiB solid-siege budget');
+ if(detail==='low')assert.ok(result.bytes.length<SOLID_SIEGE_LOW_BUDGET,'Keep the complete Low catalogue within its declared download budget');
  results.push([detail,result.bytes]);checks.push({detail,unchangedModels:result.unchangedModels,bytes:result.bytes.length});
 }
 for(const [detail,bytes]of results){fs.writeFileSync(path.join(directory,`frontier-${detail}.glb`),bytes);manifest.sizes[detail]=bytes.length;}

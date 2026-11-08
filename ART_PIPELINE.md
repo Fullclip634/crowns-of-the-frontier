@@ -84,6 +84,18 @@ npm run build
 
 `art:materials` downloads seven CC0 surface sets using the published Poly Haven API and verifies file sizes and hashes, reusing only verified local files. Runtime uses local bundled JPEGs, with no asset API requests. Creator credits and source links are in [the texture license](src/assets3d/textures/LICENSE.md).
 
+### Complete regeneration
+
+`npm run art:build` on its own does **not** produce the shipped catalogue. It re-exports the source models but skips the four patch stages that re-author worker tools, figure forms, bows and horse legs, so promoting a bare build silently regresses over a hundred models. Those stages read the live catalogue, so each must be promoted before the next one runs.
+
+```powershell
+node scripts/blender/rebuild-atlas.mjs
+```
+
+runs the whole chain in the only safe order — base build, then worker tools, figure forms, bows and horse legs, promoting each stage before the next — and fails if a revision stamp or the 126-model count is missing afterwards. It takes roughly half an hour.
+
+Simplification is bounded by `-se 0.002` in `build.mjs`. gltfpack's default error limit is 1% of the whole scene, which is larger than a gold nugget or a roof finial, and the default silently deleted those meshes: 63 models lost parts, including the metallic inclusions that identify a gold deposit. At 0.2% every authored part survives on both tiers and the near catalogue is slightly smaller than with the default.
+
 On another computer, install Blender and gltfpack and set `BLENDER_BIN` and `GLTFPACK_BIN` to their executable paths before `art:build`. Normal deployment builds use the supplied GLBs and JPEGs directly.
 
 ### Staging changes safely
