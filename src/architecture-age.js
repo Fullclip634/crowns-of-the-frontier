@@ -73,7 +73,12 @@ export function applyArchitectureAge(view,root,entity,age){
   const style=architectureStyle(age);
   root.userData.model3d={...root.userData.model3d,architectureAge:age,architectureLabel:style.label};
   root.scale.set(style.width,style.height,style.width);
+  // A steeper roof on a mill would grow into the sweep of its own blades, so
+  // any model with a rotating attachment keeps its authored pitch and takes the
+  // other age cues instead. The massing scale is safe: it moves the rotor with
+  // the building and preserves their clearance.
+  let rotating=false;root.traverse(node=>{if(node.userData?.windmill)rotating=true;});
   // A node can be revisited; the pitch must never compound on itself.
-  if(!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
+  if(!rotating&&!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
   return root;
 }

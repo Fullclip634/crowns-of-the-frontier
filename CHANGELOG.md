@@ -1,3 +1,38 @@
+## 8 November 2026 — Every age now looks like a different age
+
+Buildings changed height by six percent and darkened slightly as the ages
+advanced, which is why the progression never read on screen. Four changes give
+each age its own silhouette and material.
+
+The wall material is promoted rather than tinted. Every building surface is
+already classified as timber, masonry, plaster or roof, so ageing now promotes
+that class: timber gives way to plaster in the Feudal Age and is dressed into
+stone at Imperial. It costs nothing at draw time — the same merged geometry
+simply samples a different map — and roofs are excluded so team colours survive.
+
+Roofs get their own shade on top of the owner's colour: authored in the Dark
+Age, warm toward terracotta at Feudal, then cool toward slate for Castle and
+Imperial. A red kingdom keeps red roofs; what changes is how warm they read.
+
+Buildings grow and steepen. Height runs 1.00 / 1.10 / 1.22 / 1.36 and the roof
+pitch 1.00 / 1.10 / 1.22 / 1.34, scaled about the eave line rather than the
+ground so the roof stays welded to the wall top, with the chimney transformed
+around the same pivot. On the authored house the roof line moves 5.64 → 8.63,
+a 53 percent taller silhouette. Width grows far less on purpose: placement uses
+a collision radius that does not change, so a wide increase would make towns
+overlap while a tall one cannot.
+
+Walls and foundations were missing from the authored art entirely. The wall that
+shipped was a ninety-six triangle box while the procedural fallback had merlons;
+it now carries a row of battlements sized from its own bounds, textured as
+masonry, with taller merlons on the fortified tier. Authored buildings were
+modelled meeting the ground plane and read as pasted onto the grass; they now
+sit on a stone plinth sized to their footprint and flush at every age.
+
+Verified: 37/37 across the architecture, render-batch, graphics, authored-asset
+and quality-catalogue suites, plus a 79-test regression sweep over simulation,
+navigation, placement, campaigns and scene pruning.
+
 ## 8 November 2026 — Packed catalogues keep every authored part
 
 The gold deposits shipped without their metallic inclusions, and sixty-two

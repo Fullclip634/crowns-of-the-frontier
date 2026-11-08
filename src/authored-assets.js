@@ -218,7 +218,11 @@ export function authoredBuilding(view,e){
 function foundation(view,root,e){
   const body=view.materials?.stoneDark;
   if(!body||!view.geo?.box||root.userData.foundation)return;
-  if(['farm','dock','wall','gate','tower'].includes(e.type))return;
+  // Walls, fields and towers are excluded: a wall segment must not gain a
+  // skirt, a field is soil rather than masonry, and a tower's own footing is
+  // already authored. The mill is excluded because its blades sweep close to
+  // the front wall, and any plinth that protrudes would clip them.
+  if(['farm','dock','wall','gate','tower','mill'].includes(e.type))return;
   root.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
   if(size.x<.6||size.z<.6)return;
