@@ -40,6 +40,17 @@ export function restoreProjectileState(data,sim){
 
 export function nextProjectileId(sim){
   let next=(sim.nextProjectileId||0)+1;
-  if(!Number.isSafeInteger(next)||sim.projectileIdsRecycled){const used=new Set((sim.projectiles||[]).map(shot=>shot.id));if(!Number.isSafeInteger(next))next=1;while(used.has(next)){next++;if(!Number.isSafeInteger(next))next=1;}sim.projectileIdsRecycled=true;}
+  if(!Number.isSafeInteger(next))next=1;
+  // A restored or recycled counter can land on a shot that is still flying.
+  // Reusing its id would attribute an impact to the wrong projectile, so scan
+  // only when a live shot is at or past the candidate. The previous guard was
+  // unreachable: it only ran once projectileIdsRecycled was already set, which
+  // only happened inside that same block.
+  const live=sim.projectiles;
+  if(live?.length&&live.some(shot=>shot.id>=next)){
+    const used=new Set(live.map(shot=>shot.id));
+    while(used.has(next)){next++;if(!Number.isSafeInteger(next))next=1;}
+    sim.projectileIdsRecycled=true;
+  }
   return sim.nextProjectileId=next;
 }
