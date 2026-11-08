@@ -6,9 +6,15 @@ import {roadDistance} from './terrain-layout.js';
 import {terrainBiome,isSnowBiome} from './terrain-biomes.js';
 import {bridgeFootprint} from './bridge-layout.js';
 
-export function grassTuftGeometry(){
+// A tuft is six blades at full detail. On the tiers used by phones and older
+// laptops the same ground is covered by four, which keeps the coverage and the
+// silhouette while cutting a third of the triangles: the tufts are under thirty
+// centimetres tall, so the missing blades read as thinner grass rather than as
+// missing grass, and the saving is larger than an entire town's buildings.
+export const tuftBlades=quality=>quality==='high'?6:4;
+export function grassTuftGeometry(blades=6){
   const vertices=[],indices=[],uv=[];
-  for(let blade=0;blade<6;blade++){
+  for(let blade=0;blade<blades;blade++){
     const angle=blade*2.399,h=.28+(blade%3)*.11,w=.035,lean=.12;
     const center=new THREE.Vector3(Math.sin(angle)*.12,0,Math.cos(angle)*.12);
     const across=new THREE.Vector3(Math.cos(angle),0,-Math.sin(angle));
@@ -33,7 +39,7 @@ export class GroundCover{
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
     const winter=isSnowBiome(land.map);
     const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
-    this.mesh=new THREE.InstancedMesh(grassTuftGeometry(),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
+    this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const palette=terrainBiome(land.map).grass;
