@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Color,Matrix4,Quaternion,Vector3} from 'three';
 import {lightingAt,DayNightLighting} from '../src/day-night.js';
-import {treeDetail,farFootprintScale,footprintScaledMatrix} from '../src/tree-lod.js';
+import {treeDetail,farFootprintScale,footprintScaledMatrix,treeTint} from '../src/tree-lod.js';
 
 test('lighting modes and the day/night cycle are stable, gradual and independent of simulation randomness',()=>{
   assert.equal(lightingAt(500,'day').night,0);assert.equal(lightingAt(0,'night').night,1);assert.equal(lightingAt(500,'unknown').night,0);
@@ -41,4 +41,17 @@ test('the coarse canopy is widened without changing its height or position',()=>
   assert.ok(Math.abs(scale.y-3)<1e-9,'the height is untouched');
   assert.deepEqual(position.toArray(),[4,5,6],'the position is untouched');
   assert.ok(Math.abs(source.elements[0]-2)<1e-9,'the source matrix is not mutated');
+});
+
+test('each tree gets a small stable canopy tint so a forest is not one clone',()=>{
+  const tints=[];
+  for(let id=1;id<=400;id++){
+    const tint=treeTint(id);
+    assert.ok(tint.g>=.93&&tint.g<=1.07,`brightness stays subtle for ${id}: ${tint.g}`);
+    assert.ok(tint.r>0&&tint.r<1.2&&tint.b>0&&tint.b<1.2);
+    assert.deepEqual(treeTint(id),tint,'the same tree always gets the same tint');
+    tints.push(tint.g);
+  }
+  assert.ok(new Set(tints.map(value=>value.toFixed(4))).size>350,'tints actually differ between trees');
+  assert.ok(Math.max(...tints)-Math.min(...tints)>.08,'the spread is wide enough to read');
 });

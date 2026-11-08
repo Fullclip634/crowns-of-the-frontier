@@ -23,3 +23,13 @@ export function footprintScaledMatrix(matrix,scale){
   for(const index of [0,1,2,3,8,9,10,11])out.elements[index]*=scale;
   return out;
 }
+// A whole forest grown from one canopy reads as rows of copies. Each tree gets a
+// small canopy tint derived from its id: brightness .93-1.07 with a faint warm
+// or cool shift, so neighbours differ without any tree looking wrong. Deriving
+// it from the id rather than a random draw keeps it stable across frames and
+// independent of how many trees the map happens to place.
+export function treeTint(id){
+  const a=((id*2654435761)>>>0)/4294967296,b=((id*2246822519+374761393)>>>0)/4294967296;
+  const light=.93+a*.14,warm=(b-.5)*.07;
+  return {r:light*(1+warm),g:light,b:light*(1-warm*.7)};
+}

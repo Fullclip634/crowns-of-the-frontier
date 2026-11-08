@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {entityGroundHeight} from './entity-ground.js';
 import {nodeRuntime,standardMaterial} from './render-runtime.js';
-import {treeDetail,farFootprintScale,footprintScaledMatrix} from './tree-lod.js';
+import {treeDetail,farFootprintScale,footprintScaledMatrix,treeTint} from './tree-lod.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
@@ -36,11 +36,22 @@ function buildForest(view){
   for(let variant=0;variant<4;variant++){
     const entries=trees.filter(e=>e.id%4===variant);if(!entries.length)continue;
     const sets=[],footprint=[];
+    // Bark keeps its authored colour; only the canopy varies per tree.
+    const leafy=new Set([view.materials.leaf,view.materials.leafDark].filter(Boolean));
+    const tints=entries.map(e=>{const tint=treeTint(e.id);return new THREE.Color().setRGB(tint.r,tint.g,tint.b);});
     for(const far of [false,true]){
       const model=view.mergeModel(treeModel(view,view.sim.options.map,variant,far)),parts=[],ids=[];
       model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
       footprint.push(Math.max(size.x,size.z));
-      model.traverse(part=>{if(!part.isMesh)return;const mesh=new THREE.InstancedMesh(part.geometry,part.material,entries.length);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};view.objects.add(mesh);parts.push(mesh);});
+      model.traverse(part=>{
+        if(!part.isMesh)return;
+        const mesh=new THREE.InstancedMesh(part.geometry,part.material,entries.length);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
+        // One forest built from a single canopy still reads as rows of copies.
+        // A small per-tree tint breaks that up without new geometry, and it is
+        // derived from the tree id so it never changes between frames.
+        if(leafy.has(part.material)){for(let i=0;i<entries.length;i++)mesh.setColorAt(i,tints[i]);if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
+        view.objects.add(mesh);parts.push(mesh);
+      });
       sets.push({parts,ids});
     }
     const matrices=entries.map(e=>{const dummy=new THREE.Object3D();dummy.position.set(e.x,view.landscape.surfaceHeightAt(e.x,e.z),e.z);dummy.rotation.y=rng()*6.28;dummy.scale.setScalar((.75+rng()*.55)*canopyScale);dummy.updateMatrix();return dummy.matrix.clone();});
