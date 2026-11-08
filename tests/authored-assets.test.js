@@ -288,3 +288,24 @@ test('wall segments carry real battlements instead of a bare authored box',async
     assert.ok(heavy[0].scale.y>stone[0].scale.y,'the fortified tier raises taller battlements');
   }finally{clearAuthoredAssets();}
 });
+
+test('authored buildings sit on a foundation instead of on bare grass',async()=>{
+  try{
+    const assets=await catalogue('low'),view=fixture(assets);
+    for(const type of ['house','barracks','market','keep']){
+      const model=buildingModel(view,{kind:'building',type,owner:0,r:BUILDINGS[type].r,x:0,z:0});
+      const slabs=[];model.traverse(part=>{if(part.userData.architectureDetail)slabs.push(part);});
+      assert.equal(slabs.length,1,`${type} has exactly one foundation slab`);
+      const slab=new THREE.Box3().setFromObject(slabs[0]),body=new THREE.Box3().setFromObject(model);
+      assert.ok(slab.max.y<body.max.y*.35,`${type} foundation stays low`);
+      assert.ok(slab.max.x-slab.min.x>=body.max.x-body.min.x-.02,`${type} foundation covers the footprint: slab ${(slab.max.x-slab.min.x).toFixed(2)} vs body ${(body.max.x-body.min.x).toFixed(2)}`);
+      assert.ok(slab.max.x-slab.min.x<(body.max.x-body.min.x)*1.2,`${type} foundation does not overshoot the walls`);
+      assert.equal(slabs[0].material,view.materials.stoneDark);
+    }
+    // Walls and fields are excluded: a wall segment must not gain a skirt, and a
+    // field is soil rather than masonry.
+    const wall=buildingModel(view,{kind:'building',type:'wall',owner:0,r:BUILDINGS.wall.r,x:0,z:0});
+    const wallSlabs=[];wall.traverse(part=>{if(part.userData.architectureDetail&&part.geometry===view.geo.box&&part.scale.y>=.4&&part.scale.y<=.5&&part.scale.x>2.5)wallSlabs.push(part);});
+    assert.equal(wallSlabs.length,0,'walls are not given a foundation skirt');
+  }finally{clearAuthoredAssets();}
+});

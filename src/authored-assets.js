@@ -188,6 +188,7 @@ export function authoredBuilding(view,e){
     const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):architectureAge(view.sim,e);
     if(e.type==='towncenter'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
     if(styledAge>0&&isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
+    foundation(view,root,e);
   }
   if(root&&e.type==='dock')root.traverse(part=>{
     if(!part.userData.dockPier)return;
@@ -208,6 +209,29 @@ export function authoredBuilding(view,e){
     if(e.type==='wall')crenellate(view,root,tier);
   }
   return root;
+}
+
+// The authored buildings were modelled with their walls meeting the ground
+// plane, so they read as pasted onto the grass. The procedural fallback has
+// always drawn a stone slab under each building; the authored path did not.
+// A shallow plinth restores that foundation without changing the silhouette.
+function foundation(view,root,e){
+  const body=view.materials?.stoneDark;
+  if(!body||!view.geo?.box||root.userData.foundation)return;
+  if(['farm','dock','wall','gate','tower'].includes(e.type))return;
+  root.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+  if(size.x<.6||size.z<.6)return;
+  root.userData.foundation=true;
+  // The slab is a child of the root, so it inherits the age massing scale.
+  // Divide the measured world size by that scale to keep the plinth flush with
+  // the walls instead of overshooting them at higher ages.
+  const sx=root.scale.x||1,sy=root.scale.y||1,sz=root.scale.z||1;
+  const slab=new THREE.Mesh(view.geo.box,body);
+  slab.position.set((bounds.min.x+bounds.max.x)/2/sx,(bounds.min.y+.10)/sy,(bounds.min.z+bounds.max.z)/2/sz);
+  slab.scale.set(size.x*1.06/sx,.46/sy,size.z*1.06/sz);
+  slab.userData.architectureDetail=true;
+  root.add(slab);
 }
 
 // The authored wall segment is a ninety-six triangle box, so a run of walls read
