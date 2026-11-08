@@ -8,7 +8,7 @@ This is an ordered development proposal, not a claim that its milestones have be
 
 - Three.js world with elevated terrain, solid building/unit/resource models, articulated parts, animated water, and 3D selection portraits.
 - Resource gathering, construction, queues, upgrades, ages, unit counters, siege, healing, walls, gates, fleets, transports, fog, saves, and several victory conditions.
-- Nine modes, fourteen seeded maps, nine campaign chapters, three civilizations, 19 building types, and 16 trainable types across the catalog plus sovereigns.
+- Nine modes, fourteen seeded maps, ten campaign chapters, three civilizations, 19 building types, and 16 trainable types across the catalog plus sovereigns.
 - Two-to-eight-kingdom custom battles, AI allies/enemies with individual difficulties, human slots, huge maps and three elimination rules.
 - Classic two-player and custom mixed human/AI Wi-Fi rooms with authoritative commands, team perspectives, readiness and reconnection. Rooms are held in server memory; they are not a public matchmaking service.
 - Seeded volumetric weather, pooled effects, optional audio/lightning and quality budgets.
@@ -31,8 +31,9 @@ This is an ordered development proposal, not a claim that its milestones have be
 - Campaigns gained timed objectives, so a mission can ask the player to hold
   out; chapter IX ("The long night") uses it for a three-wave siege defence, and
   the objective panel counts down.
-- Chapter VII ("The ember road") and chapter VIII ("The deepwood oath") were
-  added earlier the same day, bringing the campaign to nine chapters.
+- Chapter VII ("The ember road"), chapter VIII ("The deepwood oath"), chapter IX
+  ("The long night", a timed siege defence) and chapter X ("The last claim", the
+  finale) bring the campaign to ten chapters.
 - A latent combat defect was fixed: `nextProjectileId` could hand out the id of
   a shot that was still flying, which would attribute an impact to the wrong
   projectile. The save sanitiser that drops corrupt projectile records now has
