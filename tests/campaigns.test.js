@@ -112,3 +112,27 @@ test('every scripted campaign initializes finite objective actors and a bounded 
     if(s.campaignState.cartId)assert.ok(s.get(s.campaignState.cartId));assert.ok(s.entities.every(e=>Number.isFinite(e.hp)&&Number.isFinite(e.x)&&Number.isFinite(e.z)));
   }
 });
+
+test('a timed stage counts its own clock and cannot complete early',()=>{
+  const s=quiet('campaign9');
+  assert.equal(s.campaignState.stage,0);
+  advance(s,140);
+  assert.equal(s.campaignState.stage,0,'the hold is not over before its two and a half minutes');
+  assert.ok(campaignObjective(s).elapsed>=138,'the objective reports how long the stage has run');
+  advance(s,12);
+  assert.equal(s.campaignState.stage,1,'the hold completes once the clock runs out');
+  assert.ok(s.campaignState.elapsed<5,'the next stage starts its own clock');
+  assert.ok(s.campaignState.history.some(entry=>/Dawn is breaking/.test(entry.text)));
+});
+
+test('a timed stage does not jump forward when an older save is loaded',()=>{
+  const s=quiet('campaign9');
+  advance(s,40);
+  const save=JSON.parse(JSON.stringify(s.serialize()));
+  delete save.campaignState.stageAt;
+  const restored=Simulation.restore(save);
+  restored.tickAI=()=>{};
+  restored.tick(.1);restored.tick(.1);
+  assert.equal(restored.campaignState.stage,0,'a save without a stage start begins counting at load');
+  assert.ok(campaignObjective(restored).elapsed<1);
+});

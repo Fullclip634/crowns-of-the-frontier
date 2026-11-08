@@ -115,15 +115,29 @@ export const CAMPAIGN_SCRIPTS={
       {at:130,id:'c8-archers',text:'Foresters arrive with hunting bows and a knowledge of the trails.',reinforce:{type:'archer',count:2}},
       {at:180,id:'c8-ambush',minDifficulty:'hard',text:'An ambush party slips through the deepwood toward your camp.',reinforce:{owner:1,type:'spearman',count:3}},
     ]},
+  campaign9:{speaker:'Captain Sela',intro:'Frostmarch is cut off and the siege has settled in for the night. Hold the palisade until the relief column can march, then take the war to the camp that feeds their engines.',
+    stages:[
+      {title:'Hold the line',text:'Keep your town center standing for two and a half minutes while the siege waves break against it.',done:(s,q)=>q.elapsed>=150,dialogue:'Dawn is breaking and the palisade still stands. The siege camp is exposed and short of men.'},
+      {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The camp is burning. Their engines have no crews left to replace.'},
+      {title:'End the siege',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'Frostmarch holds, and the road south is open again.'},
+    ],optional:{text:'Hold with a completed watchtower and eight villagers alive.',done:s=>completed(s,'tower').length>0&&s.owned(0,'unit','villager').length>=8},
+    events:[
+      {at:30,id:'c9-militia',text:'The town militia falls in along the palisade.',reinforce:{type:'spearman',count:2}},
+      {at:55,id:'c9-wave-one',text:'The first siege wave advances out of the dark.',reinforce:{owner:1,type:'spearman',count:3}},
+      {at:95,id:'c9-wave-two',text:'Armoured men-at-arms join the second wave.',reinforce:{owner:1,type:'swordsman',count:2}},
+      {at:120,id:'c9-relief',text:'Relief archers reach the gatehouse and take the wall.',reinforce:{type:'archer',count:3}},
+      {at:135,id:'c9-wave-three',text:'A third wave rolls toward the gate.',reinforce:{owner:1,type:'swordsman',count:3}},
+      {at:165,id:'c9-cavalry',minDifficulty:'hard',text:'Enemy horse circles behind the palisade to cut down workers.',reinforce:{owner:1,type:'knight',count:2}},
+    ]},
 };
 
 function initializeStory(sim){
   const script=CAMPAIGN_SCRIPTS[sim.options.mode];if(!script)return;
-  const q=sim.campaignState={stage:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[]};
+  const q=sim.campaignState={stage:0,stageAt:0,elapsed:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[]};
   if(script.cart){const cart=sim.addUnit('cart',0,script.cart.x,script.cart.z);cart.displayName=script.cart.name;q.cartId=cart.id;}
   sim.campaignCheckpoint=null;
 }
-export function campaignObjective(sim){const q=sim.campaignState,script=CAMPAIGN_SCRIPTS[sim.options.mode];return !q||q.legacy||q.finished||!script?null:{...script.stages[Math.min(q.stage,script.stages.length-1)],index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish};}
+export function campaignObjective(sim){const q=sim.campaignState,script=CAMPAIGN_SCRIPTS[sim.options.mode];return !q||q.legacy||q.finished||!script?null:{...script.stages[Math.min(q.stage,script.stages.length-1)],index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0};}
 
 export function installCampaigns(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tick=p.tick,end=p.end,emit=p.emit,serialize=p.serialize,restore=Simulation.restore;
@@ -131,6 +145,12 @@ export function installCampaigns(Simulation){
   p.emit=function(type,data={}){if(type==='gathered'&&data.owner===0&&data.source==='fishingboat'&&this.campaignState&&!this.campaignState.legacy)this.campaignState.fish+=data.amount;emit.call(this,type,data);};
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
   p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
+    // Stages that ask the player to hold out need a clock. Older saves have no
+    // stage start, so they begin counting from the moment they are loaded
+    // rather than instantly completing a timed objective. The elapsed time is
+    // updated every tick so the HUD and the objective never show a stale value.
+    if(q.stageAt===undefined)q.stageAt=this.time;
+    q.elapsed=Math.max(0,this.time-q.stageAt);
     q.clock+=dt;if(q.clock<.5)return;q.clock=0;
     q.fired??=[];q.resolved??=[];
     // Track the optional objective continuously so later events can branch on
@@ -152,7 +172,7 @@ export function installCampaigns(Simulation){
     if(q.cartId&&!this.get(q.cartId)){end.call(this,false,'The supply caravan was lost. Restore a checkpoint or begin the escort again.');return;}
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
     const stage=script.stages[q.stage];if(!stage?.done(this,q))return;
-    q.history.push({time:this.time,speaker:script.speaker,text:stage.dialogue});q.stage++;this.emit('campaign-stage',{title:stage.title,text:stage.dialogue,stage:q.stage,total:script.stages.length});
+    q.history.push({time:this.time,speaker:script.speaker,text:stage.dialogue});q.stage++;q.stageAt=this.time;q.elapsed=0;this.emit('campaign-stage',{title:stage.title,text:stage.dialogue,stage:q.stage,total:script.stages.length});
     if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,stage.dialogue);return;}
     this.campaignCheckpoint=copy({...serialize.call(this),campaignState:q,checkpointTag:true});this.emit('campaign-checkpoint',{stage:q.stage});
   };
