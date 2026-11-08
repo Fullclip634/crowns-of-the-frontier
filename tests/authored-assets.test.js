@@ -95,10 +95,15 @@ test('building batching keeps solid bounds, team surfaces and moving pivots whil
 
 test('Blender catalogues cover all civilizations, buildings, troops, resources and forest detail levels',async()=>{
   try{
-    const authoredParts={};
+    const authoredParts={},authoredBounds={};
     for(const detail of ['low','high']){
       const assets=await catalogue(detail);assert.equal(assets.templates.size,126);
       authoredParts[detail]=meshParts(assets);
+      authoredBounds[detail]=Object.fromEntries([...assets.templates].map(([key,root])=>{
+        root.updateMatrixWorld(true);
+        const size=new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+        return [key,size.toArray()];
+      }));
       const manifest=JSON.parse(await fs.readFile(new URL('../src/assets3d/catalogue.json',import.meta.url),'utf8'));
       assert.deepEqual([...assets.templates.keys()].sort(),manifest.models.map(model=>model.key).sort());
       for(const faction of ['alder','sun','raven']){
@@ -139,6 +144,17 @@ test('Blender catalogues cover all civilizations, buildings, troops, resources a
     }
     for(const key of ['resource:gold:0','resource:gold:1','resource:gold:2','resource:gold:3'])
       assert.ok(authoredParts.high[key].some(part=>/GoldInclusions$/.test(part.name)),`${key} keeps its metallic inclusions`);
+    // A quality switch swaps one catalogue for the other, so a model must not
+    // change size when it does. Foliage and fruit clusters are exempt: their
+    // extra leaf tips are authored detail that only the rich tier carries.
+    for(const [key,near] of Object.entries(authoredBounds.high)){
+      if(key.startsWith('tree:')||key.startsWith('resource:food:'))continue;
+      const low=authoredBounds.low[key];
+      for(let axis=0;axis<3;axis++){
+        const drift=Math.abs(low[axis]-near[axis])/Math.max(.001,near[axis]);
+        assert.ok(drift<.05,`${key} changes size between detail levels on axis ${axis}: ${near[axis].toFixed(2)} -> ${low[axis].toFixed(2)}`);
+      }
+    }
   }finally{clearAuthoredAssets();}
 });
 

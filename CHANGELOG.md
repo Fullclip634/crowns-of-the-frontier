@@ -1,3 +1,36 @@
+## 8 November 2026 — Packed catalogues keep every authored part
+
+The gold deposits shipped without their metallic inclusions, and sixty-two
+other models were missing parts as well, including the town centres of all
+three civilizations, houses, mills, barracks, ranges, stables, workshops,
+blacksmiths, markets and docks.
+
+The authoring was never wrong. `build.mjs` packed with `-si` but never set
+`-se`, so gltfpack applied its default error bound of one percent of the whole
+scene. That bound is larger than a gold nugget, a roof finial or a shutter, so
+those meshes were simplified to nothing and then dropped. The raw export
+contains every part; only the packed file did not.
+
+Packing now uses `-se 0.002` on both tiers. The near catalogue keeps every part
+and is smaller than before; the phone catalogue keeps every part and grows from
+3.8 MB to 4.59 MB. Its declared download budget moves from 4.125 MiB to
+4.75 MiB, because the old figure was only reachable by deleting geometry. The
+riding-figure triangle budget moves from 2,200 to 2,600 so a Low knight keeps
+its authored 2,520 triangles instead of being simplified under the ceiling.
+
+`scripts/blender/rebuild-atlas.mjs` (npm run art:rebuild) now encodes the whole
+regeneration chain — base build, then worker tools, figure forms, bows and
+horse legs, promoting each stage before the next — and fails if a revision
+stamp or the 126-model count is missing. `--pack-only` reuses the raw export so
+packing settings can be iterated in a minute rather than eight.
+
+Measured after the rebuild: 0 of 126 models lose any part, gold deposits carry
+inclusions at both tiers plus seams at near, the far broadleaf canopy keeps its
+seven lobes, and no building or unit changes size between detail levels by more
+than 5 percent. Verified: 726 tests across five batches, including new
+assertions for part retention and cross-tier silhouette stability; production
+build clean and release verification passing against the commit.
+
 ## 25 October 2026 — Curved natural settlement roads across rolling terrain
 
 The roads stretching from settlements across the terrain now curve naturally to
