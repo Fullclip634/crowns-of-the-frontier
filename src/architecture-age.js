@@ -10,10 +10,10 @@ export const AGE_STYLED_BUILDINGS=Object.freeze([
 export function isAgeStyled(type){return AGE_STYLED_BUILDINGS.includes(type);}
 
 const STYLES=Object.freeze([
-  Object.freeze({height:1,width:1,tint:[1,1,1],label:'frontier'}),
-  Object.freeze({height:1.06,width:1.02,tint:[.94,.95,.97],label:'feudal'}),
-  Object.freeze({height:1.15,width:1.06,tint:[.86,.88,.92],label:'castle'}),
-  Object.freeze({height:1.24,width:1.1,tint:[.80,.83,.88],label:'imperial'}),
+  Object.freeze({height:1,width:1,pitch:1,tint:[1,1,1],label:'frontier'}),
+  Object.freeze({height:1.10,width:1.02,pitch:1.10,tint:[.94,.95,.97],label:'feudal'}),
+  Object.freeze({height:1.22,width:1.06,pitch:1.22,tint:[.86,.88,.92],label:'castle'}),
+  Object.freeze({height:1.36,width:1.10,pitch:1.34,tint:[.80,.83,.88],label:'imperial'}),
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}
@@ -35,15 +35,45 @@ export function architectureOutdated(sim,entity,node){
   return (node.userData.model3d.architectureAge??-1)!==architectureAge(sim,entity);
 }
 
-// Age is expressed through massing and the baked masonry tint. Earlier
-// revisions scattered box "ornaments" around the roofline; they used the
-// darker stone material and were then darkened again by the age tint, so they
-// read as black untextured cubes that grew with every age. They are gone until
-// real per-age silhouettes can be authored in Blender.
+// Age is expressed through three things that cannot fight each other: the wall
+// material is promoted in bakeSurface, the massing grows, and the roof pitch
+// steepens. Earlier revisions scattered box "ornaments" around the roofline;
+// they used the darker stone material and were then darkened again by the age
+// tint, so they read as black untextured cubes. Nothing is added here now: the
+// roof and its chimney are scaled about the eave line, which preserves their
+// relationship exactly while giving every age a different silhouette.
+const ROOF_MATERIALS=Object.freeze(['teamRoof','roof']);
+const ROOF_FITTINGS=Object.freeze(['brick']);
+export function steepenRoof(root,pitch){
+  if(!root||!(pitch>1))return false;
+  const roofs=[],fittings=[];
+  root.traverse(part=>{
+    if(!part.isMesh)return;
+    const material=part.userData.assetMaterial;
+    if(ROOF_MATERIALS.includes(material))roofs.push(part);
+    else if(ROOF_FITTINGS.includes(material))fittings.push(part);
+  });
+  if(!roofs.length)return false;
+  let eave=Infinity;
+  for(const part of roofs){
+    part.geometry.computeBoundingBox();
+    eave=Math.min(eave,part.geometry.boundingBox.min.y*part.scale.y+part.position.y);
+  }
+  if(!Number.isFinite(eave))return false;
+  // y' = eave + pitch * (y - eave), expressed as a scale plus an offset so the
+  // shared geometry is never rewritten.
+  for(const part of [...roofs,...fittings]){
+    part.scale.y*=pitch;
+    part.position.y=eave*(1-pitch)+part.position.y*pitch;
+  }
+  return true;
+}
 export function applyArchitectureAge(view,root,entity,age){
   if(!root||!entity||age<=0)return root;
   const style=architectureStyle(age);
   root.userData.model3d={...root.userData.model3d,architectureAge:age,architectureLabel:style.label};
   root.scale.set(style.width,style.height,style.width);
+  // A node can be revisited; the pitch must never compound on itself.
+  if(!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
   return root;
 }

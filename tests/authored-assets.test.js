@@ -309,3 +309,29 @@ test('authored buildings sit on a foundation instead of on bare grass',async()=>
     assert.equal(wallSlabs.length,0,'walls are not given a foundation skirt');
   }finally{clearAuthoredAssets();}
 });
+
+test('each age gives a building a taller, steeper roof that stays attached to its walls',async()=>{
+  try{
+    const assets=await catalogue('low');
+    const measured=[];
+    for(const age of [0,1,2,3]){
+      const view=fixture(assets);
+      view.sim.players=Array.from({length:8},()=>({faction:'alder',age}));
+      const model=buildingModel(view,{kind:'building',type:'house',owner:0,r:BUILDINGS.house.r,x:0,z:0});
+      model.updateMatrixWorld(true);
+      const box=material=>{let out=null;model.traverse(part=>{if(part.isMesh&&part.userData.assetMaterial===material)out=new THREE.Box3().setFromObject(part);});return out;};
+      const wall=box('plaster'),roof=box('teamRoof'),chimney=box('brick');
+      assert.ok(wall&&roof&&chimney,'the house keeps its walls, roof and chimney');
+      for(const value of [wall.min.y,wall.max.y,roof.min.y,roof.max.y,chimney.max.y])assert.ok(Number.isFinite(value));
+      assert.ok(Math.abs(roof.min.y-wall.max.y)<.12,`age ${age}: the roof still meets the wall top (${roof.min.y.toFixed(2)} vs ${wall.max.y.toFixed(2)})`);
+      measured.push({age,roofTop:roof.max.y,eave:roof.min.y,chimney:chimney.max.y,pitch:roof.max.y-roof.min.y});
+    }
+    for(let i=1;i<measured.length;i++){
+      const previous=measured[i-1],current=measured[i];
+      assert.ok(current.roofTop>previous.roofTop+.25,`age ${current.age} stands taller than age ${previous.age}`);
+      assert.ok(current.pitch>previous.pitch+.15,`age ${current.age} has a steeper roof`);
+      assert.ok(current.chimney>previous.chimney+.1,`age ${current.age} raises the chimney with the roof`);
+    }
+    assert.ok(measured[3].roofTop>measured[0].roofTop*1.35,'Imperial is visibly taller than Dark Age');
+  }finally{clearAuthoredAssets();}
+});
