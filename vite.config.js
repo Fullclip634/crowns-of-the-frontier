@@ -1,11 +1,20 @@
 import {defineConfig} from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
+import {execSync} from 'node:child_process';
 import {Script} from 'node:vm';
 import {writeReleaseManifest} from './server/release.js';
 import {precacheFiles} from './scripts/offline-assets.js';
 let outputDirectory='dist',projectRoot='';
 const buildId=String(Date.now());
+// Hosted agents stamp the revision through the environment. Local builds used
+// to ship `commit: null`, which made a deployment impossible to verify against
+// a revision, so fall back to the checked-out commit.
+function releaseCommit(){
+  const hosted=process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA;
+  if(hosted)return hosted;
+  try{return execSync('git rev-parse HEAD',{cwd:import.meta.dirname,stdio:['ignore','pipe','ignore']}).toString().trim();}catch{return undefined;}
+}
 export default defineConfig({
   server:{watch:{ignored:['**/.tools/**','**/artifacts/**']}},
   optimizeDeps:{include:['three/addons/loaders/GLTFLoader.js','three/addons/loaders/KTX2Loader.js','three/addons/libs/meshopt_decoder.module.js']},
@@ -43,6 +52,6 @@ export default defineConfig({
       fs.writeFileSync(path.join(outputDirectory,'sw.js'),source);
       const packageVersion=JSON.parse(fs.readFileSync('package.json','utf8')).version;
       fs.writeFileSync(path.join(outputDirectory,'version.json'),JSON.stringify({buildId,version:packageVersion}));
-      writeReleaseManifest(outputDirectory,{buildId,version:packageVersion,commit:process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA,files});
+      writeReleaseManifest(outputDirectory,{buildId,version:packageVersion,commit:releaseCommit(),files});
     }}],
 });
