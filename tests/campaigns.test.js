@@ -136,3 +136,21 @@ test('a timed stage does not jump forward when an older save is loaded',()=>{
   assert.equal(restored.campaignState.stage,0,'a save without a stage start begins counting at load');
   assert.ok(campaignObjective(restored).elapsed<1);
 });
+
+test('every chapter survives a real opening without throwing or firing unknown events',()=>{
+  for(const mode of Object.keys(CAMPAIGN_SCRIPTS)){
+    const script=CAMPAIGN_SCRIPTS[mode],s=quiet(mode);
+    // Ninety seconds covers the earliest scripted events in every chapter, so a
+    // bad predicate or a missing reinforcement type fails here rather than in a
+    // player's session.
+    advance(s,90);
+    const q=s.campaignState;
+    assert.ok(Number.isFinite(s.time),`${mode} keeps a finite clock`);
+    assert.ok(q.stage>=0&&q.stage<=script.stages.length,`${mode} stage stays in range`);
+    const known=new Set((script.events||[]).map(event=>event.id));
+    for(const id of q.fired)assert.ok(known.has(id),`${mode} fired ${id}, which the script declares`);
+    for(const entry of q.history)assert.ok(Number.isFinite(entry.time)&&typeof entry.text==='string'&&entry.text.length>0,`${mode} history entries are complete`);
+    assert.ok(s.entities.every(e=>Number.isFinite(e.hp)&&Number.isFinite(e.x)&&Number.isFinite(e.z)),`${mode} keeps every entity finite`);
+    assert.ok(JSON.stringify(s.serialize()).length<1000000,`${mode} still saves compactly`);
+  }
+});
