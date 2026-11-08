@@ -129,6 +129,18 @@ export const CAMPAIGN_SCRIPTS={
       {at:135,id:'c9-wave-three',text:'A third wave rolls toward the gate.',reinforce:{owner:1,type:'swordsman',count:3}},
       {at:165,id:'c9-cavalry',minDifficulty:'hard',text:'Enemy horse circles behind the palisade to cut down workers.',reinforce:{owner:1,type:'knight',count:2}},
     ]},
+  campaign10:{speaker:'Queen Maren',intro:'The rival claim has been pressed to the last ridge above the shattered crown. Take the high ground, raise the Imperial banner, and end the war on your own terms.',
+    stages:[
+      {title:'Claim the high ground',text:'Complete a castle or watchtower on the marked ridge, or hold the summit with eight land units.',marker:{x:0,z:0},done:s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8,dialogue:'The ridge is yours. From here the whole valley is in sight, and so is their keep.'},
+      {title:'Raise the Imperial banner',text:'Reach the Imperial Age.',done:s=>s.players[0].age>=3,dialogue:'The Imperial banner flies. Your rivals have lost the last advantage they held.'},
+      {title:'Break the last claim',text:'Destroy the rival keep, then their town center.',marker:{x:40,z:-34},done:conquered,dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
+    ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(completed(s,'keep').length>0||completed(s,'tower').length>0)&&s.owned(0,'unit','villager').length>=12},
+    events:[
+      {at:70,id:'c10-veterans',text:'Veterans of the border war answer the summons.',reinforce:{type:'swordsman',count:3}},
+      {at:110,id:'c10-siege',text:'A siege train arrives from the southern workshops.',reinforce:{type:'ram',count:1}},
+      {at:160,id:'c10-counter',text:'The rival claim throws its household guard at the ridge.',reinforce:{owner:1,type:'knight',count:3}},
+      {at:210,id:'c10-guard',minDifficulty:'hard',text:'Their last guard marches under the crown banner.',reinforce:{owner:1,type:'sentinel',count:2}},
+    ]},
 };
 
 function initializeStory(sim){
