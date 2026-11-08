@@ -98,6 +98,14 @@ test('the ember road chapter initializes on the volcanic frontier with a three-s
   assert.ok(s.owned(1,'building','barracks').length,'the cinder camp the chapter asks for exists');
   assert.ok(s.entities.every(e=>Number.isFinite(e.hp)&&Number.isFinite(e.x)&&Number.isFinite(e.z)));
 });
+test('the deepwood chapter starts in the Feudal Age on the woodland map',()=>{
+  const s=quiet('campaign8'),objective=campaignObjective(s);
+  assert.equal(s.options.map,'woodland','the chapter uses its own map');
+  assert.equal(s.players[0].age,1,'the chapter starts in the Feudal Age');
+  assert.equal(objective.total,3);
+  assert.match(objective.text,/lumber camp/i);
+  assert.ok(s.owned(1,'building','barracks').length,'the ambush camp exists');
+});
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){
     const s=new Simulation({mode,difficulty});assert.equal(s.campaignState.stage,0);assert.equal(s.campaignState.history.length,1);assert.ok(s.campaignCheckpoint);assert.ok(JSON.stringify(s.serialize()).length<1000000);

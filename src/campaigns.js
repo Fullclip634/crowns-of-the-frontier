@@ -104,6 +104,17 @@ export const CAMPAIGN_SCRIPTS={
       {at:120,id:'c7-wardens',text:'Pass wardens arrive with spears and shields.',reinforce:{type:'spearman',count:3}},
       {at:170,id:'c7-raid',minDifficulty:'hard',text:'Cinder raiders descend the pass to test your line.',reinforce:{owner:1,type:'swordsman',count:2}},
     ]},
+  campaign8:{speaker:'Forester Brann',intro:'The deepwood has swallowed the border road. Raise a timber camp, break the ambush waiting under the canopy, and swear the woodfort to your banner.',
+    stages:[
+      {title:'Raise a timber camp',text:'Complete a lumber camp and field four land military units.',marker:{x:-20,z:45},done:s=>completed(s,'camp').length>0&&army(s).length>=4,dialogue:'The camp is cutting and your escort is ready. The deepwood will not give up its road without a fight.'},
+      {title:'Break the ambush',text:'Destroy the rival barracks hidden in the deepwood.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The ambush is broken. The woodfort stands exposed beyond the tree line.'},
+      {title:'Swear the oath',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The woodfort swears to your banner. The border road is open again.'},
+    ],optional:{text:'Finish with at least ten villagers alive.',done:s=>s.owned(0,'unit','villager').length>=10},
+    events:[
+      {at:60,id:'c8-woodcutters',text:'Woodcutters from the old camps join your timber crews.',reinforce:{type:'villager',count:2}},
+      {at:130,id:'c8-archers',text:'Foresters arrive with hunting bows and a knowledge of the trails.',reinforce:{type:'archer',count:2}},
+      {at:180,id:'c8-ambush',minDifficulty:'hard',text:'An ambush party slips through the deepwood toward your camp.',reinforce:{owner:1,type:'spearman',count:3}},
+    ]},
 };
 
 function initializeStory(sim){
