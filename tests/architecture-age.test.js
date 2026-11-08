@@ -9,7 +9,7 @@ import {BUILDINGS} from '../src/data.js';
 import {buildingModel} from '../src/models-3d.js';
 import {registerAuthoredAssets,clearAuthoredAssets} from '../src/authored-assets.js';
 import {packBuildingModel} from '../src/structure-palette.js';
-import {AGE_STYLED_BUILDINGS,isAgeStyled,architectureStyle,architectureAge,architectureOutdated,applyArchitectureAge} from '../src/architecture-age.js';
+import {AGE_STYLED_BUILDINGS,isAgeStyled,architectureStyle,architectureAge,architectureOutdated,applyArchitectureAge,ageSurface} from '../src/architecture-age.js';
 
 const node=(age,type='keep')=>({kind:'building',type,owner:0,r:BUILDINGS[type].r,x:0,z:0,
   userData:{model3d:{architectureAge:age}}});
@@ -153,4 +153,17 @@ test('packed Blender landmark keeps one draw batch and gains a distinct age silh
     assert.ok(packed[1].size.y>packed[0].size.y,'silhouette actually changes');
     assert.notDeepEqual(packed[0].colors,packed[1].colors,'masonry tint changes with age');
   }finally{clearAuthoredAssets();}
+});
+
+test('the wall material itself advances with the age, not only its tint',()=>{
+  // Surface classes: 1 timber, 2 masonry, 3 plaster, 4 roof, 0 unclassified.
+  assert.equal(ageSurface(1,0),1,'timber stays timber in the Dark Age');
+  assert.equal(ageSurface(1,1),3,'timber gives way to plaster in the Feudal Age');
+  assert.equal(ageSurface(1,2),3,'and stays plaster through the Castle Age');
+  assert.equal(ageSurface(3,2),3);
+  assert.equal(ageSurface(3,3),2,'plaster is dressed into stone at Imperial');
+  assert.equal(ageSurface(2,3),2,'masonry is already stone');
+  assert.equal(ageSurface(4,3),4,'roofs keep their authored surface so team colours survive');
+  assert.equal(ageSurface(0,3),0,'unclassified surfaces are never promoted');
+  for(let age=0;age<=3;age++)assert.equal(ageSurface(2,age),2);
 });

@@ -17,6 +17,16 @@ const STYLES=Object.freeze([
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}
+// Surface classes baked into structureSurface.z by bakeSurface: 1 timber,
+// 2 masonry, 3 plaster, 4 roof. Ageing promotes the wall material itself, which
+// is the cue that actually reads as an age advance: timber palisade work gives
+// way to plaster and then to dressed stone. Roofs and unclassified surfaces are
+// left alone so team colours and glazing keep their meaning.
+export function ageSurface(mode,age){
+  if(mode===1)return age>=1?3:1;
+  if(mode===3)return age>=3?2:3;
+  return mode;
+}
 // A node with no age tag must be rebuilt once; -1 guarantees that without
 // rebuilding every frame (which an undefined tag would otherwise cause).
 export function architectureOutdated(sim,entity,node){

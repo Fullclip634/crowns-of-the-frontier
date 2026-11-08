@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {architectureStyle,isAgeStyled} from './architecture-age.js';
+import {architectureStyle,isAgeStyled,ageSurface} from './architecture-age.js';
 
 function paletteMaterial(view){
   const m=view.materials;
@@ -78,7 +78,7 @@ function paletteMaterial(view){
   return material;
 }
 
-function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1){
+function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -87,7 +87,7 @@ function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1){
   if(!geometry.attributes.uv)geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(count*2),2));
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,color=material.color.toArray(),emissive=material.emissive?.toArray()||[0,0,0];
-  const mode=[m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
+  const mode=ageSurface([m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0,age);
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
     colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1)*tint[k];
     surface[i*3+k]=k===0?Math.min(1,(material.roughness??.9)*roughnessScale):k===1?material.metalness??0:mode;
@@ -128,7 +128,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,age));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();
