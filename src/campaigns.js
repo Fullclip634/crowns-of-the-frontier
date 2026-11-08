@@ -117,7 +117,7 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign9:{speaker:'Captain Sela',intro:'Frostmarch is cut off and the siege has settled in for the night. Hold the palisade until the relief column can march, then take the war to the camp that feeds their engines.',
     stages:[
-      {title:'Hold the line',text:'Keep your town center standing for two and a half minutes while the siege waves break against it.',done:(s,q)=>q.elapsed>=150,dialogue:'Dawn is breaking and the palisade still stands. The siege camp is exposed and short of men.'},
+      {title:'Hold the line',text:'Keep your town center standing for two and a half minutes while the siege waves break against it.',seconds:150,done:(s,q)=>q.elapsed>=150,dialogue:'Dawn is breaking and the palisade still stands. The siege camp is exposed and short of men.'},
       {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The camp is burning. Their engines have no crews left to replace.'},
       {title:'End the siege',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'Frostmarch holds, and the road south is open again.'},
     ],optional:{text:'Hold with a completed watchtower and eight villagers alive.',done:s=>completed(s,'tower').length>0&&s.owned(0,'unit','villager').length>=8},
