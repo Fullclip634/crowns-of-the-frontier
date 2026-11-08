@@ -115,6 +115,7 @@ TECHS.seamanship={name:'Seamanship',desc:'+15% ship speed and +20% ship attack p
 ICONS.seamanship='⚓';
 MODES.push({id:'tides',name:'Masters of the tide',label:'NAVAL CONQUEST',tag:'Naval warfare',map:'coast',desc:'Two kingdoms face each other across the sea. Fish to grow your economy, escort transports, and land an army on the rival coast.',objective:'Destroy the rival town center. Use transports or Imperial siege ships.',time:'25–45 min'});
 MISSIONS.push({id:'campaign6',chapter:'VI',name:'Beyond the horizon',desc:'The frontier war reaches the sea. Establish a fleet, protect the fishing grounds, and carry your army to the enemy capital.',objective:'Destroy the rival coastal capital.',age:2,enemies:12,seed:4306,map:'coast'});
+MISSIONS.push({id:'campaign7',chapter:'VII',name:'The ember road',desc:'A volcanic frontier blocks the last supply road. Hold the ash pass, break the cinder camp that feeds the raiders, and take the ember keep before the mountain wakes.',objective:'Hold the ash pass, destroy the rival barracks, and take the ember keep.',age:2,enemies:14,seed:4307,map:'volcanic'});
 for(const key of Object.keys(ICONS))ICONS[key]+='\uFE0E';
 
 MODES.push({id:'custom',name:'War of the kingdoms',label:'CUSTOM BATTLE',tag:'Custom',desc:'Choose civilizations, allied and enemy teams, independent AI difficulties, large battlefields, and the victory rule. Play solo or host friends.',objective:'Eliminate the opposing kingdoms using the selected victory condition.',time:'At your pace'});

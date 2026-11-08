@@ -90,6 +90,14 @@ test('branching events follow the optional objective, not just the final medal',
   assert.equal(unarmed.campaignState.optionalMet,false,'the optional objective is tracked continuously');
   assert.equal(armed.campaignState.optionalMet,true,'a surviving engine satisfies the optional objective');
 });
+test('the ember road chapter initializes on the volcanic frontier with a three-stage chain',()=>{
+  const s=quiet('campaign7'),objective=campaignObjective(s);
+  assert.equal(s.options.map,'volcanic','the chapter uses its own map');
+  assert.equal(objective.total,3);
+  assert.match(objective.text,/watchtower|pass/i);
+  assert.ok(s.owned(1,'building','barracks').length,'the cinder camp the chapter asks for exists');
+  assert.ok(s.entities.every(e=>Number.isFinite(e.hp)&&Number.isFinite(e.x)&&Number.isFinite(e.z)));
+});
 test('every scripted campaign initializes finite objective actors and a bounded starting checkpoint on all difficulties',()=>{
   for(const mode of Object.keys(CAMPAIGN_SCRIPTS))for(const difficulty of ['story','normal','hard','brutal']){
     const s=new Simulation({mode,difficulty});assert.equal(s.campaignState.stage,0);assert.equal(s.campaignState.history.length,1);assert.ok(s.campaignCheckpoint);assert.ok(JSON.stringify(s.serialize()).length<1000000);

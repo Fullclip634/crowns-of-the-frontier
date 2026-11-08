@@ -93,6 +93,17 @@ export const CAMPAIGN_SCRIPTS={
       {at:60,id:'c6-crews',text:'Fishing crews from the outer banks join the harbour.',reinforce:{type:'villager',count:2}},
       {at:150,id:'c6-marines',text:'Marines disembark to reinforce the beachhead.',reinforce:{type:'spearman',count:3}},
     ]},
+  campaign7:{speaker:'Warden Ilya',intro:'The ember road is the only crossing through the cinder reach. Hold the ash pass, break the camp that feeds the raiders, and take the keep above the fields.',
+    stages:[
+      {title:'Hold the ash pass',text:'Complete a watchtower near the marked pass, or move five land military units onto it.',marker:{x:0,z:0},done:s=>completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<24)||army(s).filter(e=>Math.hypot(e.x,e.z)<16).length>=5,dialogue:'The pass is held. The cinder camp can no longer supply the raiders by night.'},
+      {title:'Break the cinder camp',text:'Destroy the rival barracks in the ash fields.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The camp is broken. The ember keep stands alone above the road.'},
+      {title:'Take the ember keep',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The ember road is open, and the mountain frontier is yours.'},
+    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.owned(0,'unit','villager').length>=8},
+    events:[
+      {at:50,id:'c7-guides',text:'Ash-field guides join you; they know which ground is safe.',reinforce:{type:'villager',count:2}},
+      {at:120,id:'c7-wardens',text:'Pass wardens arrive with spears and shields.',reinforce:{type:'spearman',count:3}},
+      {at:170,id:'c7-raid',minDifficulty:'hard',text:'Cinder raiders descend the pass to test your line.',reinforce:{owner:1,type:'swordsman',count:2}},
+    ]},
 };
 
 function initializeStory(sim){
