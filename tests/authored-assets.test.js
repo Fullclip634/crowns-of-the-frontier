@@ -267,3 +267,24 @@ test('joint palette batching preserves team colors, metal, cloth and solid anima
     }
   }finally{clearAuthoredAssets();}
 });
+
+test('wall segments carry real battlements instead of a bare authored box',async()=>{
+  try{
+    const assets=await catalogue('low'),view=fixture(assets);
+    const battlements=node=>{const list=[];node.traverse(part=>{if(part.userData.architectureDetail)list.push(part);});return list;};
+    const wall=buildingModel(view,{kind:'building',type:'wall',owner:0,r:BUILDINGS.wall.r,x:0,z:0});
+    const stone=battlements(wall);
+    assert.ok(stone.length>=3,`a wall run needs a row of merlons, found ${stone.length}`);
+    const bodyTop=new THREE.Box3();for(const part of wall.children)if(part.isMesh&&!part.userData.architectureDetail)bodyTop.expandByObject(part);
+    for(const merlon of stone){
+      assert.ok(merlon.geometry===view.geo.box,'battlements share the box geometry');
+      assert.equal(merlon.material,view.materials.stone,'battlements are masonry, not a flat dark block');
+      assert.ok(merlon.position.y>bodyTop.max.y,'merlons sit above the wall, never inside it');
+    }
+    view.sim.players[0].tech={fortifiedWall:1};
+    const fortified=buildingModel(view,{kind:'building',type:'wall',owner:0,r:BUILDINGS.wall.r,x:0,z:0});
+    const heavy=battlements(fortified);
+    assert.ok(heavy.length>=3);
+    assert.ok(heavy[0].scale.y>stone[0].scale.y,'the fortified tier raises taller battlements');
+  }finally{clearAuthoredAssets();}
+});

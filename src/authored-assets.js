@@ -205,8 +205,35 @@ export function authoredBuilding(view,e){
       for(let node=part;node&&node!==root;node=node.parent)if(node.userData.gate)return;
       part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
     });
+    if(e.type==='wall')crenellate(view,root,tier);
   }
   return root;
+}
+
+// The authored wall segment is a ninety-six triangle box, so a run of walls read
+// as a plain parapet with no battlements at all. The procedural fallback has
+// merlons and the authored model did not. These are added through the structure
+// palette, so they take the same masonry texture, roughness and lighting as the
+// wall they sit on rather than the flat dark material that made the old
+// ornaments look like black blocks.
+function crenellate(view,root,tier){
+  const materials=view.materials,body=tier==='fortified'?materials?.stoneDark:materials?.stone;
+  if(!body||!view.geo?.box||root.userData.crenellated)return;
+  root.userData.crenellated=true;
+  root.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+  if(!(size.x>.5||size.z>.5)||size.y<1)return;
+  const alongX=size.x>=size.z,span=alongX?size.x:size.z,depth=alongX?size.z:size.x;
+  const heavy=tier==='fortified',count=Math.max(3,Math.round(span/1.05));
+  const width=span/count*.58,height=heavy?.72:.55,deep=depth*.55;
+  for(let i=0;i<count;i++){
+    const offset=(i+.5)/count*span-span/2;
+    const merlon=new THREE.Mesh(view.geo.box,body);
+    merlon.position.set(alongX?center.x+offset:center.x,bounds.max.y+height/2,alongX?center.z:center.z+offset);
+    merlon.scale.set(alongX?width:deep,height,alongX?deep:width);
+    merlon.userData.architectureDetail=true;
+    root.add(merlon);
+  }
 }
 export function authoredResource(view,e){
   const key=e.kind==='shrine'?'resource:shrine':e.water?'resource:fish':`resource:${e.type}:${e.id%4}`;
