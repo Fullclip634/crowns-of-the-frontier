@@ -8,7 +8,7 @@ This is an ordered development proposal, not a claim that its milestones have be
 
 - Three.js world with elevated terrain, solid building/unit/resource models, articulated parts, animated water, and 3D selection portraits.
 - Resource gathering, construction, queues, upgrades, ages, unit counters, siege, healing, walls, gates, fleets, transports, fog, saves, and several victory conditions.
-- Nine modes, seven seeded maps, six campaign chapters, three civilizations, 19 building types, and 16 trainable types across the catalog plus sovereigns.
+- Nine modes, fourteen seeded maps, nine campaign chapters, three civilizations, 19 building types, and 16 trainable types across the catalog plus sovereigns.
 - Two-to-eight-kingdom custom battles, AI allies/enemies with individual difficulties, human slots, huge maps and three elimination rules.
 - Classic two-player and custom mixed human/AI Wi-Fi rooms with authoritative commands, team perspectives, readiness and reconnection. Rooms are held in server memory; they are not a public matchmaking service.
 - Seeded volumetric weather, pooled effects, optional audio/lightning and quality budgets.
@@ -17,6 +17,28 @@ This is an ordered development proposal, not a claim that its milestones have be
 - Mouse edge scrolling, corner scrolling, cursor arrows, keyboard controls, camera inspection, and landscape touch input.
 - Square radar with a rectangular camera locator and mouse/touch dragging. Global production overview, selection across completed production buildings, balanced training batches, and cancel/refund controls.
 - Existing automated simulation/graphics/network checks and browser verification. Physical-device performance, balance, and extensive human playtesting remain unverified.
+
+## 8 November progress
+
+- The shipped catalogue lost authored geometry in 63 models, including the gold
+  inclusions that identify a gold deposit and the town-centre details of all
+  three civilizations. The cause was the packer's default simplification error
+  bound, not the authoring; it is now explicit and every authored part reaches
+  both detail tiers. See CHANGELOG and ART_PIPELINE.
+- The complete art chain is encoded in `scripts/blender/rebuild-atlas.mjs`, so a
+  regeneration cannot silently skip the worker-tool, figure, bow and horse-leg
+  stages.
+- Campaigns gained timed objectives, so a mission can ask the player to hold
+  out; chapter IX ("The long night") uses it for a three-wave siege defence, and
+  the objective panel counts down.
+- Chapter VII ("The ember road") and chapter VIII ("The deepwood oath") were
+  added earlier the same day, bringing the campaign to nine chapters.
+- A latent combat defect was fixed: `nextProjectileId` could hand out the id of
+  a shot that was still flying, which would attribute an impact to the wrong
+  projectile. The save sanitiser that drops corrupt projectile records now has
+  direct tests.
+- Physical-device performance, visual review in a real browser, and human
+  balance feedback remain unverified in this workspace.
 
 ## 29 October verification progress
 
