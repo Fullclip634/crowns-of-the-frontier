@@ -167,3 +167,13 @@ test('the wall material itself advances with the age, not only its tint',()=>{
   assert.equal(ageSurface(0,3),0,'unclassified surfaces are never promoted');
   for(let age=0;age<=3;age++)assert.equal(ageSurface(2,age),2);
 });
+
+test('roofs shade from straw through terracotta to slate as the age advances',()=>{
+  const roofs=[0,1,2,3].map(age=>architectureStyle(age).roof);
+  assert.deepEqual(roofs[0],[1,1,1],'the Dark Age keeps the authored roof colour');
+  for(const shade of roofs)for(const value of shade)assert.ok(value>.72&&value<1.12,`roof shade stays subtle: ${value}`);
+  assert.ok(roofs[1][0]>roofs[1][2],'Feudal roofs warm toward terracotta');
+  assert.ok(roofs[2][2]>roofs[2][0],'Castle roofs cool toward slate');
+  assert.ok(roofs[3][2]>roofs[3][0],'Imperial roofs stay cool');
+  assert.ok(roofs[3][2]<roofs[2][2]+.01,'and the coolest of the four');
+});

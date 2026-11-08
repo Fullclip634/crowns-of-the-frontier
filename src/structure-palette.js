@@ -78,7 +78,7 @@ function paletteMaterial(view){
   return material;
 }
 
-function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0){
+function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0,roofTint=null){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -88,8 +88,11 @@ function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0){
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,color=material.color.toArray(),emissive=material.emissive?.toArray()||[0,0,0];
   const mode=ageSurface([m.wood,m.darkwood,m.timberEdge].includes(material)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0,age);
+  // Roofs carry the owner's team colour, so they take their own age shade:/n  // straw warms toward terracotta and then cools to slate, while the team hue
+  // underneath is preserved.
+  const shade=mode===4&&roofTint?roofTint:tint;
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
-    colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1)*tint[k];
+    colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1)*shade[k];
     surface[i*3+k]=k===0?Math.min(1,(material.roughness??.9)*roughnessScale):k===1?material.metalness??0:mode;
     emission[i*3+k]=emissive[k]*(material.emissiveIntensity??1);
   }
@@ -112,7 +115,7 @@ export function packBuildingModel(view,root,e){
   // The Town Center already has four authored Blender variants; only the
   // landmarks that reuse a single base receive an age-specific masonry tint.
   const age=isAgeStyled(e.type)?(metadata.architectureAge||0):0,ageTint=architectureStyle(age).tint;
-  const tint=fortified?[.80,.84,.90]:[ageTint[0],ageTint[1],ageTint[2]],roughnessScale=fortified?1.08:1+age*.01;
+  const style=architectureStyle(age),tint=fortified?[.80,.84,.90]:[ageTint[0],ageTint[1],ageTint[2]],roofTint=fortified?[.86,.88,.94]:style.roof,roughnessScale=fortified?1.08:1+age*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
@@ -128,7 +131,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,age));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,age,roofTint));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();

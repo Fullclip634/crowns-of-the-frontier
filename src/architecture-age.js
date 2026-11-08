@@ -10,10 +10,10 @@ export const AGE_STYLED_BUILDINGS=Object.freeze([
 export function isAgeStyled(type){return AGE_STYLED_BUILDINGS.includes(type);}
 
 const STYLES=Object.freeze([
-  Object.freeze({height:1,width:1,pitch:1,tint:[1,1,1],label:'frontier'}),
-  Object.freeze({height:1.10,width:1.02,pitch:1.10,tint:[.94,.95,.97],label:'feudal'}),
-  Object.freeze({height:1.22,width:1.06,pitch:1.22,tint:[.86,.88,.92],label:'castle'}),
-  Object.freeze({height:1.36,width:1.10,pitch:1.34,tint:[.80,.83,.88],label:'imperial'}),
+  Object.freeze({height:1,width:1,pitch:1,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
+  Object.freeze({height:1.10,width:1.02,pitch:1.10,tint:[.94,.95,.97],roof:[1.04,.93,.80],label:'feudal'}),
+  Object.freeze({height:1.22,width:1.06,pitch:1.22,tint:[.86,.88,.92],roof:[.88,.90,.96],label:'castle'}),
+  Object.freeze({height:1.36,width:1.10,pitch:1.34,tint:[.80,.83,.88],roof:[.80,.84,.95],label:'imperial'}),
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}
