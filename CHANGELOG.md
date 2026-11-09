@@ -1,3 +1,29 @@
+## 9 November 2026 — Damage and destruction are visible
+
+Three things a player could not see before.
+
+The Dark Age now looks like a Dark Age. Authored walls are mostly plaster, and
+age styling only ever promoted material upward, so the opening of a match looked
+identical to the end of one. Plaster is pulled back to timberwork at age zero
+and restored at Feudal, which makes the first age read as timber, wattle and
+thatch rather than stone.
+
+A damaged building now smokes. Nothing in the scene changed as health fell, so a
+town center at ten percent looked exactly like one at full health until it
+vanished. Buildings below sixty percent health emit smoke from the roof line,
+heavier below thirty, at most six at a time and no more than once every half
+second, so a burning town cannot flood the effect budget.
+
+A destroyed building now leaves a ruin instead of a puff of dust. Rubble pieces
+pile inside the footprint rather than flying outward, there are more of them on
+larger buildings, a scorch mark is burned into the ground, and the whole thing
+stands for over a minute instead of ten seconds — long enough to be part of the
+map rather than an afterthought.
+
+Verified: 48/48 across the battle-effect, remains, damage, architecture, graphics
+and render suites, including new tests for the smoke selection rules and for a
+ruin that outlives the collapse.
+
 ## 8 November 2026 — Every age now looks like a different age
 
 Buildings changed height by six percent and darkened slightly as the ages

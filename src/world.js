@@ -166,10 +166,41 @@ export class WorldView {
   mark(x,z){this.marker.position.set(x,this.groundHeight(x,z)+.12,z);this.marker.visible=true;this.markerTime=.8;}
   burst(x,z,color=0xe8c28b,size=1){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('burst',color),dummy=this.effectDummy??=new THREE.Object3D(),velocities=object.userData.velocities;object.position.set(x,.4,z);dummy.position.set(0,0,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(size);dummy.updateMatrix();const count=particleCount(8,this.vfxTimer?.pressure??0,this.renderQuality||this.settings.quality);object.count=count;for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,velocity=velocities[i];velocity.x=Math.cos(a)*(1+Math.random()*2)*size;velocity.y=(2+Math.random()*3)*size;velocity.z=Math.sin(a)*(1+Math.random()*2)*size;object.setMatrixAt(i,dummy.matrix);}markInstancePrefix(object,count);this.scene.add(object);this.fx.push({object,time:0,duration:.75,particles:velocities,size,recycle:mesh=>pool.release(mesh)});}
   sparks(x,y,z,color=0xffe680,size=1){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('sparks',color),dummy=this.effectDummy??=new THREE.Object3D(),velocities=object.userData.velocities;object.position.set(x,y,z);dummy.position.set(0,0,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(size);dummy.updateMatrix();const count=particleCount(12,this.vfxTimer?.pressure??0,this.renderQuality||this.settings.quality);object.count=count;for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,velocity=velocities[i];velocity.x=Math.cos(a)*(2+Math.random()*3)*size;velocity.y=(1.5+Math.random()*4)*size;velocity.z=Math.sin(a)*(2+Math.random()*3)*size;object.setMatrixAt(i,dummy.matrix);}markInstancePrefix(object,count);this.scene.add(object);this.fx.push({object,time:0,duration:.32,sparks:velocities,size,recycle:mesh=>pool.release(mesh)});}
-  crater(x,z,size=1.4){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('crater'),ground=(this.groundHeight?.(x,z)||0)+.04;object.rotation.x=-Math.PI/2;object.position.set(x,ground,z);object.scale.setScalar(size);this.scene.add(object);this.fx.push({object,time:0,duration:3.5,crater:true,size,recycle:mesh=>pool.release(mesh)});}
+  crater(x,z,size=1.4,duration=3.5){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('crater'),ground=(this.groundHeight?.(x,z)||0)+.04;object.rotation.x=-Math.PI/2;object.position.set(x,ground,z);object.scale.setScalar(size);this.scene.add(object);this.fx.push({object,time:0,duration,crater:true,size,recycle:mesh=>pool.release(mesh)});}
+  // Damage has to be readable without selecting the building. A smoking roof is
+  // the cheapest honest signal: it needs no shader variant, no second material
+  // and no geometry, and it reads at any zoom.
+  smoke(x,y,z,size=1){
+    if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return false;
+    const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('burst',0x4a4640),dummy=this.effectDummy??=new THREE.Object3D(),velocities=object.userData.velocities;
+    object.position.set(x,y,z);dummy.position.set(0,0,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(size);dummy.updateMatrix();
+    const count=particleCount(5,this.vfxTimer?.pressure??0,this.renderQuality||this.settings.quality);object.count=count;
+    for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,velocity=velocities[i];velocity.x=Math.cos(a)*.4*size;velocity.y=(.7+Math.random()*.7)*size;velocity.z=Math.sin(a)*.4*size;object.setMatrixAt(i,dummy.matrix);}
+    markInstancePrefix(object,count);this.scene.add(object);
+    this.fx.push({object,time:0,duration:1.8,particles:velocities,size,recycle:mesh=>pool.release(mesh)});
+    return true;
+  }
+  damageSmoke(dt){
+    const sim=this.sim;if(!sim)return;
+    this.smokeClock=(this.smokeClock??0)+dt;if(this.smokeClock<.55)return;this.smokeClock=0;
+    let emitted=0;
+    for(const e of sim.entities){
+      if(emitted>=6)break;
+      if(e.kind!=='building'||e.hp<=0||e.progress<1)continue;
+      const ratio=e.hp/e.maxHp;if(ratio>.6)continue;
+      if(e.owner!==0&&!sim.isVisible(e.x,e.z))continue;
+      const ground=this.groundHeight(e.x,e.z);
+      if(!nearViewport(this,e.x,ground,e.z))continue;
+      const height=Math.min(6,Math.max(2,(e.r||1.5)*1.7));
+      if(this.smoke(e.x,ground+height,e.z,ratio<.3?1.5:1))emitted++;
+    }
+  }
   effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;if(event.type==='attack'){
       const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5;const object=new THREE.Mesh(ranged?new THREE.SphereGeometry(['catapult','warship'].includes(e.type)?.3:.09,5,4):new THREE.RingGeometry(.3,.6,8),new THREE.MeshBasicMaterial({color:['catapult','warship'].includes(e.type)?0xf0a564:0xf3db9b,transparent:true}));object.position.set(e.x,3,e.z);this.scene.add(object);this.fx.push({object,time:0,duration:['catapult','warship'].includes(e.type)?.65:ranged?.3:.2,from:new THREE.Vector3(e.x,e.kind==='building'?5:1.6,e.z),to:new THREE.Vector3(target.x,1.2,target.z),arc:['catapult','warship'].includes(e.type)?10:1,impact:['catapult','warship'].includes(e.type)});
-    }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);}
+    }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);
+      // A burnt footprint is what makes a ruin read as a ruin rather than a
+      // scattering of stones, so it outlives the collapse by a wide margin.
+      if(e.kind==='building')this.crater(e.x,e.z,Math.max(1.6,(e.r||2)*1.3),75);}
     else if(event.type==='heal'){const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('heal',0x91e0b4);object.rotation.x=-Math.PI/2;object.position.set(event.target.x,.3,event.target.z);this.scene.add(object);this.fx.push({object,time:0,duration:.65,heal:true,recycle:mesh=>pool.release(mesh)});}
   }
   quality(value){this.settings.quality=value;this.graphicsError=null;this.graphicsRestoredQuality=null;let artwork;const request=(this.graphicsRequest||0)+1;
@@ -220,6 +251,7 @@ export class WorldView {
       if(e.kind==='building'){node.scale.y=1;if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);}if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
       animateSceneDecorations(this,node,e);
     }
+    this.damageSmoke(dt);
     for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=dt;const t=f.time/f.duration;if(t>=1){if(f.impact){this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);this.crater(f.to.x,f.to.z,(f.impactSize||1.8)*.9);this.sparks(f.to.x,(this.groundHeight?.(f.to.x,f.to.z)||0)+.3,f.to.z,0xffd68a,1.2);}releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.sparks){const dummy=this.effectDummy??=new THREE.Object3D();f.sparks.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-8*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.7));dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.crater){f.object.material.opacity=(1-t)*.7;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
     let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smoke.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smoke.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smoke);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}

@@ -24,7 +24,13 @@ test('fallen units stay volumetric and colored with a bounded lifetime, without 
 
 test('building destruction scatters solid rubble within an affordable instanced budget',()=>{
   const view=fixture(),pool=new BattleRemains(view);pool.spawn({id:20,owner:0,type:'towncenter',kind:'building',x:3,z:4,r:5});
-  view.clock=.45;pool.update();assert.equal(pool.rubble.count,12);assert.equal(view.remainsDiagnostics.drawCalls,1);
-  const pose=new THREE.Matrix4();for(let i=0;i<12;i++){pool.rubble.getMatrixAt(i,pose);assert.ok(pose.elements.every(Number.isFinite));assert.ok(pose.determinant()>0);assert.ok(pose.elements[13]>2);}
-  view.clock=10.1;pool.update();assert.equal(pool.rubble.count,0);pool.dispose();
+  view.clock=.45;pool.update();
+  // Twelve pieces plus one per unit of footprint, capped so the instanced
+  // budget cannot be blown by a large building.
+  assert.equal(pool.rubble.count,17);assert.equal(view.remainsDiagnostics.drawCalls,1);
+  const pose=new THREE.Matrix4();for(let i=0;i<17;i++){pool.rubble.getMatrixAt(i,pose);assert.ok(pose.elements.every(Number.isFinite));assert.ok(pose.determinant()>0);assert.ok(pose.elements[13]>2);}
+  // A ruin is part of the map: it is still standing ten seconds later, which is
+  // exactly when the old remains had already vanished.
+  view.clock=10.1;pool.update();assert.equal(pool.rubble.count,17,'the ruin outlives the collapse');
+  view.clock=46;pool.update();assert.equal(pool.rubble.count,0,'but it does clear eventually');pool.dispose();
 });

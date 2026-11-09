@@ -27,14 +27,17 @@ export class BattleRemains{
     this.view=view;this.group=new THREE.Group();this.group.name='Battle remains';view.scene.add(this.group);
     this.limit=view.settings.quality==='high'?24:8;this.items=[];this.batches=new Map();this.seen=new Set();this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     this.material=standardMaterial({vertexColors:true,roughness:.92,metalness:.08});
-    this.rubble=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),standardMaterial({color:0xffffff,roughness:1}),this.limit*12);
+    this.rubble=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),standardMaterial({color:0xffffff,roughness:1}),this.limit*24);
     this.rubble.name='Solid masonry and timber rubble';this.rubble.count=0;this.rubble.frustumCulled=false;this.rubble.castShadow=view.settings.quality!=='low';this.rubble.receiveShadow=true;this.rubble.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(this.rubble);
   }
   spawn(e){
     const v=this.view;if(!e||this.seen.has(e.id)||!['unit','building'].includes(e.kind))return;
     this.seen.add(e.id);if(this.seen.size>2048)this.seen.delete(this.seen.values().next().value);
     if(e.owner!==0&&!v.sim.isVisible(e.x,e.z)||!nearViewport(v,e.x,v.groundHeight(e.x,e.z),e.z))return;
-    const item={...e,at:v.clock,life:v.settings.quality==='high'?16:10};
+    // A fallen unit is cleared away; a ruined building is part of the map and has
+    // to stand long enough to read as one. Buildings therefore linger for over a
+    // minute instead of ten seconds.
+    const item={...e,at:v.clock,life:e.kind==='building'?(v.settings.quality==='high'?75:45):(v.settings.quality==='high'?16:10)};
     if(e.kind==='unit'){
       item.key=e.owner+':'+e.type+':'+workerVisualTask(v,e);
       if(!this.batches.has(item.key)){
@@ -42,7 +45,10 @@ export class BattleRemains{
         const mesh=new THREE.InstancedMesh(geometry,this.material,this.limit);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=v.settings.quality!=='low';mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);this.batches.set(item.key,{mesh,last:v.clock});
       }
     }else{
-      const rng=seededRandom(e.id+517);item.chunks=Array.from({length:12},(_,i)=>({dx:(rng()-.5)*e.r*1.8,dz:(rng()-.5)*e.r*1.8,scale:.2+rng()*Math.min(1,e.r*.2),height:.5+rng()*1.2,angle:rng()*Math.PI,color:i%3===0?0x75634f:0x9b9c8e}));
+      const rng=seededRandom(e.id+517);// Spread is kept inside the footprint so the pieces pile into a mound instead
+      // of flying outward and leaving a bare patch where the building stood.
+      const pieces=Math.min(24,12+Math.round(e.r||0));
+      item.chunks=Array.from({length:pieces},(_,i)=>({dx:(rng()-.5)*e.r*1.05,dz:(rng()-.5)*e.r*1.05,scale:.24+rng()*Math.min(1.1,e.r*.24),height:.4+rng()*1.1,angle:rng()*Math.PI,color:i%3===0?0x75634f:0x9b9c8e}));
     }
     this.items.push(item);if(this.items.length>this.limit)this.items.shift();
   }

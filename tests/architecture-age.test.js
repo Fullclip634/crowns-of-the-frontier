@@ -177,3 +177,15 @@ test('roofs shade from straw through terracotta to slate as the age advances',()
   assert.ok(roofs[3][2]>roofs[3][0],'Imperial roofs stay cool');
   assert.ok(roofs[3][2]<roofs[2][2]+.01,'and the coolest of the four');
 });
+
+test('the first age is timber, so the starting town does not look like the last one',()=>{
+  // Authored walls are mostly plaster. Leaving them plaster at Dark Age made the
+  // opening of a match look identical to the end of one, which is what "the
+  // starting age is not age based architecture" meant.
+  assert.equal(ageSurface(3,0),1,'plaster is pulled back to timberwork in the Dark Age');
+  assert.equal(ageSurface(1,0),1,'timber stays timber');
+  assert.equal(ageSurface(3,1),3,'Feudal restores the plaster');
+  assert.equal(ageSurface(1,3),2,'and Imperial dresses timber straight into stone');
+  assert.equal(ageSurface(4,0),4,'roofs are never downgraded');
+  assert.equal(ageSurface(2,0),2,'stone footings stay stone');
+});

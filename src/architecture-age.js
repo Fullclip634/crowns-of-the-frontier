@@ -23,8 +23,12 @@ export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.pl
 // way to plaster and then to dressed stone. Roofs and unclassified surfaces are
 // left alone so team colours and glazing keep their meaning.
 export function ageSurface(mode,age){
-  if(mode===1)return age>=1?3:1;
-  if(mode===3)return age>=3?2:3;
+  // Timber is the Dark Age itself, so a building authored in plaster is pulled
+  // back down to timberwork until the Feudal Age. Without that the first age
+  // looked exactly like the last one, which is what "the starting age does not
+  // read as an age" meant.
+  if(mode===1)return age>=3?2:age>=1?3:1;
+  if(mode===3)return age>=3?2:age===0?1:3;
   return mode;
 }
 // A node with no age tag must be rebuilt once; -1 guarantees that without
