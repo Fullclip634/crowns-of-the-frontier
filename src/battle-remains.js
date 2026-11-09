@@ -37,7 +37,12 @@ export class BattleRemains{
     // A fallen unit is cleared away; a ruined building is part of the map and has
     // to stand long enough to read as one. Buildings therefore linger for over a
     // minute instead of ten seconds.
-    const item={...e,at:v.clock,life:e.kind==='building'?(v.settings.quality==='high'?75:45):(v.settings.quality==='high'?16:10)};
+    // The shell of a ruined building is part of the map and stands for two and a
+    // half minutes. The loose pieces that fly off it are debris: they settle and
+    // are gone inside fifteen seconds, so what is left behind is a ruin rather
+    // than a scatter of rocks.
+    const building=e.kind==='building';
+    const item={...e,at:v.clock,life:building?150:(v.settings.quality==='high'?16:10),chunkLife:building?(v.settings.quality==='high'?15:11):0};
     if(e.kind==='unit'){
       item.key=e.owner+':'+e.type+':'+workerVisualTask(v,e);
       if(!this.batches.has(item.key)){
@@ -49,21 +54,39 @@ export class BattleRemains{
       // of flying outward and leaving a bare patch where the building stood.
       const pieces=Math.min(24,12+Math.round(e.r||0));
       item.chunks=Array.from({length:pieces},(_,i)=>({dx:(rng()-.5)*e.r*1.05,dz:(rng()-.5)*e.r*1.05,scale:.24+rng()*Math.min(1.1,e.r*.24),height:.4+rng()*1.1,angle:rng()*Math.PI,color:i%3===0?0x75634f:0x9b9c8e}));
+      // The shell reuses the building's own packed surface, compressed to a
+      // broken stump and charred. No new geometry, no new draw call beyond the
+      // one mesh, and nothing that can enter the simulation.
+      const surface=v.structureByEntity?.get(e.id);
+      if(surface){
+        const charred=v.ruinMaterial??=surface.material.clone();
+        if(charred.color)charred.color.setHex(0x6b6258);
+        charred.roughness=1;
+        const shell=new THREE.Mesh(surface.geometry,charred);
+        shell.position.set(e.x,v.groundHeight(e.x,e.z),e.z);
+        shell.rotation.y=(e.heading||0)+(rng()-.5)*.5;
+        shell.scale.set(1,.34+rng()*.12,1);
+        shell.castShadow=v.settings.quality!=='low';shell.receiveShadow=true;
+        this.group.add(shell);item.shell=shell;
+        v.structureByEntity.delete(e.id);
+      }
     }
     this.items.push(item);if(this.items.length>this.limit)this.items.shift();
   }
   update(){
-    const v=this.view;this.items=this.items.filter(e=>v.clock-e.at<e.life);
+    const v=this.view;this.items=this.items.filter(e=>{const alive=v.clock-e.at<e.life;if(!alive&&e.shell){this.group.remove(e.shell);e.shell=null;}return alive;});
     for(const batch of this.batches.values())batch.mesh.count=0;
     let rubble=0,bodies=0;
     for(const e of this.items){
-      if(e.owner!==0&&!v.sim.isVisible(e.x,e.z)||!nearViewport(v,e.x,v.groundHeight(e.x,e.z),e.z))continue;
+      const shown=!(e.owner!==0&&!v.sim.isVisible(e.x,e.z)||!nearViewport(v,e.x,v.groundHeight(e.x,e.z),e.z));
+      if(e.shell)e.shell.visible=shown;
+      if(!shown)continue;
       const age=v.clock-e.at,sink=Math.max(0,(age-e.life+3)/3);
       if(e.key){
         const batch=this.batches.get(e.key),naval=UNITS[e.type].naval;
         const fall=Math.min(1,age/.65);this.dummy.position.set(e.x,(naval?.08:v.groundHeight(e.x,e.z)+.18)-sink*.65-(naval?fall*1.3:0),e.z);
         this.dummy.rotation.set(0,e.heading||0,naval?fall*.25:fall*1.48);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();batch.mesh.setMatrixAt(batch.mesh.count++,this.dummy.matrix);batch.last=v.clock;bodies++;
-      }else{
+      }else if(!e.chunkLife||age<=e.chunkLife){
         const t=Math.min(1,age/.9);
         for(const chunk of e.chunks){const x=e.x+chunk.dx*t,z=e.z+chunk.dz*t;this.dummy.position.set(x,v.groundHeight(x,z)+chunk.scale*.35+Math.sin(t*Math.PI)*chunk.height-sink*.9,z);this.dummy.rotation.set(t*.8,chunk.angle,t*.35);this.dummy.scale.set(chunk.scale*1.4,chunk.scale*.65,chunk.scale);this.dummy.updateMatrix();this.rubble.setMatrixAt(rubble,this.dummy.matrix);this.rubble.setColorAt(rubble,this.color.setHex(chunk.color));rubble++;}
       }

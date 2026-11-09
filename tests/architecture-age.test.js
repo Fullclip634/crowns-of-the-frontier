@@ -67,8 +67,12 @@ test('age styling adds no stray geometry, only massing and an age tag',()=>{
   root.userData.model3d={kind:'building',type:'keep',authored:true};root.add(base);
   const entity={kind:'building',type:'keep',owner:0,r:2.5};
   assert.equal(applyArchitectureAge({},root,entity,0),root);
-  assert.equal(root.scale.x,1,'Dark Age leaves the authored base untouched');
-  assert.equal(root.userData.model3d.architectureAge,undefined);
+  // The Dark Age is styled too, but only downward: an under-built settlement,
+  // never extra geometry.
+  assert.equal(root.scale.y,architectureStyle(0).height);
+  assert.ok(root.scale.y<1,'Dark Age is smaller than the authored base');
+  assert.equal(root.children.length,1,'Dark Age attaches no meshes either');
+  assert.equal(root.userData.model3d.architectureAge,0);
   applyArchitectureAge({},root,entity,3);
   assert.equal(root.children.length,1,'no extra meshes are attached to the building');
   assert.equal(root.userData.model3d.architectureAge,3);
@@ -97,8 +101,15 @@ test('every age-styled building, houses included, packs to one surface and chang
         const surface=meshes.find(part=>part.userData.structureSurface);
         packed.push({size:new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()),colors:Array.from(surface.geometry.attributes.color.array),scale:model.scale.y});
       }
-      assert.ok(packed[1].size.y>packed[0].size.y,`${type} grows taller in the Imperial Age`);
-      assert.ok(packed[1].scale>packed[0].scale,`${type} carries the age massing`);
+      // The mill is the documented exception: its rotor is sized against the
+      // ground and its own blades, so it keeps its proportions and takes only the
+      // material cues.
+      if(type==='mill'){
+        assert.equal(packed[1].scale,packed[0].scale,'the mill keeps its authored massing');
+      }else{
+        assert.ok(packed[1].size.y>packed[0].size.y,`${type} grows taller in the Imperial Age`);
+        assert.ok(packed[1].scale>packed[0].scale,`${type} carries the age massing`);
+      }
       assert.notDeepEqual(packed[0].colors,packed[1].colors,`${type} changes its masonry tint with age`);
     }
   }finally{clearAuthoredAssets();}

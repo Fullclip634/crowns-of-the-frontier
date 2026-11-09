@@ -10,7 +10,10 @@ export const AGE_STYLED_BUILDINGS=Object.freeze([
 export function isAgeStyled(type){return AGE_STYLED_BUILDINGS.includes(type);}
 
 const STYLES=Object.freeze([
-  Object.freeze({height:1,width:1,pitch:1,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
+  // The first age is deliberately under-built: lower walls and a flatter roof
+  // than the authored model, so a Dark Age town reads as a settlement that has
+  // not yet been raised in stone rather than a castle that is merely tinted.
+  Object.freeze({height:.84,width:.94,pitch:.9,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
   Object.freeze({height:1.10,width:1.02,pitch:1.10,tint:[.94,.95,.97],roof:[1.04,.93,.80],label:'feudal'}),
   Object.freeze({height:1.22,width:1.06,pitch:1.22,tint:[.86,.88,.92],roof:[.88,.90,.96],label:'castle'}),
   Object.freeze({height:1.36,width:1.10,pitch:1.34,tint:[.80,.83,.88],roof:[.80,.84,.95],label:'imperial'}),
@@ -49,7 +52,9 @@ export function architectureOutdated(sim,entity,node){
 const ROOF_MATERIALS=Object.freeze(['teamRoof','roof']);
 const ROOF_FITTINGS=Object.freeze(['brick']);
 export function steepenRoof(root,pitch){
-  if(!root||!(pitch>1))return false;
+  // A pitch below one flattens the roof, which is exactly what the first age
+  // needs; anything other than a no-op is worth applying.
+  if(!root||!pitch||pitch===1)return false;
   const roofs=[],fittings=[];
   root.traverse(part=>{
     if(!part.isMesh)return;
@@ -73,16 +78,18 @@ export function steepenRoof(root,pitch){
   return true;
 }
 export function applyArchitectureAge(view,root,entity,age){
-  if(!root||!entity||age<=0)return root;
+  // Age zero is styled too: it is the age that has to look the weakest.
+  if(!root||!entity||age<0)return root;
   const style=architectureStyle(age);
   root.userData.model3d={...root.userData.model3d,architectureAge:age,architectureLabel:style.label};
-  root.scale.set(style.width,style.height,style.width);
-  // A steeper roof on a mill would grow into the sweep of its own blades, so
-  // any model with a rotating attachment keeps its authored pitch and takes the
-  // other age cues instead. The massing scale is safe: it moves the rotor with
-  // the building and preserves their clearance.
+  // A mill's rotor is sized against its own blades and the ground, so massing
+  // and pitch would both move the sweep. Models with a rotating attachment keep
+  // their authored proportions at every age and take the material and colour
+  // cues only.
   let rotating=false;root.traverse(node=>{if(node.userData?.windmill)rotating=true;});
+  if(rotating)return root;
+  root.scale.set(style.width,style.height,style.width);
   // A node can be revisited; the pitch must never compound on itself.
-  if(!rotating&&!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
+  if(!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
   return root;
 }

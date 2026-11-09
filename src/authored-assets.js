@@ -187,7 +187,7 @@ export function authoredBuilding(view,e){
   if(root){
     const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):architectureAge(view.sim,e);
     if(e.type==='towncenter'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
-    if(styledAge>0&&isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
+    if(isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
     foundation(view,root,e);
   }
   if(root&&e.type==='dock')root.traverse(part=>{

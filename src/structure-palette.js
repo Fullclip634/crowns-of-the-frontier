@@ -140,6 +140,9 @@ export function packBuildingModel(view,root,e){
     const shared=new Set([...Object.values(view.geo),...(view.authoredGeometry||[]),...view.sharedModelGeometry]);
     for(const part of parts){part.removeFromParent();if(!shared.has(part.geometry))part.geometry.dispose();}
     const mesh=new THREE.Mesh(geometry,palette);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.structureSurface=true;group.add(mesh);
+    // A destroyed building leaves a shell that reuses this exact surface, so the
+    // geometry and material stay reachable after the node itself is removed.
+    if(e?.id!=null){const registry=view.structureByEntity??=new Map();registry.set(e.id,{geometry,material:palette});if(registry.size>512)registry.delete(registry.keys().next().value);}
   };pack(root,'static');
   const prune=node=>{for(const child of [...node.children]){prune(child);if(child.isGroup&&!child.children.length&&!movable(child))child.removeFromParent();}};
   prune(root);root.userData.structurePacked=true;return root;

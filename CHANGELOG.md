@@ -1,3 +1,27 @@
+## 9 November 2026 — Ruins stand, and the first age looks weak
+
+Destroyed buildings used to vanish, leaving a scatter of stones that sank out of
+sight within ten seconds. Two things changed.
+
+A destroyed building now leaves its own shell: the packed surface it was drawn
+with, compressed to a broken stump, charred, and set slightly askew. It reuses
+the geometry the building already had, so a ruin costs no new art and one draw,
+and it stands for two and a half minutes. The loose pieces that fly off it are
+debris now — they settle and are gone in fifteen seconds, so what remains is a
+ruin rather than a pile of rocks.
+
+The first age is deliberately under-built. Dark Age buildings were the authored
+models at full size with a timber texture, which read as a castle that had been
+recoloured. They are now built at eighty-four percent height, ninety-four
+percent width and a flatter roof, so a starting town looks like a settlement
+that has not yet been raised in stone. Mills keep their authored proportions at
+every age: their rotor is sized against the ground and its own blades, so massing
+would move the sweep.
+
+Verified: 43/43 across architecture, authored assets, remains, damage, render
+batches, windmill clearance and graphics, including new tests for the shell's
+lifetime and for a Dark Age that is smaller than the authored base.
+
 ## 9 November 2026 — Damage and destruction are visible
 
 Three things a player could not see before.

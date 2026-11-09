@@ -34,3 +34,27 @@ test('building destruction scatters solid rubble within an affordable instanced 
   view.clock=10.1;pool.update();assert.equal(pool.rubble.count,17,'the ruin outlives the collapse');
   view.clock=46;pool.update();assert.equal(pool.rubble.count,0,'but it does clear eventually');pool.dispose();
 });
+
+test('a destroyed building leaves a shell that outlives the debris',()=>{
+  const view=fixture();
+  const geometry=new THREE.BoxGeometry(4,6,4),material=new THREE.MeshStandardMaterial({color:0x9b9c8e});
+  view.structureByEntity=new Map([[30,{geometry,material}]]);
+  const pool=new BattleRemains(view);
+  pool.spawn({id:30,owner:0,type:'house',kind:'building',x:5,z:6,r:2,heading:.3});
+
+  const shell=pool.items[0].shell;
+  assert.ok(shell,'the ruin keeps the building surface');
+  assert.equal(shell.geometry,geometry,'it reuses the packed geometry rather than new art');
+  assert.ok(shell.scale.y<.5,'the shell is a broken stump, not the whole building');
+  assert.equal(shell.material===material,false,'it is charred, not the original surface');
+  assert.equal(view.structureByEntity.has(30),false,'the registry entry is released once used');
+
+  // Debris settles and goes; the ruin stays.
+  view.clock=16;pool.update();
+  assert.equal(pool.rubble.count,0,'the loose pieces have settled away');
+  assert.equal(shell.parent,pool.group,'but the ruin is still standing');
+
+  view.clock=151;pool.update();
+  assert.equal(shell.parent,null,'the ruin is cleared when its life runs out');
+  assert.equal(pool.items.length,0);
+});
