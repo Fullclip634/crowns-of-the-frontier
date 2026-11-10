@@ -141,8 +141,15 @@ export function planFortification(sim,state,owner,base,buildings){
 
 export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
   const player=sim.players[owner],populationLimit=sim.options.populationLimit||160,fortificationWorkers=Math.min(18,Math.floor(populationLimit*.45)),perimeterWorkers=Math.min(24,Math.floor(populationLimit*.5));
-  if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<fortificationWorkers||threats.length||sim.time<180||sim.time<(state.nextFortification||0))return false;
+  if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<fortificationWorkers||sim.time<180||sim.time<(state.nextFortification||0))return false;
   if(sim.difficulty(owner)==='story'&&(player.age<2||sim.time<420))return false;
+  // A permanent threat must not suspend fortification forever: a single unit
+  // poking the perimeter every half minute used to stall walls indefinitely.
+  // Walls wait out an active attack, but resume once the attack has been held
+  // off for long enough and the garrison clearly outweighs the raiders.
+  if(threats.length){state.threatSince??=sim.time;}else{state.threatSince=undefined;}
+  const holding=threats.length>0&&sim.time-(state.threatSince??sim.time)>90&&sim.owned(owner,'unit').filter(unit=>unit.kind==='unit'&&!unit.embarked&&UNITS[unit.type].damage>0).length>=threats.length*3;
+  if(threats.length&&!holding)return false;
   state.fortifications??=[];
   state.fortifications=state.fortifications.filter(plan=>sim.get(plan.base)?.owner===owner);
   if(state.fortifications.some(plan=>plan.pieces.some(piece=>{const building=sim.get(piece.id);return building&&building.progress<1;})))return false;

@@ -1,6 +1,6 @@
 import {UNITS,BUILDINGS,TECHS,AGE_COSTS,DIFFICULTIES,availableTo} from './data.js';
 import {customOpening,alliedSupport,customAttackTarget} from './allied-ai.js';
-import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers} from './ai-settlements.js';
+import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers,replaceTownCentre} from './ai-settlements.js';
 import {orderSiegeAssault} from './ai-siege.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 import {closestCandidates} from './closest-candidates.js';
@@ -183,8 +183,16 @@ export function installCommanderAI(Simulation){
   };
   p.tickAI=function(owner=1){
     if(this.options.multiplayer&&this.options.mode!=='custom'||['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival)return;
-    const tc=this.owned(owner,'building','towncenter')[0];if(!tc)return;
-    const state=stateFor(this,owner),profile=AI_PROFILES[this.difficulty(owner)],player=this.players[owner],visible=rememberVisibleEnemies(this,state,owner);state.decision++;const nextAttack=this.options.mode==='custom'?state.nextAttack:this.nextAttack;
+    const state=stateFor(this,owner),profile=AI_PROFILES[this.difficulty(owner)],player=this.players[owner];
+    const capital=this.owned(owner,'building','towncenter')[0];
+    if(!capital){
+      // Recover a razed capital instead of idling. The remembered home keeps the
+      // replacement near the original settlement rather than wherever the last
+      // surviving villager happens to stand.
+      replaceTownCentre(this,owner,state);this.assignEconomy(owner);return;
+    }
+    state.home??={x:capital.x,z:capital.z};
+    const tc=capital,visible=rememberVisibleEnemies(this,state,owner);state.decision++;const nextAttack=this.options.mode==='custom'?state.nextAttack:this.nextAttack;
     if(this.owned(owner,'building','market').some(site=>site.progress>=1)){
       if(player.resources.wood<180&&player.resources.gold>=130)this.trade('wood',true,owner);
       else if(player.resources.wood<180&&player.resources.gold<130&&player.resources.food>=900)this.trade('food',false,owner);
@@ -215,8 +223,17 @@ export function installCommanderAI(Simulation){
     }
     fortifySettlements(this,state,owner,workers,buildings,baseThreats);
     fortifyKingdomWalls(this,state,owner,workers,this.owned(owner,'building'),baseThreats);
+    // One barracks forever capped the AI at roughly half a human's production.
+    // Production buildings now scale with the age; economy buildings stay single.
+    // Every settlement already starts with a mill, and farms are placed next to
+    // a town centre, so a second mill only competed for early timber.
     const priorities=['barracks',...(player.age>=1?['range','stable','blacksmith','market']:[]),...(player.age>=2?['workshop','monastery']:[])];
-    for(const type of priorities)if(!buildings.some(b=>b.type===type)){if(this.commanderBuild(type,null,owner))break;}
+    const productionCap=type=>type==='barracks'?1+Math.min(2,player.age):['range','stable'].includes(type)?1+Math.min(1,Math.max(0,player.age-1)):1;
+    // Extra production only when the economy can actually carry it. Spending the
+    // timber a settlement needs for camps and farms on a second barracks starved
+    // expansion, which is a worse opponent than a slow one.
+    const surplus=!state.budget.savingAge&&workers.length>=16&&player.resources.wood>=260;
+    for(const type of priorities){const limit=surplus?productionCap(type):1;if(buildings.filter(b=>b.type===type).length<limit){if(this.commanderBuild(type,null,owner))break;}}
     if(this.time-state.lastRebalance>15){state.lastRebalance=this.time;for(const worker of workers.filter(w=>w.order?.type==='gather'&&!w.carry&&!w.aiFleeing).slice(0,2))this.assignWorker(worker);}
     const plan=armyPlan(this,state,owner);
     for(const b of buildings.filter(b=>b.progress>=1&&b.queue.length<2)){

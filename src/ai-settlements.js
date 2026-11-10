@@ -32,6 +32,19 @@ export function settlementThreats(sim,owner,visible,buildings){
   return visible.filter(enemy=>enemy.kind==='unit'&&UNITS[enemy.type]?.damage>0&&!UNITS[enemy.type].naval&&(assets.some(base=>distance(enemy,base)<(base.type==='towncenter'?30:22))||perimeter.some(alarm=>Math.hypot(enemy.x-alarm.siteX,enemy.z-alarm.siteZ)<26)));
 }
 
+// A lost capital is recoverable while a villager survives. The custom-battle AI
+// already replaces one; skirmish previously returned and idled forever, which
+// turned a single decisive raid into a permanent no-op opponent.
+export function replaceTownCentre(sim,owner,state){
+  const worker=sim.owned(owner,'unit','villager').find(unit=>unit.order?.type!=='build'&&!unit.embarked);
+  if(!worker||!state.home)return false;
+  for(let index=0;index<16;index++){
+    const angle=index*2.4,radius=12+Math.floor(index/4)*6,x=state.home.x+Math.cos(angle)*radius,z=state.home.z+Math.sin(angle)*radius;
+    if(sim.buildValid('towncenter',x,z,owner)){sim.build('towncenter',x,z,[worker.id],owner);return true;}
+  }
+  return false;
+}
+
 function expansionCandidates(sim,state,owner){
   const own=centers(sim,owner),friendly=sim.entities.filter(e=>e.hp>0&&e.type==='towncenter'&&sim.allied(owner,e.owner));
   const deposits=Object.values(state.deposits||{}).filter(source=>source.amount>100);
