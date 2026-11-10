@@ -45,7 +45,7 @@ export function fitBuildingSelectionRing(node,landscape){
 // No extra meshes, materials, texture loads or per-frame terrain work are added.
 export function groundBuildingFoundation(node,landscape,update=false){
   if(node.userData.foundationGrounded&&!update)return;
-  node.updateMatrixWorld(true);const point=new THREE.Vector3(),baseWorld=new THREE.Vector3().setFromMatrixPosition(node.matrixWorld).y;
+  node.updateMatrixWorld(true);const point=new THREE.Vector3(),origin=new THREE.Vector3(),scale=new THREE.Vector3();
   const report={changedMeshes:0,changedVertices:0,lowestGround:null};
   for(const mesh of node.children){
     if(!mesh.isMesh||!mesh.userData.structureSurface)continue;
@@ -55,9 +55,15 @@ export function groundBuildingFoundation(node,landscape,update=false){
     for(let i=0;i<positions.count;i++)if(positions.getY(i)<minimum+.08){indices.push(i);point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);bounds.expandByPoint(point);}
     if(!indices.length)continue;
     const rotated=['wall','gate'].includes(node.userData.model3d?.type);
-    if(rotated){const origin=new THREE.Vector3().setFromMatrixPosition(node.matrixWorld),radius=Math.hypot(Math.max(Math.abs(bounds.min.x-origin.x),Math.abs(bounds.max.x-origin.x)),Math.max(Math.abs(bounds.min.z-origin.z),Math.abs(bounds.max.z-origin.z)));bounds.min.x=origin.x-radius;bounds.max.x=origin.x+radius;bounds.min.z=origin.z-radius;bounds.max.z=origin.z+radius;}
+    if(rotated){const centre=new THREE.Vector3().setFromMatrixPosition(node.matrixWorld),radius=Math.hypot(Math.max(Math.abs(bounds.min.x-centre.x),Math.abs(bounds.max.x-centre.x)),Math.max(Math.abs(bounds.min.z-centre.z),Math.abs(bounds.max.z-centre.z)));bounds.min.x=centre.x-radius;bounds.max.x=centre.x+radius;bounds.min.z=centre.z-radius;bounds.max.z=centre.z+radius;}
     const floor=terrainFloor(landscape,bounds.min.x,bounds.max.x,bounds.min.z,bounds.max.z)-.12;
-    const delta=Math.min(0,floor-(baseWorld+minimum));if(delta>=-.005&&mesh.geometry===source)continue;
+    // Each structure mesh may carry its own local offset and scale. The plinth
+    // is extended in local space, so the world base and the world delta must be
+    // measured on this mesh, not on the node: a mesh raised inside the node
+    // would otherwise stop short of the floor by exactly its own offset.
+    origin.setFromMatrixPosition(mesh.matrixWorld);scale.setFromMatrixScale(mesh.matrixWorld);
+    const meshBase=origin.y,scaleY=scale.y||1,deltaWorld=Math.min(0,floor-(meshBase+minimum*scaleY)),delta=deltaWorld/scaleY;
+    if(delta>=-.005&&mesh.geometry===source)continue;
     const geometry=mesh.geometry===source?privateGeometry(source):mesh.geometry,target=geometry.attributes.position;originals.set(geometry,source);
     for(const index of indices)target.setY(index,positions.getY(index)+delta);
     target.needsUpdate=true;

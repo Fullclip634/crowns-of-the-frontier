@@ -15,7 +15,7 @@ import {Simulation} from '../src/simulation.js';
 import {Landscape} from '../src/landscape.js';
 import {WorldView} from '../src/world.js';
 import {registerAuthoredAssets,clearAuthoredAssets} from '../src/authored-assets.js';
-import {terrainFloor,updateGatePortcullis,syncFoundationMaterials} from '../src/building-grounding.js';
+import {terrainFloor,groundBuildingFoundation,updateGatePortcullis,syncFoundationMaterials} from '../src/building-grounding.js';
 import {WallVisuals} from '../src/wall-visuals.js';
 
 const art=process.env.ART_CATALOGUE_DIR?pathToFileURL(path.resolve(process.env.ART_CATALOGUE_DIR)+path.sep):new URL('../src/assets3d/',import.meta.url);
@@ -120,4 +120,33 @@ for(const detail of ['low','balanced','near'])test(`${detail} gates ground their
       for(const source of sources)assert.deepEqual(source.geometry.attributes.position.array,source.positions,'gate animation never modifies shared source buffers');view.releaseNode(node);node.removeFromParent();view.nodes.delete(entity.id);
     }
   }finally{release(view,assets,gltf);ground.dispose();}
+});
+
+// The keep and the siege workshop raise their structure mesh inside the node.
+// Extending the plinth is a local-space edit, so the floor must be measured
+// against the mesh's own world transform; using the node's put the underside
+// exactly the mesh offset above the ground and left daylight under the walls.
+test('a structure mesh raised inside its node still reaches the terrain floor',()=>{
+  const land=new Landscape(512,'canyon'),ground=land.geometry(land.renderSize,112);
+  const node=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(6,1,6),new THREE.MeshBasicMaterial());
+  try{
+    const x=60,z=-50,base=land.surfaceHeightAt(x,z),offset=.4;
+    node.position.set(x,base,z);mesh.position.y=offset;mesh.userData.structureSurface=true;node.add(mesh);
+    const scene=new THREE.Scene();scene.add(node);node.updateMatrixWorld(true);
+    const before=mesh.geometry.attributes.position.array.slice();
+    const report=groundBuildingFoundation(node,land);
+    assert.ok(report.changedMeshes>=1,'the raised plinth is extended');
+    assert.equal(mesh.position.y,offset,'the mesh transform is untouched; only its vertices move');
+    const positions=mesh.geometry.attributes.position,point=new THREE.Vector3(),bounds=new THREE.Box3();
+    let minY=Infinity;
+    for(let i=0;i<positions.count;i++){point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);bounds.expandByPoint(point);minY=Math.min(minY,point.y);}
+    // A node-relative implementation lands here at base + offset - 0.5, i.e. the
+    // mesh offset above the floor, which is the defect this test exists to catch.
+    const nodeRelative=base+offset-.5;
+    assert.ok(minY<nodeRelative-.05,'the plinth is not merely offset by the mesh transform');
+    const floor=terrainFloor(land,bounds.min.x,bounds.max.x,bounds.min.z,bounds.max.z)-.12;
+    assert.ok(Math.abs(minY-floor)<.002,`the underside reaches the computed floor (${minY.toFixed(3)} vs ${floor.toFixed(3)})`);
+    for(let i=0;i<=12;i++){const t=i/12;for(const [wx,wz]of[[bounds.min.x+(bounds.max.x-bounds.min.x)*t,bounds.min.z],[bounds.min.x+(bounds.max.x-bounds.min.x)*t,bounds.max.z],[bounds.min.x,bounds.min.z+(bounds.max.z-bounds.min.z)*t],[bounds.max.x,bounds.min.z+(bounds.max.z-bounds.min.z)*t]])assert.ok(minY-land.surfaceHeightAt(wx,wz)<.001,'no daylight beneath the footprint');}
+    assert.equal(mesh.geometry.attributes.position.count,before.length/3,'grounding never adds or removes vertices');
+  }finally{mesh.geometry.dispose();mesh.material.dispose();ground.dispose();}
 });
