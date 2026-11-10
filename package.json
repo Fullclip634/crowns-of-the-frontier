@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build && node scripts/clean-dist.mjs",
+    "build:native": "vite build --configLoader native && node scripts/clean-dist.mjs",
+    "bench:sim": "node scripts/battle-benchmark.mjs",
+    "measure:fps": "node scripts/measure-fps.mjs",
     "art:build": "node scripts/blender/build.mjs",
     "art:rebuild": "node scripts/blender/rebuild-atlas.mjs",
     "art:balanced": "node scripts/blender/build-balanced.mjs",
