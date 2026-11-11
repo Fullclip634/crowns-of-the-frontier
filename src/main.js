@@ -70,7 +70,7 @@ document.querySelector('#app').innerHTML=`
   <div id="world" aria-label="3D strategy battlefield"></div><div class="vignette"></div><div id="graphics-status" class="graphics-status hidden" role="status">Updating graphics…</div>
   <div id="landing" class="landing">
     <header class="landing-header"><a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiIcon("castle")}</span><span>CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a><div class="header-links"><button data-action="codex" aria-label="Open field guide">${uiIcon("book-open")}<span>Field guide</span></button><button data-action="settings" aria-label="Settings">${uiIcon("settings")}<span>Settings</span></button><span class="edition">${RELEASE.split(" - ").reverse().join(" / ").toUpperCase()}</span></div></header>
-    <main class="landing-main"><div class="eyebrow"><span class="short-rule"></span> REAL-TIME STRATEGY</div><h1>Crowns <em>of the</em><br>Frontier<span class="title-dot">.</span></h1><p class="intro">From the first timber to the final siege.<br>Raise your kingdom in a living, three-dimensional world.</p><div class="main-actions"><button class="primary" data-mode="skirmish">Quick battle ${uiIcon("chevron-right")}</button><button class="secondary" data-action="campaign">${uiIcon("campaign")}<span>Campaign</span>${uiIcon("chevron-right")}</button></div><button class="network-entry custom-entry" data-action="custom-battle">${uiIcon("custom")}<span>Custom battle</span>${uiIcon("chevron-right")}</button><button id="resume" class="resume hidden" data-action="resume">${uiIcon("rotate-ccw")} Resume saved kingdom</button><button class="network-entry" data-action="lan">${uiIcon("network")}<span>Play with friends</span>${uiIcon("chevron-right")}</button><div class="landing-note"><span class="status-dot"></span> SOLO & MULTIPLAYER <span class="separator">/</span> BUILT FOR MOUSE & TOUCH</div></main>
+    <main class="landing-main"><div class="eyebrow"><span class="short-rule"></span> REAL-TIME STRATEGY</div><h1>Crowns <em>of the</em><br>Frontier<span class="title-dot">.</span></h1><p class="intro">From the first timber to the final siege.<br>Raise your kingdom in a living, three-dimensional world.</p><div class="main-actions"><button class="primary" data-mode="skirmish">Quick battle ${uiIcon("chevron-right")}</button><button class="secondary" data-action="campaign">${uiIcon("campaign")}<span>Campaign</span>${uiIcon("chevron-right")}</button></div><button class="network-entry custom-entry" data-action="custom-battle">${uiIcon("custom")}<span>Custom battle</span>${uiIcon("chevron-right")}</button><button id="resume" class="resume hidden" data-action="resume">${uiIcon("rotate-ccw")} Resume saved kingdom</button><button id="install" class="network-entry hidden" data-action="install">${uiIcon("castle")}<span>Install the game</span>${uiIcon("chevron-right")}</button><button class="network-entry" data-action="lan">${uiIcon("network")}<span>Play with friends</span>${uiIcon("chevron-right")}</button><div class="landing-note"><span class="status-dot"></span> SOLO & MULTIPLAYER <span class="separator">/</span> BUILT FOR MOUSE & TOUCH</div></main>
     <div class="scene-caption"><span class="caption-line"></span><span>THE ALDER FRONTIER<small>Where every empire begins.</small></span><span class="coordinates">38° N · 27° E</span></div>
     <nav class="mode-strip" aria-label="Game modes">${MODES.filter(m=>!['skirmish','custom'].includes(m.id)).map((m,i)=>`<button class="mode-card" data-mode="${m.id}"><span class="mode-number">${uiIcon(m.id)}</span><span class="mode-title">${m.tag}</span><span class="mode-tag">${m.name} ${uiIcon("chevron-right")}</span></button>`).join('')}</nav>
     <footer class="landing-footer"><span>ECONOMY · WARFARE · EMPIRE</span><span>Made for mouse & touch <span class="menu-divider" aria-hidden="true"></span> Best played in landscape</span></footer>
@@ -337,7 +337,27 @@ function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('
 function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){const layer=$('#health-layer');let html='';for(const e of sim.entities){if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))continue;if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)continue;const p=view.project(e);if(p.visible&&p.x>0&&p.x<innerWidth&&p.y>50&&p.y<innerHeight-100)html+=`<div class="world-health ${sim.hostile(0,e.owner)?'rival':''}" style="left:${p.x}px;top:${p.y}px"><i style="width:${e.hp/e.maxHp*100}%"></i>${e.kind==='building'&&e.progress<1?`<small>${Math.floor(e.progress*100)}%</small>`:''}</div>`;}layer.innerHTML=html;}
 function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
+// The browser only offers installation once it has decided the page qualifies.
+// Keep that event so the landing screen can offer it in place. An install button
+// that cannot work is worse than no button, so it stays hidden until it can.
+let installPrompt=null;
+const runningInstalled=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+function refreshInstallEntry(){
+  const button=$('#install');if(!button)return;
+  button.classList.toggle('hidden',!installPrompt||runningInstalled());
+}
+function installGame(){
+  if(!installPrompt){toast('Use your browser menu to install this page.','warning');return;}
+  const prompt=installPrompt;installPrompt=null;refreshInstallEntry();
+  prompt.prompt();
+  Promise.resolve(prompt.userChoice).then(choice=>{if(choice?.outcome==='accepted')toast('Crowns is installed. Launch it from your home screen.');}).catch(()=>{});
+}
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;refreshInstallEntry();});
+window.addEventListener('appinstalled',()=>{installPrompt=null;refreshInstallEntry();toast('Crowns is installed. Launch it from your home screen.');});
+refreshInstallEntry();
+
 function action(name){
+  if(name==='install'){installGame();return;}
   if(name==='credits'){showCredits();return;}
   if(isAISpectator()&&!spectatorActionAllowed(name))return;
   if(name==='alliance'){showAlliance();return;}
