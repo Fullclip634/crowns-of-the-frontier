@@ -48,19 +48,27 @@ export class Simulation {
   on(fn){this.listeners.push(fn);}
   emit(type,data={}){const event={type,...data};this.events.push(event);for(const fn of this.listeners)fn(event);}
   get(id){return this.entities.find(e=>e.id===id&&e.hp>0);}
-  owned(owner,kind,type){
-    let candidates=this.entities;
-    if(kind==='unit'||kind==='building'){
-      let cache=this.ownedCandidates;
-      if(!cache||cache.entities!==this.entities||cache.length!==this.entities.length||cache.time!==this.time||cache.revision!==this.revision){
-        cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[]};
-        for(const e of this.entities)if(e.kind==='unit'||e.kind==='building')cache[e.kind].push(e);
-        this.ownedCandidates=cache;
-      }
-      candidates=cache[kind];
+  // The unit/building shortlist is rebuilt at most once per tick and shared by
+  // owned() and count(). Building it through one helper keeps the two in step.
+  candidatesFor(kind){
+    if(kind!=='unit'&&kind!=='building')return this.entities;
+    let cache=this.ownedCandidates;
+    if(!cache||cache.entities!==this.entities||cache.length!==this.entities.length||cache.time!==this.time||cache.revision!==this.revision){
+      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[]};
+      for(const e of this.entities)if(e.kind==='unit'||e.kind==='building')cache[e.kind].push(e);
+      this.ownedCandidates=cache;
     }
+    return cache[kind];
+  }
+  owned(owner,kind,type){
+    const candidates=this.candidatesFor(kind);
     // Keep life, ownership and type live; callers receive their own array.
     const result=[];for(const e of candidates)if(e.hp>0&&e.owner===owner&&(!kind||e.kind===kind)&&(!type||e.type===type))result.push(e);return result;
+  }
+  // Counting is the common case and must not allocate a result array; the AI
+  // asks for population and capacity many times per decision.
+  count(owner,kind,type){
+    let total=0;for(const e of this.candidatesFor(kind))if(e.hp>0&&e.owner===owner&&(!kind||e.kind===kind)&&(!type||e.type===type))total++;return total;
   }
   faction(owner){return FACTIONS[this.players[owner].faction];}
   allied(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&(this.players[a].team??a)===(this.players[b].team??b);}
@@ -137,9 +145,9 @@ export class Simulation {
   maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;return base*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
   addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const previousRevision=this.revision,e={id:this.nextId++,kind:'unit',type,owner,x,z,r:UNITS[type].radius??(type==='ram'?1.35:type==='catapult'?1.1:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
-  population(owner){return this.owned(owner,'unit').length;}
-  capacity(owner){return Math.min(this.options.populationLimit||160,this.owned(owner,'building').filter(e=>e.progress>=1).reduce((n,e)=>n+(BUILDINGS[e.type].cap||0),0));}
-  reservedPopulation(owner){return this.owned(owner,'building').reduce((n,e)=>n+e.queue.filter(q=>q.kind==='unit').length,0);}
+  population(owner){return this.count(owner,'unit');}
+  capacity(owner){const limit=this.options.populationLimit||160;let total=0;for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner===owner&&e.progress>=1)total+=BUILDINGS[e.type].cap||0;return Math.min(limit,total);}
+  reservedPopulation(owner){let total=0;for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner===owner)for(const q of e.queue)if(q.kind==='unit')total++;return total;}
   cost(cost,owner=0,kind=''){const factor=kind==='building'?this.faction(owner).cost:1;return Object.fromEntries(Object.entries(cost).map(([r,n])=>[r,Math.ceil(n*factor)]));}
   canAfford(cost,owner=0){return Object.entries(cost).every(([r,n])=>this.players[owner].resources[r]>=n);}
   spend(cost,owner){if(!this.canAfford(cost,owner))return false;for(const[r,n]of Object.entries(cost))this.players[owner].resources[r]-=n;return true;}

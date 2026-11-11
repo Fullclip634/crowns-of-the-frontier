@@ -2,7 +2,7 @@ import {UNITS} from './data.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
-const conquered=s=>!s.owned(1,'building','towncenter').length;
+const conquered=s=>!s.count(1,'building','towncenter');
 const DIFFICULTY_ORDER=['story','normal','hard','brutal'];
 const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficulty)>=DIFFICULTY_ORDER.indexOf(level);
 
@@ -33,7 +33,7 @@ export const CAMPAIGN_SCRIPTS={
       {title:'A settlement supplied',text:'Gather 250 resources and complete a third house.',done:s=>s.stats.gathered>=250&&completed(s,'house').length>=3,dialogue:'The storehouses are filling. A settlement survives through many hands; keep your workers safe.'},
       {title:'A company assembled',text:'Field six land military units. Scouts and caravans do not count.',done:s=>army(s).length>=6,dialogue:'Your company is ready. Spears stop riders; a mixed army will survive longer than a single line of troops.'},
       {title:'Clear the raider settlement',text:'Destroy the rival town center while protecting your own.',marker:{x:40,z:-34},done:conquered,dialogue:'The first frontier settlement stands. This land now has a future.'},
-    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.owned(0,'unit','villager').length>=8},
+    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.count(0,'unit','villager')>=8},
     events:[
       {at:45,id:'c1-foragers',text:'Foragers from the eastern woods ask to join the settlement.',reinforce:{type:'villager',count:2}},
       {at:100,id:'c1-militia',text:'Farmhands arrive from the outlying steadings with spears and shields.',reinforce:{type:'spearman',count:3}},
@@ -54,8 +54,8 @@ export const CAMPAIGN_SCRIPTS={
     stages:[
       {title:'Raise the stronghold',text:'Complete a castle before the final waves arrive.',done:s=>completed(s,'keep').length>0,dialogue:'Stone is only the beginning. Repair your defenses and keep producing reinforcements.'},
       {title:'Hold through the first assaults',text:'Survive until the fourth wave arrives with a castle standing.',done:s=>s.wave>=4&&completed(s,'keep').length>0,dialogue:'The early attacks were a test. Siege engines will follow; meet them outside your walls when you can.'},
-      {title:'The last bastion',text:'Survive all eight waves, eliminate the attackers, and keep a castle standing.',done:s=>s.wave>=8&&!s.owned(1,'unit').length&&completed(s,'keep').length>0,dialogue:'The last warband has broken. Your stronghold has earned its name.'},
-    ],optional:{text:'End with ten villagers alive to rebuild the frontier.',done:s=>s.owned(0,'unit','villager').length>=10},
+      {title:'The last bastion',text:'Survive all eight waves, eliminate the attackers, and keep a castle standing.',done:s=>s.wave>=8&&!s.count(1,'unit')&&completed(s,'keep').length>0,dialogue:'The last warband has broken. Your stronghold has earned its name.'},
+    ],optional:{text:'End with ten villagers alive to rebuild the frontier.',done:s=>s.count(0,'unit','villager')>=10},
     events:[
       {at:55,id:'c3-militia',text:'The outlying farms send spearmen to man the walls.',reinforce:{type:'spearman',count:3}},
       {at:115,id:'c3-archers',text:'Hunters arrive with bows and a full quiver.',reinforce:{type:'archer',count:2}},
@@ -86,7 +86,7 @@ export const CAMPAIGN_SCRIPTS={
   campaign6:{speaker:'Admiral Iven',intro:'The final frontier lies beyond the water. Secure a fishing economy, prepare the fleet, then choose a landing force or long-range naval siege.',
     stages:[
       {title:'Secure the fishing grounds',text:'Bring home 150 food with fishing boats.',done:(s,q)=>q.fish>=150,dialogue:'The fishing crews are supplying the fleet. Protect them; ships cannot replace a working economy.'},
-      {title:'Choose the invasion',text:'Land four military units on the eastern coast, or field an Imperial siege galleon.',marker:{x:23,z:-24},done:s=>army(s).filter(e=>e.x>17).length>=4||s.owned(0,'unit','warship').length>0,dialogue:'The invasion is underway. Establish a harbor on the far shore or use the fleet to support your land troops.'},
+      {title:'Choose the invasion',text:'Land four military units on the eastern coast, or field an Imperial siege galleon.',marker:{x:23,z:-24},done:s=>army(s).filter(e=>e.x>17).length>=4||s.count(0,'unit','warship')>0,dialogue:'The invasion is underway. Establish a harbor on the far shore or use the fleet to support your land troops.'},
       {title:'Beyond the horizon',text:'Destroy the rival coastal town center. Land troops and naval artillery can both achieve victory.',marker:{x:40,z:-34},done:conquered,dialogue:'The coast is secure. From a frontier village, your kingdom has reached the horizon.'},
     ],optional:{text:'Complete a harbor on the eastern shore.',done:s=>completed(s,'dock').some(e=>e.x>17)},
     events:[
@@ -96,9 +96,9 @@ export const CAMPAIGN_SCRIPTS={
   campaign7:{speaker:'Warden Ilya',intro:'The ember road is the only crossing through the cinder reach. Hold the ash pass, break the camp that feeds the raiders, and take the keep above the fields.',
     stages:[
       {title:'Hold the ash pass',text:'Complete a watchtower near the marked pass, or move five land military units onto it.',marker:{x:0,z:0},done:s=>completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<24)||army(s).filter(e=>Math.hypot(e.x,e.z)<16).length>=5,dialogue:'The pass is held. The cinder camp can no longer supply the raiders by night.'},
-      {title:'Break the cinder camp',text:'Destroy the rival barracks in the ash fields.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The camp is broken. The ember keep stands alone above the road.'},
+      {title:'Break the cinder camp',text:'Destroy the rival barracks in the ash fields.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is broken. The ember keep stands alone above the road.'},
       {title:'Take the ember keep',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The ember road is open, and the mountain frontier is yours.'},
-    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.owned(0,'unit','villager').length>=8},
+    ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.count(0,'unit','villager')>=8},
     events:[
       {at:50,id:'c7-guides',text:'Ash-field guides join you; they know which ground is safe.',reinforce:{type:'villager',count:2}},
       {at:120,id:'c7-wardens',text:'Pass wardens arrive with spears and shields.',reinforce:{type:'spearman',count:3}},
@@ -107,9 +107,9 @@ export const CAMPAIGN_SCRIPTS={
   campaign8:{speaker:'Forester Brann',intro:'The deepwood has swallowed the border road. Raise a timber camp, break the ambush waiting under the canopy, and swear the woodfort to your banner.',
     stages:[
       {title:'Raise a timber camp',text:'Complete a lumber camp and field four land military units.',marker:{x:-20,z:45},done:s=>completed(s,'camp').length>0&&army(s).length>=4,dialogue:'The camp is cutting and your escort is ready. The deepwood will not give up its road without a fight.'},
-      {title:'Break the ambush',text:'Destroy the rival barracks hidden in the deepwood.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The ambush is broken. The woodfort stands exposed beyond the tree line.'},
+      {title:'Break the ambush',text:'Destroy the rival barracks hidden in the deepwood.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The ambush is broken. The woodfort stands exposed beyond the tree line.'},
       {title:'Swear the oath',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The woodfort swears to your banner. The border road is open again.'},
-    ],optional:{text:'Finish with at least ten villagers alive.',done:s=>s.owned(0,'unit','villager').length>=10},
+    ],optional:{text:'Finish with at least ten villagers alive.',done:s=>s.count(0,'unit','villager')>=10},
     events:[
       {at:60,id:'c8-woodcutters',text:'Woodcutters from the old camps join your timber crews.',reinforce:{type:'villager',count:2}},
       {at:130,id:'c8-archers',text:'Foresters arrive with hunting bows and a knowledge of the trails.',reinforce:{type:'archer',count:2}},
@@ -118,9 +118,9 @@ export const CAMPAIGN_SCRIPTS={
   campaign9:{speaker:'Captain Sela',intro:'Frostmarch is cut off and the siege has settled in for the night. Hold the palisade until the relief column can march, then take the war to the camp that feeds their engines.',
     stages:[
       {title:'Hold the line',text:'Keep your town center standing for two and a half minutes while the siege waves break against it.',seconds:150,done:(s,q)=>q.elapsed>=150,dialogue:'Dawn is breaking and the palisade still stands. The siege camp is exposed and short of men.'},
-      {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:28,z:-24},done:s=>!s.owned(1,'building','barracks').length,dialogue:'The camp is burning. Their engines have no crews left to replace.'},
+      {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is burning. Their engines have no crews left to replace.'},
       {title:'End the siege',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'Frostmarch holds, and the road south is open again.'},
-    ],optional:{text:'Hold with a completed watchtower and eight villagers alive.',done:s=>completed(s,'tower').length>0&&s.owned(0,'unit','villager').length>=8},
+    ],optional:{text:'Hold with a completed watchtower and eight villagers alive.',done:s=>completed(s,'tower').length>0&&s.count(0,'unit','villager')>=8},
     events:[
       {at:30,id:'c9-militia',text:'The town militia falls in along the palisade.',reinforce:{type:'spearman',count:2}},
       {at:55,id:'c9-wave-one',text:'The first siege wave advances out of the dark.',reinforce:{owner:1,type:'spearman',count:3}},
@@ -134,7 +134,7 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Claim the high ground',text:'Complete a castle or watchtower on the marked ridge, or hold the summit with eight land units.',marker:{x:0,z:0},done:s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8,dialogue:'The ridge is yours. From here the whole valley is in sight, and so is their keep.'},
       {title:'Raise the Imperial banner',text:'Reach the Imperial Age.',done:s=>s.players[0].age>=3,dialogue:'The Imperial banner flies. Your rivals have lost the last advantage they held.'},
       {title:'Break the last claim',text:'Destroy the rival keep, then their town center.',marker:{x:40,z:-34},done:conquered,dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
-    ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(completed(s,'keep').length>0||completed(s,'tower').length>0)&&s.owned(0,'unit','villager').length>=12},
+    ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(completed(s,'keep').length>0||completed(s,'tower').length>0)&&s.count(0,'unit','villager')>=12},
     events:[
       {at:70,id:'c10-veterans',text:'Veterans of the border war answer the summons.',reinforce:{type:'swordsman',count:3}},
       {at:110,id:'c10-siege',text:'A siege train arrives from the southern workshops.',reinforce:{type:'ram',count:1}},

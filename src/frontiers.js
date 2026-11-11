@@ -3,6 +3,11 @@ import {disembarkSlots} from './disembark.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {navigationRegions} from './navigation.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+// Sight buckets are rebuilt for every owner on every tick, so the key must not
+// allocate. Coordinates are bounded by the world half-size, well inside the
+// 10-bit range either side of the offset.
+const sightCellIndex=(cx,cz)=>((cx+512)<<10)|((cz+512)&1023);
+const sightCell=(x,z)=>sightCellIndex(Math.floor(x/16),Math.floor(z/16));
 // The closest clear cell can be a pocket enclosed by later construction.
 // Prefer an exit that shares the town center's navigation region.
 function townCenterRegion(sim,grid,labels,owner){
@@ -110,10 +115,10 @@ export function installFrontiers(Simulation){
     const shared=this.options.mode==='custom'&&this.options.shareVision,key=shared?'team:'+this.players[owner].team:'owner:'+owner;
     if(this.sightCache?.time!==this.time||this.sightCache?.revision!==this.revision)this.sightCache={time:this.time,revision:this.revision,teams:new Map()};
     let sight=this.sightCache.teams.get(key);if(!sight){sight={buckets:new Map(),range:0};for(const e of this.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&this.allied(owner,e.owner))&&(e.kind==='unit'||e.kind==='building'&&e.progress>0)){
-      const cell=Math.floor(e.x/16)+':'+Math.floor(e.z/16);if(!sight.buckets.has(cell))sight.buckets.set(cell,[]);sight.buckets.get(cell).push(e);sight.range=Math.max(sight.range,e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18);
+      const cell=sightCell(e.x,e.z);if(!sight.buckets.has(cell))sight.buckets.set(cell,[]);sight.buckets.get(cell).push(e);sight.range=Math.max(sight.range,e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18);
     }this.sightCache.teams.set(key,sight);}
     const range=sight.range+(entity.r||0)+2;
-    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++){const sources=sight.buckets.get(x+':'+z);if(!sources)continue;for(const source of sources)if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?UNITS[source.type].vision:BUILDINGS[source.type].vision||18)+(entity.r||0))return true;}return false;
+    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++){const sources=sight.buckets.get(sightCellIndex(x,z));if(!sources)continue;for(const source of sources)if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?UNITS[source.type].vision:BUILDINGS[source.type].vision||18)+(entity.r||0))return true;}return false;
   };
   p.tickAI=function(){if(this.options.multiplayer)return;original.tickAI.call(this);if(['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival)return;
     const player=this.players[1],tc=this.owned(1,'building','towncenter')[0];if(!tc)return;

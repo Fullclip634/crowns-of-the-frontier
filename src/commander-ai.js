@@ -57,13 +57,13 @@ export function shouldRetryBlockedOrder(sim,unit,x,z){
 
 function customNavy(sim,owner,visible,known,army,tc){
   const dock=sim.owned(owner,'building','dock').find(b=>b.progress>=1);
-  if(dock&&dock.queue.length<2){const count=type=>sim.owned(owner,'unit',type).length+countQueued(sim,type,owner),warships=count('galley')+count('warship'),transports=count('transport'),type=transports<1?'transport':warships<2?(sim.players[owner].age>=3?'warship':'galley'):count('fishingboat')<3?'fishingboat':transports<2&&army.length>20?'transport':warships<6?(sim.players[owner].age>=3?'warship':'galley'):null;if(type)sim.train(dock.id,type);}
+  if(dock&&dock.queue.length<2){const count=type=>sim.count(owner,'unit',type)+countQueued(sim,type,owner),warships=count('galley')+count('warship'),transports=count('transport'),type=transports<1?'transport':warships<2?(sim.players[owner].age>=3?'warship':'galley'):count('fishingboat')<3?'fishingboat':transports<2&&army.length>20?'transport':warships<6?(sim.players[owner].age>=3?'warship':'galley'):null;if(type)sim.train(dock.id,type);}
   const opponents=sim.players.map((p,i)=>({...p,owner:i})).filter(p=>sim.hostile(owner,p.owner)).sort((a,b)=>distance(a.start,tc)-distance(b.start,tc));
   const enemy=opponents[0];if(!enemy)return;
   const target=visible.filter(e=>UNITS[e.type]?.naval&&UNITS[e.type].damage).sort((a,b)=>distance(a,tc)-distance(b,tc))[0]||known.filter(e=>e.type==='dock').sort((a,b)=>distance(a,tc)-distance(b,tc))[0],mid=z=>Math.sin(z*.03)*2;
   const state=stateFor(sim,owner),opening=customOpening(sim,owner,AI_PROFILES[sim.difficulty(owner)]),ships=sim.owned(owner,'unit').filter(e=>UNITS[e.type].naval&&UNITS[e.type].damage);
   const capped=sim.population(owner)+sim.reservedPopulation(owner)>=sim.capacity(owner),stalledFleet=capped&&sim.time>=opening.earliest+60&&army.filter(e=>UNITS[e.type].damage>0).length>=opening.army;
-  const launch=sim.time>=opening.earliest&&sim.owned(owner,'unit','villager').length>=opening.workers&&ships.length>=(stalledFleet?1:Math.min(3,1+sim.players[owner].age));
+  const launch=sim.time>=opening.earliest&&sim.count(owner,'unit','villager')>=opening.workers&&ships.length>=(stalledFleet?1:Math.min(3,1+sim.players[owner].age));
   const home=dock||tc,defense=visible.filter(e=>UNITS[e.type]?.naval&&UNITS[e.type].damage&&distance(e,home)<38).sort((a,b)=>distance(a,home)-distance(b,home))[0];
   const aid=!defense?Object.values(sim.teamAlarms||{}).filter(alarm=>alarm.owner!==owner&&sim.allied(owner,alarm.owner)&&sim.time-alarm.at<30&&sim.get(alarm.base)?.type==='dock'&&distance(home,alarm)<240).sort((a,b)=>distance(home,a)-distance(home,b))[0]:null;
   const aidCount=aid?Math.min(3,Math.floor(ships.length/2)):0;
@@ -210,7 +210,7 @@ export function installCommanderAI(Simulation){
     state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor(populationLimit*.5))};
     if(this.capacity(owner)<(this.options.populationLimit||160)&&this.capacity(owner)-this.population(owner)-this.reservedPopulation(owner)<6&&!buildings.some(b=>b.type==='house'&&b.progress<1))this.commanderBuild('house',null,owner);
     for(const town of towns.filter(b=>b.progress>=1))if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&town.queue.length<2)this.train(town.id,'villager');
-    if(this.time>12&&!this.owned(owner,'unit','scout').length&&!countQueued(this,'scout',owner)&&tc.queue.length<3)this.train(tc.id,'scout');
+    if(this.time>12&&!this.count(owner,'unit','scout')&&!countQueued(this,'scout',owner)&&tc.queue.length<3)this.train(tc.id,'scout');
     if(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&this.canAfford(ageCost,owner))this.research(tc.id,'age');
     // Build actual drop-offs near the sources workers use, then diversify paid production.
     for(const [type,resource]of [['camp','wood'],['mine','gold'],['mine','stone']]){
