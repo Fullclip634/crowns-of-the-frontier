@@ -92,11 +92,18 @@ export class WorldView {
     for(const material of sharedMaterials)for(const key of ['map','bumpMap'])if(material[key])sharedTextures.add(material[key]);
     for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];
-    sim.players.forEach((player,i)=>this.teamMaterials[i].color.setHex(player.color??FACTIONS[player.faction].color));
+    this.applyTeamColors(sim);
     this.buildLandscape(sim);if(camera){this.target.copy(camera.target);this.zoom=camera.zoom;this.angle=camera.angle;this.tilt=camera.tilt;this.updateCamera();}else{const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);}prepareViewport(this);this.buildForest(sim);
     for(const e of sim.entities)if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));
     this.updateFog();
     trimAuthoredAssets(this);
+  }
+  // Team colour lives on shared materials, so a palette change is a handful of
+  // hex writes rather than a scene rebuild. Both the rebuild path and the
+  // colour-blind setting call through here so they cannot drift apart.
+  applyTeamColors(sim){
+    if(!sim)return;
+    sim.players.forEach((player,i)=>{if(this.teamMaterials[i])this.teamMaterials[i].color.setHex(player.color??FACTIONS[player.faction].color);});
   }
   makeRiver(center=0,width=5){const vertices=[],indices=[];for(let i=0;i<=80;i++){const z=-80+i*2,x=center+Math.sin(z*.045)*(width===5?4:3);vertices.push(x-width,.08,z,x+width,.08,z);if(i<80){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();this.terrain.add(new THREE.Mesh(geo,this.materials.water));
     const bridge=new THREE.Group();this.box(bridge,this.materials.wood,center,.38,0,15,.55,15);for(let z=-7;z<=7;z+=2)this.box(bridge,this.materials.darkwood,center,.7,z,15,.14,.12);for(const z of [-7,7]){this.box(bridge,this.materials.darkwood,center,1.4,z,15,.22,.22);for(const x of [-7,-3,3,7])this.box(bridge,this.materials.darkwood,center+x,1,z,.3,2,.3);}this.terrain.add(this.mergeModel(bridge));

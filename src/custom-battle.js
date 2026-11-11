@@ -9,6 +9,14 @@ export const POPULATION_LIMITS=Object.freeze([40,60,80,120,160]);
 
 export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'},vast:{name:'Vast',size:480,desc:'9× standard area'},epic:{name:'Epic',size:560,desc:'12.25× standard area'}};
 export const PLAYER_COLORS=[0x48abc2,0xe07566,0xe6c064,0x73b67b,0xb98ed2,0x66cec0,0xe69b58,0xc3cdd5];
+// Okabe and Ito's colour-blind safe set. Team colour is the only thing telling
+// armies apart, and the default palette separates red from green by hue alone —
+// exactly the axis deuteranopia and protanopia remove. These eight differ in
+// lightness as well as hue, so they survive every common form of colour
+// blindness. The neutral stays a light grey rather than black or white, which
+// would vanish against dark terrain and against the pale UI respectively.
+export const COLORBLIND_PLAYER_COLORS=[0x0072b2,0xd55e00,0xf0e442,0x009e73,0xcc79a7,0x56b4e9,0xe69f00,0xd9d9d9];
+export const playerPalette=colorblind=>colorblind?COLORBLIND_PLAYER_COLORS:PLAYER_COLORS;
 export const VICTORY_RULES={annihilation:{name:'Destroy all buildings',desc:'A kingdom is eliminated when its last building falls, including walls and foundations. Its remaining army surrenders. Your alliance wins when every opposing kingdom is eliminated.'},capital:{name:'Capital conquest',desc:'Destroy every town center belonging to each opposing kingdom. Losing the last town center eliminates that kingdom.'},conquest:{name:'Total conquest',desc:'Destroy all opposing buildings and units. Surviving villagers can rebuild. Your alliance must eliminate every opposing kingdom.'}};
 
 export function battlePreset(preset='2v2'){
