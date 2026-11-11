@@ -108,13 +108,15 @@ for (const quality of tiers) {
       else {
         frameTimes.sort((a, b) => a - b);
         const at = p => frameTimes[Math.min(frameTimes.length - 1, Math.floor(frameTimes.length * p))] || 0;
-        const mean = frameTimes.reduce((a, b) => a + b, 0) / Math.max(1, frameTimes.length);
+        // A window that never paints reports no frames at all. Reporting a rate
+        // from an empty sample would divide by zero and print a confident 1000.
+        if (!frameTimes.length) { resolve({frames: 0, fps: null, medianFrameMs: null, p95FrameMs: null, note: 'no frames presented'}); return; }
+        const mean = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
         resolve({
           frames: frameTimes.length,
-          fps: +(1000 / Math.max(1, mean)).toFixed(1),
+          fps: +(1000 / mean).toFixed(1),
           medianFrameMs: +at(.5).toFixed(1),
-          p95FrameMs: +at(.95).toFixed(1),
-          stalls: frameTimes.length ? undefined : 0
+          p95FrameMs: +at(.95).toFixed(1)
         });
       }
     };
