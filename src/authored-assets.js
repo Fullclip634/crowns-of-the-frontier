@@ -13,6 +13,10 @@ const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
   medium:new URL('./assets3d/frontier-balanced.glb',import.meta.url).href,
   high:new URL('./assets3d/frontier-near.glb',import.meta.url).href,
+  // A genuinely decimated catalogue (scripts/blender/build-lod.mjs): 39% fewer
+  // triangles than low, with the same 126 asset keys. Reserved for distant
+  // geometry; no quality preset selects it by default.
+  far:new URL('./assets3d/frontier-far.glb',import.meta.url).href,
   trees:new URL('./assets3d/frontier-trees.glb',import.meta.url).href,
 };
 const pending=new Map();
@@ -101,8 +105,15 @@ async function catalogueFor(detail){
   catch(error){pending.delete(detail);throw error;}
 }
 
-export async function loadAuthoredAssets(quality='high'){
-  const serial=++loadSerial,catalogue=await catalogueFor(detailFor(quality));if(serial===loadSerial)active=catalogue;return catalogue;
+// `distant` is opt-in so the existing quality presets keep their exact art.
+// It gives the render path a validated low-triangle catalogue to select for
+// far-away instances without changing any current default.
+export function detailForQuality(quality='high',{distant=false}={}){
+  return distant?'far':detailFor(quality);
+}
+
+export async function loadAuthoredAssets(quality='high',options={}){
+  const serial=++loadSerial,catalogue=await catalogueFor(detailForQuality(quality,options));if(serial===loadSerial)active=catalogue;return catalogue;
 }
 
 // Leases retain source meshes rather than a duplicate rendered battlefield.
@@ -112,8 +123,8 @@ export function retainAuthoredAssets(catalogue=active){
   return {catalogue,activate(){if(released)throw new Error('Artwork lease already released.');loadSerial++;active=catalogue;},release(){if(released)return;released=true;if(catalogue){const count=retained.get(catalogue)-1;if(count)retained.set(catalogue,count);else retained.delete(catalogue);}}};
 }
 
-export async function prepareAuthoredAssets(quality){
-  const detail=detailFor(quality);reservations.set(detail,(reservations.get(detail)||0)+1);
+export async function prepareAuthoredAssets(quality,options={}){
+  const detail=detailForQuality(quality,options);reservations.set(detail,(reservations.get(detail)||0)+1);
   try{return retainAuthoredAssets(await catalogueFor(detail));}
   finally{const count=reservations.get(detail)-1;if(count)reservations.set(detail,count);else reservations.delete(detail);}
 }

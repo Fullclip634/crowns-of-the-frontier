@@ -5,8 +5,11 @@ import {execSync} from 'node:child_process';
 import {Script} from 'node:vm';
 import {writeReleaseManifest} from './server/release.js';
 import {precacheFiles} from './scripts/offline-assets.js';
+import {fingerprintBuildId} from './scripts/build-safety.mjs';
 let outputDirectory='dist',projectRoot='';
-const buildId=String(Date.now());
+// Content-addressed instead of clock-based: identical sources produce identical
+// build metadata, and the update poll only fires when something really changed.
+const buildId=fingerprintBuildId(import.meta.dirname);
 // Hosted agents stamp the revision through the environment. Local builds used
 // to ship `commit: null`, which made a deployment impossible to verify against
 // a revision, so fall back to the checked-out commit.
@@ -18,11 +21,12 @@ function releaseCommit(){
 export default defineConfig({
   server:{watch:{ignored:['**/.tools/**','**/artifacts/**']}},
   optimizeDeps:{include:['three/addons/loaders/GLTFLoader.js','three/addons/loaders/KTX2Loader.js','three/addons/libs/meshopt_decoder.module.js']},
-  // Hosted build agents may refuse a bulk rm of an existing output directory.
-  // Emitting in place is deterministic: Vite rewrites index.html (including the
-  // injected build id) and every hashed asset, and the release manifest below
-  // lists only files emitted by *this* build, so stale files are never shipped.
-  build:{emptyOutDir:false,rollupOptions:{output:{manualChunks:{three:['three']}}}},
+  // Always emit into a clean directory. scripts/build-safe.mjs builds into a
+  // fresh staging dir and swaps it in atomically, so in-place accumulation of
+  // stale catalogues (and a failed build shipping a zero-byte entry) cannot
+  // happen. Sourcemaps are emitted but deliberately excluded from the offline
+  // precache list below.
+  build:{emptyOutDir:true,sourcemap:true,rollupOptions:{output:{manualChunks:{three:['three']}}}},
   plugins:[{name:'offline-game',
     configResolved(config){projectRoot=config.root;outputDirectory=path.resolve(config.root,config.build.outDir);},
     transformIndexHtml(){return [{tag:'meta',attrs:{name:'frontier-build',content:buildId},injectTo:'head'}];},
@@ -30,7 +34,7 @@ export default defineConfig({
     // invoked from Rollup's finally on failure, where a release error would
     // mask the actual build failure.
     writeBundle(options,bundle){
-      const emitted=Object.keys(bundle).filter(file=>file.startsWith('assets/')).map(file=>'/'+file);
+      const emitted=Object.keys(bundle).filter(file=>file.startsWith('assets/')&&!file.endsWith('.map')).map(file=>'/'+file);
       const assets=emitted.length?emitted:fs.readdirSync(path.join(outputDirectory,'assets')).map(f=>'/assets/'+f);
       const fonts=fs.existsSync(path.join(outputDirectory,'fonts'))?fs.readdirSync(path.join(outputDirectory,'fonts')).map(f=>'/fonts/'+f):[];
       // Emitting in place means an old sample pack can linger in dist. Publish

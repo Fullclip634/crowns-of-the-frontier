@@ -31,6 +31,7 @@ import {animateSceneDecorations} from './scene-animation.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
+import {createGpuFrameTimer,effectiveFrameSeconds} from './gpu-timing.js';
 import {ensureModelIndices} from './vertex-layout.js';
 import {createWorldRenderer} from './render-context.js';
 import {graphicsCheckpoint} from './graphics-checkpoint.js';
@@ -42,7 +43,7 @@ export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,z
 export class WorldView {
   constructor(container,settings,renderer=createWorldRenderer()){
     this.container=container;this.settings=settings;this.nodes=new Map();this.selection=new Set();this.fx=[];this.treeIndices=new Map();this.unitBatches=new Map();this.dynamicScale=1;this.frameAverage=.016;this.performanceClock=0;this.vfxTimer=createFrameTimer({targetSeconds:1/targetFrameRate(settings)});this.target=new THREE.Vector3(-37,0,29);this.angle=Math.PI/4;this.zoom=48;this.tilt=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).tilt;
-    this.renderer=renderer;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
+    this.renderer=renderer;this.gpuTimer=createGpuFrameTimer(renderer);this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
     this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa5b4ad);this.scene.fog=new THREE.Fog(0xa5b4ad,105,230);
     this.camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.5,400);this.raycaster=new THREE.Raycaster();this.mouse=new THREE.Vector2();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.clock=0;
     this.hemi=new THREE.HemisphereLight(0xc7def1,0x52633a,.9);this.scene.add(this.hemi);this.sun=new THREE.DirectionalLight(0xffe4bd,2.7);this.sun.position.set(-48,62,32);this.sun.castShadow=true;this.sun.shadow.mapSize.set(settings.quality==='high'?2048:1024,settings.quality==='high'?2048:1024);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:180});this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.025;nodeRuntime()?.configureDirectionalShadow(this.sun,this.renderer);this.scene.add(this.sun,this.sun.target);
@@ -223,9 +224,12 @@ export class WorldView {
   }
   adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal){this.renderPressure=null;this.performanceClock=0;return;}const flight=this.renderer.backend?.isWebGPUBackend?this.renderFlight:null,pressure=flight?(this.renderPressure??={submitted:flight.submitted,skipped:flight.skipped}):null;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
     const base=Math.min(devicePixelRatio,this.settings.quality==='high'?2:this.settings.quality==='low'?1:1.25),budget=1/targetFrameRate(this.settings);
-    let average=this.frameAverage,submitted=0,held=0;if(pressure){submitted=Math.max(0,flight.submitted-pressure.submitted);held=Math.max(0,flight.skipped-pressure.skipped);pressure.submitted=flight.submitted;pressure.skipped=flight.skipped;if(held)average=Math.max(average,budget)*(submitted?1+held/submitted:2);}
-    // Queue holds are missed render opportunities, not fast displayed frames.
-    this.graphicsPressure={cpuFrameSeconds:this.frameAverage,effectiveFrameSeconds:average,submitted,held,targetFPS:1/budget};
+    let submitted=0,held=0;if(pressure){submitted=Math.max(0,flight.submitted-pressure.submitted);held=Math.max(0,flight.skipped-pressure.skipped);pressure.submitted=flight.submitted;pressure.skipped=flight.skipped;}
+    // Real GPU time when the browser exposes timer queries; CPU frame time is
+    // otherwise a systematically optimistic signal for a GPU-bound scene.
+    const gpuMs=this.gpuTimer?.frameMs??null;
+    const average=effectiveFrameSeconds({cpuSeconds:this.frameAverage,gpuMs,budgetSeconds:budget,submitted,held});
+    this.graphicsPressure={cpuFrameSeconds:this.frameAverage,gpuFrameMs:gpuMs,effectiveFrameSeconds:average,submitted,held,targetFPS:1/budget};
     if(average>budget*1.35&&this.settings.quality==='high'){this.quality('medium');return;}
     if(average>budget*1.6&&this.settings.quality==='medium'){this.quality('low');return;}
     if(average>budget*1.2&&this.dynamicScale>.62){this.dynamicScale=Math.max(.62,this.dynamicScale-.12);this.renderer.setPixelRatio(base*this.dynamicScale);}
@@ -267,7 +271,11 @@ export class WorldView {
     if(this.clock-this.locomotionPrunedAt>2){this.locomotion.prune(this.sim);this.unitActions.prune(this.sim);pruneFootPlacements(this,this.sim);this.locomotionPrunedAt=this.clock;}
     this.wallVisuals??=new WallVisuals(this);this.wallVisuals.update(menu);
     scheduleShadows(this);
-    this.renderer.render(this.scene,this.camera);
+    // Bracket only the draw call: the simulation/animation work above is CPU
+    // time and belongs to the other half of the timing comparison.
+    this.gpuTimer?.begin();
+    try{this.renderer.render(this.scene,this.camera);}
+    finally{this.gpuTimer?.end();}
   }
 }
 

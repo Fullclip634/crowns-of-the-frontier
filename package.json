@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build && node scripts/clean-dist.mjs",
+    "build": "node scripts/build-safe.mjs",
+    "build:vite": "vite build && node scripts/clean-dist.mjs",
     "build:native": "vite build --configLoader native && node scripts/clean-dist.mjs",
     "bench:sim": "node scripts/battle-benchmark.mjs",
     "measure:fps": "node scripts/measure-fps.mjs",
@@ -13,6 +14,7 @@
     "art:rebuild": "node scripts/blender/rebuild-atlas.mjs",
     "art:balanced": "node scripts/blender/build-balanced.mjs",
     "art:bridge": "node scripts/blender/build-bridge.mjs",
+    "art:lod": "node scripts/blender/build-lod.mjs",
     "art:materials": "node --use-system-ca scripts/vendor-materials.mjs",
     "art:characters": "node scripts/blender/build-character-surfaces.mjs",
     "art:horse": "node scripts/blender/build-horse-legs.mjs",

@@ -1,5 +1,5 @@
 const RUNTIME_ONLY=[
-  /^frontier-(?:near|balanced)-[^/]+\.glb$/i,
+  /^frontier-(?:near|balanced|far)-[^/]+\.glb$/i,
   /\.ktx2$/i,
   /(?:^|[-_])(?:normal|arm)(?:[-_.]|$)/i,
 ];
