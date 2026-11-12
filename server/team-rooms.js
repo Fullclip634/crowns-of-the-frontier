@@ -206,7 +206,15 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
     }catch{send(ws,{type:'error',message:'The command could not be processed. Check the battle settings and try again.'});}});
     ws.on('close',()=>{if(player&&player.ws===ws){player.ws=null;if(!player.conceded)player.disconnected=Date.now();if(!room.sim)player.ready=false;if(rooms.get(room.code)===room&&!releaseVacantRoom(room))lobby(room);}});
   });
-  let snapshotClock=0;const timer=setInterval(()=>{snapshotClock++;for(const room of rooms.values()){
+  // A single throwing room used to escape the interval callback as an uncaught
+  // exception, which terminates the process and drops every live match. Isolate
+  // the failure to the room that caused it.
+  function failRoom(room,error){
+    console.error(`Room ${room?.code||'unknown'} tick failed; closing that room:`,error);
+    try{closeLobby(room,'The battle could not continue. Create or join another room.');}
+    catch(closeError){try{rooms.delete(room.code);}catch{}console.error('Room could not be closed cleanly:',closeError);}
+  }
+  let snapshotClock=0;const timer=setInterval(()=>{snapshotClock++;for(const room of rooms.values()){try{
     let lobbyChanged=false;
     for(const player of room.players)if(!player.ws&&player.disconnected&&Date.now()-player.disconnected>120000){concede(room,player,'Commander did not reconnect.');if(!room.sim&&!player.host){restoreLobbySlot(room,player.side);room.players=room.players.filter(other=>other!==player);lobbyChanged=true;}}
     if(!room.sim&&room.players.some(player=>player.host&&player.conceded)){closeLobby(room,'The host did not reconnect. Create or join another room.');continue;}
@@ -224,7 +232,7 @@ export function attachRooms(server,{allowedOrigins=(process.env.ALLOWED_ORIGINS|
       if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}
     if(room.players.every(p=>!p.ws)&&Date.now()-Math.max(room.created,...room.players.map(p=>p.disconnected||0))>150000)rooms.delete(room.code);
-  }},100);
-  const heartbeat=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},Math.max(50,Number(heartbeatInterval)||20000));
+  }catch(error){failRoom(room,error);}}},100);
+  const heartbeat=setInterval(()=>{for(const ws of wss.clients){try{if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}catch{try{ws.terminate();}catch{}}}},Math.max(50,Number(heartbeatInterval)||20000));
   return {rooms,close(){clearInterval(timer);clearInterval(heartbeat);wss.close();}};
 }
