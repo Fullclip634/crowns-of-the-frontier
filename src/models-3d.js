@@ -193,7 +193,7 @@ function supplyCart(view,e){const g=new THREE.Group(),b=builder(view,g),m=view.m
   for(const x of [-.4,.4])for(const z of [-.7,.6])crate(view,g,x,.89,z,.66);barrel(view,g,0,1.5,0,.45);
   b.rod(m.darkwood,[-.5,.65,1.2],[-.5,.3,2.5],.06);b.rod(m.darkwood,[.5,.65,1.2],[.5,.3,2.5],.06);flag(view,g,view.teamMaterials[e.owner],.85,2.8,-1,.65);
   g.userData.model3d={kind:'unit',type:'cart',articulated:true};return g;}
-export function unitModel(view,e){ensureModels(view);return authoredUnit(view,e)||(e.type==='cart'?supplyCart(view,e):UNITS[e.type].naval?ship(view,e):['ram','catapult'].includes(e.type)?siege(view,e):human(view,e));}
+export function unitModel(view,e,catalogue=null){ensureModels(view);return authoredUnit(view,e,catalogue)||(e.type==='cart'?supplyCart(view,e):UNITS[e.type].naval?ship(view,e):['ram','catapult'].includes(e.type)?siege(view,e):human(view,e));}
 
 function cottage(view,g,owner,x,z,w=4,d=3.5,h=3.2){
   const b=builder(view,g),m=view.materials,roof=view.roofMaterials[owner],faction=view.sim?.players[owner].faction||'alder';

@@ -1,6 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {effectiveFrameSeconds, createGpuFrameTimer} from '../src/gpu-timing.js';
+import {WorldView} from '../src/world.js';
+
+test('frameTimeMs falls back to presented frame time and adapt always tracks it', () => {
+  const view = Object.create(WorldView.prototype);
+  view.frameAverage = 0.016;
+  view.gpuTimer = null;
+  assert.equal(view.frameTimeMs, 16);
+  view.gpuTimer = {frameMs: 42};
+  assert.equal(view.frameTimeMs, 42);
+  view.gpuTimer = {frameMs: NaN};
+  assert.equal(view.frameTimeMs, 16);
+
+  // Automatic quality may be disabled, but the LOD and shadow schedulers still
+  // need a live frame-time signal.
+  view.settings = {autoQuality: false};
+  view.performanceClock = 0;
+  view.renderPressure = {};
+  view.adapt(0.1);
+  assert.ok(view.frameAverage > 0.016, 'frameAverage advances even when auto-quality is off');
+  assert.equal(view.frameTimeMs, view.frameAverage * 1000);
+});
 
 test('CPU-only timing is unchanged when no GPU timer is available', () => {
   assert.equal(effectiveFrameSeconds({cpuSeconds: 0.024}), 0.024);
@@ -61,7 +82,7 @@ test('an unsupported or non-WebGL renderer yields no timer and never throws', ()
 
 test('the timer measures a completed query in milliseconds and releases it', () => {
   const harness = fakeRenderer();
-  const timer = createGpuFrameTimer(harness.renderer);
+  const timer = createGpuFrameTimer(harness.renderer, {sampleEvery: 1});
   assert.equal(timer.supported, true);
   assert.equal(timer.frameMs, null);
 
@@ -81,7 +102,7 @@ test('the timer measures a completed query in milliseconds and releases it', () 
 
 test('a disjoint event discards invalid timings instead of reporting a fast frame', () => {
   const harness = fakeRenderer({disjoint: true});
-  const timer = createGpuFrameTimer(harness.renderer);
+  const timer = createGpuFrameTimer(harness.renderer, {sampleEvery: 1});
   timer.begin();
   timer.end();
   timer.begin(); // drains the pending query
@@ -91,9 +112,22 @@ test('a disjoint event discards invalid timings instead of reporting a fast fram
   timer.dispose();
 });
 
+test('GPU time is sampled periodically rather than bracketing every frame', () => {
+  const harness = fakeRenderer();
+  const timer = createGpuFrameTimer(harness.renderer, {sampleEvery: 10});
+  assert.equal(timer.sampleEvery, 10);
+  for (let frame = 0; frame < 9; frame++) { timer.begin(); timer.end(); }
+  assert.equal(harness.calls.begun, 0, 'no query is issued on non-sample frames');
+  timer.begin(); timer.end();
+  assert.equal(harness.calls.begun, 1, 'one query every ten frames');
+  for (let frame = 0; frame < 10; frame++) { timer.begin(); timer.end(); }
+  assert.equal(harness.calls.begun, 2);
+  timer.dispose();
+});
+
 test('overlapping begin calls are ignored and dispose stops all measurement', () => {
   const harness = fakeRenderer();
-  const timer = createGpuFrameTimer(harness.renderer);
+  const timer = createGpuFrameTimer(harness.renderer, {sampleEvery: 1});
   timer.begin();
   timer.begin();
   assert.equal(harness.calls.begun, 1, 'WebGL2 allows only one active timer query');

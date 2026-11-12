@@ -24,7 +24,13 @@ function webglContext(renderer) {
   catch { return null; }
 }
 
-export function createGpuFrameTimer(renderer) {
+// A WebGL2 timer query is not free. On ANGLE/D3D11, polling a pending
+// TIME_ELAPSED_EXT query forces pipeline synchronization and can more than
+// halve the frame rate, even when queries are issued infrequently. This is
+// therefore an opt-in diagnostic (settings.gpuTiming), not a default render
+// path. Production quality adaptation uses CPU frame time and queue pressure.
+// One sample every `sampleEvery` frames is still plenty for a diagnostic.
+export function createGpuFrameTimer(renderer, {sampleEvery = 30} = {}) {
   const gl = webglContext(renderer);
   const extension = gl && typeof gl.getExtension === 'function'
     ? gl.getExtension('EXT_disjoint_timer_query_webgl2')
@@ -35,6 +41,8 @@ export function createGpuFrameTimer(renderer) {
   let pending = [];
   let lastMs = null;
   let disposed = false;
+  let frames = 0;
+  const stride = Math.max(1, Math.floor(sampleEvery) || 1);
 
   const drain = () => {
     if (!pending.length) return;
@@ -57,9 +65,14 @@ export function createGpuFrameTimer(renderer) {
 
   return {
     supported: true,
+    sampleEvery: stride,
     get frameMs() { return lastMs; },
     begin() {
       if (disposed || active) return;
+      frames += 1;
+      // Never poll a pending query on ordinary frames: that is the expensive
+      // synchronization point. Only look at results on a sample frame.
+      if (frames % stride !== 0) return;
       drain();
       if (pending.length >= MAX_PENDING) return;
       const query = gl.createQuery();
@@ -72,7 +85,6 @@ export function createGpuFrameTimer(renderer) {
       try { gl.endQuery(extension.TIME_ELAPSED_EXT); pending.push(active); }
       catch { gl.deleteQuery(active); }
       active = null;
-      drain();
     },
     dispose() {
       disposed = true;

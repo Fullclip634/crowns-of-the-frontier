@@ -1,13 +1,14 @@
-export function treeDetail(screenHeight,quality,previous){
+export function treeDetail(screenHeight,quality,previous,{threshold=34}={}){
   // Swap to the coarse canopy only once a tree is genuinely small on screen.
   // At 54 px the far mesh was still prominent, which read as a shrunken blob;
-  // 34 px keeps the authored silhouette through normal RTS zoom levels.
-  const threshold=34;
+  // 34 px keeps the authored silhouette through normal RTS zoom levels. The
+  // caller can raise the threshold when GPU timing proves the frame is bound.
+  const limit=Number.isFinite(threshold)?Math.max(1,threshold):34;
   // Keep the richer model longer while moving away. This stops tiny camera
   // movements near a threshold from repeatedly swapping tree silhouettes.
   // A settings change must not replace trees at an unchanged camera position.
   const hold=previous?.near;
-  return {quality,near:screenHeight>=threshold*(hold?.82:1)};
+  return {quality,near:screenHeight>=limit*(hold?.82:1)};
 }
 // Decimated far canopies can also be narrower than the near model. Restoring
 // the footprint keeps distant trees reading as trees instead of shrinking into

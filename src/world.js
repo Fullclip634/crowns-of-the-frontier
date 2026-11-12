@@ -11,7 +11,8 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
 import {terrainBiome,isSnowBiome} from './terrain-biomes.js';
-import {authoredAssetState,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
+import {authoredAssetState,authoredCatalogue,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
+import {unitScreenHeight,lodDecision} from './distance-lod.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix,prepareViewport} from './render-batches.js';
 import {sceneNodeFor,releaseSceneNode} from './scene-nodes.js';
 import {installBattleRemains} from './battle-remains.js';
@@ -43,7 +44,10 @@ export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,z
 export class WorldView {
   constructor(container,settings,renderer=createWorldRenderer()){
     this.container=container;this.settings=settings;this.nodes=new Map();this.selection=new Set();this.fx=[];this.treeIndices=new Map();this.unitBatches=new Map();this.dynamicScale=1;this.frameAverage=.016;this.performanceClock=0;this.vfxTimer=createFrameTimer({targetSeconds:1/targetFrameRate(settings)});this.target=new THREE.Vector3(-37,0,29);this.angle=Math.PI/4;this.zoom=48;this.tilt=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).tilt;
-    this.renderer=renderer;this.gpuTimer=createGpuFrameTimer(renderer);this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
+    // GPU timer queries are an opt-in diagnostic: on ANGLE/D3D11 they can
+    // more than halve the frame rate. Default quality adaptation uses CPU
+    // frame time plus WebGPU queue pressure, which has no measurement cost.
+    this.renderer=renderer;this.gpuTimer=settings?.gpuTiming===true?createGpuFrameTimer(renderer):null;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
     this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa5b4ad);this.scene.fog=new THREE.Fog(0xa5b4ad,105,230);
     this.camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.5,400);this.raycaster=new THREE.Raycaster();this.mouse=new THREE.Vector2();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.clock=0;
     this.hemi=new THREE.HemisphereLight(0xc7def1,0x52633a,.9);this.scene.add(this.hemi);this.sun=new THREE.DirectionalLight(0xffe4bd,2.7);this.sun.position.set(-48,62,32);this.sun.castShadow=true;this.sun.shadow.mapSize.set(settings.quality==='high'?2048:1024,settings.quality==='high'?2048:1024);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:180});this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.025;nodeRuntime()?.configureDirectionalShadow(this.sun,this.renderer);this.scene.add(this.sun,this.sun.target);
@@ -55,7 +59,9 @@ export class WorldView {
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
     this.burning=new THREE.InstancedMesh(this.geo.cone,new THREE.MeshBasicMaterial({color:0xf6b15b,transparent:true,opacity:.75,depthWrite:false}),80);this.burning.count=0;this.burning.frustumCulled=false;this.scene.add(this.burning);
-    this.smoke=new THREE.InstancedMesh(this.geo.sphere,new THREE.MeshBasicMaterial({color:0x676c62,transparent:true,opacity:.16,depthWrite:false}),80);this.smoke.count=0;this.smoke.frustumCulled=false;this.scene.add(this.smoke);
+    // `smoke()` is also the damage-effect factory. Keep the persistent fire
+    // plume batch under a distinct name so it cannot shadow that method.
+    this.smokeMesh=new THREE.InstancedMesh(this.geo.sphere,new THREE.MeshBasicMaterial({color:0x676c62,transparent:true,opacity:.16,depthWrite:false}),80);this.smokeMesh.count=0;this.smokeMesh.frustumCulled=false;this.scene.add(this.smokeMesh);
   }
   piece(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1,ry=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   box(g,m,x,y,z,w,h,d,ry=0){return this.piece(g,this.geo.box,m,x,y,z,w,h,d,ry);}
@@ -69,10 +75,27 @@ export class WorldView {
     for(const {material,geometries,motion} of byMaterial.values()){const geometry=mergeGeometries(geometries);if(geometry){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=material!==this.materials.shadow;mesh.receiveShadow=true;mesh.userData.motion=motion;group.add(mesh);}for(const geo of geometries)geo.dispose();}
     return group;
   }
+  distantCatalogue(){return this.settings.distantUnits===false?null:authoredCatalogue('far');}
+  unitDetail(e,x,y,z){
+    if(!this.distantCatalogue())return 'near';
+    const distance=Math.hypot(this.camera.position.x-x,this.camera.position.y-y,this.camera.position.z-z);
+    const previous=(this.unitLodState??=new Map()).get(e.id);
+    const decision=lodDecision({distance,worldHeight:unitScreenHeight(e.type),viewportHeight:this.container?.clientHeight||globalThis.innerHeight||720,fovDegrees:this.camera.fov,previous,threshold:26,hysteresis:.8,enabled:true});
+    this.unitLodState.set(e.id,decision);
+    return decision.detail;
+  }
   unitNode(e){const variant=workerVisualTask(this,e),key=`${e.type}:${variant}`,rigid=this.settings.rigidUnits!==false;let batch=this.unitBatches.get(key);
-    if(!batch){const model=mergeUnitModel(this,this.makeUnit(e),true);model.updateMatrixWorld(true);batch={parts:[],ids:[],renderIds:[],free:[],capacity:Math.max(512,this.sim.players.length*(this.sim.options.populationLimit||160)),model3d:model.userData.model3d};
-      if(rigid){const part=createRigidUnitPart(this,model,batch);if(part){batch.parts.push(part);this.objects.add(part);}}
-      model.traverse(part=>{if(!part.isMesh||rigid&&!part.material.transparent)return;const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(batch.capacity),1).setUsage(THREE.DynamicDrawUsage));const inst=new THREE.InstancedMesh(geometry,part.material,batch.capacity);inst.count=0;inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);inst.castShadow=part.material!==this.materials.shadow;inst.receiveShadow=true;inst.frustumCulled=false;inst.userData.unitIds=batch.renderIds;inst.userData.motion=part.userData.motion;batch.parts.push(inst);this.objects.add(inst);});this.unitBatches.set(key,batch);this.releaseNode(model);}
+    if(!batch){const capacity=Math.max(512,this.sim.players.length*(this.sim.options.populationLimit||160)),far=this.distantCatalogue();
+      const model=mergeUnitModel(this,this.makeUnit(e,null),true);model.updateMatrixWorld(true);
+      batch={parts:[],farParts:[],ids:[],renderIds:[],farRenderIds:[],free:[],capacity,model3d:model.userData.model3d};
+      const fill=(source,parts,renderIds)=>{
+        if(rigid){const part=createRigidUnitPart(this,source,batch,renderIds);if(part){parts.push(part);this.objects.add(part);}}
+        source.traverse(part=>{if(!part.isMesh||rigid&&!part.material.transparent)return;const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(capacity),1).setUsage(THREE.DynamicDrawUsage));const inst=new THREE.InstancedMesh(geometry,part.material,capacity);inst.count=0;inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);inst.castShadow=part.material!==this.materials.shadow;inst.receiveShadow=true;inst.frustumCulled=false;inst.userData.unitIds=renderIds;inst.userData.motion=part.userData.motion;parts.push(inst);this.objects.add(inst);});
+        this.releaseNode(source);
+      };
+      fill(model,batch.parts,batch.renderIds);
+      if(far){const distant=mergeUnitModel(this,this.makeUnit(e,far),true);distant.updateMatrixWorld(true);fill(distant,batch.farParts,batch.farRenderIds);}
+      this.unitBatches.set(key,batch);}
     const index=batch.free.length?batch.free.pop():batch.ids.length;batch.ids[index]=e.id;
     const node=new THREE.Group();node.userData.batch=batch;node.userData.index=index;node.userData.model3d=batch.model3d;node.userData.unitVariant=variant;return node;
   }
@@ -88,7 +111,7 @@ export class WorldView {
     this.locomotion??=new UnitLocomotion();this.locomotion.clear();this.locomotionPrunedAt=0;
     this.footPoses=new Map();this.footPoseEntity=null;
     this.unitActions??=new UnitActions();this.unitActions.clear();
-    for(const batch of this.unitBatches.values())for(const part of batch.parts){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();
+    for(const batch of this.unitBatches.values())for(const part of [...batch.parts,...(batch.farParts||[])]){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();this.unitLodState?.clear();
     const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
     for(const material of sharedMaterials)for(const key of ['map','bumpMap'])if(material[key])sharedTextures.add(material[key]);
     for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
@@ -222,7 +245,11 @@ export class WorldView {
       artwork.activate();this.attach(this.sim);this.forestLodState=forestLodState;this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
     },()=>graphicsCheckpoint(this)).catch(error=>{if(this.graphicsRequest===request)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;}).finally(()=>{artwork?.release();trimAuthoredAssets(this);trimSurfaceAssets(this);});
   }
-  adapt(dt){if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal){this.renderPressure=null;this.performanceClock=0;return;}const flight=this.renderer.backend?.isWebGPUBackend?this.renderFlight:null,pressure=flight?(this.renderPressure??={submitted:flight.submitted,skipped:flight.skipped}):null;this.frameAverage=this.frameAverage*.97+dt*.03;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
+  // Real presented-frame time is a free and reliable signal even when the GPU
+  // timer is disabled or automatic quality is off: a GPU-bound frame delays
+  // the next animation frame as well as the GPU query.
+  get frameTimeMs(){const gpu=this.gpuTimer?.frameMs;return Number.isFinite(gpu)&&gpu>0?gpu:(this.frameAverage||0)*1000;}
+  adapt(dt){this.frameAverage=this.frameAverage*.97+dt*.03;if(this.settings.autoQuality===false||this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal){this.renderPressure=null;this.performanceClock=0;return;}const flight=this.renderer.backend?.isWebGPUBackend?this.renderFlight:null,pressure=flight?(this.renderPressure??={submitted:flight.submitted,skipped:flight.skipped}):null;this.performanceClock+=dt;if(this.performanceClock<5)return;this.performanceClock=0;
     const base=Math.min(devicePixelRatio,this.settings.quality==='high'?2:this.settings.quality==='low'?1:1.25),budget=1/targetFrameRate(this.settings);
     let submitted=0,held=0;if(pressure){submitted=Math.max(0,flight.submitted-pressure.submitted);held=Math.max(0,flight.skipped-pressure.skipped);pressure.submitted=flight.submitted;pressure.skipped=flight.skipped;}
     // Real GPU time when the browser exposes timer queries; CPU frame time is
@@ -255,7 +282,7 @@ export class WorldView {
       if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){
         node.position.set(rx,ground,rz);node.rotation.y=heading;
-        const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true);continue;
+        const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true,this.unitDetail(e,rx,ground,rz));continue;
       }
       if(!visible||e.embarked)continue;
       node.position.set(rx,ground,rz);if(e.kind==='unit'){node.rotation.y=heading;const body=node.userData.body;if(body){body.position.y=e.moving?Math.sin(this.clock*10+e.id)*.065:0;if(e.type==='villager'&&e.order?.type==='gather'&&!e.moving)body.rotation.z=Math.sin(this.clock*6)*.08;else body.rotation.z=0;}}
@@ -264,7 +291,7 @@ export class WorldView {
     }
     this.damageSmoke(dt);
     for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=dt;const t=f.time/f.duration;if(t>=1){if(f.impact){this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);this.crater(f.to.x,f.to.z,(f.impactSize||1.8)*.9);this.sparks(f.to.x,(this.groundHeight?.(f.to.x,f.to.z)||0)+.3,f.to.z,0xffd68a,1.2);}releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.sparks){const dummy=this.effectDummy??=new THREE.Object3D();f.sparks.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-8*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.7));dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.crater){f.object.material.opacity=(1-t)*.7;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
-    let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smoke.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smoke.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smoke);
+    let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smokeMesh.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smokeMesh.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smokeMesh);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     this.interactions?.alignCargoFeet();
     endUnitFrame(this);

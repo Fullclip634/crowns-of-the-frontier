@@ -2,8 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
+import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {WorldView} from '../src/world.js';
+import {unitModel} from '../src/models-3d.js';
+import {UNITS} from '../src/data.js';
 import {readGlbJson, catalogueStats, compareCatalogues} from '../scripts/blender/build-lod.mjs';
 import {registerAuthoredAssets, clearAuthoredAssets, detailForQuality} from '../src/authored-assets.js';
 import {precacheFiles} from '../scripts/offline-assets.js';
@@ -40,6 +44,37 @@ test('the far catalogue actually loads through GLTFLoader and registers all 126 
   assert.ok(catalogue.geometries.size > 0);
   for (const key of ['unit:archer', 'building:towncenter:alder:0', 'resource:food:0']) {
     assert.ok(catalogue.templates.has(key), key);
+  }
+  clearAuthoredAssets();
+});
+
+test('every unit builds a solid mesh from the decimated catalogue', async () => {
+  const bytes = read('frontier-far.glb');
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+    .parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
+  const catalogue = registerAuthoredAssets(gltf, 'far', bytes.length, true);
+  const view = Object.create(WorldView.prototype);
+  view.geo = {box: new THREE.BoxGeometry(1, 1, 1), sphere: new THREE.IcosahedronGeometry(1, 0), cylinder: new THREE.CylinderGeometry(1, 1, 1, 10), cone: new THREE.ConeGeometry(1, 1, 7)};
+  const keys = ['stone', 'stoneDark', 'plaster', 'wood', 'darkwood', 'gold', 'iron', 'leaf', 'leafDark', 'trunk', 'skin', 'soil', 'furrow', 'water', 'glass', 'timberEdge'];
+  view.materials = Object.fromEntries(keys.map(key => [key, new THREE.MeshStandardMaterial({color: 0x8d9580})]));
+  for (const template of catalogue.templates.values()) template.traverse(part => {
+    if (part.isMesh && part.userData.assetMaterial && !['team', 'teamRoof'].includes(part.userData.assetMaterial))
+      view.materials[part.userData.assetMaterial] ??= part.material.clone();
+  });
+  view.teamMaterials = Array.from({length: 8}, (_, i) => new THREE.MeshStandardMaterial({color: i ? 0x9a687d : 0x397f8c}));
+  view.roofMaterials = view.teamMaterials.map(material => material.clone());
+  view.sim = {players: Array.from({length: 8}, () => ({faction: 'alder', age: 3})), options: {seed: 512, map: 'highlands'}};
+
+  for (const type of Object.keys(UNITS)) {
+    const model = unitModel(view, {kind: 'unit', type, owner: 0, id: 31});
+    let meshes = 0;
+    model.traverse(part => {
+      if (!part.isMesh) return;
+      meshes += 1;
+      assert.ok(part.geometry.getAttribute('position').array.every(Number.isFinite), `${type} vertices are finite`);
+      assert.ok(part.geometry.getAttribute('normal'), `${type} has normals`);
+    });
+    assert.ok(meshes > 0, `${type} has geometry in the far catalogue`);
   }
   clearAuthoredAssets();
 });

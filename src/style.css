@@ -134,7 +134,11 @@
 @media(max-height:520px) and (orientation:landscape){.production-panel{top:101px;right:12px;width:300px;max-height:calc(100dvh - 120px);padding:10px}.production-heading h3{font-size:23px}.production-note{font-size:8px}.production-groups{margin:8px 0}.production-choice button:first-child{padding:5px 7px}.production-choice strong{font-size:8px}.production-choice small{font-size:7px}.group-production{gap:4px}}
 @media(pointer:coarse){.production-items button,.production-heading>button,.production-groups button,.production-site,.production-choice button{min-height:44px;min-width:44px}}
 @media(max-width:600px) and (orientation:portrait){.production-panel{top:83px;right:8px;left:8px;width:auto;max-height:calc(100dvh - 105px)}}
- .battlefield-loading{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);padding:12px 20px;background:#14291eed;border:1px solid #9e976e66;color:#e8e4ce;font-size:13px;letter-spacing:.04em;z-index:40;pointer-events:none}
+ .battlefield-loading{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);min-width:min(340px,80vw);padding:12px 20px;background:#14291eed;border:1px solid #9e976e66;color:#e8e4ce;font-size:13px;letter-spacing:.04em;z-index:40;pointer-events:none}
+ .battlefield-progress{height:4px;margin-top:10px;background:#ffffff26;overflow:hidden}
+ .battlefield-progress[hidden],.battlefield-progress-label[hidden]{display:none}
+ .battlefield-progress i{display:block;height:100%;width:0;background:#c9b879;transition:width .15s linear}
+ .battlefield-progress-label{display:block;margin-top:6px;font-size:11px;color:#b9bba2;font-variant-numeric:tabular-nums}
 
 @media (pointer:coarse) and (max-height:520px) and (orientation:landscape){
   .bottom-hud{gap:6px;bottom:calc(20px + var(--safe));align-items:flex-end}

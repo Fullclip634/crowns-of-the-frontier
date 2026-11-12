@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {targetFrameRate} from './frame-pacing.js';
+import {periodicStride} from './distance-lod.js';
 const offset=new THREE.Vector3(-48,62,32),right=new THREE.Vector3(0,1,0).cross(offset).normalize(),up=offset.clone().normalize().cross(right).normalize();
 
 // Snapping in light space keeps masonry shadows stable during small pans.
@@ -17,8 +19,13 @@ export function scheduleShadows(view){
   if(!map.enabled){view.shadowSampling=null;return false;}
   const state=view.shadowSampling??={at:-Infinity,updates:0,skipped:0},t=view.target;
   const key=[t.x,t.y,t.z,view.zoom,view.angle,view.tilt,view.camera.aspect,view.settings.quality,view.sun.shadow.mapSize.x].join(':');
-  const interval=(view.renderQuality||view.settings.quality)==='high'?1/30:1/20;
+  const baseInterval=(view.renderQuality||view.settings.quality)==='high'?1/30:1/20;
+  // A second shadow pass is pure GPU cost. When timer queries prove the GPU is
+  // the bottleneck, refresh less often instead of letting the frame overrun.
+  const budgetMs=1000/targetFrameRate(view.settings);
+  const stride=periodicStride(view.frameTimeMs??null,budgetMs,{base:1,maximum:3});
+  const interval=baseInterval*stride;
   const due=map.needsUpdate||state.sim!==view.sim||state.revision!==view.sim.revision||state.camera!==key||view.clock-state.at>=interval-1e-7||view.clock<state.at;
   if(due){map.needsUpdate=!view.renderer.isWebGPURenderer;if(view.renderer.isWebGPURenderer)view.sun.shadow.needsUpdate=true;state.at=view.clock;state.sim=view.sim;state.revision=view.sim.revision;state.camera=key;state.updates++;}else state.skipped++;
-  view.shadowDiagnostics={updates:state.updates,skipped:state.skipped,refreshRate:1/interval,mapSize:view.sun.shadow.mapSize.x};return due;
+  view.shadowDiagnostics={updates:state.updates,skipped:state.skipped,refreshRate:1/interval,frameMs:view.frameTimeMs??null,gpuTimerEnabled:!!view.gpuTimer,gpuStride:stride,mapSize:view.sun.shadow.mapSize.x};return due;
 }

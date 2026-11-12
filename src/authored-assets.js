@@ -8,6 +8,7 @@ import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,applyArchitectureAge} from './architecture-age.js';
+import {readAssetResponse} from './load-progress.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -46,7 +47,7 @@ export function useSharedTrees(catalogue,trees){
 async function sharedTreeCatalogue(){
   if(!treesPending)treesPending=(async()=>{
     const response=await fetch(sources.trees);if(!response.ok)throw new Error(`Tree asset request failed (${response.status}).`);
-    const buffer=await response.arrayBuffer(),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');
+    const buffer=await readAssetResponse(response,'trees','Woodland'),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');
     return sharedTrees=registerSharedTrees(gltf,buffer.byteLength);
   })();
   try{return await treesPending;}catch(error){treesPending=null;throw error;}
@@ -96,7 +97,7 @@ async function catalogueFor(detail){
   if(!pending.has(detail))pending.set(detail,(async()=>{
     const [response,trees]=await Promise.all([fetch(sources[detail]),sharedTreeCatalogue()]);
     if(!response.ok)throw new Error(`3D asset request failed (${response.status}).`);
-    const buffer=await response.arrayBuffer();
+    const buffer=await readAssetResponse(response,detail,'3D models');
     const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const gltf=await loader.parseAsync(buffer,'');
     const catalogue=useSharedTrees(registerAuthoredAssets(gltf,detail,buffer.byteLength,false),trees);loaded.set(detail,catalogue);return catalogue;
@@ -131,6 +132,19 @@ export async function prepareAuthoredAssets(quality,options={}){
 
 export function authoredAssetState(){return active?{source:active.source,detail:active.detail,models:active.templates.size,bytes:active.bytes,sharedTrees:active.trees?.templates.size||0}:null;}
 
+// A second, decimated catalogue can stay resident alongside the active one so
+// distant instances can be built from it without swapping the whole scene.
+// `loaded` is private; these accessors keep the render path from mutating it.
+export function authoredCatalogue(detail){return loaded.get(detail)||null;}
+let distantLease=null;
+export async function preloadDistantAssets(){
+  if(distantLease)return distantLease.catalogue;
+  const catalogue=await catalogueFor('far');
+  distantLease=retainAuthoredAssets(catalogue);
+  return catalogue;
+}
+export function releaseDistantAssets(){distantLease?.release();distantLease=null;}
+
 // Keep the active catalogue and anything still used by a scene during a switch.
 // Old quality catalogues otherwise retain both CPU arrays and GPU buffers.
 export function trimAuthoredAssets(view){
@@ -147,8 +161,9 @@ export function trimAuthoredAssets(view){
 }
 export function clearAuthoredAssets(){active=null;}
 
-function cloneAsset(view,key,owner=0){
-  const template=active?.templates.get(key);if(!template)return null;
+function cloneAsset(view,key,owner=0,catalogue=null){
+  const source=catalogue||active;
+  const template=source?.templates.get(key);if(!template)return null;
   const root=template.clone(true);
   if(key.startsWith('unit:villager'))bindWorkerToolJoints(root);
   const terrainFeet=key.startsWith('unit:')&&bindFootJoints(root);
@@ -170,7 +185,7 @@ function cloneAsset(view,key,owner=0){
     part.castShadow=true;part.receiveShadow=true;
     view.authoredGeometry.add(part.geometry);
   });
-  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),...(terrainHorse?{terrainHorse:true}:{}),authored:true,detail:key.startsWith('tree:')&&active.trees?'shared':active.detail};
+  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),...(terrainHorse?{terrainHorse:true}:{}),authored:true,detail:key.startsWith('tree:')&&source.trees?'shared':source.detail};
   view.artDiagnostics=authoredAssetState();
   return root;
 }
@@ -184,9 +199,9 @@ export function workerVisualTask(view,e){
   if(resource==='food'||resource==='farm')return 'food';
   return 'wood';
 }
-export function authoredUnit(view,e){
+export function authoredUnit(view,e,catalogue=null){
   const task=workerVisualTask(view,e);
-  return (e.type==='villager'?cloneAsset(view,`unit:villager:${task}`,e.owner):null)||cloneAsset(view,`unit:${e.type}`,e.owner);
+  return (e.type==='villager'?cloneAsset(view,`unit:villager:${task}`,e.owner,catalogue):null)||cloneAsset(view,`unit:${e.type}`,e.owner,catalogue);
 }
 export function authoredBuilding(view,e){
   const faction=view.sim?.players[e.owner]?.faction||'alder';

@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {entityGroundHeight} from './entity-ground.js';
 import {nodeRuntime,standardMaterial} from './render-runtime.js';
 import {treeDetail,farFootprintScale,footprintScaledMatrix,treeTint} from './tree-lod.js';
+import {treeDetailThreshold} from './distance-lod.js';
+import {targetFrameRate} from './frame-pacing.js';
 import {BUILDINGS,UNITS,seededRandom} from './data.js';
 import {Landscape,buildLandscape,animateWater} from './landscape.js';
 import {ensureModels,buildingModel,unitModel,resourceModel,treeModel} from './models-3d.js';
@@ -88,7 +90,7 @@ export function installRealm3D(WorldView){
   p.buildForest=function(){buildForest(this);};
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};
-  p.makeUnit=function(e){return unitModel(this,e);};
+  p.makeUnit=function(e,catalogue=null){return unitModel(this,e,catalogue);};
   p.groundHeight=function(x,z){return this.landscape?.walkableHeightAt(x,z)||0;};
   p.entityHeight=function(e,x=e.x,z=e.z){
     if(e.water||UNITS[e.type]?.naval)return .08;
@@ -102,13 +104,18 @@ export function installRealm3D(WorldView){
     const pixels=this.container?.clientHeight||globalThis.innerHeight||720;
     const projection=pixels/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov)*.5));
     const lod=this.forestLodState??=new Map();
+    // Real GPU time when available, CPU frame time otherwise. A bound frame
+    // raises the swap threshold so more forest uses the decimated canopy.
+    const budgetMs=1000/targetFrameRate(this.settings);
+    const threshold=treeDetailThreshold(this.frameTimeMs,budgetMs);
+    this.forestDetailThreshold=threshold;
     this.fallSlots=new Map();for(const batch of this.forest||[]){for(const set of batch.sets)set.ids.length=0;batch.entries.forEach((e,i)=>{
       const current=this.sim.get(e.id);
       const fall=this.treeFalls?.get(e.id);
       const along=((e.x-this.target.x)*dx+(e.z-this.target.z)*dz)/length2,side=Math.hypot(e.x-this.target.x-along*dx,e.z-this.target.z-along*dz),lineHeight=this.target.y+(this.camera.position.y-this.target.y)*along;
       const obstructs=!menu&&this.tilt<.61&&along>.12&&along<1&&side<3.2&&lineHeight<this.groundHeight(e.x,e.z)+8;
       const shown=(current?.hp>0||fall)&&!obstructs&&nearViewport(this,e.x,this.groundHeight(e.x,e.z)+3,e.z,14)&&(menu||this.settings.fog===false||this.sim.isExplored(e.x,e.z));
-      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,this.settings.quality,lod.get(e.id)),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});}
+      if(shown){const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-this.groundHeight(e.x,e.z)-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,this.settings.quality,lod.get(e.id),{threshold}),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,[this.materials.leaf,this.materials.leafDark,this.materials.snow].includes(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});}
     });for(const set of batch.sets)for(const part of set.parts){part.count=set.ids.length;markInstancePrefix(part);part.boundingSphere=null;}}
   };
   p.foliageFog=function(menu){this.forestFog(menu);};

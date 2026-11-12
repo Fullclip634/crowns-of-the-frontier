@@ -24,7 +24,9 @@ import {WallPreview} from './wall-preview.js';
 import {mechanicalUnit} from './maintenance.js';
 import {Simulation,distance} from './simulation.js';
 import {WorldView,CAMERA_PRESETS} from './world.js';
-import {loadAuthoredAssets} from './authored-assets.js';
+import {loadAuthoredAssets,preloadDistantAssets} from './authored-assets.js';
+import {periodicStride} from './distance-lod.js';
+import {onAssetProgress,resetAssetProgress} from './load-progress.js';
 import {loadBridgeArtwork} from './bridge-art.js';
 import {loadSurfaceAssets} from './surface-assets.js';
 import {AudioEngine} from './audio.js';
@@ -98,7 +100,19 @@ let pointer=null,hover=null,keys=new Set(),touches=new Map(),pinch=null,portrait
 const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
-const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');bootStatus.textContent='Preparing your kingdom…';$('#landing').append(bootStatus);
+const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');
+const bootLabel=document.createElement('span');bootLabel.textContent='Preparing your kingdom…';
+const bootProgress=document.createElement('div');bootProgress.className='battlefield-progress';bootProgress.hidden=true;const bootProgressFill=document.createElement('i');bootProgress.append(bootProgressFill);
+const bootPercent=document.createElement('span');bootPercent.className='battlefield-progress-label';bootPercent.hidden=true;
+bootStatus.append(bootLabel,bootProgress,bootPercent);$('#landing').append(bootStatus);
+const stopAssetProgress=onAssetProgress(({percent,label})=>{
+  if(percent===null)return;
+  bootProgress.hidden=false;bootPercent.hidden=false;
+  bootProgressFill.style.width=`${percent}%`;
+  bootProgress.setAttribute('role','progressbar');bootProgress.setAttribute('aria-valuenow',String(percent));bootProgress.setAttribute('aria-valuemin','0');bootProgress.setAttribute('aria-valuemax','100');
+  bootLabel.textContent=`Loading ${label}…`;
+  bootPercent.textContent=`${percent}%`;
+});
 const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
 const requestedRenderer=preferredRenderer(location.href,graphicsSession);
 let lastGraphicsFailure=readGraphicsFailure(graphicsSession);
@@ -115,19 +129,31 @@ for(;!startupFailure;){
   let attemptActive=true;
   try{
     let modelsReady=false,surfacesReady=false;
-    const status=()=>{if(attemptActive)bootStatus.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
+    const status=()=>{if(attemptActive&&bootProgress.hidden)bootLabel.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
     await Promise.all([
-      Promise.all([loadAuthoredAssets(settings.quality),loadBridgeArtwork()]).then(()=>{modelsReady=true;status();}),
+      Promise.all([
+        loadAuthoredAssets(settings.quality),
+        loadBridgeArtwork(),
+        // Optional: a missing or failed distant catalogue must never prevent
+        // the game from starting. It only enables the extra LOD tier.
+        settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
+      ]).then(()=>{modelsReady=true;status();}),
       loadSurfaceAssets(settings.quality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
     ]);break;
   }
   catch(error){
     attemptActive=false;
     console.warn('Battlefield artwork could not load:',error.message);
-    bootStatus.innerHTML='<strong>The battlefield artwork could not load.</strong><span>Check your connection, then try again.</span><button class="secondary">Try again</button>';
-    await new Promise(resolve=>{bootStatus.querySelector('button').onclick=resolve;});bootStatus.textContent='Preparing your kingdom…';
+    const title=document.createElement('strong');title.textContent='The battlefield artwork could not load.';
+    const detail=document.createElement('span');detail.textContent='Check your connection, then try again.';
+    const retry=document.createElement('button');retry.className='secondary';retry.textContent='Try again';
+    bootStatus.replaceChildren(title,detail,retry);
+    await new Promise(resolve=>{retry.onclick=resolve;});
+    resetAssetProgress();bootStatus.replaceChildren(bootLabel,bootProgress,bootPercent);
+    bootLabel.textContent='Preparing your kingdom…';bootProgress.hidden=true;bootPercent.hidden=true;
   }
 }
+stopAssetProgress();
 try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);watchRendererDevice(view);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
   if(!startupFailure)recordGraphicsFailure(error,'scene-startup');
   releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
@@ -216,6 +242,8 @@ function showSettings(){
     <label class="toggle"><input id="weather-sounds" type="checkbox" ${settings.weatherSounds?'checked':''}> Rain, wind, and thunder sounds</label>
     <label class="toggle"><input id="weather-lightning" type="checkbox" ${settings.lightning?'checked':''}> Lightning flashes <small>Reduced motion also disables flashes.</small></label>
     <label class="toggle"><input id="fog" type="checkbox" ${settings.fog?'checked':''}> Fog overlay <small>Enemy visibility rules remain active.</small></label>
+    <label class="toggle"><input id="distant-units" type="checkbox" ${settings.distantUnits!==false?'checked':''}> Distant unit detail <small>Uses a lighter model for troops that are small on screen. Takes effect after reloading.</small></label>
+    <label class="toggle"><input id="gpu-timing" type="checkbox" ${settings.gpuTiming===true?'checked':''}> GPU frame timing (diagnostic) <small>Reports real GPU milliseconds. Can reduce frame rate on some drivers. Takes effect after reloading.</small></label>
     <label class="toggle"><input id="high-contrast" type="checkbox" ${settings.highContrast?'checked':''}> Higher contrast interface</label>
     <label class="toggle"><input id="colorblind" type="checkbox" ${settings.colorblind?'checked':''}> Colour-blind safe team colours <small>Swaps the eight kingdom colours for a palette that stays distinct without red/green separation.</small></label>
     <label class="toggle"><input id="reduced-motion" type="checkbox" ${settings.reducedMotion?'checked':''}> Reduce decorative motion</label>
@@ -390,7 +418,7 @@ function action(name){
   if(name==='resume'){const save=readLocalSave();if(save)try{startGame(save.options,save);}catch(error){toast('The saved kingdom could not be restored.','warning');}return;}
   if(name==='pause'){if(paused&&modal)closeModal();else showPause();return;}
   if(name==='checkpoint'){const checkpoint=sim.campaignCheckpoint;if(checkpoint)return startGame(checkpoint.options,checkpoint);return;}if(name==='journal')return showJournal();if(name==='quest-unit'){const cart=sim.get(sim.campaignState?.cartId);if(cart){setSelection([cart.id]);view.focus(cart.x,cart.z);}return;}if(name==='mission-goal'){const marker=campaignObjective(sim)?.marker;if(marker)view.focus(marker.x,marker.z);return;}if(name==='save'){saveGame();return;}if(name==='menu')return menuReturn();if(name==='restart'){if(net.active||sim.options.multiplayer){menuReturn();showLan();return;}return startGame(sim.options);}
-  if(name==='apply-settings'){const draft=settingsBindings($('#modal-root')),errors=bindingErrors(draft);if(errors.length){$('#modal-root .binding-feedback').textContent=errors.join(' ');$('#modal-root .binding-feedback').classList.add('binding-error');return;}settings.bindings=draft;settings.highContrast=$('#high-contrast').checked;settings.reducedMotion=$('#reduced-motion').checked;settings.colorblind=$('#colorblind').checked;applyAccessibility();applyPlayerPalette();refreshShortcutLabels();keys.clear();applyGraphicsChoice(settings,$('#quality').value,recommendedQuality);settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();const graphicsReady=view.quality(settings.quality),graphicsRequest=view.graphicsRequest;graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}audio.unlock();closeModal();return;}
+  if(name==='apply-settings'){const draft=settingsBindings($('#modal-root')),errors=bindingErrors(draft);if(errors.length){$('#modal-root .binding-feedback').textContent=errors.join(' ');$('#modal-root .binding-feedback').classList.add('binding-error');return;}settings.bindings=draft;settings.highContrast=$('#high-contrast').checked;settings.reducedMotion=$('#reduced-motion').checked;settings.colorblind=$('#colorblind').checked;applyAccessibility();applyPlayerPalette();refreshShortcutLabels();keys.clear();applyGraphicsChoice(settings,$('#quality').value,recommendedQuality);settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.distantUnits=$('#distant-units').checked;settings.gpuTiming=$('#gpu-timing').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();const graphicsReady=view.quality(settings.quality),graphicsRequest=view.graphicsRequest;graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}audio.unlock();closeModal();return;}
   if(name==='fullscreen'){document.documentElement.requestFullscreen?.().then(()=>{screen.orientation?.lock?.('landscape').catch(()=>{});}).catch(()=>toast('Use your browser fullscreen control on this device.'));return;}
   if(!playing||sim.ended)return;
   if(name==='objectives-expand'){if(!$('#objectives').classList.contains('objectives-expanded')&&isCompactHUD(document)){closeSelectionDetails(document);closeCompactCommands(document);}$('#objectives').classList.toggle('objectives-expanded');renderHUD();return;}
@@ -557,7 +585,7 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(edgeMoved&&buildType&&buildType!=='wall'&&edgeScroll.point){const point=view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);if(point)view.showGhost(buildType,point.x,point.z,sim.buildValid(buildType,point.x,point.z));else view.hideGhost();}
     if(buildType==='wall')updateWallPlacement();
     if(playing&&!paused&&!sim.ended&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
-      const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;fogTime+=dt;if(fogTime>.5){view.updateFog();fogTime=0;}if(uiTime>.3){renderHUD();renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
+      const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;fogTime+=dt;const fogStride=periodicStride(view.frameTimeMs??null,1000/targetFrameRate(settings),{base:1,maximum:3});if(fogTime>.5*fogStride){view.updateFog();fogTime=0;}if(uiTime>.3){renderHUD();renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
     }
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=sim.time+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);

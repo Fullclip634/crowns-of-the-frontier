@@ -40,7 +40,7 @@ function allocate(rig,rows){
 // Merge rigid Blender joint groups into one opaque draw without removing a part.
 // Pose textures grow with visible instances instead of allocating the population
 // ceiling. The same stored matrices drive shading, shadow depth and CPU picking.
-export function createRigidUnitPart(view,model,batch){
+export function createRigidUnitPart(view,model,batch,renderIds=null){
   const geometries=[],joints=[];let draw=0,sourceMaterial;
   model.traverse(part=>{
     if(!part.isMesh||part.material.transparent)return;
@@ -62,7 +62,7 @@ export function createRigidUnitPart(view,model,batch){
   if(material.isNodeMaterial)nodeRuntime().rigidPose(material,rig);
   const depth=material.isNodeMaterial?null:new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});if(depth){depth.onBeforeCompile=shader=>applyRigShader(shader,rig.uniform);depth.customProgramCacheKey=()=> 'frontier-rig-depth-v1';}
   const mesh=new THREE.InstancedMesh(geometry,material,batch.capacity);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=mesh.receiveShadow=true;mesh.customDepthMaterial=depth;
-  mesh.userData.rigidRig=rig;mesh.userData.unitIds=batch.renderIds;mesh.raycast=(raycaster,intersects)=>raycastRigidPart(mesh,raycaster,intersects);return mesh;
+  mesh.userData.rigidRig=rig;mesh.userData.unitIds=renderIds||batch.renderIds;mesh.raycast=(raycaster,intersects)=>raycastRigidPart(mesh,raycaster,intersects);return mesh;
 }
 
 export function writeRigidPose(mesh,index,e,matrix){
