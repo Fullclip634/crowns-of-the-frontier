@@ -53,7 +53,6 @@ export function terrainBiome(map){return styles[map]||styles.highlands;}
 const FALLBACK_PROFILE=Object.freeze({strength:1,cliffs:0,wood:1,gold:1,stone:1,food:1});
 export function biomeProfile(map){return BIOME_PROFILES[map]||FALLBACK_PROFILE;}
 export function isSnowBiome(map){return map==='winter'||!!styles[map]?.snow;}
-export function isVolcanicBiome(map){return !!styles[map]?.ash;}
 export function isAridBiome(map){return !!styles[map]?.sand||!!styles[map]?.ash;}
 export function isRockyBiome(map){return !!styles[map]?.rocky||!!styles[map]?.ash;}
 // Only three authored tree atlases exist; map every kind onto the closest one.

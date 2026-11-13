@@ -84,10 +84,9 @@ export function terrain(material,u){
   const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.68),vec3(1.26)),value(u.macroStrength));
   const wet=smoothstep(.30,.95,ctrl.b).mul(float(1).sub(cliffSlope.mul(.85)));
   const snow=detailScale.z;
-  const stoneTint=u.stoneTint?value(u.stoneTint,'color'):mix(vec3(1),vec3(.96,.98,1),snow.mul(.5));
   const color=texGrass.mul(value(u.grassTint,'color')).mul(macro).mul(weights.x)
     .add(texSoil.mul(mix(vec3(1),vec3(.95,.92,.86),snow)).mul(weights.y))
-    .add(texStone.mul(stoneTint).mul(weights.z))
+    .add(texStone.mul(mix(vec3(1),vec3(.96,.98,1),snow.mul(.5))).mul(weights.z))
     .add(texRock.mul(weights.w)).mul(mix(1,.74,wet.mul(.48))).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
   if(u.grassNormal.value){

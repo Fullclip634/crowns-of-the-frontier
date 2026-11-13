@@ -5,7 +5,7 @@ import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
-import {isSnowBiome,isVolcanicBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
+import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
 function chiselStone(radius,detail,sx,sy,sz,ox,oy,oz,yaw,seed){
   const stone=new THREE.DodecahedronGeometry(radius,detail),p=stone.attributes.position,c=Math.cos(yaw),s=Math.sin(yaw);
@@ -37,7 +37,7 @@ export class TerrainDetails{
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.95;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=isSnowBiome(land.map)?[0xb8c2bd,0xd7ddd6,0x92a09a]:isVolcanicBiome(land.map)?[0x4b4440,0x645953,0x342f2d]:isAridBiome(land.map)?[0xb89668,0xd1b384,0x8c704c]:isRockyBiome(land.map)?[0x86857c,0xa1a095,0x67665e]:[0x8c9082,0xa5a898,0x6e7366];
+    const palette=isSnowBiome(land.map)?[0xb8c2bd,0xd7ddd6,0x92a09a]:isAridBiome(land.map)?[0xb89668,0xd1b384,0x8c704c]:isRockyBiome(land.map)?[0x86857c,0xa1a095,0x67665e]:[0x8c9082,0xa5a898,0x6e7366];
     for(let attempt=0;attempt<capacity*4&&this.entries.length<capacity;attempt++){
       const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
       if(y<.16||roadDistance(x,z,land)<2.1||bridgeFootprint(land.map,x,z,3))continue;
