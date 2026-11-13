@@ -2,7 +2,7 @@ import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial} from 'thre
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial} from 'three/webgpu';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionWorld,positionView,normalLocal,normalWorld,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -36,17 +36,73 @@ const sample=(holder,coords=uv(),fallback=white)=>{
   const node=texture(holder.value||fallback,coords);
   node.onRenderUpdate(()=>{node.value=holder.value||fallback;});return node;
 };
-const weighted=(u,roles,coords,weights,suffix='')=>roles.map((role,i)=>sample(u[role+suffix],coords[i],suffix==='Normal'?flat:white).rgb.mul(weights[['x','y','z'][i]])).reduce((a,b)=>a.add(b));
+const hash=Fn(([point])=>{
+  const p=fract(vec3(point.x,point.y,point.x).mul(.1031)).toVar();p.addAssign(dot(p,p.yzx.add(33.33)));return fract(p.x.add(p.y).mul(p.z));
+});
+const noise=Fn(([point])=>{
+  const cell=floor(point),f=fract(point).toVar();f.assign(f.mul(f).mul(float(3).sub(f.mul(2))));
+  return mix(mix(hash(cell),hash(cell.add(vec2(1,0))),f.x),mix(hash(cell.add(vec2(0,1))),hash(cell.add(1)),f.x),f.y);
+});
 
 export function terrain(material,u){
-  const coords=[uv().mul(value(u.scale,'vec3').x),uv().mul(value(u.scale,'vec3').y),uv().mul(value(u.scale,'vec3').z)];
-  const weights=Fn(()=>{const base=max(varying(attribute('terrainMix','vec3')),vec3(0));const road=sample(u.roads).r;const blend=mix(base,vec3(0,1,0),road.mul(.94));return blend.div(max(dot(blend,vec3(1)),.001));})();
-  const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.72),vec3(1.22)),value(u.macroStrength));
-  const color=sample(u.grass,coords[0]).rgb.mul(value(u.grassTint,'color')).mul(macro).mul(weights.x)
-    .add(sample(u.soil,coords[1]).rgb.mul(weights.y)).add(sample(u.rock,coords[2]).rgb.mul(weights.z)).mul(value(u.tint,'color'));
+  const scale=value(u.scale,'vec3'),detailScale=value(u.detailScale,'vec3');
+  const worldPos=varying(positionWorld),worldNorm=normalize(varying(normalWorld));
+  const uvGrass=uv().mul(scale.x);
+  const uvGrass2=vec2(uvGrass.x.mul(.43).sub(uvGrass.y.mul(.29)),uvGrass.x.mul(.29).add(uvGrass.y.mul(.43))).add(vec2(.17,.31));
+  const uvSoil=uv().mul(scale.y),uvStone=uv().mul(detailScale.x),uvRockBase=uv().mul(scale.z);
+  const ctrl=sample(u.roads),n1=noise(worldPos.xz.mul(.09)),n2=noise(worldPos.xz.mul(.34).add(17.3));
+  const grassMix=smoothstep(.22,.78,n1),edgeBreak=n1.mul(.65).add(n2.mul(.35)).sub(.5).mul(.34);
+  const slopeVec=abs(worldNorm),cliffSlope=smoothstep(.05,.28,float(1).sub(clamp(worldNorm.y,0,1)));
+  const uvCliff=mix(uv().mul(detailScale.y),vec2(worldPos.x.mul(.24).add(worldPos.z.mul(.24)),worldPos.y.mul(.36)),smoothstep(.04,.22,slopeVec.x.add(slopeVec.z)));
+  const cliffBlend=clamp(float(.45).add(cliffSlope.mul(.55)),0,1);
+  const layers=Fn(()=>{
+    const base=max(varying(attribute('terrainMix','vec3')),vec3(0));
+    const roadBand=smoothstep(.14,.78,ctrl.r.add(edgeBreak.mul(.55)));
+    const plaza=smoothstep(.24,.84,ctrl.g.add(edgeBreak.mul(.65))).mul(float(1).sub(cliffSlope.mul(.85)));
+    const rockAmt=clamp(base.z.add(cliffSlope.mul(.92)),0,1);
+    const soilAmt=max(base.y,roadBand.mul(.94));
+    const grassAmt=base.x.mul(float(1).sub(roadBand.mul(.92))).mul(float(1).sub(cliffSlope.mul(.92))).mul(float(1).sub(plaza.mul(.88)));
+    return vec4(grassAmt,soilAmt,plaza,rockAmt);
+  })();
+  const texGrass=mix(sample(u.grass,uvGrass).rgb,sample(u.grass,uvGrass2).rgb,grassMix);
+  const texSoil=sample(u.soil,uvSoil).rgb.mul(mix(1,.78,smoothstep(.76,.96,ctrl.r).mul(.75)));
+  const texStone=sample(u.stone,uvStone).rgb.mul(mix(vec3(.95,.93,.88),vec3(.78,.82,.74),n2.mul(.45)));
+  const strata=mix(1,float(.82).add(sin(worldPos.y.mul(4.8).add(n1.mul(3.1))).mul(.22)),cliffSlope);
+  const texRock=mix(sample(u.rock,uvRockBase).rgb,sample(u.boulder,uvCliff).rgb,cliffBlend).mul(strata);
+  const weights=Fn(()=>{
+    const hG=texGrass.g.mul(.55).add(n2.mul(.25)).add(layers.x);
+    const hS=texSoil.r.mul(.45).add(n2.mul(.20)).add(layers.y.mul(float(1).sub(layers.z.mul(.5))));
+    const hP=dot(texStone,vec3(.33)).mul(.55).add(layers.z.mul(1.15));
+    const hR=dot(texRock,vec3(.33)).mul(.50).add(layers.w.mul(1.05));
+    const active=vec4(step(.001,layers.x),step(.001,layers.y),step(.001,layers.z),step(.001,layers.w));
+    const hVec=mix(vec4(-9),vec4(hG,hS,hP,hR),active);
+    const hMax=max(max(hVec.x,hVec.y),max(hVec.z,hVec.w)).sub(.18);
+    const masked=max(hVec.sub(hMax),vec4(0)).mul(active);
+    const raw=masked.add(vec4(step(dot(masked,vec4(1)),.0001),0,0,0));
+    return raw.div(dot(raw,vec4(1)));
+  })();
+  const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.68),vec3(1.26)),value(u.macroStrength));
+  const wet=smoothstep(.30,.95,ctrl.b).mul(float(1).sub(cliffSlope.mul(.85)));
+  const snow=detailScale.z;
+  const color=texGrass.mul(value(u.grassTint,'color')).mul(macro).mul(weights.x)
+    .add(texSoil.mul(mix(vec3(1),vec3(.95,.92,.86),snow)).mul(weights.y))
+    .add(texStone.mul(mix(vec3(1),vec3(.96,.98,1),snow.mul(.5))).mul(weights.z))
+    .add(texRock.mul(weights.w)).mul(mix(1,.74,wet.mul(.48))).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
-  if(u.grassNormal.value)material.normalNode=normalMap(weighted(u,['grass','soil','rock'],coords,weights,'Normal'),vec2(.35));
-  if(u.grassArm.value)material.roughnessNode=materialRoughness.mul(clamp(weighted(u,['grass','soil','rock'],coords,weights,'Arm').g,.25,1));
+  if(u.grassNormal.value){
+    const nGrass=mix(sample(u.grassNormal,uvGrass,flat).rgb,sample(u.grassNormal,uvGrass2,flat).rgb,grassMix);
+    const nSoil=sample(u.soilNormal,uvSoil,flat).rgb,nStone=sample(u.stoneNormal,uvStone,flat).rgb;
+    const nRock=mix(sample(u.rockNormal,uvRockBase,flat).rgb,sample(u.boulderNormal,uvCliff,flat).rgb,cliffBlend);
+    const normMix=nGrass.mul(weights.x).add(nSoil.mul(weights.y)).add(nStone.mul(weights.z)).add(nRock.mul(weights.w));
+    material.normalNode=normalMap(normMix,vec2(mix(.50,.68,clamp(weights.z.add(weights.w),0,1))));
+  }
+  if(u.grassArm.value){
+    const aGrass=mix(sample(u.grassArm,uvGrass).g,sample(u.grassArm,uvGrass2).g,grassMix);
+    const aSoil=sample(u.soilArm,uvSoil).g,aStone=sample(u.stoneArm,uvStone).g;
+    const aRock=mix(sample(u.rockArm,uvRockBase).g,sample(u.boulderArm,uvCliff).g,cliffBlend);
+    const rMix=aGrass.mul(weights.x).add(aSoil.mul(weights.y)).add(aStone.mul(weights.z)).add(aRock.mul(weights.w));
+    material.roughnessNode=materialRoughness.mul(mix(clamp(rMix,.25,1),.34,wet.mul(.62)));
+  }
   material.needsUpdate=true;
 }
 
@@ -115,14 +171,6 @@ export function rigidPose(material,rig){
   material.positionNode=transformed;
   material.needsUpdate=true;
 }
-
-const hash=Fn(([point])=>{
-  const p=fract(vec3(point.x,point.y,point.x).mul(.1031)).toVar();p.addAssign(dot(p,p.yzx.add(33.33)));return fract(p.x.add(p.y).mul(p.z));
-});
-const noise=Fn(([point])=>{
-  const cell=floor(point),f=fract(point).toVar();f.assign(f.mul(f).mul(float(3).sub(f.mul(2))));
-  return mix(mix(hash(cell),hash(cell.add(vec2(1,0))),f.x),mix(hash(cell.add(vec2(0,1))),hash(cell.add(1)),f.x),f.y);
-});
 
 export function water(material){
   const time=value(material.frontierWaveTime),motion=value(material.frontierWaterMotion),ripples=value(material.frontierWaterRipples),detail=value(material.frontierWaterDetail),sky=value(material.frontierWaterSky,'color'),light=value(material.frontierWaterLight);
