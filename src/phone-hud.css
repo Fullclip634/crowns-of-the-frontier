@@ -88,7 +88,8 @@
   #hud .camera-controls [data-action=camera-view]{font-size:9px}
   #hud .camera-controls [data-action=camera-view] span{display:none}
   #hud .camera-controls [data-action=camera-view]::before{content:'View'}
-  #hud .camera-controls [data-action=weather]{font-size:9px;overflow:hidden}
+  #hud .camera-controls [data-action=weather]{width:44px;min-width:44px;max-width:44px;padding:0 2px;font-size:9px;overflow:hidden}
+  #hud #weather-label{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   #hud .objective-panel{top:52px;left:8px;width:112px;padding:0;max-height:calc(100dvh - 152px)}
   #hud .objective-toggle{min-height:44px;padding:5px;gap:3px;font-size:9px}
   #hud .objective-toggle .objective-icon{font-size:18px}
