@@ -22,39 +22,54 @@ test('fallen units stay volumetric and colored with a bounded lifetime, without 
   view.clock=11;pool.update();assert.equal(batch.mesh.count,0);assert.equal(view.remainsDiagnostics.retained,0);pool.dispose();assert.equal(view.scene.children.length,0);
 });
 
-test('building destruction scatters solid rubble within an affordable instanced budget',()=>{
-  const view=fixture(),pool=new BattleRemains(view);pool.spawn({id:20,owner:0,type:'towncenter',kind:'building',x:3,z:4,r:5});
+test('building destruction spawns collapsed stone piers, charred timbers, and rubble without leaving an intact house shell',()=>{
+  const view=fixture(),geometry=new THREE.BoxGeometry(4,6,4),material=new THREE.MeshStandardMaterial({color:0x9b9c8e});
+  view.structureByEntity=new Map([[20,{geometry,material}],[21,{geometry,material}]]);
+  const pool=new BattleRemains(view);
+  pool.spawn({id:20,owner:0,type:'towncenter',kind:'building',x:3,z:4,r:5,heading:.3});
+  assert.equal(view.structureByEntity.has(20),false,'registry entry is released immediately');
+  assert.equal(pool.items[0].shell,undefined,'destroyed buildings never retain a squashed intact-house shell mesh');
+  assert.equal(pool.group.children.length,3,'only shared rubble, piers, and timbers instanced pools are mounted');
+
   view.clock=.45;pool.update();
-  // Twelve pieces plus one per unit of footprint, capped so the instanced
-  // budget cannot be blown by a large building.
-  assert.equal(pool.rubble.count,17);assert.equal(view.remainsDiagnostics.drawCalls,1);
-  const pose=new THREE.Matrix4();for(let i=0;i<17;i++){pool.rubble.getMatrixAt(i,pose);assert.ok(pose.elements.every(Number.isFinite));assert.ok(pose.determinant()>0);assert.ok(pose.elements[13]>2);}
-  // A ruin is part of the map: it is still standing ten seconds later, which is
-  // exactly when the old remains had already vanished.
-  view.clock=10.1;pool.update();assert.equal(pool.rubble.count,17,'the ruin outlives the collapse');
-  view.clock=46;pool.update();assert.equal(pool.rubble.count,0,'but it does clear eventually');pool.dispose();
+  assert.equal(pool.rubble.count,17);
+  assert.ok(pool.piers.count>=5&&pool.piers.count<=8,'foundation pad plus perimeter stone piers are instanced');
+  assert.ok(pool.timbers.count>=3&&pool.timbers.count<=5,'charred rafters are instanced across the ruin');
+  assert.equal(view.remainsDiagnostics.drawCalls,3);
+
+  const pose=new THREE.Matrix4();
+  for(const mesh of [pool.rubble,pool.piers,pool.timbers]){
+    for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,pose);assert.ok(pose.elements.every(Number.isFinite));assert.ok(pose.determinant()>0);}
+  }
+
+  // After settling (2s) vs final fade-out window (11.75s), pieces sink and shrink smoothly.
+  view.clock=2;pool.update();
+  const settledPose=new THREE.Matrix4();pool.piers.getMatrixAt(1,settledPose);
+  view.clock=11.75;pool.update();
+  const sinkingPose=new THREE.Matrix4();pool.piers.getMatrixAt(1,sinkingPose);
+  assert.ok(sinkingPose.elements[13]<settledPose.elements[13],'piers sink beneath ground during fade-out');
+
+  // Everything vanishes cleanly by 13s instead of lingering for 150s.
+  view.clock=13.1;pool.update();
+  assert.equal(pool.rubble.count,0);assert.equal(pool.piers.count,0);assert.equal(pool.timbers.count,0);
+  assert.equal(view.remainsDiagnostics.retained,0);assert.equal(view.remainsDiagnostics.drawCalls,0);
+
+  // Off-viewport deaths still release cached structure entries without leaking remains.
+  view.sim.isVisible=()=>false;
+  pool.spawn({id:21,owner:1,type:'house',kind:'building',x:99,z:99,r:2});
+  assert.equal(view.structureByEntity.has(21),false);
+  assert.equal(pool.items.length,0);
+  pool.dispose();assert.equal(view.scene.children.length,0);
 });
 
-test('a destroyed building leaves a shell that outlives the debris',()=>{
-  const view=fixture();
-  const geometry=new THREE.BoxGeometry(4,6,4),material=new THREE.MeshStandardMaterial({color:0x9b9c8e});
-  view.structureByEntity=new Map([[30,{geometry,material}]]);
-  const pool=new BattleRemains(view);
-  pool.spawn({id:30,owner:0,type:'house',kind:'building',x:5,z:6,r:2,heading:.3});
-
-  const shell=pool.items[0].shell;
-  assert.ok(shell,'the ruin keeps the building surface');
-  assert.equal(shell.geometry,geometry,'it reuses the packed geometry rather than new art');
-  assert.ok(shell.scale.y<.5,'the shell is a broken stump, not the whole building');
-  assert.equal(shell.material===material,false,'it is charred, not the original surface');
-  assert.equal(view.structureByEntity.has(30),false,'the registry entry is released once used');
-
-  // Debris settles and goes; the ruin stays.
-  view.clock=16;pool.update();
-  assert.equal(pool.rubble.count,0,'the loose pieces have settled away');
-  assert.equal(shell.parent,pool.group,'but the ruin is still standing');
-
-  view.clock=151;pool.update();
-  assert.equal(shell.parent,null,'the ruin is cleared when its life runs out');
-  assert.equal(pool.items.length,0);
+test('building death effect in WorldView syncs burnt crater duration to ruin lifetime',()=>{
+  const captured=[];
+  const mockView={
+    fx:[],settings:{quality:'high'},renderQuality:'high',scene:new THREE.Scene(),groundHeight:()=>1.5,
+    burst(){},sparks(){},smoke(){},
+    crater(x,z,size,duration){captured.push({x,z,size,duration});}
+  };
+  WorldView.prototype.effect.call(mockView,{type:'death',entity:{id:44,kind:'building',type:'house',x:10,z:12,r:2.2}});
+  assert.equal(captured.length,1);
+  assert.equal(captured[0].duration,13);
 });
