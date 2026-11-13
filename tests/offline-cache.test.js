@@ -53,3 +53,12 @@ test('the service worker returns cached assets without refetching and skips non-
   version.listeners.fetch({request:{method:'GET',url:'https://game.test/version.json',headers:{has:()=>false},mode:'cors'},respondWith:promise=>{responded=promise},waitUntil:()=>{}});
   assert.equal(responded,undefined);assert.equal(version.fetched.length,0);
 });
+
+test('page navigations fetch network-first so new deployments replace cached pages immediately',async()=>{
+  const cached=new Response('stale-page');
+  const nav=environment({cached});
+  const response=await request(nav,{url:'https://game.test/',mode:'navigate'});
+  assert.equal(await response.text(),'asset');
+  assert.deepEqual(nav.fetched,['https://game.test/']);
+  assert.deepEqual(nav.puts.map(put=>put.url),['https://game.test/']);
+});

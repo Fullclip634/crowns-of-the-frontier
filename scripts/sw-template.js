@@ -17,6 +17,18 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
   // Build checks must reach the current host even while an older page is open.
   if (url.pathname === '/version.json') return;
+  // Navigations use network-first so returning players receive deployed updates
+  // immediately instead of staying pinned to an older cached HTML entry.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).then(response => {
+      if (response.status === 200) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(() => {}));
+      }
+      return response;
+    }).catch(() => caches.match('/index.html')));
+    return;
+  }
   // Precache requests and crossorigin module requests have different Origin
   // headers. The assets here are immutable and restricted to this origin.
   event.respondWith(caches.match(event.request, {ignoreVary: true}).then(cached => {

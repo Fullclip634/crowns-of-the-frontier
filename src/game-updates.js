@@ -1,7 +1,7 @@
 export async function currentGameUpdate(buildId,fetcher=fetch){
   try{
     const response=await fetcher('/version.json',{cache:'no-store'});if(!response.ok)return null;
-    const data=await response.json();return typeof data.buildId==='string'&&/^\d{13}$/.test(data.buildId)&&data.buildId!==buildId?data:null;
+    const data=await response.json();return typeof data.buildId==='string'&&/^\d{10,20}$/.test(data.buildId)&&data.buildId!==buildId?data:null;
   }catch{return null;}
 }
 
@@ -19,5 +19,5 @@ export function installGameUpdates({buildId,canRefresh,beforeRefresh}){
     if(beforeRefresh()===false){hint.textContent='Your match could not be saved. Finish it before refreshing.';return;}
     const url=new URL(location.href);url.searchParams.set('build',latest.buildId);location.assign(url);
   };
-  const timer=setInterval(()=>{if(!document.hidden)check();},30000);return {check,dispose(){clearInterval(timer);notice.remove();}};
+  if(!document.hidden)check();const timer=setInterval(()=>{if(!document.hidden)check();},30000);return {check,dispose(){clearInterval(timer);notice.remove();}};
 }

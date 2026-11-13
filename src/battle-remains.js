@@ -42,6 +42,8 @@ function flushInstances(mesh,count){
   return count?1:0;
 }
 
+const ruinTime=view=>view.ruinClock??view.clock;
+
 const RUBBLE_COLORS=[0x8d8b80,0x6e6a62,0x7b4e3a,0x4e433a];
 const PIER_COLORS=[0x6f6a62,0x5c5750,0x817b72];
 const TIMBER_COLORS=[0x2e231b,0x3d2f24,0x241b14];
@@ -65,13 +67,13 @@ export class BattleRemains{
     this.seen.add(e.id);if(this.seen.size>2048)this.seen.delete(this.seen.values().next().value);
     if(e.kind==='building')v.structureByEntity?.delete(e.id);
     if(e.owner!==0&&!v.sim.isVisible(e.x,e.z)||!nearViewport(v,e.x,v.groundHeight(e.x,e.z),e.z))return;
-    const building=e.kind==='building';
-    const item={...e,at:v.clock,life:building?13:(v.settings.quality==='high'?16:10)};
+    const building=e.kind==='building',now=ruinTime(v);
+    const item={...e,at:now,life:building?12:(v.settings.quality==='high'?16:10)};
     if(!building){
       item.key=e.owner+':'+e.type+':'+workerVisualTask(v,e);
       if(!this.batches.has(item.key)){
         const geometry=fallenGeometry(v,e);if(!geometry)return;
-        const mesh=new THREE.InstancedMesh(geometry,this.material,this.limit);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=v.settings.quality!=='low';mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);this.batches.set(item.key,{mesh,last:v.clock});
+        const mesh=new THREE.InstancedMesh(geometry,this.material,this.limit);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=v.settings.quality!=='low';mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);this.batches.set(item.key,{mesh,last:now});
       }
     }else{
       // Replace the destroyed structure with collapsed stone piers, charred timbers,
@@ -99,24 +101,24 @@ export class BattleRemains{
     this.items.push(item);if(this.items.length>this.limit)this.retire(this.items.shift());
   }
   update(){
-    const v=this.view;
-    this.items=this.items.filter(e=>{const alive=v.clock-e.at<e.life;if(!alive)this.retire(e);return alive;});
+    const v=this.view,now=ruinTime(v);
+    this.items=this.items.filter(e=>{const alive=now-e.at<e.life;if(!alive)this.retire(e);return alive;});
     for(const batch of this.batches.values())batch.mesh.count=0;
     let rubble=0,piers=0,timbers=0,bodies=0;
     for(const e of this.items){
       const shown=!(e.owner!==0&&!v.sim.isVisible(e.x,e.z)||!nearViewport(v,e.x,v.groundHeight(e.x,e.z),e.z));
       if(!shown)continue;
-      const age=v.clock-e.at;
+      const age=now-e.at;
       if(e.key){
         const batch=this.batches.get(e.key),naval=UNITS[e.type].naval;
         const sink=Math.max(0,(age-e.life+3)/3),fall=Math.min(1,age/.65);
         this.dummy.position.set(e.x,(naval?.08:v.groundHeight(e.x,e.z)+.18)-sink*.65-(naval?fall*1.3:0),e.z);
         this.dummy.rotation.set(0,e.heading||0,naval?fall*.25:fall*1.48);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();
-        batch.mesh.setMatrixAt(batch.mesh.count++,this.dummy.matrix);batch.last=v.clock;bodies++;
+        batch.mesh.setMatrixAt(batch.mesh.count++,this.dummy.matrix);batch.last=now;bodies++;
         continue;
       }
-      // Smoothly settle beneath the soil over the final 2.5s before eviction so ruins never pop off abruptly.
-      const fade=Math.max(0,Math.min(1,(age-(e.life-2.5))/2.5)),shrink=1-fade*.85,sink=fade*1.1;
+      // Smoothly settle beneath the soil over the final 4s so building ruins clear inside 12s.
+      const fade=Math.max(0,Math.min(1,(age-(e.life-4))/4)),shrink=1-fade*.88,sink=fade*fade*1.15;
       const collapse=Math.min(1,age/.65),t=Math.min(1,age/.85);
       for(const pier of e.piers){
         const x=e.x+pier.dx*collapse,z=e.z+pier.dz*collapse;
@@ -145,7 +147,7 @@ export class BattleRemains{
     }
     let calls=flushInstances(this.rubble,rubble)+flushInstances(this.piers,piers)+flushInstances(this.timbers,timbers);
     for(const [key,batch] of this.batches){batch.mesh.visible=batch.mesh.count>0;batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.boundingSphere=null;if(batch.mesh.count)calls++;
-      if(!batch.mesh.count&&!this.items.some(e=>e.key===key)&&(v.clock-batch.last>30||this.batches.size>this.limit*2)){batch.mesh.geometry.dispose();batch.mesh.dispose();batch.mesh.removeFromParent();this.batches.delete(key);}
+      if(!batch.mesh.count&&!this.items.some(e=>e.key===key)&&(now-batch.last>30||this.batches.size>this.limit*2)){batch.mesh.geometry.dispose();batch.mesh.dispose();batch.mesh.removeFromParent();this.batches.delete(key);}
     }
     v.remainsDiagnostics={bodies,rubble,piers,timbers,retained:this.items.length,limit:this.limit,drawCalls:calls};
   }

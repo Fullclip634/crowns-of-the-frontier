@@ -42,17 +42,23 @@ test('building destruction spawns collapsed stone piers, charred timbers, and ru
     for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,pose);assert.ok(pose.elements.every(Number.isFinite));assert.ok(pose.determinant()>0);}
   }
 
-  // After settling (2s) vs final fade-out window (11.75s), pieces sink and shrink smoothly.
+  // After settling (2s) vs final fade-out window (10.5s), pieces sink and shrink smoothly.
   view.clock=2;pool.update();
   const settledPose=new THREE.Matrix4();pool.piers.getMatrixAt(1,settledPose);
-  view.clock=11.75;pool.update();
+  view.clock=10.5;pool.update();
   const sinkingPose=new THREE.Matrix4();pool.piers.getMatrixAt(1,sinkingPose);
   assert.ok(sinkingPose.elements[13]<settledPose.elements[13],'piers sink beneath ground during fade-out');
 
-  // Everything vanishes cleanly by 13s instead of lingering for 150s.
-  view.clock=13.1;pool.update();
+  // Everything vanishes cleanly by 12s (inside 10-15s) instead of lingering longer.
+  view.clock=12.05;pool.update();
   assert.equal(pool.rubble.count,0);assert.equal(pool.piers.count,0);assert.equal(pool.timbers.count,0);
   assert.equal(view.remainsDiagnostics.retained,0);assert.equal(view.remainsDiagnostics.drawCalls,0);
+
+  // When ruinClock advances on low-FPS frames (wallStep > dt), eviction still completes within 10-15s.
+  view.ruinClock=0;
+  pool.spawn({id:22,owner:0,type:'house',kind:'building',x:6,z:7,r:2});
+  view.ruinClock=12.1;pool.update();
+  assert.equal(pool.items.length,0);
 
   // Off-viewport deaths still release cached structure entries without leaking remains.
   view.sim.isVisible=()=>false;
@@ -71,5 +77,5 @@ test('building death effect in WorldView syncs burnt crater duration to ruin lif
   };
   WorldView.prototype.effect.call(mockView,{type:'death',entity:{id:44,kind:'building',type:'house',x:10,z:12,r:2.2}});
   assert.equal(captured.length,1);
-  assert.equal(captured[0].duration,13);
+  assert.equal(captured[0].duration,12);
 });
