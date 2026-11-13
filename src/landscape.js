@@ -13,7 +13,7 @@ import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
 import {terrainMeadow} from './terrain-fields.js';
 import {terrainClarityPixels} from './terrain-clarity.js';
 import {waterChannels} from './map-water.js';
-import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
+import {isSnowBiome,isVolcanicBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
 import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 
@@ -115,7 +115,7 @@ function traceOffsetRoad(points,offset,size,canvasSize){
 function groundMap(landscape){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1536;
   const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2,scale=1536/size;
-  const winter=isSnowBiome(landscape.map),arid=isAridBiome(landscape.map),rocky=isRockyBiome(landscape.map),palette=terrainBiome(landscape.map).ground;
+  const winter=isSnowBiome(landscape.map),volcanic=isVolcanicBiome(landscape.map),arid=isAridBiome(landscape.map)&&!volcanic,rocky=isRockyBiome(landscape.map),palette=terrainBiome(landscape.map).ground;
   const field=document.createElement('canvas');field.width=field.height=256;const fieldContext=field.getContext('2d'),pixels=fieldContext.createImageData(256,256),colors=palette.map(hex=>[1,3,5].map(at=>parseInt(hex.slice(at,at+2),16)));
   for(let row=0;row<256;row++)for(let column=0;column<256;column++){
     const wx=(column+.5)/256*size-half,wz=(row+.5)/256*size-half;
@@ -132,12 +132,13 @@ function groundMap(landscape){
   overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
   overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
   // Organic meadow grain & clover flecks instead of sharp block noise.
-  const grain=winter?['#d6cf9312','#2f492212']:arid?['#e8d3a416','#8a6b3a14']:rocky?['#b9b8aa14','#3c3a3412']:['#bfd29916','#224a2412'];
-  for(let i=0;i<11000;i++){ctx.fillStyle=grain[i%2];const gx=rng()*1536,gy=rng()*1536,r=.7+rng()*1.9;ctx.beginPath();ctx.arc(gx,gy,r,0,Math.PI*2);ctx.fill();}
+  const grain=winter?['#d6cf9312','#2f492212']:volcanic?['#7d6f6616','#211d1b16']:arid?['#e8d3a416','#8a6b3a14']:rocky?['#b9b8aa14','#3c3a3412']:['#bfd29916','#224a2412'];
+  const grainScale=Math.max(.45,Math.min(1,320/size));
+  for(let i=0;i<11000;i++){ctx.fillStyle=grain[i%2];const gx=rng()*1536,gy=rng()*1536,r=(.7+rng()*1.9)*grainScale;ctx.beginPath();ctx.arc(gx,gy,r,0,Math.PI*2);ctx.fill();}
   // Mossy humus carpets beneath forest groves so trees anchor into cool shaded earth.
   const sites=landscape.terrainSites;
   if(sites?.trees?.length){
-    ctx.fillStyle=winter?'rgba(42,56,48,.16)':arid?'rgba(92,74,46,.18)':'rgba(22,40,18,.21)';
+    ctx.fillStyle=winter?'rgba(42,56,48,.16)':volcanic?'rgba(34,28,26,.22)':arid?'rgba(92,74,46,.18)':'rgba(22,40,18,.21)';
     for(const tree of sites.trees){
       const tx=(tree.x+half)*scale,ty=(tree.z+half)*scale,tr=2.8*scale;
       ctx.beginPath();ctx.arc(tx,ty,tr,0,Math.PI*2);ctx.fill();
@@ -159,8 +160,8 @@ function groundMap(landscape){
   for(const pad of aprons){
     const px=(pad.x+half)*scale,py=(pad.z+half)*scale,pr=pad.r*scale;
     const g=ctx.createRadialGradient(px,py,pr*.18,px,py,pr);
-    g.addColorStop(0,winter?'rgba(155,156,144,.42)':arid?'rgba(168,144,104,.46)':'rgba(140,130,110,.44)');
-    g.addColorStop(.55,winter?'rgba(108,112,102,.20)':'rgba(98,84,60,.22)');
+    g.addColorStop(0,winter?'rgba(155,156,144,.42)':volcanic?'rgba(116,104,96,.44)':arid?'rgba(168,144,104,.46)':'rgba(140,130,110,.44)');
+    g.addColorStop(.55,winter?'rgba(108,112,102,.20)':volcanic?'rgba(64,54,48,.22)':'rgba(98,84,60,.22)');
     g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fill();
   }
@@ -175,13 +176,13 @@ function groundMap(landscape){
   for(const road of terrainRoadPaths(landscape)){
     const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)*scale,(point.z+half)*scale);
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=6.2*scale;ctx.strokeStyle=winter?'rgba(92,98,92,.30)':arid?'rgba(108,82,44,.34)':'rgba(68,58,38,.32)';ctx.stroke(path);
-    ctx.lineWidth=3.5*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d6ba84':rocky?'#b5ae9a':'#bfa87e';ctx.stroke(path);
+    ctx.lineWidth=6.2*scale;ctx.strokeStyle=winter?'rgba(92,98,92,.30)':volcanic?'rgba(54,46,42,.36)':arid?'rgba(108,82,44,.34)':'rgba(68,58,38,.32)';ctx.stroke(path);
+    ctx.lineWidth=3.5*scale;ctx.strokeStyle=winter?'#cfc8ae':volcanic?'#82756b':arid?'#d6ba84':rocky?'#b5ae9a':'#bfa87e';ctx.stroke(path);
     for(const offset of [-.62,.62]){
       const rut=traceOffsetRoad(road.points,offset,size,1536);
-      ctx.lineWidth=.82*scale;ctx.strokeStyle=winter?'rgba(130,126,112,.45)':arid?'rgba(128,96,56,.46)':'rgba(94,76,50,.48)';ctx.stroke(rut);
+      ctx.lineWidth=.82*scale;ctx.strokeStyle=winter?'rgba(130,126,112,.45)':volcanic?'rgba(64,52,44,.48)':arid?'rgba(128,96,56,.46)':'rgba(94,76,50,.48)';ctx.stroke(rut);
     }
-    ctx.lineWidth=.9*scale;ctx.strokeStyle=winter?'rgba(195,204,192,.32)':'rgba(138,148,96,.24)';ctx.stroke(path);
+    ctx.lineWidth=.9*scale;ctx.strokeStyle=winter?'rgba(195,204,192,.32)':volcanic?'rgba(138,124,114,.28)':'rgba(138,148,96,.24)';ctx.stroke(path);
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {WORLD,MAPS} from '../src/data.js';
+import {BATTLE_SIZES,battlePreset,normalizeBattle} from '../src/custom-battle.js';
 import {Simulation} from '../src/simulation.js';
 import {Landscape,buildLandscape} from '../src/landscape.js';
 import {applyTerrainShading} from '../src/terrain-surface.js';
@@ -256,4 +258,68 @@ test('terrain details use manifold 3-stone clusters with stone colors and ground
   assert.ok(cover.entries.length<=4800&&cover.entries.length>0);
   cover.mesh.geometry.dispose();
   coverView.dispose();
+});
+
+test('all 14 map biomes, game modes, and map sizes (160 to 560 Epic) configure terrain shading and ground cover cleanly',()=>{
+  const spy=installCanvasSpy(true);
+  try{
+    for(const map of Object.keys(MAPS)){
+      const land=new Landscape(512,map,WORLD);
+      const geo=land.geometry();geo.dispose();
+      const mat=new THREE.MeshStandardMaterial();
+      applyTerrainShading(mat,land,'high',fakeSurfaces(),{grass:2,soil:1.3,rock:7.5,stone:2,cliff:3.9});
+      const fakeShader={uniforms:{},vertexShader:'#include <color_vertex>\n#include <worldpos_vertex>',fragmentShader:'#include <map_fragment>\n#include <roughnessmap_fragment>\n#include <normal_fragment_maps>'};
+      mat.onBeforeCompile(fakeShader);
+      assert.ok(fakeShader.uniforms.frontierTerrainstoneTint?.value instanceof THREE.Color,map+' has stoneTint uniform');
+      assert.ok(fakeShader.fragmentShader.includes('frontierTerrainstoneTint'),map+' applies stoneTint in WebGL shader');
+      if(map==='volcanic'){
+        assert.ok(fakeShader.uniforms.frontierTerrainamount.value>0.8,'volcanic uses rocky relief blend strength instead of sandy arid fade');
+        assert.ok(fakeShader.uniforms.frontierTerraintint.value.r<0.8,'volcanic does not apply sandy cream tint');
+      }
+      mat.dispose();
+
+      const view=makeMockView(land,'high');
+      const details=new TerrainDetails(view);
+      const cover=new GroundCover(view);
+      assert.ok(details.entries.length<=360,map+' details stay within high budget');
+      assert.ok(cover.entries.length<=4800,map+' cover stays within high budget');
+      if(map==='volcanic'&&details.entries.length>0){
+        const c=new THREE.Color(details.entries[0].color);
+        assert.ok(c.r<0.45&&c.g<0.45,'volcanic rocks use dark basalt tones instead of desert sand pebbles');
+      }
+      details.mesh.geometry.dispose();cover.mesh.geometry.dispose();view.dispose();
+    }
+
+    // Verify all map sizes from standard (160) to Epic (560) and custom/campaign/naval modes.
+    for(const size of [WORLD,...Object.values(BATTLE_SIZES).map(s=>s.size)]){
+      spy.draws.length=0;
+      const land=new Landscape(777,'highlands',size);
+      const geo=land.geometry();geo.dispose();
+      const mat=new THREE.MeshStandardMaterial();
+      applyTerrainShading(mat,land,'high',fakeSurfaces(),{grass:2,soil:1.3,rock:7.5,stone:2,cliff:3.9});
+      const expectedCanvas=land.renderSize>640?2048:1024;
+      assert.equal(spy.draws.some(d=>d.canvasWidth===expectedCanvas),true,`worldSize ${size} uses ${expectedCanvas}px roadMask`);
+      assert.ok(Math.abs(mat.frontierTerrainUniforms.scale.value.x-land.renderSize/2)<1e-6,`worldSize ${size} scales world UVs proportionally`);
+      mat.dispose();
+
+      const view=makeMockView(land,'high');
+      const cover=new GroundCover(view);
+      assert.ok(cover.entries.length>0&&cover.entries.length<=4800,`worldSize ${size} keeps valid cover budget`);
+      cover.mesh.geometry.dispose();view.dispose();
+    }
+
+    // Verify custom epic battle, naval tides, and volcanic campaign7 generate live terrainSites via buildLandscape.
+    for(const options of [
+      normalizeBattle({map:'arid',mapSize:'epic',slots:battlePreset('2v2'),playerSlot:1,seed:2026}),
+      {mode:'campaign7',map:'volcanic',seed:4307},
+    ]){
+      const sim=new Simulation(options);
+      const land=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions);
+      const view=makeMockView(land,'high',sim);
+      buildLandscape(view);
+      assert.ok(land.terrainSites.trees.length>0||land.terrainSites.quarries.length>0,options.mode+' gathers terrainSites');
+      assert.ok(land.terrainSites.buildings.length>=2,options.mode+' includes starting buildings');
+      view.dispose();
+    }
+  }finally{spy.restore();}
 });

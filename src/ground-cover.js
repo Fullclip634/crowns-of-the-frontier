@@ -44,7 +44,8 @@ export class GroundCover{
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const palette=terrainBiome(land.map).grass;
     // Cluster grass tufts organically across open meadows, road borders and gentle rises while staying within budget.
-    const clusters=Array.from({length:36},()=>({x:(rng()-.5)*(land.worldSize-12),z:(rng()-.5)*(land.worldSize-12),spread:3.5+rng()*7}));
+    const clusterCount=Math.min(160,Math.max(36,Math.round(36*(land.worldSize/160)**1.4)));
+    const clusters=Array.from({length:clusterCount},()=>({x:(rng()-.5)*(land.worldSize-12),z:(rng()-.5)*(land.worldSize-12),spread:3.5+rng()*7}));
     for(let attempt=0;attempt<capacity*4&&this.entries.length<capacity;attempt++){
       const clumped=attempt%3===0,anchor=clumped?clusters[attempt%clusters.length]:null;
       const x=anchor?anchor.x+(rng()+rng()-1)*anchor.spread:(rng()-.5)*(land.worldSize-6);

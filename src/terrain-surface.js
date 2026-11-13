@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {terrainRoadPaths} from './terrain-layout.js';
-import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome,isVolcanicBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 import {bridgeSpans,bridgeRoadHalfWidth} from './bridge-layout.js';
 
 function traceOffsetStroke(ctx,points,offset,size,canvasSize){
@@ -24,7 +24,7 @@ function fillSoftRadial(ctx,x,y,radius,innerColor,midColor){
 
 function roadMask(land){
   const paths=terrainRoadPaths(land),canvas=document.createElement('canvas');
-  const ctx=canvas.getContext('2d'),rich=typeof ctx.arc==='function',size=rich?1024:512,half=land.renderSize/2,scale=size/land.renderSize;
+  const ctx=canvas.getContext('2d'),rich=typeof ctx.arc==='function',size=rich?(land.renderSize>640?2048:1024):512,half=land.renderSize/2,scale=size/land.renderSize;
   canvas.width=canvas.height=size;ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.lineCap='round';ctx.lineJoin='round';
   if(!rich){
     ctx.strokeStyle='#fff';ctx.lineWidth=3*scale;
@@ -65,7 +65,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
   const soil=surfaces.soil||grass,rock=surfaces.rock||grass,stone=surfaces.stone||rock,boulder=surfaces.boulder||rock,normal=quality!=='low'&&grass.normal;
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
-  const snow=isSnowBiome(land.map),arid=isAridBiome(land.map),rocky=isRockyBiome(land.map);
+  const snow=isSnowBiome(land.map),volcanic=isVolcanicBiome(land.map),arid=isAridBiome(land.map)&&!volcanic,rocky=isRockyBiome(land.map);
   const amount=snow?.24:arid?.68:rocky?.88:.82;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];
@@ -78,7 +78,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
     stoneArm:{value:quality==='high'?stone.arm||rock.arm||grass.arm||null:null},boulderArm:{value:quality==='high'?boulder.arm||rock.arm||grass.arm||null:null},
     scale:{value:new THREE.Vector3(land.renderSize/(dimensions.grass||2),land.renderSize/(dimensions.soil||1.3),land.renderSize/Math.min(10,dimensions.rock||7.5))},
     detailScale:{value:new THREE.Vector3(land.renderSize/(dimensions.stone||2.2),land.renderSize/(dimensions.cliff||4.2),snow?1:0)},
-    amount:{value:amount},tint:{value:new THREE.Color(snow?0xe4e9df:arid?0xe8dcc0:rocky?0xd9dcd2:0xe4e9dc)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},
+    amount:{value:amount},tint:{value:new THREE.Color(snow?0xe4e9df:volcanic?0xb4aaa2:arid?0xe8dcc0:rocky?0xd9dcd2:0xe4e9dc)},grassTint:{value:new THREE.Color(terrainBiome(land.map).grassTint)},stoneTint:{value:new THREE.Color(snow?0xf0f4f8:volcanic?0x8a8078:arid?0xe8d5b2:0xffffff)},
     macroReference:{value:new THREE.Color(terrainBiome(land.map).ground[0])},macroStrength:{value:snow?0:1},
     roads:{value:roads},
   };
@@ -114,6 +114,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       uniform vec3 frontierTerraindetailScale;
       uniform vec3 frontierTerraintint;
       uniform vec3 frontierTerraingrassTint;
+      uniform vec3 frontierTerrainstoneTint;
       uniform vec3 frontierTerrainmacroReference;
       uniform float frontierTerrainmacroStrength;
       uniform float frontierTerrainamount;
@@ -166,7 +167,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       float frontierWet = smoothstep(0.30, 0.95, frontierCtrl.b) * (1.0 - frontierCliffSlope * 0.85);
       vec3 terrainColor = frontierTexGrass * frontierTerraingrassTint * terrainMacro * frontierWeights.x
         + frontierTexSoil * mix(vec3(1.0), vec3(0.95, 0.92, 0.86), frontierTerraindetailScale.z) * frontierWeights.y
-        + frontierTexStone * mix(vec3(1.0), vec3(0.96, 0.98, 1.0), frontierTerraindetailScale.z * 0.5) * frontierWeights.z
+        + frontierTexStone * frontierTerrainstoneTint * frontierWeights.z
         + frontierTexRock * frontierWeights.w;
       terrainColor *= mix(1.0, 0.74, frontierWet * 0.48);
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount);`);
