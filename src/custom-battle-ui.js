@@ -62,7 +62,7 @@ export function battleResultMarkup(sim){
     const isTopGather=s.gathered===maxGathered&&maxGathered>0;
     const isTopKills=s.kills===maxKills&&maxKills>0;
     const colorHex='#'+(player.color?player.color.toString(16).padStart(6,'0'):PLAYER_COLORS[i]?.toString(16).padStart(6,'0')||'c5ae76');
-    const badge=isTopKills?'<span class="analytics-badge badge-warlord">⚔️ Warlord</span>':isTopGather?'<span class="analytics-badge badge-economy">🌾 Hegemon</span>':!player.defeated?'<span class="analytics-badge badge-survivor">🛡️ Survivor</span>':'';
+    const badge=isTopKills?`<span class="analytics-badge badge-warlord">${uiIcon('swords')} Warlord</span>`:isTopGather?`<span class="analytics-badge badge-economy">${uiIcon('wheat')} Hegemon</span>`:!player.defeated?`<span class="analytics-badge badge-survivor">${uiIcon('shield-check')} Survivor</span>`:'';
     const gatherPct=Math.round((s.gathered/maxGathered)*100);
     const killPct=Math.round((s.kills/maxKills)*100);
     return `<article class="analytics-card ${player.defeated?'defeated':''}">

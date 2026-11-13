@@ -72,3 +72,24 @@ test('palette baking preserves indexed face order, team masks and independent su
   for(let i=0;i<72;i++){const source=i<36?first:second,sourceIndex=source.geometry.index.getX(i%36),index=geometry.index.getX(i),actual=new THREE.Vector3().fromBufferAttribute(geometry.attributes.position,index),expected=new THREE.Vector3().fromBufferAttribute(source.geometry.attributes.position,sourceIndex).add(source.position);assert.deepEqual(actual.toArray(),expected.toArray());assert.equal(geometry.attributes.unitTeamMask.getX(index),i<36?1:0);assert.equal(geometry.attributes.unitSurface.getX(index),Math.fround(source.material.roughness));assert.equal(geometry.attributes.unitSurface.getY(index),Math.fround(source.material.metalness));const color=i<36?[1,1,1]:metal.color.toArray();for(let k=0;k<3;k++)assert.equal(geometry.attributes.color.getComponent(index,k),Math.fround(color[k]));}
   geometry.dispose();first.geometry.dispose();second.geometry.dispose();for(const material of [team,metal,wood,view.materials.unitPalette])material.dispose();
 });
+
+test('mergeModel normalizes extra glTF vertex attributes like color_1 without warnings or drops',()=>{
+  const a=new THREE.BoxGeometry(),b=new THREE.BoxGeometry();
+  a.setAttribute('color_1',new THREE.Float32BufferAttribute(new Float32Array(a.attributes.position.count*4).fill(.5),4));
+  a.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(a.attributes.position.count*3).fill(.8),3));
+  const material=new THREE.MeshStandardMaterial(),group=new THREE.Group();
+  const first=new THREE.Mesh(a,material),second=new THREE.Mesh(b,material);second.position.x=3;
+  group.add(first,second);
+  const warnings=[];const originalWarn=console.warn,originalError=console.error;
+  console.warn=(...args)=>warnings.push(args.join(' '));
+  console.error=(...args)=>warnings.push(args.join(' '));
+  try{
+    WorldView.prototype.mergeModel.call({materials:{}},group);
+  }finally{console.warn=originalWarn;console.error=originalError;}
+  assert.deepEqual(warnings,[]);
+  const meshes=[];group.traverse(child=>{if(child.isMesh)meshes.push(child);});
+  assert.equal(meshes.length,1);
+  assert.equal(meshes[0].geometry.getAttribute('color_1'),undefined);
+  assert.equal(meshes[0].geometry.attributes.position.count,a.attributes.position.count+b.attributes.position.count);
+  meshes[0].geometry.dispose();a.dispose();b.dispose();material.dispose();
+});

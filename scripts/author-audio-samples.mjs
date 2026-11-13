@@ -67,25 +67,75 @@ function wav(samples,rate=RATE){
 }
 const buffer=(duration)=>new Float32Array(Math.ceil(duration*RATE));
 
-// UI layer: short, quiet, distinct cues that do not mask combat.
+// UI layer: studio-sculpted tactile cues that never clip or mask combat.
 const ui={
-  select:duration=>{const s=buffer(duration);tone(s,RATE,{frequency:350,duration:.10,level:.5,decay:.05});tone(s,RATE,{frequency:525,start:.04,duration:.12,level:.32,decay:.06});return s;},
-  order:duration=>{const s=buffer(duration);tone(s,RATE,{frequency:240,duration:.09,level:.5,type:'triangle',decay:.05});tone(s,RATE,{frequency:320,start:.06,duration:.12,level:.4,type:'triangle',decay:.06});return s;},
-  coin:duration=>{const s=buffer(duration);tone(s,RATE,{frequency:920,duration:.20,level:.42,decay:.09});tone(s,RATE,{frequency:1380,start:.10,duration:.20,level:.36,decay:.11});noise(s,RATE,{duration:.05,level:.12,decay:.012,lowpass:.35,seed:17});return s;},
-  complete:duration=>{const s=buffer(duration);[392,494,587].forEach((f,i)=>tone(s,RATE,{frequency:f,start:i*.1,duration:.42,level:.38-i*.05,type:'triangle',decay:.24}));return s;},
-  alarm:duration=>{const s=buffer(duration);[146,146,196].forEach((f,i)=>tone(s,RATE,{frequency:f,start:i*.4,duration:.36,level:.28,type:'sawtooth',decay:.2}));noise(s,RATE,{duration:duration,level:.05,decay:duration,lowpass:.08,seed:29});return s;},
-  victory:duration=>{const s=buffer(duration);[262,330,392,523].forEach((f,i)=>tone(s,RATE,{frequency:f,start:i*.24,duration:.9,level:.34-i*.02,type:'triangle',decay:.55}));tone(s,RATE,{frequency:131,start:.96,duration:.6,level:.2,decay:.4});return s;},
+  select:duration=>{
+    const s=buffer(duration);
+    tone(s,RATE,{frequency:392,duration:.085,level:.42,type:'sine',decay:.038});
+    tone(s,RATE,{frequency:587.33,start:.022,duration:.11,level:.26,type:'triangle',decay:.05});
+    noise(s,RATE,{duration:.018,level:.14,decay:.006,lowpass:.45,seed:11});
+    return s;
+  },
+  order:duration=>{
+    const s=buffer(duration);
+    tone(s,RATE,{frequency:196,duration:.085,level:.46,type:'triangle',decay:.04});
+    tone(s,RATE,{frequency:293.66,start:.045,duration:.12,level:.34,type:'sine',decay:.055});
+    noise(s,RATE,{duration:.025,level:.1,decay:.008,lowpass:.25,seed:13});
+    return s;
+  },
+  coin:duration=>{
+    const s=buffer(duration);
+    tone(s,RATE,{frequency:1174.66,duration:.18,level:.36,decay:.075});
+    tone(s,RATE,{frequency:2349.32,duration:.12,level:.18,decay:.045});
+    tone(s,RATE,{frequency:1479.98,start:.085,duration:.21,level:.34,decay:.10});
+    tone(s,RATE,{frequency:2959.96,start:.085,duration:.14,level:.16,decay:.055});
+    noise(s,RATE,{duration:.035,level:.11,decay:.009,lowpass:.55,seed:17});
+    return s;
+  },
+  complete:duration=>{
+    const s=buffer(duration);
+    [293.66,369.99,440,587.33].forEach((f,i)=>{
+      tone(s,RATE,{frequency:f,start:i*.085,duration:.44,level:.34-i*.03,type:'triangle',decay:.24});
+      tone(s,RATE,{frequency:f*2,start:i*.085,duration:.30,level:.11,type:'sine',decay:.14});
+    });
+    return s;
+  },
+  alarm:duration=>{
+    const s=buffer(duration);
+    // Warm medieval war-horn fifth & muffled frame-drum double strike (no harsh buzzer).
+    [[116.54,0,.44],[146.83,.34,.42],[174.61,.68,.58]].forEach(([f,st,dur])=>{
+      tone(s,RATE,{frequency:f,start:st,duration:dur,level:.36,type:'triangle',decay:.28});
+      tone(s,RATE,{frequency:f*2,start:st,duration:dur*.85,level:.16,type:'sine',decay:.22});
+      tone(s,RATE,{frequency:f*3,start:st+.02,duration:dur*.7,level:.08,type:'sine',decay:.16});
+    });
+    [0,.34].forEach(st=>{
+      tone(s,RATE,{frequency:82,start:st,duration:.14,level:.28,type:'sine',decay:.055});
+      noise(s,RATE,{start:st,duration:.09,level:.14,decay:.03,lowpass:.14,seed:29});
+    });
+    return s;
+  },
+  victory:duration=>{
+    const s=buffer(duration);
+    tone(s,RATE,{frequency:130.81,start:0,duration:1.45,level:.26,type:'triangle',decay:.85});
+    [261.63,329.63,392,523.25].forEach((f,i)=>{
+      const st=i*.22;
+      tone(s,RATE,{frequency:f,start:st,duration:.95,level:.32,type:'triangle',decay:.55});
+      tone(s,RATE,{frequency:f*1.5,start:st+.01,duration:.75,level:.12,type:'sine',decay:.42});
+      tone(s,RATE,{frequency:f*2,start:st,duration:.6,level:.09,type:'sine',decay:.32});
+    });
+    return s;
+  },
 };
 const UI_DURATIONS={select:.18,order:.20,coin:.32,complete:.72,alarm:1.3,victory:1.6};
 
 // Voice / brass layer.
 function horn(duration){
-  const s=buffer(duration),fundamental=174.61;
-  for(const [harmonic,level]of [[1,.36],[2,.22],[3,.13],[4,.07],[5,.035]]){
-    const first=0,count=s.length;
-    for(let i=0;i<count;i++){
-      const t=i/RATE,attack=Math.min(1,t/.09),release=Math.min(1,(duration-t)/.22);
-      s[first+i]+=Math.sin(TAU*fundamental*harmonic*t+Math.sin(TAU*3*t)*.06)*level*attack*release*(1+.04*Math.sin(TAU*5*t));
+  const s=buffer(duration);
+  for(const [harmonic,level]of [[1,.38],[2,.25],[3,.15],[4,.08],[5,.04]]){
+    for(let i=0;i<s.length;i++){
+      const t=i/RATE,attack=Math.min(1,t/.08),release=Math.min(1,(duration-t)/.22);
+      const pitch=146.83+Math.min(1,t/.18)*27.78;
+      s[i]+=Math.sin(TAU*pitch*harmonic*t+Math.sin(TAU*3.2*t)*.05)*level*attack*release*(1+.04*Math.sin(TAU*5.1*t));
     }
   }
   return s;

@@ -21,12 +21,8 @@ function releaseCommit(){
 export default defineConfig({
   server:{watch:{ignored:['**/.tools/**','**/artifacts/**']}},
   optimizeDeps:{include:['three/addons/loaders/GLTFLoader.js','three/addons/loaders/KTX2Loader.js','three/addons/libs/meshopt_decoder.module.js']},
-  // Always emit into a clean directory. scripts/build-safe.mjs builds into a
-  // fresh staging dir and swaps it in atomically, so in-place accumulation of
-  // stale catalogues (and a failed build shipping a zero-byte entry) cannot
-  // happen. Sourcemaps are emitted but deliberately excluded from the offline
-  // precache list below.
-  build:{emptyOutDir:true,sourcemap:true,rollupOptions:{output:{manualChunks:{three:['three']}}}},
+  // Avoid shipping unminified source maps in production bundles.
+  build:{emptyOutDir:true,sourcemap:false,rollupOptions:{output:{manualChunks:{three:['three']}}}},
   plugins:[{name:'offline-game',
     configResolved(config){projectRoot=config.root;outputDirectory=path.resolve(config.root,config.build.outDir);},
     transformIndexHtml(){return [{tag:'meta',attrs:{name:'frontier-build',content:buildId},injectTo:'head'}];},

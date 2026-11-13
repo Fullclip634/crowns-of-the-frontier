@@ -20,7 +20,7 @@ import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './sur
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
-import {updateFlight,releaseEffect,ImpactEffects} from './battle-effects.js';
+import {updateFlight,releaseEffect,ImpactEffects,AttackEffects} from './battle-effects.js';
 import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
@@ -38,6 +38,33 @@ import {createWorldRenderer} from './render-context.js';
 import {graphicsCheckpoint} from './graphics-checkpoint.js';
 import {installCombatPresentation,combatTime} from './combat-presentation.js';
 import {projectileTargetHeight} from './combat-timing.js';
+
+const CANONICAL_MERGE_ATTRS=new Set(['position','normal','uv','color']);
+function normalizeMergeGeometries(geometries){
+  if(!geometries.length)return geometries;
+  let hasNormal=false,hasUv=false,hasColor=false;
+  for(const geometry of geometries){
+    for(const name of Object.keys(geometry.attributes))if(!CANONICAL_MERGE_ATTRS.has(name))geometry.deleteAttribute(name);
+    if(geometry.getAttribute('normal'))hasNormal=true;
+    if(geometry.getAttribute('uv'))hasUv=true;
+    if(geometry.getAttribute('color'))hasColor=true;
+  }
+  for(const geometry of geometries){
+    const count=geometry.getAttribute('position')?.count||0;
+    if(hasNormal&&!geometry.getAttribute('normal'))geometry.computeVertexNormals();
+    if(hasUv&&!geometry.getAttribute('uv'))geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(count*2),2));
+    if(hasColor){
+      const existing=geometry.getAttribute('color');
+      if(!existing)geometry.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(count*3).fill(1),3));
+      else if(existing.itemSize!==3){
+        const rgb=new Float32Array(count*3);
+        for(let i=0;i<count;i++){rgb[i*3]=existing.getX(i);rgb[i*3+1]=existing.getY(i);rgb[i*3+2]=existing.getZ(i);}
+        geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+      }
+    }
+  }
+  return geometries;
+}
 
 const mat=(color,extra={})=>standardMaterial({color,roughness:1,...extra});
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
@@ -72,7 +99,7 @@ export class WorldView {
     group.updateMatrixWorld(true);const byMaterial=new Map(),remove=[];
     group.traverse(child=>{if(!child.isMesh||child.userData.flag||child.parent.userData.windmill||child.parent.userData.gate||child.parent.userData.dockPier)return;const key=child.material.uuid+':'+JSON.stringify(child.userData.motion||null);if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,geometries:[],motion:child.userData.motion});const geometry=child.geometry.clone().applyMatrix4(child.matrixWorld);ensureModelIndices(geometry);byMaterial.get(key).geometries.push(geometry);remove.push(child);});
     for(const child of remove)child.removeFromParent();
-    for(const {material,geometries,motion} of byMaterial.values()){const geometry=mergeGeometries(geometries);if(geometry){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=material!==this.materials.shadow;mesh.receiveShadow=true;mesh.userData.motion=motion;group.add(mesh);}for(const geo of geometries)geo.dispose();}
+    for(const {material,geometries,motion} of byMaterial.values()){normalizeMergeGeometries(geometries);const geometry=mergeGeometries(geometries);if(geometry){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=material!==this.materials.shadow;mesh.receiveShadow=true;mesh.userData.motion=motion;group.add(mesh);}for(const geo of geometries)geo.dispose();}
     return group;
   }
   distantCatalogue(){return this.settings.distantUnits===false?null:authoredCatalogue('far');}
@@ -227,7 +254,10 @@ export class WorldView {
     }
   }
   effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;if(event.type==='attack'){
-      const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5;const object=new THREE.Mesh(ranged?new THREE.SphereGeometry(['catapult','warship'].includes(e.type)?.3:.09,5,4):new THREE.RingGeometry(.3,.6,8),new THREE.MeshBasicMaterial({color:['catapult','warship'].includes(e.type)?0xf0a564:0xf3db9b,transparent:true}));object.position.set(e.x,3,e.z);this.scene.add(object);this.fx.push({object,time:0,duration:['catapult','warship'].includes(e.type)?.65:ranged?.3:.2,from:new THREE.Vector3(e.x,e.kind==='building'?5:1.6,e.z),to:new THREE.Vector3(target.x,1.2,target.z),arc:['catapult','warship'].includes(e.type)?10:1,impact:['catapult','warship'].includes(e.type)});
+      const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5,siege=['catapult','warship'].includes(e.type),kind=siege?'siege':ranged?'arrow':'slash';
+      const pool=this.attackEffects??=new AttackEffects(),object=pool.acquire(kind,siege?0xf0a564:0xf3db9b);
+      object.position.set(e.x,3,e.z);this.scene.add(object);
+      this.fx.push({object,time:0,duration:siege?.65:ranged?.3:.2,from:new THREE.Vector3(e.x,e.kind==='building'?5:1.6,e.z),to:new THREE.Vector3(target.x,1.2,target.z),arc:siege?10:1,impact:siege,recycle:mesh=>pool.release(mesh)});
     }else if(event.type==='death'){this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);
       // A burnt footprint is what makes a ruin read as a ruin rather than a
       // scattering of stones, so it outlives the collapse by a wide margin.

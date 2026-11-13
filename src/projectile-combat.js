@@ -2,6 +2,7 @@ import {UNITS,BUILDINGS} from './data.js';
 import {GARRISONS,garrisonArrows} from './garrison.js';
 import {projectileWeapon,siegeProjectile,attackInterval,releaseDelay,flightDuration} from './combat-timing.js';
 import {projectileActor as actor,restoreProjectileState,nextProjectileId} from './projectile-state.js';
+import {forEachNearbyUnit} from './spatial-buckets.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const clone=value=>JSON.parse(JSON.stringify(value));
 const targetAllowed=(sim,shot,target)=>target?.hp>0&&!target.embarked&&sim.hostile(shot.owner,target.owner);
@@ -34,7 +35,7 @@ function impact(sim,shot){
     struck=target;const before=target.hp;sim.hurt(target,shot.damage,source);for(const amount of shot.bonus||[])if(target.hp>0)sim.hurt(target,amount,source);damage=before-target.hp;
   }else{
     if(targetAllowed(sim,shot,target)&&distance(target,shot.aim)<=target.r+.8){struck=target;const before=target.hp;sim.hurt(target,shot.damage,source);damage=before-target.hp;}
-    for(const nearby of sim.entities)if(nearby.kind==='unit'&&nearby!==struck&&targetAllowed(sim,shot,nearby)&&distance(nearby,shot.aim)<4)sim.hurt(nearby,shot.damage*.6,source);
+    forEachNearbyUnit(sim,shot.aim.x,shot.aim.z,4,nearby=>{if(nearby!==struck&&targetAllowed(sim,shot,nearby)&&distance(nearby,shot.aim)<4)sim.hurt(nearby,shot.damage*.6,source);});
   }
   const point=shot.siege?shot.aim:struck;
   sim.emit('projectile-impact',{entity:source,target:{...(struck?actor(struck):shot.victim),x:point.x,z:point.z},projectile:shot.id,damage,siege:shot.siege});

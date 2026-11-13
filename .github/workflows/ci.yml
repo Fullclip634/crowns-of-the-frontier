@@ -19,5 +19,6 @@ jobs:
           node-version: '24.20.0'
           cache: npm
       - run: npm ci
+      - run: npm run check
       - run: npm test
       - run: npm run build

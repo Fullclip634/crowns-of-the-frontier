@@ -3,9 +3,9 @@ const sprite=new URL('./ui-art/icons.svg',import.meta.url).href;
 const available=new Set(manifest.icons);
 export const ICON_MAP=Object.freeze({
   food:'wheat',wood:'logs',gold:'coins',stone:'mountain',pop:'users-round',population:'users-round',
-  villager:'user-round',scout:'chess-knight',spearman:'flag-triangle-right',archer:'bow-arrow',swordsman:'sword',knight:'chess-knight',ram:'siege-ram',catapult:'trebuchet',monk:'church',king:'crown',sentinel:'shield-half',marksman:'bow-arrow',outrider:'chess-knight',cart:'shopping-cart',fishingboat:'fish',galley:'sailboat',warship:'ship',transport:'ship-cargo',
-  towncenter:'landmark',house:'house',farm:'wheat',mill:'wind',camp:'trees',mine:'pickaxe',barracks:'swords',range:'bow-arrow',stable:'chess-knight',workshop:'hammer',blacksmith:'anvil',market:'store',tower:'castle',keep:'castle',wall:'brick-wall',gate:'door-open',monastery:'church',wonder:'landmark',dock:'anchor',
-  economy:'coins',attack:'swords',armor:'shield',ranged:'bow-arrow',fortification:'brick-wall',fortifiedWall:'castle',husbandry:'chess-knight',shieldDrill:'shield-check',caravanLedger:'book-open',raidingParties:'flag-triangle-right',seamanship:'ship-wheel',age:'crown',
+  villager:'user-round',scout:'spyglass',spearman:'spear',archer:'bow-arrow',swordsman:'sword',knight:'chess-knight',ram:'siege-ram',catapult:'trebuchet',monk:'church',king:'crown',sentinel:'shield-half',marksman:'crossbow',outrider:'lance',cart:'shopping-cart',fishingboat:'fish',galley:'sailboat',warship:'ship',transport:'ship-cargo',
+  towncenter:'landmark',house:'house',farm:'farm-plot',mill:'wind',camp:'trees',mine:'pickaxe',barracks:'swords',range:'crossbow',stable:'lance',workshop:'hammer',blacksmith:'anvil',market:'store',tower:'watchtower',keep:'castle',wall:'brick-wall',gate:'door-open',monastery:'church',wonder:'monument',dock:'anchor',
+  economy:'coins',attack:'swords',armor:'shield',ranged:'bow-arrow',fortification:'brick-wall',fortifiedWall:'bastion',husbandry:'horseshoe',shieldDrill:'shield-check',caravanLedger:'book-open',raidingParties:'spear',seamanship:'ship-wheel',age:'crown',
   tutorial:'graduation-cap',skirmish:'swords',regicide:'crown',survival:'shield',dominion:'landmark',sandbox:'tent-tree',tides:'sailboat',custom:'users-round',campaign:'book-open',
 });
 export function uiIcon(name){

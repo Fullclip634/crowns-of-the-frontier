@@ -61,3 +61,20 @@ test('a damaged windup cannot turn an ordinary house or melee troop into a proje
  const {sim,source,target}=fixture();sim.hit(source,target);const data=sim.serialize(),shot=data.projectiles[0],house=sim.addBuilding('house',0,-10,20,true),melee=sim.addUnit('spearman',0,-10,22);data.entities=sim.serialize().entities;
  data.projectiles=[{...shot,id:2,source:house.id},{...shot,id:3,source:melee.id}];const restored=Simulation.restore(data);assert.deepEqual(restored.projectiles,[]);
 });
+
+test('spatial bucket splash hits nearby enemies identically inside populated ticks without scanning distant units',()=>{
+ const {sim,source,target}=fixture('catapult');
+ const inside=sim.addUnit('spearman',1,target.x+2.5,target.z);
+ const edge=sim.addUnit('spearman',1,target.x+3.8,target.z);
+ const far=sim.addUnit('spearman',1,target.x+4.2,target.z);
+ const distantCrowd=[];for(let i=0;i<150;i++)distantCrowd.push(sim.addUnit('spearman',1,-60+(i%15)*2,-60+Math.floor(i/15)*2));
+ for(const u of [inside,edge,far,...distantCrowd])u.stance='hold';
+ const beforeInside=inside.hp,beforeEdge=edge.hp,beforeFar=far.hp;
+ sim.hit(source,target);
+ advance(sim,1.4);
+ assert.ok(sim.unitBuckets?.size>0);
+ assert.ok(inside.hp<beforeInside,'unit well inside splash radius takes damage');
+ assert.ok(edge.hp<beforeEdge,'unit near splash boundary still inside <4 takes damage');
+ assert.equal(far.hp,beforeFar,'unit beyond splash radius takes zero damage');
+ assert.ok(distantCrowd.every(u=>u.hp===u.maxHp));
+});

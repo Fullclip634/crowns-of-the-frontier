@@ -102,3 +102,21 @@ test('WorldView spawns bounded, pooled particle batches and exposes a report',()
   assert.ok(Math.max(...counts)<8,'no batch uses the full high-quality particle count');
   lean.impactEffects.dispose();
 });
+
+test('WorldView.effect pools attack meshes without allocating unique geometries per swing',()=>{
+  const view=effectView('high');
+  const attacker={kind:'unit',type:'knight',x:0,z:0},rangedAttacker={kind:'unit',type:'archer',x:1,z:0},target={kind:'unit',type:'spearman',x:4,z:0};
+  view.effect({type:'attack',entity:attacker,target});
+  view.effect({type:'attack',entity:rangedAttacker,target});
+  assert.equal(view.fx.length,2);
+  const geometries=view.fx.map(f=>f.object.geometry);
+  let disposed=0;for(const g of geometries)g.addEventListener('dispose',()=>disposed++);
+  assert.equal(typeof view.fx[0].recycle,'function');
+  assert.equal(typeof view.fx[1].recycle,'function');
+  view.fx[0].recycle(view.fx[0].object);
+  assert.equal(disposed,0,'recycling an attack effect keeps its shared geometry alive');
+  view.effect({type:'attack',entity:attacker,target});
+  assert.equal(view.fx[2].object,view.fx[0].object,'pooled attack mesh is reused');
+  view.flightEffects.dispose();
+  assert.equal(disposed,2,'shared geometries dispose only on pool teardown');
+});

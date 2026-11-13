@@ -114,7 +114,7 @@ test('the technology tree and icon set surface the new upgrade',()=>{
   const markup=technologyTreeMarkup(s,'alder');
   assert.match(markup,/Fortified walls/);
   assert.match(markup,/data-tree-tech="fortifiedWall"/);
-  assert.equal(ICON_MAP[FORTIFIED_WALL_TECH],'castle');
+  assert.equal(ICON_MAP[FORTIFIED_WALL_TECH],'bastion');
   assert.match(UI_ICONS[FORTIFIED_WALL_TECH],/<svg\b/);
 });
 

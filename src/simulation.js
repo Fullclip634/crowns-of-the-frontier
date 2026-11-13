@@ -6,7 +6,7 @@ import {installTactics,formationSlot} from './tactics.js';
 import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
 import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle.js';
-import {SpatialBuckets} from './spatial-buckets.js';
+import {SpatialBuckets,forEachNearbyUnit} from './spatial-buckets.js';
 import {placementCollision,recordPlacementAppend} from './placement-obstacles.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints,wallEndpointTree} from './walls.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
@@ -305,7 +305,7 @@ export class Simulation {
   hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
     if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type].role==='cavalry'&&this.players[attacker.owner].tech.raidingParties)this.players[attacker.owner].resources.gold+=3;this.emit('death',{entity:target});for(const q of target.queue||[])if(q.kind==='age')this.players[target.owner].agePending=false;}}
   hit(e,target){if(e.cooldown>0||!this.hostile(e.owner,target.owner))return;e.heading=Math.atan2(target.x-e.x,target.z-e.z);const amount=this.attackDamage(e,target);this.hurt(target,amount,e);e.cooldown=e.kind==='building'?1.6:UNITS[e.type].cooldown||1.2;
-    if(['catapult','warship'].includes(e.type))for(const nearby of this.entities)if(nearby.hp>0&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&nearby.kind==='unit'&&distance(nearby,target)<4)this.hurt(nearby,amount*.6,e);
+    if(['catapult','warship'].includes(e.type))forEachNearbyUnit(this,target.x,target.z,4,nearby=>{if(nearby.hp>0&&!nearby.embarked&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&distance(nearby,target)<4)this.hurt(nearby,amount*.6,e);});
     this.emit('attack',{entity:e,target,damage:amount});
   }
   finishOrder(e){e.order=e.orders.shift()||null;e.path=[];e.repath=0;}

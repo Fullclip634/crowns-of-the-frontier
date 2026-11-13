@@ -24,6 +24,11 @@ test('a verified game package reports its actual commit/build and serves its exa
   assert.deepEqual(body.release,{commit,expectedCommit:commit,buildId,version:'2.6.1',main:'/assets/index-test.js',snapshotProtocol:2});assert.equal(JSON.stringify(body).includes('must-not-be-exposed'),false);
   const page=await fetch(app.base+'/');assert.equal(page.status,200);assert.equal(page.headers.get('cache-control'),'no-cache');assert.match(await page.text(),/index-test\.js/);
   const script=await fetch(app.base+body.release.main);assert.match(script.headers.get('cache-control'),/immutable/);assert.equal(await script.text(),'console.log("built game");');
+  fs.mkdirSync(path.join(root,'audio'),{recursive:true});
+  for(const [rel,expected]of [['assets/model.glb','model/gltf-binary'],['assets/surface.ktx2','image/ktx2'],['assets/decoder.wasm','application/wasm'],['audio/select.wav','audio/wav']]){
+    fs.writeFileSync(path.join(root,rel),'ok');
+    const res=await fetch(app.base+'/'+rel);assert.equal(res.status,200);assert.equal(res.headers.get('content-type'),expected);
+  }
   const ws=new WebSocket(app.base.replace('http:','ws:')+'/socket');t.after(()=>ws.terminate());await new Promise((resolve,reject)=>{ws.once('open',resolve);ws.once('error',reject);});
   const pong=new Promise(resolve=>ws.once('message',raw=>resolve(JSON.parse(raw))));ws.send(JSON.stringify({type:'ping',stamp:42}));assert.deepEqual(await pong,{type:'pong',stamp:42});ws.close();
 });

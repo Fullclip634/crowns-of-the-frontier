@@ -6,6 +6,8 @@ export function releaseRenderers(view){
   view.releaseRendererWatch?.();
   view.gpuTimer?.dispose();
   view.impactEffects?.dispose();
+  view.flightEffects?.dispose();
+  view.attackEffects?.dispose();
   const renderers=new Set([view.renderer,view.modelPortrait?.renderer].filter(Boolean));
   for(const renderer of renderers){renderer.dispose();renderer.forceContextLoss?.();}
   return true;

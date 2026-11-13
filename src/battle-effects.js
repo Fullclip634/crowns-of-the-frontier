@@ -138,3 +138,57 @@ export class ImpactEffects{
     this.retained.clear();for(const list of Object.values(this.free))list.length=0;
   }
 }
+
+// Reuse lightweight attack tracer/ring meshes and geometries instead of
+// allocating GPU buffers per weapon swing or projectile release.
+export class AttackEffects{
+  constructor(){
+    this.geometry={
+      siege:new THREE.SphereGeometry(.3,5,4),
+      arrow:new THREE.SphereGeometry(.09,5,4),
+      slash:new THREE.RingGeometry(.3,.6,8),
+    };
+    this.free={siege:[],arrow:[],slash:[]};
+    this.retained=new Set();
+    this.limit=64;
+    this.disposed=false;
+  }
+  acquire(kind,color=0xf3db9b){
+    if(this.disposed)throw new Error('Attack effects have been disposed.');
+    const key=this.geometry[kind]?kind:'arrow';
+    let mesh=this.free[key].pop();
+    if(!mesh){
+      const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:1});
+      mesh=new THREE.Mesh(this.geometry[key],material);
+      mesh.userData.attackKind=key;
+      this.retained.add(mesh);
+    }
+    mesh.material.color.setHex(color);
+    mesh.material.opacity=1;
+    mesh.visible=true;
+    mesh.position.set(0,0,0);
+    mesh.scale.setScalar(1);
+    mesh.quaternion.identity();
+    return mesh;
+  }
+  release(mesh){
+    if(!this.retained.has(mesh))return;
+    mesh.removeFromParent();
+    mesh.visible=false;
+    if(this.retained.size>this.limit){
+      this.retained.delete(mesh);
+      mesh.material.dispose();
+    }else{
+      const list=this.free[mesh.userData.attackKind]??=[];
+      if(!list.includes(mesh))list.push(mesh);
+    }
+  }
+  dispose(){
+    if(this.disposed)return;
+    this.disposed=true;
+    for(const mesh of this.retained){mesh.removeFromParent();mesh.material.dispose();}
+    for(const geometry of Object.values(this.geometry))geometry.dispose();
+    this.retained.clear();
+    for(const list of Object.values(this.free))list.length=0;
+  }
+}

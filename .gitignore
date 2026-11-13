@@ -7,6 +7,12 @@ dist.previous-*/
 .build-staging-*/
 test-results/
 playwright-report/
+.shots/
+.workbuddy-ai/
+.rename-probe-*/
+artifacts/
+conversation-*.txt
+.*.log
 *.log
 .env
 .env.local

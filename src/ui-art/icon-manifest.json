@@ -109,7 +109,16 @@
     "network",
     "anchor",
     "siege-ram",
-    "trebuchet"
+    "trebuchet",
+    "watchtower",
+    "spear",
+    "crossbow",
+    "spyglass",
+    "lance",
+    "monument",
+    "farm-plot",
+    "horseshoe",
+    "bastion"
   ],
-  "spriteSHA256": "4d674e683b692c01019efa8c3a3ff591de68a9eb428670154c0c898045abb62e"
+  "spriteSHA256": "96ce69d7fc1d59c21a17749834178275cc7b23be5a104e0ad96799f072237e08"
 }
