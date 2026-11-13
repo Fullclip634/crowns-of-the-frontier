@@ -62,13 +62,7 @@ export function applySurfaceMaterials(view){
 
 export function applyGroundSurface(material,land,quality){
   const dimension=id=>Math.max(.25,(surfaceManifest.find(asset=>asset.id===id)?.dimensionsMM?.[0]||2000)/1000);
-  applyTerrainShading(material,land,quality,surfaces,{
-    grass:dimension('leafy_grass'),
-    soil:dimension('brown_mud'),
-    rock:Math.min(7.5,dimension('rocky_terrain_02')),
-    stone:dimension('medieval_blocks_05'),
-    cliff:dimension('rock_01')*2.6,
-  });
+  applyTerrainShading(material,land,quality,surfaces,{grass:dimension('leafy_grass'),soil:dimension('brown_mud'),rock:dimension('rocky_terrain_02')});
 }
 
 export function retainedSurfaceTextures(){return cache.textures();}

@@ -13,48 +13,40 @@ import {bridgeFootprint} from './bridge-layout.js';
 // missing grass, and the saving is larger than an entire town's buildings.
 export const tuftBlades=quality=>quality==='high'?6:4;
 export function grassTuftGeometry(blades=6){
-  const vertices=[],colors=[],indices=[],uv=[];
+  const vertices=[],indices=[],uv=[];
   for(let blade=0;blade<blades;blade++){
-    const angle=blade*2.399,h=.30+(blade%3)*.12,w=.038,lean=.14;
-    const center=new THREE.Vector3(Math.sin(angle)*.13,0,Math.cos(angle)*.13);
+    const angle=blade*2.399,h=.28+(blade%3)*.11,w=.035,lean=.12;
+    const center=new THREE.Vector3(Math.sin(angle)*.12,0,Math.cos(angle)*.12);
     const across=new THREE.Vector3(Math.cos(angle),0,-Math.sin(angle));
     const front=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));
     const base=vertices.length/3;
-    for(const [width,y,bend,thickness,shade] of [[w,0,0,.009,.56],[w*.72,h*.55,lean*.34,.006,.88]]){
+    for(const [width,y,bend,thickness] of [[w,0,0,.009],[w*.7,h*.55,lean*.3,.006]]){
       for(const [side,depth] of [[-1,-1],[1,-1],[1,1],[-1,1]]){
         const p=center.clone().addScaledVector(across,side*width).addScaledVector(front,bend+depth*thickness);p.y=y;
-        vertices.push(...p.toArray());uv.push((side+1)*.5,y/h);colors.push(shade,shade*.98,shade*.94);
+        vertices.push(...p.toArray());uv.push((side+1)*.5,y/h);
       }
     }
-    const tip=center.clone().addScaledVector(front,lean);tip.y=h;vertices.push(...tip.toArray());uv.push(.5,1);colors.push(1.04,1.06,.92);
+    const tip=center.clone().addScaledVector(front,lean);tip.y=h;vertices.push(...tip.toArray());uv.push(.5,1);
     indices.push(base,base+2,base+1,base,base+3,base+2);
     for(let i=0;i<4;i++){const next=(i+1)%4;indices.push(base+i,base+next,base+4+next,base+i,base+4+next,base+4+i,base+4+i,base+4+next,base+8);}
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
 }
 
 export class GroundCover{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
-    const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.045:.085)));
+    const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
     const winter=isSnowBiome(land.map);
-    const material=standardMaterial({color:0xffffff,roughness:.94,vertexColors:true,emissive:0x1f2b18,emissiveIntensity:.07});
+    const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const palette=terrainBiome(land.map).grass;
-    // Cluster grass tufts organically across open meadows, road borders and gentle rises while staying within budget.
-    const clusters=Array.from({length:36},()=>({x:(rng()-.5)*(land.worldSize-12),z:(rng()-.5)*(land.worldSize-12),spread:3.5+rng()*7}));
-    for(let attempt=0;attempt<capacity*4&&this.entries.length<capacity;attempt++){
-      const clumped=attempt%3===0,anchor=clumped?clusters[attempt%clusters.length]:null;
-      const x=anchor?anchor.x+(rng()+rng()-1)*anchor.spread:(rng()-.5)*(land.worldSize-6);
-      const z=anchor?anchor.z+(rng()+rng()-1)*anchor.spread:(rng()-.5)*(land.worldSize-6);
-      if(Math.abs(x)>(land.worldSize-6)*.5||Math.abs(z)>(land.worldSize-6)*.5)continue;
-      const y=land.surfaceHeightAt(x,z);
-      if(y<.24||roadDistance(x,z,land)<1.75||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.55)continue;
-      const slope=Math.abs(land.surfaceHeightAt(x+.7,z)-land.surfaceHeightAt(x-.7,z))+Math.abs(land.surfaceHeightAt(x,z+.7)-land.surfaceHeightAt(x,z-.7));
-      if(slope>.65&&rng()<.7)continue;
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.72+rng()*.78,color:palette[(this.entries.length+Math.floor(rng()*3))%palette.length],shade:.82+rng()*.24});
+    for(let i=0;i<capacity;i++){
+      const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
+      if(y<.2||roadDistance(x,z,land)<1.7||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.65+rng()*.8,color:palette[i%3],shade:.88+rng()*.18});
     }
     this.update(true,true);
   }

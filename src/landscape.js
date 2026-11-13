@@ -102,25 +102,13 @@ export class Landscape {
   }
 }
 
-function traceOffsetRoad(points,offset,size,canvasSize){
-  const path=new Path2D(),half=size/2,scale=canvasSize/size;
-  for(let i=0;i<points.length;i++){
-    const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],dx=next.x-prev.x,dz=next.z-prev.z,len=Math.hypot(dx,dz)||1;
-    const x=points[i].x-(dz/len)*offset,z=points[i].z+(dx/len)*offset;
-    path.lineTo((x+half)*scale,(z+half)*scale);
-  }
-  return path;
-}
-
 function groundMap(landscape){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1536;
-  const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2,scale=1536/size;
+  const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2;
   const winter=isSnowBiome(landscape.map),arid=isAridBiome(landscape.map),rocky=isRockyBiome(landscape.map),palette=terrainBiome(landscape.map).ground;
   const field=document.createElement('canvas');field.width=field.height=256;const fieldContext=field.getContext('2d'),pixels=fieldContext.createImageData(256,256),colors=palette.map(hex=>[1,3,5].map(at=>parseInt(hex.slice(at,at+2),16)));
   for(let row=0;row<256;row++)for(let column=0;column<256;column++){
-    const wx=(column+.5)/256*size-half,wz=(row+.5)/256*size-half;
-    const value=terrainMeadow(wx,wz,landscape.phase),patch=terrainMeadow(wx*2.1+41,wz*2.1-29,landscape.phase+.37);
-    const mixed=Math.max(0,Math.min(1,value*.84+patch*.16)),a=mixed<.5?colors[2]:colors[0],b=mixed<.5?colors[0]:colors[1],blend=mixed<.5?mixed*2:(mixed-.5)*2,index=(row*256+column)*4;
+    const value=terrainMeadow((column+.5)/256*size-half,(row+.5)/256*size-half,landscape.phase),a=value<.5?colors[2]:colors[0],b=value<.5?colors[0]:colors[1],blend=value<.5?value*2:(value-.5)*2,index=(row*256+column)*4;
     for(let component=0;component<3;component++)pixels.data[index+component]=a[component]+(b[component]-a[component])*blend;
     pixels.data[index+3]=255;
   }
@@ -131,57 +119,22 @@ function groundMap(landscape){
   const overlay=document.createElement('canvas');overlay.width=overlay.height=res;const overlayContext=overlay.getContext('2d');
   overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
   overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
-  // Organic meadow grain & clover flecks instead of sharp block noise.
-  const grain=winter?['#d6cf9312','#2f492212']:arid?['#e8d3a416','#8a6b3a14']:rocky?['#b9b8aa14','#3c3a3412']:['#bfd29916','#224a2412'];
-  for(let i=0;i<11000;i++){ctx.fillStyle=grain[i%2];const gx=rng()*1536,gy=rng()*1536,r=.7+rng()*1.9;ctx.beginPath();ctx.arc(gx,gy,r,0,Math.PI*2);ctx.fill();}
-  // Mossy humus carpets beneath forest groves so trees anchor into cool shaded earth.
-  const sites=landscape.terrainSites;
-  if(sites?.trees?.length){
-    ctx.fillStyle=winter?'rgba(42,56,48,.16)':arid?'rgba(92,74,46,.18)':'rgba(22,40,18,.21)';
-    for(const tree of sites.trees){
-      const tx=(tree.x+half)*scale,ty=(tree.z+half)*scale,tr=2.8*scale;
-      ctx.beginPath();ctx.arc(tx,ty,tr,0,Math.PI*2);ctx.fill();
-    }
-  }
-  // Crushed bedrock scree and gravel beds beneath gold and stone mineral deposits.
-  if(sites?.quarries?.length){
-    for(const q of sites.quarries){
-      const qx=(q.x+half)*scale,qy=(q.z+half)*scale,qr=(q.r*2.4+1.4)*scale;
-      const g=ctx.createRadialGradient(qx,qy,qr*.15,qx,qy,qr);
-      g.addColorStop(0,q.type==='gold'?'rgba(118,96,60,.62)':'rgba(116,118,110,.62)');
-      g.addColorStop(.6,q.type==='gold'?'rgba(96,82,54,.30)':'rgba(98,100,92,.28)');
-      g.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(qx,qy,qr,0,Math.PI*2);ctx.fill();
-    }
-  }
-  // Packed dirt & cobblestone aprons around settlements and initial foundations.
-  const aprons=[...landscape.settlements.map(s=>({x:s.x,z:s.z,r:9.2})),...(sites?.buildings||[]).map(b=>({x:b.x,z:b.z,r:b.r*1.55+1.2}))];
-  for(const pad of aprons){
-    const px=(pad.x+half)*scale,py=(pad.z+half)*scale,pr=pad.r*scale;
-    const g=ctx.createRadialGradient(px,py,pr*.18,px,py,pr);
-    g.addColorStop(0,winter?'rgba(155,156,144,.42)':arid?'rgba(168,144,104,.46)':'rgba(140,130,110,.44)');
-    g.addColorStop(.55,winter?'rgba(108,112,102,.20)':'rgba(98,84,60,.22)');
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fill();
-  }
+  // Coherent, restrained grain: the old 38k single-pixel speckles read as mud.
+  const grain=winter?['#d6cf9310','#2f492210']:arid?['#e8d3a414','#8a6b3a12']:rocky?['#b9b8aa12','#3c3a3410']:['#c3d2a912','#254d2a0e'];
+  for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
+  const scale=1536/size;
   for(const channel of landscape.channels()){
-    const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)*scale,(z+half)*scale);}
+    const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=(channel.width*2+(winter?11:8))*scale;ctx.strokeStyle=winter?'rgba(84,96,92,.35)':arid?'rgba(104,80,48,.38)':'rgba(54,64,46,.38)';ctx.stroke(path);
-    ctx.lineWidth=(channel.width*2+(winter?8:5))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#64745a';ctx.stroke(path);
-    ctx.lineWidth=(channel.width*2+(winter?5.5:3))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
+    ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
+    ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
   }
-  // Organic trade roads: packed earth shoulder, twin cart-wheel ruts and worn edge stones.
+  // Two-tone roads: a soft packed-earth shoulder under a bright, legible tread.
   for(const road of terrainRoadPaths(landscape)){
-    const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)*scale,(point.z+half)*scale);
+    const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=6.2*scale;ctx.strokeStyle=winter?'rgba(92,98,92,.30)':arid?'rgba(108,82,44,.34)':'rgba(68,58,38,.32)';ctx.stroke(path);
-    ctx.lineWidth=3.5*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d6ba84':rocky?'#b5ae9a':'#bfa87e';ctx.stroke(path);
-    for(const offset of [-.62,.62]){
-      const rut=traceOffsetRoad(road.points,offset,size,1536);
-      ctx.lineWidth=.82*scale;ctx.strokeStyle=winter?'rgba(130,126,112,.45)':arid?'rgba(128,96,56,.46)':'rgba(94,76,50,.48)';ctx.stroke(rut);
-    }
-    ctx.lineWidth=.9*scale;ctx.strokeStyle=winter?'rgba(195,204,192,.32)':'rgba(138,148,96,.24)';ctx.stroke(path);
+    ctx.lineWidth=5.4*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.30)':arid?'rgba(112,86,48,.34)':'rgba(74,62,42,.32)';ctx.stroke(path);
+    ctx.lineWidth=3.1*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c3ae84';ctx.stroke(path);
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }
@@ -194,14 +147,7 @@ function groundRelief(seed){
 }
 
 export function buildLandscape(view){
-  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=standardMaterial({map:null,bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
-  const entities=view.sim?.entities||[];
-  land.terrainSites={
-    trees:entities.filter(e=>e.hp>0&&e.type==='wood').map(e=>({x:e.x,z:e.z})),
-    quarries:entities.filter(e=>e.hp>0&&e.kind==='resource'&&(e.type==='gold'||e.type==='stone')).map(e=>({x:e.x,z:e.z,type:e.type,r:e.r||1.6})),
-    buildings:entities.filter(e=>e.hp>0&&e.kind==='building'&&!['farm','wall'].includes(e.type)).map(e=>({x:e.x,z:e.z,r:e.r||2.4,type:e.type})),
-  };
-  material.map=groundMap(land);
+  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
   const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
   geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
   applyGroundSurface(material,land,view.settings.quality);
