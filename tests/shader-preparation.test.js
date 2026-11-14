@@ -30,3 +30,13 @@ test('failed optional shader preparation disposes proxies and permits the rebuil
   const {view,...asset}=fixture();let disposed=0;view.renderer.compileAsync=group=>{group.children[0].material.addEventListener('dispose',()=>disposed++);return Promise.reject(new Error('compile failed'));};
   assert.equal(await transitionRendererQuality(view,'high',()=>Promise.resolve(),()=>{}),true);assert.equal(disposed,1);assert.equal(view.graphicsRebuilding,null);assert.equal(view.graphicsLoading,null);assert.equal(view.renderQuality,'high');assert.equal(view.renderer.shadowMap.enabled,true);assert.equal(view.sun.shadow.mapSize.x,2048);assert.equal(view.graphicsWarmupError,'compile failed');asset.geometry.dispose();asset.material.dispose();asset.mesh.dispose();
 });
+
+test('shader previews deduplicate repeated identical mesh variants while keeping shadow and attribute distinctions',()=>{
+  const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(),material=new THREE.MeshStandardMaterial();
+  for(let i=0;i<24;i++){const m=new THREE.Mesh(geometry,material);m.castShadow=true;m.receiveShadow=true;scene.add(m);}
+  const flat=new THREE.Mesh(geometry,material);flat.castShadow=false;flat.receiveShadow=true;scene.add(flat);
+  const preview=shaderPreview(scene);
+  assert.equal(preview.group.children.length,2,'24 identical casters pack as 1 proxy alongside 1 non-caster variant');
+  assert.equal(preview.materials.size,1);
+  preview.dispose();geometry.dispose();material.dispose();
+});

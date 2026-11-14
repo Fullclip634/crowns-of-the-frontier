@@ -4,9 +4,16 @@ import * as THREE from 'three';
 // replaces the live scene. Geometry and textures stay shared, without copying
 // runtime userData (which can contain circular unit/batch references).
 export function shaderPreview(scene){
-  const group=new THREE.Group(),materials=new Map(),instances=[];
-  const material=source=>{if(!source)return source;if(!materials.has(source)){const copy=source.clone();copy.defines={...source.defines};copy.onBeforeCompile=source.onBeforeCompile;copy.customProgramCacheKey=source.customProgramCacheKey;materials.set(source,copy);}return materials.get(source);};
+  const group=new THREE.Group(),materials=new Map(),materialIds=new Map(),seen=new Set(),instances=[];
+  const material=source=>{if(!source)return source;if(!materials.has(source)){const copy=source.clone();copy.defines={...source.defines};copy.onBeforeCompile=source.onBeforeCompile;copy.customProgramCacheKey=source.customProgramCacheKey;materials.set(source,copy);materialIds.set(source,materialIds.size+1);}return materials.get(source);};
+  const materialKey=value=>Array.isArray(value)?value.map(entry=>entry?(material(entry),materialIds.get(entry)):0).join(','):(value?(material(value),materialIds.get(value)):0);
   scene.traverse(source=>{
+    const kind=source.isInstancedMesh?'I':source.isSkinnedMesh?'S':source.isMesh?'M':source.isPoints?'P':source.isLineSegments?'L':source.isLine?'N':source.isSprite?'R':'';
+    if(!kind)return;
+    const attrs=source.geometry?.attributes?Object.keys(source.geometry.attributes).sort().join(','):'';
+    const morphs=source.morphTargetInfluences?.length?1:0;
+    const key=`${kind}|${materialKey(source.material)}|${attrs}|${source.instanceColor?1:0}|${source.castShadow?1:0}|${source.receiveShadow?1:0}|${morphs}`;
+    if(seen.has(key))return;seen.add(key);
     const value=Array.isArray(source.material)?source.material.map(material):material(source.material);let proxy;
     if(source.isInstancedMesh){proxy=new THREE.InstancedMesh(source.geometry,value,1);proxy.instanceColor=source.instanceColor;instances.push(proxy);}
     else if(source.isSkinnedMesh){proxy=new THREE.SkinnedMesh(source.geometry,value);proxy.bind(source.skeleton,source.bindMatrix);}

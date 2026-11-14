@@ -105,9 +105,13 @@ export class WorldView {
   distantCatalogue(){return this.settings.distantUnits===false?null:authoredCatalogue('far');}
   unitDetail(e,x,y,z){
     if(!this.distantCatalogue())return 'near';
+    const quality=this.settings.quality;
+    const baseThreshold=quality==='low'?48:quality==='medium'?36:26;
+    const budgetMs=1000/(quality==='low'?30:quality==='medium'?45:60);
+    const pressure=this.frameTimeMs>budgetMs*1.15?Math.min(1.65,this.frameTimeMs/budgetMs):1;
     const distance=Math.hypot(this.camera.position.x-x,this.camera.position.y-y,this.camera.position.z-z);
     const previous=(this.unitLodState??=new Map()).get(e.id);
-    const decision=lodDecision({distance,worldHeight:unitScreenHeight(e.type),viewportHeight:this.container?.clientHeight||globalThis.innerHeight||720,fovDegrees:this.camera.fov,previous,threshold:26,hysteresis:.8,enabled:true});
+    const decision=lodDecision({distance,worldHeight:unitScreenHeight(e.type),viewportHeight:this.container?.clientHeight||globalThis.innerHeight||720,fovDegrees:this.camera.fov,previous,threshold:baseThreshold*pressure,hysteresis:.8,enabled:true});
     this.unitLodState.set(e.id,decision);
     return decision.detail;
   }
@@ -115,13 +119,13 @@ export class WorldView {
     if(!batch){const capacity=Math.max(512,this.sim.players.length*(this.sim.options.populationLimit||160)),far=this.distantCatalogue();
       const model=mergeUnitModel(this,this.makeUnit(e,null),true);model.updateMatrixWorld(true);
       batch={parts:[],farParts:[],ids:[],renderIds:[],farRenderIds:[],free:[],capacity,model3d:model.userData.model3d};
-      const fill=(source,parts,renderIds)=>{
-        if(rigid){const part=createRigidUnitPart(this,source,batch,renderIds);if(part){parts.push(part);this.objects.add(part);}}
-        source.traverse(part=>{if(!part.isMesh||rigid&&!part.material.transparent)return;const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(capacity),1).setUsage(THREE.DynamicDrawUsage));const inst=new THREE.InstancedMesh(geometry,part.material,capacity);inst.count=0;inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);inst.castShadow=part.material!==this.materials.shadow;inst.receiveShadow=true;inst.frustumCulled=false;inst.userData.unitIds=renderIds;inst.userData.motion=part.userData.motion;parts.push(inst);this.objects.add(inst);});
+      const fill=(source,parts,renderIds,castFarShadow)=>{
+        if(rigid){const part=createRigidUnitPart(this,source,batch,renderIds);if(part){part.castShadow=castFarShadow;parts.push(part);this.objects.add(part);}}
+        source.traverse(part=>{if(!part.isMesh||rigid&&!part.material.transparent)return;const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);geometry.setAttribute('instanceOwner',new THREE.InstancedBufferAttribute(new Float32Array(capacity),1).setUsage(THREE.DynamicDrawUsage));const inst=new THREE.InstancedMesh(geometry,part.material,capacity);inst.count=0;inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);inst.castShadow=castFarShadow&&part.material!==this.materials.shadow;inst.receiveShadow=true;inst.frustumCulled=false;inst.userData.unitIds=renderIds;inst.userData.motion=part.userData.motion;parts.push(inst);this.objects.add(inst);});
         this.releaseNode(source);
       };
-      fill(model,batch.parts,batch.renderIds);
-      if(far){const distant=mergeUnitModel(this,this.makeUnit(e,far),true);distant.updateMatrixWorld(true);fill(distant,batch.farParts,batch.farRenderIds);}
+      fill(model,batch.parts,batch.renderIds,true);
+      if(far){const distant=mergeUnitModel(this,this.makeUnit(e,far),true);distant.updateMatrixWorld(true);fill(distant,batch.farParts,batch.farRenderIds,this.settings.quality==='high');}
       this.unitBatches.set(key,batch);}
     const index=batch.free.length?batch.free.pop():batch.ids.length;batch.ids[index]=e.id;
     const node=new THREE.Group();node.userData.batch=batch;node.userData.index=index;node.userData.model3d=batch.model3d;node.userData.unitVariant=variant;return node;
@@ -294,6 +298,8 @@ export class WorldView {
   }
   render(dt,menu=false){if(!this.sim)return;this.vfxTimer?.sample(dt);this.clock+=dt;const stepWall=Math.max(dt,this.wallStep??dt);this.ruinClock=(this.ruinClock??0)+stepWall;this.wallStep=undefined;this.fogMesh.visible=!menu&&this.settings.fog!==false;
     beginUnitFrame(this,false);
+    const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
+    let fireCount=0;const fireDummy=this.fireDummy??=new THREE.Object3D();
     for(const e of this.sim.entities){let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
         if(e.hp<=0&&this.treeIndices.has(e.id)){const i=this.treeIndices.get(e.id),dummy=new THREE.Object3D();dummy.scale.set(0,0,0);dummy.updateMatrix();this.treeTrunks.setMatrixAt(i,dummy.matrix);this.treeLeaves.setMatrixAt(i*2,dummy.matrix);this.treeLeaves.setMatrixAt(i*2+1,dummy.matrix);this.treeTrunks.instanceMatrix.needsUpdate=true;this.treeLeaves.instanceMatrix.needsUpdate=true;this.treeIndices.delete(e.id);}continue;
       }
@@ -305,8 +311,9 @@ export class WorldView {
       if(e.kind==='unit'&&(!visible||e.embarked))continue;
       const position=renderPosition(this,e),rx=position.x,rz=position.z,ground=this.entityHeight(e,rx,rz);e.renderX=rx;e.renderZ=rz;
       // Keep positions current for projectiles, picking and camera focus while
-      // skipping animation poses for batched troops outside the viewport.
+      // skipping animation poses and offscreen meshes outside the viewport + shadow margin.
       if(node.userData.batch&&!nearViewport(this,rx,ground,rz,13)){node.visible=false;node.position.set(rx,ground,rz);node.rotation.y=e.heading||0;continue;}
+      if(!node.userData.batch&&!nearViewport(this,rx,ground,rz,(e.r||2.5)+cullMargin)){node.visible=false;node.position.set(rx,ground,rz);continue;}
       const heading=e.kind==='unit'?smoothHeading(node,e.heading,dt):0,gait=e.kind==='unit'?this.locomotion.update(e,rx,rz,dt):null;
       if(e.kind==='unit')this.unitActions.update(this,e,dt);
       if(node.userData.batch){
@@ -315,12 +322,15 @@ export class WorldView {
       }
       if(!visible||e.embarked)continue;
       node.position.set(rx,ground,rz);if(e.kind==='unit'){node.rotation.y=heading;const body=node.userData.body;if(body){body.position.y=e.moving?Math.sin(this.clock*10+e.id)*.065:0;if(e.type==='villager'&&e.order?.type==='gather'&&!e.moving)body.rotation.z=Math.sin(this.clock*6)*.08;else body.rotation.z=0;}}
-      if(e.kind==='building'){node.scale.y=1;if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);}if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
+      if(e.kind==='building'){
+        node.scale.y=1;if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);
+        if(e.hp>0&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;fireDummy.position.set(e.x+.4,ground+e.r*.6+phase*.3,e.z+.4);fireDummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);fireDummy.updateMatrix();this.burning.setMatrixAt(fireCount,fireDummy.matrix);fireDummy.position.y+=phase*2+1;fireDummy.scale.setScalar(.8+phase*.8);fireDummy.updateMatrix();this.smokeMesh.setMatrixAt(fireCount,fireDummy.matrix);fireCount++;}
+      }if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
       animateSceneDecorations(this,node,e);
     }
     this.damageSmoke(dt);
     for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=f.crater?stepWall:dt;const t=f.time/f.duration;if(t>=1){if(f.impact){this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);this.crater(f.to.x,f.to.z,(f.impactSize||1.8)*.9);this.sparks(f.to.x,(this.groundHeight?.(f.to.x,f.to.z)||0)+.3,f.to.z,0xffd68a,1.2);}releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.sparks){const dummy=this.effectDummy??=new THREE.Object3D();f.sparks.forEach((v,j)=>{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-8*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.7));dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.crater){f.object.material.opacity=(1-t)*.7;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
-    let fireCount=0;const dummy=this.fireDummy??=new THREE.Object3D();for(const e of this.sim.entities)if(e.hp>0&&e.kind==='building'&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;dummy.position.set(e.x+.4,this.entityHeight(e)+e.r*.6+phase*.3,e.z+.4);dummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);dummy.updateMatrix();this.burning.setMatrixAt(fireCount,dummy.matrix);dummy.position.y+=phase*2+1;dummy.scale.setScalar(.8+phase*.8);dummy.updateMatrix();this.smokeMesh.setMatrixAt(fireCount,dummy.matrix);fireCount++;}this.burning.count=fireCount;this.smokeMesh.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smokeMesh);
+    this.burning.count=fireCount;this.smokeMesh.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smokeMesh);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     this.interactions?.alignCargoFeet();
     endUnitFrame(this);
