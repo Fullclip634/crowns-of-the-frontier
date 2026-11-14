@@ -129,12 +129,22 @@ function groundMap(landscape){
     ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
     ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
   }
-  // Two-tone roads: a soft packed-earth shoulder under a bright, legible tread.
+  // Settlement courtyards: concentric stone-paved rings under town centers.
+  for(const settlement of landscape.settlements||[]){
+    const cx=(settlement.x+half)/size*1536,cz=(settlement.z+half)/size*1536;
+    for(const [r,w,col] of [[5,9*scale,winter?'rgba(182,192,196,.42)':arid?'rgba(206,178,132,.46)':rocky?'rgba(148,146,136,.44)':'rgba(164,158,142,.42)'],[12,7*scale,winter?'rgba(162,172,176,.28)':arid?'rgba(188,160,114,.32)':'rgba(144,138,122,.28)']]){
+      const ring=new Path2D();
+      for(let i=0;i<=16;i++){const a=i*Math.PI/8,px=cx+Math.cos(a)*r*scale,py=cz+Math.sin(a)*r*scale;if(i===0)ring.moveTo(px,py);else ring.lineTo(px,py);}
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=w;ctx.strokeStyle=col;ctx.stroke(ring);
+    }
+  }
+  // Multi-tone wheel-rutted roads: soft shoulder, packed tread, and center strip.
   for(const road of terrainRoadPaths(landscape)){
     const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=5.4*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.30)':arid?'rgba(112,86,48,.34)':'rgba(74,62,42,.32)';ctx.stroke(path);
-    ctx.lineWidth=3.1*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c3ae84';ctx.stroke(path);
+    ctx.lineWidth=5.8*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.34)':arid?'rgba(112,86,48,.38)':'rgba(74,62,42,.36)';ctx.stroke(path);
+    ctx.lineWidth=3.4*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c5b086';ctx.stroke(path);
+    ctx.lineWidth=1.0*scale;ctx.strokeStyle=winter?'rgba(162,170,154,.45)':arid?'rgba(166,138,88,.45)':'rgba(112,124,84,.42)';ctx.stroke(path);
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }

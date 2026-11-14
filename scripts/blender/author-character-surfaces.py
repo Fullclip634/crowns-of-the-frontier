@@ -35,20 +35,24 @@ def material(role,frequency,roughness,relief):
     v=math_node('MULTIPLY',separate.outputs['Y'],math.tau)
     coordinates=node('ShaderNodeCombineXYZ','Periodic noise position')
     for socket,value in zip(coordinates.inputs,[math_node('MULTIPLY',math_node('COSINE',u),frequency[0]),math_node('MULTIPLY',math_node('SINE',u),frequency[0]),math_node('MULTIPLY',math_node('COSINE',v),frequency[1])]):links.new(value,socket)
-    noise=node('ShaderNodeTexNoise','Periodic grain');noise.noise_dimensions='4D';noise.inputs['Scale'].default_value=1;noise.inputs['Detail'].default_value=3;noise.inputs['Roughness'].default_value=.65
+    noise=node('ShaderNodeTexNoise','Periodic grain');noise.noise_dimensions='4D';noise.inputs['Scale'].default_value=1;noise.inputs['Detail'].default_value=2;noise.inputs['Roughness'].default_value=.56
     links.new(coordinates.outputs[0],noise.inputs['Vector']);links.new(math_node('MULTIPLY',math_node('SINE',v),frequency[1]),noise.inputs['W'])
     grain=noise.outputs['Fac'];height=grain
     if role=='cloth':
-        warp=math_node('SINE',math_node('MULTIPLY',separate.outputs['X'],math.tau*36))
-        weft=math_node('SINE',math_node('MULTIPLY',separate.outputs['Y'],math.tau*36))
+        warp=math_node('SINE',math_node('MULTIPLY',separate.outputs['X'],math.tau*32))
+        weft=math_node('SINE',math_node('MULTIPLY',separate.outputs['Y'],math.tau*32))
         weave=math_node('MULTIPLY',warp,weft)
-        height=math_node('ADD',math_node('MULTIPLY',weave,.22),math_node('MULTIPLY',grain,.4),'Crossed woven threads')
+        drape=math_node('SINE',math_node('ADD',math_node('MULTIPLY',separate.outputs['X'],math.tau*3),math_node('MULTIPLY',separate.outputs['Y'],math.tau*2)))
+        height=math_node('ADD',math_node('ADD',math_node('MULTIPLY',weave,.26),math_node('MULTIPLY',drape,.15)),math_node('MULTIPLY',grain,.42),'Crossed woven threads and drape')
     elif role=='metal':
-        strokes=math_node('SINE',math_node('MULTIPLY',separate.outputs['X'],math.tau*54))
-        height=math_node('ADD',math_node('MULTIPLY',strokes,.08),math_node('MULTIPLY',grain,.8),'Fine forged grain')
+        strokes=math_node('SINE',math_node('MULTIPLY',separate.outputs['X'],math.tau*44))
+        hammer=math_node('POWER',grain,1.65)
+        height=math_node('ADD',math_node('MULTIPLY',strokes,.11),math_node('MULTIPLY',hammer,.82),'Fine forged grain')
     elif role=='leather':
-        height=math_node('POWER',grain,2.2,'Compressed leather pores')
-    shade=math_node('ADD',math_node('MULTIPLY',height,.22 if role=='leather' else .12),.80 if role=='leather' else .88,'Neutral color variation')
+        pores=math_node('POWER',grain,2.1)
+        crease=math_node('SINE',math_node('MULTIPLY',separate.outputs['Y'],math.tau*8))
+        height=math_node('ADD',math_node('MULTIPLY',pores,.85),math_node('MULTIPLY',crease,.12),'Compressed leather pores')
+    shade=math_node('ADD',math_node('MULTIPLY',height,.25 if role=='leather' else .16),.78 if role=='leather' else .86,'Neutral color variation')
     rough=math_node('ADD',math_node('MULTIPLY',grain,.18),roughness-.09,'Roughness variation')
     bump=node('ShaderNodeBump','Physical micro relief');bump.inputs['Distance'].default_value=relief;bump.inputs['Strength'].default_value=1;links.new(height,bump.inputs['Height'])
     bsdf=node('ShaderNodeBsdfPrincipled','Export material');links.new(shade,bsdf.inputs['Base Color']);links.new(rough,bsdf.inputs['Roughness']);links.new(bump.outputs['Normal'],bsdf.inputs['Normal']);bsdf.inputs['Metallic'].default_value=1 if role=='metal' else 0
@@ -71,7 +75,7 @@ def bake(mat,bsdf,output,target,emission,source,kind):
     links.new(bsdf.outputs[0],output.inputs['Surface']);image.pack()
     return pixels
 
-definitions=[('cloth',(2.5,2.5),.91,.006),('leather',(6,6),.70,.010),('metal',(1,14),.36,.002),('skin',(9,9),.59,.0015)]
+definitions=[('cloth',(2,2),.89,.0085),('leather',(5,5),.68,.0125),('metal',(1,11),.34,.0032),('skin',(7,7),.57,.0022)]
 for index,(role,frequency,roughness,relief) in enumerate(definitions):
     bpy.ops.mesh.primitive_plane_add(size=1);plane=bpy.context.object;plane.name='Bake / '+role
     mat,bsdf,output,target,emission,shade,rough=material(role,frequency,roughness,relief);plane.data.materials.append(mat)

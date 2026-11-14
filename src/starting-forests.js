@@ -5,9 +5,10 @@ const INNER = 25, OUTER = 46, RESERVED = 36, LANE_HALF = 6;
 
 function groveShape(sim,base){
   const random=seededRandom((sim.options.seed||0)+9011+((base.seedIndex??base.owner)+1)*7919),front=forestEntrances(sim,base)[0],heading=Math.atan2(front.z,front.x);
-  return [0,1,2].map(layer=>[0,1,2].map(i=>{
-    const angle=heading+Math.PI/3+i*Math.PI*2/3+(layer===1?.32:layer===2?-.32:0)+(random()-.5)*.32,radius=(layer===1?33:layer===2?26:29)+random()*6,rotation=angle+(random()-.5)*2.2;
-    return {x:base.x+Math.cos(angle)*radius,z:base.z+Math.sin(angle)*radius,c:Math.cos(rotation),s:Math.sin(rotation),a:9+random()*3,b:6+random()*2,phase:random()*Math.PI*2};
+  return [0,1,2,3].map(layer=>[0,1,2].map(i=>{
+    const angle=layer===3?heading+(i-1)*.72+(random()-.5)*.22:heading+Math.PI/3+i*Math.PI*2/3+(layer===1?.32:layer===2?-.32:0)+(random()-.5)*.32;
+    const radius=(layer===1?33:layer===2?26:layer===3?28:29)+random()*6,rotation=angle+(random()-.5)*2.2;
+    return {x:base.x+Math.cos(angle)*radius,z:base.z+Math.sin(angle)*radius,c:Math.cos(rotation),s:Math.sin(rotation),a:(layer===3?11:9)+random()*3,b:(layer===3?8:6)+random()*2,phase:random()*Math.PI*2};
   }));
 }
 

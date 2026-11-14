@@ -26,15 +26,15 @@ function initializeDepth(view){
   source.mapping=THREE.EquirectangularReflectionMapping;
   const generator=environmentGenerator(view.renderer);
   view.environmentTarget=generator.fromEquirectangular(source);
-  view.scene.environment=view.environmentTarget.texture;view.scene.environmentIntensity=.3;
+  view.scene.environment=view.environmentTarget.texture;view.scene.environmentIntensity=.38;
   source.dispose();generator.dispose();
 
   const m=view.materials;
-  surfaceRelief(m.stone,.12);surfaceRelief(m.wood,.055);
-  for(const roof of view.roofMaterials)surfaceRelief(roof,.085);
-  m.plaster.color.setHex(0xd9c8a6);m.stone.color.setHex(0xb6b5a4);
-  m.stoneDark.color.setHex(0x737e78);m.iron.metalness=.8;m.iron.roughness=.32;
-  m.gold.metalness=.75;m.gold.roughness=.3;m.shadow.opacity=.06;
+  surfaceRelief(m.stone,.14);surfaceRelief(m.wood,.065);
+  for(const roof of view.roofMaterials)surfaceRelief(roof,.095);
+  m.plaster.color.setHex(0xdfd0b0);m.stone.color.setHex(0xb8b7a6);
+  m.stoneDark.color.setHex(0x707b75);m.iron.metalness=.84;m.iron.roughness=.28;
+  m.gold.metalness=.8;m.gold.roughness=.26;m.shadow.opacity=.06;
   m.glass=standardMaterial({color:0x263e42,roughness:.3,metalness:.08});
   m.timberEdge=standardMaterial({color:0x473328,roughness:.92});
   view.geo.head=new THREE.SphereGeometry(1,10,8);

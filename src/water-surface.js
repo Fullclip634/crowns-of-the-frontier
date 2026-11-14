@@ -3,9 +3,9 @@ import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
 export const WATER_PALETTES=Object.freeze({
   river:Object.freeze({shallow:0x838268,deep:0x344f3f,opacity:.94}),
-  coast:Object.freeze({shallow:0x82978a,deep:0x365c5c,opacity:.9}),
-  riverland:Object.freeze({shallow:0x7fa29a,deep:0x2f5a58,opacity:.92}),
-  archipelago:Object.freeze({shallow:0x93b6b3,deep:0x2a5c66,opacity:.88}),
+  coast:Object.freeze({shallow:0x7eb4ad,deep:0x26545c,opacity:.9}),
+  riverland:Object.freeze({shallow:0x7aa89e,deep:0x2b5856,opacity:.92}),
+  archipelago:Object.freeze({shallow:0x88c2be,deep:0x225866,opacity:.88}),
   volcanic:Object.freeze({shallow:0x8a6a54,deep:0x3a2c2a,opacity:.96})
 });
 
@@ -105,13 +105,14 @@ export function configureWaterSurface(material){
       vec3 frontierReflection = inverseTransformDirection(reflect(-normalize(vViewPosition), normal), viewMatrix);
       vec3 frontierSkyGradient = frontierWaterSky * mix(0.72, 1.12, clamp(frontierReflection.y * 0.5 + 0.5, 0.0, 1.0));
       outgoingLight = mix(outgoingLight, frontierSkyGradient, frontierFresnel);
-      if (vFrontierWaterBank.y < 1.25) {
+      if (vFrontierWaterBank.y < 1.45) {
         vec2 frontierDrift = vec2(frontierWaterTime * 0.18, -frontierWaterTime * 0.12);
         float frontierCells = frontierWaterNoise(vFrontierWaterXZ * 1.7 + frontierDrift);
         float frontierWash = 0.12 * sin(dot(vFrontierWaterXZ, vec2(0.23, 0.54)) + frontierWaterTime * 0.7) + (frontierCells - 0.5) * 0.18;
-        float frontierFoam = (1.0 - smoothstep(0.06, 0.48, vFrontierWaterBank.y + frontierWash)) * smoothstep(0.22, 0.8, frontierCells);
-        vec3 frontierFoamColor = vec3(0.72, 0.75, 0.63) * frontierWaterLight;
-        outgoingLight = mix(outgoingLight, frontierFoamColor, frontierFoam * 0.28);
+        float frontierFoam = (1.0 - smoothstep(0.05, 0.56, vFrontierWaterBank.y + frontierWash)) * smoothstep(0.20, 0.78, frontierCells);
+        float frontierOuterSurf = (1.0 - smoothstep(0.45, 1.35, vFrontierWaterBank.y - frontierWash * 0.8)) * smoothstep(0.48, 0.86, frontierCells) * 0.45;
+        vec3 frontierFoamColor = vec3(0.82, 0.85, 0.76) * frontierWaterLight;
+        outgoingLight = mix(outgoingLight, frontierFoamColor, clamp((frontierFoam + frontierOuterSurf) * 0.36, 0.0, 0.48));
       }
       #include <opaque_fragment>`);
   };

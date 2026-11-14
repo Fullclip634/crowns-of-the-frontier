@@ -13,10 +13,10 @@ const STYLES=Object.freeze([
   // The first age is deliberately under-built: lower walls and a flatter roof
   // than the authored model, so a Dark Age town reads as a settlement that has
   // not yet been raised in stone rather than a castle that is merely tinted.
-  Object.freeze({height:.84,width:.94,pitch:.9,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
-  Object.freeze({height:1.10,width:1.02,pitch:1.10,tint:[.94,.95,.97],roof:[1.04,.93,.80],label:'feudal'}),
-  Object.freeze({height:1.22,width:1.06,pitch:1.22,tint:[.86,.88,.92],roof:[.88,.90,.96],label:'castle'}),
-  Object.freeze({height:1.36,width:1.10,pitch:1.34,tint:[.80,.83,.88],roof:[.80,.84,.95],label:'imperial'}),
+  Object.freeze({height:.82,width:.93,pitch:.88,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
+  Object.freeze({height:1.12,width:1.02,pitch:1.12,tint:[.95,.96,.98],roof:[1.06,.92,.78],label:'feudal'}),
+  Object.freeze({height:1.25,width:1.07,pitch:1.25,tint:[.87,.89,.93],roof:[.86,.89,.97],label:'castle'}),
+  Object.freeze({height:1.40,width:1.12,pitch:1.38,tint:[.80,.84,.90],roof:[.79,.83,.96],label:'imperial'}),
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}

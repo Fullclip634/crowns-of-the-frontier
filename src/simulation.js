@@ -5,7 +5,7 @@ import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
 import {installTactics,formationSlot} from './tactics.js';
 import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
-import {installCustomBattle,normalizeBattle,PLAYER_COLORS} from './custom-battle.js';
+import {installCustomBattle,normalizeBattle,BATTLE_SIZES,PLAYER_COLORS} from './custom-battle.js';
 import {SpatialBuckets,forEachNearbyUnit} from './spatial-buckets.js';
 import {placementCollision,recordPlacementAppend} from './placement-obstacles.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints,wallEndpointTree} from './walls.js';
@@ -34,13 +34,14 @@ const FIELD_RECOVERY_DELAY=8,FIELD_RECOVERY_RADIUS=18,FIELD_RECOVERY_RATE=.015;
 export class Simulation {
   constructor(options={}) {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
+    this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
-    this.worldSize=this.options.mode==='custom'?this.options.worldSize:WORLD;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
+    const requestedSize=this.mission?WORLD:(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||WORLD);
+    this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
     this.rng=seededRandom(this.options.seed);this.entities=[];this.nextId=1;this.time=0;this.revision=0;
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
-    this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':'raven')];
     this.initialize();
   }
@@ -76,50 +77,58 @@ export class Simulation {
   difficulty(owner=1){return this.players[owner]?.difficulty||this.options.difficulty;}
   startClearing(x,z){
     if(bridgeFootprint(this.options.map,x,z,8))return true;
-    const custom=this.options.mode==='custom';if(custom?this.players.some(player=>player.start&&Math.hypot(x-player.start.x,z-player.start.z-16)<11):Math.min(Math.hypot(x+36,z-49),Math.hypot(x-36,z+49))<12)return true;
+    const custom=this.options.mode==='custom',bases=this.spawnPositions;
+    if(custom?this.players.some(player=>player.start&&Math.hypot(x-player.start.x,z-player.start.z-16)<11):Math.min(Math.hypot(x+36,z-49),Math.hypot(x-36,z+49),...(bases?[Math.hypot(x-(bases[0].x+3),z-(bases[0].z+19)),Math.hypot(x-(bases[1].x-4),z-(bases[1].z-15))]:[]))<12)return true;
     if(this.options.map!=='coast')return false;
-    return custom?this.players.some(player=>player.start&&Math.hypot(x-Math.sin(player.start.z*.03)*2-Math.sign(player.start.x)*20,z-player.start.z)<8):Math.min(Math.hypot(x+19,z-25),Math.hypot(x-19,z+25))<8;
+    return custom?this.players.some(player=>player.start&&Math.hypot(x-Math.sin(player.start.z*.03)*2-Math.sign(player.start.x)*20,z-player.start.z)<8):Math.min(Math.hypot(x+19,z-25),Math.hypot(x-19,z+25),...(bases?[Math.hypot(x+19,z-(bases[0].z-5)),Math.hypot(x-19,z-(bases[1].z+9))]:[]))<8;
   }
   initialize(){
     const m=this.options.mode,mission=this.mission, peaceful=m==='sandbox'||m==='tutorial', survival=m==='survival'||mission?.survival;
-    this.players.forEach(p=>p.age=m==='regicide'?2:mission?.age||0);
+    const scale=mission?1:this.worldSize/WORLD,shift=!mission&&scale>1;
+    const dx0=shift?Math.round(-44*scale)-(-39):0,dz0=shift?Math.round(35*scale)-30:0;
+    const dx1=mission?0:Math.round(46*scale)-40,dz1=mission?0:Math.round(-39*scale)-(-34);
+    this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
+    this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='regicide'?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
     if(m==='sandbox'){this.players[0].resources={food:6000,wood:6000,gold:6000,stone:6000};this.players[0].age=3;}
     if(survival){this.players[0].resources={food:1000,wood:1100,gold:600,stone:800};this.players[0].age=Math.max(1,this.players[0].age);}
-    this.addBuilding('towncenter',0,-39,30,true);
-    this.addBuilding('house',0,-48,20,true);this.addBuilding('house',0,-30,40,true);
-    this.addBuilding('mill',0,-49,36,true);
-    this.addBuilding('barracks',0,-27,24,true);
+    this.addBuilding('towncenter',0,-39+dx0,30+dz0,true);
+    this.addBuilding('house',0,-48+dx0,20+dz0,true);this.addBuilding('house',0,-30+dx0,40+dz0,true);
+    this.addBuilding('mill',0,-49+dx0,36+dz0,true);
+    this.addBuilding('barracks',0,-27+dx0,24+dz0,true);
     const startWorkers=mission?.age?12:8;
-    for(let i=0;i<startWorkers;i++)this.addUnit('villager',0,-43+(i%4)*2.4,43+Math.floor(i/4)*2.4);
-    this.addUnit('scout',0,-27,33);
-    if(m==='regicide')this.addUnit('king',0,-39,21);
-    if(survival||mission?.age){for(let i=0;i<8;i++)this.addUnit(i%3?'spearman':'archer',0,-23+i%4*2,34+Math.floor(i/4)*2);this.addBuilding('range',0,-47,10,true);}
+    for(let i=0;i<startWorkers;i++)this.addUnit('villager',0,-43+dx0+(i%4)*2.4,43+dz0+Math.floor(i/4)*2.4);
+    this.addUnit('scout',0,-27+dx0,33+dz0);
+    if(m==='regicide')this.addUnit('king',0,-39+dx0,21+dz0);
+    if(survival||mission?.age){for(let i=0;i<8;i++)this.addUnit(i%3?'spearman':'archer',0,-23+dx0+i%4*2,34+dz0+Math.floor(i/4)*2);this.addBuilding('range',0,-47+dx0,10+dz0,true);}
     if(!peaceful&&!survival){
-      this.addBuilding('towncenter',1,40,-34,true);this.addBuilding('house',1,51,-26,true);this.addBuilding('house',1,29,-43,true);this.addBuilding('barracks',1,28,-24,true);this.addBuilding('mill',1,49,-44,true);
-      for(let i=0;i<(mission?.age?12:8);i++)this.addUnit('villager',1,33+i%4*2,-43-Math.floor(i/4)*2);
+      this.addBuilding('towncenter',1,40+dx1,-34+dz1,true);this.addBuilding('house',1,51+dx1,-26+dz1,true);this.addBuilding('house',1,29+dx1,-43+dz1,true);this.addBuilding('barracks',1,(shift?28+dx1:33),(shift?-24+dz1:-28),true);this.addBuilding('mill',1,49+dx1,-44+dz1,true);
+      for(let i=0;i<(mission?.age?12:8);i++)this.addUnit('villager',1,33+dx1+i%4*2,-43+dz1-Math.floor(i/4)*2);
       const count=mission?.enemies??5;
-      if(m==='regicide')this.addUnit('king',1,40,-43);
-      for(let i=0;i<count;i++)this.addUnit(this.players[1].age>=2&&i%4===0?'knight':this.players[1].age>=1&&i%3===0?'archer':'spearman',1,25+i%6*2,-35-Math.floor(i/6)*2);
-      if(mission?.age>=1)this.addBuilding('range',1,52,-12,true);
-      if(mission?.age>=2){this.addBuilding('stable',1,37,-13,true);this.addBuilding('blacksmith',1,58,-38,true);}
+      if(m==='regicide')this.addUnit('king',1,40+dx1,-43+dz1);
+      for(let i=0;i<count;i++)this.addUnit(this.players[1].age>=2&&i%4===0?'knight':this.players[1].age>=1&&i%3===0?'archer':'spearman',1,25+dx1+i%6*2,-35+dz1-Math.floor(i/6)*2);
+      if(mission?.age>=1)this.addBuilding('range',1,52+dx1,-12+dz1,true);
+      if(mission?.age>=2){this.addBuilding('stable',1,37+dx1,-13+dz1,true);this.addBuilding('blacksmith',1,58+dx1,-38+dz1,true);}
       if(mission?.fortress){
-        this.addBuilding('keep',1,35,-49,true);this.addBuilding('tower',1,18,-20,true);this.addBuilding('tower',1,53,-4,true);
-        for(let x=15;x<=62;x+=3)if(Math.abs(x-36)>4)this.addBuilding('wall',1,x,-5,true);
-        this.addBuilding('gate',1,36,-5,true);
+        this.addBuilding('keep',1,35+dx1,-49+dz1,true);this.addBuilding('tower',1,18+dx1,-20+dz1,true);this.addBuilding('tower',1,53+dx1,-4+dz1,true);
+        for(let x=15;x<=62;x+=3)if(Math.abs(x-36)>4)this.addBuilding('wall',1,x+dx1,-5+dz1,true);
+        this.addBuilding('gate',1,36+dx1,-5+dz1,true);
       }
     }
     // Mirrored resources give both starting settlements the same opportunities.
-    const clusters=[[-57,15,'wood',20],[-13,49,'wood',22],[-53,51,'food',7],[-24,15,'gold',5],[-57,30,'stone',5],[-58,-32,'wood',25],[-25,-40,'gold',7],[-16,-16,'stone',6],[-14,13,'food',7],[-65,64,'wood',18]];
-    for(const [x,z,type,count]of clusters)for(const sign of [1,-1])for(let i=0;i<count;i++){
-      const nx=clamp(x*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75),nz=clamp(z*sign+(this.rng()-.5)*(type==='wood'?18:7),-75,75);
+    const clusters=[[-57,15,'wood',20,true],[-13,49,'wood',22,true],[-53,51,'food',7,true],[-24,15,'gold',5,true],[-57,30,'stone',5,true],[-58,-32,'wood',25,false],[-25,-40,'gold',7,false],[-16,-16,'stone',6,false],[-14,13,'food',7,false],[-65,64,'wood',18,false]];
+    const edgeLimit=this.halfWorld-5;
+    for(const [x,z,type,count,local]of clusters)for(const sign of [1,-1])for(let i=0;i<count;i++){
+      const bx=local?x*sign+(sign===1?dx0:dx1):x*sign*scale,bz=local?z*sign+(sign===1?dz0:dz1):z*sign*scale;
+      const nx=clamp(bx+(this.rng()-.5)*(type==='wood'?18:7),-edgeLimit,edgeLimit),nz=clamp(bz+(this.rng()-.5)*(type==='wood'?18:7),-edgeLimit,edgeLimit);
       if(type==='wood'&&reservedStartingLand(this,nx,nz))continue;
       if(this.entities.some(e=>e.kind==='building'&&distance(e,{x:nx,z:nz})<e.r+3)||this.isWater(nx,nz)||this.startClearing(nx,nz))continue;
       this.addNaturalResource(type,nx,nz,type==='wood'?220:type==='food'?350:1800);
     }
-    for(let i=0;i<28;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addNaturalResource('wood',x,z,240);}
-    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*145,z=(this.rng()-.5)*145;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addNaturalResource('wood',x,z,260);}
-    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28,z=(this.rng()-.5)*65;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
+    const span=145*scale;
+    for(let i=0;i<28;i++){const x=(this.rng()-.5)*span,z=(this.rng()-.5)*span;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addNaturalResource('wood',x,z,240);}
+    if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*span,z=(this.rng()-.5)*span;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addNaturalResource('wood',x,z,260);}
+    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28*scale,z=(this.rng()-.5)*65*scale;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
     // New biomes carry their own economy: arid/volcanic/highland worlds are
     // mineral rich and timber poor, woodlands and valleys reverse that. The
     // amounts use the same seeded RNG, so replays and saves stay deterministic.
@@ -128,13 +137,21 @@ export class Simulation {
       for(const [type,factor]of [['wood',profile.wood],['food',profile.food],['gold',profile.gold],['stone',profile.stone]]){
         const extra=Math.round(Math.max(0,factor-1)*26)-Math.round(Math.max(0,1-factor)*10);
         for(let i=0;i<extra;i++){
-          const x=(this.rng()-.5)*140,z=(this.rng()-.5)*140;
+          const x=(this.rng()-.5)*140*scale,z=(this.rng()-.5)*140*scale;
           if(this.isWater(x,z)||reservedStartingLand(this,x,z)||this.startClearing(x,z)||this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+4))continue;
           this.addNaturalResource(type,x,z,type==='wood'?220:type==='food'?350:1800);
         }
       }
     }
-    if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26,-23],[3,1],[28,25]])this.addShrine(x,z);}
+    if(scale>1){
+      const extraScattered=Math.round(140*(scale-1));
+      for(let i=0;i<extraScattered;i++){
+        const x=(this.rng()-.5)*(this.worldSize-16),z=(this.rng()-.5)*(this.worldSize-16);
+        if(this.isWater(x,z)||reservedStartingLand(this,x,z)||this.startClearing(x,z)||this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))continue;
+        this.addNaturalResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2200:260);
+      }
+    }
+    if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26*scale,-23*scale],[3,1],[28*scale,25*scale]])this.addShrine(x,z);}
     plantStartingForests(this);
     groupFieldForests(this);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
@@ -402,7 +419,8 @@ export class Simulation {
     let resource=this.nearest(e,t=>t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0);if(!resource)resource=this.nearest(e,t=>t.type==='farm'&&t.owner===e.owner&&t.progress>=1);if(resource){e.gatherType=resource.type==='farm'?'food':resource.type;e.order={type:'gather',target:resource.id};e.path=[];}}
   assignEconomy(owner){for(const e of this.owned(owner,'unit','villager'))if(!e.order)this.assignWorker(e);}
   aiBuild(type,owner=1){const tc=this.owned(owner,'building','towncenter')[0];if(!tc)return false;const worker=this.owned(owner,'unit','villager').find(w=>!['build','repair'].includes(w.order?.type));if(!worker)return false;
-    for(let i=0;i<24;i++){const angle=this.rng()*Math.PI*2,r=12+this.rng()*23,x=clamp(tc.x+Math.cos(angle)*r,-71,71),z=clamp(tc.z+Math.sin(angle)*r,-71,71);if(this.buildValid(type,x,z,owner))return this.build(type,x,z,[worker.id],owner);}return false;
+    const limit=this.halfWorld-9;
+    for(let i=0;i<24;i++){const angle=this.rng()*Math.PI*2,r=12+this.rng()*23,x=clamp(tc.x+Math.cos(angle)*r,-limit,limit),z=clamp(tc.z+Math.sin(angle)*r,-limit,limit);if(this.buildValid(type,x,z,owner))return this.build(type,x,z,[worker.id],owner);}return false;
   }
   tickAI(){const m=this.options.mode;if(this.options.multiplayer||['sandbox','tutorial','survival'].includes(m)||this.mission?.survival)return;const owner=1,p=this.players[1],difficulty=DIFFICULTIES[this.options.difficulty],tc=this.owned(1,'building','towncenter')[0];if(!tc)return;
     this.assignEconomy(1);const workers=this.owned(1,'unit','villager');
@@ -423,7 +441,7 @@ export class Simulation {
     if((m==='dominion'||this.mission?.dominion)&&this.time>65){const free=soldiers.filter(e=>!e.order||e.order.type!=='attack');for(const shrine of this.entities.filter(e=>e.kind==='shrine'&&e.owner!==1)){const group=free.splice(0,3);this.command(group.map(e=>e.id),{type:'attackmove',x:shrine.x,z:shrine.z});}}
     if(m==='wonder'&&p.age===3&&this.time>700&&!this.owned(1,'building','wonder').length&&this.canAfford(BUILDINGS.wonder.cost,1))this.aiBuild('wonder');
   }
-  spawnWave(){this.wave++;const d=DIFFICULTIES[this.options.difficulty],count=Math.round((5+this.wave*2.5)*d.wave),sides=[{x:58,z:55},{x:-58,z:-55},{x:60,z:-50}],base=sides[(this.wave-1)%sides.length];
+  spawnWave(){this.wave++;const d=DIFFICULTIES[this.options.difficulty],count=Math.round((5+this.wave*2.5)*d.wave),s=this.worldSize/WORLD,sides=[{x:58*s,z:55*s},{x:-58*s,z:-55*s},{x:60*s,z:-50*s}],base=sides[(this.wave-1)%sides.length];
     this.players[1].age=Math.min(3,Math.floor(this.wave/3));for(let i=0;i<count;i++){
       let type=i%3===0?'archer':'spearman';if(this.wave>=3&&i%4===0)type='knight';if(this.wave>=5&&i%8===0)type='ram';if(this.wave>=8&&i%10===0)type='catapult';
       const unit=this.addUnit(type,1,base.x+i%6*1.8,base.z+Math.floor(i/6)*1.8);const tc=this.owned(0,'building','towncenter')[0];if(tc)unit.order={type:'attackmove',x:tc.x,z:tc.z};

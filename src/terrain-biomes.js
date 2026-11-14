@@ -4,24 +4,24 @@
 // Age of Empires tradition of clearly readable terrain types.
 const styles={
   // Legacy meadow frontier — verified green dominance, do not change.
-  highlands:{ground:['#5d864c','#7a9b60','#426c3e'],grassTint:0x97c78b,grass:[0x648c45,0x86a95f,0x507b3c],map:'#567a49'},
-  valley:{ground:['#57844c','#78a363','#3f6d40'],grassTint:0x94c78b,grass:[0x608d49,0x7fa75c,0x4b793c],map:'#507849'},
-  rivers:{ground:['#5b874f','#7ba267','#426e40'],grassTint:0x94c58b,grass:[0x618e48,0x80a85f,0x4f7d40],map:'#52794b'},
+  highlands:{ground:['#5d864c','#7a9b60','#426c3e'],grassTint:0x97c78b,grass:[0x648c45,0x86a95f,0x507b3c],map:'#567a49',plaza:0x9d998c,cliff:0x86847c},
+  valley:{ground:['#57844c','#78a363','#3f6d40'],grassTint:0x94c78b,grass:[0x608d49,0x7fa75c,0x4b793c],map:'#507849',plaza:0x9a988b,cliff:0x82847b},
+  rivers:{ground:['#5b874f','#7ba267','#426e40'],grassTint:0x94c58b,grass:[0x618e48,0x80a85f,0x4f7d40],map:'#52794b',plaza:0x98968a,cliff:0x80837a},
   // Retain the legacy map identifier for saved kingdoms and network rooms.
-  desert:{ground:['#6a8e4e','#8ca967','#4e793d'],grassTint:0x9bc986,grass:[0x6c9449,0x8eae62,0x567e3e],map:'#60834c'},
-  canyon:{ground:['#607f53','#829777','#466c42'],grassTint:0x97bf88,grass:[0x638948,0x86a464,0x4e773e],map:'#5c7951'},
-  coast:{ground:['#59884f','#79a36b','#427340'],grassTint:0x96c98a,grass:[0x628f49,0x83aa63,0x4d7b40],map:'#507c4c'},
-  winter:{ground:['#c5d0c3','#e1e3d5','#95ac9a'],grassTint:0xffffff,grass:[0xb7c6a7,0xc6c9aa,0x9cae83],map:'#b8c5b8'},
+  desert:{ground:['#6a8e4e','#8ca967','#4e793d'],grassTint:0x9bc986,grass:[0x6c9449,0x8eae62,0x567e3e],map:'#60834c',plaza:0xa69d88,cliff:0x8e8878},
+  canyon:{ground:['#607f53','#829777','#466c42'],grassTint:0x97bf88,grass:[0x638948,0x86a464,0x4e773e],map:'#5c7951',plaza:0x9e9585,cliff:0x8a8274},
+  coast:{ground:['#59884f','#79a36b','#427340'],grassTint:0x96c98a,grass:[0x628f49,0x83aa63,0x4d7b40],map:'#507c4c',plaza:0xa29e90,cliff:0x888980},
+  winter:{ground:['#c5d0c3','#e1e3d5','#95ac9a'],grassTint:0xffffff,grass:[0xb7c6a7,0xc6c9aa,0x9cae83],map:'#b8c5b8',plaza:0xb8c2c4,cliff:0x94a0a6},
 
   // New terrain kinds. Each palette has a different dominant channel so the
   // minimap and the ground read as a different place from the first frame.
-  arid:{ground:['#c9a468','#e2c68d','#977a49'],grassTint:0xd6b87c,grass:[0xc3a269,0xd9bc84,0xa18650],map:'#c4a066',sand:true},
-  tundra:{ground:['#c6d5dc','#e7eef1','#93aeb8'],grassTint:0xd9e8ec,grass:[0xb3c8ce,0xd3e1e4,0x8fa9b1],map:'#b7cad2',snow:true},
-  volcanic:{ground:['#4c4340','#6d5c52','#2d2928'],grassTint:0x8b8073,grass:[0x6b5d53,0x847266,0x494039],map:'#4e4541',ash:true},
-  highland:{ground:['#84917b','#a8b299','#5d6b5b'],grassTint:0xa8b899,grass:[0x859674,0xa2ae8b,0x687762],map:'#7d8c73',rocky:true},
-  woodland:{ground:['#3c6540','#5b8250','#26492d'],grassTint:0x79b46c,grass:[0x4a7641,0x699052,0x355934],map:'#3c6238',dense:true},
-  riverland:{ground:['#548e88','#83b3a0','#376e68'],grassTint:0x8fc6b4,grass:[0x568e84,0x7fae99,0x3c7067],map:'#568c84',lush:true},
-  archipelago:{ground:['#b5b489','#d2cca2','#8b9a7d'],grassTint:0xb8c89a,grass:[0xa6b083,0xc5c59b,0x849975],map:'#a8b792',shore:true},
+  arid:{ground:['#c9a468','#e2c68d','#977a49'],grassTint:0xd6b87c,grass:[0xc3a269,0xd9bc84,0xa18650],map:'#c4a066',plaza:0xcbb183,cliff:0xb38b59,sand:true},
+  tundra:{ground:['#c6d5dc','#e7eef1','#93aeb8'],grassTint:0xd9e8ec,grass:[0xb3c8ce,0xd3e1e4,0x8fa9b1],map:'#b7cad2',plaza:0xb5c5cc,cliff:0x8296a1,snow:true},
+  volcanic:{ground:['#4c4340','#6d5c52','#2d2928'],grassTint:0x8b8073,grass:[0x6b5d53,0x847266,0x494039],map:'#4e4541',plaza:0x5e5652,cliff:0x4a423e,ash:true},
+  highland:{ground:['#84917b','#a8b299','#5d6b5b'],grassTint:0xa8b899,grass:[0x859674,0xa2ae8b,0x687762],map:'#7d8c73',plaza:0x96988e,cliff:0x787b72,rocky:true},
+  woodland:{ground:['#3c6540','#5b8250','#26492d'],grassTint:0x79b46c,grass:[0x4a7641,0x699052,0x355934],map:'#3c6238',plaza:0x8d8c7e,cliff:0x6e7368,dense:true},
+  riverland:{ground:['#548e88','#83b3a0','#376e68'],grassTint:0x8fc6b4,grass:[0x568e84,0x7fae99,0x3c7067],map:'#568c84',plaza:0x929e98,cliff:0x6d7f7a,lush:true},
+  archipelago:{ground:['#b5b489','#d2cca2','#8b9a7d'],grassTint:0xb8c89a,grass:[0xa6b083,0xc5c59b,0x849975],map:'#a8b792',plaza:0xbcb69c,cliff:0x94927e,shore:true},
 };
 for(const style of Object.values(styles)){Object.freeze(style.ground);Object.freeze(style.grass);Object.freeze(style);}
 Object.freeze(styles);

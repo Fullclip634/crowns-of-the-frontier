@@ -45,8 +45,9 @@ export class GroundCover{
     const palette=terrainBiome(land.map).grass;
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<1.7||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.65+rng()*.8,color:palette[i%3],shade:.88+rng()*.18});
+      if(y<.2||roadDistance(x,z,land)<1.85||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
+      const patch=Math.sin(x*.14+z*.11)*Math.cos(x*.09-z*.13);
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.68+rng()*.82)*(patch>0?1.08:.94),color:palette[i%3],shade:.88+rng()*.2});
     }
     this.update(true,true);
   }

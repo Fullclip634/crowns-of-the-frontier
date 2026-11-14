@@ -27,25 +27,30 @@ function paletteMaterial(view){
         diffuseColor.rgb *= vUnitTeamColor;
         bool unitCharacter = vUnitSurface.z > 1.5 && frontierUnitcharacterReady > 0.5;
         vec2 unitCharacterUv = frontierCharacterUV(vUv, vUnitSurface.z);
-        float unitDetail = (1.0 - smoothstep(18.0, 44.0, length(vViewPosition))) * frontierUnitcharacterDetail;
+        float unitDetail = (1.0 - smoothstep(42.0, 110.0, length(vViewPosition))) * frontierUnitcharacterDetail;
         if(vUnitSurface.z > 0.5 && vUnitSurface.z < 1.5) diffuseColor.rgb *= texture2D(frontierUnitWood, vUv).rgb;
-        else if(unitCharacter) diffuseColor.rgb *= texture2D(frontierUnitcharacterColor, unitCharacterUv).rgb;`);
+        else if(unitCharacter) {
+          vec3 charTex = texture2D(frontierUnitcharacterColor, unitCharacterUv).rgb;
+          if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) charTex = mix(charTex, charTex * vec3(1.06, 1.08, 1.12), 0.55);
+          diffuseColor.rgb *= charTex;
+        }`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vUnitSurface.x;
         if(unitCharacter && unitDetail > 0.001) roughnessFactor = mix(roughnessFactor, texture2D(frontierUnitcharacterNormal, unitCharacterUv).a, unitDetail);
+        if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) roughnessFactor *= 0.82;
         roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
-      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vUnitSurface.y, 0.0, 1.0);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.14 : 0.0), 0.0, 1.0);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         if(unitCharacter && unitDetail > 0.001) {
           vec3 unitNormal = texture2D(frontierUnitcharacterNormal, unitCharacterUv).xyz * 2.0 - 1.0;
-          unitNormal.xy *= (vUnitSurface.z > 4.5 ? 0.12 : 0.3) * unitDetail;
+          unitNormal.xy *= (vUnitSurface.z > 4.5 ? 0.16 : 0.38) * unitDetail;
           normal = normalize(tbn * unitNormal);
         }
         #endif`);
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v3';}
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v4';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;

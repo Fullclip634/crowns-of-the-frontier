@@ -38,12 +38,15 @@ export function installFrontiers(Simulation){
       this.players.forEach(player=>{player.age=Math.max(1,player.age);player.resources.wood+=350;player.resources.gold+=180;});
       for(const owner of [0,1]){
         if(owner===1&&(['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival))continue;
-        const sign=owner===0?-1:1;this.addBuilding('dock',owner,sign*19,owner===0?25:-25,true);
-        const boat=this.addUnit('fishingboat',owner,sign*10,owner===0?24:-24);
-        this.addUnit('galley',owner,sign*9,owner===0?14:-14);this.addUnit('transport',owner,sign*10,owner===0?34:-34);
+        const sign=owner===0?-1:1,tc=this.owned(owner,'building','towncenter')[0],dockZ=this.mission?(owner===0?25:-25):(tc?tc.z+(owner===0?-5:9):(owner===0?25:-25));
+        const mid=this.mission?0:Math.sin(dockZ*.03)*2;
+        this.addBuilding('dock',owner,mid+sign*19,dockZ,true);
+        const boat=this.addUnit('fishingboat',owner,mid+sign*10,dockZ+(owner===0?-1:1));
+        this.addUnit('galley',owner,mid+sign*9,dockZ+(owner===0?-11:11));this.addUnit('transport',owner,mid+sign*10,dockZ+(owner===0?9:-9));
         boat.order={type:'gather',target:null};
       }
       for(let i=0;i<12;i++){const fish=this.addNaturalResource('food',(this.rng()-.5)*17,-66+i*12,2200);fish.water=true;fish.r=2.1;}
+      if(this.worldSize>160)for(let i=12;i<Math.round(this.worldSize/12);i++){const z=-this.halfWorld+14+i*12,fish=this.addNaturalResource('food',Math.sin(z*.03)*2+(this.rng()-.5)*15,z,2200);fish.water=true;fish.r=2.1;}
       for(const e of this.entities.filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=this.maxHP(e);e.hp=e.maxHp;}
       for(const boat of this.entities.filter(e=>e.type==='fishingboat'))this.assignWorker(boat);
       this.updateFog();

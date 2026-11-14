@@ -40,13 +40,24 @@ const weighted=(u,roles,coords,weights,suffix='')=>roles.map((role,i)=>sample(u[
 
 export function terrain(material,u){
   const coords=[uv().mul(value(u.scale,'vec3').x),uv().mul(value(u.scale,'vec3').y),uv().mul(value(u.scale,'vec3').z)];
-  const weights=Fn(()=>{const base=max(varying(attribute('terrainMix','vec3')),vec3(0));const road=sample(u.roads).r;const blend=mix(base,vec3(0,1,0),road.mul(.94));return blend.div(max(dot(blend,vec3(1)),.001));})();
-  const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.72),vec3(1.22)),value(u.macroStrength));
-  const color=sample(u.grass,coords[0]).rgb.mul(value(u.grassTint,'color')).mul(macro).mul(weights.x)
-    .add(sample(u.soil,coords[1]).rgb.mul(weights.y)).add(sample(u.rock,coords[2]).rgb.mul(weights.z)).mul(value(u.tint,'color'));
+  const roadSample=sample(u.roads).rgb;
+  const plaza=smoothstep(.08,.72,roadSample.g),shore=smoothstep(.05,.75,roadSample.b);
+  const weights=Fn(()=>{
+    const base=max(varying(attribute('terrainMix','vec3')),vec3(0));
+    const road=clamp(roadSample.r.mul(.94).add(shore.mul(.62).mul(float(1).sub(smoothstep(.35,.85,base.z)))),0,.96);
+    const withRoad=mix(base,vec3(0,1,0),road);
+    const blend=mix(withRoad,vec3(0,.36,.64),plaza.mul(.88));
+    return blend.div(max(dot(blend,vec3(1)),.001));
+  })();
+  const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.70),vec3(1.25)),value(u.macroStrength));
+  const grassCol=mix(sample(u.grass,coords[0]).rgb,sample(u.grass,coords[0].mul(.37).add(vec2(.19,.43))).rgb,.34).mul(value(u.grassTint,'color')).mul(macro);
+  const soilCol=mix(sample(u.soil,coords[1]).rgb,sample(u.soil,coords[1].mul(.41).add(vec2(.31,.17))).rgb,.3).mul(mix(1,.76,shore)).mul(mix(1,.92,roadSample.r));
+  const rockBase=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,coords[2].mul(2.35)).rgb,.42);
+  const rockCol=mix(rockBase.mul(value(u.cliffTint,'color')),rockBase.mul(value(u.plazaTint,'color')),plaza);
+  const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
-  if(u.grassNormal.value)material.normalNode=normalMap(weighted(u,['grass','soil','rock'],coords,weights,'Normal'),vec2(.35));
-  if(u.grassArm.value)material.roughnessNode=materialRoughness.mul(clamp(weighted(u,['grass','soil','rock'],coords,weights,'Arm').g,.25,1));
+  if(u.grassNormal.value)material.normalNode=normalMap(weighted(u,['grass','soil','rock'],coords,weights,'Normal'),vec2(.48));
+  if(u.grassArm.value)material.roughnessNode=materialRoughness.mul(clamp(weighted(u,['grass','soil','rock'],coords,weights,'Arm').g,.22,1));
   material.needsUpdate=true;
 }
 
@@ -66,8 +77,8 @@ export function unitPalette(material,u){
   material.colorNode=materialColor.rgb.mul(team).mul(tint);
   material.roughnessNode=clamp(surface.x,.04,1);material.metalnessNode=clamp(surface.y,0,1);material.normalNode=null;
   if(u.characterNormal.value){
-    const detail=character.select(float(1).sub(smoothstep(18,44,positionView.length())),0);
-    const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.12,.3);
+    const detail=character.select(float(1).sub(smoothstep(42,110,positionView.length())),0);
+    const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.16,.38);
     const micro=Fn(()=>{const result=vec4(.5,.5,1,surface.x).toVar();If(active,()=>{result.assign(sample(u.characterNormal,coords,flat));});return result;})();
     material.roughnessNode=clamp(mix(surface.x,micro.a,amount),.04,1);
     material.normalNode=normalMap(micro.rgb,vec2(strength.mul(amount)));
@@ -76,7 +87,7 @@ export function unitPalette(material,u){
 }
 
 export function structurePalette(material,u){
-  const surface=varying(attribute('structureSurface','vec3')),mode=surface.z;
+  const surface=varying(attribute('structureSurface','vec3')),mode=surface.z,worldPos=varying(positionGeometry);
   const choose=(suffix='',fallback=white)=>Fn(()=>{
     const result=vec3(suffix==='Normal'?vec3(.5,.5,1):vec3(1)).toVar();
     If(mode.greaterThan(3.5),()=>{if(!suffix)result.assign(sample(u.roof).rgb);})
@@ -85,12 +96,13 @@ export function structurePalette(material,u){
       .ElseIf(mode.greaterThan(.5),()=>{result.assign(sample(u['wood'+suffix],uv(),fallback).rgb);});
     return result;
   })();
-  material.colorNode=materialColor.rgb.mul(choose());
+  const groundAo=mix(.84,1,smoothstep(0,1.15,max(0,worldPos.y)));
+  material.colorNode=materialColor.rgb.mul(choose()).mul(groundAo);
   const arm=choose('Arm'),active=mode.greaterThan(.5).and(mode.lessThan(3.5)).and(value(u.detail).greaterThan(.5));
   material.roughnessNode=clamp(surface.x.mul(active.select(arm.g,1)),.04,1);
   material.metalnessNode=clamp(surface.y,0,1);
-  material.aoNode=active.select(mix(1,arm.r,.65),1);
-  const normalScale=mode.greaterThan(2.5).select(.24,mode.greaterThan(1.5).select(.45,.3));
+  material.aoNode=active.select(mix(1,arm.r,.72),1).mul(groundAo);
+  const normalScale=mode.greaterThan(2.5).select(.30,mode.greaterThan(1.5).select(.54,.38));
   material.normalNode=active.select(normalMap(choose('Normal',flat),vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
   material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.5).add(1)).add(vec3(.65,.3,.07).mul(varying(attribute('structureNightGlow','float'))).mul(night));

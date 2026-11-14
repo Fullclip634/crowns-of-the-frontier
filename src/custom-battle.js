@@ -58,10 +58,28 @@ function spawnGroundClear(context,x,z,half=SPAWN_HALF_EXTENT){
   }
   return true;
 }
-function nearestGroundSpawn(context,point,taken){
-  // Relax the required footprint only if a map genuinely has no room for it.
-  for(const half of [SPAWN_HALF_EXTENT,18,12,8]){
-    for(let ring=0;ring<=28;ring++){
+function nearestGroundSpawn(context,point,taken,team=null,idealSpacing=SPAWN_SEPARATION){
+  const tiers=[
+    [Math.max(SPAWN_SEPARATION,idealSpacing*.9),Math.max(SPAWN_SEPARATION,idealSpacing*.72)],
+    [Math.max(SPAWN_SEPARATION,idealSpacing*.74),Math.max(SPAWN_SEPARATION,idealSpacing*.6)],
+    [SPAWN_SEPARATION,SPAWN_SEPARATION],
+  ];
+  // Relax the required footprint and separation only if a map genuinely has no room.
+  for(const [enemySep,allySep] of tiers){
+    for(const half of [SPAWN_HALF_EXTENT,20,16]){
+      for(let ring=0;ring<=34;ring++){
+        const radius=ring*8,steps=Math.max(1,ring*8);
+        for(let i=0;i<steps;i++){
+          const angle=i*Math.PI*2/steps,x=point.x+Math.cos(angle)*radius,z=point.z+Math.sin(angle)*radius;
+          if(!spawnGroundClear(context,x,z,half))continue;
+          if(taken.some(other=>Math.hypot(other.x-x,other.z-z)<(team!==null&&other.team!==undefined&&other.team!==team?enemySep:allySep)))continue;
+          return {x,z};
+        }
+      }
+    }
+  }
+  for(const half of [12,8]){
+    for(let ring=0;ring<=34;ring++){
       const radius=ring*8,steps=Math.max(1,ring*8);
       for(let i=0;i<steps;i++){
         const angle=i*Math.PI*2/steps,x=point.x+Math.cos(angle)*radius,z=point.z+Math.sin(angle)*radius;
@@ -89,10 +107,11 @@ export function landBattleSpawns(context,slots,worldSize){
     const scaled=base.map(point=>({x:point.x*factor,z:point.z*factor}));
     if(fits(scaled))return scaled;
   }
-  const taken=[];
-  return base.map(point=>{
-    const found=nearestGroundSpawn(context,point,taken)||point;
-    taken.push(found);return found;
+  const idealSpacing=2*.34*worldSize*Math.sin(Math.PI/Math.max(2,slots.length)),taken=[];
+  return base.map((point,index)=>{
+    const team=slots[index]?.team??index+1;
+    const found=nearestGroundSpawn(context,point,taken,team,idealSpacing)||point;
+    taken.push({...found,team});return found;
   });
 }
 export function spawnContext(map,worldSize,isWater){

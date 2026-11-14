@@ -23,11 +23,13 @@ export class TerrainDetails{
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.98;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=isSnowBiome(land.map)?[0xc3cbc5,0xe0e4db,0xa7b4a9]:isAridBiome(land.map)?[0xc4a878,0xd8c096,0x9b8158]:isRockyBiome(land.map)?[0x8c8b82,0xa5a49a,0x6b6a62]:terrainBiome(land.map).grass;
+    const palette=isSnowBiome(land.map)?[0xc3cbc5,0xe0e4db,0xa7b4a9]:isAridBiome(land.map)?[0xc4a878,0xd8c096,0x9b8158]:isRockyBiome(land.map)?[0x8c8b82,0xa5a49a,0x6b6a62]:[0x8a8d82,0x9e9f93,0x70746a];
     for(let i=0;i<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<2||bridgeFootprint(land.map,x,z,3))continue;
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:.3+rng()*.6,color:palette[i%3],stretch:.8+rng()*.6,shade:.9+rng()*.15});
+      if(y<.2||roadDistance(x,z,land)<2.2||bridgeFootprint(land.map,x,z,3))continue;
+      const slope=Math.hypot(land.surfaceHeightAt(x+1.2,z)-y,land.surfaceHeightAt(x,z+1.2)-y);
+      const talusBoost=slope>.22?1.28:1;
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.32+rng()*.62)*talusBoost,color:palette[i%3],stretch:.82+rng()*.62,shade:.88+rng()*.18});
     }
     this.update(true,true);
   }

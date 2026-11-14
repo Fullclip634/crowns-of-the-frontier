@@ -12,8 +12,8 @@ function paletteMaterial(view){
     material.defines={USE_UV:''};
     if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
       for(const [key,uniform] of Object.entries(uniforms))shader.uniforms['frontierStructure'+key]=uniform;
-      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\n'+shader.vertexShader;
-      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;');
+      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\nvarying vec3 vStructurePos;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;\nvStructurePos = position;');
       shader.fragmentShader=`uniform sampler2D frontierStructurewood;
         uniform sampler2D frontierStructurestone;
         uniform sampler2D frontierStructureplaster;
@@ -29,20 +29,34 @@ function paletteMaterial(view){
         uniform float frontierStructuredetail;
         uniform float frontierStructurenight;
         varying vec3 vStructureSurface;
-        varying vec3 vStructureEmission;\n`+shader.fragmentShader;
+        varying vec3 vStructureEmission;
+        varying vec3 vStructurePos;\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-        if(vStructureSurface.z > 3.5) diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb;
-        else if(vStructureSurface.z > 2.5) diffuseColor.rgb *= texture2D(frontierStructureplaster, vUv).rgb;
-        else if(vStructureSurface.z > 1.5) diffuseColor.rgb *= texture2D(frontierStructurestone, vUv).rgb;
-        else if(vStructureSurface.z > 0.5) diffuseColor.rgb *= texture2D(frontierStructurewood, vUv).rgb;`);
+        float plinthMask = 1.0 - smoothstep(0.0, 0.75, max(0.0, vStructurePos.y));
+        float groundAo = mix(0.82, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
+        if(vStructureSurface.z > 3.5) {
+          float shingleCourse = 0.93 + 0.12 * sin(vStructurePos.y * 18.0 + (vStructurePos.x + vStructurePos.z) * 2.5);
+          diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb * shingleCourse;
+        } else if(vStructureSurface.z > 2.5) {
+          vec3 plasterTex = texture2D(frontierStructureplaster, vUv).rgb;
+          vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.4).rgb * 0.86;
+          diffuseColor.rgb *= mix(plasterTex * 1.03, plinthStone, plinthMask * 0.55);
+        } else if(vStructureSurface.z > 1.5) {
+          float ashlarCourse = 0.94 + 0.1 * sin(vStructurePos.y * 11.0) * cos((vStructurePos.x - vStructurePos.z) * 4.5);
+          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv).rgb * ashlarCourse * mix(1.0, 0.88, plinthMask * 0.45);
+        } else if(vStructureSurface.z > 0.5) {
+          float woodGrain = 0.94 + 0.1 * sin((vStructurePos.x + vStructurePos.y * 2.2 + vStructurePos.z) * 9.0);
+          diffuseColor.rgb *= texture2D(frontierStructurewood, vUv).rgb * woodGrain;
+        }
+        diffuseColor.rgb *= groundAo;`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vStructureSurface.x;
-        float structureOcclusion = 1.0;
+        float structureOcclusion = mix(0.84, 1.0, smoothstep(0.0, 1.1, max(0.0, vStructurePos.y)));
         bool armReady = vStructureSurface.z > 2.5 ? frontierStructurearmAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurearmAvailable.y > 0.5 : frontierStructurearmAvailable.x > 0.5;
         if(frontierStructuredetail > 0.5 && vStructureSurface.z > 0.5 && vStructureSurface.z < 3.5 && armReady) {
           vec2 structureArm = vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterArm, vUv).rg : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneArm, vUv).rg : texture2D(frontierStructurewoodArm, vUv).rg;
           roughnessFactor *= structureArm.g;
-          structureOcclusion = mix(1.0, structureArm.r, 0.65);
+          structureOcclusion *= mix(1.0, structureArm.r, 0.72);
         }
         roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= structureOcclusion;');
@@ -55,12 +69,12 @@ function paletteMaterial(view){
         if(vStructureSurface.z > 0.5 && vStructureSurface.z < 3.5 && frontierStructuredetail > 0.5 && normalReady) {
           vec3 structureNormal = vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterNormal, vUv).xyz : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneNormal, vUv).xyz : texture2D(frontierStructurewoodNormal, vUv).xyz;
           structureNormal = structureNormal * 2.0 - 1.0;
-          structureNormal.xy *= vStructureSurface.z > 2.5 ? 0.24 : vStructureSurface.z > 1.5 ? 0.45 : 0.3;
+          structureNormal.xy *= vStructureSurface.z > 2.5 ? 0.30 : vStructureSurface.z > 1.5 ? 0.54 : 0.38;
           normal = normalize(tbn * structureNormal);
         }
         #endif`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v5';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v6';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
