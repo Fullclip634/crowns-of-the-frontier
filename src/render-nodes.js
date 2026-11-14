@@ -53,8 +53,10 @@ export function terrain(material,u){
   const grassCol=mix(sample(u.grass,coords[0]).rgb,sample(u.grass,coords[0].mul(.37).add(vec2(.19,.43))).rgb,.34).mul(value(u.grassTint,'color')).mul(macro);
   const soilCol=mix(sample(u.soil,coords[1]).rgb,sample(u.soil,coords[1].mul(.41).add(vec2(.31,.17))).rgb,.3).mul(mix(1,.76,shore)).mul(mix(1,.92,roadSample.r));
   const rockBase=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,coords[2].mul(2.35)).rgb,.42);
-  const rockCol=mix(rockBase.mul(value(u.cliffTint,'color')),rockBase.mul(value(u.plazaTint,'color')),plaza);
-  const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
+  const plazaStone=rockBase.mul(value(u.plazaTint,'color'));
+  const rockCol=mix(rockBase.mul(value(u.cliffTint,'color')),plazaStone,plaza);
+  const baseColor=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z));
+  const color=mix(baseColor,plazaStone,plaza.mul(.88)).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
   if(u.grassNormal.value)material.normalNode=normalMap(weighted(u,['grass','soil','rock'],coords,weights,'Normal'),vec2(.48));
   if(u.grassArm.value)material.roughnessNode=materialRoughness.mul(clamp(weighted(u,['grass','soil','rock'],coords,weights,'Arm').g,.22,1));

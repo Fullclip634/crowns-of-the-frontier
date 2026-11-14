@@ -34,7 +34,7 @@ function hullGeometry(){
 
 export function ensureModels(view){
   if(view.modelsReady)return;view.modelsReady=true;const m=view.materials;
-  Object.assign(m,{leather:standard(0x594334),pants:standard(0x535c4a),hair:standard(0x47372b),straw:standard(0xbda270),horse:standard(0x76513a),mane:standard(0x342b28),steel:standard(0xb5c0c0,{metalness:.85,roughness:.3}),slate:standard(0x47576a),brick:standard(0x967255),grain:standard(0xd7b65b),fruit:standard(0x9e4240),canvas:standard(0xd0c4a6),glow:standard(0xcd6229,{emissive:0xff6d26,emissiveIntensity:1.8}),relic:standard(0x55cdb5,{emissive:0x287b67,emissiveIntensity:.65,metalness:.55,roughness:.18})});
+  Object.assign(m,{leather:standard(0x594334),pants:standard(0x535c4a),hair:standard(0x47372b),straw:standard(0x9a825a),horse:standard(0x76513a),mane:standard(0x342b28),steel:standard(0xb5c0c0,{metalness:.85,roughness:.3}),slate:standard(0x47576a),brick:standard(0x967255),grain:standard(0xd7b65b),fruit:standard(0x9e4240),canvas:standard(0x7c6a54),glow:standard(0xcd6229,{emissive:0xff6d26,emissiveIntensity:1.8}),relic:standard(0x55cdb5,{emissive:0x287b67,emissiveIntensity:.65,metalness:.55,roughness:.18})});
   m.brick.map=m.stone.map;m.brick.bumpMap=m.stone.bumpMap;m.brick.bumpScale=.1;m.snow=standard(0xe3e9e5);
   m.rock=standard(0xa3aca3);m.oreRock=standard(0xd4a643,{metalness:.3,roughness:.63});m.oreGold=standard(0xffd26e,{metalness:.72,roughness:.3});
   const capsule=new THREE.CapsuleGeometry(.5,.5,2,8);capsule.scale(1,2/3,1);

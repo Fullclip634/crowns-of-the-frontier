@@ -1,16 +1,16 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
-import {terrainRoadPaths} from './terrain-layout.js';
+import {terrainRoadPaths,settlementPlazas,settlementCourtyardRoads} from './terrain-layout.js';
 import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
-function strokeRing(ctx,cx,cz,r,width,color){
+function strokeDiamond(ctx,cx,cz,r,width,color){
   ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();
-  for(let i=0;i<=16;i++){const a=i*Math.PI/8,x=cx+Math.cos(a)*r,y=cz+Math.sin(a)*r;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+  ctx.moveTo(cx,cz-r);ctx.lineTo(cx+r,cz);ctx.lineTo(cx,cz+r);ctx.lineTo(cx-r,cz);ctx.lineTo(cx,cz-r);
   ctx.stroke();
 }
 
 export function roadMask(land){
-  const paths=terrainRoadPaths(land),canvas=document.createElement('canvas');canvas.width=canvas.height=512;
+  const paths=[...terrainRoadPaths(land),...settlementCourtyardRoads(land)],canvas=document.createElement('canvas');canvas.width=canvas.height=512;
   const ctx=canvas.getContext('2d'),half=land.renderSize/2,scale=512/land.renderSize;
   ctx.fillStyle='#000';ctx.fillRect(0,0,512,512);ctx.lineCap='round';ctx.lineJoin='round';
   // B channel: wet shoreline / riverbank moisture transition.
@@ -23,19 +23,19 @@ export function roadMask(land){
     }
     ctx.stroke();
   }
-  // G channel: cobblestone/flagstone plazas under settlements and outbuildings.
-  for(const settlement of land.settlements||[]){
-    const cx=(settlement.x+half)*scale,cz=(settlement.z+half)*scale;
-    for(const [r,w,alpha] of [[3.5,8*scale,0.95],[9.5,7.5*scale,0.82],[15.5,6.5*scale,0.58],[21,5.5*scale,0.28]]){
-      strokeRing(ctx,cx,cz,r*scale,w,`rgba(0,255,0,${alpha})`);
-    }
-  }
   // R channel: wheel-rutted cart roads with softer shoulder and grassy median strip.
   for(const road of paths){
-    for(const [width,color] of [[4.8*scale,'rgba(255,48,0,0.42)'],[3.2*scale,'rgba(255,95,0,0.94)'],[0.95*scale,'rgba(110,40,0,0.65)']]){
+    for(const [width,color] of [[5.2*scale,'rgba(255,0,0,0.45)'],[3.4*scale,'rgba(255,0,0,0.96)'],[1.05*scale,'rgba(95,0,0,0.72)']]){
       ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();
       road.points.forEach((point,i)=>{const px=(point.x+half)*scale,py=(point.z+half)*scale;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});
       ctx.stroke();
+    }
+  }
+  // G channel: diamond/square cobblestone & flagstone plazas under the Town Center and surrounding buildings.
+  for(const pad of settlementPlazas(land)){
+    const cx=(pad.x+half)*scale,cz=(pad.z+half)*scale,rad=pad.size*scale;
+    for(const [frac,alpha] of [[0.25,0.98],[0.55,0.95],[0.85,0.88],[1.12,0.45]]){
+      strokeDiamond(ctx,cx,cz,rad*frac,rad*0.44,`rgba(0,255,0,${alpha})`);
     }
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.NoColorSpace;return texture;
@@ -111,16 +111,19 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       vec3 terrainMacro = mix(vec3(1.0), clamp(diffuseColor.rgb / frontierTerrainmacroReference, vec3(0.70), vec3(1.25)), frontierTerrainmacroStrength);
       float cloverDapple = sin(vTerrainWorldPos.x * 0.55 + vTerrainWorldPos.z * 0.48) * cos(vTerrainWorldPos.x * 0.37 - vTerrainWorldPos.z * 0.62);
       vec3 lushGrass = grassSample * frontierTerraingrassTint * terrainMacro * mix(vec3(0.95, 0.98, 0.93), vec3(1.05, 1.09, 0.96), smoothstep(-0.35, 0.45, cloverDapple));
-      vec2 cobbleGrid = fract(vTerrainWorldPos.xz * 0.85) - 0.5;
-      float cobbleMortar = smoothstep(0.36, 0.47, max(abs(cobbleGrid.x), abs(cobbleGrid.y)));
-      float cobbleCell = fract(sin(dot(floor(vTerrainWorldPos.xz * 0.85), vec2(127.1, 311.7))) * 43758.5453);
-      vec3 plazaStone = mix(rockSample * frontierTerrainplazaTint * (0.91 + 0.18 * cobbleCell), soilSample * 0.62, cobbleMortar * 0.65);
-      float strata = 0.86 + 0.22 * sin(vTerrainWorldPos.y * 5.2 + sin(vTerrainWorldPos.x * 0.18) * 1.4 + cos(vTerrainWorldPos.z * 0.18) * 1.4);
-      float crevice = smoothstep(0.55, 0.92, sin(vTerrainWorldPos.x * 1.35 - vTerrainWorldPos.y * 2.4) * cos(vTerrainWorldPos.z * 1.35 + vTerrainWorldPos.y * 2.1));
-      vec3 cliffRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.24);
+      vec2 rotPlaza = vec2(vTerrainWorldPos.x + vTerrainWorldPos.z, vTerrainWorldPos.z - vTerrainWorldPos.x) * 0.72;
+      rotPlaza.x += mod(floor(rotPlaza.y), 2.0) * 0.5;
+      vec2 cobbleGrid = fract(rotPlaza) - 0.5;
+      float cobbleMortar = smoothstep(0.35, 0.47, max(abs(cobbleGrid.x), abs(cobbleGrid.y)));
+      float cobbleCell = fract(sin(dot(floor(rotPlaza), vec2(127.1, 311.7))) * 43758.5453);
+      vec3 plazaStone = mix(rockSample * frontierTerrainplazaTint * (0.85 + 0.28 * cobbleCell), soilSample * 0.48, cobbleMortar * 0.78);
+      float strata = 0.84 + 0.26 * sin(vTerrainWorldPos.y * 5.6 + sin(vTerrainWorldPos.x * 0.18) * 1.4 + cos(vTerrainWorldPos.z * 0.18) * 1.4);
+      float crevice = smoothstep(0.50, 0.90, sin(vTerrainWorldPos.x * 1.35 - vTerrainWorldPos.y * 2.4) * cos(vTerrainWorldPos.z * 1.35 + vTerrainWorldPos.y * 2.1));
+      vec3 cliffRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.28);
       vec3 finalRock = mix(cliffRock, plazaStone, terrainPlaza);
-      vec3 finalSoil = soilSample * mix(1.0, 0.76, terrainShore) * mix(1.0, 0.92, terrainRoad);
+      vec3 finalSoil = soilSample * mix(1.0, 0.76, terrainShore) * mix(1.0, 0.90, terrainRoad);
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
+      terrainColor = mix(terrainColor, plazaStone, terrainPlaza * 0.88);
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
