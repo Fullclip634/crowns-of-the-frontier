@@ -32,24 +32,51 @@ export class TerrainDetails{
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const palette=isSnowBiome(land.map)?[0xbec7c2,0xd8ddd5,0x98a59b]:isAridBiome(land.map)?[0xbfa272,0xd4bc90,0x947950]:isRockyBiome(land.map)?[0x86857c,0x9fa095,0x67665e]:[0x82857b,0x989a8e,0x6a6e64];
     const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),attempts=capacity*3;
+    const validSite=(x,z,minCamp)=>{
+      if(Math.abs(x)>land.half-4||Math.abs(z)>land.half-4)return false;
+      const y=land.surfaceHeightAt(x,z),td=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
+      return y>=.2&&td>=minCamp&&roadDistance(x,z,land)>=2.6&&!bridgeFootprint(land.map,x,z,3);
+    };
+    if(!low){
+      const cliffChains=Math.min(18,Math.max(6,Math.floor(capacity/48)));
+      for(let c=0;c<cliffChains&&this.entries.length+8<capacity;c++){
+        let ax,az;
+        if(c<settlements.length*2){
+          const base=settlements[c%settlements.length],dir=Math.atan2(-base.z,-base.x)+(c<settlements.length?1.15:-1.15)+(rng()-.5)*.35;
+          const dist=campRadius*1.38+rng()*14;ax=base.x+Math.cos(dir)*dist;az=base.z+Math.sin(dir)*dist;
+        }else{
+          ax=(rng()-.5)*(land.worldSize-24);az=(rng()-.5)*(land.worldSize-24);
+        }
+        if(!validSite(ax,az,campRadius*1.28))continue;
+        const dx=(land.surfaceHeightAt(ax+2,az)-land.surfaceHeightAt(ax-2,az))/4,dz=(land.surfaceHeightAt(ax,az+2)-land.surfaceHeightAt(ax,az-2))/4;
+        let heading=Math.hypot(dx,dz)>.04?Math.atan2(-dx,dz):rng()*Math.PI*2,cx=ax,cz=az;
+        const blocks=5+Math.floor(rng()*4);
+        for(let b=0;b<blocks&&this.entries.length<capacity;b++){
+          if(validSite(cx,cz,campRadius*1.25)){
+            const cy=land.surfaceHeightAt(cx,cz),arch=Math.sin((b+.5)/blocks*Math.PI),scale=(1.55+rng()*1.15)*(.78+arch*.42);
+            this.entries.push({x:cx,y:cy,z:cz,angle:heading+(rng()-.5)*.22,scale,color:palette[this.entries.length%3],stretch:1.65+rng()*.75,heightScale:.92+rng()*.55,shade:.82+rng()*.22,sink:-.16*scale});
+            if(this.entries.length<capacity&&rng()<.7){
+              const tx=cx+Math.sin(heading)*(1.2+rng()*1.4),tz=cz-Math.cos(heading)*(1.2+rng()*1.4);
+              if(validSite(tx,tz,campRadius*1.2)){
+                const ty=land.surfaceHeightAt(tx,tz),ts=.48+rng()*.52;
+                this.entries.push({x:tx,y:ty,z:tz,angle:rng()*Math.PI*2,scale:ts,color:palette[this.entries.length%3],stretch:1.1+rng()*.45,heightScale:.65+rng()*.35,shade:.78+rng()*.2,sink:-.05*ts});
+              }
+            }
+          }
+          heading+=(rng()-.5)*.28;cx+=Math.cos(heading)*2.05;cz+=Math.sin(heading)*2.05;
+        }
+      }
+    }
     for(let i=0;i<attempts&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
       const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      if(y<.2||townDist<campRadius*.82||townDist<campRadius*1.25&&rng()<.8||roadDistance(x,z,land)<2.4||bridgeFootprint(land.map,x,z,3))continue;
+      if(y<.2||townDist<campRadius*.9||townDist<campRadius*1.3&&rng()<.88||roadDistance(x,z,land)<2.4||bridgeFootprint(land.map,x,z,3))continue;
       const dx=(land.surfaceHeightAt(x+1.5,z)-land.surfaceHeightAt(x-1.5,z))/3,dz=(land.surfaceHeightAt(x,z+1.5)-land.surfaceHeightAt(x,z-1.5))/3;
-      const slope=Math.hypot(dx,dz),cliff=(slope>.11||y>2.3||i%4===0)&&townDist>=campRadius*1.25;
+      const slope=Math.hypot(dx,dz),cliff=(slope>.11||y>2.3||i%4===0)&&townDist>=campRadius*1.3;
       const angle=slope>.06?Math.atan2(-dx,dz)+(rng()-.5)*.38:rng()*Math.PI*2;
       const scale=cliff?(1.35+rng()*1.65+Math.min(1.3,slope*2.6)):(.48+rng()*.72);
       const stretch=cliff?(1.45+rng()*.95):(.88+rng()*.55),heightScale=cliff?(.82+rng()*.58):(.68+rng()*.38);
       this.entries.push({x,y,z,angle,scale,color:palette[this.entries.length%3],stretch,heightScale,shade:.84+rng()*.22,sink:cliff?-.14*scale:-.03*scale});
-      if(cliff&&!low&&this.entries.length<capacity){
-        const side=rng()<.5?-1:1,dist=1.5+rng()*2.2,cx=x+Math.cos(angle)*dist*side,cz=z+Math.sin(angle)*dist*side,cy=land.surfaceHeightAt(cx,cz);
-        const subTownDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(cx-s.x,cz-s.z))):Infinity;
-        if(cy>=.2&&subTownDist>=campRadius*1.15&&roadDistance(cx,cz,land)>=2.4&&!bridgeFootprint(land.map,cx,cz,3)){
-          const subScale=scale*(.58+rng()*.32);
-          this.entries.push({x:cx,y:cy,z:cz,angle:angle+(rng()-.5)*.45,scale:subScale,color:palette[this.entries.length%3],stretch:1.25+rng()*.65,heightScale:.74+rng()*.42,shade:.80+rng()*.22,sink:-.12*subScale});
-        }
-      }
     }
     this.update(true,true);
   }

@@ -24,9 +24,15 @@ export class Landscape {
   heightAt(x,z){
     const p=this.phase;
     let h=terrainRelief(this.map,x,z,p);
-    const townDistance=Math.min(...this.settlements.map(point=>Math.hypot(x-point.x,z-point.z)));
-    const clearOuter=22+terrainMeadow(x*1.35,z*1.35,p)*9;
-    h=.65+(h-.65)*smooth(11.5,clearOuter,townDistance);
+    for(const point of this.settlements){
+      const dx=x-point.x,dz=z-point.z,d=Math.hypot(dx,dz);
+      if(d<68){
+        const angle=Math.atan2(dz,dx),warp=1+.18*Math.sin(angle*2+p)+.12*Math.cos(angle*3-p);
+        const wd=d*warp,baseH=terrainRelief(this.map,point.x,point.z,p);
+        h-=(baseH-.65)*(1-smooth(18,62,wd));
+        h=.65+(h-.65)*smooth(12,26,wd);
+      }
+    }
     for(const channel of this.channels()){
       const d=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend);
       // The water mesh and naval navigation end at the same channel width.

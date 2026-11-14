@@ -42,10 +42,9 @@ export function terrainWeights(land,x,y,z,normalY=1){
   // New terrain kinds get a distinct grass/soil/rock signature instead of the
   // uniform meadow wash; roads and river banks still win over the base blend.
   const exposure=(arid?.28:rocky?.36:.14)*patch+smooth(.016,.135,slope)*(rocky?.96:.86)+smooth(3.8,12.5,y)*.42;
-  const rock=Math.min(.95,exposure*(1-campZone*.88))*(1-road*.9)*(1-bank*.6);
+  const rock=Math.min(.95,exposure*(1-campZone*.92))*(1-road*.9)*(1-bank*.6);
   const baseSoil=arid?.34:rocky?.18:winter?.12:.04,patchSoil=arid?.3:rocky?.2:winter?.17:.08;
-  const campSoil=campZone*(winter?.28:.34+patch*.26);
-  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),campSoil,baseSoil+patch*patchSoil)*(1-rock));
+  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),baseSoil+patch*patchSoil)*(1-rock));
   return {grass:Math.max(0,1-soil-rock),soil,rock};
 }
 

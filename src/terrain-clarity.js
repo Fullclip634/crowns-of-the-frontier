@@ -20,11 +20,14 @@ export function terrainReliefSamples(land,resolution=CLARITY_RESOLUTION){
     const left=heights[row*resolution+Math.max(0,col-1)],right=heights[row*resolution+Math.min(resolution-1,col+1)];
     const above=heights[Math.max(0,row-1)*resolution+col],below=heights[Math.min(resolution-1,row+1)*resolution+col];
     const dx=(right-left)/(2*cell),dz=(below-above)/(2*cell);
+    const x=(col+.5)*cell-half,z=(row+.5)*cell-half;
+    const townDist=(land.settlements||[]).length?Math.min(...land.settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
+    const campFade=smooth(20,42,townDist);
     // Light arrives from the north-west. Flat ground stays neutral (1.0).
-    const facing=(dx*.55+dz*.83)/Math.sqrt(1+dx*dx+dz*dz);
+    const facing=(dx*.55+dz*.83)/Math.sqrt(1+dx*dx+dz*dz)*(.35+.65*campFade);
     const value=clamp(1+facing*.62,.42,1.24);
     shade[index]=value;min=Math.min(min,value);max=Math.max(max,value);
-    const slope=Math.hypot(dx,dz),exposure=smooth(.18,.85,slope)*.42;
+    const slope=Math.hypot(dx,dz),exposure=smooth(.18,.85,slope)*.42*campFade;
     stone[index]=exposure;if(exposure>.08)exposed++;
   }
   return {resolution,shade,stone,diagnostics:{min,max,exposed,cell}};
