@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry,terrainRoadPaths,settlementPlazas,settlementCourtyardRoads} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
@@ -25,17 +25,8 @@ export class Landscape {
     const p=this.phase;
     let h=terrainRelief(this.map,x,z,p);
     const townDistance=Math.min(...this.settlements.map(point=>Math.hypot(x-point.x,z-point.z)));
-    h=.65+(h-.65)*smooth(12,26,townDistance);
-    for(const point of this.settlements){
-      const d=Math.hypot(x-point.x,z-point.z);
-      if(d<=26||d>=52)continue;
-      const r=Math.hypot(point.x,point.z)||1,outward=((x-point.x)*point.x+(z-point.z)*point.z)/r;
-      const arc=smooth(4,16,outward)*smooth(26,31,d)*(1-smooth(41,50,d));
-      if(arc>0){
-        const shelf=Math.tanh(Math.sin(d*.32+this.phase)*2.6)*.5+.5;
-        h+=(2.4+shelf*1.8)*arc;
-      }
-    }
+    const clearOuter=22+terrainMeadow(x*1.35,z*1.35,p)*9;
+    h=.65+(h-.65)*smooth(11.5,clearOuter,townDistance);
     for(const channel of this.channels()){
       const d=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend);
       // The water mesh and naval navigation end at the same channel width.
@@ -139,24 +130,13 @@ function groundMap(landscape){
     ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
     ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
   }
-  // Multi-tone wheel-rutted roads: soft shoulder, packed tread, and center strip.
-  for(const road of [...terrainRoadPaths(landscape),...settlementCourtyardRoads(landscape)]){
+  // Multi-tone wheel-rutted cart roads: soft shoulder, packed tread, and grassy median strip.
+  for(const road of terrainRoadPaths(landscape)){
     const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=5.8*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.38)':arid?'rgba(112,86,48,.42)':'rgba(74,62,42,.40)';ctx.stroke(path);
-    ctx.lineWidth=3.4*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c5b086';ctx.stroke(path);
-    ctx.lineWidth=1.1*scale;ctx.strokeStyle=winter?'rgba(162,170,154,.55)':arid?'rgba(166,138,88,.52)':'rgba(98,118,74,.55)';ctx.stroke(path);
-  }
-  // Diamond/square flagstone plazas under the Town Center and surrounding settlement buildings.
-  for(const pad of settlementPlazas(landscape)){
-    const cx=(pad.x+half)/size*1536,cz=(pad.z+half)/size*1536,rad=pad.size*scale;
-    for(const frac of [.28,.58,.88]){
-      const r=rad*frac,diamond=new Path2D();
-      diamond.moveTo(cx,cz-r);diamond.lineTo(cx+r,cz);diamond.lineTo(cx,cz+r);diamond.lineTo(cx-r,cz);diamond.lineTo(cx,cz-r);
-      ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=rad*.42;
-      ctx.strokeStyle=winter?'rgba(182,192,196,.58)':arid?'rgba(206,178,132,.62)':rocky?'rgba(148,146,136,.60)':'rgba(164,158,142,.58)';
-      ctx.stroke(diamond);
-    }
+    ctx.lineWidth=5.6*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.36)':arid?'rgba(112,86,48,.40)':'rgba(74,62,42,.38)';ctx.stroke(path);
+    ctx.lineWidth=3.2*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c5b086';ctx.stroke(path);
+    ctx.lineWidth=1.05*scale;ctx.strokeStyle=winter?'rgba(162,170,154,.52)':arid?'rgba(166,138,88,.50)':'rgba(98,118,74,.52)';ctx.stroke(path);
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }

@@ -249,7 +249,7 @@ function foundation(view,root,e){
   // already authored. A mill keeps a plinth but one that does not protrude at
   // all, because its blades sweep close to the front wall.
   if(['farm','dock','wall','gate','tower'].includes(e.type))return;
-  const overhang=e.type==='mill'?1:1.06;
+  const overhang=e.type==='mill'?1:1.12;
   root.updateMatrixWorld(true);
   // Measure the building only. A rotor or a moving gate sits outside the walls
   // and would otherwise inflate the plinth until it clipped the blades.

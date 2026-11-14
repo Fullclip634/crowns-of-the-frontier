@@ -15,12 +15,12 @@ export const tuftBlades=quality=>quality==='high'?6:4;
 export function grassTuftGeometry(blades=6){
   const vertices=[],indices=[],uv=[];
   for(let blade=0;blade<blades;blade++){
-    const angle=blade*2.399,h=.28+(blade%3)*.11,w=.035,lean=.12;
-    const center=new THREE.Vector3(Math.sin(angle)*.12,0,Math.cos(angle)*.12);
+    const angle=blade*2.399,h=.34+(blade%3)*.13,w=.092,lean=.24;
+    const center=new THREE.Vector3(Math.sin(angle)*.22,0,Math.cos(angle)*.22);
     const across=new THREE.Vector3(Math.cos(angle),0,-Math.sin(angle));
     const front=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));
     const base=vertices.length/3;
-    for(const [width,y,bend,thickness] of [[w,0,0,.009],[w*.7,h*.55,lean*.3,.006]]){
+    for(const [width,y,bend,thickness] of [[w,0,0,.016],[w*.72,h*.55,lean*.34,.011]]){
       for(const [side,depth] of [[-1,-1],[1,-1],[1,1],[-1,1]]){
         const p=center.clone().addScaledVector(across,side*width).addScaledVector(front,bend+depth*thickness);p.y=y;
         vertices.push(...p.toArray());uv.push((side+1)*.5,y/h);
@@ -36,9 +36,9 @@ export function grassTuftGeometry(blades=6){
 export class GroundCover{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
-    const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.04:.075)));
+    const capacity=Math.min(low?9500:24000,Math.floor(land.worldSize**2*(low?.055:.095)));
     const winter=isSnowBiome(land.map);
-    const material=standardMaterial({color:0xffffff,roughness:1,emissive:0x293421,emissiveIntensity:.1});
+    const material=standardMaterial({color:0xffffff,roughness:.92,emissive:0x24331b,emissiveIntensity:.12});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
@@ -47,7 +47,7 @@ export class GroundCover{
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
       if(y<.2||roadDistance(x,z,land)<1.85||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
       const patch=Math.sin(x*.14+z*.11)*Math.cos(x*.09-z*.13);
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.68+rng()*.82)*(patch>0?1.08:.94),color:palette[i%3],shade:.88+rng()*.2});
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.82+rng()*.94)*(patch>0?1.18:.95),color:palette[i%3],shade:.84+rng()*.26});
     }
     this.update(true,true);
   }
@@ -60,9 +60,9 @@ export class GroundCover{
     this.buildingSites=sites;
     let count=0;
     for(const e of this.entries){
-      if(!nearViewport(v,e.x,e.y,e.z,5)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
+      if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
       if(sites.get(cell(e.x,e.z))?.some(b=>Math.hypot(b.x-e.x,b.z-e.z)<b.r+1))continue;
-      this.dummy.position.set(e.x,e.y+.005,e.z);this.dummy.rotation.set(0,e.angle,v.settings.quality==='high'?Math.sin(v.clock*1.6+e.x*.2)*(.025+(v.weatherState?.intensity||0)*.07):0);this.dummy.scale.setScalar(e.scale);this.dummy.updateMatrix();
+      this.dummy.position.set(e.x,e.y+.005,e.z);this.dummy.rotation.set(0,e.angle,v.settings.quality==='high'?Math.sin(v.clock*1.6+e.x*.2)*(.025+(v.weatherState?.intensity||0)*.07):0);this.dummy.scale.set(e.scale*1.36,e.scale*1.12,e.scale*1.36);this.dummy.updateMatrix();
       this.mesh.setMatrixAt(count,this.dummy.matrix);this.mesh.setColorAt(count,this.color.setHex(e.color).multiplyScalar(e.shade));count++;
     }
     this.mesh.count=count;markInstancePrefix(this.mesh);if(this.mesh.instanceColor&&count){this.mesh.instanceColor.clearUpdateRanges();this.mesh.instanceColor.addUpdateRange(0,count*3);this.mesh.instanceColor.needsUpdate=true;}

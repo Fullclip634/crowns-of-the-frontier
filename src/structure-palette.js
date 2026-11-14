@@ -32,21 +32,21 @@ function paletteMaterial(view){
         varying vec3 vStructureEmission;
         varying vec3 vStructurePos;\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-        float plinthMask = 1.0 - smoothstep(0.0, 0.75, max(0.0, vStructurePos.y));
-        float groundAo = mix(0.82, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
+        float plinthMask = 1.0 - smoothstep(0.0, 0.82, max(0.0, vStructurePos.y));
+        float groundAo = mix(0.78, 1.0, smoothstep(0.0, 1.25, max(0.0, vStructurePos.y)));
         if(vStructureSurface.z > 3.5) {
-          float shingleCourse = 0.93 + 0.12 * sin(vStructurePos.y * 18.0 + (vStructurePos.x + vStructurePos.z) * 2.5);
+          float shingleCourse = 0.91 + 0.14 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
           diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb * shingleCourse;
         } else if(vStructureSurface.z > 2.5) {
-          vec3 plasterTex = texture2D(frontierStructureplaster, vUv).rgb;
-          vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.4).rgb * 0.86;
-          diffuseColor.rgb *= mix(plasterTex * 1.03, plinthStone, plinthMask * 0.55);
+          vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
+          vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
+          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.62);
         } else if(vStructureSurface.z > 1.5) {
-          float ashlarCourse = 0.94 + 0.1 * sin(vStructurePos.y * 11.0) * cos((vStructurePos.x - vStructurePos.z) * 4.5);
-          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv).rgb * ashlarCourse * mix(1.0, 0.88, plinthMask * 0.45);
+          float ashlarCourse = 0.92 + 0.13 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
+          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv * 1.25).rgb * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
-          float woodGrain = 0.94 + 0.1 * sin((vStructurePos.x + vStructurePos.y * 2.2 + vStructurePos.z) * 9.0);
-          diffuseColor.rgb *= texture2D(frontierStructurewood, vUv).rgb * woodGrain;
+          float woodGrain = 0.92 + 0.13 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
+          diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
         }
         diffuseColor.rgb *= groundAo;`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
