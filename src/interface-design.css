@@ -80,7 +80,8 @@
 .custom-validation{font-size:12px;line-height:1.5;color:var(--ui-secondary)}
 .custom-launch{gap:10px}
 .custom-launch small{font-size:12px;line-height:1.5}
-.custom-dialog .custom-launch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));position:sticky;bottom:0;z-index:3;background:#1a2f26;border-top:1px solid #52624d;padding:12px 0 0;gap:10px}
+.custom-dialog .custom-launch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));position:sticky;bottom:-35px;z-index:3;background:#14261f;border-top:1px solid #52624d;padding:14px 0 35px;margin-bottom:-35px;gap:10px;box-shadow:0 -10px 24px rgba(4,10,8,.5)}
+@media(max-width:899px){.custom-dialog .custom-launch{bottom:-27px;padding-bottom:27px;margin-bottom:-27px}}
 .custom-dialog .custom-launch>small{grid-column:1/-1}
 .room-code{font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:6px;border-radius:4px;background:#12271d}
 .room-grid article,.room-players article{border-radius:4px;border-color:#465e45;background:#223b2d}

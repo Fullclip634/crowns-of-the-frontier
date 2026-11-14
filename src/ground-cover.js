@@ -36,7 +36,7 @@ export function grassTuftGeometry(blades=6){
 export class GroundCover{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
-    const capacity=Math.min(low?9500:24000,Math.floor(land.worldSize**2*(low?.055:.095)));
+    const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.036:.072)));
     const winter=isSnowBiome(land.map);
     const material=standardMaterial({color:0xffffff,roughness:.92,emissive:0x24331b,emissiveIntensity:.12});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
