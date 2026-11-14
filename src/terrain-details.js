@@ -31,20 +31,21 @@ export class TerrainDetails{
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=high;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const palette=isSnowBiome(land.map)?[0xbec7c2,0xd8ddd5,0x98a59b]:isAridBiome(land.map)?[0xbfa272,0xd4bc90,0x947950]:isRockyBiome(land.map)?[0x86857c,0x9fa095,0x67665e]:[0x82857b,0x989a8e,0x6a6e64];
-    const settlements=land.settlements||[],attempts=capacity*2;
+    const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),attempts=capacity*3;
     for(let i=0;i<attempts&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
       const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      if(y<.2||townDist<13.5||roadDistance(x,z,land)<2.4||bridgeFootprint(land.map,x,z,3))continue;
+      if(y<.2||townDist<campRadius*.82||townDist<campRadius*1.25&&rng()<.8||roadDistance(x,z,land)<2.4||bridgeFootprint(land.map,x,z,3))continue;
       const dx=(land.surfaceHeightAt(x+1.5,z)-land.surfaceHeightAt(x-1.5,z))/3,dz=(land.surfaceHeightAt(x,z+1.5)-land.surfaceHeightAt(x,z-1.5))/3;
-      const slope=Math.hypot(dx,dz),cliff=slope>.11||y>2.3||i%4===0;
+      const slope=Math.hypot(dx,dz),cliff=(slope>.11||y>2.3||i%4===0)&&townDist>=campRadius*1.25;
       const angle=slope>.06?Math.atan2(-dx,dz)+(rng()-.5)*.38:rng()*Math.PI*2;
-      const scale=cliff?(1.35+rng()*1.65+Math.min(1.3,slope*2.6)):(.52+rng()*.78);
+      const scale=cliff?(1.35+rng()*1.65+Math.min(1.3,slope*2.6)):(.48+rng()*.72);
       const stretch=cliff?(1.45+rng()*.95):(.88+rng()*.55),heightScale=cliff?(.82+rng()*.58):(.68+rng()*.38);
       this.entries.push({x,y,z,angle,scale,color:palette[this.entries.length%3],stretch,heightScale,shade:.84+rng()*.22,sink:cliff?-.14*scale:-.03*scale});
       if(cliff&&!low&&this.entries.length<capacity){
         const side=rng()<.5?-1:1,dist=1.5+rng()*2.2,cx=x+Math.cos(angle)*dist*side,cz=z+Math.sin(angle)*dist*side,cy=land.surfaceHeightAt(cx,cz);
-        if(cy>=.2&&roadDistance(cx,cz,land)>=2.4&&!bridgeFootprint(land.map,cx,cz,3)){
+        const subTownDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(cx-s.x,cz-s.z))):Infinity;
+        if(cy>=.2&&subTownDist>=campRadius*1.15&&roadDistance(cx,cz,land)>=2.4&&!bridgeFootprint(land.map,cx,cz,3)){
           const subScale=scale*(.58+rng()*.32);
           this.entries.push({x:cx,y:cy,z:cz,angle:angle+(rng()-.5)*.45,scale:subScale,color:palette[this.entries.length%3],stretch:1.25+rng()*.65,heightScale:.74+rng()*.42,shade:.80+rng()*.22,sink:-.12*subScale});
         }

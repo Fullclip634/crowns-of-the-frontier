@@ -42,12 +42,18 @@ export class GroundCover{
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=terrainBiome(land.map).grass;
-    for(let i=0;i<capacity;i++){
+    const palette=terrainBiome(land.map).grass,settlements=land.settlements||[],campRadius=Math.min(26,land.worldSize*.14);
+    for(let i=0;i<capacity*2&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
       if(y<.2||roadDistance(x,z,land)<1.85||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
+      const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
+      const campDist=townDist+Math.sin(x*.23+z*.19)*3.5+Math.cos(x*.17-z*.29)*2.5;
+      if(campDist<11)continue;
+      const campFactor=campDist<campRadius?Math.max(0,(campDist-11)/(campRadius-11)):1;
+      if(campFactor<1&&rng()>campFactor*.22)continue;
       const patch=Math.sin(x*.14+z*.11)*Math.cos(x*.09-z*.13);
-      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.82+rng()*.94)*(patch>0?1.18:.95),color:palette[i%3],shade:.84+rng()*.26});
+      const campScale=.58+.42*campFactor;
+      this.entries.push({x,y,z,angle:rng()*Math.PI*2,scale:(.82+rng()*.94)*(patch>0?1.18:.95)*campScale,color:palette[this.entries.length%3],shade:.84+rng()*.26});
     }
     this.update(true,true);
   }
