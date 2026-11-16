@@ -1,8 +1,10 @@
+import * as THREE from 'three';
+
 // Age-driven architecture. Only the Town Center has four authored Blender
 // variants; every other landmark reuses its single authored base and gains
-// age-specific massing and a heavier masonry tint. Geometry is merged by
-// packBuildingModel, so each building stays one draw call and the runtime
-// catalogue validation remains satisfied.
+// age-specific massing, structural buttresses/crests, and dressed masonry.
+// Geometry is merged by packBuildingModel, so each building stays one draw
+// call and the runtime catalogue validation remains satisfied.
 
 export const AGE_STYLED_BUILDINGS=Object.freeze([
   'house','keep','tower','barracks','wonder','monastery','market','workshop','stable','range','blacksmith','mill','camp','mine'
@@ -13,10 +15,10 @@ const STYLES=Object.freeze([
   // The first age is deliberately under-built: lower walls and a flatter roof
   // than the authored model, so a Dark Age town reads as a settlement that has
   // not yet been raised in stone rather than a castle that is merely tinted.
-  Object.freeze({height:.82,width:.93,pitch:.88,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
-  Object.freeze({height:1.12,width:1.02,pitch:1.12,tint:[.95,.96,.98],roof:[1.06,.92,.78],label:'feudal'}),
-  Object.freeze({height:1.25,width:1.07,pitch:1.25,tint:[.87,.89,.93],roof:[.86,.89,.97],label:'castle'}),
-  Object.freeze({height:1.40,width:1.12,pitch:1.38,tint:[.80,.84,.90],roof:[.79,.83,.96],label:'imperial'}),
+  Object.freeze({height:.78,width:.90,pitch:.84,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
+  Object.freeze({height:.98,width:.99,pitch:1.06,tint:[.96,.97,.98],roof:[1.06,.92,.78],label:'feudal'}),
+  Object.freeze({height:1.18,width:1.07,pitch:1.24,tint:[.87,.90,.95],roof:[.86,.89,.97],label:'castle'}),
+  Object.freeze({height:1.38,width:1.15,pitch:1.38,tint:[.78,.84,.94],roof:[.78,.82,.96],label:'imperial'}),
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}
@@ -91,5 +93,101 @@ export function applyArchitectureAge(view,root,entity,age){
   root.scale.set(style.width,style.height,style.width);
   // A node can be revisited; the pitch must never compound on itself.
   if(!root.userData.model3d.architecturePitch&&steepenRoof(root,style.pitch))root.userData.model3d.architecturePitch=style.pitch;
+  return root;
+}
+
+const WALL_ROLES=new Set(['stone','stoneDark','plaster','wood','darkwood']);
+const EAVE_ROLES=new Set(['plaster']);
+const ROOF_ROLES=new Set(['teamRoof','roof']);
+const MILITARY_CREST=new Set(['keep','barracks','stable','range','workshop','blacksmith','monastery','wonder']);
+
+function isAnimatedAttachment(root,node){
+  for(let cur=node;cur&&cur!==root;cur=cur.parent){
+    if(cur.userData?.windmill||cur.userData?.windmillMount||cur.userData?.gate||cur.userData?.dockPier||cur.userData?.flag)return true;
+  }
+  return false;
+}
+
+function measureLocalBoxes(root){
+  root.updateMatrixWorld(true);
+  const inverse=root.matrixWorld.clone().invert(),worldToLocal=new THREE.Matrix4(),box=new THREE.Box3();
+  const wall=new THREE.Box3(),eave=new THREE.Box3(),roof=new THREE.Box3();
+  root.traverse(part=>{
+    if(!part.isMesh||!part.geometry||isAnimatedAttachment(root,part))return;
+    part.geometry.computeBoundingBox();
+    if(!part.geometry.boundingBox)return;
+    worldToLocal.copy(inverse).multiply(part.matrixWorld);
+    box.copy(part.geometry.boundingBox).applyMatrix4(worldToLocal);
+    const role=part.userData.assetMaterial;
+    if(WALL_ROLES.has(role))wall.union(box);
+    if(EAVE_ROLES.has(role))eave.union(box);
+    if(ROOF_ROLES.has(role))roof.union(box);
+  });
+  return {wall,eave,roof};
+}
+
+function detailMesh(root,geometry,material,x,y,z,sx,sy,sz){
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.position.set(x,y,z);
+  mesh.scale.set(sx,sy,sz);
+  mesh.castShadow=true;
+  mesh.receiveShadow=true;
+  mesh.userData.ageFortification=true;
+  root.add(mesh);
+  return mesh;
+}
+
+/** Add stepped stone piers, castle buttresses, and imperial finials by age so every age looks structurally stronger. */
+export function strengthenArchitecture(view,root,entity,age){
+  if(!root||!entity||age<=0||!view?.geo?.box||!view?.materials?.stone||root.userData.strengthened)return root;
+  if(['farm','dock','wall','gate','mill','towncenter'].includes(entity.type))return root;
+  const {wall,eave,roof}=measureLocalBoxes(root);
+  if(wall.isEmpty())return root;
+  const eaveSize=!eave.isEmpty()?eave.getSize(new THREE.Vector3()):null;
+  const core=eaveSize&&eaveSize.x>=1.2&&eaveSize.z>=1.2?eave:wall;
+  const size=core.getSize(new THREE.Vector3()),center=core.getCenter(new THREE.Vector3());
+  if(size.x<1.2||size.z<1.2)return root;
+  root.userData.strengthened=true;
+  const {stone,stoneDark,gold}=view.materials,boxGeo=view.geo.box,cylGeo=view.geo.cylinder||boxGeo;
+  const eaveY=!eave.isEmpty()?Math.min(wall.max.y,Math.max(eave.max.y,1.8)):roof.isEmpty()?wall.max.y:Math.min(wall.max.y,roof.min.y+.45);
+  const pierW=Math.max(.26,Math.min(.50,Math.min(size.x,size.z)*.105));
+  if(entity.type==='tower'){
+    const radius=Math.min(size.x,size.z)*.5;
+    if(age>=1)detailMesh(root,cylGeo,stoneDark||stone,center.x,.48,center.z,radius*1.14,.96,radius*1.14);
+    if(age>=2){
+      const height=Math.max(1.6,eaveY*(age>=3?.70:.48));
+      for(const [dx,dz]of [[1,0],[-1,0],[0,1],[0,-1]]){
+        detailMesh(root,boxGeo,stoneDark||stone,center.x+dx*radius*.94,height*.38,center.z+dz*radius*.94,.44,height*.76,.44);
+        detailMesh(root,boxGeo,stone,center.x+dx*radius*.86,height*.52,center.z+dz*radius*.86,.34,height,.34);
+      }
+    }
+    if(age>=3){
+      detailMesh(root,cylGeo,stoneDark||stone,center.x,eaveY*.92,center.z,radius*1.12,.36,radius*1.12);
+      if(gold&&!roof.isEmpty())detailMesh(root,cylGeo,gold,center.x,roof.max.y+.32,center.z,.11,.68,.11);
+    }
+    return root;
+  }
+  const hx=size.x*.5,hz=size.z*.5;
+  const height=eaveY*(age>=3?1.04:age===2?.94:.80);
+  // Corner piers reinforce weak timber corners in Feudal, widen into battered stone buttresses in Castle, and rise into crowned bastions in Imperial.
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+    const x=center.x+sx*(hx-pierW*.14),z=center.z+sz*(hz-pierW*.14);
+    if(age===1){
+      detailMesh(root,boxGeo,stone,x,height*.5,z,pierW,height,pierW);
+      continue;
+    }
+    const baseH=Math.max(.75,height*(age>=3?.52:.42));
+    detailMesh(root,boxGeo,stoneDark||stone,center.x+sx*hx,baseH*.5,center.z+sz*hz,pierW*1.42,baseH,pierW*1.42);
+    detailMesh(root,boxGeo,stone,x,height*.5,z,pierW*1.12,height,pierW*1.12);
+    if(age>=3){
+      const capY=height+.14;
+      detailMesh(root,boxGeo,stoneDark||stone,x,capY,z,pierW*1.34,.28,pierW*1.34);
+      if(MILITARY_CREST.has(entity.type)&&gold)detailMesh(root,cylGeo,gold,x,capY+.30,z,.09,.36,.09);
+    }
+  }
+  if(age>=3&&gold&&!roof.isEmpty()){
+    const roofCenter=roof.getCenter(new THREE.Vector3());
+    detailMesh(root,cylGeo,gold,roofCenter.x,roof.max.y+.28,roofCenter.z,.10,.64,.10);
+  }
   return root;
 }

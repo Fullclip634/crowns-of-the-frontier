@@ -334,7 +334,7 @@ export class WorldView {
       if(!visible||e.embarked)continue;
       node.position.set(rx,ground,rz);if(e.kind==='unit'){node.rotation.y=heading;const body=node.userData.body;if(body){body.position.y=e.moving?Math.sin(this.clock*10+e.id)*.065:0;if(e.type==='villager'&&e.order?.type==='gather'&&!e.moving)body.rotation.z=Math.sin(this.clock*6)*.08;else body.rotation.z=0;}}
       if(e.kind==='building'){
-        node.scale.y=1;if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);
+        if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);
         if(e.hp>0&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const phase=(this.clock+e.id*.3)%2;fireDummy.position.set(e.x+.4,ground+e.r*.6+phase*.3,e.z+.4);fireDummy.scale.set(.45+Math.sin(this.clock*10+e.id)*.1,1.2+phase*.4,.45);fireDummy.updateMatrix();this.burning.setMatrixAt(fireCount,fireDummy.matrix);fireDummy.position.y+=phase*2+1;fireDummy.scale.setScalar(.8+phase*.8);fireDummy.updateMatrix();this.smokeMesh.setMatrixAt(fireCount,fireDummy.matrix);fireCount++;}
       }if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
       animateSceneDecorations(this,node,e);

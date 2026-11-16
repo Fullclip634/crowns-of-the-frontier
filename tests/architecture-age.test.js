@@ -200,3 +200,27 @@ test('the first age is timber, so the starting town does not look like the last 
   assert.equal(ageSurface(4,0),4,'roofs are never downgraded');
   assert.equal(ageSurface(2,0),2,'stone footings stay stone');
 });
+
+test('landmarks gain physical corner fortifications and Town Center advances wall surface by age',async()=>{
+  const assets=await catalogue();
+  try{
+    const barracksVerts=[],tcModes=[];
+    for(const age of [0,1,2,3]){
+      const view=fixture(assets,age);
+      view.materials.plaster=new THREE.MeshStandardMaterial({color:0xdfd0b0});
+      view.materials.plaster.map=new THREE.Texture();
+      const b=packBuildingModel(view,buildingModel(view,{kind:'building',type:'barracks',owner:0,r:BUILDINGS.barracks.r,x:0,z:0}),{kind:'building',type:'barracks',owner:0,r:BUILDINGS.barracks.r,x:0,z:0});
+      const bSurface=b.children.find(c=>c.userData.structureSurface);
+      barracksVerts.push(bSurface.geometry.attributes.position.count);
+      const tc=packBuildingModel(view,buildingModel(view,{kind:'building',type:'towncenter',owner:0,r:BUILDINGS.towncenter.r,x:0,z:0}),{kind:'building',type:'towncenter',owner:0,r:BUILDINGS.towncenter.r,x:0,z:0});
+      const tcSurface=tc.children.find(c=>c.userData.structureSurface);
+      tcModes.push(new Set(Array.from(tcSurface.geometry.attributes.structureSurface.array).filter((_,i)=>i%3===2)));
+    }
+    assert.ok(barracksVerts[1]>barracksVerts[0],'Feudal adds corner stone piers');
+    assert.ok(barracksVerts[2]>barracksVerts[1],'Castle widens into stepped stone buttresses');
+    assert.ok(barracksVerts[3]>barracksVerts[2],'Imperial crowns bastions and adds finials');
+    assert.ok(!tcModes[0].has(3),'Dark Age Town Center pulls plaster walls down to timber');
+    assert.ok(tcModes[1].has(3),'Feudal Town Center restores plaster upper stories');
+    assert.ok(!tcModes[3].has(3)&&tcModes[3].has(2),'Imperial Town Center dresses walls into stone masonry');
+  }finally{clearAuthoredAssets();}
+});

@@ -7,7 +7,7 @@ import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
-import {isAgeStyled,architectureAge,applyArchitectureAge} from './architecture-age.js';
+import {isAgeStyled,architectureAge,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {readAssetResponse} from './load-progress.js';
 
 const sources={
@@ -214,7 +214,8 @@ export function authoredBuilding(view,e){
     const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):architectureAge(view.sim,e);
     if(e.type==='towncenter'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
     if(isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
-    foundation(view,root,e);
+    strengthenArchitecture(view,root,e,styledAge);
+    foundation(view,root,e,styledAge);
   }
   if(root&&e.type==='dock')root.traverse(part=>{
     if(!part.userData.dockPier)return;
@@ -241,7 +242,7 @@ export function authoredBuilding(view,e){
 // plane, so they read as pasted onto the grass. The procedural fallback has
 // always drawn a stone slab under each building; the authored path did not.
 // A shallow plinth restores that foundation without changing the silhouette.
-function foundation(view,root,e){
+function foundation(view,root,e,age=0){
   const body=view.materials?.stoneDark;
   if(!body||!view.geo?.box||root.userData.foundation)return;
   // Walls, fields and towers are excluded: a wall segment must not gain a
@@ -267,9 +268,10 @@ function foundation(view,root,e){
   // Divide the measured world size by that scale to keep the plinth flush with
   // the walls instead of overshooting them at higher ages.
   const sx=root.scale.x||1,sy=root.scale.y||1,sz=root.scale.z||1;
+  const slabH=e.type==='mill'?.46:.46+Math.max(0,Math.min(3,age))*.08;
   const slab=new THREE.Mesh(view.geo.box,body);
-  slab.position.set((bounds.min.x+bounds.max.x)/2/sx,(bounds.min.y+.10)/sy,(bounds.min.z+bounds.max.z)/2/sz);
-  slab.scale.set(size.x*overhang/sx,.46/sy,size.z*overhang/sz);
+  slab.position.set((bounds.min.x+bounds.max.x)/2/sx,(bounds.min.y+.10+(slabH-.46)*.5)/sy,(bounds.min.z+bounds.max.z)/2/sz);
+  slab.scale.set(size.x*overhang/sx,slabH/sy,size.z*overhang/sz);
   slab.userData.architectureDetail=true;
   root.add(slab);
 }
