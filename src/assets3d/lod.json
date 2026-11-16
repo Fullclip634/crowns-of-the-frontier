@@ -2,14 +2,14 @@
   "source": "frontier-low.glb",
   "output": "frontier-far.glb",
   "ratio": 0.35,
-  "sourceBytes": 4587472,
-  "lodBytes": 2487272,
-  "sourceSHA256": "42b576bbe4f498a3a12aa8491a387ef3b5a293c629fac4c37559427815df6b56",
-  "lodSHA256": "d53a5a101b2d26200a6f58ae1c2d4dbb33d0d3b4d9c2c9fbd3dfb00602699270",
+  "sourceBytes": 4573256,
+  "lodBytes": 2550564,
+  "sourceSHA256": "39e8015d3666c507ac81b37ee2c3d42d74976d128c4ca1d402335bae8d16db52",
+  "lodSHA256": "4b8aed4ca7405b6564d2a218fb67f847e9557c0a908380b0f89c3c4119f0328f",
   "triangles": {
-    "source": 229138,
-    "lod": 139605,
-    "reduction": 0.3907
+    "source": 220598,
+    "lod": 142207,
+    "reduction": 0.3554
   },
   "assetKeys": 126,
   "restoredMeshNodes": 1162,

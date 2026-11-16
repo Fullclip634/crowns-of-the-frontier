@@ -59,19 +59,46 @@ function colored(geometry,color){
   geometry.setAttribute('color',new THREE.BufferAttribute(array,3));return geometry;
 }
 function arrowGeometry(){
-  const shaft=colored(new THREE.CylinderGeometry(.018,.018,.85,5).rotateX(Math.PI/2),0x80684d);
-  const tip=colored(new THREE.ConeGeometry(.05,.18,4).rotateX(Math.PI/2).translate(0,0,.49),0xb9c3bd);
-  const feather=colored(new THREE.BoxGeometry(.16,.012,.19).translate(0,0,-.32),0xd9d1b5);
+  const shaft=colored(new THREE.CylinderGeometry(.016,.016,.86,5).rotateX(Math.PI/2),0x5c4632);
+  const tip=colored(new THREE.ConeGeometry(.045,.21,4).rotateX(Math.PI/2).translate(0,0,.49),0xc8d2ce);
+  const feather=colored(new THREE.BoxGeometry(.15,.010,.20).translate(0,0,-.32),0xe3dcc2);
   const vertical=feather.clone().rotateZ(Math.PI/2),parts=[shaft,tip,feather,vertical],merged=mergeGeometries(parts);
   for(const part of parts)part.dispose();return merged;
+}
+function stoneGeometry(){
+  const g=new THREE.IcosahedronGeometry(.27,0),p=g.attributes.position,colors=new Float32Array(p.count*3);
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i),y=p.getY(i),z=p.getZ(i),warp=1+Math.sin(x*19+y*11)*.16+Math.cos(z*17-x*7)*.12;
+    p.setXYZ(i,x*warp,y*(warp*.92),z*warp);
+    const shade=.42+Math.max(0,y/.27)*.22+((i%3)*.04);
+    colors[i*3]=shade*1.04;colors[i*3+1]=shade*.98;colors[i*3+2]=shade*.90;
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(colors,3));g.computeVertexNormals();return g;
+}
+function splinterGeometry(){
+  const g=new THREE.ConeGeometry(.12,.30,4);g.rotateX(Math.PI*.35);g.scale(1,.62,1.25);return g;
+}
+function craterGeometry(){
+  const g=new THREE.CircleGeometry(1.42,18),p=g.attributes.position,colors=new Float32Array(p.count*3);
+  for(let i=0;i<p.count;i++){
+    const r=Math.hypot(p.getX(i),p.getY(i))/1.42,jag=1+Math.sin(Math.atan2(p.getY(i),p.getX(i))*7)*.09;
+    p.setX(i,p.getX(i)*jag);p.setY(i,p.getY(i)*jag);
+    const t=clamp(r,0,1);
+    colors[i*3]=.10+t*.32;colors[i*3+1]=.08+t*.25;colors[i*3+2]=.06+t*.18;
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(colors,3));return g;
+}
+function wakeGeometry(){
+  const positions=[-0.38,0,0,-1.45,0,-2.10,-0.82,0,-2.25,-0.38,0,0,-0.82,0,-2.25,-0.08,0,-0.45,0.38,0,0,0.82,0,-2.25,1.45,0,-2.10,0.38,0,0,0.08,0,-0.45,0.82,0,-2.25];
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
 
 // Pools keep the same solid meshes/materials throughout a match and across
 // scene switches. Shared geometry is never disposed when a single shot ends.
 export class FlightEffects{
   constructor(){
-    this.geometry={arrow:arrowGeometry(),stone:new THREE.IcosahedronGeometry(.26,1),slash:new THREE.TorusGeometry(.38,.026,5,14,Math.PI*.85)};
-    this.material={arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.15}),stone:standardMaterial({color:0xa0927c,roughness:.96})};
+    this.geometry={arrow:arrowGeometry(),stone:stoneGeometry(),slash:new THREE.TorusGeometry(.42,.022,4,16,Math.PI*.78)};
+    this.material={arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.18}),stone:standardMaterial({vertexColors:true,roughness:.94})};
     this.free={arrow:[],stone:[],slash:[]};this.retained=new Set();this.limit=96;
   }
   acquire(kind){
@@ -96,7 +123,7 @@ export class FlightEffects{
 // after each quiet gap can discard its linked GPU program as well.
 export class ImpactEffects{
   constructor(){
-    this.geometry={burst:new THREE.IcosahedronGeometry(.13,0),heal:new THREE.TorusGeometry(.85,.035,5,28)};
+    this.geometry={burst:splinterGeometry(),heal:new THREE.TorusGeometry(.85,.035,5,28)};
     this.free={burst:[],heal:[]};this.retained=new Set();this.limit=48;this.disposed=false;
   }
   acquire(kind,color=kind==='heal'?0x91e0b4:kind==='sparks'?0xffe680:0xe8c28b){
@@ -105,14 +132,18 @@ export class ImpactEffects{
     let mesh=this.free[kind].pop();
     if(!mesh){
       if(kind==='sparks'){
-        this.geometry.sparks??=new THREE.BoxGeometry(.04,.04,.2);
+        this.geometry.sparks??=new THREE.BoxGeometry(.025,.025,.34);
         const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false});
         mesh=new THREE.InstancedMesh(this.geometry.sparks,material,12);
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.userData.velocities=Array.from({length:12},()=>({x:0,y:0,z:0}));
       }else if(kind==='crater'){
-        this.geometry.crater??=new THREE.RingGeometry(.3,1.4,14);
-        const material=new THREE.MeshBasicMaterial({color:0x3a3024,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
+        this.geometry.crater??=craterGeometry();
+        const material=new THREE.MeshBasicMaterial({color:0xffffff,vertexColors:true,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
         mesh=new THREE.Mesh(this.geometry.crater,material);
+      }else if(kind==='wake'){
+        this.geometry.wake??=wakeGeometry();
+        const material=new THREE.MeshBasicMaterial({color:0xdcebe8,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide});
+        mesh=new THREE.Mesh(this.geometry.wake,material);
       }else{
         const material=kind==='burst'?standardMaterial({color,roughness:.9,transparent:true,opacity:.8}):new THREE.MeshBasicMaterial({color,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
         mesh=kind==='burst'?new THREE.InstancedMesh(this.geometry.burst,material,8):new THREE.Mesh(this.geometry.heal,material);
@@ -122,6 +153,7 @@ export class ImpactEffects{
     }
     if(kind==='sparks'){mesh.material.color.setHex(color);mesh.material.opacity=.9;}
     else if(kind==='crater'){mesh.material.opacity=.7;}
+    else if(kind==='wake'){mesh.material.opacity=.38;}
     else{mesh.material.color.setHex(color);mesh.material.opacity=kind==='burst'?.8:.7;}
     mesh.visible=true;mesh.position.set(0,0,0);mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
   }

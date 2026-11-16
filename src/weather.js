@@ -1,5 +1,6 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {seededRandom} from './data.js';
 import {DayNightLighting} from './day-night.js';
 import {isSnowBiome,isAridBiome} from './terrain-biomes.js';
@@ -7,6 +8,31 @@ import {isSnowBiome,isAridBiome} from './terrain-biomes.js';
 export const WEATHER_NAMES={clear:'Clear skies',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snowfall'};
 const clamp=n=>Math.max(0,Math.min(1,n));
 const smooth=n=>{n=clamp(n);return n*n*(3-2*n);};
+const STORM_CLOUD_COLOR=new THREE.Color(0x6c7986),BRIGHT_CLOUD_COLOR=new THREE.Color(0xf2f6fa);
+
+function cloudClusterGeometry(){
+  // Sculpted 5-lobe flat-bottomed cumulus puff so clouds read as organic sky strata
+  // rather than floating spherical blobs.
+  const lobes=[[0,.15,0,1.0,.82,.85],[-.72,.02,.22,.68,.56,.62],[.76,.04,-.18,.64,.52,.58],[-.26,.34,-.28,.54,.58,.52],[.30,.28,.30,.50,.50,.48]];
+  const parts=lobes.map(([x,y,z,sx,sy,sz])=>{
+    const lobe=new THREE.IcosahedronGeometry(1,1);
+    lobe.deleteAttribute('uv');
+    const p=lobe.attributes.position,colors=new Float32Array(p.count*3);
+    for(let i=0;i<p.count;i++){
+      const vx=p.getX(i)*sx+x,vy=(p.getY(i)<0?p.getY(i)*.26:p.getY(i))*sy+y,vz=p.getZ(i)*sz+z;
+      p.setXYZ(i,vx,vy,vz);
+      const lift=clamp((vy+.15)/.95);
+      const shade=.76+lift*.24;
+      colors[i*3]=shade*.97;colors[i*3+1]=shade*.99;colors[i*3+2]=Math.min(1,shade*1.02);
+    }
+    lobe.setAttribute('color',new THREE.BufferAttribute(colors,3));
+    return lobe;
+  });
+  const merged=mergeGeometries(parts);
+  for(const part of parts)part.dispose();
+  merged.computeVertexNormals();
+  return merged;
+}
 
 // Weather uses a separate seeded clock: it never changes economy/combat RNG.
 export function weatherAt(seed,map,time,preference='auto'){
@@ -30,12 +56,13 @@ export class WeatherRenderer {
       // from this frame's daylight baseline and darkens them again and again.
       hemiGround:view.hemi.groundColor.clone(),environment:view.scene.environmentIntensity,exposure:view.renderer.toneMappingExposure,
       fogMesh:view.fogMesh?.material?.color?view.fogMesh.material.color.clone():null};
-    this.rain=this.instances(new THREE.CylinderGeometry(.018,.012,1,4),new THREE.MeshBasicMaterial({color:0xbdd1db,transparent:true,opacity:.52,depthWrite:false}),1400);
-    this.snow=this.instances(new THREE.IcosahedronGeometry(.11,0),new THREE.MeshBasicMaterial({color:0xe9f1e9,transparent:true,opacity:.8,depthWrite:false}),1000);
-    this.ripples=this.instances(new THREE.TorusGeometry(1,.028,3,12).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xb2c7cb,transparent:true,opacity:.2,depthWrite:false}),60);
-    this.clouds=this.instances(new THREE.IcosahedronGeometry(1,2),standardMaterial({color:0xb6c3ca,transparent:true,opacity:.38,depthWrite:false,roughness:1}),36);
+    this.rain=this.instances(new THREE.CylinderGeometry(.005,.013,1.55,4),new THREE.MeshBasicMaterial({color:0xd0e2ea,transparent:true,opacity:.38,depthWrite:false}),1400);
+    this.snow=this.instances(new THREE.OctahedronGeometry(.09,0).scale(1,.38,1),new THREE.MeshBasicMaterial({color:0xecf4f0,transparent:true,opacity:.74,depthWrite:false}),1000);
+    this.ripples=this.instances(new THREE.TorusGeometry(1,.026,3,14).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xb8cdd2,transparent:true,opacity:.22,depthWrite:false}),60);
+    this.clouds=this.instances(cloudClusterGeometry(),standardMaterial({color:0xffffff,vertexColors:true,transparent:true,opacity:.24,depthWrite:false,roughness:1}),36);
+    this.cloudTint=new THREE.Color();
     const rng=seededRandom(this.seed+55131);this.particles=Array.from({length:1400},()=>({x:rng(),z:rng(),phase:rng(),speed:.8+rng()*.4,scale:.7+rng()*.6}));
-    this.cloudSeeds=Array.from({length:36},()=>({x:(rng()-.5)*210,z:(rng()-.5)*210,y:48+rng()*24,scale:9+rng()*12}));
+    this.cloudSeeds=Array.from({length:36},()=>({x:(rng()-.5)*220,z:(rng()-.5)*220,y:62+rng()*24,scale:9+rng()*11}));
     this.daylight=new DayNightLighting(view);
   }
   instances(geometry,material,capacity){const mesh=new THREE.InstancedMesh(geometry,material,capacity);mesh.count=0;mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.userData.weather3d=true;this.group.add(mesh);return mesh;}
@@ -59,18 +86,21 @@ export class WeatherRenderer {
     const count=v.settings.reducedMotion?Math.min(100,Math.floor(budget*this.strength)):Math.floor(budget*this.strength*scale),snow=state.type==='snow';this.rain.count=snow?0:count;this.snow.count=snow?Math.min(1000,count):0;
     if(count){
       this.updateRoofs();const span=Math.min(150,Math.max(55,v.zoom*1.5)),speed=snow?2.4:24,mesh=snow?this.snow:this.rain;
-      for(let i=0;i<mesh.count;i++){const p=this.particles[i],phase=((p.phase-time*speed*p.speed/40)%1+1)%1,x=v.target.x+((p.x+time*state.wind/180)%1-.5)*span,z=v.target.z+(p.z-.5)*span;
-        const y=this.surface(x,z)+phase*40+.4;this.dummy.position.set(x,y,z);this.dummy.rotation.set(snow?time*.4+p.phase:0,0,snow?time*.7:-state.wind*.012);this.dummy.scale.set(snow?p.scale:1,snow?p.scale:p.scale*.9,snow?p.scale:1);this.dummy.updateMatrix();mesh.setMatrixAt(i,this.dummy.matrix);
+      for(let i=0;i<mesh.count;i++){const p=this.particles[i],phase=((p.phase-time*speed*p.speed/40)%1+1)%1,flutter=snow?Math.sin(time*1.5+p.phase*6.283)*.95:0,x=v.target.x+((p.x+time*state.wind/180)%1-.5)*span+flutter,z=v.target.z+(p.z-.5)*span;
+        const y=this.surface(x,z)+phase*40+.4;this.dummy.position.set(x,y,z);this.dummy.rotation.set(snow?time*.5+p.phase:0,snow?time*.8:0,snow?Math.sin(time+p.phase)*.35:-state.wind*.045);this.dummy.scale.set(snow?p.scale*1.05:1,snow?p.scale*1.05:(.85+state.wind*.28)*p.scale,snow?p.scale*1.05:1);this.dummy.updateMatrix();mesh.setMatrixAt(i,this.dummy.matrix);
       }mesh.instanceMatrix.needsUpdate=true;
-      this.ripples.count=snow?0:Math.floor((quality==='low'?12:quality==='medium'?28:60)*this.strength);this.ripples.material.opacity=this.strength*.18;
-      for(let i=0;i<this.ripples.count;i++){const p=this.particles[i+140],x=v.target.x+(p.x-.5)*span,z=v.target.z+(p.z-.5)*span,t=(time*.8+p.phase)%1,r=.08+t*.5;
-        this.dummy.position.set(x,this.surface(x,z)+.045,z);this.dummy.rotation.set(0,0,0);this.dummy.scale.set(r,1-t,r);this.dummy.updateMatrix();this.ripples.setMatrixAt(i,this.dummy.matrix);
+      this.ripples.count=snow?0:Math.floor((quality==='low'?12:quality==='medium'?28:60)*this.strength);this.ripples.material.opacity=this.strength*.22;
+      for(let i=0;i<this.ripples.count;i++){const p=this.particles[i+140],x=v.target.x+(p.x-.5)*span,z=v.target.z+(p.z-.5)*span,t=(time*.8+p.phase)%1,r=.12+t*.72;
+        this.dummy.position.set(x,this.surface(x,z)+.045,z);this.dummy.rotation.set(0,0,0);this.dummy.scale.set(r,Math.max(.05,1-t),r);this.dummy.updateMatrix();this.ripples.setMatrixAt(i,this.dummy.matrix);
       }this.ripples.instanceMatrix.needsUpdate=true;
     }else this.ripples.count=0;
-    this.clouds.count=this.cloudiness>.02?(quality==='low'?10:quality==='medium'?22:36):0;this.clouds.material.opacity=this.cloudiness*.38;
+    this.clouds.count=this.cloudiness>.02?(quality==='low'?10:quality==='medium'?22:36):0;this.clouds.material.opacity=this.cloudiness*.24;
+    const stormShade=clamp(this.strength*(state.type==='storm'?1:.65));
     for(let i=0;i<this.clouds.count;i++){const p=this.cloudSeeds[i],motion=v.settings.reducedMotion?0:time*.4;
-      this.dummy.position.set(v.target.x+((p.x+motion+105)%210)-105,p.y,v.target.z+p.z);this.dummy.rotation.set(0,p.x,0);this.dummy.scale.set(p.scale,p.scale*.3,p.scale*.65);this.dummy.updateMatrix();this.clouds.setMatrixAt(i,this.dummy.matrix);
-    }this.clouds.instanceMatrix.needsUpdate=true;
+      this.dummy.position.set(v.target.x+((p.x+motion+110)%220)-110,p.y,v.target.z+p.z);this.dummy.rotation.set(0,p.x,0);this.dummy.scale.set(p.scale*1.15,p.scale*.24,p.scale*.72);this.dummy.updateMatrix();this.clouds.setMatrixAt(i,this.dummy.matrix);
+      this.cloudTint.copy(BRIGHT_CLOUD_COLOR).lerp(STORM_CLOUD_COLOR,stormShade).multiplyScalar(.9+((i*7)%5)*.025+flash*.28);
+      this.clouds.setColorAt(i,this.cloudTint);
+    }this.clouds.instanceMatrix.needsUpdate=true;if(this.clouds.count>0&&this.clouds.instanceColor)this.clouds.instanceColor.needsUpdate=true;
     v.weatherDiagnostics={type:state.type,rain:this.rain.count,snow:this.snow.count,ripples:this.ripples.count,clouds:this.clouds.count,drawCalls:[this.rain,this.snow,this.ripples,this.clouds].filter(mesh=>mesh.count>0).length};
   }
   dispose(){const v=this.view;this.daylight.dispose();v.scene.background.copy(this.base.background);v.scene.fog.color.copy(this.base.fog);v.scene.fog.near=this.base.near;v.scene.fog.far=this.base.far;v.sun.color.copy(this.base.sun);v.sun.intensity=2.7;v.hemi.color.copy(this.base.hemi);v.hemi.intensity=.9;for(const mesh of this.group.children){mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();}this.group.removeFromParent();}

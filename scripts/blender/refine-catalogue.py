@@ -4,26 +4,39 @@ Run with the project Blender executable in background mode after export-source.
 The output retains the game's semantic materials, joints and moving subgroups.
 """
 
+import argparse
 import bpy
 import bmesh
 import json
 import math
 import random
 import os
+import sys
 from pathlib import Path
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 project = Path(__file__).resolve().parents[2]
+parser = argparse.ArgumentParser()
+parser.add_argument("--blend", default="")
+parser.add_argument("--prefix", default="")
+parser.add_argument("--output", default="")
+argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+cli = parser.parse_args(argv)
 stage = os.environ.get("FRONTIER_ART_STAGE", "")
 if stage not in {"", "full", "resources"}:
     raise ValueError("Invalid art staging mode")
 source = project / (".tools/art-candidate/resources/source/catalogue.glb" if stage == "resources" else ".tools/art-source/catalogue.glb")
-out = project / (f".tools/art-candidate/{stage}/raw" if stage else ".tools/art-refined")
+out = Path(cli.output).resolve() if cli.output else project / (f".tools/art-candidate/{stage}/raw" if stage else ".tools/art-refined")
 out.mkdir(parents=True, exist_ok=True)
-bpy.ops.object.select_all(action="SELECT")
-bpy.ops.object.delete(use_global=False)
-bpy.ops.import_scene.gltf(filepath=str(source))
+if cli.blend:
+    blend_path = Path(cli.blend).resolve()
+    assert blend_path.is_relative_to(project) and blend_path.suffix == ".blend" and blend_path.is_file()
+    bpy.ops.wm.open_mainfile(filepath=str(blend_path))
+else:
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete(use_global=False)
+    bpy.ops.import_scene.gltf(filepath=str(source))
 roots = [obj for obj in bpy.data.objects if obj.get("assetKey")]
 materials = {}
 for obj in bpy.data.objects:
@@ -237,12 +250,13 @@ def winter_boughs(root, height, variant, far, rng):
     for tier in range(tiers):
         z = 1.5 + tier*(height-1.9)/(tiers-1)
         radius = 2.15*(1-tier/(tiers+1))
+        droop = -.36 * (1 - tier / (tiers + 1) * .65)
         for branch in range(branches):
             angle = branch*math.tau/branches + tier*.43 + variant*.3
             direction = Vector((math.cos(angle), math.sin(angle), 0))
             root_point = Vector((.10, -.05, z))
-            tip = root_point + direction*(radius*rng.uniform(.88, 1.1)) + Vector((0, 0, -.22))
-            rod_data(bark_vertices, bark_faces, root_point, tip, .075*(1-tier/tiers*.65), .12, 5 if far else 7)
+            tip = root_point + direction*(radius*rng.uniform(.88, 1.1)) + Vector((0, 0, droop))
+            rod_data(bark_vertices, bark_faces, root_point, tip, .075*(1-tier/tiers*.65), .12, 4 if far else 5)
             for section in range(2 if far else 3):
                 fraction = .30 + section*(.55 if far else .30)
                 center = root_point.lerp(tip, fraction)
@@ -279,7 +293,7 @@ def author_tree(root):
     radii = [.28, .235, .17, .105]
     for segment in range(len(trunk)-1):
         rod_data(vertices, faces, trunk[segment], trunk[segment+1], radii[segment],
-                 radii[segment+1]/radii[segment], 8 if far else 13)
+                 radii[segment+1]/radii[segment], 8 if far else 12)
     for i in range(4 if not far else 2):
         angle = i * math.tau / 4 + variant
         rod_data(vertices, faces, (0, 0, .35),
@@ -300,8 +314,8 @@ def author_tree(root):
                     height - (.30 if not i else .60+tier*.65))
         junction = (.13, -.06, height*.50)
         bend = ((junction[0]+location[0])*.5, (junction[1]+location[1])*.5, height*.70)
-        rod_data(vertices, faces, junction, bend, .10, .6, 7 if far else 10)
-        rod_data(vertices, faces, bend, location, .06, .25, 6 if far else 9)
+        rod_data(vertices, faces, junction, bend, .10, .6, 5 if far else 6)
+        rod_data(vertices, faces, bend, location, .06, .25, 4 if far else 5)
         crowns.append(location)
     make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
     scale = ((1.05 if far else .92)*spread, (.95 if far else .83)*spread,
@@ -409,9 +423,11 @@ def bake_shading(root):
             else:
                 colors.data[vert.index].color = (shade, shade, shade, 1)
 
-exec(compile((project / "scripts/blender/human-figures.py").read_text(encoding="utf-8"), "human-figures.py", "exec"))
+target_roots = [r for r in roots if not cli.prefix or r["assetKey"].startswith(cli.prefix)]
+if not cli.prefix or cli.prefix.startswith("unit:"):
+    exec(compile((project / "scripts/blender/human-figures.py").read_text(encoding="utf-8"), "human-figures.py", "exec"))
 
-for i, root in enumerate(roots):
+for i, root in enumerate(target_roots):
     if root["assetKey"].startswith("unit:"):
         author_human(root)
     if root["assetKey"].startswith("tree:"):
@@ -425,12 +441,12 @@ for i, root in enumerate(roots):
     bpy.context.view_layer.update()
     bake_shading(root)
     if (i + 1) % 12 == 0:
-        print(f"Refined {i + 1}/{len(roots)} models", flush=True)
+        print(f"Refined {i + 1}/{len(target_roots)} models", flush=True)
 
 def export(name, near):
     bpy.ops.object.select_all(action="DESELECT")
     selected = []
-    for root in roots:
+    for root in target_roots:
         for obj in descendants(root):
             if not near and obj.get("nearOnly"):
                 continue
@@ -439,6 +455,8 @@ def export(name, near):
     if near:
         for obj in selected:
             if obj.type != "MESH" or obj.get("assetMaterial") in ["leaf", "leafDark", "snow"]:
+                continue
+            if any(mod.name == "Crafted edges" for mod in obj.modifiers):
                 continue
             bpy.context.view_layer.objects.active = obj
             bevel = obj.modifiers.new("Crafted edges", "BEVEL")
@@ -456,6 +474,6 @@ def export(name, near):
 export("frontier-low.glb", False)
 export("frontier-near.glb", True)
 bpy.ops.wm.save_as_mainfile(filepath=str(out / "frontier-assets.blend"), compress=True)
-(out / "report.json").write_text(json.dumps({"models": len(roots), "source": "original game assets and authored Blender geometry",
+(out / "report.json").write_text(json.dumps({"models": len(target_roots), "keys": sorted(r["assetKey"] for r in target_roots), "source": "original game assets and authored Blender geometry",
                                              "features": ["weathered ore shapes", "solid gold seams", "branched fruit canes", "closed shrub leaflets", "civic arcades", "detailed gables", "field packs and visors", "species-shaped crowns", "curved tapered trunks", "closed leaf tips", "branched winter boughs", "patchy snow", "smooth volumetric foliage", "adult figures", "nested joints", "solid worker tools", "slate tiles", "beveled edges", "baked vertex shading"]}, indent=2), encoding="utf-8")
 print("Blender catalogue art pass complete.", flush=True)

@@ -202,29 +202,38 @@ export function water(material){
   const displaced=positionGeometry.add(vec3(0,wave.x,0));
   const waveNormal=Fn(()=>{normalLocal.assign(normalize(vec3(wave.y.negate(),1,wave.z.negate())));return displaced;})();
   material.positionNode=waveNormal;
-  const absorption=float(1).sub(exp(max(bank.x,0).mul(-1.8)));
-  material.colorNode=materialColor.rgb.mul(mix(value(material.frontierWaterShallow,'color'),value(material.frontierWaterDeep,'color'),absorption));
-  material.opacityNode=materialOpacity.mul(mix(.45,1,absorption));
+  const absorption=float(1).sub(exp(max(bank.x,0).mul(-1.65)));
+  const shallowCol=value(material.frontierWaterShallow,'color'),deepCol=value(material.frontierWaterDeep,'color');
+  const caustic=detail.greaterThan(.5).and(bank.x.lessThan(1.55)).select(
+    pow(max(float(0),float(1).sub(abs(noise(xz.mul(1.45).add(vec2(time.mul(.22),time.mul(.14)))).sub(noise(xz.mul(2.15).sub(vec2(time.mul(.16),time.mul(-.25)))))).mul(2))),4).mul(float(1).sub(absorption)).mul(light).mul(.24),
+    0
+  );
+  material.colorNode=materialColor.rgb.mul(mix(shallowCol,deepCol,absorption)).add(shallowCol.mul(caustic));
+  material.opacityNode=materialOpacity.mul(mix(.42,1,absorption));
   material.normalNode=Fn(()=>{
-    const distortion=detail.greaterThan(.5).select(noise(xz.mul(.28).add(vec2(time.mul(.06),time.mul(-.04)))).sub(.5).mul(4),0);
-    const ra=cos(dot(xz,vec2(3.7,1.9)).add(time.mul(2.3)).add(distortion));
-    const rb=cos(dot(xz,vec2(-2.1,3.1)).sub(time.mul(1.8)).sub(distortion.mul(.73)));
-    const rc=cos(dot(xz,vec2(1.3,-4.2)).add(time.mul(1.2)).add(distortion.mul(.41)));
-    const slope=vec2(.48,.247).mul(ra).add(vec2(-.23,.339).mul(rb)).add(vec2(.091,-.294).mul(rc));
+    const distortion=detail.greaterThan(.5).select(noise(xz.mul(.28).add(vec2(time.mul(.08),time.mul(.05)))).sub(.5).mul(3.8),0);
+    const ra=cos(dot(xz,vec2(3.7,1.9)).add(time.mul(2.4)).add(distortion));
+    const rb=cos(dot(xz,vec2(-2.1,3.1)).sub(time.mul(1.9)).sub(distortion.mul(.73)));
+    const rc=cos(dot(xz,vec2(1.3,-4.2)).add(time.mul(1.4)).add(distortion.mul(.41)));
+    const rd=detail.greaterThan(.5).select(cos(dot(xz,vec2(-3.8,-2.5)).add(time.mul(2.9)).sub(distortion.mul(.55))),0);
+    const slope=vec2(.42,.22).mul(ra).add(vec2(-.22,.31).mul(rb)).add(vec2(.10,-.27).mul(rc)).add(vec2(-.18,-.12).mul(rd));
     const coverage=float(1).div(float(1).add(xz.fwidth().length().mul(2.5)));
     return normalize(normalViewGeometry.add(mat3(cameraViewMatrix).mul(vec3(slope.x,0,slope.y)).mul(ripples).mul(coverage)));
   })();
   material.outputNode=Fn(()=>{
-    const fresnel=float(.02).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),5).mul(.98));
+    const fresnel=float(.03).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),4.6).mul(.97));
     const reflection=reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix);
-    const skyGradient=sky.mul(mix(.72,1.12,clamp(reflection.y.mul(.5).add(.5),0,1)));
+    const skyGradient=sky.mul(mix(.76,1.18,clamp(reflection.y.mul(.5).add(.5),0,1)));
     const color=mix(output.rgb,skyGradient,fresnel).toVar();
-    If(bank.y.lessThan(1.45),()=>{
-      const cells=noise(xz.mul(1.7).add(vec2(time.mul(.18),time.mul(-.12))));
-      const wash=sin(dot(xz,vec2(.23,.54)).add(time.mul(.7))).mul(.12).add(cells.sub(.5).mul(.18));
-      const foam=float(1).sub(smoothstep(.05,.56,bank.y.add(wash))).mul(smoothstep(.20,.78,cells));
-      const outerSurf=float(1).sub(smoothstep(.45,1.35,bank.y.sub(wash.mul(.8)))).mul(smoothstep(.48,.86,cells)).mul(.45);
-      color.assign(mix(color,vec3(.82,.85,.76).mul(light),clamp(foam.add(outerSurf).mul(.36),0,.48)));
+    If(bank.y.lessThan(1.5),()=>{
+      const drift=vec2(time.mul(.16),time.mul(-.11));
+      const cells=noise(xz.mul(1.65).add(drift));
+      const lace=detail.greaterThan(.5).select(noise(xz.mul(4.1).sub(drift.mul(1.4))),cells);
+      const foamNoise=mix(cells,lace,.38);
+      const wash=sin(dot(xz,vec2(.27,.58)).add(time.mul(1.15))).mul(.14).add(cells.sub(.5).mul(.2));
+      const foam=float(1).sub(smoothstep(.03,.58,bank.y.add(wash))).mul(smoothstep(.24,.76,foamNoise));
+      const outerSurf=float(1).sub(smoothstep(.40,1.42,bank.y.sub(wash.mul(.85)))).mul(smoothstep(.52,.88,foamNoise)).mul(.52);
+      color.assign(mix(color,vec3(.84,.88,.80).mul(light),clamp(foam.add(outerSurf).mul(.42),0,.55)));
     });
     return vec4(color,output.a);
   })();

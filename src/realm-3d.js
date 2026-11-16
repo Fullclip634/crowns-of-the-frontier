@@ -87,7 +87,15 @@ export function installRealm3D(WorldView){
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
-  p.buildLandscape=function(){ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);const treeKind=treeBiome(this.sim.options.map),dry=isAridBiome(this.sim.options.map)&&this.sim.options.map!=='desert';this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:dry?0x8a7d4c:treeKind==='desert'?0x8a8752:0x5c743d);this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:dry?0x4c4530:treeKind==='desert'?0x4a4830:0x3e5732);buildLandscape(this);};
+  p.buildLandscape=function(){
+    ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);
+    for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);
+    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&map!=='desert'&&!volcanic,lush=map==='woodland'||map==='riverland';
+    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x9c8952:treeKind==='desert'?0x8a8752:lush?0x506d38:0x5c743d);
+    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x574b2e:treeKind==='desert'?0x4a4830:lush?0x324b2b:0x3e5732);
+    if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x3a322f:0x66563e);
+    buildLandscape(this);
+  };
   p.buildForest=function(){buildForest(this);};
   p.makeSea=function(){}; // The elevated landscape owns all river/coast meshes.
   p.makeBuilding=function(e){return buildingModel(this,e);};
