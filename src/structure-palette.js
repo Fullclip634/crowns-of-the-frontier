@@ -33,7 +33,8 @@ function paletteMaterial(view){
         varying vec3 vStructurePos;\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
         float plinthMask = 1.0 - smoothstep(0.0, 0.82, max(0.0, vStructurePos.y));
-        float groundAo = mix(0.78, 1.0, smoothstep(0.0, 1.25, max(0.0, vStructurePos.y)));
+        float earthSkirt = 1.0 - smoothstep(0.0, 0.44, max(0.0, vStructurePos.y));
+        float groundAo = mix(0.84, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
         if(vStructureSurface.z > 3.5) {
           float shingleCourse = 0.91 + 0.14 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
           diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb * shingleCourse;
@@ -48,7 +49,7 @@ function paletteMaterial(view){
           float woodGrain = 0.92 + 0.13 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
         }
-        diffuseColor.rgb *= groundAo;`);
+        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.88, 0.84, 0.75), earthSkirt * 0.45) * groundAo;`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vStructureSurface.x;
         float structureOcclusion = mix(0.84, 1.0, smoothstep(0.0, 1.1, max(0.0, vStructurePos.y)));

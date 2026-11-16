@@ -15,8 +15,8 @@ export const tuftBlades=quality=>quality==='high'?6:4;
 export function grassTuftGeometry(blades=6){
   const vertices=[],indices=[],uv=[];
   for(let blade=0;blade<blades;blade++){
-    const angle=blade*2.399,h=.34+(blade%3)*.13,w=.092,lean=.24;
-    const center=new THREE.Vector3(Math.sin(angle)*.22,0,Math.cos(angle)*.22);
+    const angle=blade*2.399,h=.36+(blade%3)*.13,w=.086,lean=.27;
+    const center=new THREE.Vector3(Math.sin(angle)*.24,0,Math.cos(angle)*.24);
     const across=new THREE.Vector3(Math.cos(angle),0,-Math.sin(angle));
     const front=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));
     const base=vertices.length/3;
@@ -38,11 +38,12 @@ export class GroundCover{
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+19),low=view.settings.quality!=='high';
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.036:.072)));
     const winter=isSnowBiome(land.map);
-    const material=standardMaterial({color:0xffffff,roughness:.92,emissive:0x24331b,emissiveIntensity:.12});
+    const material=standardMaterial({color:0xffffff,roughness:.94});
     this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const basePalette=terrainBiome(land.map).grass,palette=winter?basePalette:[...basePalette,0x3d662c,0x9cb85c];
+    const basePalette=terrainBiome(land.map).grass,meadowGreen=!winter&&!['arid','tundra','volcanic'].includes(land.map);
+    const palette=meadowGreen?[...basePalette,0x4c6835,0x6e8247]:basePalette;
     const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.15);
     for(let i=0;i<capacity*2&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);

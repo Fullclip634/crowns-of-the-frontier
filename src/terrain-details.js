@@ -7,15 +7,23 @@ import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
 
 export function pebbleGeometry(){
-  const geometry=new THREE.IcosahedronGeometry(.58,1),p=geometry.attributes.position;
+  const geometry=new THREE.IcosahedronGeometry(.62,1),p=geometry.attributes.position;
+  const slice=(px,py,pz,nx,ny,nz,limit,strength)=>{
+    const d=px*nx+py*ny+pz*nz;if(d<=limit)return [px,py,pz];
+    const push=(d-limit)*strength;return [px-nx*push,py-ny*push,pz-nz*push];
+  };
   for(let i=0;i<p.count;i++){
-    const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+    let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
     const n1=Math.sin(x*127.1+y*74.7+z*311.7)*43758.5453,f1=n1-Math.floor(n1);
     const n2=Math.sin(x*269.5-y*183.3+z*113.5)*31415.9265,f2=n2-Math.floor(n2);
-    const strata=1+Math.tanh(Math.sin(y*8.5+x*2.1)*2.4)*.12;
-    const baseFlare=y<0?1.18:1-y*.22;
-    const rx=(.84+f1*.32)*strata*baseFlare,rz=(.84+f2*.32)*strata*baseFlare,ry=.76+(f1+f2)*.16;
-    p.setXYZ(i,x*rx,y*ry,z*rz);
+    [x,y,z]=slice(x,y,z,.70,.46,-.54,.30,.88);
+    [x,y,z]=slice(x,y,z,-.62,.58,.52,.32,.86);
+    [x,y,z]=slice(x,y,z,.28,.44,.85,.34,.84);
+    const stepY=y>.20?.20+(y-.20)*.34+x*.08:y<-.06?-.06+(y+.06)*.45:y;
+    const strata=1+Math.tanh(Math.sin(stepY*10.5+x*2.4)*2.8)*.10;
+    const baseFlare=stepY<0?1.24:1-stepY*.24;
+    const rx=(.88+f1*.26)*strata*baseFlare,rz=(.88+f2*.26)*strata*baseFlare,ry=.78+(f1+f2)*.12;
+    p.setXYZ(i,x*rx,stepY*ry,z*rz);
   }
   geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
 }
@@ -27,10 +35,10 @@ export class TerrainDetails{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
     const capacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
-    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.94;material.vertexColors=false;
+    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=isSnowBiome(land.map)?[0xbec7c2,0xd8ddd5,0x98a59b]:isAridBiome(land.map)?[0xbfa272,0xd4bc90,0x947950]:isRockyBiome(land.map)?[0x86857c,0x9fa095,0x67665e]:[0x82857b,0x989a8e,0x6a6e64];
+    const palette=land.map==='volcanic'?[0x6f6966,0x87807b,0x56504d]:isSnowBiome(land.map)?[0xc8d2ce,0xe1e7e2,0x9aa9a4]:isAridBiome(land.map)||['desert','canyon','archipelago'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:isRockyBiome(land.map)?[0x9ca097,0xb3b7ad,0x7d8178]:[0xb1b5aa,0xc6c9bd,0x8d9387];
     const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),attempts=capacity*3;
     const validSite=(x,z,minCamp)=>{
       if(Math.abs(x)>land.half-4||Math.abs(z)>land.half-4)return false;

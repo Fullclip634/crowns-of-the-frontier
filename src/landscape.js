@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry,terrainRoadPaths} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
@@ -136,13 +136,15 @@ function groundMap(landscape){
     ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
     ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
   }
-  // Multi-tone wheel-rutted cart roads: soft shoulder, packed tread, and grassy median strip.
+  // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
+  const volcanic=landscape.map==='volcanic';
+  const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[94,82,58];
+  const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[172,166,148]:[176,158,122];
   for(const road of terrainRoadPaths(landscape)){
-    const path=new Path2D();for(const point of road.points)path.lineTo((point.x+half)/size*1536,(point.z+half)/size*1536);
-    ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=5.6*scale;ctx.strokeStyle=winter?'rgba(96,102,96,.36)':arid?'rgba(112,86,48,.40)':'rgba(74,62,42,.38)';ctx.stroke(path);
-    ctx.lineWidth=3.2*scale;ctx.strokeStyle=winter?'#cfc8ae':arid?'#d8bd88':rocky?'#bab3a0':'#c5b086';ctx.stroke(path);
-    ctx.lineWidth=1.05*scale;ctx.strokeStyle=winter?'rgba(162,170,154,.52)':arid?'rgba(166,138,88,.50)':'rgba(98,118,74,.52)';ctx.stroke(path);
+    strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,layers:[
+      {width:4.4*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.26*t).toFixed(3)})`},
+      {width:2.5*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.72*t).toFixed(3)})`},
+    ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }

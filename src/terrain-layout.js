@@ -19,6 +19,43 @@ export function terrainRoadPaths(land){
   }));
 }
 
+export function strokeTaperedRoad(ctx,points,{half,size,canvasSize,layers,gravelColor=null}){
+  if(!points||points.length<2)return;
+  const scale=canvasSize/size,cum=[0];
+  for(let i=1;i<points.length;i++)cum.push(cum[i-1]+Math.hypot(points[i].x-points[i-1].x,points[i].z-points[i-1].z));
+  const total=cum[cum.length-1]||1,fadeStart=Math.min(total*.08,2.5),fadeEnd=Math.min(total*.30,13.5);
+  const toPx=p=>[(p.x+half)*scale,(p.z+half)*scale];
+  const prevCap=ctx.lineCap,prevJoin=ctx.lineJoin;
+  ctx.lineCap='butt';ctx.lineJoin='round';
+  for(const {width,rgba,median}of layers){
+    for(let i=0;i<points.length-1;i++){
+      const a=points[i],b=points[i+1],segLen=cum[i+1]-cum[i],sub=Math.max(1,Math.ceil(segLen/2.5));
+      for(let s=0;s<sub;s++){
+        const dMid=cum[i]+segLen*((s+.5)/sub),dStart=Math.min(1,dMid/Math.max(fadeStart,.01));
+        const dEnd=Math.max(0,Math.min(1,(total-dMid)/Math.max(fadeEnd,.01)));
+        const taper=dEnd*dEnd*(3-2*dEnd)*(.6+.4*dStart);
+        if(taper<=.02)continue;
+        const u0=s/sub,u1=(s+1)/sub,p0={x:a.x+(b.x-a.x)*u0,z:a.z+(b.z-a.z)*u0},p1={x:a.x+(b.x-a.x)*u1,z:a.z+(b.z-a.z)*u1};
+        const [x0,y0]=toPx(p0),[x1,y1]=toPx(p1);
+        ctx.strokeStyle=rgba(taper,median);ctx.lineWidth=width*(.32+.68*taper);
+        ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+      }
+    }
+  }
+  if(gravelColor){
+    ctx.lineCap='round';
+    const tail=points[points.length-1],prev=points[points.length-2],[ex,ey]=toPx(tail),[nx,ny]=toPx(prev);
+    const dx=ex-nx,dy=ey-ny,len=Math.hypot(dx,dy)||1;
+    for(let d=0;d<9;d++){
+      const h=Math.sin((tail.x+d*3.1)*17.3+(tail.z-d*2.7)*31.7)*43758.5453,r=h-Math.floor(h);
+      const gx=ex-(dx/len)*(r*5.5)*scale+(r-.5)*4.2*scale,gy=ey-(dy/len)*(r*5.5)*scale+(Math.cos(d*2.1)-.5)*3.4*scale;
+      ctx.strokeStyle=gravelColor(.16+r*.28);ctx.lineWidth=(.75+r*.85)*scale;
+      ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+.18*scale,gy+.18*scale);ctx.stroke();
+    }
+  }
+  ctx.lineCap=prevCap;ctx.lineJoin=prevJoin;
+}
+
 export function roadDistance(x,z,land){
   let squaredDistance=Infinity;
   for(const path of terrainRoadPaths(land))for(const road of path.segments){
