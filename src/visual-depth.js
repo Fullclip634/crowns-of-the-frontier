@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {environmentGenerator,standardMaterial} from './render-runtime.js';
+import {standardMaterial} from './render-runtime.js';
+import {applyBiomeAtmosphere,createSkyDome,updateSkyDome} from './sky-atmosphere.js';
 import {UNITS} from './data.js';
 import {decorateMaterials} from './world-polish.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
@@ -17,17 +18,8 @@ function surfaceRelief(material,scale){
 }
 
 function initializeDepth(view){
-  const sky=document.createElement('canvas');sky.width=128;sky.height=64;
-  const c=sky.getContext('2d'),gradient=c.createLinearGradient(0,0,0,64);
-  gradient.addColorStop(0,'#7ba3c3');gradient.addColorStop(.47,'#d7e3e8');
-  gradient.addColorStop(.53,'#e4d5b1');gradient.addColorStop(1,'#465538');
-  c.fillStyle=gradient;c.fillRect(0,0,128,64);
-  const source=new THREE.CanvasTexture(sky);source.colorSpace=THREE.SRGBColorSpace;
-  source.mapping=THREE.EquirectangularReflectionMapping;
-  const generator=environmentGenerator(view.renderer);
-  view.environmentTarget=generator.fromEquirectangular(source);
-  view.scene.environment=view.environmentTarget.texture;view.scene.environmentIntensity=.38;
-  source.dispose();generator.dispose();
+  createSkyDome(view);
+  applyBiomeAtmosphere(view);
 
   const m=view.materials;
   surfaceRelief(m.stone,.14);surfaceRelief(m.wood,.065);
@@ -99,7 +91,9 @@ export function installVisualDepth(WorldView){
     this.contactCache=new Map();this.contactPrunedAt=0;
     if(!this.polished){decorateMaterials(this);this.polished=true;}
     if(!this.depthInitialized){initializeDepth(this);this.depthInitialized=true;}
-    attach.call(this,sim);if(!sameSimulation)this.setCameraPreset(this.settings.cameraPreset,true);
+    attach.call(this,sim);
+    applyBiomeAtmosphere(this);updateSkyDome(this);
+    if(!sameSimulation)this.setCameraPreset(this.settings.cameraPreset,true);
   };
   p.houseModel=function(g,team,x,z,s=1){
     house.call(this,g,team,x,z,s);const m=this.materials;
@@ -138,5 +132,5 @@ export function installVisualDepth(WorldView){
     }
     return g;
   };
-  p.render=function(dt,menu){if(this.contactShadows)updateContacts(this,menu);render.call(this,dt,menu);};
+  p.render=function(dt,menu){updateSkyDome(this);if(this.contactShadows)updateContacts(this,menu);render.call(this,dt,menu);};
 }

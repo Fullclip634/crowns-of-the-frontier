@@ -4,8 +4,9 @@ const originals=new WeakMap();
 
 export function syncFoundationMaterials(view){
   const source=view.materials.stone,target=view.materials.stoneDark;
-  for(const name of ['map','normalMap','roughnessMap'])target[name]=source[name];
-  target.normalScale.copy(source.normalScale);target.roughness=source.roughness;target.needsUpdate=true;
+  let changed=false;
+  for(const name of ['map','normalMap','roughnessMap'])if(target[name]!==source[name]){target[name]=source[name];changed=true;}
+  target.normalScale.copy(source.normalScale);target.roughness=source.roughness;if(changed)target.needsUpdate=true;
 }
 
 // The displayed terrain is linear within each grid triangle. Taking the lowest

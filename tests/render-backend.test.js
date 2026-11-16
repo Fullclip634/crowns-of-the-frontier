@@ -49,12 +49,12 @@ test('a native fault during an asynchronous rebuild cannot mark invalid graphics
   }
 });
 
-test('an uncaptured native error during shader warmup blocks further quality requests',async()=>{
-  const compiling=deferred(),resume=deferred();let restored=0,released=0;
+test('an uncaptured native error during quality preparation blocks further quality requests',async()=>{
+  const preparing=deferred(),resume=deferred();let restored=0,released=0;
   const view={settings:{quality:'high'},sim:{},renderQuality:'low',scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),materials:{},graphicsSceneValid:true,
-    renderer:{isWebGPURenderer:true,shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){},async compileAsync(){compiling.resolve();await resume.promise;}},sun:{shadow:{map:null,mapSize:{x:1024,y:1024,set(x,y){this.x=x;this.y=y;}}}}};watchRendererDevice(view);
-  const change=transitionRendererQuality(view,'high',async()=>{},()=>{},()=>({restore(){restored++;},release(){released++;}}));await compiling.promise;view.renderer.onError({type:'GPUOutOfMemoryError',message:'Out of memory'});const failure=view.graphicsFatal;resume.resolve();
-  assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,1);
+    renderer:{isWebGPURenderer:true,shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){}},sun:{shadow:{map:null,mapSize:{x:1024,y:1024,set(x,y){this.x=x;this.y=y;}}}}};watchRendererDevice(view);
+  const change=transitionRendererQuality(view,'high',async()=>{preparing.resolve();await resume.promise;},()=>assert.fail('faulted preparation cannot rebuild the scene'),()=>({restore(){restored++;},release(){released++;}}));await preparing.promise;view.renderer.onError({type:'GPUOutOfMemoryError',message:'Out of memory'});const failure=view.graphicsFatal;resume.resolve();
+  assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,0);
   let prepared=false;assert.equal(await transitionRendererQuality(view,'low',async()=>{prepared=true;},()=>{}),false);assert.equal(prepared,false);
 });
 
@@ -63,14 +63,14 @@ test('native backend recovery offers compatible reload without exposing raw driv
 });
 
 test('a quality warm-up cannot revive a lost device or rebuild through recovery',async()=>{
-  const compiling=deferred(),resume=deferred();let restored=0,released=0;
+  const preparing=deferred(),resume=deferred();let restored=0,released=0;
   const view={settings:{quality:'high'},sim:{},renderQuality:'low',scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),materials:{},graphicsSceneValid:true,
-    renderer:{isWebGPURenderer:true,onDeviceLost(){},shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){},async compileAsync(){compiling.resolve();await resume.promise;}},
+    renderer:{isWebGPURenderer:true,onDeviceLost(){},shadowMap:{enabled:false},getPixelRatio:()=>1,setPixelRatio(){}},
     sun:{shadow:{map:null,mapSize:{x:1024,y:1024,set(x,y){this.x=x;this.y=y;}}}}};
   watchRendererDevice(view);
-  const change=transitionRendererQuality(view,'high',async()=>{},async()=>{},()=>({restore(){restored++;},release(){released++;}}));
-  await compiling.promise;view.renderer.onDeviceLost({message:'Lost while compiling'});const failure=view.graphicsFatal;resume.resolve();
-  assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,1);assert.equal(view.graphicsLoading,null);assert.equal(view.graphicsRebuilding,null);
+  const change=transitionRendererQuality(view,'high',async()=>{preparing.resolve();await resume.promise;},()=>assert.fail('lost device cannot rebuild the scene'),()=>({restore(){restored++;},release(){released++;}}));
+  await preparing.promise;view.renderer.onDeviceLost({message:'Lost while preparing'});const failure=view.graphicsFatal;resume.resolve();
+  assert.equal(await change,false);assert.equal(view.graphicsFatal,failure);assert.equal(view.graphicsSceneValid,false);assert.equal(restored,0);assert.equal(released,0);assert.equal(view.graphicsLoading,null);assert.equal(view.graphicsRebuilding??null,null);
   let prepared=false;assert.equal(await transitionRendererQuality(view,'low',async()=>{prepared=true;},()=>{}),false);assert.equal(prepared,false);
   releasePreparedPrograms(view);
 });

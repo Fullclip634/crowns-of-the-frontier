@@ -28,7 +28,7 @@ export function beginUnitFrame(view,refreshViewport=true){
 // Prepare the camera before any render extension samples contacts or cargo.
 export function installRenderFrame(WorldView){
   const render=WorldView.prototype.render;
-  WorldView.prototype.render=function(dt,menu=false){if(this.graphicsRebuilding||this.graphicsFatal||!canSubmitFrame(this))return false;this.renderFrameAt=performance.now();prepareViewport(this);try{const result=render.call(this,dt,menu);submittedFrame(this);return result;}finally{releasePreparedPrograms(this);}};
+  WorldView.prototype.render=function(dt,menu=false){if(this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal||!canSubmitFrame(this))return false;this.renderFrameAt=performance.now();prepareViewport(this);try{const result=render.call(this,dt,menu);submittedFrame(this);return result;}finally{releasePreparedPrograms(this);}};
 }
 
 export function markInstancePrefix(mesh,count=mesh.count){

@@ -3,7 +3,7 @@ import {installNodeRuntime} from './render-runtime.js';
 
 // Probe texture support on the actual game context without allocating the
 // full-size backbuffer until its artwork has finished preparing.
-export function createWorldRenderer(){return new WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}
+export function createWorldRenderer(){const renderer=new WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});renderer.debug.checkShaderErrors=false;return renderer;}
 
 // Prefer native WebGPU. An explicit compatibility request or failed startup
 // creates a fresh WebGL canvas; a canvas cannot switch context types safely.

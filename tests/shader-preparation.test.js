@@ -40,3 +40,12 @@ test('shader previews deduplicate repeated identical mesh variants while keeping
   assert.equal(preview.materials.size,1);
   preview.dispose();geometry.dispose();material.dispose();
 });
+
+test('WebGPU renderer skips synchronous scene-wide compileAsync warmup during quality transitions',async()=>{
+  const {view,...asset}=fixture();let called=0;
+  view.renderer.isWebGPURenderer=true;
+  view.renderer.compileAsync=()=>{called++;return Promise.resolve();};
+  await prepareScenePrograms(view);
+  assert.equal(called,0);
+  asset.geometry.dispose();asset.material.dispose();asset.mesh.dispose();
+});

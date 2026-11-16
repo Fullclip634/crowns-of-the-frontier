@@ -44,19 +44,23 @@ export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
   const requested=quality==='high'?16:quality==='medium'?8:4,anisotropy=Math.min(requested,view.renderer?.getMaxAnisotropy?.()||view.renderer?.capabilities?.getMaxAnisotropy?.()||4);
   for(const map of new Set([...retainedSurfaceTextures(),...(view.roofMaterials||[]).flatMap(m=>[m.map,m.bumpMap]).filter(Boolean)]))if(map.anisotropy!==anisotropy){map.anisotropy=anisotropy;map.needsUpdate=true;}
-  const bind=(material,role,tint)=>{
+  const bind=(material,role,tint,{albedo=true,roughnessMap=true,metalness=0,roughness=.95}={})=>{
     const set=surfaces[role];if(!set?.color||!material)return;
-    material.map=set.color;material.bumpMap=null;material.color.setHex(tint);
-    material.normalMap=quality==='low'?null:set.normal||null;material.normalScale.setScalar(role==='stone'?.45:role==='boulder'?.55:.3);
-    material.roughnessMap=quality==='high'||quality==='medium'&&['stone','wood','plaster'].includes(role)?set.arm||null:null;material.roughness=.95;material.needsUpdate=true;
+    const nextMap=albedo?set.color:null,nextBump=null,nextNormal=quality==='low'?null:set.normal||null;
+    const nextRough=roughnessMap&&(quality==='high'||quality==='medium'&&['stone','wood','plaster'].includes(role))?set.arm||null:null;
+    const structureChanged=material.map!==nextMap||material.bumpMap!==nextBump||material.normalMap!==nextNormal||material.roughnessMap!==nextRough||Boolean(material.metalness)!==Boolean(metalness);
+    material.map=nextMap;material.bumpMap=nextBump;material.color.setHex(tint);
+    material.normalMap=nextNormal;material.normalScale.setScalar(role==='stone'?.45:role==='boulder'?.55:.3);
+    material.roughnessMap=nextRough;material.metalness=metalness;material.roughness=roughness;
+    if(structureChanged)material.needsUpdate=true;
   };
   bind(m.stone,'stone',0xe5e0d4);bind(m.brick,'stone',0xb8947b);
   bind(m.plaster,'plaster',0xe5dbbf);
   bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
-  bind(m.rock,'boulder',0xd8ded8);bind(m.oreRock,'boulder',0xd4a643);
+  bind(m.rock,'boulder',0xd8ded8);
   // The grey boulder albedo hides gold at low detail; preserve its relief while
   // tinting the ore body itself. Gold veins use a separate metallic material.
-  if(m.oreRock){m.oreRock.map=null;m.oreRock.roughnessMap=null;m.oreRock.metalness=.3;m.oreRock.roughness=.63;m.oreRock.needsUpdate=true;}
+  bind(m.oreRock,'boulder',0xd4a643,{albedo:false,roughnessMap:false,metalness:.3,roughness:.63});
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 

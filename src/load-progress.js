@@ -37,7 +37,7 @@ export function reportAssetProgress(id, {loaded = 0, total = 0, label = ''} = {}
 // jumping at the end. Falls back to arrayBuffer() for mock responses and
 // browsers without ReadableStream support.
 export async function readAssetResponse(response, id, label) {
-  if (!response.body?.getReader) return response.arrayBuffer();
+  if (!response.body?.getReader || !listeners.size) return response.arrayBuffer();
   const declared = Number(response.headers?.get?.('content-length')) || 0;
   const reader = response.body.getReader();
   const chunks = [];

@@ -19,6 +19,7 @@ export function setShadowEnabled(view,enabled){
 function configureShadows(view,quality){
   setShadowEnabled(view,quality!=='low');
   const size=quality==='high'?2048:1024,shadow=view.sun.shadow;
+  shadow.radius=quality==='high'?1.85:2.15;
   // Node-renderer ShadowNode owns its target and cached bindings. It resizes the
   // target from mapSize; destroying it here leaves submitted texture views stale.
   if(!view.renderer.isWebGPURenderer&&shadow.map&&(quality==='low'||shadow.mapSize.x!==size)){shadow.map.dispose();shadow.map=null;}

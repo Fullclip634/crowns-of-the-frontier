@@ -10,6 +10,7 @@ import {trimSurfaceAssets} from './surface-assets.js';
 export class ModelPortrait {
   constructor(view){
     this.view=view;const runtime=nodeRuntime();this.renderer=runtime?new runtime.WebGPURenderer({alpha:true,antialias:true,device:view.renderer.backend.device,forceWebGL:!view.renderer.backend.isWebGPUBackend}):new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:view.renderer.getContext().getContextAttributes()?.powerPreference||'high-performance'});
+    if(!runtime)this.renderer.debug.checkShaderErrors=false;
     this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.setClearColor(0x1a3027,0);
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;
     this.renderer.domElement.setAttribute('aria-label','Rotating 3D model');

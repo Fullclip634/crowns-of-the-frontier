@@ -74,7 +74,7 @@ export function canonicalGeometry(geometry){
     for(let i=0;i<positions.count;i++){uv[i*2]=positions.getX(i)*.25;uv[i*2+1]=(positions.getY(i)+positions.getZ(i))*.25;}
     geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
   }
-  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  if(!geometry.boundingBox)geometry.computeBoundingBox();if(!geometry.boundingSphere)geometry.computeBoundingSphere();
 }
 
 export function registerAuthoredAssets(gltf,detail='high',bytes=0,activate=true){

@@ -47,9 +47,10 @@ test('render extensions see the fresh camera frustum and a shared timestamp on i
 
 test('shader preparation holds the complete render pipeline and releases warmed programs after the live frame',()=>{
   const events=[];class View{render(){events.push('draw');return 42;}}installRenderFrame(View);
-  const view=new View();view.camera=new THREE.PerspectiveCamera();view.graphicsRebuilding=1;view.graphicsProgramReleases=[()=>events.push('release')];
+  const view=new View();view.camera=new THREE.PerspectiveCamera();view.graphicsLoading='medium';view.graphicsRebuilding=1;view.graphicsProgramReleases=[()=>events.push('release')];
   assert.equal(view.render(.016),false);assert.deepEqual(events,[]);assert.equal(view.frameFrustum,undefined);
-  view.graphicsRebuilding=null;assert.equal(view.render(.016),42);assert.deepEqual(events,['draw','release']);view.render(.016);assert.deepEqual(events,['draw','release','draw']);assert.deepEqual(view.graphicsProgramReleases,[]);
+  view.graphicsRebuilding=null;assert.equal(view.render(.016),false,'pending graphics load pauses heavy frames before rebuild');
+  view.graphicsLoading=null;assert.equal(view.render(.016),42);assert.deepEqual(events,['draw','release']);view.render(.016);assert.deepEqual(events,['draw','release','draw']);assert.deepEqual(view.graphicsProgramReleases,[]);
 });
 
 test('shared torso and limb poses retain exact animation while reusing prefixes only within one unit',()=>{
