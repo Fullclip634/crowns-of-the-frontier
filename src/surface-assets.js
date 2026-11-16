@@ -58,9 +58,9 @@ export function applySurfaceMaterials(view){
   bind(m.plaster,'plaster',0xe5dbbf);
   bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
   bind(m.rock,'boulder',0xd8ded8);
-  // The grey boulder albedo hides gold at low detail; preserve its relief while
-  // tinting the ore body itself. Gold veins use a separate metallic material.
-  bind(m.oreRock,'boulder',0xd4a643,{albedo:false,roughnessMap:false,metalness:.3,roughness:.63});
+  // Dark craggy host rock contrasts sharply against inlaid metallic gold veins
+  // and nuggets so gold deposits read cleanly instead of flat yellow lumps.
+  bind(m.oreRock,'boulder',0x66625b,{metalness:.08,roughness:.9});
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 

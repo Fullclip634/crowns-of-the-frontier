@@ -67,15 +67,15 @@ def rod(data, role, start, end, radius, sides=6, near=False, shade=1):
 
 def seed_head(data, center, height, width, near=False, shade=1):
     x, y, z = center
-    sides = 4 if near else 6
+    sides = 3 if near else 4
     vertices = []
-    for at, radius in [(0, .2),(.18, .82),(.66,1),(.9,.55),(1,.02)]:
+    for at, radius in [(0, .24),(.28, 1.0),(.76,.58),(1,.03)]:
         for i in range(sides):
             angle = math.tau * i / sides
             vertices.append((x+math.cos(angle)*width*radius,
                              y+math.sin(angle)*width*radius, z+height*at))
-    faces = [tuple(reversed(range(sides))),tuple(range(4*sides,5*sides))]
-    for row in range(4):
+    faces = [tuple(reversed(range(sides))),tuple(range(3*sides,4*sides))]
+    for row in range(3):
         for i in range(sides):
             faces.append((row*sides+i,row*sides+(i+1)%sides,
                           (row+1)*sides+(i+1)%sides,(row+1)*sides+i))
@@ -95,7 +95,7 @@ def leaf(data, start, end, width, near=False, shade=1):
 
 def soil_bed(data):
     # Dense enough to follow the runtime's triangulated terrain on gentle slopes.
-    n = 12
+    n = 8
     vertices = [(x/n*5.7-2.85,y/n*5.7-2.85,.16) for y in range(n+1) for x in range(n+1)]
     faces = []
     for y in range(n):
@@ -131,26 +131,26 @@ for index, faction in enumerate(["alder","sun","raven"]):
             bend = (.035+rng.random()*.07)*(1 if row%2 else -1)
             base = (x,y,.19)
             tip = (x+bend,y+.03,height)
-            rod(data,"grain",base,tip,.017,shade=.8+rng.random()*.17)
-            seed_head(data,(tip[0],tip[1],height-.02),.28,.083,shade=.82+rng.random()*.17)
-            leaf(data,(x,y,.40),(x+.22,y-.10,.66),.052,shade=.82)
+            rod(data,"grain",base,tip,.019,4,shade=.76+rng.random()*.18)
+            seed_head(data,(tip[0],tip[1],height-.02),.30,.088,shade=.88+rng.random()*.12)
+            leaf(data,(x,y,.40),(x+.22,y-.10,.66),.056,shade=.84)
             if faction == "sun":
-                leaf(data,(x,y,.26),(x-.19,y+.08,.48),.06,shade=.90)
+                leaf(data,(x,y,.26),(x-.19,y+.08,.48),.064,shade=.92)
             else:
-                leaf(data,(x,y,.31),(x-.12,y+.10,.52),.028,shade=.90)
-            for offset in [-1,1]:
-                extra=(x+offset*.11,y+offset*.08,height-.04+rng.random()*.09)
-                rod(data,"grain",(x+offset*.035,y,.19),extra,.015,5,True,.85)
-                seed_head(data,(extra[0],extra[1],extra[2]-.02),.24,.057,True,.93)
-                leaf(data,(x+offset*.035,y,.4),(x+offset*.20,y+.08,.66),.039,True,.88)
+                leaf(data,(x,y,.31),(x-.12,y+.10,.52),.034,shade=.90)
+            offset = -1 if (row+column)%2 else 1
+            extra=(x+offset*.11,y+offset*.08,height-.04+rng.random()*.09)
+            rod(data,"grain",(x+offset*.035,y,.19),extra,.016,4,True,.84)
+            seed_head(data,(extra[0],extra[1],extra[2]-.02),.26,.064,True,.95)
+            leaf(data,(x+offset*.035,y,.4),(x+offset*.20,y+.08,.66),.044,True,.88)
             # Fine kernels and barley awns are added only to the near mesh.
-            for k in range(4):
+            for k in range(2):
                 for side in [-1,1]:
-                    seed_head(data,(tip[0]+side*.033,tip[1],height+k*.051),.065,.025,True,.88)
+                    seed_head(data,(tip[0]+side*.035,tip[1],height+k*.08),.075,.030,True,.92)
             if faction == "raven":
                 for side in [-1,1]:
                     rod(data,"grain",(tip[0],tip[1],height+.16),
-                        (tip[0]+side*.10,tip[1]+.035,height+.32),.006,4,True,.92)
+                        (tip[0]+side*.10,tip[1]+.035,height+.32),.006,3,True,.94)
     for side in [-1,1]:
         for i in range(5):
             x = -2.9+i*1.45

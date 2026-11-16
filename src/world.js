@@ -39,6 +39,14 @@ import {graphicsCheckpoint} from './graphics-checkpoint.js';
 import {installCombatPresentation,combatTime} from './combat-presentation.js';
 import {projectileTargetHeight} from './combat-timing.js';
 
+function flameClusterGeometry(){
+  const a=new THREE.ConeGeometry(.42,1.0,5).translate(0,.28,0);
+  const b=new THREE.ConeGeometry(.28,.75,5).rotateZ(.24).translate(.22,.16,.12);
+  const c=new THREE.ConeGeometry(.26,.68,5).rotateZ(-.22).translate(-.20,.14,-.14);
+  const parts=[a,b,c].map(g=>{const f=g.index?g.toNonIndexed():g;if(f!==g)g.dispose();for(const k of Object.keys(f.attributes))if(!['position','normal'].includes(k))f.deleteAttribute(k);return f;});
+  const merged=mergeGeometries(parts);for(const p of parts)p.dispose();merged.computeVertexNormals();return merged;
+}
+
 const CANONICAL_MERGE_ATTRS=new Set(['position','normal','uv','color']);
 function normalizeMergeGeometries(geometries){
   if(!geometries.length)return geometries;
@@ -85,7 +93,7 @@ export class WorldView {
     this.fogMesh=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD),new THREE.MeshBasicMaterial({map:this.fogTexture,transparent:true,depthWrite:false}));this.fogMesh.rotation.x=-Math.PI/2;this.fogMesh.position.y=.32;this.fogMesh.renderOrder=5;this.scene.add(this.fogMesh);
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
-    this.burning=new THREE.InstancedMesh(this.geo.cone,new THREE.MeshBasicMaterial({color:0xf6b15b,transparent:true,opacity:.75,depthWrite:false}),80);this.burning.count=0;this.burning.frustumCulled=false;this.scene.add(this.burning);
+    this.burning=new THREE.InstancedMesh(flameClusterGeometry(),new THREE.MeshBasicMaterial({color:0xef7b2c,transparent:true,opacity:.72,depthWrite:false}),80);this.burning.count=0;this.burning.frustumCulled=false;this.scene.add(this.burning);
     // `smoke()` is also the damage-effect factory. Keep the persistent fire
     // plume batch under a distinct name so it cannot shadow that method.
     this.smokeMesh=new THREE.InstancedMesh(this.geo.sphere,new THREE.MeshBasicMaterial({color:0x676c62,transparent:true,opacity:.16,depthWrite:false}),80);this.smokeMesh.count=0;this.smokeMesh.frustumCulled=false;this.scene.add(this.smokeMesh);

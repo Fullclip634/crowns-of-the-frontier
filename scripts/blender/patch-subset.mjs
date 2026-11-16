@@ -10,10 +10,11 @@ import {replaceModelPatch} from './model-patch.mjs';
 const project=fileURLToPath(new URL('../../',import.meta.url));
 const args=process.argv.slice(2),options={};
 for(let i=0;i<args.length;i+=2){
-  assert.ok(['--prefix','--source','--directory','--stage'].includes(args[i])&&args[i+1],'Use --prefix <prefix> [--source <blend>] [--directory <dir>]');
+  assert.ok(['--prefix','--exclude','--source','--directory','--stage'].includes(args[i])&&args[i+1],'Use --prefix <prefix> [--exclude <p1,p2>] [--source <blend>] [--directory <dir>]');
   options[args[i]]=args[i+1];
 }
 const prefix=options['--prefix'];assert.ok(prefix,'--prefix is required');
+const exclude=options['--exclude']||'';
 const owned=value=>{const full=path.resolve(project,value),rel=path.relative(project,full);assert.ok(rel&&!rel.startsWith('..')&&!path.isAbsolute(rel));return full;};
 const source=owned(options['--source']||'.tools/art-refined/frontier-assets.blend');
 const directory=owned(options['--directory']||'src/assets3d');
@@ -37,7 +38,7 @@ async function run(command,argv,logPath){
   }finally{fsSync.closeSync(fd);}
 }
 
-await run(blender,['--background','--threads','1','--python-exit-code','1','--python','scripts/blender/refine-catalogue.py','--','--blend',source,'--prefix',prefix,'--output',raw],path.join(stage,'refine.log'));
+await run(blender,['--background','--threads','1','--python-exit-code','1','--python','scripts/blender/refine-catalogue.py','--','--blend',source,'--prefix',prefix,'--exclude',exclude,'--output',raw],path.join(stage,'refine.log'));
 const report=JSON.parse(await fs.readFile(path.join(raw,'report.json'),'utf8'));
 const keys=report.keys;assert.ok(Array.isArray(keys)&&keys.length>0,'Subset refined 0 models for '+prefix);
 

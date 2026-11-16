@@ -94,7 +94,7 @@ export function unitPalette(material,u){
     if(!builder.object.isInstancedMesh)return vec3(1);
     const owner=int(clamp(attribute('instanceOwner','float'),0,7).add(.5));
     const mask=attribute('unitTeamMask','float');
-    return mask.greaterThan(1.5).select(roofs.element(owner),mask.greaterThan(.5).select(teams.element(owner),vec3(1)));
+    return mask.greaterThan(1.5).select(roofs.element(owner),mask.greaterThan(.01).select(mix(vec3(.76,.71,.61),teams.element(owner),clamp(mask,0,1)),vec3(1)));
   })().toVarying();
   const tile=clamp(floor(surface.z.add(.5)).sub(2),0,3),repeats=tile.lessThan(.5).select(6,tile.lessThan(1.5).select(4,tile.lessThan(2.5).select(2,10)));
   const coords=vec2(tile.mod(2),floor(tile.div(2))).mul(256).add(16).add(fract(uv().mul(repeats)).mul(224)).div(512);
@@ -109,7 +109,7 @@ export function unitPalette(material,u){
   })();
   material.colorNode=materialColor.rgb.mul(team).mul(tint);
   const steelRough=steel.select(.82,1);
-  material.roughnessNode=clamp(surface.x.mul(steelRough),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.14,0)),0,1);material.normalNode=null;
+  material.roughnessNode=clamp(surface.x.mul(steelRough),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.08,0)),0,steel.select(.62,1));material.normalNode=null;
   if(u.characterNormal.value){
     const detail=character.select(float(1).sub(smoothstep(42,110,positionView.length())),0);
     const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.16,.38);

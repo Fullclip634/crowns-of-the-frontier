@@ -20,6 +20,7 @@ project = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser()
 parser.add_argument("--blend", default="")
 parser.add_argument("--prefix", default="")
+parser.add_argument("--exclude", default="")
 parser.add_argument("--output", default="")
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 cli = parser.parse_args(argv)
@@ -124,15 +125,20 @@ def leaf_volume(vertices, faces, center, direction, length, width, thickness=.02
         faces.extend([(base+j, base+i, base+4), (base+i, base+j, base+5)])
 
 def weathered_rock(vertices, faces, center, scale, angle, rng, detail=2):
-    """Closed uneven stone with a settled base and broad erosion, not a ball."""
+    """Closed uneven stone with angular mineral facets and a settled base."""
     bm = bmesh.new()
     bmesh.ops.create_icosphere(bm, subdivisions=detail, radius=1)
     bm.verts.ensure_lookup_table()
     base = len(vertices)
     rotation = Matrix.Rotation(angle, 3, "Z")
+    planes = [Vector((rng.uniform(-1,1), rng.uniform(-1,1), rng.uniform(.15,.95))).normalized() for _ in range(3)]
     for vert in bm.verts:
-        p = vert.co
-        erosion = 1 + .09*math.sin(p.x*5.2+p.y*3.8) + .055*math.cos(p.z*6.1-p.y*4) + rng.uniform(-.035,.035)
+        p = vert.co.copy()
+        for plane in planes:
+            d = p.dot(plane)
+            if d > .64:
+                p -= plane * ((d - .64) * .85)
+        erosion = 1 + .08*math.sin(p.x*5.2+p.y*3.8) + .05*math.cos(p.z*6.1-p.y*4) + rng.uniform(-.03,.03)
         point = rotation @ Vector((p.x*scale[0]*erosion, p.y*scale[1]*erosion,
                                     max(-.68,p.z)*scale[2]*erosion))
         vertices.append(tuple(Vector(center)+point))
@@ -206,19 +212,19 @@ def author_resource(root):
         tree = BVHTree.FromPolygons([Vector(p) for p in vertices],faces,all_triangles=False)
         gold, gold_faces, nuggets, nugget_faces = [], [], [], []
         for center, scale in centers:
-            for vein in range(2):
+            for vein in range(3):
                 angle = rng.random()*math.tau
                 points = []
                 for step in range(4):
-                    direction = Vector((math.cos(angle+step*.10),math.sin(angle+step*.10),.35+step*.16)).normalized()
+                    direction = Vector((math.cos(angle+step*.12),math.sin(angle+step*.12),.35+step*.16)).normalized()
                     point, normal, _, _ = tree.ray_cast(center+direction*scale*3,-direction,scale*3)
                     if point is not None:
-                        points.append(point+normal*.018)
+                        points.append(point+normal*.032)
                 for i in range(len(points)-1):
                     if (points[i+1]-points[i]).length_squared > .000001:
-                        rod_data(gold,gold_faces,points[i],points[i+1],.025,.8,5)
+                        rod_data(gold,gold_faces,points[i],points[i+1],.055,.82,5)
                 if points:
-                    organic_crown(nuggets,nugget_faces,points[len(points)//2],(.065,.048,.055),rng,1)
+                    organic_crown(nuggets,nugget_faces,points[len(points)//2],(.13,.10,.12),rng,1)
         seams = make_mesh(root,"gold",gold,gold_faces,root.name+"_GoldSeams")
         seams["nearOnly"] = True
         make_mesh(root,"gold",nuggets,nugget_faces,root.name+"_GoldInclusions")
@@ -349,6 +355,8 @@ def roof_tiles(root):
     key = root["assetKey"]
     if not key.startswith("building:") or ":sun:" in key:
         return
+    for old in [obj for obj in descendants(root) if obj.name.endswith("_SlateTiles")]:
+        bpy.data.objects.remove(old, do_unlink=True)
     for roof in [obj for obj in descendants(root) if obj.type == "MESH" and obj.get("assetMaterial") == "teamRoof"]:
         mesh = roof.data
         vertices = [roof.matrix_world @ vert.co for vert in mesh.vertices]
@@ -359,25 +367,27 @@ def roof_tiles(root):
         top = max(v.z for v in vertices) + 1
         tile_vertices, tile_faces = [], []
         count = 0
-        y = miny + .28
-        while y < maxy - .15 and count < 140:
-            x = minx + .29
-            while x < maxx - .15 and count < 140:
+        y = miny + .24
+        row = 0
+        while y < maxy - .15 and count < 168:
+            x = minx + .25 + (.29 if row % 2 else 0)
+            while x < maxx - .15 and count < 168:
                 point, normal, _, _ = tree.ray_cast(Vector((x, y, top)), Vector((0, 0, -1)))
                 if point is not None and .3 < normal.z < .95:
                     tangent = Vector((0, 1, 0))
                     tangent = (tangent - normal * tangent.dot(normal)).normalized()
                     across = tangent.cross(normal).normalized()
                     base = len(tile_vertices)
-                    for depth in [0, .035]:
-                        for a, b in [(-.285, -.235), (.285, -.235), (.285, .235), (-.285, .235)]:
+                    for depth in [0, .040]:
+                        for a, b in [(-.275, -.22), (.275, -.22), (.275, .22), (-.275, .22)]:
                             tile_vertices.append(tuple(point + across * a + tangent * b + normal * (depth + .006)))
                     tile_faces.extend([(base,base+3,base+2,base+1),(base+4,base+5,base+6,base+7),
                                        (base,base+1,base+5,base+4),(base+1,base+2,base+6,base+5),
                                        (base+2,base+3,base+7,base+6),(base+3,base,base+4,base+7)])
                     count += 1
-                x += .6
-            y += .49
+                x += .58
+            y += .42
+            row += 1
         if tile_vertices:
             obj = make_mesh(root, "teamRoof", tile_vertices, tile_faces, root.name + "_SlateTiles")
             obj["nearOnly"] = True
@@ -420,10 +430,14 @@ def bake_shading(root):
                 # Subtle canopy variation survives compression and batching.
                 variation = .90 + .10*(.5+.5*math.sin(p.x*8.1+p.y*5.3+p.z*6.7))
                 colors.data[vert.index].color = (shade*variation*.96, shade*variation, shade*variation*.92, 1)
+            elif role in ["teamRoof", "roof"]:
+                tile_var = .86 + .14*(.5+.5*math.sin(p.x*6.3+p.z*7.9+p.y*3.1))
+                colors.data[vert.index].color = (shade*tile_var, shade*tile_var, shade*tile_var, 1)
             else:
                 colors.data[vert.index].color = (shade, shade, shade, 1)
 
-target_roots = [r for r in roots if not cli.prefix or r["assetKey"].startswith(cli.prefix)]
+excludes = tuple(e for e in cli.exclude.split(",") if e)
+target_roots = [r for r in roots if (not cli.prefix or r["assetKey"].startswith(cli.prefix)) and not r["assetKey"].startswith(excludes)]
 if not cli.prefix or cli.prefix.startswith("unit:"):
     exec(compile((project / "scripts/blender/human-figures.py").read_text(encoding="utf-8"), "human-figures.py", "exec"))
 
@@ -452,6 +466,11 @@ def export(name, near):
                 continue
             obj.select_set(True)
             selected.append(obj)
+    if not near:
+        for obj in selected:
+            for mod in list(obj.modifiers):
+                if mod.name == "Crafted edges":
+                    obj.modifiers.remove(mod)
     if near:
         for obj in selected:
             if obj.type != "MESH" or obj.get("assetMaterial") in ["leaf", "leafDark", "snow"]:

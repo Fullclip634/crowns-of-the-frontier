@@ -506,17 +506,17 @@
     }
   ],
   "sizes": {
-    "near": 14473116,
-    "low": 4573256,
-    "balanced": 13661196
+    "near": 14443108,
+    "low": 4535964,
+    "balanced": 13616276
   },
   "stage": "full",
   "completeCatalogue": true,
   "source": "Original Blender crop fields composed with unchanged original models.",
   "farmRevision": "field-crops-v1",
   "farmSourceHashes": {
-    "low": "f5d50d96386a598f53d8c429e6276f047bc050d108878393e44f6ba86a705cfe",
-    "near": "9a4c61298dfecf9522cb8d2984f4cc765d0f7444ff720581f44af1aaacbb76b6"
+    "low": "6b464c8938431602cdfb53721b340f8a8530689146a14d0f1eadb890f4a0d85d",
+    "near": "3eed9e6f13f1fab646d6d27d05a89e995bfef28247f6261f17f5906d7a7f589b"
   },
   "gateRevision": "gate-footings-v1",
   "gateSourceHashes": {
@@ -535,30 +535,30 @@
     "passed": true,
     "models": 126,
     "meshes": 1405,
-    "visibleTriangles": 704266,
+    "visibleTriangles": 680248,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0035814142672628817,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 18253704,
-    "candidateBytes": 13661196,
-    "referenceDecodedBufferBytes": 40519956,
-    "candidateDecodedBufferBytes": 36605228,
-    "referenceSHA256": "85252e15a7bfd5f360929a61c52d9941c2a68729879cdf9aafa7a508903343ad",
-    "candidateSHA256": "a58498c9ca18bcfd102dae75aea7ab1efba95fb7ec0338f4bb072bea15dc6042"
+    "referenceBytes": 18204668,
+    "candidateBytes": 13616276,
+    "referenceDecodedBufferBytes": 38941920,
+    "candidateDecodedBufferBytes": 35190928,
+    "referenceSHA256": "167c6653c09e1aa84ad405a9112639c2cfda5c1b26e65f8f24382c3cafb5c7c9",
+    "candidateSHA256": "1ac107c8a3ff2cde4d0499a8d2a080666e4085cd9886be4ee9a13437ccc575af"
   },
   "balancedSourceHashes": {
-    "near": "c150c6ecf680cc093d28749355b23e753afa3e824aa31a0814af98d97ee1205d",
-    "low": "39e8015d3666c507ac81b37ee2c3d42d74976d128c4ca1d402335bae8d16db52",
+    "near": "46c50245bf556bb659daf799ee995c40b64ed2ca8453b056df9e5ade013a721a",
+    "low": "69ca4dc42beadfa4b5dd26d3ded8974e0943a0e1946889d9e061e43a0bda2b68",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 2690996,
+    "bytes": 2689900,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "4945ce232eb9b62eeb906b03bb036189561d9db18700deb6788fd0341454bd83",
+    "sha256": "f77c2d15992983a0da5f997aae67cfa9498f7bf17ca18eddf84a1aaa7b6e3d86",
     "precision": {
       "passed": true,
       "models": 24,
@@ -569,9 +569,9 @@
       "maxNormalDegrees": 0.002181338033288982,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 13678944,
-      "candidateBytes": 2690996,
-      "referenceDecodedBufferBytes": 39881782,
+      "referenceBytes": 13641096,
+      "candidateBytes": 2689900,
+      "referenceDecodedBufferBytes": 38467482,
       "candidateDecodedBufferBytes": 6326038
     }
   },

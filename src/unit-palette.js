@@ -19,7 +19,7 @@ function paletteMaterial(view){
         #ifdef USE_INSTANCING
         int owner = int(clamp(instanceOwner, 0.0, 7.0) + 0.5);
         if(unitTeamMask > 1.5) vUnitTeamColor = frontierRoofColors[owner];
-        else if(unitTeamMask > 0.5) vUnitTeamColor = frontierTeamColors[owner];
+        else if(unitTeamMask > 0.01) vUnitTeamColor = mix(vec3(0.76, 0.71, 0.61), frontierTeamColors[owner], clamp(unitTeamMask, 0.0, 1.0));
         #endif`);
       shader.fragmentShader='uniform sampler2D frontierUnitWood;\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.fragmentShader;
       shader.fragmentShader='uniform sampler2D frontierUnitcharacterColor;\nuniform sampler2D frontierUnitcharacterNormal;\nuniform float frontierUnitcharacterReady;\nuniform float frontierUnitcharacterDetail;\n'+characterAtlasGLSL+shader.fragmentShader;
@@ -39,7 +39,7 @@ function paletteMaterial(view){
         if(unitCharacter && unitDetail > 0.001) roughnessFactor = mix(roughnessFactor, texture2D(frontierUnitcharacterNormal, unitCharacterUv).a, unitDetail);
         if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) roughnessFactor *= 0.82;
         roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
-      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.14 : 0.0), 0.0, 1.0);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(min(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.08 : 0.0), 0.62), 0.0, 1.0);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         if(unitCharacter && unitDetail > 0.001) {
@@ -50,7 +50,7 @@ function paletteMaterial(view){
         #endif`);
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v4';}
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v5';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;
@@ -73,9 +73,22 @@ export function mergeUnitModel(view,model,neutralTeams=false){
     if(part.material.transparent){const copy=part.clone();copy.geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);copy.position.set(0,0,0);copy.rotation.set(0,0,0);copy.scale.setScalar(1);transparent.push(copy);return;}
     const geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);ensureModelIndices(geometry);
     for(const name of Object.keys(geometry.attributes))if(!['position','normal','uv','color'].includes(name))geometry.deleteAttribute(name);
-    const team=neutralTeams?(view.teamMaterials.includes(part.material)?1:view.roofMaterials?.includes(part.material)?2:0):0;
-    const count=geometry.attributes.position.count,old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),color=team?[1,1,1]:part.material.color.toArray();
-    const wooden=[view.materials.wood,view.materials.darkwood,view.materials.timberEdge].includes(part.material)&&!!view.materials.wood.map,mode=wooden?1:characterSurfaceMode(part.userData.surfaceRole,model.userData.model3d?.type,part.userData.motion);
+    const rawTeam=neutralTeams?(view.teamMaterials.includes(part.material)?1:view.roofMaterials?.includes(part.material)?2:0):0;
+    const unitType=model.userData.model3d?.type,motionType=part.userData.motion?.type;
+    const wooden=[view.materials.wood,view.materials.darkwood,view.materials.timberEdge].includes(part.material)&&!!view.materials.wood.map;
+    const mode=wooden?1:characterSurfaceMode(part.userData.surfaceRole,unitType,part.userData.motion);
+    let team=rawTeam;
+    if(rawTeam===1&&unitType&&mode===2&&motionType!=='cape'){
+      const partName=part.userData.figurePart||part.name||'';
+      if(unitType==='villager'){
+        team=partName.includes('cuff')||partName==='Unchanged body'?.55:.28;
+      }else if(['archer','marksman','scout','outrider','monk'].includes(unitType)){
+        if(partName.includes('Mantle'))team=.92;
+        else if(partName.includes('Tunic')||partName.includes('Coat tail'))team=.46;
+        else if(['arm','forearm','head'].includes(motionType))team=.42;
+      }
+    }
+    const count=geometry.attributes.position.count,old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),color=rawTeam?[1,1,1]:part.material.color.toArray();
     for(let i=0;i<count;i++)for(let k=0;k<3;k++){colors[i*3+k]=(old?old.getComponent(i,k):1)*color[k];surface[i*3+k]=k===0?part.material.roughness??.9:k===1?part.material.metalness??0:mode;}
     geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.setAttribute('unitSurface',new THREE.BufferAttribute(surface,3));geometry.setAttribute('unitTeamMask',new THREE.Float32BufferAttribute(new Float32Array(count).fill(team),1));
     const key=JSON.stringify(part.userData.motion||null);if(!groups.has(key))groups.set(key,{motion:part.userData.motion,geometries:[]});groups.get(key).geometries.push(geometry);
