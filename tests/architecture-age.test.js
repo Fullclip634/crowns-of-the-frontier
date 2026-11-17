@@ -218,7 +218,7 @@ test('landmarks gain physical corner fortifications and Town Center advances wal
     }
     assert.ok(barracksVerts[1]>barracksVerts[0],'Feudal adds corner stone piers');
     assert.ok(barracksVerts[2]>barracksVerts[1],'Castle widens into stepped stone buttresses');
-    assert.ok(barracksVerts[3]>barracksVerts[2],'Imperial crowns bastions and adds finials');
+    assert.ok(barracksVerts[3]>barracksVerts[2],'Imperial crowns stone bastions cleanly');
     assert.ok(!tcModes[0].has(3),'Dark Age Town Center pulls plaster walls down to timber');
     assert.ok(tcModes[1].has(3),'Feudal Town Center restores plaster upper stories');
     assert.ok(!tcModes[3].has(3)&&tcModes[3].has(2),'Imperial Town Center dresses walls into stone masonry');

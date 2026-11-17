@@ -137,7 +137,7 @@ function detailMesh(root,geometry,material,x,y,z,sx,sy,sz){
   return mesh;
 }
 
-/** Add stepped stone piers, castle buttresses, and imperial finials by age so every age looks structurally stronger. */
+/** Add stepped stone piers, castle buttresses, and imperial bastion crowns by age so every age looks structurally stronger. */
 export function strengthenArchitecture(view,root,entity,age){
   if(!root||!entity||age<=0||!view?.geo?.box||!view?.materials?.stone||root.userData.strengthened)return root;
   if(['farm','dock','wall','gate','mill','towncenter'].includes(entity.type))return root;
@@ -148,7 +148,7 @@ export function strengthenArchitecture(view,root,entity,age){
   const size=core.getSize(new THREE.Vector3()),center=core.getCenter(new THREE.Vector3());
   if(size.x<1.2||size.z<1.2)return root;
   root.userData.strengthened=true;
-  const {stone,stoneDark,gold}=view.materials,boxGeo=view.geo.box,cylGeo=view.geo.cylinder||boxGeo;
+  const {stone,stoneDark}=view.materials,boxGeo=view.geo.box,cylGeo=view.geo.cylinder||boxGeo;
   const eaveY=!eave.isEmpty()?Math.min(wall.max.y,Math.max(eave.max.y,1.8)):roof.isEmpty()?wall.max.y:Math.min(wall.max.y,roof.min.y+.45);
   const pierW=Math.max(.26,Math.min(.50,Math.min(size.x,size.z)*.105));
   if(entity.type==='tower'){
@@ -163,13 +163,12 @@ export function strengthenArchitecture(view,root,entity,age){
     }
     if(age>=3){
       detailMesh(root,cylGeo,stoneDark||stone,center.x,eaveY*.92,center.z,radius*1.12,.36,radius*1.12);
-      if(gold&&!roof.isEmpty())detailMesh(root,cylGeo,gold,center.x,roof.max.y+.32,center.z,.11,.68,.11);
     }
     return root;
   }
   const hx=size.x*.5,hz=size.z*.5;
   const height=eaveY*(age>=3?1.04:age===2?.94:.80);
-  // Corner piers reinforce weak timber corners in Feudal, widen into battered stone buttresses in Castle, and rise into crowned bastions in Imperial.
+  // Corner piers reinforce weak timber corners in Feudal, widen into battered stone buttresses in Castle, and rise into crowned stone bastions in Imperial.
   for(const sx of [-1,1])for(const sz of [-1,1]){
     const x=center.x+sx*(hx-pierW*.14),z=center.z+sz*(hz-pierW*.14);
     if(age===1){
@@ -182,12 +181,8 @@ export function strengthenArchitecture(view,root,entity,age){
     if(age>=3){
       const capY=height+.14;
       detailMesh(root,boxGeo,stoneDark||stone,x,capY,z,pierW*1.34,.28,pierW*1.34);
-      if(MILITARY_CREST.has(entity.type)&&gold)detailMesh(root,cylGeo,gold,x,capY+.30,z,.09,.36,.09);
+      if(MILITARY_CREST.has(entity.type))detailMesh(root,boxGeo,stone,x,capY+.25,z,pierW*.92,.24,pierW*.92);
     }
-  }
-  if(age>=3&&gold&&!roof.isEmpty()){
-    const roofCenter=roof.getCenter(new THREE.Vector3());
-    detailMesh(root,cylGeo,gold,roofCenter.x,roof.max.y+.28,roofCenter.z,.10,.64,.10);
   }
   return root;
 }
