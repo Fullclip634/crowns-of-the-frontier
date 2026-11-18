@@ -77,10 +77,33 @@ function crowdCosts(sim,unit){
 }
 
 export class MinHeap {
-  constructor(){this.items=[];}
-  get size(){return this.items.length;}
-  push(id,score){const item={id,score};let i=this.items.length;this.items.push(item);while(i>0){const parent=(i-1)>>1;if(this.items[parent].score<=score)break;this.items[i]=this.items[parent];i=parent;}this.items[i]=item;}
-  pop(){if(!this.items.length)return null;const first=this.items[0],last=this.items.pop();if(this.items.length){let i=0;while(true){let child=i*2+1;if(child>=this.items.length)break;if(child+1<this.items.length&&this.items[child+1].score<this.items[child].score)child++;if(last.score<=this.items[child].score)break;this.items[i]=this.items[child];i=child;}this.items[i]=last;}return first.id;}
+  constructor(){this.ids=[];this.scores=[];this.size=0;}
+  clear(){this.size=0;}
+  get lowestScore(){return this.scores[0];}
+  push(id,score){
+    const {ids,scores}=this;
+    let i=this.size++;
+    while(i>0){
+      const parent=(i-1)>>1;
+      if(scores[parent]<=score)break;
+      ids[i]=ids[parent];scores[i]=scores[parent];i=parent;
+    }
+    ids[i]=id;scores[i]=score;
+  }
+  pop(){
+    if(!this.size)return null;
+    const {ids,scores}=this,first=ids[0],size=--this.size;
+    if(size){
+      const last=ids[size],score=scores[size];let i=0;
+      for(let child=i*2+1;child<size;child=i*2+1){
+        if(child+1<size&&scores[child+1]<scores[child])child++;
+        if(score<=scores[child])break;
+        ids[i]=ids[child];scores[i]=scores[child];i=child;
+      }
+      ids[i]=last;scores[i]=score;
+    }
+    return first;
+  }
 }
 
 // Visit every crossed cell, including both neighbors at a diagonal corner.
@@ -143,19 +166,24 @@ export function findPath(sim,e,dest,range=0,normalOverride=null){
   }
   if(!goals&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
   if(!goals&&labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
-  const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={size,came:new Int32Array(size*size),cost:new Float32Array(size*size),marks:new Int32Array(size*size),search:0});
-  const {came,cost,marks}=scratch,open=new MinHeap();
+  const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={
+    size,came:new Int32Array(size*size),cost:new Float32Array(size*size),
+    marks:new Int32Array(size*size),estimate:new Float64Array(size*size),open:new MinHeap(),search:0,
+  });
+  const {came,cost,marks,estimate,open}=scratch;
+  open.clear();
   // Signed marks identify the open and settled cells of this search. Most
   // routes visit a fraction of the battlefield, so leave other cells alone.
   if(scratch.search===0x7fffffff){marks.fill(0);scratch.search=0;}
   const search=++scratch.search,settled=-search;
   const h=goals?id=>Math.max(0,Math.hypot(id%size*2-half+1-dest.x,Math.floor(id/size)*2-half+1-dest.z)-range)/2:id=>Math.hypot(id%size-b.x,Math.floor(id/size)-b.z);
   came[start]=-1;cost[start]=0;marks[start]=search;
-  let closest=start,closestH=h(start),found=-1,goalCost=Infinity,iterations=0;open.push(start,closestH);
-  while(open.size&&iterations++<size*size*2){if(found>=0&&open.items[0].score>=goalCost)break;const current=open.pop();if(marks[current]===settled)continue;const remaining=h(current);if(remaining<closestH){closest=current;closestH=remaining;}
+  let closest=start,closestH=h(start),found=-1,goalCost=Infinity,iterations=0;
+  estimate[start]=closestH;open.push(start,closestH);
+  while(open.size&&iterations++<size*size*2){if(found>=0&&open.lowestScore>=goalCost)break;const current=open.pop();if(marks[current]===settled)continue;const remaining=estimate[current];if(remaining<closestH){closest=current;closestH=remaining;}
     if(goals?goals.has(current):current===end){const score=cost[current]+(goals&&current===start?traffic?.get(start)||0:0);if(score<goalCost){found=current;goalCost=score;}if(current!==start||!traffic?.get(start))break;}
     marks[current]=settled;const x=current%size,z=Math.floor(current/size);
-    for(const [dx,dz]of NEIGHBORS){const nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||marks[id]===settled||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(marks[id]!==search||n<cost[id]){marks[id]=search;cost[id]=n;came[id]=current;open.push(id,n+h(id));}}
+    for(const neighbor of NEIGHBORS){const dx=neighbor[0],dz=neighbor[1],nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||marks[id]===settled||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(marks[id]!==search||n<cost[id]){if(marks[id]!==search)estimate[id]=h(id);marks[id]=search;cost[id]=n;came[id]=current;open.push(id,n+estimate[id]);}}
   }
   e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};if(a.x!==startCell.x||a.z!==startCell.z)result.unshift({x:a.x*2-half+1,z:a.z*2-half+1});return finishResourceApproach(sim,grid,e,dest,range,result);
 }

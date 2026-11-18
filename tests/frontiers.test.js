@@ -4,7 +4,14 @@ import {Simulation} from '../src/simulation.js';
 import {MinHeap,navigationRegions} from '../src/navigation.js';
 import {battlePreset} from '../src/custom-battle.js';
 const advance=(s,t)=>{for(let i=0;i<t*10;i++)s.tick(.1);};
-test('heap returns priorities in ascending order',()=>{const heap=new MinHeap();heap.push(1,8);heap.push(2,2);heap.push(3,5);assert.deepEqual([heap.pop(),heap.pop(),heap.pop()],[2,3,1]);});
+test('the route heap orders priorities and discards pending cells between searches',()=>{
+  const heap=new MinHeap();heap.push(1,8);heap.push(2,2);heap.push(3,5);
+  assert.deepEqual([heap.pop(),heap.pop(),heap.pop()],[2,3,1]);
+  heap.push(4,1);heap.push(5,2);heap.clear();
+  assert.equal(heap.size,0);assert.equal(heap.pop(),null);
+  heap.push(8,5);heap.push(9,3);assert.equal(heap.lowestScore,3);
+  assert.deepEqual([heap.pop(),heap.pop(),heap.pop()],[9,8,null]);
+});
 test('naval mode starts with a fishing economy and separates land and sea navigation',()=>{const s=new Simulation({mode:'tides'});s.tickAI=()=>{};s.stop(s.owned(0,'unit','villager').map(e=>e.id));const boat=s.owned(0,'unit','fishingboat')[0],food=s.players[0].resources.food;advance(s,65);assert.ok(s.players[0].resources.food>=food+75,'a fishing boat actually deposited its catch');assert.ok(s.isWater(boat.x,boat.z));const cell=s.cell(0,30);assert.equal(s.grid(0)[cell.z*80+cell.x],1);assert.equal(s.grid(0,true)[cell.z*80+cell.x],0);});
 test('harbors require a shoreline and fishing boats spawn on water',()=>{const s=new Simulation({mode:'tides'});s.tickAI=()=>{};assert.equal(s.buildValid('dock',-45,50),false);const dock=s.owned(0,'building','dock')[0];assert.ok(s.train(dock.id,'fishingboat'));advance(s,21);assert.ok(s.owned(0,'unit','fishingboat').every(e=>s.isWater(e.x,e.z)));});
 test('trained land units spawn on clear navigation-cell centers outside nearby foundations',()=>{
