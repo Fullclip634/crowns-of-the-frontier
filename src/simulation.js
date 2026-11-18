@@ -23,13 +23,37 @@ import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeO
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
-import {channelAt} from './map-water.js';
+import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
 const CELL=2, GRID=WORLD/CELL;
 const FIELD_RECOVERY_DELAY=8,FIELD_RECOVERY_RADIUS=18,FIELD_RECOVERY_RATE=.015;
+
+// Replenish only resources lost to water or the map edge during relocation.
+function replaceMissingShoreResources(sim,owner){
+  const {start}=sim.players[owner],{map}=sim.options,bank=landBank(map,start.x,start.z);
+  const limit=sim.halfWorld-5,supplyRange=42,available=new Set();
+  for(const entity of sim.entities){
+    if(entity.kind==='resource'&&!entity.water&&distance(entity,start)<=supplyRange&&landBank(map,entity.x,entity.z)===bank)available.add(entity.type);
+  }
+  for(const [type,amount] of [['wood',220],['food',350],['gold',1800],['stone',1800]]){
+    if(available.has(type))continue;
+    let reserve=null;
+    for(const radius of [16,22,29,36]){
+      for(let i=0;i<24;i++){
+        const angle=i*Math.PI/12,x=start.x+Math.cos(angle)*radius,z=start.z+Math.sin(angle)*radius;
+        if(Math.abs(x)>limit||Math.abs(z)>limit||!dryBankFootprint(map,x,z,2,bank)||sim.startClearing(x,z))continue;
+        if(sim.entities.some(entity=>distance(entity,{x,z})<entity.r+3))continue;
+        reserve={x,z};
+        break;
+      }
+      if(reserve)break;
+    }
+    if(reserve)sim.addNaturalResource(type,reserve.x,reserve.z,amount);
+  }
+}
 
 export class Simulation {
   constructor(options={}) {
@@ -88,8 +112,8 @@ export class Simulation {
   initialize(){
     const m=this.options.mode,mission=this.mission, peaceful=m==='sandbox'||m==='tutorial', survival=m==='survival'||mission?.survival;
     const scale=mission?1:this.worldSize/WORLD,shift=!mission&&scale>1;
-    const dx0=shift?Math.round(-44*scale)-(-39):0,dz0=shift?Math.round(35*scale)-30:0;
-    const dx1=mission?0:Math.round(46*scale)-40,dz1=mission?0:Math.round(-39*scale)-(-34);
+    let dx0=shift?Math.round(-44*scale)-(-39):0,dz0=shift?Math.round(35*scale)-30:0;
+    let dx1=mission?0:Math.round(46*scale)-40,dz1=mission?0:Math.round(-39*scale)-(-34);
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
     this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='regicide'?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
@@ -117,6 +141,18 @@ export class Simulation {
         for(let x=15;x<=62;x+=3)if(Math.abs(x-36)>4)this.addBuilding('wall',1,x+dx1,-5+dz1,true);
         this.addBuilding('gate',1,36+dx1,-5+dz1,true);
       }
+    }
+    const movedStarts=[];
+    // Keep the opening army, buildings and nearby resource offsets on one bank.
+    if(!mission&&waterChannels(this.options.map).length)for(let owner=0;owner<2;owner++){
+      const start=this.spawnPositions[owner],sites=this.entities.filter(entity=>entity.owner===owner);
+      const dry=drySettlementStart(this.options.map,this.halfWorld,start,sites);
+      if(dry===start)continue;
+      const dx=dry.x-start.x,dz=dry.z-start.z;
+      for(const site of sites){site.x+=dx;site.z+=dz;}
+      this.players[owner].start=this.spawnPositions[owner]=dry;
+      movedStarts.push(owner);
+      if(owner===0){dx0+=dx;dz0+=dz;}else{dx1+=dx;dz1+=dz;}
     }
     // Mirrored resources give both starting settlements the same opportunities.
     const clusters=[[-57,15,'wood',20,true],[-13,49,'wood',22,true],[-53,51,'food',7,true],[-24,15,'gold',5,true],[-57,30,'stone',5,true],[-58,-32,'wood',25,false],[-25,-40,'gold',7,false],[-16,-16,'stone',6,false],[-14,13,'food',7,false],[-65,64,'wood',18,false]];
@@ -157,6 +193,7 @@ export class Simulation {
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26*scale,-23*scale],[3,1],[28*scale,25*scale]])this.addShrine(x,z);}
     plantStartingForests(this);
     groupFieldForests(this);
+    for(const owner of movedStarts)replaceMissingShoreResources(this,owner);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
   addResource(type,x,z,amount){const previousRevision=this.revision,e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;recordPlacementAppend(this,e,previousRevision);return e;}
@@ -504,7 +541,28 @@ export class Simulation {
     if(this.events.length>200)this.events.splice(0,100);
   }
   serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
-  static restore(data){if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');const s=new Simulation(data.options);for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];restoreWallLinks(s.entities);if(data.rngState!==undefined)s.rng.state=data.rngState;s.explored=Uint8Array.from(data.explored);s.revision++;s.grids={};clearSavedBridgeResources(s);restoreBridgeOccupants(s,data.bridgeRoadHalfWidth);s.updateFog();return s;}
+  static restore(data){
+    if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
+    const s=new Simulation(data.options);
+    // Version-one saves store each opening location on the player. Restore
+    // the original terrain and roads around that layout, even across map revisions.
+    const starts=s.spawnPositions.map((start,owner)=>data.players[owner]?.start??start);
+    for(const site of s.startingSites){
+      const seeded=s.spawnPositions[site.owner],saved=starts[site.owner];
+      site.x+=saved.x-seeded.x;
+      site.z+=saved.z-seeded.z;
+    }
+    s.spawnPositions=starts;
+    for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
+    restoreWallLinks(s.entities);
+    if(data.rngState!==undefined)s.rng.state=data.rngState;
+    s.explored=Uint8Array.from(data.explored);
+    s.revision++;s.grids={};
+    clearSavedBridgeResources(s);
+    restoreBridgeOccupants(s,data.bridgeRoadHalfWidth);
+    s.updateFog();
+    return s;
+  }
 }
 
 installFrontiers(Simulation);

@@ -6,7 +6,7 @@ import {Simulation} from '../src/simulation.js';
 import {Landscape} from '../src/landscape.js';
 import {terrainRelief,broadRelief,tacticalHeight,terrainPhase,highGroundMultiplier,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled,HIGH_GROUND_THRESHOLD} from '../src/terrain-elevation.js';
 import {terrainWeights} from '../src/terrain-layout.js';
-import {waterChannels,channelAt} from '../src/map-water.js';
+import {waterChannels,channelAt,dryBankFootprint,landBank} from '../src/map-water.js';
 import {bridgeSpans} from '../src/bridge-layout.js';
 import {terrainBiome,biomeProfile,isSnowBiome,isAridBiome,LEGACY_MEADOW_MAPS,NEW_BIOME_MAPS} from '../src/terrain-biomes.js';
 import {updateBattlePreview} from '../src/custom-battle-ui.js';
@@ -228,4 +228,46 @@ test('custom battle preview aligns water channels with authoritative map geometr
       assert.ok(Math.abs(px-expectedX)<1e-6,`${map} preview channel ${idx} matches world channel`);
     });
   }
+});
+
+test('classic shoreline starts keep settlements and their first resources on dry ground',()=>{
+  for(const [map,mode,seed,worldSize] of [
+    ['archipelago','sandbox',512,160],['archipelago','skirmish',2026,160],
+    ['archipelago','regicide',7,240],['riverland','survival',1,160],['rivers','survival',512,160],
+  ]){
+    const sim=new Simulation({map,mode,seed,worldSize});
+    for(const [owner,player] of sim.players.entries()){
+      const sites=sim.entities.filter(entity=>entity.owner===owner);
+      if(!sites.length)continue;
+      const {start}=player,bank=landBank(map,start.x,start.z);
+      for(const site of sites){
+        const clearance=site.type==='towncenter'?1.8:site.kind==='building'?1.15:.25;
+        assert.ok(dryBankFootprint(map,site.x,site.z,site.r+clearance,bank),[map,mode,owner,site.type].join(' '));
+      }
+      for(const type of ['wood','food','gold','stone']){
+        assert.ok(sim.entities.some(entity=>entity.kind==='resource'&&entity.type===type&&Math.hypot(entity.x-start.x,entity.z-start.z)<=42&&landBank(map,entity.x,entity.z)===bank),[map,mode,owner,type].join(' '));
+      }
+    }
+    const {x,z}=sim.players[0].start,channel=waterChannels(map).at(-1),farZ=-sim.halfWorld+5;
+    assert.ok(sim.isVisible(x,z));
+    assert.equal(sim.isExplored(channel.center+Math.sin(farZ*channel.frequency)*channel.bend,farZ),false);
+  }
+});
+
+test('shoreline saves retain the saved opening positions and terrain footprints',()=>{
+  const sim=new Simulation({map:'archipelago',mode:'sandbox',seed:512});
+  const data=JSON.parse(JSON.stringify(sim.serialize()));
+  const relocated=Simulation.restore(data);
+  assert.deepEqual(relocated.spawnPositions,sim.spawnPositions);
+  assert.deepEqual(relocated.startingSites,sim.startingSites);
+
+  const savedStart={x:-39,z:30},start=data.players[0].start;
+  const dx=savedStart.x-start.x,dz=savedStart.z-start.z;
+  for(const entity of data.entities.filter(entity=>entity.owner===0)){entity.x+=dx;entity.z+=dz;}
+  data.players[0].start=savedStart;
+  const legacy=Simulation.restore(data),site=legacy.startingSites.find(site=>site.owner===0&&site.type==='towncenter');
+  assert.deepEqual(legacy.spawnPositions[0],savedStart);
+  assert.deepEqual({x:site.x,z:site.z},savedStart);
+  assert.deepEqual(legacy.startingSites.filter(site=>site.owner===0).map(({x,z})=>[x,z]),sim.startingSites.filter(site=>site.owner===0).map(({x,z})=>[x+dx,z+dz]));
+  assert.ok(legacy.isVisible(site.x,site.z));
 });
