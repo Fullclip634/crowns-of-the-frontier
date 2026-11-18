@@ -143,10 +143,11 @@ function groundMap(landscape){
   const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[94,82,58];
   const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[172,166,148]:[176,158,122];
   for(const road of terrainRoadPaths(landscape)){
+    const wheelSpacing=road.local?.57:.79,wheelWidth=road.local?.37:.48;
     strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[
       {width:(road.local?3.2:4.4)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.34*t).toFixed(3)})`},
       {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.84*t).toFixed(3)})`},
-      ...[-.64,.64].map(offset=>({width:.39*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.32*t).toFixed(3)})`})),
+      ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.55*t).toFixed(3)})`})),
     ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
   }
   paintSettlementPaving(ctx,landscape,half,scale);

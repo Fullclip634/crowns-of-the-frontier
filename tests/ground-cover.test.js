@@ -18,6 +18,10 @@ test('seeded ground cover obeys terrain, exploration and newly built foundations
   assert.deepEqual(cover.entries,copy.entries);assert.ok(cover.entries.length>400);
   cover.update(false,true);assert.equal(cover.mesh.count,0);
   view.sim.isExplored=()=>true;cover.update(false,true);const count=cover.mesh.count;assert.ok(count>400);assert.equal(view.groundCoverDiagnostics.drawCalls,1);
+  const matrixVersion=cover.mesh.instanceMatrix.version,colorVersion=cover.mesh.instanceColor.version;
+  cover.update(false,true);
+  assert.equal(cover.mesh.instanceMatrix.version,matrixVersion);
+  assert.equal(cover.mesh.instanceColor.version,colorVersion);
   const e=cover.entries[0];view.sim.entities.push({kind:'building',x:e.x,z:e.z,r:15,hp:100});cover.update(false,true);assert.ok(cover.mesh.count<count);
   const matrix=new THREE.Matrix4();for(let i=0;i<cover.mesh.count;i++){cover.mesh.getMatrixAt(i,matrix);assert.ok(Math.hypot(matrix.elements[12]-e.x,matrix.elements[14]-e.z)>=15.99);}
   for(const item of [cover,copy]){item.mesh.geometry.dispose();item.mesh.material.dispose();item.mesh.dispose();}

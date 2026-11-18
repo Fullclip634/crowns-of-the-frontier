@@ -155,7 +155,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
         finalSoil = mix(finalSoil, beachSand * (0.85 + 0.25 * dot(soilSample, vec3(0.3, 0.59, 0.11))), terrainBeach);
       }
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
-      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - terrainPaving * 0.72));`);
+      float packedGround = max(terrainPaving * 0.72, terrainRoad * 0.24);
+      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - packedGround));`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
       vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.16).xyz, 0.45);
@@ -176,7 +177,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       roughnessFactor *= mix(clamp(terrainRoughness, 0.22, 1.0), 0.94, terrainPaving);
       #endif`);
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v8:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v9:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled natural grass, soil and rocky terrain';
   material.needsUpdate=true;
 }

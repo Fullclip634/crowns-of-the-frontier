@@ -105,7 +105,8 @@ export function terrain(material,u){
   const rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.34))).add(flags.z.greaterThan(.5).select(vec3(1.35,.38,.08).mul(emberMask).mul(.55),vec3(0)));
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(.36));
   const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
-  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(terrainPaving.mul(.72))));
+  const packedGround=max(terrainPaving.mul(.72),terrainRoad.mul(.24));
+  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(packedGround)));
   const rockCoordHigh=uv().mul(scale.z.mul(6.5));
   if(u.grassNormal.value){
     const grassNorm=sample(u.grassNormal,coords[0].mul(.42),flat).rgb;

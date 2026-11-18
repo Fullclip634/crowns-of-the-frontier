@@ -94,7 +94,7 @@ export class TerrainDetails{
     this.key=key;this.last=v.clock;let count=0;const sites=v.groundCover?.buildingSites;
     for(const e of this.entries){
       if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
-      if(sites?.get(Math.floor(e.x/16)+':'+Math.floor(e.z/16))?.some(b=>Math.hypot(b.x-e.x,b.z-e.z)<b.r+1))continue;
+      if(sites?.get(Math.floor(e.x/16)+':'+Math.floor(e.z/16))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
       this.dummy.position.set(e.x,e.y+(e.sink??.015),e.z);this.dummy.rotation.set(.09*Math.sin(e.angle),e.angle,.07*Math.cos(e.angle));this.dummy.scale.set(e.scale*e.stretch,e.scale*(e.heightScale||1),e.scale);this.dummy.updateMatrix();
       this.mesh.setMatrixAt(count,this.dummy.matrix);this.mesh.setColorAt(count,this.color.setHex(e.color).multiplyScalar(e.shade));count++;
     }
