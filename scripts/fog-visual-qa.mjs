@@ -8,7 +8,7 @@ base.searchParams.set('renderer',backend);
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel:process.env.QA_BROWSER||'msedge',headless:true,args:[
   '--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-webgpu','--enable-unsafe-swiftshader',
-  ...(backend==='webgl'?['--use-angle=swiftshader']:['--use-webgpu-adapter=swiftshader']),
+  ...(backend==='webgl'?['--use-angle=swiftshader']:[`--use-webgpu-adapter=${process.env.QA_WEBGPU_ADAPTER||'swiftshader'}`]),
 ]});
 const errors=[];
 try{

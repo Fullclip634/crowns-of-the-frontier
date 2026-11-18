@@ -1,7 +1,6 @@
 import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial,MeshBasicMaterial} from 'three';
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMaterial as ThreeBasicNodeMaterial} from 'three/webgpu';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
-import {UNEXPLORED_ALPHA} from './fog-texture.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
 import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
 
@@ -35,11 +34,11 @@ export class MeshBasicNodeMaterial extends ThreeBasicNodeMaterial {
 const pixel=(r,g,b)=>{const map=new DataTexture(new Uint8Array([r,g,b,255]),1,1,RGBAFormat,UnsignedByteType);map.needsUpdate=true;return map;};
 const white=pixel(255,255,255),flat=pixel(128,128,255);
 const value=(holder,type='float')=>reference('value',type,holder);
-export function battlefieldFog(material,fog){
+export function battlefieldFog(material,fog,unexploredAlpha){
   const surface=material.outputNode||output,scale=value(fog.scale),position=positionWorld.xz.mul(scale);
   const border=smoothstep(.5,scale.mul(4).add(.5),max(abs(position.x),abs(position.y)));
   const sampled=texture(fog.mask.value,position.add(.5)).a;
-  const amount=mix(sampled,UNEXPLORED_ALPHA/255,border).mul(value(fog.enabled));
+  const amount=mix(sampled,unexploredAlpha,border).mul(value(fog.enabled));
   material.outputNode=vec4(mix(surface.rgb,value(fog.tint,'color'),amount),surface.a);
   material.needsUpdate=true;
 }

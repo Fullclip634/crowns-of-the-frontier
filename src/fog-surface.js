@@ -4,8 +4,8 @@ import {UNEXPLORED_ALPHA} from './fog-texture.js';
 // Sample at each surface's world position so relief, waves and other raised
 // scenery share the same map as the minimap without an overdraw pass.
 export function shadeBattlefieldFog(material,view){
-  const fog=view.battleFog;
-  if(material.isNodeMaterial){nodeRuntime().battlefieldFog(material,fog);return material;}
+  const fog=view.battleFog,unexploredAlpha=UNEXPLORED_ALPHA/255;
+  if(material.isNodeMaterial){nodeRuntime().battlefieldFog(material,fog,unexploredAlpha);return material;}
 
   const prepare=material.onBeforeCompile,programKey=material.customProgramCacheKey.call(material);
   material.onBeforeCompile=function(shader,renderer){
@@ -36,7 +36,7 @@ export function shadeBattlefieldFog(material,view){
       vec2 fogPosition = vFrontierFogPosition * frontierFogScale;
       float fogAtBorder = smoothstep(0.5, 0.5 + 4.0 * frontierFogScale, max(abs(fogPosition.x), abs(fogPosition.y)));
       float fogAtSurface = texture2D(frontierFogMask, fogPosition + 0.5).a;
-      float fogAmount = mix(fogAtSurface, ${UNEXPLORED_ALPHA/255}, fogAtBorder) * frontierFogEnabled;
+      float fogAmount = mix(fogAtSurface, ${unexploredAlpha}, fogAtBorder) * frontierFogEnabled;
       gl_FragColor.rgb = mix(gl_FragColor.rgb, frontierFogTint, fogAmount);
     `);
   };

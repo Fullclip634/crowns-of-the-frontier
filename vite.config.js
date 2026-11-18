@@ -30,6 +30,10 @@ export default defineConfig({
     // invoked from Rollup's finally on failure, where a release error would
     // mask the actual build failure.
     writeBundle(options,bundle){
+      const renderer=Object.values(bundle).find(item=>item.type==='chunk'&&item.facadeModuleId?.endsWith('/src/render-nodes.js'));
+      // The entry awaits this module during startup. A static import back to
+      // the entry would leave both chunks waiting before the renderer can boot.
+      if(renderer?.imports.some(file=>bundle[file]?.isEntry))throw new Error('The WebGPU renderer chunk imports the game entry.');
       const emitted=Object.keys(bundle).filter(file=>file.startsWith('assets/')&&!file.endsWith('.map')).map(file=>'/'+file);
       const assets=emitted.length?emitted:fs.readdirSync(path.join(outputDirectory,'assets')).map(f=>'/assets/'+f);
       const fonts=fs.existsSync(path.join(outputDirectory,'fonts'))?fs.readdirSync(path.join(outputDirectory,'fonts')).map(f=>'/fonts/'+f):[];
