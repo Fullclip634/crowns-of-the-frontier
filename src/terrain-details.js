@@ -43,7 +43,7 @@ export class TerrainDetails{
     const validSite=(x,z,minCamp)=>{
       if(Math.abs(x)>land.half-4||Math.abs(z)>land.half-4)return false;
       const y=land.surfaceHeightAt(x,z),td=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      return y>=.2&&td>=minCamp&&roadDistance(x,z,land)>=2.6&&!bridgeFootprint(land.map,x,z,3);
+      return y>=.2&&td>=minCamp&&roadDistance(x,z,land,2.6)>=2.6&&!bridgeFootprint(land.map,x,z,3);
     };
     if(!low){
       const cliffChains=Math.min(18,Math.max(6,Math.floor(capacity/48)));
@@ -78,7 +78,7 @@ export class TerrainDetails{
     for(let i=0;i<attempts&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
       const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      if(y<.2||townDist<campRadius*.9||townDist<campRadius*1.3&&rng()<.88||roadDistance(x,z,land)<2.4||bridgeFootprint(land.map,x,z,3))continue;
+      if(y<.2||townDist<campRadius*.9||townDist<campRadius*1.3&&rng()<.88||roadDistance(x,z,land,2.4)<2.4||bridgeFootprint(land.map,x,z,3))continue;
       const dx=(land.surfaceHeightAt(x+1.5,z)-land.surfaceHeightAt(x-1.5,z))/3,dz=(land.surfaceHeightAt(x,z+1.5)-land.surfaceHeightAt(x,z-1.5))/3;
       const slope=Math.hypot(dx,dz),cliff=(slope>.11||y>2.3||i%4===0)&&townDist>=campRadius*1.3;
       const angle=slope>.06?Math.atan2(-dx,dz)+(rng()-.5)*.38:rng()*Math.PI*2;

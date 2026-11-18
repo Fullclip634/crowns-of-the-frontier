@@ -6,6 +6,8 @@ import {prepareTerrainGeometry,terrainWeights,roadDistance,terrainRoadPaths} fro
 import {GroundCover} from '../src/ground-cover.js';
 import {TerrainDetails,pebbleGeometry} from '../src/terrain-details.js';
 import {terrainRelief} from '../src/terrain-relief.js';
+import {Simulation} from '../src/simulation.js';
+import {bridgeSpans} from '../src/bridge-layout.js';
 
 test('playable land has broad rolling elevation at Epic size while capitals retain level construction ground',()=>{
   for(const map of ['highlands','winter','desert','canyon','valley','rivers','coast']){
@@ -59,6 +61,30 @@ test('seeded roads meander naturally while keeping their drawn and painted paths
   }
   const first=new Landscape(512,'highlands',560),differentSeed=new Landscape(91,'highlands',560);
   assert.notDeepEqual(terrainRoadPaths(first)[0].points,terrainRoadPaths(differentSeed)[0].points,'world seed varies the scenery without using simulation randomness');
+});
+
+test('starting lanes connect real buildings and approach bridges on dry ground after a save',()=>{
+  const sim=new Simulation({mode:'custom',map:'archipelago',mapSize:'epic',startAge:2,seed:512});
+  const restored=Simulation.restore(sim.serialize());
+  assert.deepEqual(restored.startingSites,sim.startingSites);
+  const land=new Landscape(512,'archipelago',sim.worldSize,sim.spawnPositions,sim.startingSites);
+  const roads=terrainRoadPaths(land),spans=bridgeSpans('archipelago');
+  for(const site of sim.startingSites.filter(site=>site.type!=='towncenter')){
+    assert.ok(roads.some(road=>road.local&&road.end.x===site.x&&road.end.z===site.z),site.type+' connects to its settlement');
+  }
+  const bridges=roads.filter(road=>!road.local);
+  assert.ok(bridges.length>=2);
+  for(const {end} of bridges){
+    assert.equal(end.z,0);
+    assert.ok(spans.some(span=>Math.abs(end.x-span.center)===span.halfLength+1.5));
+  }
+  for(const {segments} of roads)for(const {x,z,dx,dz} of segments){
+    assert.equal(sim.isWater(x+dx*.5,z+dz*.5),false);
+    for(const offset of [-4,-2,0,2,4]){
+      const a=x+offset,b=z+offset,distance=roadDistance(a,b,land);
+      assert.equal(roadDistance(a,b,land,4),distance<=4?distance:Infinity);
+    }
+  }
 });
 
 test('solid terrain pebbles are bounded, seeded, hidden by fog and cleared beneath live foundations',()=>{

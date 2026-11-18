@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
-import {terrainRoadPaths,strokeTaperedRoad} from './terrain-layout.js';
+import {terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
 import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
 export function roadMask(land){
   const paths=terrainRoadPaths(land),size=768,canvas=document.createElement('canvas');canvas.width=canvas.height=size;
-  const ctx=canvas.getContext('2d'),half=land.renderSize/2,scale=size/land.renderSize;
+  const ctx=canvas.getContext('2d'),half=land.half,scale=size/land.worldSize;
   ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.lineCap='round';ctx.lineJoin='round';
   const beach=land.map==='coast'||land.map==='archipelago';
   const strokeChannel=(channel,style,width)=>{
@@ -22,13 +22,16 @@ export function roadMask(land){
     if(beach)strokeChannel(channel,'rgba(0,255,0,0.78)',(channel.width*2+15.5)*scale);
     strokeChannel(channel,'rgba(0,0,255,0.84)',(channel.width*2+9.5)*scale);
   }
-  // R channel: tapered cart trails fading cleanly into wilderness terrain.
+  // Red values above the lane range identify the flagstone pads.
   for(const road of paths){
-    strokeTaperedRoad(ctx,road.points,{half,size:land.renderSize,canvasSize:size,layers:[
-      {width:4.6*scale,rgba:t=>`rgba(255,0,0,${(.36*t).toFixed(3)})`},
-      {width:2.5*scale,rgba:t=>`rgba(255,0,0,${(.62*t).toFixed(3)})`},
-    ],gravelColor:a=>`rgba(255,0,0,${a.toFixed(3)})`});
+    strokeTaperedRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,layers:[
+      {width:(road.local?3.2:4.6)*scale,rgba:t=>`rgba(196,0,0,${(.39*t).toFixed(3)})`},
+      {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(196,0,0,${(.72*t).toFixed(3)})`},
+    ],gravelColor:a=>`rgba(196,0,0,${a.toFixed(3)})`});
   }
+  paintSettlementPaving(ctx,land,half,scale,true);
+  ctx.fillStyle='#000';
+  for(const edge of [0,size-1]){ctx.fillRect(edge,0,1,size);ctx.fillRect(0,edge,size,1);}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.NoColorSpace;return texture;
 }
 
@@ -90,9 +93,11 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       }\n`+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       vec3 terrainBlend = max(vTerrainMix, vec3(0.0));
-      vec3 roadSample = texture2D(frontierTerrainroads, vMapUv).rgb;
+      vec3 roadSample = texture2D(frontierTerrainroads, vMapUv * 2.0 - 0.5).rgb;
+      float terrainPaving = smoothstep(0.81, 0.99, roadSample.r);
+      float roadStrength = min(roadSample.r * 1.30, 1.0);
       float edgeNoise = sin(vTerrainWorldPos.x * 1.45 + vTerrainWorldPos.z * 1.15) * cos(vTerrainWorldPos.x * 0.85 - vTerrainWorldPos.z * 1.65) * 0.14;
-      float terrainRoad = smoothstep(0.08, 0.88, roadSample.r + edgeNoise * roadSample.r);
+      float terrainRoad = smoothstep(0.08, 0.88, roadStrength + edgeNoise * roadStrength);
       float terrainShore = smoothstep(0.05, 0.75, roadSample.b) * (1.0 - smoothstep(0.35, 0.85, terrainBlend.z));
       float terrainBeach = frontierTerrainbiomeFlags.w > 0.5 ? smoothstep(0.08, 0.78, roadSample.g + edgeNoise * 0.5 * roadSample.g) * (1.0 - smoothstep(0.32, 0.80, terrainBlend.z)) * (1.0 - terrainRoad * 0.85) : 0.0;
       terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), clamp(terrainRoad * 0.78 + max(terrainShore, terrainBeach) * 0.62, 0.0, 0.92));
@@ -150,7 +155,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
         finalSoil = mix(finalSoil, beachSand * (0.85 + 0.25 * dot(soilSample, vec3(0.3, 0.59, 0.11))), terrainBeach);
       }
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
-      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount);`);
+      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - terrainPaving));`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
       vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.16).xyz, 0.45);
@@ -158,7 +163,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       vec3 rockNorm = texture2D(frontierTerrainrockNormal, vMapUv * frontierTerrainscale.z * 6.5).xyz;
       vec3 terrainNormal = grassNorm * terrainBlend.x + soilNorm * terrainBlend.y + rockNorm * terrainBlend.z;
       terrainNormal = terrainNormal * 2.0 - 1.0;
-      terrainNormal.xy *= mix(0.48, 0.76, terrainBlend.z);
+      terrainNormal.xy *= mix(0.48, 0.76, terrainBlend.z) * (1.0 - terrainPaving * 0.84);
       normal = normalize(tbn * terrainNormal);
       #endif`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
@@ -171,7 +176,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       roughnessFactor *= clamp(terrainRoughness, 0.22, 1.0);
       #endif`);
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v6:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v7:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled natural grass, soil and rocky terrain';
   material.needsUpdate=true;
 }

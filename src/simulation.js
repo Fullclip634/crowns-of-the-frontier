@@ -44,6 +44,9 @@ export class Simulation {
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
     this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':'raven')];
     this.initialize();
+    this.startingSites=this.entities
+      .filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type))
+      .map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
   }
   makePlayer(faction){return {faction,resources:{food:550,wood:550,gold:250,stone:250},age:0,formation:'square',tech:Object.fromEntries(Object.keys(TECHS).map(type=>[type,0])),agePending:false};}
   on(fn){this.listeners.push(fn);}

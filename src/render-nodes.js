@@ -55,9 +55,10 @@ export function terrain(material,u){
   const scale=value(u.scale,'vec3'),worldPos=varying(positionGeometry),flags=u.biomeFlags?value(u.biomeFlags,'vec4'):vec4(0,0,0,0);
   const worldNormal=varying(normalize(normalLocal)),worldNormalY=worldNormal.y;
   const coords=[uv().mul(scale.x),uv().mul(scale.y),uv().mul(scale.z).mul(5.5)];
-  const roadSample=sample(u.roads).rgb;
+  const roadSample=sample(u.roads,uv().mul(2).sub(.5)).rgb;
+  const terrainPaving=smoothstep(.81,.99,roadSample.r),roadStrength=clamp(roadSample.r.mul(1.30),0,1);
   const edgeNoise=sin(worldPos.x.mul(1.45).add(worldPos.z.mul(1.15))).mul(cos(worldPos.x.mul(.85).sub(worldPos.z.mul(1.65)))).mul(.14);
-  const terrainRoad=smoothstep(.08,.88,roadSample.r.add(edgeNoise.mul(roadSample.r)));
+  const terrainRoad=smoothstep(.08,.88,roadStrength.add(edgeNoise.mul(roadStrength)));
   const baseMix=max(varying(attribute('terrainMix','vec3')),vec3(0));
   const shore=smoothstep(.05,.75,roadSample.b).mul(float(1).sub(smoothstep(.35,.85,baseMix.z)));
   const terrainBeach=flags.w.greaterThan(.5).select(smoothstep(.08,.78,roadSample.g.add(edgeNoise.mul(.5).mul(roadSample.g))).mul(float(1).sub(smoothstep(.32,.80,baseMix.z))).mul(float(1).sub(terrainRoad.mul(.85))),float(0));
@@ -105,13 +106,13 @@ export function terrain(material,u){
   const rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.34))).add(flags.z.greaterThan(.5).select(vec3(1.35,.38,.08).mul(emberMask).mul(.55),vec3(0)));
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(.36));
   const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
-  material.colorNode=mix(materialColor.rgb,color,value(u.amount));
+  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(terrainPaving)));
   const rockCoordHigh=uv().mul(scale.z.mul(6.5));
   if(u.grassNormal.value){
     const grassNorm=sample(u.grassNormal,coords[0].mul(.42),flat).rgb;
     const soilNorm=sample(u.soilNormal,coords[1].mul(.55),flat).rgb;
     const rockNorm=sample(u.rockNormal,rockCoordHigh,flat).rgb;
-    material.normalNode=normalMap(grassNorm.mul(weights.x).add(soilNorm.mul(weights.y)).add(rockNorm.mul(weights.z)),vec2(mix(.48,.76,weights.z)));
+    material.normalNode=normalMap(grassNorm.mul(weights.x).add(soilNorm.mul(weights.y)).add(rockNorm.mul(weights.z)),vec2(mix(.48,.76,weights.z).mul(float(1).sub(terrainPaving.mul(.84)))));
   }else material.normalNode=null;
   if(u.grassArm.value){
     const armRough=sample(u.grassArm,coords[0].mul(.16)).g.mul(weights.x).add(sample(u.soilArm,coords[1].mul(.18)).g.mul(weights.y)).add(sample(u.rockArm,rockCoordHigh).g.mul(weights.z));

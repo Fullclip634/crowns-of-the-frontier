@@ -47,7 +47,7 @@ export class GroundCover{
     const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.15);
     for(let i=0;i<capacity*2&&this.entries.length<capacity;i++){
       const x=(rng()-.5)*(land.worldSize-6),z=(rng()-.5)*(land.worldSize-6),y=land.surfaceHeightAt(x,z);
-      if(y<.2||roadDistance(x,z,land)<1.85||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
+      if(y<.2||roadDistance(x,z,land,1.85)<1.85||bridgeFootprint(land.map,x,z,3)||winter&&rng()<.5)continue;
       const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
       const campDist=townDist+Math.sin(x*.23+z*.19)*3.8+Math.cos(x*.17-z*.29)*2.8;
       if(campDist<16)continue;

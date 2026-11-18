@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
@@ -20,7 +20,7 @@ import {shadeBattlefieldFog} from './fog-surface.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
-  constructor(seed,map,worldSize=160,settlements=null){this.worldSize=worldSize;this.half=worldSize/2;this.renderSize=worldSize*2;this.settlements=settlements||[{x:-37,z:30},{x:37,z:-30}];this.seed=seed;this.map=map;this.phase=seededRandom(seed+751)()*Math.PI*2;}
+  constructor(seed,map,worldSize=160,settlements=null,startingSites=null){this.worldSize=worldSize;this.half=worldSize/2;this.renderSize=worldSize*2;this.settlements=settlements||[{x:-37,z:30},{x:37,z:-30}];this.startingSites=startingSites;this.seed=seed;this.map=map;this.phase=seededRandom(seed+751)()*Math.PI*2;}
   channels(){return this.waterChannels??=waterChannels(this.map);}
   heightAt(x,z){
     const p=this.phase;
@@ -143,11 +143,13 @@ function groundMap(landscape){
   const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[94,82,58];
   const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[172,166,148]:[176,158,122];
   for(const road of terrainRoadPaths(landscape)){
-    strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,layers:[
-      {width:4.4*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.26*t).toFixed(3)})`},
-      {width:2.5*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.72*t).toFixed(3)})`},
+    strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[
+      {width:(road.local?3.2:4.4)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.34*t).toFixed(3)})`},
+      {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.84*t).toFixed(3)})`},
+      ...[-.64,.64].map(offset=>({width:.39*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.32*t).toFixed(3)})`})),
     ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
   }
+  paintSettlementPaving(ctx,landscape,half,scale);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
 }
 
