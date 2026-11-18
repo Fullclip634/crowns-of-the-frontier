@@ -290,15 +290,28 @@ function crenellate(view,root,tier){
   const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   if(!(size.x>.5||size.z>.5)||size.y<1)return;
   const alongX=size.x>=size.z,span=alongX?size.x:size.z,depth=alongX?size.z:size.x;
-  const heavy=tier==='fortified',count=Math.max(3,Math.round(span/1.05));
-  const width=span/count*.58,height=heavy?.72:.55,deep=depth*.55;
-  for(let i=0;i<count;i++){
-    const offset=(i+.5)/count*span-span/2;
-    const merlon=new THREE.Mesh(view.geo.box,body);
-    merlon.position.set(alongX?center.x+offset:center.x,bounds.max.y+height/2,alongX?center.z:center.z+offset);
-    merlon.scale.set(alongX?width:deep,height,alongX?deep:width);
-    merlon.userData.architectureDetail=true;
-    root.add(merlon);
+  const heavy=tier==='fortified',count=Math.max(3,Math.round(span/1.05)),course=span/count;
+  const coping=materials.stone||body;
+  const profile=heavy?{offset:depth*.31,width:depth*.26,height:.69}:{offset:depth*.23,width:depth*.32,height:.49};
+  const add=(along,height,across,w,h,d,material)=>{
+    const piece=new THREE.Mesh(view.geo.box,material);
+    piece.position.set(center.x+(alongX?along:across),height,center.z+(alongX?across:along));
+    piece.scale.set(alongX?w:d,h,alongX?d:w);
+    piece.userData.architectureDetail=true;
+    root.add(piece);
+  };
+  // Set the battlements on the outer edges so the fortified wall has a
+  // recessed walkway. The dressed caps remain part of the packed masonry.
+  for(const edge of heavy?[-1,1]:[1]){
+    const across=edge*profile.offset,base=bounds.max.y;
+    const sillHeight=heavy?.20:.15;
+    add(0,base+sillHeight*.53,across,span*.98,sillHeight,profile.width+.07,body);
+    for(let i=0;i<count;i++){
+      const along=(i+.5)*course-span/2;
+      const width=course*(heavy?.65:.59),top=base+profile.height;
+      add(along,base+profile.height*.53,across,width,profile.height,profile.width,body);
+      add(along,top+.087,across,width+.07,.13,profile.width+.09,coping);
+    }
   }
 }
 export function authoredResource(view,e){

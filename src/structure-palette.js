@@ -158,7 +158,8 @@ export function packBuildingModel(view,root,e){
   // Everyday buildings keep timber frames and limewashed panels as they grow.
   // Age and size still change, while civic and defensive stonework stays distinct.
   const wallAge=FRAMED_BUILDINGS.has(e.type)?Math.min(2,surfaceAge):surfaceAge;
-  const style=architectureStyle(age),tint=fortified?[.80,.84,.90]:[ageTint[0],ageTint[1],ageTint[2]],roofTint=fortified?[.86,.88,.94]:style.roof,roughnessScale=fortified?1.08:1+surfaceAge*.01;
+  const style=architectureStyle(age),masonry=e.type==='wall'||e.type==='gate';
+  const tint=masonry?(fortified?[.70,.81,.93]:[.88,.95,1.03]):ageTint,roofTint=fortified?[.86,.88,.94]:style.roof,roughnessScale=fortified?1.08:1+surfaceAge*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();

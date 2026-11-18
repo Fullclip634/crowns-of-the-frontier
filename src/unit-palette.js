@@ -4,6 +4,18 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {ensureModelIndices} from './vertex-layout.js';
 import {characterSurfaceMode,characterAtlasGLSL} from './character-surfaces.js';
 import {characterSurfaceMaps} from './surface-assets.js';
+const GARMENT_TINT={
+  villager:[.92,.78,.60],spearman:[.78,.68,.53],swordsman:[.72,.65,.60],
+  archer:[.61,.72,.51],marksman:[.69,.60,.47],knight:[.71,.67,.62],
+  scout:[.79,.68,.51],outrider:[.77,.60,.50],sentinel:[.73,.73,.66],
+  monk:[.91,.82,.69],king:[.88,.77,.66],
+};
+const HORSE_COAT={
+  knight:new THREE.Color(0x584337).toArray(),
+  scout:new THREE.Color(0x817568).toArray(),
+  outrider:new THREE.Color(0x744531).toArray(),
+};
+
 
 function paletteMaterial(view){
   if(!view.materials.unitPalette){
@@ -88,8 +100,20 @@ export function mergeUnitModel(view,model,neutralTeams=false){
         else if(['arm','forearm','head'].includes(motionType))team=.42;
       }
     }
-    const count=geometry.attributes.position.count,old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),color=rawTeam?[1,1,1]:part.material.color.toArray();
-    for(let i=0;i<count;i++)for(let k=0;k<3;k++){colors[i*3+k]=(old?old.getComponent(i,k):1)*color[k];surface[i*3+k]=k===0?part.material.roughness??.9:k===1?part.material.metalness??0:mode;}
+    const positions=geometry.attributes.position,count=positions.count,old=geometry.attributes.color;
+    const colors=new Float32Array(count*3),surface=new Float32Array(count*3);
+    // Retain the team colours on shields and standards. Dyed wool and linen
+    // still carry a team tint, and cloth has a recognisable colour by role.
+    const tunic=mode===2&&motionType!=='cape'&&part.userData.surfaceRole==='team'?GARMENT_TINT[unitType]:null;
+    const coat=part.userData.surfaceRole==='horse'?HORSE_COAT[unitType]:null;
+    const color=coat||(rawTeam?[1,1,1]:part.material.color.toArray());
+    for(let i=0;i<count;i++){
+      const coatShade=coat?.63+.37*Math.min(1,Math.max(0,(positions.getY(i)-.28)/1.05)):1;
+      for(let k=0;k<3;k++){
+        colors[i*3+k]=(old?old.getComponent(i,k):1)*color[k]*(tunic?.[k]??1)*coatShade;
+        surface[i*3+k]=k===0?part.material.roughness??.9:k===1?part.material.metalness??0:mode;
+      }
+    }
     geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.setAttribute('unitSurface',new THREE.BufferAttribute(surface,3));geometry.setAttribute('unitTeamMask',new THREE.Float32BufferAttribute(new Float32Array(count).fill(team),1));
     const key=JSON.stringify(part.userData.motion||null);if(!groups.has(key))groups.set(key,{motion:part.userData.motion,geometries:[]});groups.get(key).geometries.push(geometry);
   });

@@ -7,17 +7,21 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {WorldView} from '../src/world.js';
 import {BUILDINGS,UNITS} from '../src/data.js';
 import {buildingModel,unitModel,treeModel,resourceModel} from '../src/models-3d.js';
-import {registerAuthoredAssets,clearAuthoredAssets,workerVisualTask} from '../src/authored-assets.js';
+import {registerAuthoredAssets,registerSharedTrees,useSharedTrees,clearAuthoredAssets,workerVisualTask} from '../src/authored-assets.js';
 import {animatePart} from '../src/world-polish.js';
 import {UnitActions} from '../src/unit-actions.js';
 import {mergeUnitModel} from '../src/unit-palette.js';
 import {packBuildingModel} from '../src/structure-palette.js';
 import {LOW_CATALOGUE_BUDGET} from '../scripts/blender/content-budget.mjs';
 
-async function catalogue(detail){
-  const bytes=await fs.readFile(new URL(`../src/assets3d/frontier-${detail==='high'?'near':'low'}.glb`,import.meta.url));
-  const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+async function assetGLTF(bytes){
+  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
     .parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+}
+async function catalogue(detail){
+
+  const bytes=await fs.readFile(new URL(`../src/assets3d/frontier-${detail==='high'?'near':'low'}.glb`,import.meta.url));
+  const gltf=await assetGLTF(bytes);
   return registerAuthoredAssets(gltf,detail,bytes.length);
 }
 // Every authored mesh part, in draw order, with the flag that marks detail the
@@ -96,8 +100,10 @@ test('building batching keeps solid bounds, team surfaces and moving pivots whil
 test('Blender catalogues cover all civilizations, buildings, troops, resources and forest detail levels',async()=>{
   try{
     const authoredParts={},authoredBounds={};
+    const treeBytes=await fs.readFile(new URL('../src/assets3d/frontier-trees.glb',import.meta.url));
+    const trees=registerSharedTrees(await assetGLTF(treeBytes),treeBytes.length);
     for(const detail of ['low','high']){
-      const assets=await catalogue(detail);assert.equal(assets.templates.size,126);
+      const assets=await catalogue(detail);useSharedTrees(assets,trees);assert.equal(assets.templates.size,126);
       authoredParts[detail]=meshParts(assets);
       authoredBounds[detail]=Object.fromEntries([...assets.templates].map(([key,root])=>{
         root.updateMatrixWorld(true);
@@ -138,7 +144,7 @@ test('Blender catalogues cover all civilizations, buildings, troops, resources a
     // made explicit. The phone catalogue may only drop parts the author marked
     // nearOnly; everything else has to reach both tiers.
     for(const [key,near] of Object.entries(authoredParts.high)){
-      const expected=near.filter(part=>!part.nearOnly).map(part=>part.name).sort();
+      const expected=near.filter(part=>key.startsWith('tree:')||!part.nearOnly).map(part=>part.name).sort();
       const actual=authoredParts.low[key].map(part=>part.name).sort();
       assert.deepEqual(actual,expected,`${key} lost authored parts in the phone catalogue`);
     }
@@ -226,10 +232,18 @@ test('phone assets preserve the complete catalogue with smaller download and geo
   }finally{clearAuthoredAssets();}
 });
 
-test('detailed broadleaf foliage has closed outward leaf tips and winter trees have separate boughs',async()=>{
+test('broadleaf tips, meadow conifer sprays and winter boughs use solid foliage',async()=>{
   try{
     const high=await catalogue('high');
-    for(const biome of ['highlands','desert'])for(let variant=0;variant<4;variant++){
+    for(let variant=0;variant<4;variant++){
+      const root=high.templates.get('tree:highlands:'+variant+':near'),roles=new Set();
+      assert.equal(root.userData.foliageSpecies,'meadow conifer');
+      root.traverse(part=>{if(part.isMesh)roles.add(part.userData.assetMaterial);});
+      assert.deepEqual(roles,new Set(['trunk','leaf','leafDark']));
+      solid(root);
+    }
+    const biome='desert';
+    for(let variant=0;variant<4;variant++){
       const root=high.templates.get(`tree:${biome}:${variant}:near`);let leaves=0;
       root.traverse(part=>{
         if(!part.isMesh||part.userData.foliageDetail!=='closed leaf tips')return;
@@ -286,6 +300,9 @@ test('wall segments carry real battlements instead of a bare authored box',async
     const heavy=battlements(fortified);
     assert.ok(heavy.length>=3);
     assert.ok(heavy[0].scale.y>stone[0].scale.y,'the fortified tier raises taller battlements');
+    const side=part=>part.position.z;
+    assert.ok(heavy.some(part=>side(part)<-.15)&&heavy.some(part=>side(part)>.15),'fortified parapets leave a passage between two ranks');
+    assert.ok(stone.every(part=>side(part)>.15),'the standard wall has one rank of parapet stones');
   }finally{clearAuthoredAssets();}
 });
 
