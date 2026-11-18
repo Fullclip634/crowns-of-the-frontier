@@ -130,11 +130,12 @@ function groundMap(landscape){
   const grain=winter?['#d6cf9310','#2f492210']:arid?['#e8d3a414','#8a6b3a12']:rocky?['#b9b8aa12','#3c3a3410']:['#c3d2a912','#254d2a0e'];
   for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
   const scale=1536/size;
+  const shore=landscape.map==='coast'||landscape.map==='archipelago';
   for(const channel of landscape.channels()){
     const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
-    ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
+    ctx.lineWidth=(channel.width*2+(winter?10:shore?13:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':shore?'#bfa878':arid?'#9b8156':'#67795f';ctx.stroke(path);
+    ctx.lineWidth=(channel.width*2+(winter?8:shore?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':shore?'#dfd0a4':arid?'#c2a878':'#7b876b';ctx.stroke(path);
   }
   // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
   const volcanic=landscape.map==='volcanic';

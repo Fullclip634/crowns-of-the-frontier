@@ -19,6 +19,13 @@ export function broadRelief(map,x,z,phase){
     const terrace=Math.tanh(shape*3.1);
     h+=profile.cliffs*(terrace*3.1);
   }
+  if(map==='arid'){
+    const duneCoord=xx*.038+zz*.016+terrainNoise(xx*.018+5,zz*.018-7,seed^0x3c91)*1.45;
+    h+=(Math.sin(duneCoord*Math.PI*2)+.32*Math.sin(duneCoord*Math.PI*4-.75))*.62;
+  }else if(map==='tundra'){
+    const driftCoord=xx*.042-zz*.019+terrainNoise(xx*.021-9,zz*.021+4,seed^0x6a19)*1.3;
+    h+=(Math.sin(driftCoord*Math.PI*2)+.25*Math.cos(driftCoord*Math.PI*4))*.36;
+  }
   return h;
 }
 
@@ -58,4 +65,12 @@ export function slopeAt(map,seed,x,z,phase=terrainPhase(seed)){
 }
 export function slopeSpeedFactor(slope){
   return 1-Math.min(.35,Math.max(0,slope-.35)*.22);
+}
+export function biomeVisionModifier(map){
+  return map==='woodland'?-2:map==='tundra'?1:0;
+}
+export function biomeSpeedFactor(map,height=1){
+  if(map!=='riverland')return 1;
+  const t=Math.max(0,Math.min(1,(1.35-height)/1.1));
+  return 1-.12*t*t*(3-2*t);
 }

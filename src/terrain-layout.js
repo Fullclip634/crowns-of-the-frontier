@@ -71,9 +71,10 @@ export function terrainWeights(land,x,y,z,normalY=1){
   const settlements=land.settlements||[],townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
   const campIrregular=(terrainMeadow(x*2.1+17,z*2.1-11,land.phase)-.5)*9+Math.sin(x*.31-z*.27)*2.8;
   const campZone=1-smooth(9,25,townDist+campIrregular);
+  const shoreSpan=land.map==='archipelago'?7.2:land.map==='coast'?5.2:4;
   let bank=0;for(const channel of land.channels()){
     const distance=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend)-channel.width;
-    if(distance>=0)bank=Math.max(bank,1-smooth(.2,4,distance));
+    if(distance>=0)bank=Math.max(bank,1-smooth(.2,shoreSpan,distance));
   }
   const winter=isSnowBiome(land.map),arid=isAridBiome(land.map),rocky=isRockyBiome(land.map);
   // New terrain kinds get a distinct grass/soil/rock signature instead of the
@@ -81,7 +82,8 @@ export function terrainWeights(land,x,y,z,normalY=1){
   const exposure=(arid?.28:rocky?.36:.14)*patch+smooth(.016,.135,slope)*(rocky?.96:.86)+smooth(3.8,12.5,y)*.42;
   const rock=Math.min(.95,exposure*(1-campZone*.92))*(1-road*.9)*(1-bank*.6);
   const baseSoil=arid?.34:rocky?.18:winter?.12:.04,patchSoil=arid?.3:rocky?.2:winter?.17:.08;
-  const soil=Math.min(.95,Math.max(road*.95,bank*(winter?.75:.45),baseSoil+patch*patchSoil)*(1-rock));
+  const bankWeight=winter?.75:land.map==='archipelago'||land.map==='coast'?.82:.45;
+  const soil=Math.min(.95,Math.max(road*.95,bank*bankWeight,baseSoil+patch*patchSoil)*(1-rock));
   return {grass:Math.max(0,1-soil-rock),soil,rock};
 }
 

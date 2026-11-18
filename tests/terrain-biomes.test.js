@@ -4,11 +4,13 @@ import * as THREE from 'three';
 import {MAPS} from '../src/data.js';
 import {Simulation} from '../src/simulation.js';
 import {Landscape} from '../src/landscape.js';
-import {terrainRelief,broadRelief,tacticalHeight,terrainPhase,highGroundMultiplier,slopeAt,slopeSpeedFactor,tacticalTerrainEnabled,HIGH_GROUND_THRESHOLD} from '../src/terrain-elevation.js';
+import {terrainRelief,broadRelief,tacticalHeight,terrainPhase,highGroundMultiplier,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled,HIGH_GROUND_THRESHOLD} from '../src/terrain-elevation.js';
 import {terrainWeights} from '../src/terrain-layout.js';
 import {waterChannels,channelAt} from '../src/map-water.js';
 import {bridgeSpans} from '../src/bridge-layout.js';
 import {terrainBiome,biomeProfile,isSnowBiome,isAridBiome,LEGACY_MEADOW_MAPS,NEW_BIOME_MAPS} from '../src/terrain-biomes.js';
+import {updateBattlePreview} from '../src/custom-battle-ui.js';
+import {BATTLE_SIZES} from '../src/custom-battle.js';
 
 const hex=value=>new THREE.Color(value);
 
@@ -139,5 +141,91 @@ test('terrain splat weights give new biomes a distinct surface signature',()=>{
     const w=flat(map);
     assert.ok(Number.isFinite(w.grass)&&Number.isFinite(w.soil)&&Number.isFinite(w.rock));
     assert.ok(Math.abs(w.grass+w.soil+w.rock-1)<1e-6,map+' weights are normalized');
+  }
+  const archShore=terrainWeights(new Landscape(512,'archipelago',400),40-8-.5,1,0,1);
+  assert.ok(archShore.soil>.5,'archipelago shores expose sandy beach inlets');
+});
+
+test('biome tactical rules enforce woodland sight lines, tundra ridges, and riverland soft ground',()=>{
+  assert.equal(biomeVisionModifier('woodland'),-2);
+  assert.equal(biomeVisionModifier('tundra'),1);
+  assert.equal(biomeVisionModifier('highlands'),0);
+  assert.ok(biomeSpeedFactor('riverland',.25)<1&&biomeSpeedFactor('riverland',.25)>=.88);
+  assert.equal(biomeSpeedFactor('riverland',2),1);
+  assert.equal(biomeSpeedFactor('highland',.25),1);
+
+  const visibleArea=map=>{
+    const sim=new Simulation({mode:'sandbox',map,seed:512});
+    sim.entities=sim.entities.filter(e=>e.owner!==0);
+    sim.addUnit('scout',0,0,0);
+    sim.updateFog();
+    return sim.visible.reduce((sum,cell)=>sum+cell,0);
+  };
+  assert.ok(visibleArea('woodland')<visibleArea('tundra'),'woodland shortens sight lines while tundra opens them');
+
+  const riverSim=new Simulation({mode:'sandbox',map:'riverland',seed:512}),phase=riverSim.tacticalPhase();
+  let soft=null;
+  for(let x=-60;x<=60;x+=4)for(let z=-60;z<=60;z+=4){
+    if(riverSim.isWater(x,z))continue;
+    const h=tacticalHeight('riverland',512,x,z,phase),slope=slopeAt('riverland',512,x,z,phase);
+    if(h<.5&&slope<.35){soft={x,z};break;}
+  }
+  assert.ok(soft,'riverland has gentle low soft ground');
+  const unit=riverSim.addUnit('spearman',0,soft.x,soft.z),startX=unit.x;
+  riverSim.move(unit,{x:soft.x+10,z:soft.z},.1);
+  const moved=Math.hypot(unit.x-startX,unit.z-soft.z);
+  assert.ok(moved>0&&moved<.36*.98,'soft valley ground slightly slows land troops on riverland');
+});
+
+test('custom battle preview aligns water channels with authoritative map geometry',()=>{
+  for(const map of ['rivers','riverland','archipelago']){
+    const strokes=[];
+    let currentPath=[],activeStyle=null,activeWidth=0;
+    const ctx={
+      fillStyle:'',strokeStyle:'',lineWidth:0,font:'',textAlign:'',textBaseline:'',
+      fillRect(){},clearRect(){},arc(){},fill(){},fillText(){},
+      beginPath(){currentPath=[];},
+      moveTo(x,y){currentPath.push([x,y]);},
+      lineTo(x,y){currentPath.push([x,y]);},
+      stroke(){if(currentPath.length>1)strokes.push({style:activeStyle,width:activeWidth,points:currentPath});},
+    };
+    Object.defineProperty(ctx,'strokeStyle',{get:()=>activeStyle,set:v=>{activeStyle=v;}});
+    Object.defineProperty(ctx,'lineWidth',{get:()=>activeWidth,set:v=>{activeWidth=v;}});
+    const canvas={width:260,height:260,getContext:()=>ctx};
+    const fields=new Map([
+      ['battle-preview',canvas],
+      ['custom-player-slot',{value:'1'}],['custom-pace',{value:'balanced'}],
+      ['custom-map',{value:map}],['custom-size',{value:'vast'}],
+      ['custom-age',{value:'0'}],['custom-resources',{value:'standard'}],
+      ['custom-population',{value:'80'}],['custom-seed',{value:'512'}],
+      ['custom-victory',{value:'annihilation'}],['custom-vision',{checked:true}],
+      ['custom-remnants',{checked:true}],
+      ['battle-summary',{textContent:''}],['battle-rule',{textContent:''}],
+      ['custom-network-note',{textContent:''}],
+    ]);
+    for(let i=0;i<8;i++){
+      fields.set(`custom-name-${i}`,{value:`Kingdom ${i+1}`});
+      fields.set(`custom-type-${i}`,{value:i<4?'ai':'closed'});
+      fields.set(`custom-faction-${i}`,{value:'alder'});
+      fields.set(`custom-team-${i}`,{value:i<2?'1':'2'});
+      fields.set(`custom-difficulty-${i}`,{value:'normal'});
+    }
+    const root={
+      querySelector(sel){
+        if(sel==='.custom-validation')return {textContent:''};
+        if(sel==='[data-action=custom-start]')return {innerHTML:'',disabled:false};
+        if(sel==='[data-action=custom-host]')return {disabled:false,title:''};
+        return fields.get(sel.replace(/^#/,''));
+      },
+      querySelectorAll(){return [];},
+    };
+    updateBattlePreview(root);
+    const channels=waterChannels(map),worldSize=BATTLE_SIZES.vast.size;
+    assert.equal(strokes.length,channels.length,map+' preview draws each channel');
+    channels.forEach((ch,idx)=>{
+      const [px,py]=strokes[idx].points[0],z=(py/260-.5)*worldSize;
+      const expectedX=((ch.center+Math.sin(z*ch.frequency)*ch.bend)/worldSize+.5)*260;
+      assert.ok(Math.abs(px-expectedX)<1e-6,`${map} preview channel ${idx} matches world channel`);
+    });
   }
 });

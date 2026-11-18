@@ -22,7 +22,7 @@ import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './b
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './fortified-walls.js';
-import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
+import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {channelAt} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
 
@@ -260,9 +260,10 @@ export class Simulation {
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
     if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,precise?.05:1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
     const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);
-    // Steep cliffs slow troops on tactical-terrain maps; legacy maps keep
-    // their published movement speeds.
-    const terrainSpeed=this.tacticalEnabled()&&!d.naval?slopeSpeedFactor(slopeAt(this.options.map,this.options.seed,e.x,e.z,this.tacticalPhase())):1;
+    // Steep cliffs and soft valley lowlands slow troops on tactical-terrain maps;
+    // legacy maps keep their published movement speeds.
+    const phase=this.tacticalEnabled()&&!d.naval?this.tacticalPhase():0;
+    const terrainSpeed=this.tacticalEnabled()&&!d.naval?slopeSpeedFactor(slopeAt(this.options.map,this.options.seed,e.x,e.z,phase))*biomeSpeedFactor(this.options.map,tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase)):1;
     const step=Math.min(len,speed*terrainSpeed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
     let nx=e.x+dx/len*step,nz=e.z+dz/len*step;
     const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4);
@@ -457,7 +458,7 @@ export class Simulation {
   }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
-  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r+=elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
+  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase))+biomeVisionModifier(this.options.map));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
     for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
   }
   tutorialObjectives(){return [

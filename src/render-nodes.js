@@ -42,18 +42,25 @@ const sample=(holder,coords=uv(),fallback=white)=>{
 };
 
 export function terrain(material,u){
-  const scale=value(u.scale,'vec3'),worldPos=varying(positionGeometry);
+  const scale=value(u.scale,'vec3'),worldPos=varying(positionGeometry),flags=u.biomeFlags?value(u.biomeFlags,'vec4'):vec4(0,0,0,0);
+  const worldNormal=varying(normalize(normalLocal)),worldNormalY=worldNormal.y;
   const coords=[uv().mul(scale.x),uv().mul(scale.y),uv().mul(scale.z).mul(5.5)];
   const roadSample=sample(u.roads).rgb;
   const edgeNoise=sin(worldPos.x.mul(1.45).add(worldPos.z.mul(1.15))).mul(cos(worldPos.x.mul(.85).sub(worldPos.z.mul(1.65)))).mul(.14);
   const terrainRoad=smoothstep(.08,.88,roadSample.r.add(edgeNoise.mul(roadSample.r)));
   const baseMix=max(varying(attribute('terrainMix','vec3')),vec3(0));
   const shore=smoothstep(.05,.75,roadSample.b).mul(float(1).sub(smoothstep(.35,.85,baseMix.z)));
-  const mixed=mix(baseMix,vec3(0,1,0),clamp(terrainRoad.mul(.78).add(shore.mul(.62)),0,.92));
+  const terrainBeach=flags.w.greaterThan(.5).select(smoothstep(.08,.78,roadSample.g.add(edgeNoise.mul(.5).mul(roadSample.g))).mul(float(1).sub(smoothstep(.32,.80,baseMix.z))).mul(float(1).sub(terrainRoad.mul(.85))),float(0));
+  const mixed=mix(baseMix,vec3(0,1,0),clamp(terrainRoad.mul(.78).add(max(shore,terrainBeach).mul(.62)),0,.92));
   const grassRaw=mix(sample(u.grass,coords[0]).rgb,sample(u.grass,coords[0].mul(.16).add(vec2(.19,.43))).rgb,.46);
   const grassSample=clamp(grassRaw.sub(.5).mul(1.32).add(.5),.05,1.35);
   const soilSample=sample(u.soil,coords[1].mul(.55)).rgb;
-  const rockSample=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,coords[2].mul(2.727).add(vec2(.23,.41))).rgb,.46);
+  const triWBase=pow(abs(worldNormal),vec3(4));
+  const triW=triWBase.div(max(triWBase.x.add(triWBase.y).add(triWBase.z),.001));
+  const rockTop=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,coords[2].mul(2.727).add(vec2(.23,.41))).rgb,.46);
+  const rockSideX=sample(u.rock,worldPos.zy.mul(.085)).rgb;
+  const rockSideZ=sample(u.rock,worldPos.xy.mul(.085).add(vec2(.37,.19))).rgb;
+  const rockSample=rockSideX.mul(triW.x).add(rockTop.mul(triW.y)).add(rockSideZ.mul(triW.z));
   const lumaWeights=vec3(.3,.59,.11);
   const sampleLuma=vec3(dot(grassSample,lumaWeights),dot(soilSample,lumaWeights),dot(rockSample,lumaWeights).add(.16));
   const heightWeighted=mixed.mul(pow(max(sampleLuma,vec3(.08)),vec3(1.65)));
@@ -61,15 +68,31 @@ export function terrain(material,u){
   const macro=mix(vec3(1),clamp(materialColor.rgb.div(value(u.macroReference,'color')),vec3(.68),vec3(1.26)),value(u.macroStrength));
   const cloverDapple=sin(worldPos.x.mul(.42).add(worldPos.z.mul(.36))).mul(cos(worldPos.x.mul(.29).sub(worldPos.z.mul(.48))));
   const tuftGrain=sin(worldPos.x.mul(2.8).add(cos(worldPos.z.mul(2.1)))).mul(cos(worldPos.z.mul(2.6).sub(sin(worldPos.x.mul(1.9)))));
-  const grassCol=grassSample.mul(value(u.grassTint,'color')).mul(macro).mul(mix(vec3(.88,.94,.84),vec3(1.08,1.12,.94),smoothstep(-.42,.48,cloverDapple))).mul(float(.96).add(tuftGrain.mul(.09)));
+  const baseGrassCol=grassSample.mul(value(u.grassTint,'color')).mul(macro).mul(mix(vec3(.88,.94,.84),vec3(1.08,1.12,.94),smoothstep(-.42,.48,cloverDapple))).mul(float(.96).add(tuftGrain.mul(.09)));
+  const driftWave=sin(worldPos.x.mul(.42).sub(worldPos.z.mul(.19)).add(sin(worldPos.z.mul(.14)).mul(1.3)));
+  const snowSparkle=sin(worldPos.x.mul(4.3).add(worldPos.z.mul(3.7))).mul(cos(worldPos.z.mul(4.1).sub(worldPos.x.mul(3.2))));
+  const snowMask=mix(float(.86),float(1.04),smoothstep(-.6,.65,driftWave)).mul(float(.97).add(snowSparkle.mul(.045)));
+  const snowBase=mix(vec3(.86,.91,.96),vec3(.99,1,1.02),smoothstep(-.5,.5,driftWave));
+  const snowCol=mix(baseGrassCol,grassSample.mul(snowBase).mul(snowMask).mul(macro),.85);
+  const sandRipple=sin(worldPos.x.mul(3.4).add(worldPos.z.mul(1.3)).add(sin(worldPos.z.mul(.6)).mul(1.4)));
+  const aridShade=mix(vec3(.88,.72,.48),vec3(1.12,.96,.70),smoothstep(-.7,.7,sandRipple));
+  const sandCol=mix(baseGrassCol,mix(soilSample,grassSample,.28).mul(value(u.grassTint,'color')).mul(aridShade).mul(macro),.72);
+  const ashNoise=sin(worldPos.x.mul(1.8).sub(worldPos.z.mul(1.4))).mul(cos(worldPos.z.mul(1.5).add(worldPos.x.mul(1.2))));
+  const ashBase=soilSample.mul(value(u.grassTint,'color')).mul(mix(vec3(.76,.72,.70),vec3(1.06,.98,.94),smoothstep(-.5,.5,ashNoise))).mul(macro);
+  const ashCol=mix(baseGrassCol,ashBase,.68);
+  const grassCol=flags.x.greaterThan(.5).select(snowCol,flags.y.greaterThan(.5).select(sandCol,flags.z.greaterThan(.5).select(ashCol,baseGrassCol)));
   const soilTint=u.soilTint?value(u.soilTint,'color'):vec3(.78,.74,.65);
-  const soilCol=soilSample.mul(soilTint).mul(mix(1,.72,shore)).mul(mix(1,.88,terrainRoad));
-  const worldNormalY=varying(normalLocal.y);
+  const soilLuma=dot(soilSample,lumaWeights);
+  const swashRipple=sin(worldPos.x.mul(2.9).add(worldPos.z.mul(1.7)).add(sin(worldPos.z.mul(.45)).mul(1.2)));
+  const beachSand=mix(vec3(.84,.77,.58),vec3(.95,.89,.71),smoothstep(-.6,.6,swashRipple)).mul(mix(1,.76,shore)).mul(float(.85).add(soilLuma.mul(.25)));
+  const baseSoilCol=soilSample.mul(soilTint).mul(mix(1,.72,shore)).mul(mix(1,.88,terrainRoad));
+  const soilCol=mix(baseSoilCol,beachSand,terrainBeach);
   const strataWarp=sin(worldPos.x.mul(.19)).mul(1.5).add(cos(worldPos.z.mul(.19)).mul(1.5));
   const strata=float(.84).add(sin(worldPos.y.mul(6.4).add(strataWarp)).mul(.20)).add(cos(worldPos.y.mul(15.2).add(strataWarp.mul(1.7))).mul(.08));
   const crevice=smoothstep(.42,.88,sin(worldPos.x.mul(1.45).sub(worldPos.y.mul(2.6))).mul(cos(worldPos.z.mul(1.45).add(worldPos.y.mul(2.3)))));
-  const rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.34)));
   const ledgeDust=smoothstep(.64,.90,worldNormalY);
+  const emberMask=smoothstep(.62,.92,crevice).mul(smoothstep(.22,.75,weights.z)).mul(float(1).sub(ledgeDust));
+  const rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.34))).add(flags.z.greaterThan(.5).select(vec3(1.35,.38,.08).mul(emberMask).mul(.55),vec3(0)));
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(.36));
   const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
   material.colorNode=mix(materialColor.rgb,color,value(u.amount));
@@ -82,7 +105,7 @@ export function terrain(material,u){
   }else material.normalNode=null;
   if(u.grassArm.value){
     const armRough=sample(u.grassArm,coords[0].mul(.16)).g.mul(weights.x).add(sample(u.soilArm,coords[1].mul(.18)).g.mul(weights.y)).add(sample(u.rockArm,rockCoordHigh).g.mul(weights.z));
-    material.roughnessNode=materialRoughness.mul(clamp(mix(armRough,.34,shore.mul(.55)),.22,1));
+    material.roughnessNode=materialRoughness.mul(clamp(mix(mix(armRough,.34,shore.mul(.55)),.48,flags.x.mul(.35)),.22,1));
   }else material.roughnessNode=null;
   material.needsUpdate=true;
 }

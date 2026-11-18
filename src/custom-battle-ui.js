@@ -2,7 +2,7 @@ import {difficultyLabel} from './ui-format.js';
 import {uiIcon} from './ui-icons.js';
 import {AGES,MAPS,FACTIONS,DIFFICULTIES} from './data.js';
 import {BATTLE_SIZES,POPULATION_LIMITS,VICTORY_RULES,PLAYER_COLORS,landBattleSpawns,spawnContext,normalizeBattle} from './custom-battle.js';
-import {channelAt} from './map-water.js';
+import {channelAt,waterChannels} from './map-water.js';
 import {AI_PACES} from './allied-ai.js';
 import {terrainBiome} from './terrain-biomes.js';
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,10 +27,20 @@ export function updateBattlePreview(root=document){
   const draft=readBattleSetup(root),canvas=root.querySelector('#battle-preview'),ctx=canvas.getContext('2d'),size=canvas.width;
   root.querySelectorAll('.battle-slot').forEach((row,i)=>{const active=draft.slots[i].enabled;row.classList.toggle('closed',!active);row.classList.toggle('player-slot',draft.playerSlot===i+1);row.querySelectorAll('input,select').forEach(input=>{if(!input.id.includes('-type-'))input.disabled=!active||input.id.includes('-difficulty-')&&draft.slots[i].controller==='human';});});
   ctx.fillStyle=draft.map==='winter'?'#b7c4b2':terrainBiome(draft.map).map;ctx.fillRect(0,0,size,size);
-  if(['coast','valley','rivers','riverland','archipelago'].includes(draft.map)){
-    const channels={coast:[0],valley:[0],rivers:[-15,15],riverland:[-19,19],archipelago:[-30,30]}[draft.map]||[0];
-    ctx.strokeStyle=draft.map==='volcanic'?'#8a6a54':'#70a9b0';ctx.lineWidth=draft.map==='coast'?21:draft.map==='archipelago'?12:8;
-    for(const offset of channels){ctx.beginPath();for(let y=0;y<=size;y+=4){const x=size/2+offset+Math.sin(y*.08)*4;if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}
+  const channels=waterChannels(draft.map);
+  if(channels.length){
+    const previewWorldSize=BATTLE_SIZES[draft.mapSize]?.size||480,previewScale=size/previewWorldSize;
+    ctx.strokeStyle=draft.map==='volcanic'?'#8a6a54':'#70a9b0';
+    for(const channel of channels){
+      ctx.lineWidth=Math.max(4,channel.width*2*previewScale);
+      ctx.beginPath();
+      for(let y=0;y<=size;y+=4){
+        const z=(y/size-.5)*previewWorldSize;
+        const x=((channel.center+Math.sin(z*channel.frequency)*channel.bend)/previewWorldSize+.5)*size;
+        if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
   }
   const warning=root.querySelector('.custom-validation'),launch=root.querySelector('[data-action=custom-start]'),host=root.querySelector('[data-action=custom-host]'),networkNote=root.querySelector('#custom-network-note');
   launch.innerHTML=`${draft.spectator?'Watch AI battle':'Play against AI'} ${uiIcon(draft.spectator?'eye':'play')}`;
