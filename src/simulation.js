@@ -2,7 +2,7 @@ import {retireDeadUnits} from './dead-unit-cleanup.js';
 import {revealVisionCircle} from './vision-circle.js';
 import {installFrontiers} from './frontiers.js';
 import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
-import {installTactics,formationSlot} from './tactics.js';
+import {installTactics,formationSlot,formationDestinations} from './tactics.js';
 import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
 import {installCustomBattle,normalizeBattle,BATTLE_SIZES,PLAYER_COLORS} from './custom-battle.js';
@@ -219,23 +219,26 @@ export class Simulation {
     while(b.queue.length)this.cancelQueue(b.id,0,owner);const rate=b.progress<1?.7:.2;for(const [r,n]of Object.entries(this.cost(BUILDINGS[b.type].cost,owner,'building')))this.players[owner].resources[r]+=Math.floor(n*rate);b.demolished=true;b.hp=0;this.revision++;this.emit('death',{entity:b});return true;
   }
   trade(resource,buy,owner=0){if(!['food','wood','stone'].includes(resource))return false;if(!this.owned(owner,'building','market').some(b=>b.progress>=1))return this.fail('Build a market to trade resources.',owner);const p=this.players[owner];const cost=buy?{gold:130}:{[resource]:100};if(!this.spend(cost,owner))return this.fail('Not enough resources for this trade.',owner);p.resources[buy?resource:'gold']+=(buy?100:70)+(p.tech.caravanLedger?(buy?10:20):0);this.emit('sound',{name:'coin',owner});return true;}
-  command(ids,order,append=false){const units=ids.map(id=>this.get(id)).filter(e=>e?.kind==='unit'),reserved=new Map();units.forEach((e,i)=>{
-      const o={...order};if(o.type==='build'&&e.type==='villager'&&this.get(o.target)?.type==='wall')o.wallConstruction=true;if(!append)e.wallConstructionSkipped=[];if((o.type==='move'||o.type==='attackmove')&&units.length>1){const formation=this.players[e.owner].formation,width=formation==='line'?Math.min(12,units.length):formation==='column'?2:Math.ceil(Math.sqrt(units.length)),rows=Math.ceil(units.length/width);o.x=clamp(o.x+(i%width-(width-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);o.z=clamp(o.z+(Math.floor(i/width)-(rows-1)/2)*2,-this.halfWorld+3,this.halfWorld-3);}
-      if(['move','attackmove'].includes(o.type)){const surface=e.owner+':'+!!UNITS[e.type].naval;if(!reserved.has(surface))reserved.set(surface,[]);const slots=reserved.get(surface);Object.assign(o,formationSlot(this,e,o,slots));slots.push({x:o.x,z:o.z,r:e.r});}
+  command(ids,order,append=false){const units=ids.map(id=>this.get(id)).filter(e=>e?.kind==='unit');
+    const destinations=order.type==='move'||order.type==='attackmove'?formationDestinations(this,units,order,append):null;
+    units.forEach(e=>{
+      const o={...order,...destinations?.get(e)};if(o.type==='build'&&e.type==='villager'&&this.get(o.target)?.type==='wall')o.wallConstruction=true;if(!append)e.wallConstructionSkipped=[];
       if(append&&e.order){if(e.orders.length<32)e.orders.push(o);}else{e.order=o;e.orders=[];e.path=[];e.repath=0;e.stuckTime=0;e.pathStatus='pending';if(['attack','attackmove','patrol','guard'].includes(o.type))e.stance='aggressive';}
     });if(units.some(e=>e.owner===0)){if(units.some(e=>e.type!=='villager')&&['move','attackmove','attack'].includes(order.type))this.tutorialFlags.command=true;this.emit('order',{order});}
   }
   smartCommand(ids,target,x,z,append=false,attackMove=false,owner=0){const owned=ids.map(id=>this.get(id)).filter(e=>e?.owner===owner);const units=owned.filter(e=>e.kind==='unit');
     for(const b of owned.filter(e=>e.kind==='building')){b.rally={x,z,target:target?.kind==='resource'?target.id:null};}
     if(!target){if(units.length)this.command(units.map(e=>e.id),{type:attackMove?'attackmove':'move',x,z},append);return;}
-    for(const unit of units){let order={type:attackMove?'attackmove':'move',x,z};
+    const move={type:attackMove?'attackmove':'move',x,z},moving=[];
+    for(const unit of units){let order=move;
       if(this.hostile(owner,target?.owner)&&target.kind!=='resource')order={type:'attack',target:target.id};
       else if(unit.type==='villager'&&target?.kind==='resource')order={type:'gather',target:target.id};
       else if(unit.type==='villager'&&target?.kind==='building'&&this.allied(owner,target.owner)){order=target.owner===owner&&target.progress<1?{type:'build',target:target.id}:target.type==='farm'&&target.owner===owner?{type:'gather',target:target.id}:target.progress>=1?{type:'repair',target:target.id}:order;}
       else if(unit.type==='villager'&&mechanicalUnit(target)&&this.allied(owner,target.owner)&&target.hp<target.maxHp)order={type:'repair',target:target.id};
       else if(unit.type==='monk'&&this.allied(owner,target?.owner)&&healableUnit(target))order={type:'heal',target:target.id};
-      this.command([unit.id],order,append);
+      if(order===move)moving.push(unit.id);else this.command([unit.id],order,append);
     }
+    if(moving.length)this.command(moving,move,append);
   }
   stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
   isWater(x,z){if(Math.abs(z)<=bridgeRoadHalfWidth-.6)return false;return channelAt(this.options.map,x,z);}
@@ -365,7 +368,11 @@ export class Simulation {
     }
     if(!order)return;
     if(order.type==='attack'||order.type==='heal'){this.finishOrder(e);return;}
-    if(order.type==='move'||order.type==='attackmove'){const precise=order.type==='move'&&order.aiFortification===true;if(this.move(e,order,dt,precise?0:1.4,precise))this.finishOrder(e);return;}
+    if(order.type==='move'||order.type==='attackmove'){
+      const exact=order.type==='move'&&order.aiFortification===true,formation=order.formation===true;
+      const arrival=exact?0:formation ? .55 : 1.4;
+      if(this.move(e,order,dt,arrival,exact||formation))this.finishOrder(e);return;
+    }
     if(order.type==='patrol'){if(this.move(e,order,dt,1.4)){if(e.orders.length)this.finishOrder(e);else{[order.x,order.originX]=[order.originX,order.x];[order.z,order.originZ]=[order.originZ,order.z];e.path=[];e.repath=0;}}return;}
     if(order.type==='guard'){const ally=this.get(order.target);if(!ally||!this.allied(ally.owner,e.owner)){this.finishOrder(e);return;}const point=formationSlot(this,e,{x:ally.x+(order.offsetX||0),z:ally.z+(order.offsetZ||0)});if(distance(e,point)>3)this.move(e,point,dt,2);return;}
     let target=this.get(order.target);if(!target&&order.type==='gather'&&e.carry>0){order.returning=true;target={kind:'resource',type:e.carryType};}if(!target){

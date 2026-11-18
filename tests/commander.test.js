@@ -41,6 +41,77 @@ test('queued orders remain bounded and holding clears pending commands',()=>{
   assert.equal(s.setStance([u.id],'hold',1),false);assert.ok(s.setStance([u.id],'hold'));assert.equal(u.order,null);assert.equal(u.orders.length,0);
 });
 
+function openBattlefield(map='highlands'){
+  const sim=new Simulation({mode:'sandbox',map,seed:512});
+  sim.entities=[];sim.index=new Map();sim.revision++;sim.grids={};
+  return sim;
+}
+
+test('an eastbound attack line puts melee ahead of ranged support and settles at distinct positions',()=>{
+  const sim=openBattlefield(),units=['archer','swordsman','monk','spearman','catapult','knight'].map((type,i)=>sim.addUnit(type,0,-24,-5+i*2));
+  sim.players[0].formation='line';
+  sim.smartCommand(units.map(unit=>unit.id).reverse(),null,20,0,false,true);
+  const front=units.filter((_,i)=>i%2===1),rear=units.filter((_,i)=>i%2===0);
+  assert.ok(front.every(unit=>unit.order.type==='attackmove'&&unit.order.x>20));
+  assert.ok(rear.every(unit=>unit.order.formation&&unit.order.x<20));
+  for(const rank of [front,rear]){
+    assert.equal(new Set(rank.map(unit=>unit.order.x)).size,1);
+    assert.ok(rank[0].order.z<rank[1].order.z&&rank[1].order.z<rank[2].order.z);
+  }
+  const orders=units.map(unit=>({...unit.order}));
+  const loaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));
+  advance(loaded,30);
+  for(const [i,unit] of units.entries()){
+    const moved=loaded.get(unit.id);
+    assert.equal(moved.order,null);
+    assert.ok(distance(moved,orders[i])<=.56,'the unit reaches its assigned place before stopping');
+  }
+});
+
+test('queued formations turn from the previous destination and stay distinct at the battlefield edge',()=>{
+  const sim=openBattlefield(),units=Array.from({length:6},(_,i)=>sim.addUnit('spearman',0,-22,-5+i*2));
+  const ids=units.map(unit=>unit.id),limit=sim.halfWorld-3;
+  sim.players[0].formation='line';
+  sim.command(ids,{type:'move',x:20,z:0});
+  sim.command(ids,{type:'move',x:20,z:limit},true);
+  const turn=units.map(unit=>unit.orders[0]);
+  assert.ok(turn.every(order=>Math.abs(order.z-limit)<1e-6));
+  assert.equal(new Set(turn.map(order=>order.x)).size,6);
+
+  sim.players[0].formation='column';
+  sim.command(ids,{type:'move',x:limit,z:0});
+  const edge=units.map(unit=>unit.order);
+  assert.ok(edge.every(order=>Math.abs(order.x)<=limit&&Math.abs(order.z)<=limit));
+  assert.equal(new Set(edge.map(order=>order.x)).size,3);
+  assert.equal(new Set(edge.map(order=>order.z)).size,2);
+  assert.equal(Math.max(...edge.map(order=>order.x)),limit);
+});
+
+test('a mixed shoreline order seats land troops and ships on their own movement surfaces',()=>{
+  const sim=openBattlefield('coast'),land=Array.from({length:4},(_,i)=>sim.addUnit('spearman',0,-24,42+i)),ships=['galley','transport','warship','galley'].map((type,i)=>sim.addUnit(type,0,0,42+i));
+  sim.command([...land,...ships].map(unit=>unit.id),{type:'move',x:-12,z:42});
+  for(const [group,naval] of [[land,false],[ships,true]]){
+    const targets=new Set();
+    for(const unit of group){
+      assert.equal(sim.isWater(unit.order.x,unit.order.z),naval);
+      const cell=sim.cell(unit.order.x,unit.order.z);
+      assert.equal(sim.grid(unit.owner,naval)[cell.z*sim.gridSize+cell.x],0);
+      targets.add(unit.order.x+':'+unit.order.z);
+    }
+    assert.equal(targets.size,group.length);
+  }
+});
+
+test('a wide battle line narrows along a bridge and leaves room for siege carriages',()=>{
+  const sim=openBattlefield('valley'),units=Array.from({length:13},(_,i)=>sim.addUnit(i===0?'catapult':'spearman',0,-24-(i%3)*2,-10+i*2));
+  sim.players[0].formation='line';
+  sim.command(units.map(unit=>unit.id),{type:'move',x:0,z:2});
+  const targets=units.map(unit=>unit.order);
+  assert.ok(targets.every(order=>Math.abs(order.z)<=3.5&&!sim.isWater(order.x,order.z)));
+  assert.ok(new Set(targets.map(order=>order.x)).size>2,'the company uses multiple ranks down the crossing');
+  assert.equal(new Set(targets.map(order=>order.x+':'+order.z)).size,units.length);
+});
+
 test('AI intelligence uses observed positions, expires troop sightings, and retains remembered buildings',()=>{
   const s=new Simulation(),state={known:{}};assert.equal(rememberVisibleEnemies(s,state).length,0);assert.deepEqual(state.known,{});
   const enemy=s.addUnit('knight',0,33,-20),outpost=s.addBuilding('tower',0,20,-20,true);rememberVisibleEnemies(s,state);
