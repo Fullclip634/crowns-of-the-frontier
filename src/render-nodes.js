@@ -105,17 +105,18 @@ export function terrain(material,u){
   const rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.34))).add(flags.z.greaterThan(.5).select(vec3(1.35,.38,.08).mul(emberMask).mul(.55),vec3(0)));
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(.36));
   const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
-  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(terrainPaving)));
+  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(terrainPaving.mul(.72))));
   const rockCoordHigh=uv().mul(scale.z.mul(6.5));
   if(u.grassNormal.value){
     const grassNorm=sample(u.grassNormal,coords[0].mul(.42),flat).rgb;
     const soilNorm=sample(u.soilNormal,coords[1].mul(.55),flat).rgb;
     const rockNorm=sample(u.rockNormal,rockCoordHigh,flat).rgb;
-    material.normalNode=normalMap(grassNorm.mul(weights.x).add(soilNorm.mul(weights.y)).add(rockNorm.mul(weights.z)),vec2(mix(.48,.76,weights.z).mul(float(1).sub(terrainPaving.mul(.84)))));
+    material.normalNode=normalMap(grassNorm.mul(weights.x).add(soilNorm.mul(weights.y)).add(rockNorm.mul(weights.z)),vec2(mix(.48,.76,weights.z).mul(float(1).sub(terrainPaving.mul(.52)))));
   }else material.normalNode=null;
   if(u.grassArm.value){
     const armRough=sample(u.grassArm,coords[0].mul(.16)).g.mul(weights.x).add(sample(u.soilArm,coords[1].mul(.18)).g.mul(weights.y)).add(sample(u.rockArm,rockCoordHigh).g.mul(weights.z));
-    material.roughnessNode=materialRoughness.mul(clamp(mix(mix(armRough,.34,shore.mul(.55)),.48,flags.x.mul(.35)),.22,1));
+    const roughness=clamp(mix(mix(armRough,.34,shore.mul(.55)),.48,flags.x.mul(.35)),.22,1);
+    material.roughnessNode=materialRoughness.mul(mix(roughness,.94,terrainPaving));
   }else material.roughnessNode=null;
   material.needsUpdate=true;
 }

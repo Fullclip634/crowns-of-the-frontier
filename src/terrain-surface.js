@@ -155,7 +155,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
         finalSoil = mix(finalSoil, beachSand * (0.85 + 0.25 * dot(soilSample, vec3(0.3, 0.59, 0.11))), terrainBeach);
       }
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
-      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - terrainPaving));`);
+      diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - terrainPaving * 0.72));`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
       vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.16).xyz, 0.45);
@@ -163,7 +163,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       vec3 rockNorm = texture2D(frontierTerrainrockNormal, vMapUv * frontierTerrainscale.z * 6.5).xyz;
       vec3 terrainNormal = grassNorm * terrainBlend.x + soilNorm * terrainBlend.y + rockNorm * terrainBlend.z;
       terrainNormal = terrainNormal * 2.0 - 1.0;
-      terrainNormal.xy *= mix(0.48, 0.76, terrainBlend.z) * (1.0 - terrainPaving * 0.84);
+      terrainNormal.xy *= mix(0.48, 0.76, terrainBlend.z) * (1.0 - terrainPaving * 0.52);
       normal = normalize(tbn * terrainNormal);
       #endif`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
@@ -173,10 +173,10 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
         + texture2D(frontierTerrainrockArm, vMapUv * frontierTerrainscale.z * 6.5).g * terrainBlend.z;
       terrainRoughness = mix(terrainRoughness, 0.34, terrainShore * 0.55);
       terrainRoughness = mix(terrainRoughness, 0.48, frontierTerrainbiomeFlags.x * 0.35);
-      roughnessFactor *= clamp(terrainRoughness, 0.22, 1.0);
+      roughnessFactor *= mix(clamp(terrainRoughness, 0.22, 1.0), 0.94, terrainPaving);
       #endif`);
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v7:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v8:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled natural grass, soil and rocky terrain';
   material.needsUpdate=true;
 }

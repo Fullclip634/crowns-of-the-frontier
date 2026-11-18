@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
-import {prepareTerrainGeometry,terrainWeights,roadDistance,terrainRoadPaths} from '../src/terrain-layout.js';
+import {prepareTerrainGeometry,terrainWeights,roadDistance,terrainRoadPaths,paintSettlementPaving} from '../src/terrain-layout.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {TerrainDetails,pebbleGeometry} from '../src/terrain-details.js';
 import {terrainRelief} from '../src/terrain-relief.js';
@@ -85,6 +85,29 @@ test('starting lanes connect real buildings and approach bridges on dry ground a
       assert.equal(roadDistance(a,b,land,4),distance<=4?distance:Infinity);
     }
   }
+});
+
+test('settlement paving leaves exposed ground at the perimeter and shares its stone shapes with the material mask',()=>{
+  const land={map:'highlands',seed:512,startingSites:[{type:'towncenter',x:-39,z:30,r:5}]};
+  function capture(mask){
+    const stones=[];
+    const ctx={
+      beginPath(){this.points=[];},
+      moveTo(x,y){this.points.push([x,y]);},
+      lineTo(x,y){this.points.push([x,y]);},
+      fill(){stones.push({points:this.points,color:this.fillStyle.match(/\d+(?:\.\d+)?/g).map(Number)});},
+    };
+    paintSettlementPaving(ctx,land,80,4,mask);
+    return stones;
+  }
+  const stones=capture(false),mask=capture(true);
+  assert.deepEqual(capture(false),stones);
+  assert.ok(stones.length>60);
+  assert.deepEqual(mask.map(tile=>tile.points),stones.map(tile=>tile.points));
+  assert.ok(stones.every(({color,points})=>Math.max(...color.slice(0,3))<135&&points.length===8));
+  assert.ok(new Set(stones.map(({color})=>color[0])).size>12,'stone faces have distinct tones');
+  assert.ok(stones.some(({color})=>color[3]<.8),'outer stones fade into the ground');
+  assert.equal(stones.some(({points})=>points.some(([x,z])=>x<=(80-39-5.8)*4&&z<=(80+30-5.8)*4)),false,'the corner leaves natural ground exposed');
 });
 
 test('solid terrain pebbles are bounded, seeded, hidden by fog and cleared beneath live foundations',()=>{

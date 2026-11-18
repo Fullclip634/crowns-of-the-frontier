@@ -2,6 +2,7 @@ import {terrainMeadow,terrainNoise} from './terrain-fields.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
 import {bridgeSpans} from './bridge-layout.js';
 import {channelAt} from './map-water.js';
+import {seededRandom} from './data.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 
@@ -63,19 +64,31 @@ export function paintSettlementPaving(ctx,land,half,scale,mask=false){
   const color=terrainBiome(land.map).plaza,r=color>>16,g=color>>8&255,b=color&255;
   for(const site of land.startingSites||[]){
     if(site.type==='dock')continue;
-    const radius=site.r+(site.type==='towncenter'?2.15:1.15);
-    const left=(site.x-radius+half)*scale,top=(site.z-radius+half)*scale,size=radius*2*scale;
-    ctx.fillStyle=mask?'#ff0000':`rgb(${r*.66},${g*.65},${b*.63})`;
-    ctx.fillRect(left,top,size,size);
-    if(mask)continue;
-    const rows=Math.ceil(radius*2/1.04),columns=Math.ceil(radius*2/1.25),tileX=size/columns,tileZ=size/rows;
+    const radius=site.r+(site.type==='towncenter'?1.65:.95),size=2*radius;
+    const rows=Math.ceil(size/1.03),columns=Math.ceil(size/1.32),tileX=size/columns,tileZ=size/rows;
+    const random=seededRandom(land.seed^Math.imul(Math.round(site.x*128),73856093)^Math.imul(Math.round(site.z*128),19349663));
     for(let row=0;row<rows;row++)for(let column=-1;column<columns;column++){
-      const shift=row%2*.4,start=Math.max(0,column+shift),end=Math.min(columns,column+1+shift);
-      if(end<=start)continue;
-      const noise=terrainNoise(site.x+column*17,site.z+row*19,land.seed);
-      const grain=.89+noise*.15,grout=.075*scale;
-      ctx.fillStyle=`rgb(${r*grain},${g*grain},${b*grain})`;
-      ctx.fillRect(left+start*tileX+grout*.5,top+row*tileZ+grout*.5,(end-start)*tileX-grout,tileZ-grout);
+      const shift=row%2*.47,start=Math.max(0,column+shift),end=Math.min(columns,column+1+shift);
+      if(end-start<.25)continue;
+      const x=Math.abs((start+end)*.5*tileX-radius),z=Math.abs((row+.5)*tileZ-radius);
+      const edge=radius-Math.max(x,z)-Math.max(0,Math.min(x,z)-radius*.48)*.5;
+      const coverage=smooth(0,.72,edge+(random()-.5)*.72);
+      if(coverage<.12)continue;
+      const grout=.11+random()*.075,shade=.61+random()*.19,vein=(random()-.5)*7;
+      const left=(site.x-radius+start*tileX+grout*.5+half)*scale,right=(site.x-radius+end*tileX-grout*.5+half)*scale;
+      const top=(site.z-radius+row*tileZ+grout*.5+half)*scale,bottom=(site.z-radius+(row+1)*tileZ-grout*.5+half)*scale;
+      const chip=Math.min(right-left,bottom-top)*(.09+random()*.2),alpha=Math.min(1,coverage*1.3).toFixed(2);
+      ctx.fillStyle=mask?`rgba(255,0,0,${alpha})`:`rgba(${Math.round(r*shade+vein)},${Math.round(g*shade+vein*.4)},${Math.round(b*shade-vein*.65)},${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(left+chip,top);
+      ctx.lineTo(right-chip*.7,top);
+      ctx.lineTo(right,top+chip);
+      ctx.lineTo(right,bottom-chip*.65);
+      ctx.lineTo(right-chip,bottom);
+      ctx.lineTo(left+chip*.6,bottom);
+      ctx.lineTo(left,bottom-chip);
+      ctx.lineTo(left,top+chip*.7);
+      ctx.fill();
     }
   }
 }
