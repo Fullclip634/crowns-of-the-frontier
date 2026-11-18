@@ -4,11 +4,17 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {seededRandom} from './data.js';
 import {DayNightLighting} from './day-night.js';
 import {isSnowBiome,isAridBiome} from './terrain-biomes.js';
+import {biomeAtmosphere} from './sky-atmosphere.js';
 
 export const WEATHER_NAMES={clear:'Clear skies',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snowfall'};
 const clamp=n=>Math.max(0,Math.min(1,n));
 const smooth=n=>{n=clamp(n);return n*n*(3-2*n);};
 const STORM_CLOUD_COLOR=new THREE.Color(0x6c7986),BRIGHT_CLOUD_COLOR=new THREE.Color(0xf2f6fa);
+
+export function battlefieldHaze(profile,focusDistance,cloudiness){
+  const clearance=Math.max(0,focusDistance-58);
+  return {near:profile.hazeNear+clearance-cloudiness*20,far:profile.hazeFar+clearance-cloudiness*45};
+}
 
 function cloudClusterGeometry(){
   // Sculpted 5-lobe flat-bottomed cumulus puff so clouds read as organic sky strata
@@ -50,7 +56,9 @@ export function weatherAt(seed,map,time,preference='auto'){
 export class WeatherRenderer {
   constructor(view){
     this.view=view;this.seed=view.sim.options.seed;this.map=view.sim.options.map;this.group=new THREE.Group();this.group.name='3D weather';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.tint=new THREE.Color();this.roofs=new Map();this.roofStamp='';this.strength=0;this.cloudiness=0;
-    this.base={background:view.scene.background.clone(),fog:view.scene.fog.color.clone(),sun:view.sun.color.clone(),hemi:view.hemi.color.clone(),ground:view.groundSurface.material.color.clone(),near:115,far:275,
+    this.atmosphere=biomeAtmosphere(this.map);
+    this.base={background:view.scene.background.clone(),fog:view.scene.fog.color.clone(),sun:view.sun.color.clone(),hemi:view.hemi.color.clone(),ground:view.groundSurface.material.color.clone(),
+      near:view.scene.fog.near,far:view.scene.fog.far,key:view.sun.intensity,fill:view.hemi.intensity,
       // The night pass modulates these too. Weather must rewrite every field it
       // owns each frame, otherwise the night pass cannot tell its own output
       // from this frame's daylight baseline and darkens them again and again.
@@ -77,8 +85,9 @@ export class WeatherRenderer {
     const v=this.view,time=v.sim.time,preference=menu?'clear':v.settings.weather||'auto',state=weatherAt(this.seed,this.map,time,preference);v.weatherState=state;
     const blend=1-Math.exp(-dt*.7);this.strength+=(state.amount-this.strength)*blend;this.cloudiness+=(state.cloud-this.cloudiness)*blend;
     const dark=this.cloudiness*.48,flash=state.flash&&v.settings.lightning!==false&&!v.settings.reducedMotion?1:0;
-    v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=this.base.near-this.cloudiness*20;v.scene.fog.far=this.base.far-this.cloudiness*45;
-    v.sun.color.copy(this.base.sun).lerp(this.tint.setHex(0xb7cedb),dark);v.sun.intensity=2.7*(1-dark*.72)+flash*2;v.hemi.color.copy(this.base.hemi).lerp(this.tint.setHex(0x9eb4bf),dark);v.hemi.intensity=.9-dark*.22+flash*.3;
+    const haze=battlefieldHaze(this.atmosphere,v.camera.position.distanceTo(v.target),this.cloudiness);
+    v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=haze.near;v.scene.fog.far=haze.far;
+    v.sun.color.copy(this.base.sun).lerp(this.tint.setHex(0xb7cedb),dark);v.sun.intensity=this.base.key*(1-dark*.72)+flash*2;v.hemi.color.copy(this.base.hemi).lerp(this.tint.setHex(0x9eb4bf),dark);v.hemi.intensity=this.base.fill-dark*.22+flash*.3;
     v.hemi.groundColor.copy(this.base.hemiGround).lerp(this.tint.setHex(0x8b9aa6),dark*.6);v.scene.environmentIntensity=this.base.environment*(1-dark*.12);v.renderer.toneMappingExposure=this.base.exposure;v.fogTint.copy(this.base.fogTint);
     const ground=v.groundSurface.material;ground.color.copy(this.base.ground).multiplyScalar(1-this.strength*.08);ground.roughness=1-this.strength*.2;
     this.daylight.update(dt);
@@ -103,7 +112,7 @@ export class WeatherRenderer {
     }this.clouds.instanceMatrix.needsUpdate=true;if(this.clouds.count>0&&this.clouds.instanceColor)this.clouds.instanceColor.needsUpdate=true;
     v.weatherDiagnostics={type:state.type,rain:this.rain.count,snow:this.snow.count,ripples:this.ripples.count,clouds:this.clouds.count,drawCalls:[this.rain,this.snow,this.ripples,this.clouds].filter(mesh=>mesh.count>0).length};
   }
-  dispose(){const v=this.view;this.daylight.dispose();v.scene.background.copy(this.base.background);v.scene.fog.color.copy(this.base.fog);v.scene.fog.near=this.base.near;v.scene.fog.far=this.base.far;v.sun.color.copy(this.base.sun);v.sun.intensity=2.7;v.hemi.color.copy(this.base.hemi);v.hemi.intensity=.9;for(const mesh of this.group.children){mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();}this.group.removeFromParent();}
+  dispose(){const v=this.view;this.daylight.dispose();v.scene.background.copy(this.base.background);v.scene.fog.color.copy(this.base.fog);v.scene.fog.near=this.base.near;v.scene.fog.far=this.base.far;v.sun.color.copy(this.base.sun);v.sun.intensity=this.base.key;v.hemi.color.copy(this.base.hemi);v.hemi.intensity=this.base.fill;for(const mesh of this.group.children){mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();}this.group.removeFromParent();}
 }
 
 export function installWeather(WorldView){const p=WorldView.prototype,attach=p.attach,render=p.render;

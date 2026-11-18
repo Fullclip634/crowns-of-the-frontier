@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {biomeAtmosphere,biomeAtmosphereKey,createSkyDome,updateSkyDome,disposeSkyDome} from '../src/sky-atmosphere.js';
+import {applyBiomeAtmosphere,biomeAtmosphere,biomeAtmosphereKey,createSkyDome,updateSkyDome,disposeSkyDome} from '../src/sky-atmosphere.js';
+import {battlefieldHaze} from '../src/weather.js';
 import {MeshStandardNodeMaterial,MeshBasicNodeMaterial,terrain,unitPalette,structurePalette,water,skyDome} from '../src/render-nodes.js';
 import {installNodeRuntime} from '../src/render-runtime.js';
 import {shaderPreview} from '../src/shader-preparation.js';
@@ -47,6 +48,30 @@ test('createSkyDome and updateSkyDome track camera, horizon fog color, weather c
 
   disposeSkyDome(view);
   assert.equal(view.skyDome,null);assert.equal(scene.children.length,0);
+});
+
+test('biome lighting resets between matches and distance haze keeps the camera focus clear',()=>{
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color();
+  scene.fog=new THREE.Fog();
+  const view={scene,sun:new THREE.DirectionalLight(),hemi:new THREE.HemisphereLight(),renderer:{},sim:{options:{map:'winter'}}};
+  const winter=biomeAtmosphere('winter'),arid=biomeAtmosphere('arid');
+  for(const map of ['winter','arid','winter']){
+    view.sim.options.map=map;
+    const profile=biomeAtmosphere(map);
+    applyBiomeAtmosphere(view);
+    assert.equal(view.sun.color.getHex(),profile.sunHex);
+    assert.equal(view.hemi.color.getHex(),profile.fillHex);
+    assert.equal(view.sun.intensity,profile.keyIntensity);
+    assert.equal(view.hemi.intensity,profile.fillIntensity);
+    assert.equal(view.renderer.toneMappingExposure,profile.exposure);
+    for(const distance of [30,100,280]){
+      const clear=battlefieldHaze(profile,distance,0),storm=battlefieldHaze(profile,distance,.9);
+      assert.ok(storm.near>distance&&storm.far>storm.near);
+      assert.ok(storm.near<clear.near&&storm.far<clear.far);
+    }
+  }
+  assert.ok(battlefieldHaze(winter,50,0).near<battlefieldHaze(arid,50,0).near);
 });
 
 test('node materials maintain WebGPU/WebGL2 shader parity hooks and clear disabled quality nodes',()=>{

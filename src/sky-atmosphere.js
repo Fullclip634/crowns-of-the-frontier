@@ -3,11 +3,16 @@ import {environmentGenerator,basicMaterial,nodeRuntime} from './render-runtime.j
 import {isSnowBiome,terrainBiome} from './terrain-biomes.js';
 
 const ATMOSPHERES=Object.freeze({
-  winter:Object.freeze({skyHex:0xc2d0da,zenithHex:0x4e769e,hemiGroundHex:0x7c8e94,envZenith:'#4e769e',envHorizon:'#e4eef4',envGround:'#8b999f'}),
-  arid:Object.freeze({skyHex:0xcbb99b,zenithHex:0x4473a6,hemiGroundHex:0x8e744c,envZenith:'#4474a6',envHorizon:'#eadbc0',envGround:'#917851'}),
-  volcanic:Object.freeze({skyHex:0x938884,zenithHex:0x3c4553,hemiGroundHex:0x4a403b,envZenith:'#3d4653',envHorizon:'#bdb0a9',envGround:'#3d3735'}),
-  coastal:Object.freeze({skyHex:0xa7c0cb,zenithHex:0x356ea8,hemiGroundHex:0x526845,envZenith:'#356ea8',envHorizon:'#deecf2',envGround:'#4d6542'}),
-  temperate:Object.freeze({skyHex:0xa4b9c2,zenithHex:0x3b6c9e,hemiGroundHex:0x50633b,envZenith:'#3b6d9f',envHorizon:'#dce7ed',envGround:'#4a5a3a'}),
+  winter:Object.freeze({skyHex:0xc2d0da,zenithHex:0x4e769e,hemiGroundHex:0x91a8b7,envZenith:'#4e769e',envHorizon:'#e4eef4',envGround:'#8b999f',
+    sunHex:0xfff4e7,fillHex:0xd0e5ff,keyIntensity:3.05,fillIntensity:1.28,exposure:1.19,hazeNear:77,hazeFar:228}),
+  arid:Object.freeze({skyHex:0xcbb99b,zenithHex:0x4473a6,hemiGroundHex:0xa08666,envZenith:'#4474a6',envHorizon:'#eadbc0',envGround:'#917851',
+    sunHex:0xffe0b9,fillHex:0xd4e1f1,keyIntensity:3.22,fillIntensity:1.13,exposure:1.15,hazeNear:112,hazeFar:288}),
+  volcanic:Object.freeze({skyHex:0x938884,zenithHex:0x3c4553,hemiGroundHex:0x695c58,envZenith:'#3d4653',envHorizon:'#bdb0a9',envGround:'#3d3735',
+    sunHex:0xf1d6b8,fillHex:0xc3c8d7,keyIntensity:2.82,fillIntensity:1.17,exposure:1.19,hazeNear:95,hazeFar:240}),
+  coastal:Object.freeze({skyHex:0xa7c0cb,zenithHex:0x356ea8,hemiGroundHex:0x697f66,envZenith:'#356ea8',envHorizon:'#deecf2',envGround:'#4d6542',
+    sunHex:0xffedda,fillHex:0xcfe7f5,keyIntensity:3,fillIntensity:1.22,exposure:1.16,hazeNear:78,hazeFar:230}),
+  temperate:Object.freeze({skyHex:0xa4b9c2,zenithHex:0x3b6c9e,hemiGroundHex:0x6f7e56,envZenith:'#3b6d9f',envHorizon:'#dce7ed',envGround:'#4a5a3a',
+    sunHex:0xffecd2,fillHex:0xd8e9f2,keyIntensity:3.12,fillIntensity:1.2,exposure:1.17,hazeNear:94,hazeFar:255}),
 });
 
 const STORM_ZENITH=0x4c5d69,NIGHT_ZENITH=0x060d1c;
@@ -56,6 +61,9 @@ export function applyBiomeAtmosphere(view){
   view.scene?.background?.setHex?.(profile.skyHex);
   view.scene?.fog?.color?.setHex?.(profile.skyHex);
   view.hemi?.groundColor?.setHex?.(profile.hemiGroundHex);
+  if(view.sun){view.sun.color.setHex(profile.sunHex);view.sun.intensity=profile.keyIntensity;}
+  if(view.hemi){view.hemi.color.setHex(profile.fillHex);view.hemi.intensity=profile.fillIntensity;}
+  if(view.renderer)view.renderer.toneMappingExposure=profile.exposure;
   if(view.renderer){
     // CubeUV PMREM expands every PBR fragment shader across dozens of pipelines on both
     // WebGPU DX12 and WebGL ANGLE DX11; sky dome and hemisphere bounce keep atmospheric parity without stalls.
