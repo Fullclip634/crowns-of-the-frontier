@@ -8,10 +8,10 @@ const fixture=(mode='night')=>({
   scene:{background:new Color(0xa5b4ad),fog:{color:new Color()},environmentIntensity:.3},
   hemi:{groundColor:new Color(0x52633a),color:new Color(0xc7def1),intensity:.9},
   sun:{color:new Color(0xffe4bd),intensity:2.7},renderer:{toneMappingExposure:1.1},
-  fogMesh:{material:{color:new Color(0xffffff)}},
+  fogTint:new Color(0x13201e),
   materials:{structurePalette:{frontierUniforms:{night:{value:0}}}},
 });
-const snapshot=v=>({sun:v.sun.intensity,hemi:v.hemi.intensity,background:v.scene.background.clone(),sunColor:v.sun.color.clone(),exposure:v.renderer.toneMappingExposure,environment:v.scene.environmentIntensity,fog:v.fogMesh.material.color.clone()});
+const snapshot=v=>({sun:v.sun.intensity,hemi:v.hemi.intensity,background:v.scene.background.clone(),sunColor:v.sun.color.clone(),exposure:v.renderer.toneMappingExposure,environment:v.scene.environmentIntensity,fog:v.fogTint.clone()});
 
 test('night lighting is idempotent across repeated frames instead of compounding toward black',()=>{
   const v=fixture('night'),lighting=new DayNightLighting(v);lighting.update(.016);
@@ -84,14 +84,14 @@ test('weather frames never let the night pass compound ambient, exposure, fog or
     v.sun.color.copy(day.sun);v.sun.intensity=2.7*(1-.3*.72);
     v.hemi.color.copy(day.hemi);v.hemi.intensity=.9-.3*.22;
     v.hemi.groundColor.copy(day.ground);v.scene.environmentIntensity=.3*(1-.3*.12);
-    v.renderer.toneMappingExposure=1.1;v.fogMesh.material.color.copy(day.fog);
+    v.renderer.toneMappingExposure=1.1;v.fogTint.copy(day.fog);
   };
   weatherFrame();lighting.update(.016);
-  const first={environment:v.scene.environmentIntensity,exposure:v.renderer.toneMappingExposure,fog:v.fogMesh.material.color.clone(),ground:v.hemi.groundColor.clone()};
+  const first={environment:v.scene.environmentIntensity,exposure:v.renderer.toneMappingExposure,fog:v.fogTint.clone(),ground:v.hemi.groundColor.clone()};
   for(let frame=0;frame<240;frame++){weatherFrame();lighting.update(.016);}
   assert.ok(Math.abs(v.scene.environmentIntensity-first.environment)<1e-9,'ambient response does not decay');
   assert.ok(Math.abs(v.renderer.toneMappingExposure-first.exposure)<1e-9,'exposure does not drift');
-  assert.ok(v.fogMesh.material.color.equals(first.fog),'fog overlay is stable');
+  assert.ok(v.fogTint.equals(first.fog),'fog tint is stable');
   assert.ok(v.hemi.groundColor.equals(first.ground),'ground bounce is stable');
 });
 test('disposal restores every daylight resource including colours and intensities',()=>{

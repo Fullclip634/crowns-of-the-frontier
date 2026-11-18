@@ -4,6 +4,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {canonicalGeometry} from './authored-assets.js';
 import {readAssetResponse} from './load-progress.js';
 import {bridgeArtwork,bridgeSpans,bridgeRoadHalfWidth,bridgeWidthScale} from './bridge-layout.js';
+import {shadeBattlefieldFog} from './fog-surface.js';
 const source=new URL('./assets3d/frontier-bridge.glb',import.meta.url).href;
 let pending,template,bytes=0;
 function bridgeAprons(view,span){
@@ -20,13 +21,18 @@ export async function loadBridgeArtwork(){
   try{return await pending;}catch(error){pending=null;throw error;}
 }
 export function buildBridges(view){
-  view.bridgeMeshes=[];let triangles=0,draws=0;
+  view.bridgeMeshes=[];const materials=new Map();let triangles=0,draws=0;
   for(const span of bridgeSpans(view.landscape.map)){
     if(!template)throw new Error('Bridge artwork has not finished loading.');
     const root=template.clone(true),group=new THREE.Group(),aprons=bridgeAprons(view,span);root.position.x=span.center;root.scale.set(span.halfLength/bridgeArtwork.halfLength,1,bridgeWidthScale);group.add(root,aprons);
     root.traverse(part=>{if(!part.isMesh)return;const role=part.userData.assetMaterial,material=role==='stone'?(view.materials.rock||view.materials.stone):view.materials[role];if(!material)throw new Error('Unknown bridge material.');material.vertexColors=true;part.material=material;});
     view.mergeModel(group);aprons.geometry.dispose();group.name='Authored stone river bridge';group.userData.bridge=span;
-    group.traverse(part=>{if(part.isMesh){triangles+=(part.geometry.index?.count||part.geometry.attributes.position.count)/3;draws++;}});
+    group.traverse(part=>{
+      if(!part.isMesh)return;
+      const source=part.material;
+      if(!materials.has(source))materials.set(source,shadeBattlefieldFog(source.clone(),view));
+      part.material=materials.get(source);triangles+=(part.geometry.index?.count||part.geometry.attributes.position.count)/3;draws++;
+    });
     view.terrain.add(group);view.bridgeMeshes.push(group);
   }
   view.bridgeDiagnostics={source:'Blender',revision:bridgeArtwork.revision,bridges:view.bridgeMeshes.length,triangles,draws,bytes,clearWidth:bridgeRoadHalfWidth*2};

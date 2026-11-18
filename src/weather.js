@@ -55,7 +55,7 @@ export class WeatherRenderer {
       // owns each frame, otherwise the night pass cannot tell its own output
       // from this frame's daylight baseline and darkens them again and again.
       hemiGround:view.hemi.groundColor.clone(),environment:view.scene.environmentIntensity,exposure:view.renderer.toneMappingExposure,
-      fogMesh:view.fogMesh?.material?.color?view.fogMesh.material.color.clone():null};
+      fogTint:view.fogTint.clone()};
     this.rain=this.instances(new THREE.CylinderGeometry(.005,.013,1.55,4),new THREE.MeshBasicMaterial({color:0xd0e2ea,transparent:true,opacity:.38,depthWrite:false}),1400);
     this.snow=this.instances(new THREE.OctahedronGeometry(.09,0).scale(1,.38,1),new THREE.MeshBasicMaterial({color:0xecf4f0,transparent:true,opacity:.74,depthWrite:false}),1000);
     this.ripples=this.instances(new THREE.TorusGeometry(1,.026,3,14).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xb8cdd2,transparent:true,opacity:.22,depthWrite:false}),60);
@@ -79,7 +79,7 @@ export class WeatherRenderer {
     const dark=this.cloudiness*.48,flash=state.flash&&v.settings.lightning!==false&&!v.settings.reducedMotion?1:0;
     v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=this.base.near-this.cloudiness*20;v.scene.fog.far=this.base.far-this.cloudiness*45;
     v.sun.color.copy(this.base.sun).lerp(this.tint.setHex(0xb7cedb),dark);v.sun.intensity=2.7*(1-dark*.72)+flash*2;v.hemi.color.copy(this.base.hemi).lerp(this.tint.setHex(0x9eb4bf),dark);v.hemi.intensity=.9-dark*.22+flash*.3;
-    v.hemi.groundColor.copy(this.base.hemiGround).lerp(this.tint.setHex(0x8b9aa6),dark*.6);v.scene.environmentIntensity=this.base.environment*(1-dark*.12);v.renderer.toneMappingExposure=this.base.exposure;if(this.base.fogMesh&&v.fogMesh?.material)v.fogMesh.material.color.copy(this.base.fogMesh);
+    v.hemi.groundColor.copy(this.base.hemiGround).lerp(this.tint.setHex(0x8b9aa6),dark*.6);v.scene.environmentIntensity=this.base.environment*(1-dark*.12);v.renderer.toneMappingExposure=this.base.exposure;v.fogTint.copy(this.base.fogTint);
     const ground=v.groundSurface.material;ground.color.copy(this.base.ground).multiplyScalar(1-this.strength*.08);ground.roughness=1-this.strength*.2;
     this.daylight.update(dt);
     this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?240:quality==='medium'?700:1400;

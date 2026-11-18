@@ -17,7 +17,7 @@ function capture(view){
     background:view.scene.background.clone(),sunColor:view.sun.color.clone(),sunIntensity:view.sun.intensity,
     hemiColor:view.hemi.color.clone(),hemiGround:view.hemi.groundColor.clone(),hemiIntensity:view.hemi.intensity,
     environment:view.scene.environmentIntensity,exposure:view.renderer.toneMappingExposure,
-    fog:view.fogMesh.material.color.clone(),
+    fog:view.fogTint.clone(),
   };
 }
 const close=(a,b)=>Math.abs(a-b)<1e-6;
@@ -30,7 +30,7 @@ function identical(a,b){
 // Moonlit night keeps the land readable: a cool directional moon, generous
 // blue fill light, a deep navy sky and warm structure windows (the palette's
 // night-glow uniform). Nothing is crushed to black.
-const NIGHT_SKY=0x142540,NIGHT_MOON=0xbfd0f5,TWILIGHT=0xeeb17c,NIGHT_HEMI=0x93a9d2,NIGHT_GROUND=0x47566f,NIGHT_FOG=0x8294b8;
+const NIGHT_SKY=0x142540,NIGHT_MOON=0xbfd0f5,TWILIGHT=0xeeb17c,NIGHT_HEMI=0x93a9d2,NIGHT_GROUND=0x47566f,NIGHT_FOG=0x101c31;
 
 export class DayNightLighting{
   constructor(view){
@@ -55,7 +55,7 @@ export class DayNightLighting{
     v.hemi.color.copy(base.hemiColor).lerp(this.tint.setHex(NIGHT_HEMI),night);v.hemi.groundColor.copy(base.hemiGround).lerp(this.tint.setHex(NIGHT_GROUND),night);
     v.hemi.intensity=base.hemiIntensity*(1-night*.28);
     v.scene.environmentIntensity=base.environment*(1-night*.38);v.renderer.toneMappingExposure=base.exposure*(1+night*.10);
-    v.fogMesh.material.color.copy(base.fog).lerp(this.tint.setHex(NIGHT_FOG),night*.55);
+    v.fogTint.copy(base.fog).lerp(this.tint.setHex(NIGHT_FOG),night*.55);
     const uniform=v.materials.structurePalette?.frontierUniforms?.night;if(uniform)uniform.value=night;
     v.lightingState={mode:LIGHTING_MODES[v.settings.lighting]?v.settings.lighting:'day',night,twilight,label:night>.85?'Night':night<.15?'Day':'Twilight'};
     this.written=capture(v);
@@ -65,7 +65,7 @@ export class DayNightLighting{
     v.scene.background.copy(b.background);v.scene.fog.color.copy(b.background);
     v.sun.color.copy(b.sunColor);v.sun.intensity=b.sunIntensity;
     v.hemi.color.copy(b.hemiColor);v.hemi.groundColor.copy(b.hemiGround);v.hemi.intensity=b.hemiIntensity;
-    v.scene.environmentIntensity=b.environment;v.renderer.toneMappingExposure=b.exposure;v.fogMesh.material.color.copy(b.fog);
+    v.scene.environmentIntensity=b.environment;v.renderer.toneMappingExposure=b.exposure;v.fogTint.copy(b.fog);
     const uniform=v.materials.structurePalette?.frontierUniforms?.night;if(uniform)uniform.value=0;
     this.written=null;this.frameBase=null;this.amount=null;
   }

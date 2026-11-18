@@ -89,8 +89,11 @@ export class WorldView {
     this.materials={stone:mat(0xc1b9a4),stoneDark:mat(0x8c9288),plaster:mat(0xe6d5b4),wood:mat(0x756046),darkwood:mat(0x483c30),roof:mat(0x5a6c66),roofRed:mat(0x8b5949),gold:mat(0xd9b865,{metalness:.35,roughness:.55}),iron:mat(0x8a9ba0,{metalness:.45}),leaf:mat(0x617b4b),leafDark:mat(0x3e6550),trunk:mat(0x66563e),skin:mat(0xd2b08d),berry:mat(0x9d4d48),soil:mat(0x837052),furrow:mat(0x6b6343),crop:mat(0xc3ad62),water:mat(0x6a9fa6,{metalness:.35,roughness:.25,transparent:true,opacity:.85}),shadow:new THREE.MeshBasicMaterial({color:0x26382c,transparent:true,opacity:.14,depthWrite:false})};
     this.geo={box:new THREE.BoxGeometry(1,1,1),sphere:new THREE.IcosahedronGeometry(1,0),cylinder:new THREE.CylinderGeometry(1,1,1,10),cone:new THREE.ConeGeometry(1,1,7),roof:new THREE.ConeGeometry(1,1,4),ring:new THREE.RingGeometry(.83,1,32)};
     this.teamMaterials=[mat(0x397f8c),mat(0x9a687d)];
-    this.terrain=new THREE.Group();this.scene.add(this.terrain);this.objects=new THREE.Group();this.scene.add(this.objects);this.fogCanvas=document.createElement('canvas');this.fogCanvas.width=80;this.fogCanvas.height=80;this.fogCtx=this.fogCanvas.getContext('2d');this.fogTexture=new THREE.CanvasTexture(this.fogCanvas);this.fogTexture.magFilter=THREE.LinearFilter;
-    this.fogMesh=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD),new THREE.MeshBasicMaterial({map:this.fogTexture,transparent:true,depthWrite:false}));this.fogMesh.rotation.x=-Math.PI/2;this.fogMesh.position.y=.32;this.fogMesh.renderOrder=5;this.scene.add(this.fogMesh);
+    this.terrain=new THREE.Group();this.scene.add(this.terrain);this.objects=new THREE.Group();this.scene.add(this.objects);
+    this.fogCanvas=document.createElement('canvas');this.fogCanvas.width=this.fogCanvas.height=80;this.fogCtx=this.fogCanvas.getContext('2d');
+    this.fogTexture=new THREE.CanvasTexture(this.fogCanvas);this.fogTexture.flipY=false;
+    this.fogTint=new THREE.Color(0x13201e);
+    this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint}};
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
     this.burning=new THREE.InstancedMesh(flameClusterGeometry(),new THREE.MeshBasicMaterial({color:0xef7b2c,transparent:true,opacity:.72,depthWrite:false}),80);this.burning.count=0;this.burning.frustumCulled=false;this.scene.add(this.burning);
@@ -221,7 +224,7 @@ export class WorldView {
     if(e.owner===0){const r=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=.13;r.scale.setScalar(e.r+(.6));r.visible=false;r.userData.selection=true;g.add(r);g.userData.ring=r;}
     return g;
   }
-  updateFog(){return updateFogTexture(this);}
+  updateFog(){this.fogRevision=this.sim.fogRevision;return updateFogTexture(this);}
   groundPoint(clientX,clientY){const rect=this.renderer.domElement.getBoundingClientRect();this.mouse.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.mouse,this.camera);const point=this.landscape?this.landscape.rayPoint(this.raycaster.ray):this.raycaster.ray.intersectPlane(this.plane,new THREE.Vector3());return point&&insideMap(point.x,point.z,this.sim?.worldSize||WORLD)?point:null;}
   pick(clientX,clientY){this.groundPoint(clientX,clientY);const hits=this.raycaster.intersectObjects(this.objects.children,true);for(const hit of hits){let id=hit.object.userData.entity;if(hit.object.userData.treeIds)id=hit.object.userData.treeIds[hit.instanceId];if(hit.object.userData.unitIds)id=hit.object.userData.unitIds[hit.instanceId];if(hit.object.userData.wallIds)id=hit.object.userData.wallIds[hit.instanceId];const e=this.sim.get(id);if(e&&(e.owner===0||this.sim.isVisible(e.x,e.z)))return e;}return pickFruitVolume(this);}
   project(e){const x=e.renderX??e.x,z=e.renderZ??e.z,v=new THREE.Vector3(x,this.entityHeight(e,x,z)+(e.kind==='building'?7:UNITS[e.type]?.naval?5:3),z).project(this.camera),rect=this.renderer.domElement.getBoundingClientRect();return {x:rect.left+(v.x+1)*rect.width/2,y:rect.top+(1-v.y)*rect.height/2,visible:v.z>-1&&v.z<1};}
@@ -305,7 +308,9 @@ export class WorldView {
     else if(average>budget*1.8)setShadowEnabled(this,false);
     else if(average<budget*1.05&&this.dynamicScale<1){this.dynamicScale=Math.min(1,this.dynamicScale+.08);this.renderer.setPixelRatio(base*this.dynamicScale);}
   }
-  render(dt,menu=false){if(!this.sim)return;this.vfxTimer?.sample(dt);this.clock+=dt;const stepWall=Math.max(dt,this.wallStep??dt);this.ruinClock=(this.ruinClock??0)+stepWall;this.wallStep=undefined;this.fogMesh.visible=!menu&&this.settings.fog!==false;
+  render(dt,menu=false){if(!this.sim)return;this.vfxTimer?.sample(dt);this.clock+=dt;const stepWall=Math.max(dt,this.wallStep??dt);this.ruinClock=(this.ruinClock??0)+stepWall;this.wallStep=undefined;
+    if(this.fogRevision!==this.sim.fogRevision)this.updateFog();
+    this.battleFog.enabled.value=Number(!menu&&this.settings.fog!==false&&!this.sim.options.spectator);
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
     let fireCount=0;const fireDummy=this.fireDummy??=new THREE.Object3D();

@@ -11,7 +11,7 @@ test('lighting modes and the day/night cycle are stable, gradual and independent
 });
 
 test('moonlight stays readable, retains lightning and restores daylight resources on disposal',()=>{
-  const v={settings:{lighting:'night'},sim:{time:0},scene:{background:new Color(0xa5b4ad),fog:{color:new Color()},environmentIntensity:.3},hemi:{groundColor:new Color(0x52633a),color:new Color(0xc7def1),intensity:.9},sun:{color:new Color(0xffe4bd),intensity:2.7},renderer:{toneMappingExposure:1.1},fogMesh:{material:{color:new Color(0xffffff)}},materials:{structurePalette:{frontierUniforms:{night:{value:0}}}}};
+  const v={settings:{lighting:'night'},sim:{time:0},scene:{background:new Color(0xa5b4ad),fog:{color:new Color()},environmentIntensity:.3},hemi:{groundColor:new Color(0x52633a),color:new Color(0xc7def1),intensity:.9},sun:{color:new Color(0xffe4bd),intensity:2.7},renderer:{toneMappingExposure:1.1},fogTint:new Color(0x13201e),materials:{structurePalette:{frontierUniforms:{night:{value:0}}}}};
   const lighting=new DayNightLighting(v),ground=v.hemi.groundColor.clone();lighting.update(.016);
   assert.equal(v.lightingState.label,'Night');assert.ok(v.sun.intensity>.4&&v.hemi.intensity>.4);assert.equal(v.materials.structurePalette.frontierUniforms.night.value,1);
   v.weatherState={flash:true};v.sun.intensity=4.7;lighting.update(.016);assert.ok(v.sun.intensity>1.5);

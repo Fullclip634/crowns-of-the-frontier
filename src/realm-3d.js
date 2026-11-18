@@ -16,6 +16,7 @@ import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncF
 import {wallTier} from './fortified-walls.js';
 import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
+import {shadeBattlefieldFog} from './fog-surface.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -32,6 +33,8 @@ function foundation(view,e){
 }
 function buildForest(view){
   view.forest=[];const trees=view.sim.entities.filter(e=>e.type==='wood'&&e.hp>0),rng=seededRandom(view.sim.options.seed+191);
+  const materials=new Map();
+  const leafy=new Set([view.materials.leaf,view.materials.leafDark]);
   // Arid and volcanic frontiers reuse the authored woodland atlas but read as
   // sparse, stunted scrub; tundra keeps full-height conifers.
   const canopyScale=isAridBiome(view.sim.options.map)?.62:isSnowBiome(view.sim.options.map)?.92:view.sim.options.map==='woodland'?1.12:1;
@@ -39,7 +42,6 @@ function buildForest(view){
     const entries=trees.filter(e=>e.id%4===variant);if(!entries.length)continue;
     const sets=[],footprint=[];
     // Bark keeps its authored colour; only the canopy varies per tree.
-    const leafy=new Set([view.materials.leaf,view.materials.leafDark].filter(Boolean));
     const tints=entries.map(e=>{const tint=treeTint(e.id);return new THREE.Color().setRGB(tint.r,tint.g,tint.b);});
     for(const far of [false,true]){
       const model=view.mergeModel(treeModel(view,view.sim.options.map,variant,far)),parts=[],ids=[];
@@ -48,7 +50,10 @@ function buildForest(view){
       model.traverse(part=>{
         if(!part.isMesh)return;
         if(view.settings.quality==='low'&&part.userData.foliageDetail==='closed leaf tips')return;
-        const mesh=new THREE.InstancedMesh(part.geometry,part.material,entries.length);mesh.count=0;mesh.castShadow=!far&&part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
+        const source=part.material;
+        if(!materials.has(source))materials.set(source,shadeBattlefieldFog(source.clone(),view));
+        const mesh=new THREE.InstancedMesh(part.geometry,materials.get(source),entries.length);mesh.count=0;mesh.castShadow=!far&&part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
+        mesh.userData.foliageSway=leafy.has(source)||source===view.materials.snow;
         // One forest built from a single canopy still reads as rows of copies.
         // A small per-tree tint breaks that up without new geometry, and it is
         // derived from the tree id so it never changes between frames.
@@ -121,7 +126,6 @@ export function installRealm3D(WorldView){
     const lodOptions=quality==='low'?{base:115,maximum:168}:quality==='medium'?{base:70,maximum:118}:{base:46,maximum:92};
     const threshold=treeDetailThreshold(this.frameTimeMs,budgetMs,lodOptions);
     this.forestDetailThreshold=threshold;
-    const swayMats=new Set([this.materials.leaf,this.materials.leafDark,this.materials.snow].filter(Boolean));
     this.fallSlots=new Map();for(const batch of this.forest||[]){for(const set of batch.sets)set.ids.length=0;batch.entries.forEach((e,i)=>{
       const current=this.sim.get(e.id),fall=this.treeFalls?.get(e.id);
       if(!(current?.hp>0||fall))return;
@@ -130,7 +134,7 @@ export function installRealm3D(WorldView){
       if(!(menu||this.settings.fog===false||this.sim.isExplored(e.x,e.z)))return;
       const along=length2>0?((e.x-this.target.x)*dx+(e.z-this.target.z)*dz)/length2:0,side=Math.hypot(e.x-this.target.x-along*dx,e.z-this.target.z-along*dz),lineHeight=this.target.y+(this.camera.position.y-this.target.y)*along;
       if(!menu&&this.tilt<.61&&along>.12&&along<1&&side<3.2&&lineHeight<groundY+8)return;
-      const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-groundY-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,quality,lod.get(e.id),{threshold}),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,swayMats.has(part.material),fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});
+      const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-groundY-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,quality,lod.get(e.id),{threshold}),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,part.userData.foliageSway,fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});
     });for(const set of batch.sets)for(const part of set.parts){part.count=set.ids.length;markInstancePrefix(part);part.boundingSphere=null;}}
   };
   p.foliageFog=function(menu){this.forestFog(menu);};

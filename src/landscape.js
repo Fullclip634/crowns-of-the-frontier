@@ -16,6 +16,7 @@ import {waterChannels} from './map-water.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
 import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
+import {shadeBattlefieldFog} from './fog-surface.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
@@ -162,21 +163,20 @@ export function buildLandscape(view){
   const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
   geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
   applyGroundSurface(material,land,view.settings.quality);
+  view.battleFog.scale.value=1/land.worldSize;
+  shadeBattlefieldFog(material,view);
   const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;
   view.waterMeshes=[];
-  configureWaterSurface(view.materials.water);
+  if(!view.materials.water.frontierWaveTime){configureWaterSurface(view.materials.water);shadeBattlefieldFog(view.materials.water,view);}
   configureWaterPalette(view.materials.water,land.map);
   for(const channel of land.channels()){
     const water=new THREE.Mesh(land.waterGeometry(channel,view.settings.quality),view.materials.water);water.userData.channel=channel;view.terrain.add(water);view.waterMeshes.push(water);
   }
   buildBridges(view);
-  // Match the ground triangulation at every quality setting.
-  view.fogMesh.geometry.dispose();view.fogMesh.geometry=land.geometry(land.renderSize,segments,.13);view.fogMesh.rotation.set(0,0,0);view.fogMesh.position.y=0;
-  const fogPositions=view.fogMesh.geometry.getAttribute('position'),fogUV=view.fogMesh.geometry.getAttribute('uv');
-  for(let i=0;i<fogUV.count;i++)fogUV.setXY(i,(fogPositions.getX(i)+land.half)/land.worldSize,1-(fogPositions.getZ(i)+land.half)/land.worldSize);
-  view.fogMesh.material.polygonOffset=true;view.fogMesh.material.polygonOffsetFactor=-1;view.fogMesh.material.polygonOffsetUnits=-1;
   view.groundCover=new GroundCover(view);
+  shadeBattlefieldFog(view.groundCover.mesh.material,view);
   view.terrainDetails=new TerrainDetails(view);
+  shadeBattlefieldFog(view.terrainDetails.mesh.material,view);
 }
 
 export function animateWater(view){

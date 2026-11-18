@@ -41,7 +41,7 @@ export class Simulation {
     this.rng=seededRandom(this.options.seed);this.entities=[];this.nextId=1;this.time=0;this.revision=0;
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
-    this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
+    this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
     this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':'raven')];
     this.initialize();
   }
@@ -460,6 +460,7 @@ export class Simulation {
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
   updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase))+biomeVisionModifier(this.options.map));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
     for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
+    this.fogRevision++;
   }
   tutorialObjectives(){return [
     {text:'Gather 100 resources. Your villagers are already working.',done:this.stats.gathered>=100},
