@@ -213,7 +213,7 @@ export function installRealm3D(WorldView){
     if(event.type==='attack'){
       if(this.fx.length>(this.settings.quality==='low'?32:90))return;
       const flight=attackFlight(this,event.entity,event.target,event.garrisonArrow||0,event),pool=this.flightEffects??=new FlightEffects(),object=pool.acquire(flight.kind);
-      const shot={...flight,object,time:event.flightAge||0,recycle:mesh=>pool.release(mesh)};updateFlight(shot,Math.min(1,shot.time/shot.duration));this.scene.add(object);this.fx.push(shot);return;
+      const shot={...flight,object,time:event.flightAge||0,recycle:mesh=>pool.release(mesh)};updateFlight(shot,Math.min(1,shot.time/shot.duration));if(flight.kind==='slash')this.scene.add(object);this.fx.push(shot);return;
     }
     const count=this.fx.length;effect.call(this,event);
     for(let i=count;i<this.fx.length;i++){

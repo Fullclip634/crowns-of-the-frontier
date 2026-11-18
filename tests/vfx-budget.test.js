@@ -109,7 +109,7 @@ test('WorldView.effect pools attack meshes without allocating unique geometries 
   view.effect({type:'attack',entity:attacker,target});
   view.effect({type:'attack',entity:rangedAttacker,target});
   assert.equal(view.fx.length,2);
-  const geometries=view.fx.map(f=>f.object.geometry);
+  const geometries=view.fx.map(f=>view.flightEffects.geometry[f.kind]);
   let disposed=0;for(const g of geometries)g.addEventListener('dispose',()=>disposed++);
   assert.equal(typeof view.fx[0].recycle,'function');
   assert.equal(typeof view.fx[1].recycle,'function');

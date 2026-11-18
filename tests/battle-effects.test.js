@@ -17,10 +17,10 @@ test('projectiles follow raised, interpolated weapon positions and turn along th
 });
 
 test('combat mesh pools reuse completed shots, preserve shared geometry and bound retained objects',()=>{
-  const pool=new FlightEffects(),scene=new THREE.Scene(),mesh=pool.acquire('arrow');scene.add(mesh);let disposed=false;mesh.geometry.addEventListener('dispose',()=>disposed=true);
+  const pool=new FlightEffects(),scene=new THREE.Scene(),mesh=pool.acquire('arrow');scene.add(mesh);let disposed=false;pool.geometry.arrow.addEventListener('dispose',()=>disposed=true);
   releaseEffect({object:mesh,recycle:m=>pool.release(m)});assert.equal(scene.children.length,0);assert.equal(disposed,false);assert.equal(pool.acquire('arrow'),mesh);pool.release(mesh);
   for(const kind of ['arrow','stone','slash']){
-    const a=pool.acquire(kind);scene.add(a);assert.ok(a.geometry.attributes.position.array.every(Number.isFinite));a.geometry.computeBoundingBox();const size=a.geometry.boundingBox.getSize(new THREE.Vector3());assert.ok(size.x>0&&size.y>0&&size.z>=0);
+    const a=pool.acquire(kind);scene.add(a);const geometry=pool.geometry[kind];assert.ok(geometry.attributes.position.array.every(Number.isFinite));geometry.computeBoundingBox();const size=geometry.boundingBox.getSize(new THREE.Vector3());assert.ok(size.x>0&&size.y>0&&size.z>=0);
     pool.release(a);assert.equal(pool.acquire(kind),a);pool.release(a);
   }
   const many=Array.from({length:120},()=>pool.acquire('slash'));many.forEach(m=>pool.release(m));assert.ok(pool.retained.size<=pool.limit);assert.equal(disposed,false);
@@ -70,4 +70,37 @@ test('kinetic combat vfx pools support directional sparks and ground crater deca
 
   pool.dispose();
   assert.throws(() => pool.acquire('sparks'), /disposed/);
+});
+
+test('flight draws pack visible opaque shots while preserving pose and pool lifetime',()=>{
+  const pool=new FlightEffects(),scene=new THREE.Scene();
+  const arrow=pool.acquire('arrow'),hidden=pool.acquire('arrow'),stone=pool.acquire('stone'),slash=pool.acquire('slash');
+  arrow.position.set(-2,4,5);
+  arrow.rotation.y=.61;
+  hidden.position.x=9;
+  stone.position.set(-4,6,8);
+  scene.add(slash);
+  const fx=[{kind:'arrow',object:arrow},{kind:'arrow',object:hidden},{kind:'stone',object:stone},{kind:'slash',object:slash}];
+  const view={scene,fx,battleFog:{enabled:{value:1}},sim:{isVisible:x=>x<0}};
+  pool.syncBatches(view);
+  const batches=[pool.batches.arrow,pool.batches.stone];
+  assert.equal(scene.children.length,3);
+  assert.deepEqual(batches.map(batch=>batch.count),[1,1]);
+  assert.ok(batches.every(batch=>batch.visible&&batch.isInstancedMesh));
+  const matrix=new THREE.Matrix4();
+  pool.batches.arrow.getMatrixAt(0,matrix);
+  for(let i=0;i<16;i++)assert.ok(Math.abs(matrix.elements[i]-arrow.matrix.elements[i])<1e-6);
+  view.battleFog.enabled.value=0;
+  pool.syncBatches(view);
+  assert.equal(pool.batches.arrow.count,2);
+  assert.equal(pool.batches.arrow.instanceMatrix.updateRanges[0].count,32);
+  pool.clearBatches();
+  assert.ok(batches.every(batch=>!batch.visible&&batch.count===0));
+  view.fx=fx.slice(0,2);
+  pool.syncBatches(view);
+  assert.equal(pool.batches.arrow,batches[0]);
+  assert.equal(pool.batches.stone.visible,false);
+  pool.dispose();
+  pool.dispose();
+  assert.equal(scene.children.length,0);
 });

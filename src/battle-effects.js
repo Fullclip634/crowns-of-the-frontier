@@ -5,6 +5,7 @@ import {UNITS} from './data.js';
 import {siegeArmAngle,projectileTargetHeight} from './combat-timing.js';
 import {bowArcher,bowReleasePoint} from './archery-pose.js';
 import {visualBodyOffset} from './foot-placement.js';
+import {markInstancePrefix} from './render-batches.js';
 
 const clamp=(value,lo,hi)=>Math.max(lo,Math.min(hi,value));
 const buildingHeight=type=>({tower:6.2,keep:7.5,towncenter:5.8,wall:2.4,gate:3.8}[type]||2.6);
@@ -93,18 +94,51 @@ function wakeGeometry(){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
 
-// Pools keep the same solid meshes/materials throughout a match and across
-// scene switches. Shared geometry is never disposed when a single shot ends.
+// Opaque projectiles share one instanced draw per shape. Melee slashes
+// retain individual opacity and transparent sorting.
 export class FlightEffects{
   constructor(){
     this.geometry={arrow:arrowGeometry(),stone:stoneGeometry(),slash:new THREE.TorusGeometry(.42,.022,4,16,Math.PI*.78)};
     this.material={arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.18}),stone:standardMaterial({vertexColors:true,roughness:.94})};
-    this.free={arrow:[],stone:[],slash:[]};this.retained=new Set();this.limit=96;
+    this.free={arrow:[],stone:[],slash:[]};this.retained=new Set();this.limit=96;this.batches={};
   }
   acquire(kind){
     let mesh=this.free[kind].pop();
-    if(!mesh){const material=kind==='slash'?standardMaterial({color:0xe0d6b1,transparent:true,opacity:0,depthWrite:false,roughness:.6}):this.material[kind];mesh=new THREE.Mesh(this.geometry[kind],material);mesh.userData.flightKind=kind;this.retained.add(mesh);}
+    if(!mesh){
+      mesh=kind==='slash'
+        ?new THREE.Mesh(this.geometry.slash,standardMaterial({color:0xe0d6b1,transparent:true,opacity:0,depthWrite:false,roughness:.6}))
+        :new THREE.Object3D();
+      mesh.userData.flightKind=kind;
+      this.retained.add(mesh);
+    }
     mesh.visible=true;mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
+  }
+  clearBatches(){
+    for(const batch of Object.values(this.batches)){batch.count=0;batch.visible=false;}
+  }
+  syncBatches(view){
+    this.clearBatches();
+    const fog=view.battleFog?.enabled.value;
+    for(const effect of view.fx){
+      const {kind,object}=effect;
+      if(kind!=='arrow'&&kind!=='stone'||!object.visible)continue;
+      if(fog&&!view.sim.isVisible(object.position.x,object.position.z))continue;
+      let batch=this.batches[kind];
+      if(!batch){
+        batch=this.batches[kind]=new THREE.InstancedMesh(this.geometry[kind],this.material[kind],this.limit);
+        batch.name=kind==='arrow'?'Battlefield arrows':'Battlefield siege stones';
+        batch.userData.flightKind=kind;
+        batch.frustumCulled=false;
+        batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        batch.count=0;
+        view.scene.add(batch);
+      }
+      if(batch.count>=this.limit)continue;
+      object.updateMatrix();
+      batch.setMatrixAt(batch.count++,object.matrix);
+      batch.visible=true;
+    }
+    for(const batch of Object.values(this.batches))markInstancePrefix(batch);
   }
   release(mesh){
     mesh.removeFromParent();mesh.visible=false;
@@ -113,6 +147,10 @@ export class FlightEffects{
     else if(!this.free[kind].includes(mesh))this.free[kind].push(mesh);
   }
   dispose(){
+    if(this.disposed)return;
+    this.disposed=true;
+    for(const batch of Object.values(this.batches)){batch.removeFromParent();batch.dispose();}
+    this.batches={};
     for(const mesh of this.retained){mesh.removeFromParent();if(mesh.userData.flightKind==='slash')mesh.material.dispose();}
     for(const geometry of Object.values(this.geometry))geometry.dispose();for(const material of Object.values(this.material))material.dispose();
     this.retained.clear();for(const list of Object.values(this.free))list.length=0;
