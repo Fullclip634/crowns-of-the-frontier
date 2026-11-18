@@ -37,9 +37,14 @@ try{
       const v=frontier.view;
       v.settings.fog=fog;
       v.focus(x,z);v.target.set(x,y??v.groundHeight(x,z),z);v.zoom=28;v.tilt=.85;v.angle=0;v.updateCamera();
-      return v.renderer.info.render.frame;
+      return v.renderer.isWebGPURenderer?(v.renderFlight?.submitted??0):v.renderer.info.render.frame;
     },{x,z,y,fog});
-    await page.waitForFunction(frame=>frontier.view.renderer.info.render.frame>frame+1,frame);
+    await page.waitForFunction(frame=>{
+      const v=frontier.view,count=v.renderer.isWebGPURenderer?(v.renderFlight?.submitted??0):v.renderer.info.render.frame;
+      return v.graphicsFatal||count>frame+1;
+    },frame);
+    const failure=await page.evaluate(()=>frontier.view.graphicsFatal||null);
+    assert.equal(failure,null,JSON.stringify(failure));
     const image=await page.screenshot({path:name?`${output}/${backend}-${name}.png`:undefined});
     return page.evaluate(async encoded=>{
       const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
