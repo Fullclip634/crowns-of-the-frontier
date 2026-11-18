@@ -62,9 +62,17 @@ export function terrainRoadPaths(land){
 
 export function paintSettlementPaving(ctx,land,half,scale,mask=false){
   const color=terrainBiome(land.map).plaza,r=color>>16,g=color>>8&255,b=color&255;
+  const soil=mask?'196,0,0':`${Math.round(r*.72)},${Math.round(g*.65)},${Math.round(b*.52)}`;
   for(const site of land.startingSites||[]){
     if(site.type==='dock')continue;
     const radius=site.r+(site.type==='towncenter'?1.65:.95),size=2*radius;
+    const cx=(site.x+half)*scale,cz=(site.z+half)*scale,wear=(radius+1.4)*scale;
+    const packed=ctx.createRadialGradient(cx,cz,0,cx,cz,wear);
+    for(const [stop,alpha] of [[0,.87],[.5,.76],[.78,.36],[1,0]]){
+      packed.addColorStop(stop,`rgba(${soil},${mask?alpha*.42:alpha})`);
+    }
+    ctx.fillStyle=packed;
+    ctx.fillRect(cx-wear,cz-wear,wear*2,wear*2);
     const rows=Math.ceil(size/1.03),columns=Math.ceil(size/1.32),tileX=size/columns,tileZ=size/rows;
     const random=seededRandom(land.seed^Math.imul(Math.round(site.x*128),73856093)^Math.imul(Math.round(site.z*128),19349663));
     for(let row=0;row<rows;row++)for(let column=-1;column<columns;column++){
@@ -74,7 +82,7 @@ export function paintSettlementPaving(ctx,land,half,scale,mask=false){
       const edge=radius-Math.max(x,z)-Math.max(0,Math.min(x,z)-radius*.48)*.5;
       const coverage=smooth(0,.72,edge+(random()-.5)*.72);
       if(coverage<.12)continue;
-      const grout=.11+random()*.075,shade=.61+random()*.19,vein=(random()-.5)*7;
+      const grout=.10+random()*.065,shade=.48+random()*.13,vein=(random()-.5)*7;
       const left=(site.x-radius+start*tileX+grout*.5+half)*scale,right=(site.x-radius+end*tileX-grout*.5+half)*scale;
       const top=(site.z-radius+row*tileZ+grout*.5+half)*scale,bottom=(site.z-radius+(row+1)*tileZ-grout*.5+half)*scale;
       const chip=Math.min(right-left,bottom-top)*(.09+random()*.2),alpha=Math.min(1,coverage*1.3).toFixed(2);

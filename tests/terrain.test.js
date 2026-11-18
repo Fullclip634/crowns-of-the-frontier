@@ -90,21 +90,27 @@ test('starting lanes connect real buildings and approach bridges on dry ground a
 test('settlement paving leaves exposed ground at the perimeter and shares its stone shapes with the material mask',()=>{
   const land={map:'highlands',seed:512,startingSites:[{type:'towncenter',x:-39,z:30,r:5}]};
   function capture(mask){
-    const stones=[];
+    const stones=[],ground=[];
     const ctx={
+      createRadialGradient(...bounds){const stops=[];ground.push({bounds,stops});return {addColorStop:(at,color)=>stops.push([at,color])};},
+      fillRect(){},
       beginPath(){this.points=[];},
       moveTo(x,y){this.points.push([x,y]);},
       lineTo(x,y){this.points.push([x,y]);},
       fill(){stones.push({points:this.points,color:this.fillStyle.match(/\d+(?:\.\d+)?/g).map(Number)});},
     };
     paintSettlementPaving(ctx,land,80,4,mask);
-    return stones;
+    return {stones,ground};
   }
-  const stones=capture(false),mask=capture(true);
-  assert.deepEqual(capture(false),stones);
+  const painted=capture(false),mask=capture(true),{stones}=painted;
+  assert.deepEqual(capture(false),painted);
+  assert.equal(painted.ground.length,1);
+  assert.deepEqual(painted.ground[0].bounds,mask.ground[0].bounds);
+  assert.match(painted.ground[0].stops.at(-1)[1],/,0\)$/,'the soil fades completely at the outer edge');
+  assert.ok(mask.ground[0].stops.every(([,color])=>color.startsWith('rgba(196,0,0,')),'soil stays within the road range of the mask');
   assert.ok(stones.length>60);
-  assert.deepEqual(mask.map(tile=>tile.points),stones.map(tile=>tile.points));
-  assert.ok(stones.every(({color,points})=>Math.max(...color.slice(0,3))<135&&points.length===8));
+  assert.deepEqual(mask.stones.map(tile=>tile.points),stones.map(tile=>tile.points));
+  assert.ok(stones.every(({color,points})=>Math.max(...color.slice(0,3))<104&&points.length===8));
   assert.ok(new Set(stones.map(({color})=>color[0])).size>12,'stone faces have distinct tones');
   assert.ok(stones.some(({color})=>color[3]<.8),'outer stones fade into the ground');
   assert.equal(stones.some(({points})=>points.some(([x,z])=>x<=(80-39-5.8)*4&&z<=(80+30-5.8)*4)),false,'the corner leaves natural ground exposed');
