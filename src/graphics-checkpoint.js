@@ -12,7 +12,7 @@ export function graphicsCheckpoint(view){
     restore({superseded=false}={}){
       const selected=view.settings.quality,pose=view.sim===sim?camera:cameraState(view);
       view.settings.quality=quality;view.graphicsSceneValid=false;
-      try{artwork.activate();view.attach(view.sim);if(view.sim===sim)view.forestLodState=forestLodState;restoreCamera(view,pose);view.graphicsSceneValid=true;}
+      try{artwork.activate();if(view.sim){view.attach(view.sim);if(view.sim===sim)view.forestLodState=forestLodState;}restoreCamera(view,pose);view.graphicsSceneValid=true;}
       finally{view.settings.quality=superseded?selected:quality;}
     },
     release(){artwork.release();},

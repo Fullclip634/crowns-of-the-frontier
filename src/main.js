@@ -69,11 +69,10 @@ const progress=read('crowns-progress',{});const audio=new AudioEngine(settings);
 let customDraft={map:'highlands',mapSize:'vast',playerSlot:1,spectator:false,startAge:0,resourceLevel:'standard',populationLimit:80,seed:2026,victory:'annihilation',shareVision:true,revealRemnants:true,slots:battlePreset('2v2'),...read('crowns-custom-setup',{})};
 settings.bindings=readBindings(settings.bindings);
 document.querySelector('#app').innerHTML=`
-  <div id="world" aria-label="3D strategy battlefield"></div><div class="vignette"></div><div id="graphics-status" class="graphics-status hidden" role="status">Updating graphics…</div>
+  <div id="world" class="world-poster" aria-label="3D strategy battlefield"></div><div class="vignette"></div><div id="graphics-status" class="graphics-status hidden" role="status">Updating graphics…</div>
   <div id="landing" class="landing">
     <header class="landing-header"><a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiIcon("castle")}</span><span>CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a><div class="header-links"><button data-action="codex" aria-label="Open field guide">${uiIcon("book-open")}<span>Field guide</span></button><button data-action="settings" aria-label="Settings">${uiIcon("settings")}<span>Settings</span></button><span class="edition">${RELEASE.split(" - ").reverse().join(" / ").toUpperCase()}</span></div></header>
     <main class="landing-main"><div class="eyebrow"><span class="short-rule"></span> REAL-TIME STRATEGY</div><h1>Crowns <em>of the</em><br>Frontier<span class="title-dot">.</span></h1><p class="intro">From the first timber to the final siege.<br>Raise your kingdom in a living, three-dimensional world.</p><div class="main-actions"><button class="primary" data-mode="skirmish">Quick battle ${uiIcon("chevron-right")}</button><button class="secondary" data-action="campaign">${uiIcon("campaign")}<span>Campaign</span>${uiIcon("chevron-right")}</button></div><button class="network-entry custom-entry" data-action="custom-battle">${uiIcon("custom")}<span>Custom battle</span>${uiIcon("chevron-right")}</button><button id="resume" class="resume hidden" data-action="resume">${uiIcon("rotate-ccw")} Resume saved kingdom</button><button id="install" class="network-entry hidden" data-action="install">${uiIcon("castle")}<span>Install the game</span>${uiIcon("chevron-right")}</button><button class="network-entry" data-action="lan">${uiIcon("network")}<span>Play with friends</span>${uiIcon("chevron-right")}</button><div class="landing-note"><span class="status-dot"></span> SOLO & MULTIPLAYER <span class="separator">/</span> BUILT FOR MOUSE & TOUCH</div></main>
-    <div class="scene-caption"><span class="caption-line"></span><span>THE ALDER FRONTIER<small>Where every empire begins.</small></span><span class="coordinates">38° N · 27° E</span></div>
     <nav class="mode-strip" aria-label="Game modes">${MODES.filter(m=>!['skirmish','custom'].includes(m.id)).map((m,i)=>`<button class="mode-card" data-mode="${m.id}"><span class="mode-number">${uiIcon(m.id)}</span><span class="mode-title">${m.tag}</span><span class="mode-tag">${m.name} ${uiIcon("chevron-right")}</span></button>`).join('')}</nav>
     <footer class="landing-footer"><span>ECONOMY · WARFARE · EMPIRE</span><span>Made for mouse & touch <span class="menu-divider" aria-hidden="true"></span> Best played in landscape</span></footer>
   </div>
@@ -155,7 +154,7 @@ for(;!startupFailure;){
   }
 }
 stopAssetProgress();
-try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);watchRendererDevice(view);sim=new Simulation({mode:'sandbox',seed:8642});view.attach(sim);view.zoom=52;view.angle=-.35;view.focus(-32,28);view.updateCamera();} catch(error){
+try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);watchRendererDevice(view);} catch(error){
   if(!startupFailure)recordGraphicsFailure(error,'scene-startup');
   releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
   const failure=document.createElement('div');failure.className='modal-backdrop';failure.style.position='fixed';failure.style.zIndex='100';
@@ -250,6 +249,7 @@ function launchCustom(multiplayer){
 function showJournal(){if(!sim.campaignState||sim.campaignState.legacy)return;if(playing)paused=true;showModal('<div class="eyebrow">THE FRONTIER CHRONICLES</div><h2>Campaign journal.</h2><div class="campaign-journal">'+sim.campaignState.history.map(entry=>'<article><span>'+esc(entry.speaker)+' · '+formatTime(entry.time)+'</span><p>'+esc(entry.text)+'</p></article>').join('')+'</div><p class="journal-optional">Optional goal: '+esc(CAMPAIGN_SCRIPTS[sim.options.mode].optional.text)+'</p>','journal-game',true);}
 function showCampaign(){showModal(`<div class="eyebrow">THE FRONTIER CHRONICLES</div><h2>A kingdom in the making.</h2><p class="modal-intro">${MISSIONS.length} story chapters, or create your own battle with configurable allies, rivals, and victory rules.</p><button class="secondary full" data-action="custom-battle">Create your own custom battle</button><div class="chapter-list">${MISSIONS.map(m=>`<button class="chapter" data-mode="${m.id}"><span class="chapter-number">${m.chapter}</span><span><strong>${m.name}</strong><small>${m.desc}</small></span><span class="chapter-status">${progress[m.id]?.optional?uiIcon('trophy'):progress[m.id]?uiIcon('check'):uiIcon('chevron-right')}</span></button>`).join('')}</div>`, 'campaign',true);}
 function startGame(options,save=null){if(!view)return;chat.close(false);if(!net.active)chat.reset();resetCompactHud(document);audio.clearCombat();edgeScroll.reset();audio.lastThunder=undefined;tacticalMode=null;unloadMode=false;productionOpen=false;productionKey='';$('#production-panel').classList.add('hidden');$('#production-toggle').setAttribute('aria-expanded','false');$('#hud').classList.remove('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed','false');closeModal();setupOptions={...setupOptions,...options};sim=save?Simulation.restore(save):new Simulation(options);
+  $('#world').classList.add('world-poster');presentingMatch=null;
   if(net.active&&save?.visible){sim.visible=save.visible;sim.explored=save.explored;}
   $('#hud').classList.toggle('ai-spectator',isAISpectator());view.attach(sim);applyPlayerPalette();sim.on(onEvent);playing=true;paused=false;speed=1;groups={};controlGroupKey='';activeSubgroup=null;$('#control-groups-bar')?.classList.add('hidden');$('#toasts').innerHTML='';selection=[];view.selection=new Set();cancelBuild();setAttackMove(false);simulationPacer.reset();accumulator=0;lastAutosave=sim.time;$('#landing').classList.add('hidden');$('#hud').classList.remove('hidden');view.angle=Math.PI/4;view.setCameraPreset(settings.cameraPreset,true);updateCameraLabel();audio.unlock();renderHUD();renderSelection();updateRotate();toast(isAISpectator()?'The AI commanders are taking the field. Select a kingdom on the roster to follow.':'Your kingdom awaits. Select a villager or your town center.');if(sim.options.mode==='tutorial')toast('Start with the objectives in the upper-left corner.');if(sim.ended)showEnd(sim.ended);}
 function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!==undefined&&e.owner!==0)return;
@@ -437,7 +437,7 @@ function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('
 }
 function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){renderHealthBars($('#health-layer'),sim,view);}
-function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();controlGroupKey='';activeSubgroup=null;$('#control-groups-bar')?.classList.add('hidden');$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#resume').classList.toggle('hidden',!readLocalSave());view.focus(-36,30);view.zoom=52;view.angle=-.35;view.updateCamera();updateRotate();}
+function menuReturn(){audio.clearCombat();if(playing&&!sim.ended)saveGame(true);if(net.active)net.leave();closeModal();playing=false;paused=false;cancelBuild();selection=[];view.selection.clear();controlGroupKey='';activeSubgroup=null;$('#control-groups-bar')?.classList.add('hidden');$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#world').classList.add('world-poster');presentingMatch=null;$('#resume').classList.toggle('hidden',!readLocalSave());updateRotate();}
 // The browser only offers installation once it has decided the page qualifies.
 // Keep that event so the landing screen can offer it in place. An install button
 // that cannot work is worse than no button, so it stays hidden until it can.
@@ -641,7 +641,7 @@ function syncGraphicsRecovery(){
     if(graphicsRecoveryUi?.failure===view.graphicsFatal)return;
     const compatible=startupCompatibilityURL({failure:view.graphicsFatal,backend:rendererBackend(view.renderer),playing,network:!!net.socket,modal:!!modal,href:location.href,storage:graphicsSession});
     if(compatible){renderClosed=true;$('#graphics-status').textContent='Opening compatible graphics…';$('#graphics-status').classList.remove('hidden');location.replace(compatible);return true;}
-    const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim.options.multiplayer),saved=playing&&!network&&saveGame(true);
+    const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim?.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
     showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError,support:graphicsSupport()}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
   }else if(graphicsRecoveryUi){
@@ -656,18 +656,33 @@ async function retryBattlefield(){
   const applied=await view.quality(view.graphicsRecoveryQuality||view.renderQuality||'low');
   if(!applied){const current=$('#modal-root [data-action="retry-battlefield"]');if(current)current.disabled=false;const status=$('#graphics-recovery-note');if(status)status.textContent='Graphics could not recover. Your match remains in memory. Try again, or save before reloading.';}
 }
-let lastRender=0,frameRequest=0,renderClosed=false;const framePacer=new FramePacer();
+let lastRender=0,frameRequest=0,renderClosed=false,presentingMatch=null;const framePacer=new FramePacer();
+function presentBattlefield(){
+  const world=$('#world'),match=sim;
+  if(!world.classList.contains('world-poster')||presentingMatch===match)return;
+  presentingMatch=match;
+  const finish=ready=>{
+    if(presentingMatch!==match)return;
+    presentingMatch=null;
+    if(ready&&playing&&sim===match&&!view.graphicsFatal){world.classList.remove('world-poster');last=performance.now();simulationPacer.reset();}
+  };
+  const queue=view.renderer.backend?.device?.queue;
+  if(!queue?.onSubmittedWorkDone){finish(true);return;}
+  try{queue.onSubmittedWorkDone().then(()=>finish(true),()=>finish(false));}catch{finish(false);}
+}
 function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(.08,elapsed);last=now;
-  const graphicsBusy=!!view?.graphicsLoading;$('#graphics-status').classList.toggle('hidden',!graphicsBusy);$('#world').setAttribute('aria-busy',String(graphicsBusy));
+  const firstFrame=playing&&$('#world').classList.contains('world-poster')&&!view?.graphicsFatal,graphicsBusy=!!view?.graphicsLoading||firstFrame;
+  $('#graphics-status').classList.toggle('hidden',!graphicsBusy);$('#world').setAttribute('aria-busy',String(graphicsBusy));
+  if(graphicsBusy)setUIText($('#graphics-status'),firstFrame?'Preparing the battlefield…':'Updating graphics…');
   if(view){const keyboardPan=['panUp','panDown','panLeft','panRight'].some(id=>heldControl(keys,id,settings.bindings));const edgeMoved=edgeScroll.tick(view,dt,{active:playing&&!paused&&!sim.ended&&!modal&&!chat.opened&&!keyboardPan&&(buildType!=='wall'||wallDraft.panning),enabled:settings.edgeScroll,speed:settings.edgeScrollSpeed});
     if(edgeMoved&&buildType&&buildType!=='wall'&&edgeScroll.point){const point=view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);if(point)view.showGhost(buildType,point.x,point.z,sim.buildValid(buildType,point.x,point.z));else view.hideGhost();}
     if(buildType==='wall')updateWallPlacement();
-    if(playing&&!paused&&!sim.ended&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
+    if(playing&&!firstFrame&&!paused&&!sim.ended&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
       const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){renderHUD();renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
     }
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
-    view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=sim.time+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
-    if(playing&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal||!playing?100:1000/targetFrameRate(settings);if(framePacer.due(now,renderInterval)){const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;view.wallStep=playing&&paused?dt:renderGap*(playing&&!paused?Math.max(1,speed):1);if(view.render(Math.min(.2,(now-lastRender)/1000),!playing)!==false)lastRender=now;}audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);const weatherLabel=$('#weather-label');if(weatherLabel){weatherLabel.textContent=view.weatherState?.type==='clear'?'Clear':WEATHER_NAMES[view.weatherState?.type]?.split(' ')[0]||'Clear';weatherLabel.parentElement.title=`Weather: ${WEATHER_NAMES[view.weatherState?.type]||'Clear'}. Mode: ${settings.weather}. Click to change.`;}
+    view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
+    if(playing&&!firstFrame&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal?100:1000/targetFrameRate(settings);if(playing&&presentingMatch!==sim&&framePacer.due(now,renderInterval)){const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;view.wallStep=playing&&paused?dt:renderGap*(playing&&!paused?Math.max(1,speed):1);if(view.render(Math.min(.2,(now-lastRender)/1000),false)!==false){lastRender=now;presentBattlefield();}}audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);const weatherLabel=$('#weather-label');if(weatherLabel){weatherLabel.textContent=view.weatherState?.type==='clear'?'Clear':WEATHER_NAMES[view.weatherState?.type]?.split(' ')[0]||'Clear';weatherLabel.parentElement.title=`Weather: ${WEATHER_NAMES[view.weatherState?.type]||'Clear'}. Mode: ${settings.weather}. Click to change.`;}
     audio.updateCombat();
   }frameRequest=requestAnimationFrame(frame);
 }

@@ -71,14 +71,14 @@ export async function transitionRendererQuality(view,quality,prepare,rebuild,cap
   try{
     if(downgrade&&!view.graphicsRebuilding)shrinkRendererTargets(view,quality,previous);
     await prepare();
-    if(!latest()||!view.sim)return false;
+    if(!latest())return false;
     unlock=await graphicsLock(view);if(!latest())return false;
     view.graphicsRebuilding=request;checkpoint=capture?.();mutated=true;view.graphicsSceneValid=false;await rebuild();
     if(!latest()){if(!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal))restore();return false;}view.graphicsSceneValid=true;
     configureShadows(view,quality);
     // Precompilation is optional: a rebuilt scene can also compile normally on
     // its first live frame. Restoring the old targets here would mislabel it.
-    try{await prepareScenePrograms(view);if(request===view.graphicsRequest)view.graphicsWarmupError=null;}
+    try{if(view.sim)await prepareScenePrograms(view);if(request===view.graphicsRequest)view.graphicsWarmupError=null;}
     catch(error){if(request===view.graphicsRequest)view.graphicsWarmupError=error.message;}
     if(!latest()){if(!view.renderingReleased&&!graphicsNeedsReload(view.graphicsFatal))restore();return false;}
     applyRendererQuality(view,quality);view.graphicsBaseline={...rendererTargets(view),quality};view.graphicsFatal=null;view.graphicsRestoredQuality=null;return true;

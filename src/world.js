@@ -287,7 +287,8 @@ export class WorldView {
       if(models.status==='rejected')throw models.reason;artwork=models.value;
     },()=>{
       const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt,forestLodState=this.forestLodState;
-      artwork.activate();this.attach(this.sim);this.forestLodState=forestLodState;this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();
+      artwork.activate();
+      if(this.sim){this.attach(this.sim);this.forestLodState=forestLodState;this.target.copy(target);this.zoom=zoom;this.angle=angle;this.tilt=tilt;this.updateCamera();}
     },()=>graphicsCheckpoint(this)).catch(error=>{if(this.graphicsRequest===request)this.graphicsError=error.message;console.warn('Detailed graphics could not load:',error.message);return false;}).finally(()=>{artwork?.release();trimAuthoredAssets(this);trimSurfaceAssets(this);});
   }
   // Real presented-frame time is a free and reliable signal even when the GPU

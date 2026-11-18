@@ -49,3 +49,13 @@ test('WebGPU renderer skips synchronous scene-wide compileAsync warmup during qu
   assert.equal(called,0);
   asset.geometry.dispose();asset.material.dispose();asset.mesh.dispose();
 });
+
+test('graphics settings prepare the chosen tier before any match has been created',async()=>{
+  const {view,...asset}=fixture();
+  view.sim=null;
+  let prepared=false,activated=false;
+  view.renderer.compileAsync=()=>assert.fail('The menu has no live scene to compile');
+  const applied=await transitionRendererQuality(view,'high',async()=>{prepared=true;},()=>{assert.ok(prepared);activated=true;});
+  assert.equal(applied,true);assert.ok(activated);assert.equal(view.sim,null);assert.equal(view.renderQuality,'high');assert.equal(view.graphicsLoading,null);
+  asset.geometry.dispose();asset.material.dispose();asset.mesh.dispose();
+});
