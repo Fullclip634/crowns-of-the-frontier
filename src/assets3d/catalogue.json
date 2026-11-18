@@ -506,7 +506,7 @@
     }
   ],
   "sizes": {
-    "near": 14443108,
+    "near": 14206964,
     "low": 4535964,
     "balanced": 13616276
   },
@@ -556,23 +556,23 @@
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 2689900,
+    "bytes": 2456020,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "f77c2d15992983a0da5f997aae67cfa9498f7bf17ca18eddf84a1aaa7b6e3d86",
+    "sha256": "f60f70c5ac75a1b7b35eb2c60c07bbf6234eac5b0ca82fb71eb7bbf92e49f7f2",
     "precision": {
       "passed": true,
       "models": 24,
       "meshes": 96,
-      "visibleTriangles": 141894,
+      "visibleTriangles": 114166,
       "exactTrianglePositionsAndWinding": true,
       "normalLimitDegrees": 0.05,
-      "maxNormalDegrees": 0.002181338033288982,
+      "maxNormalDegrees": 0.0017690968713909463,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 13641096,
-      "candidateBytes": 2689900,
-      "referenceDecodedBufferBytes": 38467482,
-      "candidateDecodedBufferBytes": 6326038
+      "referenceBytes": 13404952,
+      "candidateBytes": 2456020,
+      "referenceDecodedBufferBytes": 37915064,
+      "candidateDecodedBufferBytes": 5773620
     }
   },
   "workerToolRevision": "craft-tools-v1",

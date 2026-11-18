@@ -34,7 +34,7 @@ test('all presets render the same tree geometry for every biome, variant and dis
   }finally{clearAuthoredAssets();const geometries=new Set(),materials=new Set();for(const scene of [...scenes,...trees.templates.values()])scene.traverse(part=>{if(part.isMesh){geometries.add(part.geometry);materials.add(part.material);}});for(const value of [...geometries,...materials])value.dispose();}
 });
 
-test('the shipped far canopy keeps the near footprint and a lobed silhouette',async()=>{
+test('the shipped far canopy keeps the near footprint with fewer triangles',async()=>{
   // Regression guard. The old far broadleaf was three oversized lobes: 450
   // triangles and 3.54 units wide against a 4.26-unit near model, which read
   // as a shrunken ball when zooming out.
@@ -46,8 +46,15 @@ test('the shipped far canopy keeps the near footprint and a lobed silhouette',as
       const restored=far.width*farFootprintScale(near.width,far.width);
       assert.ok(restored>=near.width*.85,`${biome}:${variant} compensation must restore the near footprint`);
       assert.ok(Math.abs(far.height-near.height)<near.height*.15,`${biome}:${variant} far canopy keeps the near height`);
-      assert.ok(far.tris>=600,`${biome}:${variant} far canopy keeps lobed geometry`);
+      assert.ok(far.tris>=600,`${biome}:${variant} far canopy keeps distinct branches`);
       assert.ok(far.tris<near.tris,`${biome}:${variant} far canopy must still cost less than near`);
+      if(biome==='highlands'){
+        const conifer=trees.templates.get('tree:'+biome+':'+variant+':near');
+        assert.equal(conifer.userData.foliageSpecies,'meadow conifer');
+        assert.ok(near.height>near.width*1.4,'conifers keep an upright outline');
+        assert.ok(near.tris<7200&&far.tris<1500,'green conifers stay below the previous canopy budget');
+        conifer.traverse(node=>assert.notEqual(node.userData.assetMaterial,'snow'));
+      }
     }
   }finally{clearAuthoredAssets();}
 });

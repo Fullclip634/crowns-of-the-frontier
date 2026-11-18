@@ -279,6 +279,50 @@ def winter_boughs(root, height, variant, far, rng):
     for role, (vertices, faces) in foliage.items():
         make_mesh(root, role, vertices, faces, root.name + "_" + role)
 
+
+def meadow_boughs(root, height, spread, variant, far):
+    """Green conifers with a raised crown and uneven whorls of hanging sprays."""
+    bark, bark_faces = [], []
+    foliage = {"leafDark": ([], []), "leaf": ([], [])}
+    tiers = 8
+    for tier in range(tiers):
+        progress = tier / (tiers - 1)
+        radius = spread * (2.0 * (1 - progress) ** .83 + .18)
+        level = height * (.32 + .65 * progress)
+        for branch in range(8):
+            twig = random.Random(3161 + variant * 571 + tier * 101 + branch * 11)
+            angle = branch * math.tau / 8 + tier * .62 + twig.uniform(-.27, .27)
+            direction = Vector((math.cos(angle), math.sin(angle), 0))
+            across = Vector((-direction.y, direction.x, 0))
+            origin = Vector((.23 * progress, -.12 * progress, level + twig.uniform(-.12, .12)))
+            elbow = origin + direction * radius * .64 + Vector((0, 0, .10))
+            tip = origin + direction * radius * twig.uniform(.88, 1.18) + Vector((0, 0, -.28 * (1 - progress)))
+            if far and branch in (1, 3, 5):
+                continue
+            rod_data(bark, bark_faces, origin, elbow, .060 * (1 - .65 * progress), .62, 4)
+            if not far:
+                rod_data(bark, bark_faces, elbow, tip, .035 * (1 - .65 * progress), .25, 4)
+            dark, dark_faces = foliage["leafDark"]
+            green, green_faces = foliage["leaf"]
+            # Full-length twisted needle clusters cover the limb and form the
+            # same outer silhouette in both meshes. Near tips add split edges.
+            leaf_volume(dark, dark_faces, origin.lerp(tip, .48), direction + Vector((0, 0, -.10)),
+                        radius * 1.05, radius * (.29 if far else .21), radius * .145)
+            leaf_volume(green, green_faces, tip.lerp(elbow, .26), direction + Vector((0, 0, .10)),
+                        radius * .50, radius * .17, radius * .10)
+            for side in (() if far else (-1, 1)):
+                spray = direction * .64 + across * side * .78 + Vector((0, 0, -.26))
+                center = origin.lerp(tip, .51 + side * .085) + spray * radius * .13
+                leaf_volume(dark, dark_faces, center, spray, radius * .64, radius * .125, radius * .08)
+                needle = direction * .70 + across * side * .58 + Vector((0, 0, -.14))
+                leaf_volume(green, green_faces, center + direction * radius * .23,
+                            needle, radius * .42, radius * .082, radius * .065)
+    limbs = make_mesh(root, "trunk", bark, bark_faces, root.name + "_Limbs")
+    limbs["skipCraftedBevel"] = True
+    for role, (vertices, faces) in foliage.items():
+        make_mesh(root, role, vertices, faces, root.name + "_" + role)
+
+
 def author_tree(root):
     _, biome, variant, lod = root["assetKey"].split(":")
     variant = int(variant)
@@ -290,9 +334,11 @@ def author_tree(root):
     height, spread = [(6.3, 1.0), (7.2, .78), (6.5, 1.18), (5.8, 1.12)][variant]
     if biome == "winter":
         height, spread = 5.8 + variant*.15, 1.0
+    elif biome == "highlands":
+        height, spread = [(7.8, .94), (8.6, .79), (7.5, 1.0), (7.15, .92)][variant]
     elif biome == "desert":
         spread *= .85
-    root["foliageSpecies"] = "pine" if biome == "winter" else ["oak", "birch", "elm", "beech"][variant]
+    root["foliageSpecies"] = {"winter": "pine", "highlands": "meadow conifer"}.get(biome, ["oak", "birch", "elm", "beech"][variant])
     # A gently bent, tapering trunk avoids the straight toy-cylinder silhouette.
     trunk = [(0, 0, 0), (.06, -.025, height*.28),
              (.13+variant*.025, -.06, height*.56), (.18, -.10, height*.80)]
@@ -300,6 +346,8 @@ def author_tree(root):
     for segment in range(len(trunk)-1):
         rod_data(vertices, faces, trunk[segment], trunk[segment+1], radii[segment],
                  radii[segment+1]/radii[segment], 8 if far else 12)
+    if biome == "highlands":
+        rod_data(vertices, faces, trunk[-1], (.24, -.12, height), radii[-1], .10, 6 if far else 8)
     for i in range(4 if not far else 2):
         angle = i * math.tau / 4 + variant
         rod_data(vertices, faces, (0, 0, .35),
@@ -307,6 +355,11 @@ def author_tree(root):
     if biome == "winter":
         make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
         winter_boughs(root, height, variant, far, rng)
+        return
+    if biome == "highlands":
+        trunk_mesh = make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
+        trunk_mesh["skipCraftedBevel"] = far
+        meadow_boughs(root, height, spread, variant, far)
         return
     crowns = []
     # Three oversized lobes read as a smooth ball from a distance. A distant
@@ -473,7 +526,7 @@ def export(name, near):
                     obj.modifiers.remove(mod)
     if near:
         for obj in selected:
-            if obj.type != "MESH" or obj.get("assetMaterial") in ["leaf", "leafDark", "snow"]:
+            if obj.type != "MESH" or obj.get("skipCraftedBevel") or obj.get("assetMaterial") in ["leaf", "leafDark", "snow"]:
                 continue
             if any(mod.name == "Crafted edges" for mod in obj.modifiers):
                 continue

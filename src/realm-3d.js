@@ -94,10 +94,13 @@ export function installRealm3D(WorldView){
   };
   p.buildLandscape=function(){
     ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);
-    for(let i=0;i<this.sim.players.length;i++)this.roofMaterials[i].color.copy(this.teamMaterials[i].color).lerp(new THREE.Color(this.sim.players[i].faction==='sun'?0xa88651:this.sim.players[i].faction==='raven'?0x6d5b57:0x526479),.72);
+    const roofColors={alder:new THREE.Color(0x687982),raven:new THREE.Color(0x716d68),sun:new THREE.Color(0x9d754d)};
+    for(const [i,player] of this.sim.players.entries()){
+      this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
+    }
     const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&map!=='desert'&&!volcanic,lush=map==='woodland'||map==='riverland';
-    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x9c8952:treeKind==='desert'?0x8a8752:lush?0x506d38:0x5c743d);
-    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x574b2e:treeKind==='desert'?0x4a4830:lush?0x324b2b:0x3e5732);
+    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x9c8952:treeKind==='desert'?0x8a8752:lush?0x3e5f35:0x526b3c);
+    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x574b2e:treeKind==='desert'?0x4a4830:lush?0x2b4429:0x344e30);
     if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x3a322f:0x66563e);
     buildLandscape(this);
   };

@@ -36,17 +36,17 @@ function paletteMaterial(view){
         float earthSkirt = 1.0 - smoothstep(0.0, 0.44, max(0.0, vStructurePos.y));
         float groundAo = mix(0.84, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
         if(vStructureSurface.z > 3.5) {
-          float shingleCourse = 0.91 + 0.14 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
+          float shingleCourse = 0.97 + 0.055 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
           diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb * shingleCourse;
         } else if(vStructureSurface.z > 2.5) {
           vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
           vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
           diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.62);
         } else if(vStructureSurface.z > 1.5) {
-          float ashlarCourse = 0.92 + 0.13 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
+          float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
           diffuseColor.rgb *= texture2D(frontierStructurestone, vUv * 1.25).rgb * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
-          float woodGrain = 0.92 + 0.13 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
+          float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
         }
         diffuseColor.rgb *= mix(vec3(1.0), vec3(0.88, 0.84, 0.75), earthSkirt * 0.45) * groundAo;`);
@@ -102,7 +102,7 @@ function promotedWallColor(material,rawMode,mode,m){
   return material.color.toArray();
 }
 
-function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0,roofTint=null){
+function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofTint){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -112,8 +112,7 @@ function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0,roofTi
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,emissive=material.emissive?.toArray()||[0,0,0];
   const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
-  // Preserve structural half-timber beams in Feudal & Castle ages so stucco walls stay framed, then dress beams as carved stone in Imperial.
-  const mode=material===m.darkwood&&rawMode===1&&age<3?1:ageSurface(rawMode,age);
+  const mode=material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge);
   const color=promotedWallColor(material,rawMode,mode,m);
   // Roofs carry the owner's team colour, so they take their own age shade:
   // straw warms toward terracotta and then cools to slate, while the team hue
@@ -133,6 +132,7 @@ function bakeSurface(view,part,matrix,tint=[1,1,1],roughnessScale=1,age=0,roofTi
 }
 
 const movable=node=>node.userData.gate||node.userData.windmill||node.userData.dockPier;
+const FRAMED_BUILDINGS=new Set(['house','mill','market','barracks','range','stable','camp','workshop']);
 
 // One opaque draw per static structure; moving gates, mill rotors and flags keep
 // their own pivots. Identical houses and wall sections reuse the same geometry.
@@ -143,6 +143,9 @@ export function packBuildingModel(view,root,e){
   // The Town Center already has four authored Blender variants, so only landmarks
   // receive massing tint; Town Center still advances wall material surfaces by age.
   const surfaceAge=metadata.architectureAge||0,age=isAgeStyled(e.type)?surfaceAge:0,ageTint=architectureStyle(age).tint;
+  // Everyday buildings keep timber frames and limewashed panels as they grow.
+  // Age and size still change, while civic and defensive stonework stays distinct.
+  const wallAge=FRAMED_BUILDINGS.has(e.type)?Math.min(2,surfaceAge):surfaceAge;
   const style=architectureStyle(age),tint=fortified?[.80,.84,.90]:[ageTint[0],ageTint[1],ageTint[2]],roofTint=fortified?[.86,.88,.94]:style.roof,roughnessScale=fortified?1.08:1+surfaceAge*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
@@ -159,7 +162,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,surfaceAge,roofTint));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofTint));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();

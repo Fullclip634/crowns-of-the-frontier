@@ -8,19 +8,27 @@ export function roadMask(land){
   const ctx=canvas.getContext('2d'),half=land.half,scale=size/land.worldSize;
   ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.lineCap='round';ctx.lineJoin='round';
   const beach=land.map==='coast'||land.map==='archipelago';
-  const strokeChannel=(channel,style,width)=>{
-    ctx.strokeStyle=style;ctx.lineWidth=width;
-    ctx.beginPath();
-    for(let z=-half;z<=half;z+=4){
-      const x=channel.center+Math.sin(z*channel.frequency)*channel.bend,px=(x+half)*scale,py=(z+half)*scale;
-      if(z===-half)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  const channels=land.channels?.()||[];
+  if(channels.length){
+    const mask=ctx.createImageData(size,size),pixels=mask.data;
+    for(let i=3;i<pixels.length;i+=4)pixels[i]=255;
+    const fade=(distance,width)=>{
+      const t=Math.min(1,Math.max(0,distance/width));
+      return (1-t)*(1-t)*(1+2*t);
+    };
+    for(const channel of channels)for(let row=0;row<size;row++){
+      const z=(row+.5)/scale-half,center=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+      const bankWidth=beach?4.3+Math.sin(z*.19+channel.center)*1.05+Math.cos(z*.41)*.38:3.1;
+      const left=Math.max(0,Math.floor((center-channel.width-bankWidth+half)*scale));
+      const right=Math.min(size-1,Math.ceil((center+channel.width+bankWidth+half)*scale));
+      for(let column=left;column<=right;column++){
+        const distance=Math.abs((column+.5)/scale-half-center)-channel.width;
+        const i=(row*size+column)*4;
+        if(beach)pixels[i+1]=Math.max(pixels[i+1],214*fade(distance,bankWidth));
+        pixels[i+2]=Math.max(pixels[i+2],215*fade(distance+1.3,bankWidth));
+      }
     }
-    ctx.stroke();
-  };
-  // G channel: sandy shore beach band; B channel: wet shoreline / riverbank moisture transition.
-  for(const channel of land.channels?.()||[]){
-    if(beach)strokeChannel(channel,'rgba(0,255,0,0.78)',(channel.width*2+15.5)*scale);
-    strokeChannel(channel,'rgba(0,0,255,0.84)',(channel.width*2+9.5)*scale);
+    ctx.putImageData(mask,0,0);
   }
   // Red values above the lane range identify the flagstone pads.
   for(const road of paths){
@@ -151,8 +159,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions){
       vec3 finalSoil = soilSample * frontierTerrainsoilTint * mix(1.0, 0.72, terrainShore) * mix(1.0, 0.88, terrainRoad);
       if (frontierTerrainbiomeFlags.w > 0.5 && terrainBeach > 0.01) {
         float swashRipple = sin(vTerrainWorldPos.x * 2.9 + vTerrainWorldPos.z * 1.7 + sin(vTerrainWorldPos.z * 0.45) * 1.2);
-        vec3 beachSand = mix(vec3(0.84, 0.77, 0.58), vec3(0.95, 0.89, 0.71), smoothstep(-0.6, 0.6, swashRipple)) * mix(1.0, 0.76, terrainShore);
-        finalSoil = mix(finalSoil, beachSand * (0.85 + 0.25 * dot(soilSample, vec3(0.3, 0.59, 0.11))), terrainBeach);
+        vec3 beachSand = mix(vec3(0.51, 0.43, 0.29), vec3(0.72, 0.63, 0.44), smoothstep(-0.6, 0.6, swashRipple)) * mix(1.0, 0.76, terrainShore);
+        finalSoil = mix(finalSoil, beachSand * (0.68 + 0.54 * dot(soilSample, vec3(0.3, 0.59, 0.11))), terrainBeach);
       }
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
       float packedGround = max(terrainPaving * 0.72, terrainRoad * 0.24);

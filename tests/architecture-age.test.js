@@ -224,3 +224,18 @@ test('landmarks gain physical corner fortifications and Town Center advances wal
     assert.ok(!tcModes[3].has(3)&&tcModes[3].has(2),'Imperial Town Center dresses walls into stone masonry');
   }finally{clearAuthoredAssets();}
 });
+
+test('an imperial house keeps limewash, structural timber and a masonry base in one draw',async()=>{
+  const assets=await catalogue();
+  try{
+    const view=fixture(assets,3);
+    view.materials.plaster.map=new THREE.Texture();
+    const entity={kind:'building',type:'house',owner:0,r:BUILDINGS.house.r,x:0,z:0};
+    const root=packBuildingModel(view,buildingModel(view,entity),entity),surfaces=[];
+    root.traverse(node=>{if(node.userData.structureSurface)surfaces.push(node);});
+    assert.equal(surfaces.length,1);
+    const attribute=surfaces[0].geometry.attributes.structureSurface,modes=new Set();
+    for(let v=0;v<attribute.count;v++)modes.add(attribute.getZ(v));
+    for(const mode of [1,2,3,4])assert.ok(modes.has(mode),'each building material is visible');
+  }finally{clearAuthoredAssets();}
+});

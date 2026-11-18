@@ -94,7 +94,7 @@ export function terrain(material,u){
   const soilTint=u.soilTint?value(u.soilTint,'color'):vec3(.78,.74,.65);
   const soilLuma=dot(soilSample,lumaWeights);
   const swashRipple=sin(worldPos.x.mul(2.9).add(worldPos.z.mul(1.7)).add(sin(worldPos.z.mul(.45)).mul(1.2)));
-  const beachSand=mix(vec3(.84,.77,.58),vec3(.95,.89,.71),smoothstep(-.6,.6,swashRipple)).mul(mix(1,.76,shore)).mul(float(.85).add(soilLuma.mul(.25)));
+  const beachSand=mix(vec3(.51,.43,.29),vec3(.72,.63,.44),smoothstep(-.6,.6,swashRipple)).mul(mix(1,.76,shore)).mul(float(.68).add(soilLuma.mul(.54)));
   const baseSoilCol=soilSample.mul(soilTint).mul(mix(1,.72,shore)).mul(mix(1,.88,terrainRoad));
   const soilCol=mix(baseSoilCol,beachSand,terrainBeach);
   const strataWarp=sin(worldPos.x.mul(.19)).mul(1.5).add(cos(worldPos.z.mul(.19)).mul(1.5));
@@ -162,7 +162,7 @@ export function structurePalette(material,u){
     const result=vec3(suffix==='Normal'?vec3(.5,.5,1):vec3(1)).toVar();
     If(mode.greaterThan(3.5),()=>{
       if(!suffix){
-        const shingle=float(.91).add(sin(worldPos.y.mul(19.5).add(worldPos.x.add(worldPos.z).mul(2.8))).mul(.14));
+        const shingle=float(.97).add(sin(worldPos.y.mul(19.5).add(worldPos.x.add(worldPos.z).mul(2.8))).mul(.055));
         result.assign(sample(u.roof).rgb.mul(shingle));
       }
     }).ElseIf(mode.greaterThan(2.5),()=>{
@@ -173,12 +173,12 @@ export function structurePalette(material,u){
       }else result.assign(sample(u['plaster'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(1.5),()=>{
       if(!suffix){
-        const ashlar=float(.92).add(sin(worldPos.y.mul(12)).mul(cos(worldPos.x.sub(worldPos.z).mul(4.8))).mul(.13));
+        const ashlar=float(.96).add(sin(worldPos.y.mul(12)).mul(cos(worldPos.x.sub(worldPos.z).mul(4.8))).mul(.07));
         result.assign(sample(u.stone,uv().mul(1.25),fallback).rgb.mul(ashlar).mul(mix(1,.85,plinthMask.mul(.48))));
       }else result.assign(sample(u['stone'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
-        const grain=float(.92).add(sin(worldPos.x.add(worldPos.y.mul(2.4)).add(worldPos.z).mul(10.5)).mul(.13));
+        const grain=float(.96).add(sin(worldPos.x.add(worldPos.y.mul(2.4)).add(worldPos.z).mul(10.5)).mul(.055));
         result.assign(sample(u.wood,uv().mul(1.2),fallback).rgb.mul(grain));
       }else result.assign(sample(u['wood'+suffix],uv(),fallback).rgb);
     });
