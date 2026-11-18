@@ -2,18 +2,19 @@ import * as THREE from 'three';
 import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {architectureStyle,isAgeStyled,ageSurface} from './architecture-age.js';
+import {isSnowBiome} from './terrain-biomes.js';
 
 function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
     const material=standardMaterial({vertexColors:true,roughness:.9});
-    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0}};
+    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0},snow:{value:0}};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
     if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
       for(const [key,uniform] of Object.entries(uniforms))shader.uniforms['frontierStructure'+key]=uniform;
-      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\nvarying vec3 vStructurePos;\n'+shader.vertexShader;
-      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;\nvStructurePos = position;');
+      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\nvarying vec3 vStructurePos;\nvarying float vStructureRoofUp;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;\nvStructurePos = position;\nvStructureRoofUp = normalize(normal).y;');
       shader.fragmentShader=`uniform sampler2D frontierStructurewood;
         uniform sampler2D frontierStructurestone;
         uniform sampler2D frontierStructureplaster;
@@ -28,6 +29,8 @@ function paletteMaterial(view){
         uniform vec3 frontierStructurearmAvailable;
         uniform float frontierStructuredetail;
         uniform float frontierStructurenight;
+        uniform float frontierStructuresnow;
+        varying float vStructureRoofUp;
         varying vec3 vStructureSurface;
         varying vec3 vStructureEmission;
         varying vec3 vStructurePos;\n`+shader.fragmentShader;
@@ -37,7 +40,15 @@ function paletteMaterial(view){
         float groundAo = mix(0.84, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
         if(vStructureSurface.z > 3.5) {
           float shingleCourse = 0.97 + 0.055 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
-          diffuseColor.rgb *= texture2D(frontierStructureroof, vUv).rgb * shingleCourse;
+          vec3 roof = texture2D(frontierStructureroof, vUv).rgb;
+          diffuseColor.rgb *= roof * shingleCourse;
+          if (frontierStructuresnow > 0.5) {
+            float drift = sin(vStructurePos.x * 1.85 + vStructurePos.z * 0.71) * cos(vStructurePos.z * 1.31 - vStructurePos.y * .77);
+            float edging = sin(vStructurePos.x * 9.6 - vStructurePos.z * 12.0) * .12;
+            float settle = smoothstep(.23, .76, vStructureRoofUp) * smoothstep(-.60, .45, drift * .49 + edging + .28);
+            float grain = .84 + .16 * dot(roof, vec3(.3, .59, .11));
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.67, .76, .84) * grain, settle * .88);
+          }
         } else if(vStructureSurface.z > 2.5) {
           vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
           vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
@@ -75,7 +86,7 @@ function paletteMaterial(view){
         }
         #endif`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v6';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v7';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
@@ -86,6 +97,7 @@ function paletteMaterial(view){
   u.woodArm.value=m.wood.roughnessMap||null;u.stoneArm.value=m.stone.roughnessMap||null;
   u.plasterArm.value=m.plaster.roughnessMap||null;
   u.armAvailable.value.set(u.woodArm.value?1:0,u.stoneArm.value?1:0,u.plasterArm.value?1:0);
+  u.snow.value=Number(isSnowBiome(view.sim?.options?.map));
   u.detail.value=view.settings?.quality==='high'?2:view.settings?.quality==='medium'?1:0;
   const normal=u.stoneNormal.value||u.woodNormal.value||u.plasterNormal.value||null;
   if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}

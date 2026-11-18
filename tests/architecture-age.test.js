@@ -239,3 +239,21 @@ test('an imperial house keeps limewash, structural timber and a masonry base in 
     for(const mode of [1,2,3,4])assert.ok(modes.has(mode),'each building material is visible');
   }finally{clearAuthoredAssets();}
 });
+
+test('packed roof snow tracks the current biome without allocating a second building mesh',async()=>{
+  const assets=await catalogue();
+  try{
+    const view=fixture(assets,1);
+    const roster={kind:'building',type:'house',owner:0,r:BUILDINGS.house.r,x:0,z:0};
+    const cover=[];
+    for(const map of ['highlands','tundra','winter','coast']){
+      view.sim.options.map=map;
+      const model=packBuildingModel(view,buildingModel(view,roster),roster),surfaces=[];
+      model.traverse(node=>{if(node.userData.structureSurface)surfaces.push(node);});
+      assert.equal(surfaces.length,1);
+      assert.equal(surfaces[0].material,view.materials.structurePalette);
+      cover.push(surfaces[0].material.frontierUniforms.snow.value);
+    }
+    assert.deepEqual(cover,[0,1,1,0]);
+  }finally{clearAuthoredAssets();}
+});

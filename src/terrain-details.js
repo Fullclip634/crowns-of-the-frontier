@@ -4,7 +4,7 @@ import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
-import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
+import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 
 export function pebbleGeometry(){
   const geometry=new THREE.IcosahedronGeometry(.62,1),p=geometry.attributes.position;
@@ -38,66 +38,105 @@ export class TerrainDetails{
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=false;
     this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
-    const palette=land.map==='volcanic'?[0x6f6966,0x87807b,0x56504d]:isSnowBiome(land.map)?[0xc8d2ce,0xe1e7e2,0x9aa9a4]:isAridBiome(land.map)||['desert','canyon','archipelago'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:isRockyBiome(land.map)?[0x9ca097,0xb3b7ad,0x7d8178]:[0xb1b5aa,0xc6c9bd,0x8d9387];
-    const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),attempts=capacity*3;
-    const validSite=(x,z,minCamp)=>{
-      if(Math.abs(x)>land.half-4||Math.abs(z)>land.half-4)return false;
-      const y=land.surfaceHeightAt(x,z),td=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      return y>=.2&&td>=minCamp&&roadDistance(x,z,land,2.6)>=2.6&&!bridgeFootprint(land.map,x,z,3);
+    const coastal=land.map==='coast'||land.map==='archipelago';
+    const rocky=isRockyBiome(land.map);
+    const palette=land.map==='volcanic'?[0x655d59,0x79716d,0x514e47]:isSnowBiome(land.map)?[0x929da7,0xbac4c6,0x747d87]:coastal?[0x9d9b88,0xb5af98,0x797b72]:isAridBiome(land.map)||['desert','canyon'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:rocky?[0x9ca097,0xb3b7ad,0x7d8178]:[0xa7a99b,0xb9b9a7,0x808778];
+    const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),mapEdge=land.half-4;
+    const townDistance=(x,z)=>settlements.reduce((d,site)=>Math.min(d,Math.hypot(x-site.x,z-site.z)),Infinity);
+    const validSite=(x,z,clearance)=>Math.abs(x)<=mapEdge&&Math.abs(z)<=mapEdge&&
+      roadDistance(x,z,land,clearance)>=clearance&&!bridgeFootprint(land.map,x,z,3);
+    const add=(type,x,y,z,angle,scale,stretch,heightScale,sink)=>{
+      const color=palette[this.entries.length%palette.length],shade=(type==='shore'?.73:.84)+rng()*.21;
+      this.entries.push({type,x,y,z,angle,scale,color,stretch,heightScale,shade,sink});
     };
-    if(!low){
-      const cliffChains=Math.min(18,Math.max(6,Math.floor(capacity/48)));
-      for(let c=0;c<cliffChains&&this.entries.length+8<capacity;c++){
-        let ax,az;
-        if(c<settlements.length*2){
-          const base=settlements[c%settlements.length],dir=Math.atan2(-base.z,-base.x)+(c<settlements.length?1.15:-1.15)+(rng()-.5)*.35;
-          const dist=campRadius*1.38+rng()*14;ax=base.x+Math.cos(dir)*dist;az=base.z+Math.sin(dir)*dist;
-        }else{
-          ax=(rng()-.5)*(land.worldSize-24);az=(rng()-.5)*(land.worldSize-24);
-        }
-        if(!validSite(ax,az,campRadius*1.28))continue;
-        const dx=(land.surfaceHeightAt(ax+2,az)-land.surfaceHeightAt(ax-2,az))/4,dz=(land.surfaceHeightAt(ax,az+2)-land.surfaceHeightAt(ax,az-2))/4;
-        let heading=Math.hypot(dx,dz)>.04?Math.atan2(-dx,dz):rng()*Math.PI*2,cx=ax,cz=az;
-        const blocks=5+Math.floor(rng()*4);
-        for(let b=0;b<blocks&&this.entries.length<capacity;b++){
-          if(validSite(cx,cz,campRadius*1.25)){
-            const cy=land.surfaceHeightAt(cx,cz),arch=Math.sin((b+.5)/blocks*Math.PI),scale=(1.55+rng()*1.15)*(.78+arch*.42);
-            this.entries.push({x:cx,y:cy,z:cz,angle:heading+(rng()-.5)*.22,scale,color:palette[this.entries.length%3],stretch:1.65+rng()*.75,heightScale:.92+rng()*.55,shade:.82+rng()*.22,sink:-.16*scale});
-            if(this.entries.length<capacity&&rng()<.7){
-              const tx=cx+Math.sin(heading)*(1.2+rng()*1.4),tz=cz-Math.cos(heading)*(1.2+rng()*1.4);
-              if(validSite(tx,tz,campRadius*1.2)){
-                const ty=land.surfaceHeightAt(tx,tz),ts=.48+rng()*.52;
-                this.entries.push({x:tx,y:ty,z:tz,angle:rng()*Math.PI*2,scale:ts,color:palette[this.entries.length%3],stretch:1.1+rng()*.45,heightScale:.65+rng()*.35,shade:.78+rng()*.2,sink:-.05*ts});
-              }
-            }
-          }
-          heading+=(rng()-.5)*.28;cx+=Math.cos(heading)*2.05;cz+=Math.sin(heading)*2.05;
+
+    // Small pockets of mixed gravel follow the exposed bank between crossings.
+    if(coastal){
+      const limit=Math.floor(capacity*.32),channels=land.channels();
+      const pockets=Math.ceil(limit/(channels.length*2*6));
+      for(const channel of channels)for(const side of [-1,1])for(let i=0;i<pockets&&this.entries.length<limit;i++){
+        const centerZ=((i+.15+rng()*.7)/pockets-.5)*(land.worldSize-16);
+        const setback=.95+rng()*2.2,spread=1.6+rng()*2.1;
+        for(let j=0;j<6&&this.entries.length<limit;j++){
+          const z=centerZ+(rng()-.5)*spread*2,mid=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+          const depth=Math.max(.55,setback+(rng()-.5)*1.65),x=mid+side*(channel.width+depth);
+          const y=land.surfaceHeightAt(x,z);
+          if(y<.12||!validSite(x,z,2))continue;
+          const scale=(j===0?.49:.16)+rng()*(j===0?.40:.34);
+          add('shore',x,y,z,rng()*Math.PI*2,scale,1+rng()*.48,.6+rng()*.35,-scale*.095);
         }
       }
     }
-    for(let i=0;i<attempts&&this.entries.length<capacity;i++){
-      const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
-      const townDist=settlements.length?Math.min(...settlements.map(s=>Math.hypot(x-s.x,z-s.z))):Infinity;
-      if(y<.2||townDist<campRadius*.9||townDist<campRadius*1.3&&rng()<.88||roadDistance(x,z,land,2.4)<2.4||bridgeFootprint(land.map,x,z,3))continue;
-      const dx=(land.surfaceHeightAt(x+1.5,z)-land.surfaceHeightAt(x-1.5,z))/3,dz=(land.surfaceHeightAt(x,z+1.5)-land.surfaceHeightAt(x,z-1.5))/3;
-      const slope=Math.hypot(dx,dz),cliff=(slope>.11||y>2.3||i%4===0)&&townDist>=campRadius*1.3;
-      const angle=slope>.06?Math.atan2(-dx,dz)+(rng()-.5)*.38:rng()*Math.PI*2;
-      const scale=cliff?(1.35+rng()*1.65+Math.min(1.3,slope*2.6)):(.48+rng()*.72);
-      const stretch=cliff?(1.45+rng()*.95):(.88+rng()*.55),heightScale=cliff?(.82+rng()*.58):(.68+rng()*.38);
-      this.entries.push({x,y,z,angle,scale,color:palette[this.entries.length%3],stretch,heightScale,shade:.84+rng()*.22,sink:cliff?-.14*scale:-.03*scale});
+
+    if(!low){
+      const chains=Math.min(20,Math.max(6,Math.floor(capacity/40)));
+      const limit=Math.min(capacity*.54,this.entries.length+chains*11);
+      let placed=0;
+      // Ledges follow the uphill contours, and loose fragments collect lower down.
+      for(let i=0;i<chains*12&&placed<chains&&this.entries.length<limit;i++){
+        const x=(rng()-.5)*(land.worldSize-14),z=(rng()-.5)*(land.worldSize-14);
+        if(!validSite(x,z,3.2)||townDistance(x,z)<campRadius*1.22||land.surfaceHeightAt(x,z)<.45)continue;
+        const dx=(land.surfaceHeightAt(x+2,z)-land.surfaceHeightAt(x-2,z))*.25;
+        const dz=(land.surfaceHeightAt(x,z+2)-land.surfaceHeightAt(x,z-2))*.25;
+        const slope=Math.hypot(dx,dz);
+        if(slope<(rocky?.24:.13))continue;
+        const alongX=-dz/slope,alongZ=dx/slope,outX=-dx/slope,outZ=-dz/slope;
+        const angle=Math.atan2(-alongZ,alongX),blocks=4+Math.floor(rng()*4),first=this.entries.length;
+        for(let b=0;b<blocks&&this.entries.length<limit;b++){
+          const step=(b-(blocks-1)*.5)*1.33,lap=(rng()-.5)*.6;
+          const bx=x+alongX*step+outX*lap,bz=z+alongZ*step+outZ*lap,y=land.surfaceHeightAt(bx,bz);
+          if(y<.44||!validSite(bx,bz,3.2)||townDistance(bx,bz)<campRadius*1.17)continue;
+          const scale=(.98+rng()*.68+Math.min(slope,.8)*.65)*(.72+.28*Math.sin((b+.5)/blocks*Math.PI));
+          add('ledge',bx,y,bz,angle+(rng()-.5)*.25,scale,1.63+rng()*.48,.75+rng()*.48,-scale*(.18+Math.min(.17,slope*.11)));
+          if(rng()<.36||this.entries.length>=limit)continue;
+          const run=1.15+rng()*1.4,sx=bx+outX*run,sz=bz+outZ*run,sy=land.surfaceHeightAt(sx,sz);
+          if(sy>=.28&&validSite(sx,sz,2.6)){
+            const size=.24+rng()*.49;
+            add('scree',sx,sy,sz,angle+rng()*1.4,size,1.10+rng()*.42,.62+rng()*.34,-size*.11);
+          }
+        }
+        if(this.entries.length>first)placed++;
+      }
     }
+
+    for(let i=0;i<capacity*4&&this.entries.length<capacity;i++){
+      const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
+      if(y<.23||!validSite(x,z,2.4))continue;
+      const distance=townDistance(x,z);
+      if(distance<campRadius*.86||distance<campRadius*1.25&&rng()<.75)continue;
+      const scale=.33+rng()*.65;
+      add('field',x,y,z,rng()*Math.PI*2,scale,.84+rng()*.53,.65+rng()*.38,-scale*.07);
+    }
+    this.visibleEntries=[];
+    this.nextEntries=[];
     this.update(true,true);
   }
   update(menu=false,force=false){
-    const v=this.view,key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,menu,v.settings.fog].join(':');
+    const v=this.view,key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog].join(':');
     if(!force&&this.key===key&&v.clock-(this.last||0)<.5)return;
-    this.key=key;this.last=v.clock;let count=0;const sites=v.groundCover?.buildingSites;
+    this.key=key;this.last=v.clock;
+    const visible=this.nextEntries,sites=v.groundCover?.buildingSites;
+    visible.length=0;
+    let changed=force;
     for(const e of this.entries){
       if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
       if(sites?.get(Math.floor(e.x/16)+':'+Math.floor(e.z/16))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
-      this.dummy.position.set(e.x,e.y+(e.sink??.015),e.z);this.dummy.rotation.set(.09*Math.sin(e.angle),e.angle,.07*Math.cos(e.angle));this.dummy.scale.set(e.scale*e.stretch,e.scale*(e.heightScale||1),e.scale);this.dummy.updateMatrix();
-      this.mesh.setMatrixAt(count,this.dummy.matrix);this.mesh.setColorAt(count,this.color.setHex(e.color).multiplyScalar(e.shade));count++;
+      if(e!==this.visibleEntries[visible.length])changed=true;
+      visible.push(e);
     }
+    if(!changed&&visible.length===this.visibleEntries.length)return;
+    this.nextEntries=this.visibleEntries;
+    this.visibleEntries=visible;
+    for(let i=0;i<visible.length;i++){
+      const e=visible[i];
+      this.dummy.position.set(e.x,e.y+e.sink,e.z);
+      this.dummy.rotation.set(.09*Math.sin(e.angle),e.angle,.07*Math.cos(e.angle));
+      this.dummy.scale.set(e.scale*e.stretch,e.scale*e.heightScale,e.scale);
+      this.dummy.updateMatrix();
+      this.mesh.setMatrixAt(i,this.dummy.matrix);
+      this.mesh.setColorAt(i,this.color.setHex(e.color).multiplyScalar(e.shade));
+    }
+    const count=visible.length;
     this.mesh.count=count;markInstancePrefix(this.mesh);
     if(this.mesh.instanceColor&&count){this.mesh.instanceColor.clearUpdateRanges();this.mesh.instanceColor.addUpdateRange(0,count*3);this.mesh.instanceColor.needsUpdate=true;}
     v.terrainDetailDiagnostics={visible:count,seeded:this.entries.length,capacity:this.mesh.instanceMatrix.count,triangles:count*this.mesh.geometry.attributes.position.count/3,drawCalls:count?1:0};

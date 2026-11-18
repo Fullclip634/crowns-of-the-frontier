@@ -187,7 +187,19 @@ export function structurePalette(material,u){
   const earthSkirt=float(1).sub(smoothstep(0,.44,max(0,worldPos.y)));
   const groundAo=mix(.84,1,smoothstep(0,1.15,max(0,worldPos.y)));
   const structureOcclusion=mix(.84,1,smoothstep(0,1.1,max(0,worldPos.y)));
-  material.colorNode=materialColor.rgb.mul(choose()).mul(mix(vec3(1),vec3(.88,.84,.75),earthSkirt.mul(.45))).mul(groundAo);
+  const soot=mix(vec3(1),vec3(.88,.84,.75),earthSkirt.mul(.45));
+  const roofUp=varying(normalLocal.y);
+  material.colorNode=Fn(()=>{
+    const color=materialColor.rgb.mul(choose()).toVar();
+    If(value(u.snow).greaterThan(.5).and(mode.greaterThan(3.5)),()=>{
+      const drift=sin(worldPos.x.mul(1.85).add(worldPos.z.mul(.71))).mul(cos(worldPos.z.mul(1.31).sub(worldPos.y.mul(.77))));
+      const edging=sin(worldPos.x.mul(9.6).sub(worldPos.z.mul(12))).mul(.12);
+      const settle=smoothstep(.23,.76,roofUp).mul(smoothstep(-.60,.45,drift.mul(.49).add(edging).add(.28)));
+      const grain=float(.84).add(dot(sample(u.roof).rgb,vec3(.3,.59,.11)).mul(.16));
+      color.assign(mix(color,vec3(.67,.76,.84).mul(grain),settle.mul(.88)));
+    });
+    return color.mul(soot).mul(groundAo);
+  })();
   const active=mode.greaterThan(.5).and(mode.lessThan(3.5)).and(value(u.detail).greaterThan(.5));
   const arm=Fn(()=>{const result=vec3(1).toVar();If(active,()=>{result.assign(choose('Arm'));});return result;})();
   const normSample=Fn(()=>{const result=vec3(.5,.5,1).toVar();If(active,()=>{result.assign(choose('Normal',flat));});return result;})();

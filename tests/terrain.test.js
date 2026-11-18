@@ -131,3 +131,30 @@ test('solid terrain pebbles are bounded, seeded, hidden by fog and cleared benea
   assert.equal(view.terrainDetailDiagnostics.drawCalls,1);assert.ok(view.terrainDetailDiagnostics.capacity<=120);
   for(const item of [details,copy]){item.mesh.geometry.dispose();item.mesh.material.dispose();item.mesh.dispose();}view.groundCover.mesh.geometry.dispose();view.groundCover.mesh.material.dispose();view.groundCover.mesh.dispose();ground.dispose();
 });
+
+test('coastal gravel stays above the shoreline and static detail keeps its uploaded instance range',()=>{
+  const land=new Landscape(512,'archipelago');
+  land.geometry(land.renderSize,160).dispose();
+  const view={landscape:land,terrain:new THREE.Group(),settings:{quality:'high',fog:false},sim:{isExplored:()=>false},clock:0,target:new THREE.Vector3(),zoom:40,angle:0,tilt:.7};
+  const detail=new TerrainDetails(view),gravel=detail.entries.filter(entry=>entry.type==='shore');
+  assert.ok(gravel.length>=20);
+  for(const e of gravel){
+    const clearance=Math.min(...land.channels().map(c=>Math.abs(e.x-c.center-Math.sin(e.z*c.frequency)*c.bend)-c.width));
+    assert.ok(clearance>=.54&&clearance<4);
+    assert.ok(e.y>=.12&&e.y+e.sink<e.y&&e.scale<1);
+    assert.ok(roadDistance(e.x,e.z,land,2)>=2);
+  }
+  const version=detail.mesh.instanceMatrix.version,tintVersion=detail.mesh.instanceColor.version;
+  view.clock=1;
+  detail.update();
+  assert.equal(detail.mesh.instanceMatrix.version,version);
+  assert.equal(detail.mesh.instanceColor.version,tintVersion);
+  view.settings.fog=true;
+  detail.update();
+  assert.equal(detail.mesh.count,0);
+  view.sim.isExplored=()=>true;
+  view.clock=2;
+  detail.update();
+  assert.ok(detail.mesh.count>0&&detail.mesh.instanceMatrix.version>version);
+  detail.mesh.geometry.dispose();detail.mesh.material.dispose();detail.mesh.dispose();
+});
