@@ -15,7 +15,8 @@ const totalCost=(sim,owner,pieces)=>pieces.reduce((cost,piece)=>{
 export function fortificationReserved(sim,type,x,z,owner){
   const definition=BUILDINGS[type];if(!definition)return false;
   const point={x,z};
-  for(const [commander,state]of Object.entries(sim.aiStates||{})){
+  const commanders=sim.aiStates||(sim.commanderAI?{1:sim.commanderAI}:{});
+  for(const [commander,state]of Object.entries(commanders)){
     if(!sim.allied(owner,Number(commander)))continue;
     for(const plan of state.fortifications||[]){
       if(!sim.get(plan.base))continue;
@@ -141,7 +142,8 @@ export function planFortification(sim,state,owner,base,buildings){
 
 export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
   const player=sim.players[owner],populationLimit=sim.options.populationLimit||160,fortificationWorkers=Math.min(18,Math.floor(populationLimit*.45)),perimeterWorkers=Math.min(24,Math.floor(populationLimit*.5));
-  if(sim.options.mode!=='custom'||player.controller!=='ai'||player.age<1||workers.length<fortificationWorkers||sim.time<180||sim.time<(state.nextFortification||0))return false;
+  const commander=sim.options.mode==='custom'?player.controller==='ai':sim.options.mode==='skirmish'&&owner===1&&!sim.options.multiplayer;
+  if(!commander||player.age<1||workers.length<fortificationWorkers||sim.time<180||sim.time<(state.nextFortification||0))return false;
   if(sim.difficulty(owner)==='story'&&(player.age<2||sim.time<420))return false;
   // A permanent threat must not suspend fortification forever: a single unit
   // poking the perimeter every half minute used to stall walls indefinitely.
@@ -153,7 +155,9 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
   state.fortifications??=[];
   state.fortifications=state.fortifications.filter(plan=>sim.get(plan.base)?.owner===owner);
   if(state.fortifications.some(plan=>plan.pieces.some(piece=>{const building=sim.get(piece.id);return building&&building.progress<1;})))return false;
-  let plan=state.fortifications.find(plan=>sim.time>=(plan.retryAt||0)&&plan.pieces.some(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)));
+  const missing=piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece);
+  const ready=piece=>missing(piece)&&sim.time>=(piece.retryAt||0);
+  let plan=state.fortifications.find(plan=>sim.time>=(plan.retryAt||0)&&plan.pieces.some(ready));
   if(!plan&&workers.length>=perimeterWorkers&&sim.time>=300&&sim.time>=(state.nextPerimeter||0)){
     state.nextPerimeter=sim.time+60;
     for(const existing of state.fortifications){
@@ -170,20 +174,50 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
     }
     if(!plan)return false;
   }
-  const piece=plan.pieces.find(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));if(!piece)return false;
-  if(clearWorkerSites(sim,plan,owner,workers,[],piece)){state.nextFortification=sim.time+1;return false;}
-  const cost=sim.cost(BUILDINGS[piece.type].cost,owner,'building');
-  if(!affordable(sim,owner,cost)||!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)){plan.retryAt=sim.time+30;state.nextFortification=sim.time+3;return false;}
-  const displaced=[];
-  if(!fortificationRoutesSafe(sim,plan,owner,displaced,piece)){
-    if(clearWorkerSites(sim,plan,owner,workers,displaced,piece)){state.nextFortification=sim.time+1;return false;}
-    plan.retryAt=sim.time+30;state.nextFortification=sim.time+3;return false;
+  // Keep the entrance ahead of its wall line. Other obstructions have a
+  // per-site retry so a house or a busy builder cannot freeze an entire front.
+  const entranceMissing=missing(plan.pieces[0]);
+  const candidates=entranceMissing?plan.pieces.slice(0,1):plan.pieces;
+  for(const piece of candidates){
+    if(!ready(piece))continue;
+    const cost=sim.cost(BUILDINGS[piece.type].cost,owner,'building');
+    if(!affordable(sim,owner,cost)||!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)){
+      piece.retryAt=sim.time+30;
+      continue;
+    }
+    // Let units clear the next safe foundation before extending the line.
+    // Placing farther walls during that move can cut a crew off from its work.
+    if(clearWorkerSites(sim,plan,owner,workers,[],piece)){
+      state.nextFortification=sim.time+1;
+      return false;
+    }
+    const displaced=[];
+    if(!fortificationRoutesSafe(sim,plan,owner,displaced,piece)){
+      if(clearWorkerSites(sim,plan,owner,workers,displaced,piece)){
+        state.nextFortification=sim.time+1;
+      }else{
+        plan.retryAt=sim.time+30;
+        state.nextFortification=sim.time+3;
+      }
+      return false;
+    }
+    const builders=workers.filter(available).sort((a,b)=>distance(a,piece)-distance(b,piece));
+    const worker=builders.find(worker=>routable(sim,worker,piece));
+    if(!worker){plan.retryAt=sim.time+20;return false;}
+    const builderIds=[worker.id];
+    if(plan.layout==='perimeter'){
+      const helper=builders.find(other=>other!==worker&&routable(sim,other,piece));
+      if(helper)builderIds.push(helper.id);
+    }
+    const building=sim.build(piece.type,piece.x,piece.z,builderIds,owner);
+    if(!building){piece.retryAt=sim.time+3;continue;}
+    building.wallAngle=piece.angle??plan.angle;
+    piece.id=building.id;
+    delete piece.retryAt;
+    delete plan.retryAt;
+    state.nextFortification=sim.time+3;
+    return true;
   }
-  const builders=workers.filter(available).sort((a,b)=>distance(a,piece)-distance(b,piece));
-  const worker=builders.find(worker=>routable(sim,worker,piece));if(!worker){plan.retryAt=sim.time+20;return false;}
-  const builderIds=[worker.id];
-  if(plan.layout==='perimeter'){const helper=builders.find(other=>other.id!==worker.id&&routable(sim,other,piece));if(helper)builderIds.push(helper.id);}
-  const building=sim.build(piece.type,piece.x,piece.z,builderIds,owner);if(!building)return false;
-  building.wallAngle=piece.angle??plan.angle;piece.id=building.id;delete plan.retryAt;state.nextFortification=sim.time+3;
-  return true;
+  state.nextFortification=sim.time+3;
+  return false;
 }

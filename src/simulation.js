@@ -540,7 +540,7 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options);
@@ -554,6 +554,7 @@ export class Simulation {
     }
     s.spawnPositions=starts;
     for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
+    s.commanderAI=data.commanderAI||null;
     restoreWallLinks(s.entities);
     if(data.rngState!==undefined)s.rng.state=data.rngState;
     s.explored=Uint8Array.from(data.explored);

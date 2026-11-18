@@ -195,3 +195,49 @@ test('a harvested natural wall anchor becomes a paid replacement instead of a pe
   assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);assert.equal(sim.players[owner].resources.stone,stone-sim.cost(BUILDINGS.wall.cost,owner,'building').stone);
   advanceWalls(sim,owner,45);assert.equal(sim.get(piece.id)?.progress,1);
 });
+
+test('a skirmish rival keeps working on its own gate plan after save and load',()=>{
+  const sim=new Simulation({mode:'skirmish',map:'highlands',worldSize:320,seed:512});
+  sim.entities=[];sim.index=new Map();sim.grids={};sim.revision++;sim.time=240;
+  const owner=1,base=sim.addBuilding('towncenter',owner,-40,0,true);
+  sim.addBuilding('towncenter',0,75,55,true);
+  sim.addBuilding('tower',owner,-25,0,true);
+  const workers=[];
+  for(let i=0;i<20;i++)workers.push(sim.addUnit('villager',owner,-39-i%5,-8-Math.floor(i/5)*2));
+  sim.players[owner].resources={food:1500,wood:1800,gold:1200,stone:1800};
+  sim.players[owner].age=2;
+  const state=sim.commanderAI={known:{},decision:0};
+  assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
+  const gate=sim.get(state.fortifications[0].pieces[0].id);
+  assert.ok(gate&&gate.type==='gate');
+  assert.equal(fortificationReserved(sim,'house',gate.x,gate.z,owner),true);
+  const loaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));
+  loaded.tickAI=()=>{};
+  assert.deepEqual(loaded.commanderAI,JSON.parse(JSON.stringify(state)));
+  assert.equal(loaded.commanderAI.fortifications[0].base,base.id);
+  for(let i=0;i<3600;i++){
+    loaded.tick(.1);
+    if(i%30!==0)continue;
+    const ownedWorkers=loaded.owned(owner,'unit','villager'),buildings=loaded.owned(owner,'building');
+    staffSettlements(loaded,loaded.commanderAI,owner,ownedWorkers,buildings);
+    fortifyKingdomWalls(loaded,loaded.commanderAI,owner,ownedWorkers,buildings,[]);
+  }
+  assert.ok(loaded.commanderAI.fortifications[0].pieces.every(piece=>loaded.get(piece.id)?.progress===1));
+});
+
+test('a blocked foundation retries independently on a real commander decision',()=>{
+  const {sim,owner,workers,state}=fixture();
+  assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
+  const plan=state.fortifications[0];
+  for(let i=0;i<450;i++)sim.tick(.1);
+  assert.equal(sim.get(plan.pieces[0].id)?.progress,1);
+  const blocked=plan.pieces[1],realBuildValid=sim.buildValid.bind(sim);
+  sim.buildValid=(type,x,z,builder)=>{
+    if(type===blocked.type&&x===blocked.x&&z===blocked.z)return false;
+    return realBuildValid(type,x,z,builder);
+  };
+  assert.equal(fortifyKingdomWalls(sim,state,owner,workers,sim.owned(owner,'building'),[]),true);
+  assert.ok(blocked.retryAt>sim.time);
+  assert.equal(blocked.id,undefined);
+  assert.ok(plan.pieces.slice(2).some(piece=>sim.get(piece.id)?.progress===0));
+});
