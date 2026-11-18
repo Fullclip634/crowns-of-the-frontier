@@ -42,11 +42,12 @@ function fixture(){const material=new THREE.MeshStandardMaterial({color:0x6a9fa6
 test('river palettes remain earthy at every quality and map changes reuse the existing shader uniforms',()=>{
   const {material,view}=fixture(),shallow=material.frontierWaterShallow,deep=material.frontierWaterDeep;
   const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader);
-  for(const map of ['valley','rivers','coast','valley'])for(const quality of ['low','medium','high']){
+  for(const map of ['valley','rivers','coast','archipelago','valley'])for(const quality of ['low','medium','high']){
     configureWaterPalette(material,map);view.settings.quality=quality;animateWaterSurface(view);
-    const palette=WATER_PALETTES[map==='coast'?'coast':'river'];assert.equal(deep.value.getHex(),palette.deep);assert.equal(shallow.value.getHex(),palette.shallow);assert.equal(material.opacity,palette.opacity);
+    const palette=WATER_PALETTES[map]||WATER_PALETTES.river;assert.equal(deep.value.getHex(),palette.deep);assert.equal(shallow.value.getHex(),palette.shallow);assert.equal(material.opacity,palette.opacity);
     assert.equal(shader.uniforms.frontierWaterShallow,shallow);assert.equal(shader.uniforms.frontierWaterDeep,deep);
-    if(map!=='coast'){assert.ok(deep.value.g>deep.value.b&&deep.value.r>deep.value.b*.6);assert.ok(shallow.value.r>shallow.value.b&&shallow.value.g>shallow.value.b);}
+    assert.equal(shader.uniforms.frontierWaterFoam,material.frontierWaterFoam);assert.equal(material.frontierWaterFoam.value,palette.foam);
+    if(palette===WATER_PALETTES.river){assert.ok(deep.value.g>deep.value.b&&deep.value.r>deep.value.b*.6);assert.ok(shallow.value.r>shallow.value.b&&shallow.value.g>shallow.value.b);}
   }
   material.dispose();
 });
@@ -64,8 +65,12 @@ test('real storm states strengthen water motion and night light dims the shoreli
   view.sun.intensity=.62;view.hemi.intensity=.56;view.scene.background.setHex(0x152640);animateWaterSurface(view);assert.ok(material.frontierWaterLight.value<dayLight*.4);assert.ok(material.frontierWaterSky.value.equals(view.scene.background));assert.equal(material.frontierWaterDetail.value,1);view.settings.quality='low';animateWaterSurface(view);assert.equal(material.frontierWaterDetail.value,0);assert.ok(material.frontierWaterRipples.value<calmRipples);material.dispose();
 });
 
-test('reduced decorative motion freezes the water phase without changing its geometry or settings',()=>{
-  const {material,view}=fixture();view.settings.reducedMotion=true;const choice={...view.settings};animateWaterSurface(view);assert.equal(material.frontierWaveTime.value,0);assert.equal(material.frontierWaterRipples.value,0);assert.equal(material.frontierWaterDetail.value,0);view.clock=100;animateWaterSurface(view);assert.equal(material.frontierWaveTime.value,0);assert.deepEqual(view.settings,choice);assert.equal(view.waterDiagnostics.geometryUploadsPerFrame,0);material.dispose();
+test('reduced motion keeps static ripples and shallow detail at a fixed water phase',()=>{
+  const {material,view}=fixture();view.settings.reducedMotion=true;const choice={...view.settings};
+  animateWaterSurface(view);assert.equal(material.frontierWaveTime.value,0);assert.ok(material.frontierWaterRipples.value>0);assert.equal(material.frontierWaterDetail.value,1);
+  const ripples=material.frontierWaterRipples.value;view.clock=100;view.weatherState=weatherAt(512,'coast',97,'storm');
+  animateWaterSurface(view);assert.equal(material.frontierWaveTime.value,0);assert.equal(material.frontierWaterMotion.value,1);assert.equal(material.frontierWaterRipples.value,ripples);
+  assert.deepEqual(view.settings,choice);assert.equal(view.waterDiagnostics.geometryUploadsPerFrame,0);material.dispose();
 });
 
 test('forest sway responds to actual weather amounts and respects reduced decorative motion',()=>{

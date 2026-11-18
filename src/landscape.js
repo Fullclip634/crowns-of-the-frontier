@@ -100,8 +100,13 @@ export class Landscape {
   }
   waterGeometry(channel,quality='low'){
     const vertices=[],uv=[],depth=[],shore=[],indices=[],across=quality==='low'?8:Math.max(8,Math.ceil(channel.width*2/1.4)),length=this.worldSize/2;
+    // Give the shallow water more samples without adding rows or triangles.
+    const offsets=Array.from({length:across+1},(_,col)=>{
+      const u=2*col/across-1;
+      return channel.width*u*(1+.44*(1-Math.abs(u)));
+    });
     for(let row=0;row<=length;row++){const z=-this.half+row*2,mid=channel.center+Math.sin(z*channel.frequency)*channel.bend;
-      for(let col=0;col<=across;col++){const x=mid-channel.width+col/across*channel.width*2;vertices.push(x,.08,z);uv.push(col/across*2,row*.07);depth.push(Math.max(0,.08-this.surfaceHeightAt(x,z)));shore.push(channel.width*(1-Math.abs(col/across*2-1)));}
+      for(const offset of offsets){const x=mid+offset;vertices.push(x,.08,z);uv.push(1+offset/channel.width,row*.07);depth.push(Math.max(0,.08-this.surfaceHeightAt(x,z)));shore.push(channel.width-Math.abs(offset));}
     }
     for(let row=0;row<length;row++)for(let col=0;col<across;col++){const a=row*(across+1)+col,b=a+across+1;indices.push(a,b,a+1,b,b+1,a+1);}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setAttribute('frontierWaterDepth',new THREE.Float32BufferAttribute(depth,1));geo.setAttribute('frontierWaterShore',new THREE.Float32BufferAttribute(shore,1));geo.setIndex(indices);geo.computeVertexNormals();

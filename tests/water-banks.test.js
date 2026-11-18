@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Landscape} from '../src/landscape.js';
 
 test('water bank data follows the actual terrain in rivers and sea channels',()=>{
-  for(const map of ['coast','valley','rivers']){
+  for(const map of ['coast','valley','rivers','riverland','archipelago']){
     const land=new Landscape(512,map);const terrain=land.geometry();
     for(const channel of land.channels()){
       const water=land.waterGeometry(channel),position=water.getAttribute('position'),depth=water.getAttribute('frontierWaterDepth'),shore=water.getAttribute('frontierWaterShore');
@@ -14,6 +14,7 @@ test('water bank data follows the actual terrain in rivers and sea channels',()=
         assert.ok(shore.getX(i)>=0&&shore.getX(i)<=channel.width);
         if(i%9===0||i%9===8)assert.equal(shore.getX(i),0,'wave displacement settles at both navigation banks');
         if(i%9===4)assert.equal(shore.getX(i),channel.width);
+        if(i%9===1||i%9===7)assert.ok(shore.getX(i)<channel.width/4,'the first samples resolve shallows within the existing mesh budget');
       }
       assert.ok(depth.array.some(value=>value>1));water.dispose();
     }

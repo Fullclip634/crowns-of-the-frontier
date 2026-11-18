@@ -2,7 +2,7 @@ import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial,MeshBasicMa
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMaterial as ThreeBasicNodeMaterial} from 'three/webgpu';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -230,6 +230,7 @@ const noise=Fn(([point])=>{
 
 export function water(material){
   const time=value(material.frontierWaveTime),motion=value(material.frontierWaterMotion),ripples=value(material.frontierWaterRipples),detail=value(material.frontierWaterDetail),sky=value(material.frontierWaterSky,'color'),light=value(material.frontierWaterLight);
+  const foamStrength=value(material.frontierWaterFoam);
   const shore=attribute('frontierWaterShore','float'),bank=varying(vec2(attribute('frontierWaterDepth','float'),shore));
   const xz=varying(positionGeometry.xz),a=positionGeometry.x.mul(.9).add(positionGeometry.z.mul(.36)).add(time.mul(1.3)),b=positionGeometry.z.mul(.65).sub(time);
   const fade=smoothstep(0,1,shore).mul(motion);
@@ -237,16 +238,25 @@ export function water(material){
   const displaced=positionGeometry.add(vec3(0,wave.x,0));
   const waveNormal=Fn(()=>{normalLocal.assign(normalize(vec3(wave.y.negate(),1,wave.z.negate())));return displaced;})();
   material.positionNode=waveNormal;
-  const absorption=float(1).sub(exp(max(bank.x,0).mul(-1.65)));
+  const depth=min(max(bank.x,0),bank.y.mul(1.6)),absorption=float(1).sub(exp(depth.mul(-1.65)));
   const shallowCol=value(material.frontierWaterShallow,'color'),deepCol=value(material.frontierWaterDeep,'color');
-  const caustic=detail.greaterThan(.5).and(bank.x.lessThan(1.55)).select(
-    pow(max(float(0),float(1).sub(abs(noise(xz.mul(1.45).add(vec2(time.mul(.22),time.mul(.14)))).sub(noise(xz.mul(2.15).sub(vec2(time.mul(.16),time.mul(-.25)))))).mul(2))),4).mul(float(1).sub(absorption)).mul(light).mul(.24),
-    0
-  );
-  material.colorNode=materialColor.rgb.mul(mix(shallowCol,deepCol,absorption)).add(shallowCol.mul(caustic));
-  material.opacityNode=materialOpacity.mul(mix(.42,1,absorption));
+  const current=sin(xz.x.mul(1.22).add(sin(xz.y.mul(.34).add(time.mul(.34))).mul(.86)).add(xz.y.mul(.13)).sub(time.mul(.55)));
+  material.colorNode=Fn(()=>{
+    const tone=materialColor.rgb.mul(mix(shallowCol,deepCol,absorption)).mul(float(1).add(current.mul(.078))).toVar();
+    If(detail.greaterThan(.5).and(depth.lessThan(1.10)),()=>{
+      const a=noise(xz.mul(1.45).add(vec2(time.mul(.22),time.mul(.14))));
+      const b=noise(xz.mul(2.15).sub(vec2(time.mul(.16),time.mul(-.25))));
+      const caustic=pow(max(0,float(1).sub(abs(a.sub(b)).mul(2))),4)
+        .mul(float(1).sub(absorption)).mul(light).mul(float(1).sub(smoothstep(.55,1.10,depth))).mul(.24);
+      tone.addAssign(shallowCol.mul(caustic));
+    });
+    return tone;
+  })();
+  const wetEdge=smoothstep(0,.44,bank.y).mul(smoothstep(0,.22,depth));
+  material.opacityNode=materialOpacity.mul(mix(.30,1,absorption)).mul(wetEdge);
   material.normalNode=Fn(()=>{
-    const distortion=detail.greaterThan(.5).select(noise(xz.mul(.28).add(vec2(time.mul(.08),time.mul(.05)))).sub(.5).mul(3.8),0);
+    const distortion=float(0).toVar();
+    If(detail.greaterThan(.5),()=>{distortion.assign(noise(xz.mul(.28).add(vec2(time.mul(.08),time.mul(.05)))).sub(.5).mul(3.8));});
     const ra=cos(dot(xz,vec2(3.7,1.9)).add(time.mul(2.4)).add(distortion));
     const rb=cos(dot(xz,vec2(-2.1,3.1)).sub(time.mul(1.9)).sub(distortion.mul(.73)));
     const rc=cos(dot(xz,vec2(1.3,-4.2)).add(time.mul(1.4)).add(distortion.mul(.41)));
@@ -256,19 +266,19 @@ export function water(material){
     return normalize(normalViewGeometry.add(mat3(cameraViewMatrix).mul(vec3(slope.x,0,slope.y)).mul(ripples).mul(coverage)));
   })();
   material.outputNode=Fn(()=>{
-    const fresnel=float(.03).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),4.6).mul(.97));
+    const fresnel=float(.02).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),5).mul(.98));
     const reflection=reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix);
     const skyGradient=sky.mul(mix(.76,1.18,clamp(reflection.y.mul(.5).add(.5),0,1)));
     const color=mix(output.rgb,skyGradient,fresnel).toVar();
-    If(bank.y.lessThan(1.5),()=>{
+    If(bank.y.lessThan(1.65).and(depth.lessThan(.82)),()=>{
       const drift=vec2(time.mul(.16),time.mul(-.11));
       const cells=noise(xz.mul(1.65).add(drift));
-      const lace=detail.greaterThan(.5).select(noise(xz.mul(4.1).sub(drift.mul(1.4))),cells);
-      const foamNoise=mix(cells,lace,.38);
+      const foamNoise=float(cells).toVar();
+      If(detail.greaterThan(.5),()=>{foamNoise.assign(mix(cells,noise(xz.mul(4.1).sub(drift.mul(1.4))),.38));});
       const wash=sin(dot(xz,vec2(.27,.58)).add(time.mul(1.15))).mul(.14).add(cells.sub(.5).mul(.2));
-      const foam=float(1).sub(smoothstep(.03,.58,bank.y.add(wash))).mul(smoothstep(.24,.76,foamNoise));
-      const outerSurf=float(1).sub(smoothstep(.40,1.42,bank.y.sub(wash.mul(.85)))).mul(smoothstep(.52,.88,foamNoise)).mul(.52);
-      color.assign(mix(color,vec3(.84,.88,.80).mul(light),clamp(foam.add(outerSurf).mul(.42),0,.55)));
+      const waterline=float(1).sub(smoothstep(.18,.68,depth.add(wash))).mul(float(1).sub(smoothstep(.65,1.65,bank.y)));
+      const lacing=smoothstep(.32,.79,foamNoise).mul(smoothstep(.05,.22,bank.y));
+      color.assign(mix(color,vec3(.84,.88,.80).mul(light),waterline.mul(lacing).mul(foamStrength)));
     });
     return vec4(color,output.a);
   })();
