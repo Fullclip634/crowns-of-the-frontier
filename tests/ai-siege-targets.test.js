@@ -34,3 +34,41 @@ test('a ram breaches masonry through normal movement and damage before advancing
   }
   assert.ok(walls.some(wall=>wall.hp<=0),'the ram destroys an actual section');assert.ok(crossed,'the ram advances through the breach');assert.ok(tower.hp<tower.maxHp,'the ram reaches and damages the defended tower');
 });
+
+test('trebuchets select a firing position on their shore when a more attractive target is out of reach',()=>{
+  const sim=new Simulation({mode:'sandbox',map:'coast',seed:512});
+  for(const entity of sim.entities)entity.hp=0;
+  sim.revision++;
+  const engine=sim.addUnit('catapult',0,-24,0);
+  const distantTower=sim.addBuilding('tower',1,19,0,true);
+  const reachableTown=sim.addBuilding('towncenter',1,-23,35,true);
+  const assignments=orderSiegeAssault(sim,0,[engine],[distantTower,reachableTown],distantTower);
+  assert.ok(assignments.has(engine.id));
+  assert.equal(engine.order?.target,reachableTown.id);
+});
+
+test('commander refreshes the army objective without resetting siege movement and escorts',()=>{
+  const sim=new Simulation({mode:'skirmish',map:'highlands',seed:512});
+  for(const entity of sim.entities)entity.hp=0;
+  sim.revision++;
+  sim.addBuilding('towncenter',1,-45,-40,true);
+  const tower=sim.addBuilding('tower',0,20,0,true);
+  const engine=sim.addUnit('catapult',1,-15,0);
+  const escorts=Array.from({length:5},(_,i)=>sim.addUnit('spearman',1,-17-i,2));
+  sim.players[1].resources={food:0,wood:0,gold:0,stone:0};
+  sim.canSee=()=>true;
+  sim.nextAttack=0;
+  sim.time=500;
+  sim.tickAI(1);
+  assert.equal(engine.order?.target,tower.id);
+  const screen=escorts.find(unit=>unit.order?.type==='guard');
+  assert.equal(screen?.order.target,engine.id);
+  const engineOrder=engine.order,screenOrder=screen.order;
+  const path=[{x:-10,z:0},{x:-4,z:0}];
+  engine.path=path;
+  sim.time+=9;
+  sim.tickAI(1);
+  assert.equal(engine.order,engineOrder);
+  assert.equal(engine.path,path);
+  assert.equal(screen.order,screenOrder);
+});

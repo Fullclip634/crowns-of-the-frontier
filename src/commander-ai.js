@@ -320,8 +320,9 @@ export function installCommanderAI(Simulation){
       else if(phase==='attack'||phase==='defend'){
         const guardCount=this.options.mode==='custom'&&phase==='attack'?Math.min(6,Math.max(2,Math.floor(fighters.length*.15))):0;
         const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege'&&shouldRetryBlockedOrder(this,e,tc.x+8,tc.z-6)).sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
-        const assault=fighters.filter(e=>!ids.has(e.id)&&shouldRetryBlockedOrder(this,e,target.x,target.z));this.command(assault.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
-        if(phase==='attack')orderSiegeAssault(this,owner,assault,visible,target);
+        const assault=fighters.filter(e=>!ids.has(e.id)&&shouldRetryBlockedOrder(this,e,target.x,target.z));
+        const assigned=phase==='attack'?orderSiegeAssault(this,owner,assault,visible,target):new Set();
+        this.command(assault.filter(e=>!assigned.has(e.id)).map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
         if(guards.length)this.command(guards.map(e=>e.id),{type:'attackmove',x:tc.x+8,z:tc.z-6});state.homeGuard=guards.map(e=>e.id);
       }
       else if(this.options.mode!=='custom'&&this.options.map==='coast'){
