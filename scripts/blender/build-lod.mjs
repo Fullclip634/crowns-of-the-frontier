@@ -79,9 +79,9 @@ export function compareCatalogues(source, lod, {minimumReduction = 0.15} = {}) {
   return {ok: failures.length === 0, failures, before: before.triangles, after: after.triangles, reduction, keys: before.keys.size};
 }
 
-export function buildLod({source = 'frontier-low.glb', output = 'frontier-far.glb', ratio = 0.35, error = 0.02, minimumReduction = 0.15} = {}) {
-  const input = path.join(assetDirectory, source);
-  const target = path.join(assetDirectory, output);
+export function buildLod({directory = assetDirectory, source = 'frontier-low.glb', output = 'frontier-far.glb', ratio = 0.35, error = 0.02, minimumReduction = 0.15} = {}) {
+  const input = path.join(directory, source);
+  const target = path.join(directory, output);
   const optimizer = process.env.GLTFPACK_BIN || path.join(project, '.tools', 'gltfpack', 'gltfpack.exe');
   if (!fs.existsSync(optimizer)) throw new Error(`gltfpack is missing at ${optimizer}`);
 
@@ -123,7 +123,7 @@ export function buildLod({source = 'frontier-low.glb', output = 'frontier-far.gl
     restoredMeshNodes: repair.repaired,
     tool: 'gltfpack -si -se -ke -kn -km -c + restoreMeshExtras',
   };
-  fs.writeFileSync(path.join(assetDirectory, 'lod.json'), JSON.stringify(report, null, 2) + '\n');
+  fs.writeFileSync(path.join(directory, 'lod.json'), JSON.stringify(report, null, 2) + '\n');
   return report;
 }
 

@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 14206964,
-    "low": 4535964,
-    "balanced": 13616276
+    "near": 14219612,
+    "low": 4545692,
+    "balanced": 13999828
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -534,23 +534,23 @@
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1405,
-    "visibleTriangles": 680248,
+    "meshes": 1412,
+    "visibleTriangles": 687202,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0035814142672628817,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 18204668,
-    "candidateBytes": 13616276,
-    "referenceDecodedBufferBytes": 38941920,
-    "candidateDecodedBufferBytes": 35190928,
-    "referenceSHA256": "167c6653c09e1aa84ad405a9112639c2cfda5c1b26e65f8f24382c3cafb5c7c9",
-    "candidateSHA256": "1ac107c8a3ff2cde4d0499a8d2a080666e4085cd9886be4ee9a13437ccc575af"
+    "referenceBytes": 18773052,
+    "candidateBytes": 13999828,
+    "referenceDecodedBufferBytes": 39888302,
+    "candidateDecodedBufferBytes": 36035578,
+    "referenceSHA256": "5c68dc3653c111223e53863538e7a15d01fce5156285a051d723b3e4c08ad283",
+    "candidateSHA256": "9193ccf8f1b7c843bc1686ba372bc276a1026f26baccc91ed47673bbfa868a71"
   },
   "balancedSourceHashes": {
-    "near": "46c50245bf556bb659daf799ee995c40b64ed2ca8453b056df9e5ade013a721a",
-    "low": "69ca4dc42beadfa4b5dd26d3ded8974e0943a0e1946889d9e061e43a0bda2b68",
+    "near": "85ee696cc7994001ac0e4f54fb188ed643a5842ce8dcbaee070746a5620e08cc",
+    "low": "4aa66d5c5e60549bdb16880c50fb4739c0e946f4ae9dc64e1079eeb35a0c97ba",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
@@ -578,5 +578,6 @@
   "workerToolRevision": "craft-tools-v1",
   "figureRevision": "field-forms-v1",
   "bowRevision": "drawn-bows-v1",
-  "horseLegRevision": "articulated-hooves-v1"
+  "horseLegRevision": "articulated-hooves-v1",
+  "mountedFormRevision": "shaped-horses-and-bridles-v1"
 }
