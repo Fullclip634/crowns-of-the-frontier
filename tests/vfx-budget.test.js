@@ -120,3 +120,60 @@ test('WorldView.effect pools attack meshes without allocating unique geometries 
   view.flightEffects.dispose();
   assert.equal(disposed,2,'shared geometries dispose only on pool teardown');
 });
+
+test('hidden enemy deaths and healing use no transient effect budget',()=>{
+  const view=effectView('low');
+  view.sim={options:{},isVisible:x=>x<0};
+  view.groundHeight=()=>1;
+  const house={kind:'building',type:'house',owner:1,x:9,z:0,r:2};
+  const soldier={kind:'unit',type:'swordsman',owner:1,x:12,z:0};
+  view.effect({type:'death',entity:house});
+  view.effect({type:'heal',entity:soldier,target:soldier});
+  assert.equal(view.fx.length,0);
+  assert.equal(view.impactEffects,undefined);
+
+  view.effect({type:'death',entity:{...house,x:-2}});
+  view.effect({type:'heal',entity:soldier,target:{...soldier,x:-3}});
+  assert.deepEqual(view.fx.map(f=>f.object.userData.impactKind),['burst','sparks','burst','crater','heal']);
+
+  view.sim.options.spectator=true;
+  view.effect({type:'heal',entity:soldier,target:soldier});
+  assert.equal(view.fx.at(-1).object.position.x,soldier.x);
+  view.impactEffects.dispose();
+});
+
+test('fog suppresses existing particles and decals while their lifetimes advance',()=>{
+  const view=effectView('low');
+  let seen=true;
+  view.sim={isVisible:()=>seen};
+  view.battleFog={enabled:{value:1}};
+  view.groundHeight=()=>1;
+  view.burst(8,3);
+  view.sparks(8,2,3);
+  view.crater(8,3,1,12);
+  view.wake(8,3,0);
+
+  const [burst,sparks,crater,wake]=view.fx;
+  const [burstMatrix,sparkMatrix]=[burst.object,sparks.object].map(object=>object.instanceMatrix);
+  const versions=[burstMatrix.version,sparkMatrix.version];
+  seen=false;
+  view.updateBattleEffects(.1,.1);
+  assert.ok(view.fx.every(f=>f.time===.1&&!f.object.visible));
+  assert.deepEqual([burstMatrix.version,sparkMatrix.version],versions);
+
+  seen=true;
+  view.updateBattleEffects(.05,.05);
+  assert.ok(view.fx.every(f=>f.object.visible));
+  assert.equal(burstMatrix.updateRanges[0].count,burst.object.count*16);
+  assert.equal(sparkMatrix.updateRanges[0].count,sparks.object.count*16);
+  assert.ok(crater.object.material.opacity<.7&&wake.object.material.opacity<.38);
+
+  seen=false;
+  view.updateBattleEffects(0,12);
+  assert.equal(view.fx.includes(crater),false);
+  assert.equal(crater.object.parent,null);
+  view.battleFog.enabled.value=0;
+  view.updateBattleEffects(0,0);
+  assert.ok(view.fx.every(f=>f.object.visible));
+  view.impactEffects.dispose();
+});

@@ -20,7 +20,7 @@ import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './sur
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
-import {updateFlight,releaseEffect,ImpactEffects,AttackEffects} from './battle-effects.js';
+import {updateFlight,releaseEffect,witnessedEffect,ImpactEffects,AttackEffects} from './battle-effects.js';
 import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
@@ -271,7 +271,10 @@ export class WorldView {
       if(this.smoke(e.x,ground+height,e.z,ratio<.3?1.5:1))emitted++;
     }
   }
-  effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;if(event.type==='attack'){
+  effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;
+    if(event.type==='death'&&!witnessedEffect(this,e))return;
+    if(event.type==='heal'&&!witnessedEffect(this,event.target))return;
+    if(event.type==='attack'){
       const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5,siege=['catapult','warship'].includes(e.type),kind=siege?'siege':ranged?'arrow':'slash';
       const pool=this.attackEffects??=new AttackEffects(),object=pool.acquire(kind,siege?0xf0a564:0xf3db9b);
       object.position.set(e.x,3,e.z);this.scene.add(object);
@@ -311,6 +314,83 @@ export class WorldView {
     else if(average>budget*1.8)setShadowEnabled(this,false);
     else if(average<budget*1.05&&this.dynamicScale<1){this.dynamicScale=Math.min(1,this.dynamicScale+.08);this.renderer.setPixelRatio(base*this.dynamicScale);}
   }
+  updateBattleEffects(dt,wallStep){
+    const sim=this.sim,fog=this.battleFog.enabled.value,time=combatTime(this);
+    for(let i=this.fx.length-1;i>=0;i--){
+      const f=this.fx[i],object=f.object;
+      if(f.authoritative){
+        f.time=Math.max(f.time,time-f.releasedAt);
+        const target=f.tracked&&sim.get(f.tracked);
+        if(target&&!target.embarked&&witnessedEffect(this,target)){
+          f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;
+          f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);
+        }
+      }else{
+        f.time+=f.crater?wallStep:dt;
+      }
+      const t=f.time/f.duration;
+      if(t>=1){
+        if(f.impact&&(!fog||sim.isVisible(f.to.x,f.to.z))){
+          this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);
+          this.crater(f.to.x,f.to.z,(f.impactSize||1.8)*.9);
+          this.sparks(f.to.x,(this.groundHeight?.(f.to.x,f.to.z)||0)+.3,f.to.z,0xffd68a,1.2);
+        }
+        releaseEffect(f);
+        this.fx.splice(i,1);
+        continue;
+      }
+      if(f.from)updateFlight(f,t);
+      // Opaque shots are culled at their current position during batch packing.
+      if(f.kind==='arrow'||f.kind==='stone')continue;
+      object.visible=!fog||sim.isVisible(object.position.x,object.position.z);
+      if(!object.visible)continue;
+      if(f.particles){
+        const dummy=this.effectDummy??=new THREE.Object3D();
+        for(let j=0;j<object.count;j++){
+          const v=f.particles[j];
+          if(f.smoke){
+            dummy.position.set(v.x*f.time,v.y*f.time,v.z*f.time);
+            dummy.scale.setScalar(f.size*(.65+t*1.25));
+          }else{
+            dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);
+            dummy.scale.setScalar(f.size*(1-t*.6));
+          }
+          dummy.rotation.set(t*3,j+t*3,t);
+          dummy.updateMatrix();
+          object.setMatrixAt(j,dummy.matrix);
+        }
+        markInstancePrefix(object);
+        object.material.opacity=(1-t)*(f.smoke?.55:1);
+      }else if(f.sparks){
+        const dummy=this.effectDummy??=new THREE.Object3D();
+        for(let j=0;j<object.count;j++){
+          const v=f.sparks[j],vx=v.x,vy=v.y-16*f.time,vz=v.z;
+          dummy.position.set(vx*f.time,Math.max(0,v.y*f.time-8*f.time*f.time),vz*f.time);
+          dummy.scale.setScalar(f.size*(1-t*.85));
+          dummy.rotation.set(0,0,0);
+          dummy.lookAt(dummy.position.x+vx,dummy.position.y+vy,dummy.position.z+vz);
+          dummy.updateMatrix();
+          object.setMatrixAt(j,dummy.matrix);
+        }
+        markInstancePrefix(object);
+        object.material.opacity=1-t;
+      }else if(f.wake){
+        object.scale.set(f.size*(1+t*.85),1,f.size*(1+t*1.1));
+        object.material.opacity=(1-t)*.38;
+      }else if(f.crater){
+        object.material.opacity=(1-t)*.7;
+      }else if(f.heal){
+        object.scale.setScalar(1+t);
+        object.material.opacity=(1-t)*.6;
+        object.position.y=(f.groundY||0)+.3+t*1.2;
+      }else if(f.death){
+        object.scale.setScalar(1+t*3);
+        object.material.opacity=(1-t)*.4;
+      }
+    }
+    this.flightEffects?.syncBatches(this);
+  }
+
   render(dt,menu=false){if(!this.sim)return;this.vfxTimer?.sample(dt);this.clock+=dt;const stepWall=Math.max(dt,this.wallStep??dt);this.ruinClock=(this.ruinClock??0)+stepWall;this.wallStep=undefined;
     if(this.fogRevision!==this.sim.fogRevision)this.updateFog();
     this.battleFog.enabled.value=Number(!menu&&this.settings.fog!==false&&!this.sim.options.spectator);
@@ -349,8 +429,7 @@ export class WorldView {
       animateSceneDecorations(this,node,e);
     }
     this.damageSmoke(dt);
-    for(let i=this.fx.length-1;i>=0;i--){const f=this.fx[i];if(f.authoritative){f.time=Math.max(f.time,combatTime(this)-f.releasedAt);const target=f.tracked&&this.sim.get(f.tracked);if(target&&!target.embarked&&(target.owner===0||this.sim.isVisible(target.x,target.z))){f.to.x=target.renderX??target.x;f.to.z=target.renderZ??target.z;f.to.y=this.entityHeight(target,f.to.x,f.to.z)+projectileTargetHeight(target)+(target.kind==='unit'?visualBodyOffset(this,target):0);}}else f.time+=f.crater?stepWall:dt;const t=f.time/f.duration;if(t>=1){if(f.impact){this.burst(f.to.x,f.to.z,f.impactColor??0xe9ac65,f.impactSize??1.8);this.crater(f.to.x,f.to.z,(f.impactSize||1.8)*.9);this.sparks(f.to.x,(this.groundHeight?.(f.to.x,f.to.z)||0)+.3,f.to.z,0xffd68a,1.2);}releaseEffect(f);this.fx.splice(i,1);continue;}if(f.particles){const dummy=this.effectDummy??=new THREE.Object3D();f.particles.forEach((v,j)=>{if(f.smoke){dummy.position.set(v.x*f.time,v.y*f.time,v.z*f.time);dummy.scale.setScalar(f.size*(.65+t*1.25));}else{dummy.position.set(v.x*f.time,Math.max(0,v.y*f.time-5*f.time*f.time),v.z*f.time);dummy.scale.setScalar(f.size*(1-t*.6));}dummy.rotation.set(t*3,j+t*3,t);dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=(1-t)*(f.smoke?.55:1);}else if(f.sparks){const dummy=this.effectDummy??=new THREE.Object3D();f.sparks.forEach((v,j)=>{const vx=v.x,vy=v.y-16*f.time,vz=v.z;dummy.position.set(vx*f.time,Math.max(0,v.y*f.time-8*f.time*f.time),vz*f.time);dummy.rotation.set(0,0,0);dummy.lookAt(dummy.position.x+vx,dummy.position.y+vy,dummy.position.z+vz);dummy.scale.setScalar(f.size*(1-t*.7));dummy.updateMatrix();f.object.setMatrixAt(j,dummy.matrix);});f.object.instanceMatrix.needsUpdate=true;f.object.material.opacity=1-t;}else if(f.wake){f.object.scale.set(f.size*(1+t*.85),1,f.size*(1+t*1.1));f.object.material.opacity=(1-t)*.38;}else if(f.crater){f.object.material.opacity=(1-t)*.7;}else if(f.heal){f.object.scale.setScalar(1+t);f.object.material.opacity=(1-t)*.6;f.object.position.y=(f.groundY||0)+.3+t*1.2;}else if(f.death){f.object.scale.setScalar(1+t*3);f.object.material.opacity=(1-t)*.4;}else updateFlight(f,t);}
-    this.flightEffects?.syncBatches(this);
+    this.updateBattleEffects(dt,stepWall);
     this.burning.count=fireCount;this.smokeMesh.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smokeMesh);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     this.interactions?.alignCargoFeet();
