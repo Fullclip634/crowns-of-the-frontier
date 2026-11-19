@@ -20,7 +20,7 @@ try{
     quality:'low',autoQuality:false,frameRate:'30',fog:true,reducedMotion:true,weather:'clear',volume:0,music:false,
   })));
   await page.goto(base.href,{waitUntil:'commit'});
-  await page.waitForFunction(()=>window.frontier?.view&&!frontier.view.graphicsLoading);
+  await page.waitForFunction(()=>window.frontier?.view&&!frontier.view.graphicsLoading,null,{polling:250});
   assert.equal(await page.locator('html').getAttribute('data-renderer'),backend);
 
   async function start(map,mapSize){
@@ -32,29 +32,31 @@ try{
       return {worldSize:s.worldSize,cells:v.fogCanvas.width,home:{x:home.x,z:home.z},visible:s.isVisible(home.x,home.z)};
     },{map,mapSize});
   }
-  async function capture({x,z,y=null,fog,name}){
-    const frame=await page.evaluate(({x,z,y,fog})=>{
+  async function capture({x,z,y=null,fog,name,zoom=28,tilt=.85,angle=0,highlights=false}){
+    const frame=await page.evaluate(({x,z,y,fog,zoom,tilt,angle})=>{
       const v=frontier.view;
       v.settings.fog=fog;
-      v.focus(x,z);v.target.set(x,y??v.groundHeight(x,z),z);v.zoom=28;v.tilt=.85;v.angle=0;v.updateCamera();
+      v.focus(x,z);v.target.set(x,y??v.groundHeight(x,z),z);v.zoom=zoom;v.tilt=tilt;v.angle=angle;v.updateCamera();
       return v.renderer.isWebGPURenderer?(v.renderFlight?.submitted??0):v.renderer.info.render.frame;
-    },{x,z,y,fog});
+    },{x,z,y,fog,zoom,tilt,angle});
     await page.waitForFunction(frame=>{
       const v=frontier.view,count=v.renderer.isWebGPURenderer?(v.renderFlight?.submitted??0):v.renderer.info.render.frame;
       return v.graphicsFatal||count>frame+1;
-    },frame);
+    },frame,{polling:250});
     const failure=await page.evaluate(()=>frontier.view.graphicsFatal||null);
     assert.equal(failure,null,JSON.stringify(failure));
     const image=await page.screenshot({path:name?`${output}/${backend}-${name}.png`:undefined});
-    return page.evaluate(async encoded=>{
+    return page.evaluate(async ({encoded,highlights})=>{
       const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
-      const canvas=document.createElement('canvas');canvas.width=canvas.height=9;
+      const width=highlights?100:9,height=highlights?90:9,offset=highlights?12:0;
+      const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
       const context=canvas.getContext('2d');
-      context.drawImage(image,Math.floor(image.width/2)-4,Math.floor(image.height/2)-4,9,9,0,0,9,9);
-      const pixels=context.getImageData(0,0,9,9).data;let sum=0;
-      for(let i=0;i<pixels.length;i+=4)sum+=.2126*pixels[i]+.7152*pixels[i+1]+.0722*pixels[i+2];
-      return Math.round(sum/81);
-    },image.toString('base64'));
+      context.drawImage(image,Math.floor((image.width-width)/2),Math.floor((image.height-height)/2)-offset,width,height,0,0,width,height);
+      const pixels=context.getImageData(0,0,width,height).data,luma=[];
+      for(let i=0;i<pixels.length;i+=4)luma.push(.2126*pixels[i]+.7152*pixels[i+1]+.0722*pixels[i+2]);
+      const samples=highlights?luma.sort((a,b)=>b-a).slice(0,Math.ceil(luma.length*.07)):luma;
+      return Math.round(samples.reduce((sum,value)=>sum+value,0)/samples.length);
+    },{encoded:image.toString('base64'),highlights});
   }
 
   for(const {map,mapSize,z,name} of [
@@ -92,6 +94,44 @@ try{
     assert.ok(unknown+8<remembered&&remembered+8<scouted,`${name}: exploration states are indistinguishable (${unknown}, ${remembered}, ${scouted})`);
     console.log(JSON.stringify({backend,name,...initial,fogHome,clearHome,unknown,remembered,scouted,clear}));
   }
+  await start('valley');
+  const approach=await page.evaluate(()=>{
+    const {sim}=frontier,scout=sim.owned(0,'unit','scout')[0];
+    for(const entity of sim.entities)if(entity!==scout)entity.hp=0;
+    sim.explored.fill(0);
+    for(let x=-40;x<=-20;x++){
+      Object.assign(scout,{x,z:0});
+      sim.updateFog();
+      if(sim.isVisible(-12,0))break;
+    }
+    return {visible:sim.isVisible(-12,0),center:sim.isExplored(0,0)};
+  });
+  assert.deepEqual(approach,{visible:true,center:false});
+  await capture({x:-9,z:0,fog:true,name:'bridge-approach'});
+  assert.equal(await page.evaluate(()=>frontier.view.bridgeMeshes[0].visible),true);
+
+  const deposit=await page.evaluate(()=>{
+    const {sim,view}=frontier;
+    const gold=sim.addResource('gold',-37,-44,5000);
+    sim.addResource('gold',-33,-44,5000);
+    return {x:gold.x,z:gold.z,y:view.entityHeight(gold)+.65,id:gold.id};
+  });
+  const sampleDeposit=async seen=>{
+    const state=await page.evaluate(({deposit,seen})=>{
+      const {sim}=frontier,scout=sim.owned(0,'unit','scout')[0];
+      Object.assign(scout,seen?{x:deposit.x-16,z:deposit.z}:{x:-60,z:55});
+      sim.updateFog();
+      return {visible:sim.isVisible(deposit.x,deposit.z),explored:sim.isExplored(deposit.x,deposit.z)};
+    },{deposit,seen});
+    assert.deepEqual(state,{visible:seen,explored:true});
+    const brightness=await capture({...deposit,fog:true,zoom:10,tilt:.62,angle:.34,highlights:true,name:seen?'visible-gold':'remembered-gold'});
+    assert.equal(await page.evaluate(id=>frontier.view.nodes.get(id)?.visible,deposit.id),true);
+    return brightness;
+  };
+  const litGold=await sampleDeposit(true),dimGold=await sampleDeposit(false);
+  assert.ok(litGold-dimGold>=12,`explored gold stays bright after the scout departs (${litGold} vs ${dimGold})`);
+  console.log(JSON.stringify({backend,approach,litGold,dimGold}));
+
   const diagnostics=await page.evaluate(()=>{
     const v=frontier.view;
     return {fatal:v.graphicsFatal||null,programFailures:v.renderer.info.programs?.filter(program=>program.diagnostics?.runnable===false).length||0};

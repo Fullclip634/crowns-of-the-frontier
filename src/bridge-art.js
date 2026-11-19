@@ -20,6 +20,27 @@ export async function loadBridgeArtwork(){
   if(!pending)pending=(async()=>{const response=await fetch(source);if(!response.ok)throw new Error('Bridge artwork request failed ('+response.status+').');const buffer=await readAssetResponse(response,'bridge','Bridge'),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');let root;gltf.scene.traverse(node=>{if(node.userData.assetKey==='terrain:bridge:stone')root=node;if(node.isMesh)canonicalGeometry(node.geometry);});if(!root||root.userData.bridgeRevision!==bridgeArtwork.revision)throw new Error('Bridge artwork is incomplete or out of date.');bytes=buffer.byteLength;template=root;return root;})();
   try{return await pending;}catch(error){pending=null;throw error;}
 }
+export function updateBridgeVisibility(view,menu=false){
+  if(!view.bridgeMeshes?.length)return;
+  const sim=view.sim,unrestricted=menu||view.settings.fog===false||sim.options.spectator;
+  for(const bridge of view.bridgeMeshes){
+    const fog=bridge.userData.discovery;
+    if(!unrestricted&&fog.revision!==sim.fogRevision){
+      fog.revision=sim.fogRevision;
+      fog.explored=false;
+      // The foot of the bridge can be scouted before the center of the crossing.
+      const {bounds}=fog;
+      const min=sim.cell(bounds.min.x,bounds.min.z),max=sim.cell(bounds.max.x,bounds.max.z);
+      cells:for(let z=min.z;z<=max.z;z++){
+        for(let x=min.x;x<=max.x;x++){
+          if(sim.explored[z*sim.gridSize+x]){fog.explored=true;break cells;}
+        }
+      }
+    }
+    bridge.visible=unrestricted||fog.explored;
+  }
+}
+
 export function buildBridges(view){
   view.bridgeMeshes=[];const materials=new Map();let triangles=0,draws=0;
   for(const span of bridgeSpans(view.landscape.map)){
@@ -33,6 +54,7 @@ export function buildBridges(view){
       if(!materials.has(source))materials.set(source,shadeBattlefieldFog(source.clone(),view));
       part.material=materials.get(source);triangles+=(part.geometry.index?.count||part.geometry.attributes.position.count)/3;draws++;
     });
+    group.userData.discovery={bounds:new THREE.Box3().setFromObject(group),revision:-1,explored:false};
     view.terrain.add(group);view.bridgeMeshes.push(group);
   }
   view.bridgeDiagnostics={source:'Blender',revision:bridgeArtwork.revision,bridges:view.bridgeMeshes.length,triangles,draws,bytes,clearWidth:bridgeRoadHalfWidth*2};

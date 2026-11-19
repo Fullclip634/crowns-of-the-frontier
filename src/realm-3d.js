@@ -17,6 +17,7 @@ import {wallTier} from './fortified-walls.js';
 import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
+import {updateBridgeVisibility} from './bridge-art.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -83,6 +84,21 @@ function scaffold(view,e){
   return view.mergeModel(g);
 }
 
+function fogScenery(view,node){
+  const materials=view.sceneryFogMaterials??=new Map();
+  node.traverse(part=>{
+    if(!part.isMesh)return;
+    const source=part.material;
+    if(!materials.has(source)){
+      const material=source.clone();
+      material.onBeforeCompile=source.onBeforeCompile;
+      material.customProgramCacheKey=source.customProgramCacheKey;
+      materials.set(source,shadeBattlefieldFog(material,view));
+    }
+    part.material=materials.get(source);
+  });
+}
+
 export function installRealm3D(WorldView){
   const p=WorldView.prototype,attach=p.attach,render=p.render,effect=p.effect,burst=p.burst;
   p.attach=function(sim){
@@ -142,7 +158,7 @@ export function installRealm3D(WorldView){
   };
   p.foliageFog=function(menu){this.forestFog(menu);};
   p.releaseNode=function(node){
-    const sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials]),sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]);
+    const sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials,...(this.sceneryFogMaterials?.values()||[])]),sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]);
     node.traverse(mesh=>{if(!mesh.isMesh)return;if(!sharedGeometry.has(mesh.geometry))mesh.geometry.dispose();if(!sharedMaterials.has(mesh.material))mesh.material.dispose();});
     this.foundationHeights.delete(node.userData.entity);
   };
@@ -157,6 +173,7 @@ export function installRealm3D(WorldView){
     let node;
     if(e.kind==='unit')node=this.unitNode(e);
     else node=this.mergeModel(e.kind==='building'?this.makeBuilding(e):resourceModel(this,e));
+    if(e.kind==='resource'||e.kind==='shrine')fogScenery(this,node);
     node.position.set(e.x,this.entityHeight(e),e.z);node.userData.entity=e.id;node.userData.model3d={...node.userData.model3d,kind:e.kind,type:e.water?'fish':e.type};
     if(e.kind==='building'&&!['farm','dock'].includes(e.type)){if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;groundBuildingFoundation(node,this.landscape);}
     if(e.type==='gate')groundGatePortcullis(node,this.landscape);
@@ -225,7 +242,7 @@ export function installRealm3D(WorldView){
   };
   p.render=function(dt,menu){
     animateWater(this);
-    for(const bridge of this.bridgeMeshes||[])bridge.visible=!!menu||this.settings.fog===false||this.sim.isExplored(bridge.userData.bridge.center,0);
+    updateBridgeVisibility(this,menu);
     if(this.materials.glow)this.materials.glow.emissiveIntensity=1.4+Math.sin(this.clock*8)*.25;
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     let landUnits=null;

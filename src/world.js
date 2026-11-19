@@ -154,9 +154,11 @@ export class WorldView {
     this.footPoses=new Map();this.footPoseEntity=null;
     this.unitActions??=new UnitActions();this.unitActions.clear();
     for(const batch of this.unitBatches.values())for(const part of [...batch.parts,...(batch.farParts||[])]){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();this.unitLodState?.clear();
-    const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
+    const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials,...(this.sceneryFogMaterials?.values()||[])]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
     for(const material of sharedMaterials)for(const key of ['map','bumpMap'])if(material[key])sharedTextures.add(material[key]);
     for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
+    for(const material of this.sceneryFogMaterials?.values()||[])material.dispose();
+    this.sceneryFogMaterials?.clear();
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];this.flightEffects?.clearBatches();
     this.applyTeamColors(sim);
     this.buildLandscape(sim);if(camera){this.target.copy(camera.target);this.zoom=camera.zoom;this.angle=camera.angle;this.tilt=camera.tilt;this.updateCamera();}else{const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);}prepareViewport(this);this.buildForest(sim);

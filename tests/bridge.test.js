@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
 import {WorldView} from '../src/world.js';
-import {loadBridgeArtwork,buildBridges} from '../src/bridge-art.js';
+import {loadBridgeArtwork,buildBridges,updateBridgeVisibility} from '../src/bridge-art.js';
 import {bridgeSpans,bridgeFootprint,bridgeArtwork,bridgeWidthScale,bridgeRoadHalfWidth} from '../src/bridge-layout.js';
 import {Simulation} from '../src/simulation.js';
 
@@ -28,6 +28,31 @@ test('the actual Blender bridge and approach ramps match walking and command hei
       const command=view.landscape.rayPoint(ray.ray);assert.ok(command&&Math.abs(command.y-view.landscape.walkableHeightAt(x,z))<.003,'commands target the road rather than the riverbed');
     }
   }
+});
+
+test('an explored approach reveals the bridge while its center is still unknown',async()=>{
+  const view=await fixture('valley'),bridge=view.bridgeMeshes[0];
+  const sim=view.sim=new Simulation({mode:'sandbox',map:'valley',seed:512});
+  view.settings={fog:true};
+  sim.explored.fill(0);
+  updateBridgeVisibility(view);
+  assert.equal(bridge.visible,false);
+
+  const approach=sim.cell(-15,0);
+  sim.explored[approach.z*sim.gridSize+approach.x]=1;
+  sim.fogRevision++;
+  assert.equal(sim.isExplored(0,0),false);
+  updateBridgeVisibility(view);
+  assert.equal(bridge.visible,true);
+
+  sim.explored.fill(0);
+  sim.fogRevision++;
+  updateBridgeVisibility(view);
+  assert.equal(bridge.visible,false);
+  updateBridgeVisibility(view,true);
+  assert.equal(bridge.visible,true);
+  updateBridgeVisibility(view);
+  assert.equal(bridge.visible,false);
 });
 
 test('bridge arches remain open above the continuous riverbed while the masonry piers are solid',async()=>{
