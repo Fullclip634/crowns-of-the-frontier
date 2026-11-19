@@ -38,7 +38,11 @@ export class Landscape {
       const d=Math.abs(x-channel.center-Math.sin(z*channel.frequency)*channel.bend);
       // The water mesh and naval navigation end at the same channel width.
       // Meet water level there instead of leaving a submerged "dry" bank.
-      if(d<channel.width)h=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
+      if(d<channel.width){
+        const baseBed=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
+        const sandbar=(this.map==='coast'||this.map==='archipelago')?Math.sin(z*.085+channel.center)*Math.cos(x*.21)*.20*(1-smooth(Math.max(0,channel.width-3.2),channel.width-.4,d)):0;
+        h=Math.min(.04,baseBed+sandbar);
+      }
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
       const span=bridgeSpans(this.map).find(span=>span.center===channel.center);
       if(span){const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(bridgeOuterHalfWidth,bridgeOuterHalfWidth+6.8,Math.abs(z));h+=(bridgeArtwork.baseHeight-h)*bank*across;}
@@ -140,8 +144,27 @@ function groundMap(landscape){
   for(const channel of landscape.channels()){
     const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.lineWidth=(channel.width*2+(winter?10:shore?13:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':shore?'#bfa878':arid?'#9b8156':'#67795f';ctx.stroke(path);
-    ctx.lineWidth=(channel.width*2+(winter?8:shore?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':shore?'#dfd0a4':arid?'#c2a878':'#7b876b';ctx.stroke(path);
+    if(shore){
+      // Organic wavy sandy coves and coastal headlands along both sides of the channel.
+      for(const [extra,color] of [[15,'#baa474'],[9.5,'#dfd0a4']]){
+        ctx.beginPath();
+        for(let z=-half;z<=half;z+=3){
+          const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+          const cove=Math.sin(z*.11+channel.center*.7)*2.2+Math.cos(z*.23-channel.center*.4)*1.1+Math.sin(z*.15+1.3)*.75;
+          const px=(cx+channel.width+extra*.5+cove+half)/size*1536,py=(z+half)/size*1536;
+          if(z===-half)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+        }
+        for(let z=half;z>=-half;z-=3){
+          const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+          const cove=Math.sin(z*.11+channel.center*.7)*2.2+Math.cos(z*.23-channel.center*.4)*1.1-Math.sin(z*.15-1.3)*.75;
+          ctx.lineTo((cx-channel.width-extra*.5-cove+half)/size*1536,(z+half)/size*1536);
+        }
+        ctx.closePath();ctx.fillStyle=color;ctx.fill();
+      }
+    }else{
+      ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
+      ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
+    }
   }
   // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
   const volcanic=landscape.map==='volcanic';

@@ -250,5 +250,150 @@
         "md5": "bcf75b16af394d77466ac8e4d695ad12"
       }
     ]
+  },
+  {
+    "id": "snow_02",
+    "name": "Snow 02",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      2000,
+      2000
+    ],
+    "source": "https://polyhaven.com/a/snow_02",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "snow_02_color.jpg",
+        "bytes": 325497,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_diff_1k.jpg",
+        "md5": "fc54766c6b36ff298699115a619d440b"
+      },
+      {
+        "kind": "normal",
+        "file": "snow_02_normal.jpg",
+        "bytes": 1081858,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_nor_gl_1k.jpg",
+        "md5": "f16b5701f9ad521cdd6af10c1d6d2b48"
+      },
+      {
+        "kind": "arm",
+        "file": "snow_02_arm.jpg",
+        "bytes": 88100,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_arm_1k.jpg",
+        "md5": "701fa0f0fa36bc69f3a8f3cde0ad2d95"
+      }
+    ]
+  },
+  {
+    "id": "sand_01",
+    "name": "Sand 01",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      1500,
+      1500
+    ],
+    "source": "https://polyhaven.com/a/sand_01",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "sand_01_color.jpg",
+        "bytes": 485088,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_01/sand_01_diff_1k.jpg",
+        "md5": "c914c8edb419f040e04224081a3f79a5"
+      },
+      {
+        "kind": "normal",
+        "file": "sand_01_normal.jpg",
+        "bytes": 877821,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_01/sand_01_nor_gl_1k.jpg",
+        "md5": "369b82aa417c77ec85c4c07c4c7b60a0"
+      },
+      {
+        "kind": "arm",
+        "file": "sand_01_arm.jpg",
+        "bytes": 131275,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_01/sand_01_arm_1k.jpg",
+        "md5": "3ab2b7731c0430662bdc4d12425411a3"
+      }
+    ]
+  },
+  {
+    "id": "rock_face_03",
+    "name": "Rock Face 03",
+    "authors": {
+      "Dario Barresi": "Photography",
+      "Rico Cilliers": "Processing"
+    },
+    "dimensionsMM": [
+      2699.9995708465576,
+      2699.9995708465576
+    ],
+    "source": "https://polyhaven.com/a/rock_face_03",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "rock_face_03_color.jpg",
+        "bytes": 927082,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_face_03/rock_face_03_diff_1k.jpg",
+        "md5": "e4c34abb1aad5befe12754fad507147a"
+      },
+      {
+        "kind": "normal",
+        "file": "rock_face_03_normal.jpg",
+        "bytes": 1146788,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_face_03/rock_face_03_nor_gl_1k.jpg",
+        "md5": "cbd30858439ece391480c5e67e09de89"
+      },
+      {
+        "kind": "arm",
+        "file": "rock_face_03_arm.jpg",
+        "bytes": 793241,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_face_03/rock_face_03_arm_1k.jpg",
+        "md5": "351c58daba868568fb5a191194aa5302"
+      }
+    ]
+  },
+  {
+    "id": "roof_slates_02",
+    "name": "Roof Slates 02",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensionsMM": [
+      3000,
+      3000
+    ],
+    "source": "https://polyhaven.com/a/roof_slates_02",
+    "license": "CC0-1.0",
+    "maps": [
+      {
+        "kind": "color",
+        "file": "roof_slates_02_color.jpg",
+        "bytes": 515626,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_slates_02/roof_slates_02_diff_1k.jpg",
+        "md5": "d7683ac63f6d46159790186f2e19919f"
+      },
+      {
+        "kind": "normal",
+        "file": "roof_slates_02_normal.jpg",
+        "bytes": 763206,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_slates_02/roof_slates_02_nor_gl_1k.jpg",
+        "md5": "e661093ac3305df7de9159ad07ef5f75"
+      },
+      {
+        "kind": "arm",
+        "file": "roof_slates_02_arm.jpg",
+        "bytes": 224234,
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_slates_02/roof_slates_02_arm_1k.jpg",
+        "md5": "2727e9ad576a3d22c90a6936346161c0"
+      }
+    ]
   }
 ]

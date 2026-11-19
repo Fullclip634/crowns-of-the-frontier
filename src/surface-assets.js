@@ -5,6 +5,7 @@ import {SurfaceResidency,surfaceKeys,surfacePins} from './surface-residency.js';
 import {loadCompressedSurface,surfaceCodecState} from './surface-codecs.js';
 import {characterSurfaceKinds} from './character-surfaces.js';
 import {ensureAtmosphereUniforms,applyAnalyticIblToMaterial} from './atmosphere-uniforms.js';
+import {isSnowBiome} from './terrain-biomes.js';
 
 const files={
   grass:{color:new URL('./assets3d/textures/leafy_grass_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/leafy_grass_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/leafy_grass_arm.jpg',import.meta.url).href},
@@ -14,6 +15,10 @@ const files={
   soil:{color:new URL('./assets3d/textures/brown_mud_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/brown_mud_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/brown_mud_arm.jpg',import.meta.url).href},
   rock:{color:new URL('./assets3d/textures/rocky_terrain_02_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/rocky_terrain_02_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/rocky_terrain_02_arm.jpg',import.meta.url).href},
   boulder:{color:new URL('./assets3d/textures/rock_01_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/rock_01_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/rock_01_arm.jpg',import.meta.url).href},
+  snow:{color:new URL('./assets3d/textures/snow_02_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/snow_02_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/snow_02_arm.jpg',import.meta.url).href},
+  sand:{color:new URL('./assets3d/textures/sand_01_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/sand_01_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/sand_01_arm.jpg',import.meta.url).href},
+  volcanic:{color:new URL('./assets3d/textures/rock_face_03_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/rock_face_03_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/rock_face_03_arm.jpg',import.meta.url).href},
+  roof:{color:new URL('./assets3d/textures/roof_slates_02_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/roof_slates_02_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/roof_slates_02_arm.jpg',import.meta.url).href},
 };
 const compressed={
   grass:{color:new URL('./assets3d/textures/ktx2/leafy_grass_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/leafy_grass_arm.ktx2',import.meta.url).href},
@@ -23,6 +28,10 @@ const compressed={
   soil:{color:new URL('./assets3d/textures/ktx2/brown_mud_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/brown_mud_arm.ktx2',import.meta.url).href},
   rock:{color:new URL('./assets3d/textures/ktx2/rocky_terrain_02_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rocky_terrain_02_arm.ktx2',import.meta.url).href},
   boulder:{color:new URL('./assets3d/textures/ktx2/rock_01_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rock_01_arm.ktx2',import.meta.url).href},
+  snow:{color:new URL('./assets3d/textures/ktx2/snow_02_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/snow_02_arm.ktx2',import.meta.url).href},
+  sand:{color:new URL('./assets3d/textures/ktx2/sand_01_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/sand_01_arm.ktx2',import.meta.url).href},
+  volcanic:{color:new URL('./assets3d/textures/ktx2/rock_face_03_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/rock_face_03_arm.ktx2',import.meta.url).href},
+  roof:{color:new URL('./assets3d/textures/ktx2/roof_slates_02_color.ktx2',import.meta.url).href,arm:new URL('./assets3d/textures/ktx2/roof_slates_02_arm.ktx2',import.meta.url).href},
 };
 const characterFiles={color:new URL('./assets3d/characters/character-color.png',import.meta.url).href,normal:new URL('./assets3d/characters/character-normal-roughness.png',import.meta.url).href};
 const surfaces={},cache=new SurfaceResidency({loaded(key,map){const [role,kind]=key.split(':');(surfaces[role]??={})[kind]=map;},removed(key,map){const [role,kind]=key.split(':');if(surfaces[role]?.[kind]===map)delete surfaces[role][kind];}});
@@ -36,10 +45,11 @@ async function texture(role,kind,renderer){
 export async function loadSurfaceAssets(quality,renderer){
   const kinds=quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color'];
   await Promise.all([...Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind,renderer))),...characterSurfaceKinds(quality).map(kind=>texture('character',kind,renderer))]);
-  if(quality==='medium')await Promise.all(['stone','wood','plaster'].map(role=>texture(role,'arm',renderer)));
+  if(quality==='medium')await Promise.all(['stone','wood','plaster','roof'].map(role=>texture(role,'arm',renderer)));
 }
 export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',characters:{source:'Original Blender artwork',atlases:Object.keys(surfaces.character||{})},loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
 export function characterSurfaceMaps(){return surfaces.character||{};}
+export function roofSurfaceMaps(){return surfaces.roof||{};}
 
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
@@ -69,7 +79,24 @@ export function applySurfaceMaterials(view){
 
 export function applyGroundSurface(material,land,quality,atmosphere=null){
   const dimension=id=>Math.max(.25,(surfaceManifest.find(asset=>asset.id===id)?.dimensionsMM?.[0]||2000)/1000);
-  applyTerrainShading(material,land,quality,surfaces,{grass:dimension('leafy_grass'),soil:dimension('brown_mud'),rock:dimension('rocky_terrain_02')},atmosphere);
+  const map=land?.map||'highlands',snow=isSnowBiome(map),arid=map==='arid',volcanic=map==='volcanic',shore=map==='coast'||map==='archipelago',crag=map==='highland'||map==='canyon'||snow||arid||volcanic;
+  const primaryRole=snow&&surfaces.snow?.color?'snow':arid&&surfaces.sand?.color?'sand':volcanic&&surfaces.volcanic?.color?'volcanic':'grass';
+  const soilRole=shore&&surfaces.sand?.color?'sand':'soil';
+  const rockRole=crag&&surfaces.volcanic?.color?'volcanic':'rock';
+  const idFor={grass:'leafy_grass',soil:'brown_mud',rock:'rocky_terrain_02',snow:'snow_02',sand:'sand_01',volcanic:'rock_face_03',stone:'medieval_blocks_05'};
+  const biomeSurfaces={
+    grass:surfaces[primaryRole]||surfaces.grass,
+    soil:surfaces[soilRole]||surfaces.soil,
+    rock:surfaces[rockRole]||surfaces.rock,
+    paving:surfaces.stone||surfaces.rock,
+  };
+  const dims={
+    grass:dimension(idFor[primaryRole]),
+    soil:dimension(idFor[soilRole]),
+    rock:rockRole==='volcanic'?Math.max(48,dimension('rock_face_03')*24):dimension('rocky_terrain_02'),
+    paving:dimension('medieval_blocks_05'),
+  };
+  applyTerrainShading(material,land,quality,biomeSurfaces,dims,atmosphere);
 }
 
 export function retainedSurfaceTextures(){return cache.textures();}

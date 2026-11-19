@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 
-const ids=['leafy_grass','medieval_blocks_05','old_wood_floor','painted_plaster_wall','brown_mud','rocky_terrain_02','rock_01'];
+const ids=['leafy_grass','medieval_blocks_05','old_wood_floor','painted_plaster_wall','brown_mud','rocky_terrain_02','rock_01','snow_02','sand_01','rock_face_03','roof_slates_02'];
 const folder=new URL('../src/assets3d/textures/',import.meta.url);
 const headers={'User-Agent':'CrownsOfTheFrontier-AssetPreparation/1.0'};
 await fs.mkdir(folder,{recursive:true});

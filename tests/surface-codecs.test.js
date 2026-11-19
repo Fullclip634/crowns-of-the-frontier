@@ -7,7 +7,7 @@ import {compressedSurfaceSupport,loadCompressedSurface,surfaceCodecState} from '
 
 test('bundled compressed surfaces retain their source hashes, dimensions, mip chain and color spaces',()=>{
   const folder=new URL('../src/assets3d/textures/ktx2/',import.meta.url),manifest=JSON.parse(fs.readFileSync(new URL('manifest.json',folder),'utf8'));
-  assert.equal(manifest.maps.length,14);assert.ok(manifest.maps.every(map=>map.kind!=='normal'),'original normal direction detail remains uncompressed');
+  assert.equal(manifest.maps.length,22);assert.ok(manifest.maps.every(map=>map.kind!=='normal'),'original normal direction detail remains uncompressed');
   const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
   for(const map of manifest.maps){const source=fs.readFileSync(new URL('../'+map.source,folder)),bytes=fs.readFileSync(new URL(map.file,folder)),ktx=readKtx(bytes);
     assert.equal(sha(source),map.sourceSHA256);assert.equal(sha(bytes),map.SHA256);assert.equal(ktx.pixelWidth,1024);assert.equal(ktx.pixelHeight,1024);assert.equal(ktx.levels.length,11);assert.equal(ktx.dataFormatDescriptor[0].transferFunction,map.kind==='color'?2:1);

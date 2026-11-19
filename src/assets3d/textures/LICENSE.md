@@ -9,5 +9,9 @@ These texture sets are by Poly Haven contributors and are distributed under [CC0
 - [Brown Mud](https://polyhaven.com/a/brown_mud) — Rob Tuytel; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
 - [Rocky Terrain 02](https://polyhaven.com/a/rocky_terrain_02) — Amal Kumar; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
 - [Rock 01](https://polyhaven.com/a/rock_01) — Rob Tuytel; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
+- [Snow 02](https://polyhaven.com/a/snow_02) — Rob Tuytel; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
+- [Sand 01](https://polyhaven.com/a/sand_01) — Rob Tuytel; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
+- [Rock Face 03](https://polyhaven.com/a/rock_face_03) — Dario Barresi, Rico Cilliers; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
+- [Roof Slates 02](https://polyhaven.com/a/roof_slates_02) — Rob Tuytel; original 1k diffuse, OpenGL normal, and packed AO/roughness/metallic JPEG maps.
 
 Original downloaded files are verified against the source API file size and MD5. Runtime assets are bundled locally; the game does not call Poly Haven services.

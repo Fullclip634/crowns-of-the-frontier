@@ -17,7 +17,7 @@ export class SurfaceResidency {
 
 export function surfaceKeys(quality,roles){
   const keys=new Set(roles.flatMap(role=>(quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color']).map(kind=>role+':'+kind)));
-  if(quality==='medium')for(const role of ['stone','wood','plaster'])keys.add(role+':arm');return keys;
+  if(quality==='medium')for(const role of ['stone','wood','plaster','roof'])if(roles.includes(role))keys.add(role+':arm');return keys;
 }
 
 export function surfacePins(view){

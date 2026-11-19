@@ -7,8 +7,8 @@ import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
 
-export function pebbleGeometry(){
-  const geometry=new THREE.IcosahedronGeometry(.62,1),p=geometry.attributes.position;
+export function pebbleGeometry(detail=1){
+  const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
   const slice=(px,py,pz,nx,ny,nz,limit,strength)=>{
     const d=px*nx+py*ny+pz*nz;if(d<=limit)return [px,py,pz];
     const push=(d-limit)*strength;return [px-nx*push,py-ny*push,pz-nz*push];
@@ -17,13 +17,16 @@ export function pebbleGeometry(){
     let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
     const n1=Math.sin(x*127.1+y*74.7+z*311.7)*43758.5453,f1=n1-Math.floor(n1);
     const n2=Math.sin(x*269.5-y*183.3+z*113.5)*31415.9265,f2=n2-Math.floor(n2);
-    [x,y,z]=slice(x,y,z,.70,.46,-.54,.30,.88);
-    [x,y,z]=slice(x,y,z,-.62,.58,.52,.32,.86);
-    [x,y,z]=slice(x,y,z,.28,.44,.85,.34,.84);
-    const stepY=y>.20?.20+(y-.20)*.34+x*.08:y<-.06?-.06+(y+.06)*.45:y;
-    const strata=1+Math.tanh(Math.sin(stepY*10.5+x*2.4)*2.8)*.10;
-    const baseFlare=stepY<0?1.24:1-stepY*.24;
-    const rx=(.88+f1*.26)*strata*baseFlare,rz=(.88+f2*.26)*strata*baseFlare,ry=.78+(f1+f2)*.12;
+    // Five asymmetric geological cleavage planes sculpt sharp stratified crags.
+    [x,y,z]=slice(x,y,z,.74,.42,-.52,.26,.92);
+    [x,y,z]=slice(x,y,z,-.68,.52,.51,.28,.90);
+    [x,y,z]=slice(x,y,z,.24,.48,.84,.30,.88);
+    [x,y,z]=slice(x,y,z,-.38,.36,-.85,.32,.86);
+    [x,y,z]=slice(x,y,z,.12,.96,.24,.34,.94);
+    const stepY=y>.18?.18+(y-.18)*.30+x*.10:y<-.08?-.08+(y+.08)*.42:y;
+    const strata=1+Math.tanh(Math.sin(stepY*13.5+x*2.8-z*1.6)*3.2)*.14;
+    const baseFlare=stepY<0?1.32:1-stepY*.28;
+    const rx=(.86+f1*.28)*strata*baseFlare,rz=(.86+f2*.28)*strata*baseFlare,ry=.82+(f1+f2)*.14;
     p.setXYZ(i,x*rx,stepY*ry,z*rz);
   }
   geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
@@ -37,7 +40,7 @@ export class TerrainDetails{
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
     const capacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=false;
-    this.mesh=new THREE.InstancedMesh(pebbleGeometry(),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
+    this.mesh=new THREE.InstancedMesh(pebbleGeometry(high?2:1),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const coastal=land.map==='coast'||land.map==='archipelago';
     const rocky=isRockyBiome(land.map);
@@ -70,25 +73,26 @@ export class TerrainDetails{
     }
 
     if(!low){
-      const chains=Math.min(20,Math.max(6,Math.floor(capacity/40)));
-      const limit=Math.min(capacity*.54,this.entries.length+chains*11);
+      const chains=Math.min(rocky?30:22,Math.max(8,Math.floor(capacity/(rocky?28:38))));
+      const limit=Math.min(capacity*(rocky?.64:.54),this.entries.length+chains*11);
       let placed=0;
       // Ledges follow the uphill contours, and loose fragments collect lower down.
-      for(let i=0;i<chains*12&&placed<chains&&this.entries.length<limit;i++){
+      for(let i=0;i<chains*14&&placed<chains&&this.entries.length<limit;i++){
         const x=(rng()-.5)*(land.worldSize-14),z=(rng()-.5)*(land.worldSize-14);
         if(!validSite(x,z,3.2)||townDistance(x,z)<campRadius*1.22||land.surfaceHeightAt(x,z)<.45)continue;
         const dx=(land.surfaceHeightAt(x+2,z)-land.surfaceHeightAt(x-2,z))*.25;
         const dz=(land.surfaceHeightAt(x,z+2)-land.surfaceHeightAt(x,z-2))*.25;
         const slope=Math.hypot(dx,dz);
-        if(slope<(rocky?.24:.13))continue;
+        if(slope<(rocky?.17:.13))continue;
         const alongX=-dz/slope,alongZ=dx/slope,outX=-dx/slope,outZ=-dz/slope;
         const angle=Math.atan2(-alongZ,alongX),blocks=4+Math.floor(rng()*4),first=this.entries.length;
         for(let b=0;b<blocks&&this.entries.length<limit;b++){
           const step=(b-(blocks-1)*.5)*1.33,lap=(rng()-.5)*.6;
           const bx=x+alongX*step+outX*lap,bz=z+alongZ*step+outZ*lap,y=land.surfaceHeightAt(bx,bz);
           if(y<.44||!validSite(bx,bz,3.2)||townDistance(bx,bz)<campRadius*1.17)continue;
-          const scale=(.98+rng()*.68+Math.min(slope,.8)*.65)*(.72+.28*Math.sin((b+.5)/blocks*Math.PI));
-          add('ledge',bx,y,bz,angle+(rng()-.5)*.25,scale,1.63+rng()*.48,.75+rng()*.48,-scale*(.18+Math.min(.17,slope*.11)));
+          const cragBoost=rocky?1.24:1.0;
+          const scale=(.98+rng()*.68+Math.min(slope,.8)*.65)*(.72+.28*Math.sin((b+.5)/blocks*Math.PI))*cragBoost;
+          add('ledge',bx,y,bz,angle+(rng()-.5)*.25,scale,1.68+rng()*.52,.82+rng()*.56,-scale*(.18+Math.min(.17,slope*.11)));
           if(rng()<.36||this.entries.length>=limit)continue;
           const run=1.15+rng()*1.4,sx=bx+outX*run,sz=bz+outZ*run,sy=land.surfaceHeightAt(sx,sz);
           if(sy>=.28&&validSite(sx,sz,2.6)){

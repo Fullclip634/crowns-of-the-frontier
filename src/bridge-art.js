@@ -11,7 +11,11 @@ function bridgeAprons(view,span){
   const positions=[],colors=[],uv=[],indices=[],land=view.landscape;
   for(const side of [-1,1])for(let row=0;row<6;row++)for(let col=0;col<12;col++){
     const xx=[span.center+side*(span.halfLength+row*.5),span.center+side*(span.halfLength+(row+1)*.5)].sort((a,b)=>a-b),width=bridgeRoadHalfWidth/6,z0=-bridgeRoadHalfWidth+col*width,z1=Math.min(bridgeRoadHalfWidth,z0+width),points=[[xx[0],z0],[xx[1],z0],[xx[1],z1],[xx[0],z1]],base=positions.length/3;
-    for(const top of [false,true])for(const [x,z]of points){const y=land.walkableHeightAt(x,z)+.006;positions.push(x,top?y:Math.min(land.surfaceHeightAt(x,z)-.12,y-.18),z);uv.push(x*.5,z*.5);colors.push(.70,.70,.64);}
+    const edgeShade=col===0||col===11?.82:1;
+    const wearFade=row>=4?.86:row>=3?.94:1;
+    const stoneVar=.93+((Math.abs((row*37+col*17+(side>0?11:3))%13))/12)*.12;
+    const cr=.68*edgeShade*stoneVar*wearFade,cg=.68*edgeShade*stoneVar*wearFade,cb=.63*edgeShade*stoneVar*(row>=4?.90:1);
+    for(const top of [false,true])for(const [x,z]of points){const y=land.walkableHeightAt(x,z)+.006;positions.push(x,top?y:Math.min(land.surfaceHeightAt(x,z)-.12,y-.18),z);uv.push(x*.46,z*.46);colors.push(top?cr:cr*.78,top?cg:cg*.78,top?cb:cb*.78);}
     for(const index of [0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,3,7,4,3,4,0])indices.push(base+index);
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();return new THREE.Mesh(geometry,view.materials.rock||view.materials.stone);
