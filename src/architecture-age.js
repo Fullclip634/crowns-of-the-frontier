@@ -11,14 +11,15 @@ export const AGE_STYLED_BUILDINGS=Object.freeze([
 ]);
 export function isAgeStyled(type){return AGE_STYLED_BUILDINGS.includes(type);}
 
+const roofFinish=color=>Object.freeze(new THREE.Color(color).toArray());
 const STYLES=Object.freeze([
   // The first age is deliberately under-built: lower walls and a flatter roof
   // than the authored model, so a Dark Age town reads as a settlement that has
   // not yet been raised in stone rather than a castle that is merely tinted.
-  Object.freeze({height:.78,width:.90,pitch:.84,tint:[1,1,1],roof:[1,1,1],label:'frontier'}),
-  Object.freeze({height:.98,width:.99,pitch:1.06,tint:[.96,.97,.98],roof:[1.06,.92,.78],label:'feudal'}),
-  Object.freeze({height:1.18,width:1.07,pitch:1.24,tint:[.87,.90,.95],roof:[.86,.89,.97],label:'castle'}),
-  Object.freeze({height:1.38,width:1.15,pitch:1.38,tint:[.78,.84,.94],roof:[.78,.82,.96],label:'imperial'}),
+  Object.freeze({height:.78,width:.90,pitch:.84,tint:[1,1,1],roof:roofFinish(0x957d58),label:'frontier'}),
+  Object.freeze({height:.98,width:.99,pitch:1.06,tint:[.96,.97,.98],roof:roofFinish(0xb86e51),label:'feudal'}),
+  Object.freeze({height:1.18,width:1.07,pitch:1.24,tint:[.87,.90,.95],roof:roofFinish(0x687e80),label:'castle'}),
+  Object.freeze({height:1.38,width:1.15,pitch:1.38,tint:[.78,.84,.94],roof:roofFinish(0x75839b),label:'imperial'}),
 ]);
 export function architectureStyle(age){return STYLES[Math.max(0,Math.min(3,Math.round(age||0)))];}
 export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.players?.[entity?.owner]?.age||0));}
@@ -28,12 +29,7 @@ export function architectureAge(sim,entity){return Math.max(0,Math.min(3,sim?.pl
 // way to plaster and then to dressed stone. Roofs and unclassified surfaces are
 // left alone so team colours and glazing keep their meaning.
 export function ageSurface(mode,age){
-  // Timber is the Dark Age itself, so a building authored in plaster is pulled
-  // back down to timberwork until the Feudal Age. Without that the first age
-  // looked exactly like the last one, which is what "the starting age does not
-  // read as an age" meant.
-  if(mode===1)return age>=3?2:age>=1?3:1;
-  if(mode===3)return age>=3?2:age===0?1:3;
+  if(mode===1||mode===3)return age>=2?2:age===1?3:1;
   return mode;
 }
 // A node with no age tag must be rebuilt once; -1 guarantees that without

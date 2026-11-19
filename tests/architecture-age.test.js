@@ -57,6 +57,7 @@ test('a node rebuilds exactly once when its owner advances an age',()=>{
   assert.equal(architectureOutdated(sim,{...untagged,type:'farm'},node(2)),false,'unstyled buildings never rebuild for age');
   assert.equal(architectureOutdated(sim,{...untagged,type:'wall'},node(2)),false);
   assert.equal(architectureOutdated({players:[{age:3}]},{...untagged,type:'keep',owner:0},node(2)),true);
+  assert.equal(architectureOutdated(sim,{kind:'unit',type:'villager',owner:0},node(0)),false);
 });
 
 test('age styling adds no stray geometry, only massing and an age tag',()=>{
@@ -170,8 +171,8 @@ test('the wall material itself advances with the age, not only its tint',()=>{
   // Surface classes: 1 timber, 2 masonry, 3 plaster, 4 roof, 0 unclassified.
   assert.equal(ageSurface(1,0),1,'timber stays timber in the Dark Age');
   assert.equal(ageSurface(1,1),3,'timber gives way to plaster in the Feudal Age');
-  assert.equal(ageSurface(1,2),3,'and stays plaster through the Castle Age');
-  assert.equal(ageSurface(3,2),3);
+  assert.equal(ageSurface(1,2),2,'Castle civic construction uses masonry');
+  assert.equal(ageSurface(3,2),2);
   assert.equal(ageSurface(3,3),2,'plaster is dressed into stone at Imperial');
   assert.equal(ageSurface(2,3),2,'masonry is already stone');
   assert.equal(ageSurface(4,3),4,'roofs keep their authored surface so team colours survive');
@@ -179,14 +180,12 @@ test('the wall material itself advances with the age, not only its tint',()=>{
   for(let age=0;age<=3;age++)assert.equal(ageSurface(2,age),2);
 });
 
-test('roofs shade from straw through terracotta to slate as the age advances',()=>{
-  const roofs=[0,1,2,3].map(age=>architectureStyle(age).roof);
-  assert.deepEqual(roofs[0],[1,1,1],'the Dark Age keeps the authored roof colour');
-  for(const shade of roofs)for(const value of shade)assert.ok(value>.72&&value<1.12,`roof shade stays subtle: ${value}`);
-  assert.ok(roofs[1][0]>roofs[1][2],'Feudal roofs warm toward terracotta');
-  assert.ok(roofs[2][2]>roofs[2][0],'Castle roofs cool toward slate');
-  assert.ok(roofs[3][2]>roofs[3][0],'Imperial roofs stay cool');
-  assert.ok(roofs[3][2]<roofs[2][2]+.01,'and the coolest of the four');
+test('roof finishes progress from cedar and clay to two slate palettes',()=>{
+  const [cedar,clay,slate,imperial]=[0,1,2,3].map(age=>architectureStyle(age).roof);
+  assert.ok(cedar[0]>cedar[1]&&cedar[1]>cedar[2],'Frontier cedar is a warm brown');
+  assert.ok(clay[0]/clay[1]>cedar[0]/cedar[1],'Feudal clay reads redder than cedar');
+  assert.ok(slate[2]>slate[0],'Castle roofs turn cool');
+  assert.ok(imperial[2]/imperial[1]>slate[2]/slate[1],'Imperial slate has a clearer blue tone');
 });
 
 test('the first age is timber, so the starting town does not look like the last one',()=>{
@@ -204,7 +203,7 @@ test('the first age is timber, so the starting town does not look like the last 
 test('landmarks gain physical corner fortifications and Town Center advances wall surface by age',async()=>{
   const assets=await catalogue();
   try{
-    const barracksVerts=[],tcModes=[];
+    const barracksVerts=[],tcModes=[],tcRoofs=[];
     for(const age of [0,1,2,3]){
       const view=fixture(assets,age);
       view.materials.plaster=new THREE.MeshStandardMaterial({color:0xdfd0b0});
@@ -215,12 +214,22 @@ test('landmarks gain physical corner fortifications and Town Center advances wal
       const tc=packBuildingModel(view,buildingModel(view,{kind:'building',type:'towncenter',owner:0,r:BUILDINGS.towncenter.r,x:0,z:0}),{kind:'building',type:'towncenter',owner:0,r:BUILDINGS.towncenter.r,x:0,z:0});
       const tcSurface=tc.children.find(c=>c.userData.structureSurface);
       tcModes.push(new Set(Array.from(tcSurface.geometry.attributes.structureSurface.array).filter((_,i)=>i%3===2)));
+      const palette=tcSurface.geometry.attributes,color=palette.color,modes=palette.structureSurface;
+      const roof=[0,0,0];let roofVertices=0;
+      for(let i=0;i<color.count;i++){
+        if(modes.getZ(i)!==4)continue;
+        roofVertices++;roof[0]+=color.getX(i);roof[1]+=color.getY(i);roof[2]+=color.getZ(i);
+      }
+      assert.ok(roofVertices>0);
+      tcRoofs.push(roof.map(channel=>channel/roofVertices));
     }
+    for(let i=1;i<tcRoofs.length;i++)assert.ok(Math.hypot(...tcRoofs[i].map((channel,j)=>channel-tcRoofs[i-1][j]))>.025,'adjacent ages have distinct packed roof colors');
     assert.ok(barracksVerts[1]>barracksVerts[0],'Feudal adds corner stone piers');
     assert.ok(barracksVerts[2]>barracksVerts[1],'Castle widens into stepped stone buttresses');
     assert.ok(barracksVerts[3]>barracksVerts[2],'Imperial crowns stone bastions cleanly');
     assert.ok(!tcModes[0].has(3),'Dark Age Town Center pulls plaster walls down to timber');
     assert.ok(tcModes[1].has(3),'Feudal Town Center restores plaster upper stories');
+    assert.ok(!tcModes[2].has(3)&&tcModes[2].has(2),'Castle Town Center uses masonry');
     assert.ok(!tcModes[3].has(3)&&tcModes[3].has(2),'Imperial Town Center dresses walls into stone masonry');
   }finally{clearAuthoredAssets();}
 });
