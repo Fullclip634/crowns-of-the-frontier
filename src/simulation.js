@@ -327,16 +327,34 @@ export class Simulation {
     if(e.owner===0&&this.time-(this.lastBlockedNotice??-10)>4){this.lastBlockedNotice=this.time;this.emit('notice',{owner:0,message:'A unit cannot reach its destination. Choose another route or open the obstruction.',tone:'warning'});}
     this.emit('order-blocked',{entity:e});const target=this.get(e.order?.target);if(e.order?.type==='build'&&e.type==='villager'&&target?.type==='wall')this.finishWallOrder(e,target,true);else this.finishOrder(e);
   }
-  nearest(e,predicate,max=Infinity,combatOnly=false){let best=null,d=max;const consider=target=>{
+  nearest(e,predicate,max=Infinity,combatOnly=false,targetOwners=-1){
+    let best=null,nearest=max;
+    const consider=target=>{
       if(target.hp<=0||target===e||combatOnly&&target.kind!=='unit'&&target.kind!=='building')return;
-      // Reject distant candidates before their predicate and the square root.
-      // The small margin preserves the original strict surface-distance test.
-      const dx=e.x-target.x,dz=e.z-target.z,reach=d+target.r+1e-9;
-      if(reach<0||dx*dx+dz*dz>reach*reach)return;
-      if(!predicate(target))return;
-      const len=Math.hypot(dx,dz)-target.r;if(len<d){d=len;best=target;}
+      if(!(targetOwners&(1<<target.owner)))return;
+      // Keep the original strict surface-distance test and stable tie order.
+      const dx=e.x-target.x,dz=e.z-target.z,reach=nearest+target.r+1e-9;
+      if(reach<0||dx*dx+dz*dz>reach*reach||!predicate(target))return;
+      const gap=Math.hypot(dx,dz)-target.r;
+      if(gap<nearest){nearest=gap;best=target;}
     };
-    if(Number.isFinite(max)&&this.entityBuckets){const range=max+(this.maxEntityRadius||8)+2;for(let x=Math.floor((e.x-range)/8);x<=Math.floor((e.x+range)/8);x++){const column=this.entityBuckets.get(x);if(!column)continue;for(let z=Math.floor((e.z-range)/8);z<=Math.floor((e.z+range)/8);z++){const bucket=column.get(z),candidates=combatOnly?bucket?.combat:bucket;if(candidates)for(const target of candidates)consider(target);}}}else for(const target of this.entities)consider(target);return best;}
+    if(Number.isFinite(max)&&this.entityBuckets){
+      const range=max+(this.maxEntityRadius||8)+2;
+      const minX=Math.floor((e.x-range)/8),maxX=Math.floor((e.x+range)/8);
+      const minZ=Math.floor((e.z-range)/8),maxZ=Math.floor((e.z+range)/8);
+      for(let x=minX;x<=maxX;x++){
+        const column=this.entityBuckets.get(x);
+        if(!column)continue;
+        for(let z=minZ;z<=maxZ;z++){
+          const bucket=column.get(z);
+          if(!bucket||combatOnly&&bucket.combatOwners!==undefined&&!(bucket.combatOwners&targetOwners))continue;
+          const candidates=combatOnly?bucket.combat:bucket;
+          if(candidates)for(const target of candidates)consider(target);
+        }
+      }
+    }else for(const target of this.entities)consider(target);
+    return best;
+  }
   nearestDrop(e,resource,naval=false){
     if(this.dropCache?.revision!==this.revision||this.dropCache.entities!==this.entities){
       const sites=new Map();for(const b of this.entities)if(b.hp>0&&b.kind==='building'&&b.progress>=1&&BUILDINGS[b.type].drop){if(!sites.has(b.owner))sites.set(b.owner,[]);sites.get(b.owner).push(b);}
@@ -394,7 +412,11 @@ export class Simulation {
     }
     let combat=null;
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
-    else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type)))combat=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&['unit','building'].includes(t.kind)&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!order||order.type!=='guard'||distance(t,this.get(order.target)||e)<18),e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0),d.role==='siege'?27:13),true);
+    else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type))){
+      const guard=order?.type==='guard'?(this.get(order.target)||e):null;
+      const range=e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0),d.role==='siege'?27:13);
+      combat=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!guard||distance(t,guard)<18),range,true,this.combatTargetOwners?.[e.owner]);
+    }
     if(combat&&meleeBuildingAttack(e,combat)){
       const gap=meleeSurfaceDistance(e,combat);
       if(gap>meleeReach(e)||gap<0){if(e.stance!=='hold'||order?.type==='attack')approachMelee(this,e,combat,dt);}
@@ -450,7 +472,7 @@ export class Simulation {
     }
   }
   tickBuilding(e,dt){if(e.progress<1)return;e.cooldown=Math.max(0,e.cooldown-dt);const d=BUILDINGS[e.type];
-    if(d.damage&&e.cooldown<=0){const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building'),d.range,true);if(enemy)this.hit(e,enemy);}
+    if(d.damage&&e.cooldown<=0){const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building'),d.range,true,this.combatTargetOwners?.[e.owner]);if(enemy)this.hit(e,enemy);}
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;q.remaining-=dt;
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
       if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
@@ -527,6 +549,13 @@ export class Simulation {
   tick(dt){if(this.ended)return;this.time+=dt;
     const entities=this.entitySpatial??=new SpatialBuckets(8),units=this.unitSpatial??=new SpatialBuckets(4);entities.reset();units.reset();this.entityBuckets=entities.columns;this.unitBuckets=units.columns;this.maxEntityRadius=0;
     for(const e of this.entities)if(e.hp>0){entities.add(e,e.kind==='unit'||e.kind==='building');this.maxEntityRadius=Math.max(this.maxEntityRadius,e.r||0);if(e.kind==='unit'&&!e.embarked)units.add(e);}
+    // Reuse the team lookup for all unit and tower searches during this tick.
+    const owners=this.combatTargetOwners??=[];
+    for(let owner=0;owner<this.players.length;owner++){
+      let mask=0;
+      for(let other=0;other<this.players.length;other++)if(this.hostile(owner,other))mask|=1<<other;
+      owners[owner]=mask;
+    }
     // Keep the start-of-tick snapshot semantics without allocating a full copy.
     const tickEntityCount=this.entities.length;
     for(let i=0;i<tickEntityCount;i++){const e=this.entities[i];if(e.hp>0){if(e.kind==='unit')this.tickUnit(e,dt);else if(e.kind==='building')this.tickBuilding(e,dt);}}

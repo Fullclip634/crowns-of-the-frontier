@@ -78,3 +78,21 @@ test('spatial bucket splash hits nearby enemies identically inside populated tic
  assert.equal(far.hp,beforeFar,'unit beyond splash radius takes zero damage');
  assert.ok(distantCrowd.every(u=>u.hp===u.maxHp));
 });
+
+test('automatic target search handles allied, hostile and defeated owners in mixed cells',()=>{
+  const sim=new Simulation({mode:'sandbox',map:'highlands',seed:512});
+  sim.entities=[];sim.index=new Map();sim.checkVictory=()=>{};
+  sim.players.push(sim.makePlayer('raven'));
+  sim.players[0].team=1;sim.players[1].team=1;sim.players[2].team=2;
+  const actor=sim.addUnit('archer',0,-30,0),ally=sim.addUnit('spearman',1,-29,0),enemy=sim.addUnit('spearman',2,-26,0);
+  const update=sim.tickUnit.bind(sim);sim.tickUnit=()=>{};
+  let target=null;sim.hit=(source,destination)=>{target=destination;};
+  sim.tick(.1);update(actor,.1);
+  assert.equal(target,enemy);
+  sim.players[2].defeated=true;
+  target=null;sim.tick(.1);update(actor,.1);
+  assert.equal(target,null);
+  sim.players[1].team=3;
+  sim.tick(.1);update(actor,.1);
+  assert.equal(target,ally);
+});
