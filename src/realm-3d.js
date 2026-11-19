@@ -34,7 +34,7 @@ function foundation(view,e){
   return height-.12;
 }
 function buildForest(view){
-  view.forest=[];const trees=view.sim.entities.filter(e=>e.type==='wood'&&e.hp>0),rng=seededRandom(view.sim.options.seed+191);
+  view.forest=[];const trees=view.sim.entities.filter(e=>e.type==='wood'&&(e.hp>0||view.sim.resourceMemory?.has(e.id))),rng=seededRandom(view.sim.options.seed+191);
   const materials=new Map();
   const leafy=new Set([view.materials.leaf,view.materials.leafDark]);
   // Arid and volcanic frontiers reuse the authored woodland atlas but read as
@@ -147,7 +147,7 @@ export function installRealm3D(WorldView){
     const threshold=treeDetailThreshold(this.frameTimeMs,budgetMs,lodOptions);
     this.forestDetailThreshold=threshold;
     this.fallSlots=new Map();for(const batch of this.forest||[]){for(const set of batch.sets)set.ids.length=0;batch.entries.forEach((e,i)=>{
-      const current=this.sim.get(e.id),fall=this.treeFalls?.get(e.id);
+      const current=this.sim.resourceMemory?.get(e.id)??this.sim.get(e.id),fall=this.treeFalls?.get(e.id);
       if(!(current?.hp>0||fall))return;
       const groundY=batch.matrices[i]?.elements[13]??this.groundHeight(e.x,e.z);
       if(!nearViewport(this,e.x,groundY+3,e.z,14))return;

@@ -2,6 +2,7 @@ import {UNITS,BUILDINGS,DIFFICULTIES,TECHS} from './data.js';
 import {disembarkSlots} from './disembark.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {navigationRegions} from './navigation.js';
+import {takeFromResource} from './resource-vision.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 // Sight buckets are rebuilt for every owner on every tick, so the key must not
 // allocate. Coordinates are bounded by the world half-size, well inside the
@@ -105,7 +106,7 @@ export function installFrontiers(Simulation){
       if(e.carry>=75||order.returning){order.returning=true;const dock=this.nearestDrop(e,'food',true);if(!dock)return;if(distance(e,dock)>dock.r+5.5){this.move(e,dock,dt,dock.r+5);return;}
         this.players[e.owner].resources.food+=e.carry;this.emit('gathered',{owner:e.owner,amount:e.carry,resource:'food',source:'fishingboat'});if(e.owner===0)this.stats.gathered+=e.carry;e.carry=0;e.carryType=null;order.returning=false;e.path=[];return;}
       if(distance(e,target)>target.r+2){this.move(e,target,dt,target.r+1.5);return;}
-      const n=Math.min(75-e.carry,target.amount,dt*4*(1+this.players[e.owner].tech.economy*.25));e.carry+=n;e.carryType='food';target.amount-=n;if(target.amount<=0){target.hp=0;order.returning=true;}return;
+      const n=Math.min(75-e.carry,target.amount,dt*4*(1+this.players[e.owner].tech.economy*.25));e.carry+=n;e.carryType='food';if(takeFromResource(this,target,n))order.returning=true;return;
     }
     const site=e.order?.type==='build'?this.get(e.order.target):null,progress=site?.progress;
     original.tickUnit.call(this,e,dt);

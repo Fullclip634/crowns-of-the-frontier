@@ -28,7 +28,8 @@ export function drawMinimap(canvas,sim,view,settings){
       if(sim.options.map!=='coast'){ctx.fillStyle='#ac9b75';ctx.fillRect(coord(channel.center-channel.width-3),coord(-7.75),(channel.width+3)*2*scale,15.5*scale);}
     }
   }
-  for(const e of sim.entities){
+  for(const entity of sim.entities){
+    const e=sim.resourceMemory?.get(entity.id)??entity;
     if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;
     ctx.fillStyle=e.kind==='resource'?{wood:'#315b42',gold:'#e1bf69',stone:'#bac0b4',food:e.water?'#c5dee2':'#ab7560'}[e.type]:e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e3d3a2'):e.owner>=0?('#'+(sim.players[e.owner].color??(e.owner===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):'#e3d3a2';
     const r=e.kind==='building'?Math.max(2,e.r*scale):e.kind==='unit'?1.6:1.5;ctx.fillRect(coord(e.x)-r,coord(e.z)-r,r*2,r*2);

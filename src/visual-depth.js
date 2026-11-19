@@ -61,8 +61,10 @@ export function contactPose(view,e,x,z,radius,ground){
 
 export function updateContacts(view,menu){
   const mesh=view.contactShadows,slots=view.contactSlots??=[];let count=0,culled=0,computed=0,reused=0,firstChanged=Infinity,lastChanged=-1;
-  for(const e of view.sim.entities){
+  const remembered=menu?null:view.sim.resourceMemory;
+  for(const entity of view.sim.entities){
     if(count===1024)break;
+    const e=remembered?.get(entity.id)??entity;
     if(e.hp<=0||e.embarked||e.water||UNITS[e.type]?.naval||e.type==='farm'||(e.kind==='building'&&e.progress===0))continue;
     const shown=menu||e.owner===0||e.kind==='shrine'||view.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&view.sim.isExplored(e.x,e.z));
     if(!shown)continue;

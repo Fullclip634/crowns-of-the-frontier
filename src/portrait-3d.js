@@ -57,6 +57,6 @@ export class ModelPortrait {
 
 export function renderModelPortrait(view){
   const target=document.getElementById('model-portrait');if(!target||document.hidden||view.portraitDisabled||!target.clientWidth||!target.clientHeight)return;
-  const entity=view.sim.get(Number(target.dataset.entity));if(!entity)return;
+  const id=Number(target.dataset.entity),entity=view.sim.resourceMemory?.get(id)??view.sim.get(id);if(!entity)return;
   try{view.modelPortrait??=new ModelPortrait(view);view.modelPortrait.render(target,entity,view.clock);}catch(error){view.portraitDisabled=true;console.error('3D portrait could not start',error);}
 }

@@ -162,7 +162,7 @@ export class WorldView {
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];this.flightEffects?.clearBatches();
     this.applyTeamColors(sim);
     this.buildLandscape(sim);if(camera){this.target.copy(camera.target);this.zoom=camera.zoom;this.angle=camera.angle;this.tilt=camera.tilt;this.updateCamera();}else{const home=sim.owned(0,'building','towncenter')[0]||sim.players[0].start||{x:-37,z:30};this.zoom=58;this.focus(home.x,home.z);}prepareViewport(this);this.buildForest(sim);
-    for(const e of sim.entities)if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));
+    for(const entity of sim.entities){const e=sim.resourceMemory?.get(entity.id)??entity;if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));}
     this.updateFog();
     trimAuthoredAssets(this);
   }
@@ -317,7 +317,8 @@ export class WorldView {
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
     let fireCount=0;const fireDummy=this.fireDummy??=new THREE.Object3D();
-    for(const e of this.sim.entities){let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
+    const remembered=menu?null:this.sim.resourceMemory;
+    for(const entity of this.sim.entities){const e=remembered?.get(entity.id)??entity;let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
         if(e.hp<=0&&this.treeIndices.has(e.id)){const i=this.treeIndices.get(e.id),dummy=new THREE.Object3D();dummy.scale.set(0,0,0);dummy.updateMatrix();this.treeTrunks.setMatrixAt(i,dummy.matrix);this.treeLeaves.setMatrixAt(i*2,dummy.matrix);this.treeLeaves.setMatrixAt(i*2+1,dummy.matrix);this.treeTrunks.instanceMatrix.needsUpdate=true;this.treeLeaves.instanceMatrix.needsUpdate=true;this.treeIndices.delete(e.id);}continue;
       }
       const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));node=sceneNodeFor(this,e,visible);if(!node)continue;

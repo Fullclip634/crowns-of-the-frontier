@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {wasFelledOutOfSight} from './resource-vision.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {renderPosition,smoothHeading} from './motion-smoothing.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
@@ -16,7 +17,7 @@ export function cargoGeometry(view,type){
 
 export class WorldInteractions {
   constructor(view){
-    this.view=view;this.group=new THREE.Group();this.group.name='3D world interactions';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.cargo={};this.cargoFeet=[];this.cargoFeetCount=0;this.stumpPoses=new Map();this.stumpSlots=[];this.fell=new Set(view.sim.entities.filter(e=>e.type==='wood'&&e.hp<=0).map(e=>e.id));view.treeFalls=new Map();
+    this.view=view;this.group=new THREE.Group();this.group.name='3D world interactions';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.cargo={};this.cargoFeet=[];this.cargoFeetCount=0;this.stumpPoses=new Map();this.stumpSlots=[];this.fell=new Set(view.sim.entities.filter(e=>e.type==='wood'&&e.hp<=0&&!view.sim.resourceMemory?.has(e.id)).map(e=>e.id));view.treeFalls=new Map();
     for(const type of ['wood','food','gold','stone']){const mesh=new THREE.InstancedMesh(cargoGeometry(view,type),view.materials[type==='food'?'canvas':type],512);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=true;mesh.userData.model3d={type:'cargo',resource:type,volumetric:true};this.cargo[type]=mesh;this.group.add(mesh);}
     const stumpGeometry=new THREE.CylinderGeometry(.27,.36,.32,8);stumpGeometry.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(stumpGeometry.attributes.position.count*3).fill(1),3));
     this.stumps=new THREE.InstancedMesh(stumpGeometry,view.materials.trunk,4096);this.stumps.count=0;this.stumps.frustumCulled=false;this.stumps.receiveShadow=true;this.stumps.userData.model3d={type:'stump',volumetric:true};this.group.add(this.stumps);
@@ -24,9 +25,11 @@ export class WorldInteractions {
   update(dt,menu){
     this.cargoFeetCount=0;
     const v=this.view,counts={wood:0,food:0,gold:0,stone:0};let stumpCount=0,stumpsChanged=false,culledCargo=0;
-    for(const e of v.sim.entities){
+    const remembered=menu?null:v.sim.resourceMemory;
+    for(const entity of v.sim.entities){
+      const e=remembered?.get(entity.id)??entity;
       if(e.type==='wood'&&e.hp<=0){
-        if(!this.fell.has(e.id)){this.fell.add(e.id);if(v.sim.isVisible(e.x,e.z)){v.treeFalls.set(e.id,{at:v.clock});v.forestRefresh=undefined;}}
+        if(!this.fell.has(e.id)){this.fell.add(e.id);v.forestRefresh=undefined;if(!wasFelledOutOfSight(e)&&v.sim.isVisible(e.x,e.z))v.treeFalls.set(e.id,{at:v.clock});}
         if(stumpCount<4096&&(menu||v.sim.isExplored(e.x,e.z))){
           let pose=this.stumpPoses.get(e.id),changed=!pose||pose.x!==e.x||pose.z!==e.z;
           if(changed){this.dummy.position.set(e.x,v.groundHeight(e.x,e.z)+.15,e.z);this.dummy.rotation.set(0,e.id*.7,0);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();pose={x:e.x,z:e.z,matrix:this.dummy.matrix.clone()};this.stumpPoses.set(e.id,pose);if(this.stumpPoses.size>4096)this.stumpPoses.delete(this.stumpPoses.keys().next().value);}

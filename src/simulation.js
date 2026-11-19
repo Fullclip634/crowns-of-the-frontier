@@ -1,5 +1,6 @@
 import {retireDeadUnits} from './dead-unit-cleanup.js';
 import {revealVisionCircle} from './vision-circle.js';
+import {takeFromResource,revealResourceChanges,serializeResourceMemory,restoreResourceMemory} from './resource-vision.js';
 import {installFrontiers} from './frontiers.js';
 import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
 import {installTactics,formationSlot,formationDestinations} from './tactics.js';
@@ -468,7 +469,7 @@ export class Simulation {
       if(distance(e,target)>gatheringRange(e,target)){this.move(e,target,dt,gatheringApproach(e,target));return;}
       e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*this.faction(e.owner).gather*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
-      if(target.amount!==undefined){target.amount-=n;if(target.amount<=0){target.hp=0;this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}}
+      if(target.amount!==undefined&&takeFromResource(this,target,n)){this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}
     }
   }
   tickBuilding(e,dt){if(e.progress<1)return;e.cooldown=Math.max(0,e.cooldown-dt);const d=BUILDINGS[e.type];
@@ -529,6 +530,7 @@ export class Simulation {
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
   updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase))+biomeVisionModifier(this.options.map));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
     for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
+    revealResourceChanges(this);
     this.fogRevision++;
   }
   tutorialObjectives(){return [
@@ -569,7 +571,7 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options);
@@ -590,6 +592,7 @@ export class Simulation {
     s.revision++;s.grids={};
     clearSavedBridgeResources(s);
     restoreBridgeOccupants(s,data.bridgeRoadHalfWidth);
+    restoreResourceMemory(s,data.resourceMemory);
     s.updateFog();
     return s;
   }
