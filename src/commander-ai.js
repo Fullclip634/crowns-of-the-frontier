@@ -55,6 +55,17 @@ export function shouldRetryBlockedOrder(sim,unit,x,z){
   return Math.hypot((unit.pathTargetX??Infinity)-x,(unit.pathTargetZ??Infinity)-z)>BLOCKED_TARGET_TOLERANCE;
 }
 
+// Formation slots may sit well away from the objective. Preserve current orders
+// using the shared rally point so a refresh does not rebuild everyone’s route.
+function advanceArmy(sim, fighters, point, phase) {
+  const objective={x:point.x,z:point.z,phase};
+  const moving=fighters.filter(unit=>{
+    const previous=unit.order?.type==='attackmove'&&unit.order.commanderObjective;
+    return unit.pathStatus==='blocked'||!previous||previous.phase!==phase||distance(previous,objective)>6;
+  });
+  if(moving.length)sim.command(moving.map(unit=>unit.id),{type:'attackmove',x:objective.x,z:objective.z,commanderObjective:objective});
+}
+
 function customNavy(sim,owner,visible,known,army,tc){
   const dock=sim.owned(owner,'building','dock').find(b=>b.progress>=1);
   if(dock&&dock.queue.length<2){const count=type=>sim.count(owner,'unit',type)+countQueued(sim,type,owner),warships=count('galley')+count('warship'),transports=count('transport'),type=transports<1?'transport':warships<2?(sim.players[owner].age>=3?'warship':'galley'):count('fishingboat')<3?'fishingboat':transports<2&&army.length>20?'transport':warships<6?(sim.players[owner].age>=3?'warship':'galley'):null;if(type)sim.train(dock.id,type);}
@@ -322,8 +333,8 @@ export function installCommanderAI(Simulation){
         const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege'&&shouldRetryBlockedOrder(this,e,tc.x+8,tc.z-6)).sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
         const assault=fighters.filter(e=>!ids.has(e.id)&&shouldRetryBlockedOrder(this,e,target.x,target.z));
         const assigned=phase==='attack'?orderSiegeAssault(this,owner,assault,visible,target):new Set();
-        this.command(assault.filter(e=>!assigned.has(e.id)).map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
-        if(guards.length)this.command(guards.map(e=>e.id),{type:'attackmove',x:tc.x+8,z:tc.z-6});state.homeGuard=guards.map(e=>e.id);
+        advanceArmy(this,assault.filter(e=>!assigned.has(e.id)),target,phase);
+        advanceArmy(this,guards,{x:tc.x+8,z:tc.z-6},'home-guard');state.homeGuard=guards.map(e=>e.id);
       }
       else if(this.options.mode!=='custom'&&this.options.map==='coast'){
         for(const sign of [-1,1]){const rally=sign<0?{x:-24,z:30}:target;this.command(fighters.filter(unit=>Math.sign(unit.x)===sign&&distance(unit,rally)>12&&shouldRetryBlockedOrder(this,unit,rally.x,rally.z)).map(unit=>unit.id),{type:'move',...rally});}

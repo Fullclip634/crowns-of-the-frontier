@@ -72,3 +72,33 @@ test('commander refreshes the army objective without resetting siege movement an
   assert.equal(engine.path,path);
   assert.equal(screen.order,screenOrder);
 });
+
+test('a commander keeps marching formations intact and redirects them when the objective moves',()=>{
+  const sim=new Simulation({mode:'skirmish',map:'highlands',seed:512});
+  for(const entity of sim.entities)entity.hp=0;
+  sim.revision++;
+  sim.addBuilding('towncenter',1,-45,-40,true);
+  const objective=sim.addBuilding('towncenter',0,20,0,true);
+  const fighters=Array.from({length:6},(_,i)=>sim.addUnit('spearman',1,-17-i,2));
+  sim.players[1].resources={food:0,wood:0,gold:0,stone:0};
+  sim.canSee=()=>true;
+  sim.nextAttack=0;sim.time=500;
+  sim.tickAI(1);
+  assert.equal(sim.commanderAI.phase,'attack');
+  assert.ok(fighters.every(unit=>unit.order?.type==='attackmove'));
+  const fighter=fighters[0],order=fighter.order,path=[{x:-10,z:0},{x:-4,z:0}];
+  fighter.path=path;fighter.pathStatus='ready';
+  const reinforcement=sim.addUnit('spearman',1,-19,8);
+  sim.time+=9;
+  sim.tickAI(1);
+  assert.equal(fighter.order,order,'orders for existing formation slots survive a commander refresh');
+  assert.equal(fighter.path,path,'the formation keeps its current path');
+  assert.equal(reinforcement.order?.type,'attackmove','new units join the current assault');
+
+  objective.hp=0;
+  const newObjective=sim.addBuilding('towncenter',0,30,13,true);
+  sim.time+=9;
+  sim.tickAI(1);
+  assert.notEqual(fighter.order,order);
+  assert.deepEqual(fighter.order?.commanderObjective,{x:newObjective.x,z:newObjective.z,phase:'attack'});
+});
