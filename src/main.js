@@ -672,7 +672,7 @@ function presentBattlefield(){
   const finish=ready=>{
     if(presentingMatch!==match)return;
     presentingMatch=null;
-    if(ready&&playing&&sim===match&&!view.graphicsFatal){world.classList.remove('world-poster');last=performance.now();simulationPacer.reset();}
+    if(ready&&playing&&sim===match&&!view.graphicsFatal){world.classList.remove('world-poster');lastRender=last=performance.now();simulationPacer.reset();}
   };
   const queue=view.renderer.backend?.device?.queue;
   if(!queue?.onSubmittedWorkDone){finish(true);return;}
@@ -691,8 +691,15 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
     if(playing&&!firstFrame&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal?100:1000/targetFrameRate(settings);
-    // WebGPU can continue filling its bounded queue while the first frame is presented.
-    if(playing&&framePacer.due(now,renderInterval)){const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;view.wallStep=playing&&paused?dt:renderGap*(playing&&!paused?Math.max(1,speed):1);if(view.render(Math.min(.2,(now-lastRender)/1000),false)!==false){lastRender=now;renderHealth();presentBattlefield();}}audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);if(weatherLabelEl){const weatherType=view.weatherState?.type,weatherName=WEATHER_NAMES[weatherType]||'Clear',weatherText=weatherType==='clear'?'Clear':weatherName.split(' ')[0],weatherTitle=`Weather: ${weatherName}. Mode: ${settings.weather}. Click to change.`;if(weatherText!==lastWeatherText){lastWeatherText=weatherText;weatherLabelEl.textContent=weatherText;}if(weatherButtonEl&&weatherTitle!==lastWeatherTitle){lastWeatherTitle=weatherTitle;weatherButtonEl.title=weatherTitle;}}
+    // Keep the opening scene still so queued frames share its shadow map.
+    if(playing&&framePacer.due(now,renderInterval)){
+      const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;
+      view.wallStep=firstFrame?0:paused?dt:renderGap*Math.max(1,speed);
+      if(view.render(firstFrame?0:Math.min(.2,(now-lastRender)/1000),false)!==false){
+        lastRender=now;renderHealth();presentBattlefield();
+      }
+    }
+    audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);if(weatherLabelEl){const weatherType=view.weatherState?.type,weatherName=WEATHER_NAMES[weatherType]||'Clear',weatherText=weatherType==='clear'?'Clear':weatherName.split(' ')[0],weatherTitle=`Weather: ${weatherName}. Mode: ${settings.weather}. Click to change.`;if(weatherText!==lastWeatherText){lastWeatherText=weatherText;weatherLabelEl.textContent=weatherText;}if(weatherButtonEl&&weatherTitle!==lastWeatherTitle){lastWeatherTitle=weatherTitle;weatherButtonEl.title=weatherTitle;}}
     audio.updateCombat();
   }frameRequest=requestAnimationFrame(frame);
 }
