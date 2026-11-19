@@ -18,6 +18,7 @@ import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
+import {forEachNearbyUnit} from './spatial-buckets.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -253,8 +254,16 @@ export function installRealm3D(WorldView){
       const gate=node.userData.portcullis;
       if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
       if(gate){
-        landUnits??=this.sim.entities.filter(u=>u.hp>0&&u.kind==='unit'&&!u.embarked&&!UNITS[u.type].naval);
-        const nearby=landUnits.some(u=>this.sim.allied(u.owner,e.owner)&&Math.hypot(u.x-e.x,u.z-e.z)<5.5),desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);
+        let nearby=false;
+        if(this.sim.unitBuckets?.size){
+          forEachNearbyUnit(this.sim,e.x,e.z,5.5,u=>{
+            if(!nearby&&u.hp>0&&!u.embarked&&!UNITS[u.type]?.naval&&this.sim.allied(u.owner,e.owner)&&(u.x-e.x)**2+(u.z-e.z)**2<30.25)nearby=true;
+          });
+        }else{
+          landUnits??=this.sim.entities.filter(u=>u.hp>0&&u.kind==='unit'&&!u.embarked&&!UNITS[u.type].naval);
+          nearby=landUnits.some(u=>this.sim.allied(u.owner,e.owner)&&(u.x-e.x)**2+(u.z-e.z)**2<30.25);
+        }
+        const desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);
       }
     }
     this.groundCover?.update(menu);

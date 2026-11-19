@@ -2,7 +2,7 @@ import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial,MeshBasicMa
 import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMaterial as ThreeBasicNodeMaterial} from 'three/webgpu';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -37,10 +37,44 @@ const value=(holder,type='float')=>reference('value',type,holder);
 export function battlefieldFog(material,fog,unexploredAlpha){
   const surface=material.outputNode||output,scale=value(fog.scale),position=positionWorld.xz.mul(scale);
   const border=smoothstep(.5,scale.mul(4).add(.5),max(abs(position.x),abs(position.y)));
-  const sampled=texture(fog.mask.value,position.add(.5)).a;
+  const fogUv=position.add(.5),fogStep=scale.mul(1.3),mask=fog.mask.value;
+  // Five diagonal taps reuse the single mask TextureNode binding so WebGPU
+  // compatibility sampler budgets stay unchanged while softening grid edges.
+  const sampled=texture(mask,fogUv).a.mul(.4)
+    .add(texture(mask,fogUv.add(vec2(fogStep,fogStep))).a
+      .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep))).a)
+      .add(texture(mask,fogUv.add(vec2(fogStep,fogStep.negate()))).a)
+      .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep.negate()))).a).mul(.15));
   const amount=mix(sampled,unexploredAlpha,border).mul(value(fog.enabled));
   material.outputNode=vec4(mix(surface.rgb,value(fog.tint,'color'),amount),surface.a);
   material.needsUpdate=true;
+}
+
+export function grassWind(material,u){
+  const time=value(u.time),strength=value(u.strength);
+  const bend=clamp(positionGeometry.y.mul(2.4),0,1),bendSq=bend.mul(bend);
+  const gust=sin(time.mul(1.9).add(positionLocal.x.mul(.24)).add(positionLocal.z.mul(.18)))
+    .add(sin(time.mul(3.1).sub(positionLocal.x.mul(.39)).add(positionLocal.z.mul(.33))).mul(.35));
+  const offset=gust.mul(bendSq).mul(strength);
+  material.positionNode=positionLocal.add(vec3(offset.mul(.84),0,offset.mul(.54)));
+  material.needsUpdate=true;
+}
+
+function metallicSheen(albedo,metalness,roughness,nightFactor=float(0),minMetal=.08){
+  return Fn(()=>{
+    const color=output.rgb.toVar();
+    const metalMask=smoothstep(minMetal,.45,metalness);
+    If(metalMask.greaterThan(.001),()=>{
+      const refl=normalize(reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix));
+      const env=mix(vec3(.24,.23,.20),vec3(.76,.86,.98),smoothstep(-.35,.72,refl.y))
+        .add(vec3(.95,.91,.82).mul(exp(abs(refl.y).mul(-5))).mul(.24));
+      const fresnel=float(.22).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),4).mul(.78));
+      const lightScale=clamp(dot(color,vec3(.3,.59,.11)).mul(1.4).add(.22),.18,1).mul(float(1).sub(nightFactor.mul(.55)));
+      const metalTint=mix(vec3(.75),albedo,float(.78));
+      color.addAssign(metalTint.mul(env).mul(fresnel).mul(float(1).sub(roughness)).mul(metalMask).mul(lightScale).mul(.36));
+    });
+    return vec4(color,output.a);
+  })();
 }
 
 const sample=(holder,coords=uv(),fallback=white)=>{
@@ -152,6 +186,7 @@ export function unitPalette(material,u){
     material.roughnessNode=clamp(mix(surface.x,micro.a,amount).mul(steelRough),.04,1);
     material.normalNode=normalMap(micro.rgb,vec2(strength.mul(amount)));
   }
+  material.outputNode=metallicSheen(materialColor.rgb.mul(team),material.metalnessNode,material.roughnessNode);
   material.needsUpdate=true;
 }
 
@@ -210,6 +245,7 @@ export function structurePalette(material,u){
   material.normalNode=active.select(normalMap(normSample,vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
   material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.5).add(1)).add(vec3(.65,.3,.07).mul(varying(attribute('structureNightGlow','float'))).mul(night));
+  material.outputNode=metallicSheen(materialColor.rgb,material.metalnessNode,material.roughnessNode,night,.10);
   material.needsUpdate=true;
 }
 
@@ -242,7 +278,7 @@ const noise=Fn(([point])=>{
 
 export function water(material){
   const time=value(material.frontierWaveTime),motion=value(material.frontierWaterMotion),ripples=value(material.frontierWaterRipples),detail=value(material.frontierWaterDetail),sky=value(material.frontierWaterSky,'color'),light=value(material.frontierWaterLight);
-  const foamStrength=value(material.frontierWaterFoam);
+  const foamStrength=value(material.frontierWaterFoam),sunDir=normalize(value(material.frontierWaterSunDir,'vec3')),sunColor=value(material.frontierWaterSunColor,'color');
   const shore=attribute('frontierWaterShore','float'),bank=varying(vec2(attribute('frontierWaterDepth','float'),shore));
   const xz=varying(positionGeometry.xz),a=positionGeometry.x.mul(.9).add(positionGeometry.z.mul(.36)).add(time.mul(1.3)),b=positionGeometry.z.mul(.65).sub(time);
   const fade=smoothstep(0,1,shore).mul(motion);
@@ -278,10 +314,13 @@ export function water(material){
     return normalize(normalViewGeometry.add(mat3(cameraViewMatrix).mul(vec3(slope.x,0,slope.y)).mul(ripples).mul(coverage)));
   })();
   material.outputNode=Fn(()=>{
-    const fresnel=float(.02).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),5).mul(.98));
-    const reflection=reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix);
-    const skyGradient=sky.mul(mix(.76,1.18,clamp(reflection.y.mul(.5).add(.5),0,1)));
-    const color=mix(output.rgb,skyGradient,fresnel).toVar();
+    const fresnel=float(.04).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),4.2).mul(.96));
+    const reflection=normalize(reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix));
+    const skyElevation=pow(clamp(reflection.y,0,1),.65);
+    const skyGradient=mix(sky.mul(1.12),sky.mul(vec3(.60,.76,.98)),skyElevation);
+    const sunAlign=max(dot(reflection,sunDir),0);
+    const glint=pow(sunAlign,96).mul(.85).add(pow(sunAlign,18).mul(.16));
+    const color=mix(output.rgb,skyGradient,fresnel).add(sunColor.mul(glint).mul(light).mul(smoothstep(0,.35,bank.y))).toVar();
     If(bank.y.lessThan(1.65).and(depth.lessThan(.82)),()=>{
       const drift=vec2(time.mul(.16),time.mul(-.11));
       const cells=noise(xz.mul(1.65).add(drift));

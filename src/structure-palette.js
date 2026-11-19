@@ -85,8 +85,21 @@ function paletteMaterial(view){
           normal = normalize(tbn * structureNormal);
         }
         #endif`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
+        float structMetalMask = smoothstep(0.10, 0.45, metalnessFactor);
+        if (structMetalMask > 0.001) {
+          vec3 structViewDir = normalize(vViewPosition);
+          vec3 structRefl = normalize(inverseTransformDirection(reflect(-structViewDir, normal), viewMatrix));
+          vec3 structEnv = mix(vec3(0.24, 0.23, 0.20), vec3(0.76, 0.86, 0.98), smoothstep(-0.35, 0.72, structRefl.y))
+            + vec3(0.95, 0.91, 0.82) * exp(-abs(structRefl.y) * 5.0) * 0.24;
+          float structFresnel = 0.22 + 0.78 * pow(1.0 - clamp(dot(normal, structViewDir), 0.0, 1.0), 4.0);
+          float structLightScale = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) * 1.4 + 0.22, 0.18, 1.0) * (1.0 - frontierStructurenight * 0.55);
+          vec3 structMetalTint = mix(vec3(0.75), diffuseColor.rgb, 0.78);
+          outgoingLight += structMetalTint * structEnv * structFresnel * (1.0 - roughnessFactor) * structMetalMask * structLightScale * 0.36;
+        }
+        #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v7';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v8';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;

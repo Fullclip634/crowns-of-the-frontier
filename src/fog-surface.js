@@ -35,12 +35,19 @@ export function shadeBattlefieldFog(material,view){
       #include <opaque_fragment>
       vec2 fogPosition = vFrontierFogPosition * frontierFogScale;
       float fogAtBorder = smoothstep(0.5, 0.5 + 4.0 * frontierFogScale, max(abs(fogPosition.x), abs(fogPosition.y)));
-      float fogAtSurface = texture2D(frontierFogMask, fogPosition + 0.5).a;
+      vec2 fogUv = fogPosition + 0.5;
+      float fogStep = 1.3 * frontierFogScale;
+      float fogAtSurface = texture2D(frontierFogMask, fogUv).a * 0.40 + (
+        texture2D(frontierFogMask, fogUv + vec2(fogStep, fogStep)).a +
+        texture2D(frontierFogMask, fogUv + vec2(-fogStep, fogStep)).a +
+        texture2D(frontierFogMask, fogUv + vec2(fogStep, -fogStep)).a +
+        texture2D(frontierFogMask, fogUv + vec2(-fogStep, -fogStep)).a
+      ) * 0.15;
       float fogAmount = mix(fogAtSurface, ${unexploredAlpha}, fogAtBorder) * frontierFogEnabled;
       gl_FragColor.rgb = mix(gl_FragColor.rgb, frontierFogTint, fogAmount);
     `);
   };
-  material.customProgramCacheKey=()=>`${programKey}:battlefield-fog`;
+  material.customProgramCacheKey=()=>`${programKey}:battlefield-fog-v2`;
   material.needsUpdate=true;
   return material;
 }

@@ -58,9 +58,9 @@ export function applySurfaceMaterials(view){
   bind(m.plaster,'plaster',0xe5dbbf);
   bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
   bind(m.rock,'boulder',0xd8ded8);
-  // Dark craggy host rock contrasts sharply against inlaid metallic gold veins
-  // and nuggets so gold deposits read cleanly instead of flat yellow lumps.
-  bind(m.oreRock,'boulder',0x66625b,{metalness:.08,roughness:.9});
+  // Dark granite-slate host rock contrasts cleanly against inlaid metallic gold
+  // veins without crushing boulder albedo into flat charcoal black.
+  bind(m.oreRock,'boulder',0x8e8980,{metalness:.08,roughness:.88});
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 

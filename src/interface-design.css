@@ -303,7 +303,7 @@
 
 /* Viewport Containment Guards */
 html,body{overflow:hidden;overflow-x:clip;max-width:100%}
-#health-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+#health-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 #alert-line{max-width:calc(100vw - 24px - var(--safe-left,0px) - var(--safe-right,0px));overflow:hidden;text-overflow:ellipsis}
 
 #hud .selection-panel.is-empty{

@@ -5,6 +5,7 @@ import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
+import {buildingSiteKey} from './ground-cover.js';
 
 export function pebbleGeometry(){
   const geometry=new THREE.IcosahedronGeometry(.62,1),p=geometry.attributes.position;
@@ -120,7 +121,7 @@ export class TerrainDetails{
     let changed=force;
     for(const e of this.entries){
       if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
-      if(sites?.get(Math.floor(e.x/16)+':'+Math.floor(e.z/16))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+      if(sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
       if(e!==this.visibleEntries[visible.length])changed=true;
       visible.push(e);
     }

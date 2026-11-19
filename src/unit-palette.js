@@ -64,9 +64,22 @@ function paletteMaterial(view){
           normal = normalize(tbn * unitNormal);
         }
         #endif`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
+        float unitMetalMask = smoothstep(0.08, 0.45, metalnessFactor);
+        if (unitMetalMask > 0.001) {
+          vec3 unitViewDir = normalize(vViewPosition);
+          vec3 unitRefl = normalize(inverseTransformDirection(reflect(-unitViewDir, normal), viewMatrix));
+          vec3 unitEnv = mix(vec3(0.24, 0.23, 0.20), vec3(0.76, 0.86, 0.98), smoothstep(-0.35, 0.72, unitRefl.y))
+            + vec3(0.95, 0.91, 0.82) * exp(-abs(unitRefl.y) * 5.0) * 0.24;
+          float unitFresnel = 0.22 + 0.78 * pow(1.0 - clamp(dot(normal, unitViewDir), 0.0, 1.0), 4.0);
+          float unitLightScale = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) * 1.4 + 0.22, 0.18, 1.0);
+          vec3 unitMetalTint = mix(vec3(0.75), diffuseColor.rgb, 0.78);
+          outgoingLight += unitMetalTint * unitEnv * unitFresnel * (1.0 - roughnessFactor) * unitMetalMask * unitLightScale * 0.36;
+        }
+        #include <opaque_fragment>`);
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v5';}
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v6';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;

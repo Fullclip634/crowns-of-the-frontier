@@ -43,3 +43,33 @@ test('renderHealthBars pools existing DOM elements and removes dead or healed un
   renderHealthBars(layer,sim,view,{width:1000,height:700});
   assert.equal(layer.children.length,1,'dead entity bar is pruned cleanly');
 });
+
+test('renderHealthBars reads canvas bounds once per frame and uses candidatesFor when available',()=>{
+  const layer=fakeLayer();
+  const units=[
+    {id:1,kind:'unit',owner:0,x:0,z:0,hp:40,maxHp:100},
+    {id:2,kind:'unit',owner:0,x:4,z:0,hp:60,maxHp:100},
+  ];
+  const building={id:3,kind:'building',owner:0,x:8,z:0,hp:100,maxHp:200,progress:.5};
+  let rectReads=0,entityScans=0,receivedRects=0;
+  const rect={left:0,top:0,width:1280,height:720};
+  const sim={
+    get entities(){entityScans++;return [...units,building];},
+    candidatesFor(kind){return kind==='unit'?units:kind==='building'?[building]:[];},
+    isVisible:()=>true,hostile:(a,b)=>a!==b,
+  };
+  const view={
+    selection:new Set(),
+    renderer:{domElement:{getBoundingClientRect(){rectReads++;return rect;}}},
+    project(e,passedRect){
+      if(passedRect===rect)receivedRects++;
+      return {x:e.id*50,y:120,visible:true};
+    },
+  };
+
+  renderHealthBars(layer,sim,view,{width:1280,height:720});
+  assert.equal(rectReads,1,'canvas layout rect is measured only once before DOM writes');
+  assert.equal(receivedRects,3,'every projected entity receives the cached rect');
+  assert.equal(entityScans,0,'skips scanning full sim.entities when candidatesFor is available');
+  assert.equal(layer.children.length,3);
+});

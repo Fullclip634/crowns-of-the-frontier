@@ -1,3 +1,4 @@
+import {Vector3} from 'three';
 import {nodeRuntime} from './render-runtime.js';
 import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
@@ -31,6 +32,8 @@ export function configureWaterSurface(material){
   const detail=material.frontierWaterDetail={value:1};
   const motion=material.frontierWaterMotion={value:1};
   const light=material.frontierWaterLight={value:1};
+  const sunDir=material.frontierWaterSunDir={value:new Vector3(-48,62,32).normalize()};
+  const sunColor=material.frontierWaterSunColor={value:material.color.clone().setHex(0xffe4bd)};
   if(material.map?.isCanvasTexture){material.map.dispose();material.map=null;}
   configureWaterPalette(material,'river');
   material.metalness=0;material.roughness=.18;material.alphaTest=.012;
@@ -47,6 +50,8 @@ export function configureWaterSurface(material){
     shader.uniforms.frontierWaterDetail=detail;
     shader.uniforms.frontierWaterMotion=motion;
     shader.uniforms.frontierWaterLight=light;
+    shader.uniforms.frontierWaterSunDir=sunDir;
+    shader.uniforms.frontierWaterSunColor=sunColor;
     shader.vertexShader=`uniform float frontierWaterTime;
       uniform float frontierWaterMotion;
       attribute float frontierWaterDepth;
@@ -70,6 +75,8 @@ export function configureWaterSurface(material){
       uniform float frontierWaterRipples;
       uniform float frontierWaterDetail;
       uniform float frontierWaterLight;
+      uniform vec3 frontierWaterSunDir;
+      uniform vec3 frontierWaterSunColor;
       varying vec2 vFrontierWaterXZ;
       varying vec2 vFrontierWaterBank;
       float frontierWaterNoise(vec2 point) {
@@ -114,11 +121,16 @@ export function configureWaterSurface(material){
         normal = normalize(normal + mat3(viewMatrix) * vec3(frontierRippleSlope.x, 0.0, frontierRippleSlope.y) * frontierWaterRipples * frontierRippleCoverage);
       }`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
-      float frontierViewCosine = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
-      float frontierFresnel = 0.02 + 0.98 * pow(1.0 - frontierViewCosine, 5.0);
-      vec3 frontierReflection = inverseTransformDirection(reflect(-normalize(vViewPosition), normal), viewMatrix);
-      vec3 frontierSkyGradient = frontierWaterSky * mix(0.76, 1.18, clamp(frontierReflection.y * 0.5 + 0.5, 0.0, 1.0));
+      vec3 frontierViewDir = normalize(vViewPosition);
+      float frontierViewCosine = clamp(dot(normal, frontierViewDir), 0.0, 1.0);
+      float frontierFresnel = 0.04 + 0.96 * pow(1.0 - frontierViewCosine, 4.2);
+      vec3 frontierReflection = normalize(inverseTransformDirection(reflect(-frontierViewDir, normal), viewMatrix));
+      float frontierSkyElevation = pow(clamp(frontierReflection.y, 0.0, 1.0), 0.65);
+      vec3 frontierSkyGradient = mix(frontierWaterSky * 1.12, frontierWaterSky * vec3(0.60, 0.76, 0.98), frontierSkyElevation);
       outgoingLight = mix(outgoingLight, frontierSkyGradient, frontierFresnel);
+      float frontierSunAlign = max(dot(frontierReflection, normalize(frontierWaterSunDir)), 0.0);
+      float frontierGlint = pow(frontierSunAlign, 96.0) * 0.85 + pow(frontierSunAlign, 18.0) * 0.16;
+      outgoingLight += frontierWaterSunColor * frontierGlint * frontierWaterLight * smoothstep(0.0, 0.35, frontierShore);
       if (frontierShore < 1.65 && frontierDepth < 0.82) {
         vec2 frontierDrift = vec2(frontierWaterTime * 0.16, -frontierWaterTime * 0.11);
         float frontierCells = frontierWaterNoise(vFrontierWaterXZ * 1.65 + frontierDrift);
@@ -132,7 +144,7 @@ export function configureWaterSurface(material){
       }
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v9';material.needsUpdate=true;
+  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v10';material.needsUpdate=true;
 }
 
 export function animateWaterSurface(view){
@@ -145,6 +157,13 @@ export function animateWaterSurface(view){
   const detail=view.materials.water.frontierWaterDetail;if(detail)detail.value=quality==='low'?0:1;
   const motion=view.materials.water.frontierWaterMotion;if(motion)motion.value=waterMotionScale(still?0:wet);
   const light=view.materials.water.frontierWaterLight;if(light)light.value=Math.max(.18,Math.min(1,((view.sun?.intensity??2.7)+(view.hemi?.intensity??.9)*.45)/3.105));
+  const sunDir=view.materials.water.frontierWaterSunDir;
+  if(sunDir&&view.sun?.position){
+    sunDir.value.copy(view.sun.position);
+    if(view.sun.target?.position)sunDir.value.sub(view.sun.target.position);
+    if(sunDir.value.lengthSq()>1e-6)sunDir.value.normalize();
+  }
+  const sunColor=view.materials.water.frontierWaterSunColor;if(sunColor&&view.sun?.color?.isColor)sunColor.value.copy(view.sun.color);
   const diagnostics=view.waterDiagnostics??={animation:'GPU mesh displacement',geometryUploadsPerFrame:0};
   diagnostics.meshes=view.waterMeshes?.length||0;
   diagnostics.motionScale=motion?.value||1;diagnostics.reducedMotion=!!still;

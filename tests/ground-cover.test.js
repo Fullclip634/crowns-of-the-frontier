@@ -26,3 +26,31 @@ test('seeded ground cover obeys terrain, exploration and newly built foundations
   const matrix=new THREE.Matrix4();for(let i=0;i<cover.mesh.count;i++){cover.mesh.getMatrixAt(i,matrix);assert.ok(Math.hypot(matrix.elements[12]-e.x,matrix.elements[14]-e.z)>=15.99);}
   for(const item of [cover,copy]){item.mesh.geometry.dispose();item.mesh.material.dispose();item.mesh.dispose();}
 });
+
+test('high-quality grass animates via GPU wind uniforms with zero stationary CPU matrix uploads',()=>{
+  const land=new Landscape(512,'highlands');
+  const view={landscape:land,terrain:new THREE.Group(),settings:{quality:'high',fog:false,reducedMotion:false},sim:{entities:[],isExplored:()=>true},weatherState:{amount:0},clock:1,target:new THREE.Vector3(),zoom:40,angle:0,tilt:.7};
+  const cover=new GroundCover(view);
+  assert.ok(cover.mesh.count>400);
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};
+  cover.mesh.material.onBeforeCompile(shader);
+  assert.equal(shader.uniforms.frontierGrassTime,cover.wind.time);
+  assert.equal(shader.uniforms.frontierGrassStrength,cover.wind.strength);
+  assert.match(shader.vertexShader,/frontierGrassTime/);
+
+  const calmStrength=cover.wind.strength.value;
+  const matrixVersion=cover.mesh.instanceMatrix.version;
+  const colorVersion=cover.mesh.instanceColor.version;
+  view.clock=2.5;view.weatherState={amount:1};
+  cover.update(false,false);
+  assert.equal(cover.wind.time.value,2.5,'GPU wind clock updates smoothly every frame');
+  assert.ok(cover.wind.strength.value>calmStrength*2,'storm weather strengthens GPU grass sway');
+  assert.equal(cover.mesh.instanceMatrix.version,matrixVersion,'stationary High grass never re-uploads instance matrices');
+  assert.equal(cover.mesh.instanceColor.version,colorVersion,'stationary High grass never re-uploads instance colors');
+
+  view.settings.reducedMotion=true;view.clock=5;
+  cover.update(false,false);
+  assert.equal(cover.wind.time.value,0);
+  assert.equal(cover.wind.strength.value,0,'reduced motion zeroes decorative grass wind');
+  cover.mesh.geometry.dispose();cover.mesh.material.dispose();cover.mesh.dispose();
+});
