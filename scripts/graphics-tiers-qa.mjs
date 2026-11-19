@@ -20,6 +20,8 @@ try{
     try{console.log('QA stage: start battle');frontier.start({mode:'sandbox',map:'highlands',seed:512});console.log('QA stage: battle started');}finally{v.attach=attach;}
     frontier.sim.players[0].age=3;console.log('QA stage: pause battle');frontier.action('pause');console.log('QA stage: battle paused');document.querySelector('#modal-root').style.visibility='hidden';v.focus(-37,30);v.zoom=35;v.tilt=.62;v.updateCamera();console.log('QA stage: camera ready');
   });
+  markStage('first battlefield presentation');
+  await page.waitForFunction(()=>!document.querySelector('#world').classList.contains('world-poster'));
   for(const quality of qualities){
     markStage(quality+' settings');console.log('Checking graphics '+quality);
     await page.evaluate(()=>{document.querySelector('#modal-root').style.visibility='';frontier.action('settings');});

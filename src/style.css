@@ -1,7 +1,11 @@
-#world.world-poster {
+#world.world-poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background: #142321 url('./ui-art/frontier-river-settlement.webp') 74% center / cover no-repeat;
 }
-#world.world-poster canvas { visibility: hidden; }
+#world.world-poster canvas { pointer-events: none; }
 
 @font-face {
   font-family: 'Cormorant Garamond';
