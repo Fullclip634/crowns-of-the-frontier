@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {inflateSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import * as THREE from 'three';
+import {mergeUnitModel} from '../src/unit-palette.js';
 import {characterSurfaceMode,characterAtlasUV,characterSurfaceKinds} from '../src/character-surfaces.js';
 
 function rgba(bytes){
@@ -44,4 +46,24 @@ test('cloth, leather, metal and skin keep distinct roles while ship paint and wo
   assert.equal(characterSurfaceMode('leather','knight'),3);assert.equal(characterSurfaceMode('skin','villager'),5);
   for(const role of ['wood','gold','horse','stone'])assert.equal(characterSurfaceMode(role,'villager'),0);
   assert.deepEqual(characterSurfaceKinds('low'),['color']);for(const quality of ['medium','high'])assert.deepEqual(characterSurfaceKinds(quality),['color','normal']);
+});
+
+test('opening workwear and scout fabric share a readable palette at every age',()=>{
+  for(const type of ['villager','scout']){
+    const rendered=[];
+    for(const age of [0,3]){
+      const original=new THREE.MeshStandardMaterial({color:0x7c6a54});
+      const model=new THREE.Group(),part=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),original);
+      model.userData.model3d={type};part.userData.surfaceRole='canvas';model.add(part);
+      const view={sim:{players:[{age}]},settings:{quality:'low'},materials:{wood:{}},teamMaterials:[]};
+      const packed=mergeUnitModel(view,model,true);
+      assert.equal(packed.children.length,1);
+      const geometry=packed.children[0].geometry,colors=geometry.attributes.color,surface=geometry.attributes.unitSurface;
+      const rgb=[colors.getX(0),colors.getY(0),colors.getZ(0)];
+      assert.ok(rgb[0]>original.color.r&&rgb[1]>original.color.g&&rgb[2]>original.color.b);
+      assert.equal(surface.getZ(0),characterSurfaceMode('canvas',type));
+      rendered.push(rgb);
+    }
+    assert.deepEqual(rendered[0],rendered[1]);
+  }
 });

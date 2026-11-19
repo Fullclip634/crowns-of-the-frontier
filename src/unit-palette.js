@@ -5,10 +5,14 @@ import {ensureModelIndices} from './vertex-layout.js';
 import {characterSurfaceMode,characterAtlasGLSL} from './character-surfaces.js';
 import {characterSurfaceMaps} from './surface-assets.js';
 const GARMENT_TINT={
-  villager:[.92,.78,.60],spearman:[.78,.68,.53],swordsman:[.72,.65,.60],
+  villager:[1.02,.98,.87],spearman:[.78,.68,.53],swordsman:[.72,.65,.60],
   archer:[.61,.72,.51],marksman:[.69,.60,.47],knight:[.71,.67,.62],
-  scout:[.79,.68,.51],outrider:[.77,.60,.50],sentinel:[.73,.73,.66],
+  scout:[.93,.95,.88],outrider:[.77,.60,.50],sentinel:[.73,.73,.66],
   monk:[.91,.82,.69],king:[.88,.77,.66],
+};
+const FIELD_FABRIC={
+  villager:{canvas:new THREE.Color(0xc1bba4).toArray(),pants:new THREE.Color(0x72806d).toArray()},
+  scout:{canvas:new THREE.Color(0xb2ad96).toArray(),pants:new THREE.Color(0x687a72).toArray()},
 };
 const HORSE_COAT={
   knight:new THREE.Color(0x584337).toArray(),
@@ -106,7 +110,8 @@ export function mergeUnitModel(view,model,neutralTeams=false){
     // still carry a team tint, and cloth has a recognisable colour by role.
     const tunic=mode===2&&motionType!=='cape'&&part.userData.surfaceRole==='team'?GARMENT_TINT[unitType]:null;
     const coat=part.userData.surfaceRole==='horse'?HORSE_COAT[unitType]:null;
-    const color=coat||(rawTeam?[1,1,1]:part.material.color.toArray());
+    const fabric=FIELD_FABRIC[unitType]?.[part.userData.surfaceRole];
+    const color=coat||fabric||(rawTeam?[1,1,1]:part.material.color.toArray());
     for(let i=0;i<count;i++){
       const coatShade=coat?.63+.37*Math.min(1,Math.max(0,(positions.getY(i)-.28)/1.05)):1;
       for(let k=0;k<3;k++){
