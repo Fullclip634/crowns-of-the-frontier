@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 13079040,
-    "low": 4317656,
-    "balanced": 12675308
+    "near": 13092552,
+    "low": 4325172,
+    "balanced": 12671892
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -535,22 +535,22 @@
     "passed": true,
     "models": 126,
     "meshes": 1392,
-    "visibleTriangles": 631420,
+    "visibleTriangles": 630736,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.0018812330295769107,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 16841080,
-    "candidateBytes": 12675308,
-    "referenceDecodedBufferBytes": 36498908,
-    "candidateDecodedBufferBytes": 32985532,
-    "referenceSHA256": "25dc5924b96dec55526b4eee73d5d9088f4cea355625ac4726bdb9db74fe50c4",
-    "candidateSHA256": "3a3647e90eb7613beb9fa0d0fc454aef43bc55abdbd149ecdef4d48c4b6a0b79"
+    "referenceBytes": 16836092,
+    "candidateBytes": 12671892,
+    "referenceDecodedBufferBytes": 36488540,
+    "candidateDecodedBufferBytes": 32976164,
+    "referenceSHA256": "f89794590a470e7bdef8b5642e0573ae0cb2e290681762d49c2ed345a8b8f386",
+    "candidateSHA256": "a3545b25991cb15cef6d7018cf416c3661687cc585f6fa8c3730d7ffa9085e53"
   },
   "balancedSourceHashes": {
-    "near": "48facc56ce0dcea4b415b1e5dfcb7710b40de33ad5670ec368938ec91eca921a",
-    "low": "3dbfce590dc6d6dfc33a32610d47e3fa62af3223f7512a3ac6bf2f444c1603e3",
+    "near": "5bb17269da05a5a3a037416bf5437dcf97453f853ae42d22a38a407f452c2ea4",
+    "low": "8dbad8109c517b27dc6c7e44327401740276da26e87850a5c5e703f998530f09",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {

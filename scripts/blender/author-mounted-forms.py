@@ -50,6 +50,9 @@ def loft(profiles, sides, buffers, center=0):
 def mount(sides):
     pieces = {role: ([],[]) for role in MATERIALS}
     coat, mane, tack, eyes = (pieces[k] for k in ("horse","mane","leather","hair"))
+    detail_sides = 4 if sides <= 6 else 6
+    mane_sides = max(4, sides - 2) if sides > 6 else 5
+    ear_sides = max(4, sides - 4) if sides > 6 else 4
     loft([(1.14,-.86,.11,.17),(1.17,-.74,.31,.33),(1.20,-.52,.40,.38),(1.20,-.18,.46,.41),
           (1.18,.18,.43,.40),(1.20,.45,.39,.36),(1.27,.65,.26,.25),(1.35,.72,.13,.16)], sides, coat)
     loft([(1.21,.39,.26,.25),(1.46,.48,.31,.27),(1.68,.56,.26,.25),
@@ -58,19 +61,19 @@ def mount(sides):
           (2.02,1.15,.153,.13),(1.94,1.30,.136,.102),(1.91,1.39,.109,.07)], sides, coat)
     for side in (-1,1):
         loft([(2.23,.84,.064,.055),(2.37,.816,.051,.037),(2.44,.79,.025,.022),(2.48,.773,.008,.008)],
-             max(5,sides-4),coat,side*.132)
+             ear_sides,coat,side*.132)
         loft([(2.155,1.012,.010,.011),(2.160,1.043,.026,.019),(2.155,1.067,.013,.009)],
-             6,eyes,side*.173)
+             detail_sides,eyes,side*.173)
         loft([(1.927,1.335,.009,.013),(1.927,1.363,.024,.013),(1.921,1.378,.008,.006)],
-             6,eyes,side*.089)
+             detail_sides,eyes,side*.089)
         loft([(2.23,.854,.017,.021),(2.15,.965,.027,.029),(2.045,1.11,.029,.020),(1.98,1.26,.024,.019)],
-             6,tack,side*.158)
+             detail_sides,tack,side*.158)
         loft([(1.96,1.24,.022,.022),(1.948,1.28,.026,.022),(1.944,1.306,.016,.014)],
-             6,tack,side*.142)
+             detail_sides,tack,side*.142)
     loft([(1.54,.37,.08,.041),(1.74,.43,.09,.07),(1.96,.55,.086,.09),(2.15,.67,.067,.09),(2.30,.77,.045,.067)],
-         max(5,sides-2),mane)
+         mane_sides,mane)
     loft([(1.28,-.76,.076,.086),(1.19,-.92,.089,.083),(1.01,-1.015,.077,.078),
-          (.78,-1.091,.051,.059),(.59,-1.18,.018,.026)],max(5,sides-2),mane)
+          (.78,-1.091,.051,.059),(.59,-1.18,.018,.026)],mane_sides,mane)
     loft([(1.964,1.251,.151,.130),(1.947,1.29,.150,.122)],sides,tack)
     return pieces
 
@@ -112,5 +115,5 @@ def catalogue(detail, sides):
     if detail == "near":
         bpy.ops.wm.save_as_mainfile(filepath=str(out/"mounted-forms.blend"),compress=True)
 
-for detail, sides in [("low", 8), ("near", 12)]:
+for detail, sides in [("low", 6), ("near", 12)]:
     catalogue(detail,sides)

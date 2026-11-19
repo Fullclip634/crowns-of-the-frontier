@@ -66,9 +66,18 @@ function colored(geometry,color){
 }
 function arrowGeometry(){
   const shaft=colored(new THREE.CylinderGeometry(.016,.016,.86,5).rotateX(Math.PI/2),0x5c4632);
-  const tip=colored(new THREE.ConeGeometry(.045,.21,4).rotateX(Math.PI/2).translate(0,0,.49),0xc8d2ce);
-  const feather=colored(new THREE.BoxGeometry(.15,.010,.20).translate(0,0,-.32),0xe3dcc2);
-  const vertical=feather.clone().rotateZ(Math.PI/2),parts=[shaft,tip,feather,vertical],merged=mergeGeometries(parts);
+  const tip=colored(new THREE.ConeGeometry(.045,.21,4).rotateX(Math.PI/2).translate(0,0,.49),0xd4dfdc);
+  const feather=colored(new THREE.BoxGeometry(.15,.010,.20).translate(0,0,-.32),0xede6ce);
+  const vertical=feather.clone().rotateZ(Math.PI/2);
+  // Sleek wind-streak wake behind fletching for crisp RTS volley readability (0 extra draw calls).
+  const streakH=colored(new THREE.PlaneGeometry(.055,.92).rotateX(-Math.PI/2).translate(0,0,-.86),0xf2e7ca);
+  const streakV=streakH.clone().rotateZ(Math.PI/2);
+  const parts=[shaft,tip,feather,vertical,streakH,streakV].map(g=>{
+    const nonIdx=g.index?g.toNonIndexed():g;if(nonIdx!==g)g.dispose();
+    if(!nonIdx.attributes.normal)nonIdx.computeVertexNormals();
+    if(!nonIdx.attributes.uv)nonIdx.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(nonIdx.attributes.position.count*2),2));
+    return nonIdx;
+  }),merged=mergeGeometries(parts);
   for(const part of parts)part.dispose();return merged;
 }
 function stoneGeometry(){
@@ -82,17 +91,116 @@ function stoneGeometry(){
   g.setAttribute('color',new THREE.BufferAttribute(colors,3));g.computeVertexNormals();return g;
 }
 function splinterGeometry(){
-  const g=new THREE.ConeGeometry(.12,.30,4);g.rotateX(Math.PI*.35);g.scale(1,.62,1.25);return g;
+  const g=new THREE.ConeGeometry(.10,.38,4);g.rotateX(Math.PI*.35);g.scale(.85,.52,1.45);return g;
 }
 function craterGeometry(){
-  const g=new THREE.CircleGeometry(1.42,18),p=g.attributes.position,colors=new Float32Array(p.count*3);
-  for(let i=0;i<p.count;i++){
-    const r=Math.hypot(p.getX(i),p.getY(i))/1.42,jag=1+Math.sin(Math.atan2(p.getY(i),p.getX(i))*7)*.09;
-    p.setX(i,p.getX(i)*jag);p.setY(i,p.getY(i)*jag);
-    const t=clamp(r,0,1);
-    colors[i*3]=.10+t*.32;colors[i*3+1]=.08+t*.25;colors[i*3+2]=.06+t*.18;
+  return new THREE.PlaneGeometry(3.1,3.1);
+}
+export function crossedPlumeGeometry(width=1.2,height=1.8,yOffset=.75){
+  const parts=[];
+  for(let i=0;i<3;i++){
+    const plane=new THREE.PlaneGeometry(width,height);
+    plane.translate(0,yOffset,0);
+    plane.rotateY((i*Math.PI)/3);
+    const nonIdx=plane.toNonIndexed();plane.dispose();
+    parts.push(nonIdx);
   }
-  g.setAttribute('color',new THREE.BufferAttribute(colors,3));return g;
+  const merged=mergeGeometries(parts);
+  for(const p of parts)p.dispose();
+  return merged;
+}
+export function fireTongueTexture(size=64){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=y/(size-1); // 0=bottom base, 1=flame tip
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1;
+      const sway=Math.sin(v*6.2+Math.cos(v*2.8))*.14*v;
+      const halfW=Math.max(.08,(1-Math.pow(v,.92))*(.84+.18*Math.sin(v*11.0+u*2.4)));
+      const d=Math.abs(u-sway)/halfW;
+      const sideLick=Math.abs(u+sway*.7-.32*(1-v))/Math.max(.08,(1-Math.pow(v,.82))*.46);
+      const shape=Math.max(clamp(1-d,0,1),clamp(1-sideLick,0,1)*.78);
+      const licks=.86+.14*Math.sin(u*9.5-v*8.5);
+      const baseFade=clamp(v/.12,0,1);
+      const tipFade=clamp((1-v)/.24,0,1);
+      const sideFade=clamp((1-Math.abs(u))/.10,0,1);
+      const body=Math.pow(shape,.85)*baseFade*tipFade*sideFade*licks;
+      const core=Math.pow(clamp(1-Math.hypot((u-sway)*.78,(v-.28)*1.35),0,1),1.4)*baseFade*tipFade*sideFade;
+      const r=clamp(255*(body*1.15+core),0,255);
+      const g=clamp((185*(1-v*.52)+55)*body+248*core,0,255);
+      const b=clamp(28*(1-v)*body+205*core,0,255);
+      const a=clamp((body*1.15+core*.8)*255,0,255);
+      const i=(y*size+x)*4;
+      data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=a;
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+export function smokePlumeTexture(size=64){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=(y/(size-1))*2-1;
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1;
+      // Multi-lobe billowing charcoal smoke silhouette with feathered edges.
+      const l1=Math.hypot(u,v)*.92;
+      const l2=Math.hypot(u-.28,v+.16)*1.08;
+      const l3=Math.hypot(u+.26,v-.14)*1.10;
+      const l4=Math.hypot(u+.08,v+.24)*1.14;
+      const d=Math.min(l1,l2,l3,l4);
+      const wisp=.88+.12*Math.sin(u*7.4+v*5.6)*Math.cos(v*8.1-u*4.8);
+      const borderFade=clamp((1-Math.max(Math.abs(u),Math.abs(v)))/.14,0,1);
+      const edge=Math.pow(clamp(1-d/.94,0,1),1.25)*wisp*borderFade;
+      const shade=78+Math.round(clamp((v+1)*.5,0,1)*66);
+      const i=(y*size+x)*4;
+      data[i]=shade+10;data[i+1]=shade+5;data[i+2]=shade;data[i+3]=Math.round(clamp(edge*1.15,0,1)*245);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+export function craterScorchTexture(size=64){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=(y/(size-1))*2-1;
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1,r=Math.hypot(u,v),ang=Math.atan2(v,u);
+      const rays=.86+.14*Math.sin(ang*9+r*4)+.09*Math.cos(ang*15-r*7);
+      const rad=r/rays;
+      const alpha=Math.pow(clamp(1-rad/.95,0,1),1.75);
+      const pit=clamp(1-rad/.45,0,1);
+      const rim=Math.exp(-Math.pow((rad-.42)/.12,2));
+      const ember=rim*clamp(Math.sin(ang*19+r*11)*Math.cos(ang*13-r*8),0,1);
+      const soot=16+(1-pit)*34;
+      const i=(y*size+x)*4;
+      data[i]=clamp(soot*1.08+ember*88,0,255);
+      data[i+1]=clamp(soot*.92+ember*34,0,255);
+      data[i+2]=clamp(soot*.76+ember*8,0,255);
+      data[i+3]=Math.round(clamp(alpha,0,1)*242);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+export function dustPuffTexture(size=32){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=(y/(size-1))*2-1;
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1,r=Math.hypot(u,v);
+      const wisp=.88+.12*Math.sin(u*7+v*5);
+      const alpha=Math.pow(clamp(1-r/.94,0,1),1.7)*wisp;
+      const i=(y*size+x)*4;
+      data[i]=196;data[i+1]=182;data[i+2]=152;data[i+3]=Math.round(clamp(alpha,0,1)*220);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
 }
 function wakeGeometry(){
   const positions=[-0.38,0,0,-1.45,0,-2.10,-0.82,0,-2.25,-0.38,0,0,-0.82,0,-2.25,-0.08,0,-0.45,0.38,0,0,0.82,0,-2.25,1.45,0,-2.10,0.38,0,0,0.08,0,-0.45,0.82,0,-2.25];
@@ -167,6 +275,7 @@ export class FlightEffects{
 export class ImpactEffects{
   constructor(){
     this.geometry={burst:splinterGeometry(),heal:new THREE.TorusGeometry(.85,.035,5,28)};
+    this.textures={};
     this.free={burst:[],heal:[]};this.retained=new Set();this.limit=48;this.disposed=false;
   }
   acquire(kind,color=kind==='heal'?0x91e0b4:kind==='sparks'?0xffe680:0xe8c28b){
@@ -181,8 +290,14 @@ export class ImpactEffects{
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.userData.velocities=Array.from({length:12},()=>({x:0,y:0,z:0}));
       }else if(kind==='crater'){
         this.geometry.crater??=craterGeometry();
-        const material=new THREE.MeshBasicMaterial({color:0xffffff,vertexColors:true,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
+        this.textures.crater??=craterScorchTexture();
+        const material=new THREE.MeshBasicMaterial({map:this.textures.crater,color:0xffffff,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
         mesh=new THREE.Mesh(this.geometry.crater,material);
+      }else if(kind==='dust'){
+        this.geometry.dust??=crossedPlumeGeometry(.82,.58,.24);
+        this.textures.dust??=dustPuffTexture();
+        const material=new THREE.MeshBasicMaterial({map:this.textures.dust,color,transparent:true,opacity:.34,depthWrite:false,side:THREE.DoubleSide});
+        mesh=new THREE.Mesh(this.geometry.dust,material);
       }else if(kind==='wake'){
         this.geometry.wake??=wakeGeometry();
         const material=new THREE.MeshBasicMaterial({color:0xdcebe8,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide});
@@ -196,6 +311,7 @@ export class ImpactEffects{
     }
     if(kind==='sparks'){mesh.material.color.setHex(color);mesh.material.opacity=.9;}
     else if(kind==='crater'){mesh.material.opacity=.7;}
+    else if(kind==='dust'){mesh.material.color.setHex(color);mesh.material.opacity=.34;}
     else if(kind==='wake'){mesh.material.opacity=.38;}
     else{mesh.material.color.setHex(color);mesh.material.opacity=kind==='burst'?.8:.7;}
     mesh.visible=true;mesh.position.set(0,0,0);mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
@@ -210,6 +326,7 @@ export class ImpactEffects{
     if(this.disposed)return;this.disposed=true;
     for(const mesh of this.retained){mesh.removeFromParent();mesh.material.dispose();if(mesh.isInstancedMesh)mesh.dispose();}
     for(const geometry of Object.values(this.geometry))geometry.dispose();
+    for(const texture of Object.values(this.textures))texture.dispose();
     this.retained.clear();for(const list of Object.values(this.free))list.length=0;
   }
 }

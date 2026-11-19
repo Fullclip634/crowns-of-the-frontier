@@ -251,7 +251,9 @@ export function unitPalette(material,u){
     if(!builder.object.isInstancedMesh)return vec3(1);
     const owner=int(clamp(attribute('instanceOwner','float'),0,7).add(.5));
     const mask=attribute('unitTeamMask','float');
-    return mask.greaterThan(1.5).select(roofs.element(owner),mask.greaterThan(.01).select(mix(vec3(.76,.71,.61),teams.element(owner),clamp(mask,0,1)),vec3(1)));
+    const bold=smoothstep(.55,.98,clamp(mask,0,1));
+    const herald=mix(vec3(.76,.71,.61),teams.element(owner),clamp(mask,0,1)).mul(mix(1,1.10,bold));
+    return mask.greaterThan(1.5).select(roofs.element(owner),mask.greaterThan(.01).select(herald,vec3(1)));
   })().toVarying();
   const tile=clamp(floor(surface.z.add(.5)).sub(2),0,3),repeats=tile.lessThan(.5).select(6,tile.lessThan(1.5).select(4,tile.lessThan(2.5).select(2,10)));
   const coords=vec2(tile.mod(2),floor(tile.div(2))).mul(256).add(16).add(fract(uv().mul(repeats)).mul(224)).div(512);
@@ -267,8 +269,8 @@ export function unitPalette(material,u){
   const atm=u.atmosphere||fallbackAtmosphere();
   const wetness=value(atm.wetness);
   material.colorNode=materialColor.rgb.mul(team).mul(tint);
-  const steelRough=steel.select(.82,1);
-  material.roughnessNode=clamp(mix(surface.x.mul(steelRough),surface.x.mul(steelRough).mul(.60),wetness.mul(.72)),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.08,0)),0,steel.select(.62,1));material.normalNode=null;
+  const steelRough=steel.select(.76,1);
+  material.roughnessNode=clamp(mix(surface.x.mul(steelRough),surface.x.mul(steelRough).mul(.60),wetness.mul(.72)),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.12,0)),0,steel.select(.68,1));material.normalNode=null;
   if(u.characterNormal.value){
     const detail=character.select(float(1).sub(smoothstep(42,110,positionView.length())),0);
     const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.16,.38);
@@ -283,24 +285,32 @@ export function unitPalette(material,u){
 
 export function structurePalette(material,u){
   const surface=varying(attribute('structureSurface','vec3')),mode=surface.z,worldPos=varying(positionGeometry);
-  const plinthMask=float(1).sub(smoothstep(0,.82,max(0,worldPos.y)));
+  const plinthMask=float(1).sub(smoothstep(0,.85,max(0,worldPos.y)));
+  const roofPbr=u.roofPbr?value(u.roofPbr,'vec3'):vec3(0,0,0);
+  const roofUv=roofPbr.x.greaterThan(.5).select(uv().mul(1.65),uv());
   const choose=(suffix='',fallback=white)=>Fn(()=>{
     const result=vec3(suffix==='Normal'?vec3(.5,.5,1):vec3(1)).toVar();
     If(mode.greaterThan(3.5),()=>{
       if(!suffix){
-        const shingle=float(.97).add(sin(worldPos.y.mul(19.5).add(worldPos.x.add(worldPos.z).mul(2.8))).mul(.055));
-        result.assign(sample(u.roof).rgb.mul(shingle));
+        const shingle=float(.96).add(sin(worldPos.y.mul(19.5).add(worldPos.x.add(worldPos.z).mul(2.8))).mul(.055));
+        const roofSample=sample(u.roof,roofUv).rgb;
+        const roofCol=roofPbr.x.greaterThan(.5).select(mix(vec3(1),roofSample.mul(1.46),.80),roofSample);
+        const eaveWeather=mix(.88,1.04,smoothstep(1.8,6.2,worldPos.y));
+        result.assign(roofCol.mul(shingle).mul(eaveWeather));
+      }else if(u['roof'+suffix]){
+        const ready=suffix==='Normal'?roofPbr.y:roofPbr.z;
+        If(ready.greaterThan(.5),()=>{result.assign(sample(u['roof'+suffix],roofUv,fallback).rgb);});
       }
     }).ElseIf(mode.greaterThan(2.5),()=>{
       if(!suffix){
         const plasterTex=sample(u.plaster,uv().mul(1.15),fallback).rgb;
         const plinthStone=sample(u.stone,uv().mul(1.6),fallback).rgb.mul(.84);
-        result.assign(mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.62)));
-      }else result.assign(sample(u['plaster'+suffix],uv(),fallback).rgb);
+        result.assign(mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.65)));
+      }else if(suffix==='Normal')result.assign(sample(u.plasterNormal,uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(1.5),()=>{
       if(!suffix){
         const ashlar=float(.96).add(sin(worldPos.y.mul(12)).mul(cos(worldPos.x.sub(worldPos.z).mul(4.8))).mul(.07));
-        result.assign(sample(u.stone,uv().mul(1.25),fallback).rgb.mul(ashlar).mul(mix(1,.85,plinthMask.mul(.48))));
+        result.assign(sample(u.stone,uv().mul(1.25),fallback).rgb.mul(ashlar).mul(mix(1,.83,plinthMask.mul(.52))));
       }else result.assign(sample(u['stone'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
@@ -310,10 +320,10 @@ export function structurePalette(material,u){
     });
     return result;
   })();
-  const earthSkirt=float(1).sub(smoothstep(0,.44,max(0,worldPos.y)));
-  const groundAo=mix(.84,1,smoothstep(0,1.15,max(0,worldPos.y)));
-  const structureOcclusion=mix(.84,1,smoothstep(0,1.1,max(0,worldPos.y)));
-  const soot=mix(vec3(1),vec3(.88,.84,.75),earthSkirt.mul(.45));
+  const earthSkirt=float(1).sub(smoothstep(0,.48,max(0,worldPos.y)));
+  const groundAo=mix(.79,1,smoothstep(0,1.25,max(0,worldPos.y)));
+  const structureOcclusion=mix(.80,1,smoothstep(0,1.2,max(0,worldPos.y)));
+  const soot=mix(vec3(1),vec3(.86,.82,.73),earthSkirt.mul(.48));
   const roofUp=varying(normalLocal.y);
   const atm=u.atmosphere||fallbackAtmosphere();
   const wetness=value(atm.wetness);
@@ -326,20 +336,21 @@ export function structurePalette(material,u){
       const drift=sin(worldPos.x.mul(1.85).add(worldPos.z.mul(.71))).mul(cos(worldPos.z.mul(1.31).sub(worldPos.y.mul(.77))));
       const edging=sin(worldPos.x.mul(9.6).sub(worldPos.z.mul(12))).mul(.12);
       const settle=smoothstep(.23,.76,roofUp).mul(smoothstep(-.60,.45,drift.mul(.49).add(edging).add(.28)));
-      const grain=float(.84).add(dot(sample(u.roof).rgb,vec3(.3,.59,.11)).mul(.16));
+      const grain=float(.84).add(dot(sample(u.roof,roofUv).rgb,vec3(.3,.59,.11)).mul(.16));
       color.assign(mix(color,vec3(.67,.76,.84).mul(grain),settle.mul(.88)));
     });
     return color.mul(soot).mul(groundAo).mul(mix(1,.84,structWetFace)).mul(cloudMod);
   })();
-  const active=mode.greaterThan(.5).and(mode.lessThan(3.5)).and(value(u.detail).greaterThan(.5));
+  const active=mode.greaterThan(.5).and(value(u.detail).greaterThan(.5));
   const arm=Fn(()=>{const result=vec3(1).toVar();If(active,()=>{result.assign(choose('Arm'));});return result;})();
   const normSample=Fn(()=>{const result=vec3(.5,.5,1).toVar();If(active,()=>{result.assign(choose('Normal',flat));});return result;})();
-  const rainGloss=wetness.mul(mix(.42,.92,smoothstep(.10,.75,roofUp)));
-  const baseRough=surface.x.mul(arm.g);
-  material.roughnessNode=clamp(mix(baseRough,baseRough.mul(.42),rainGloss),.04,1);
+  const rainGloss=wetness.mul(mix(.42,.94,smoothstep(.10,.75,roofUp)));
+  const roofRough=mode.greaterThan(3.5).select(mix(.68,1.06,arm.g),arm.g);
+  const baseRough=surface.x.mul(roofRough);
+  material.roughnessNode=clamp(mix(baseRough,baseRough.mul(.40),rainGloss),.04,1);
   material.metalnessNode=clamp(surface.y,0,1);
-  material.aoNode=mix(1,arm.r,.72).mul(structureOcclusion);
-  const normalScale=mode.greaterThan(2.5).select(.30,mode.greaterThan(1.5).select(.54,.38));
+  material.aoNode=mix(1,arm.r,mode.greaterThan(3.5).select(.82,.72)).mul(structureOcclusion);
+  const normalScale=mode.greaterThan(3.5).select(.62,mode.greaterThan(2.5).select(.30,mode.greaterThan(1.5).select(.54,.38)));
   material.normalNode=active.select(normalMap(normSample,vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
   material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.65).add(1)).add(vec3(1.18,.56,.16).mul(varying(attribute('structureNightGlow','float'))).mul(night));

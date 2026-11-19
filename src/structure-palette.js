@@ -4,13 +4,41 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {architectureStyle,isAgeStyled,ageSurface} from './architecture-age.js';
 import {isSnowBiome} from './terrain-biomes.js';
 import {ensureAtmosphereUniforms,ANALYTIC_IBL_GLSL,CLOUD_SHADOW_GLSL} from './atmosphere-uniforms.js';
+import {roofSurfaceMaps} from './surface-assets.js';
+
+function smoothShallowCreases(geometry,cosLimit=.52){
+  const pos=geometry.attributes.position,nrm=geometry.attributes.normal;
+  if(!pos||!nrm)return;
+  const buckets=new Map(),quant=v=>Math.round(v*1000);
+  for(let i=0;i<pos.count;i++){
+    const key=`${quant(pos.getX(i))},${quant(pos.getY(i))},${quant(pos.getZ(i))}`;
+    let list=buckets.get(key);
+    if(!list){list=[];buckets.set(key,list);}
+    list.push(i);
+  }
+  const src=new Float32Array(nrm.array),out=new Float32Array(nrm.array);
+  for(const indices of buckets.values()){
+    if(indices.length<2)continue;
+    for(const i of indices){
+      const nx=src[i*3],ny=src[i*3+1],nz=src[i*3+2];
+      let sx=0,sy=0,sz=0;
+      for(const j of indices){
+        const ox=src[j*3],oy=src[j*3+1],oz=src[j*3+2];
+        if(nx*ox+ny*oy+nz*oz>=cosLimit){sx+=ox;sy+=oy;sz+=oz;}
+      }
+      const len=Math.hypot(sx,sy,sz);
+      if(len>1e-6){out[i*3]=sx/len;out[i*3+1]=sy/len;out[i*3+2]=sz/len;}
+    }
+  }
+  nrm.array.set(out);nrm.needsUpdate=true;
+}
 
 function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
     const material=standardMaterial({vertexColors:true,roughness:.9});
     const atm=ensureAtmosphereUniforms(view);
-    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0},snow:{value:0},atmosphere:atm};
+    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},roofNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},roofArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},roofPbr:{value:new THREE.Vector3()},detail:{value:0},night:{value:0},snow:{value:0},atmosphere:atm};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
     if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
@@ -34,11 +62,13 @@ function paletteMaterial(view){
         uniform sampler2D frontierStructurewoodNormal;
         uniform sampler2D frontierStructurestoneNormal;
         uniform sampler2D frontierStructureplasterNormal;
+        uniform sampler2D frontierStructureroofNormal;
         uniform sampler2D frontierStructurewoodArm;
         uniform sampler2D frontierStructurestoneArm;
-        uniform sampler2D frontierStructureplasterArm;
+        uniform sampler2D frontierStructureroofArm;
         uniform vec3 frontierStructurenormalAvailable;
         uniform vec3 frontierStructurearmAvailable;
+        uniform vec3 frontierStructureroofPbr;
         uniform float frontierStructuredetail;
         uniform float frontierStructurenight;
         uniform float frontierStructuresnow;
@@ -61,56 +91,63 @@ function paletteMaterial(view){
         ${CLOUD_SHADOW_GLSL}
         ${ANALYTIC_IBL_GLSL}\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-        float plinthMask = 1.0 - smoothstep(0.0, 0.82, max(0.0, vStructurePos.y));
-        float earthSkirt = 1.0 - smoothstep(0.0, 0.44, max(0.0, vStructurePos.y));
-        float groundAo = mix(0.84, 1.0, smoothstep(0.0, 1.15, max(0.0, vStructurePos.y)));
+        float plinthMask = 1.0 - smoothstep(0.0, 0.85, max(0.0, vStructurePos.y));
+        float earthSkirt = 1.0 - smoothstep(0.0, 0.48, max(0.0, vStructurePos.y));
+        float groundAo = mix(0.79, 1.0, smoothstep(0.0, 1.25, max(0.0, vStructurePos.y)));
         if(vStructureSurface.z > 3.5) {
-          float shingleCourse = 0.97 + 0.055 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
-          vec3 roof = texture2D(frontierStructureroof, vUv).rgb;
-          diffuseColor.rgb *= roof * shingleCourse;
+          float shingleCourse = 0.96 + 0.055 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
+          vec2 roofUv = frontierStructureroofPbr.x > 0.5 ? vUv * 1.65 : vUv;
+          vec3 roofSample = texture2D(frontierStructureroof, roofUv).rgb;
+          vec3 roof = frontierStructureroofPbr.x > 0.5 ? mix(vec3(1.0), roofSample * 1.46, 0.80) : roofSample;
+          float eaveWeather = mix(0.88, 1.04, smoothstep(1.8, 6.2, vStructurePos.y));
+          diffuseColor.rgb *= roof * shingleCourse * eaveWeather;
           if (frontierStructuresnow > 0.5) {
             float drift = sin(vStructurePos.x * 1.85 + vStructurePos.z * 0.71) * cos(vStructurePos.z * 1.31 - vStructurePos.y * .77);
             float edging = sin(vStructurePos.x * 9.6 - vStructurePos.z * 12.0) * .12;
             float settle = smoothstep(.23, .76, vStructureRoofUp) * smoothstep(-.60, .45, drift * .49 + edging + .28);
-            float grain = .84 + .16 * dot(roof, vec3(.3, .59, .11));
+            float grain = .84 + .16 * dot(roofSample, vec3(.3, .59, .11));
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.67, .76, .84) * grain, settle * .88);
           }
         } else if(vStructureSurface.z > 2.5) {
           vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
           vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
-          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.62);
+          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65);
         } else if(vStructureSurface.z > 1.5) {
           float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
-          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv * 1.25).rgb * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
+          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv * 1.25).rgb * ashlarCourse * mix(1.0, 0.83, plinthMask * 0.52);
         } else if(vStructureSurface.z > 0.5) {
           float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
         }
         float structWetFace = frontierAtmwetness * mix(0.45, 1.0, smoothstep(0.15, 0.85, vStructureRoofUp));
-        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.88, 0.84, 0.75), earthSkirt * 0.45) * groundAo * mix(1.0, 0.84, structWetFace);
+        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.86, 0.82, 0.73), earthSkirt * 0.48) * groundAo * mix(1.0, 0.84, structWetFace);
         diffuseColor.rgb *= frontierCloudLight(vStructureWorldPos.xz, frontierAtmcloudMap, frontierAtmcloudOffset, frontierAtmcloudScale, frontierAtmcloudStrength * 0.85, frontierAtmiblSky);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vStructureSurface.x;
-        float structureOcclusion = mix(0.84, 1.0, smoothstep(0.0, 1.1, max(0.0, vStructurePos.y)));
-        bool armReady = vStructureSurface.z > 2.5 ? frontierStructurearmAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurearmAvailable.y > 0.5 : frontierStructurearmAvailable.x > 0.5;
-        if(frontierStructuredetail > 0.5 && vStructureSurface.z > 0.5 && vStructureSurface.z < 3.5 && armReady) {
-          vec2 structureArm = vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterArm, vUv).rg : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneArm, vUv).rg : texture2D(frontierStructurewoodArm, vUv).rg;
-          roughnessFactor *= structureArm.g;
-          structureOcclusion *= mix(1.0, structureArm.r, 0.72);
+        float structureOcclusion = mix(0.80, 1.0, smoothstep(0.0, 1.2, max(0.0, vStructurePos.y)));
+        bool armReady = vStructureSurface.z > 3.5 ? frontierStructureroofPbr.z > 0.5 : vStructureSurface.z > 2.5 ? false : vStructureSurface.z > 1.5 ? frontierStructurearmAvailable.y > 0.5 : frontierStructurearmAvailable.x > 0.5;
+        if(frontierStructuredetail > 0.5 && vStructureSurface.z > 0.5 && armReady) {
+          vec2 structureArm = vStructureSurface.z > 3.5 ? texture2D(frontierStructureroofArm, vUv * 1.65).rg : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneArm, vUv).rg : texture2D(frontierStructurewoodArm, vUv).rg;
+          roughnessFactor *= vStructureSurface.z > 3.5 ? mix(0.68, 1.06, structureArm.g) : structureArm.g;
+          structureOcclusion *= mix(1.0, structureArm.r, vStructureSurface.z > 3.5 ? 0.82 : 0.72);
+        } else if(vStructureSurface.z > 2.5 && vStructureSurface.z < 3.5) {
+          float plasterLuma = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
+          roughnessFactor *= mix(0.98, 0.88, smoothstep(0.25, 0.75, plasterLuma));
+          structureOcclusion *= mix(0.88, 1.0, smoothstep(0.18, 0.62, plasterLuma));
         }
-        float rainGloss = frontierAtmwetness * mix(0.42, 0.92, smoothstep(0.10, 0.75, vStructureRoofUp));
-        roughnessFactor = clamp(mix(roughnessFactor, roughnessFactor * 0.42, rainGloss), 0.04, 1.0);`);
+        float rainGloss = frontierAtmwetness * mix(0.42, 0.94, smoothstep(0.10, 0.75, vStructureRoofUp));
+        roughnessFactor = clamp(mix(roughnessFactor, roughnessFactor * 0.40, rainGloss), 0.04, 1.0);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= structureOcclusion;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vStructureSurface.y, 0.0, 1.0);');
       shader.fragmentShader='varying float vStructureNightGlow;\n'+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.65) + vec3(1.18, 0.56, 0.16) * vStructureNightGlow * frontierStructurenight;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
-        bool normalReady = vStructureSurface.z > 2.5 ? frontierStructurenormalAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurenormalAvailable.y > 0.5 : frontierStructurenormalAvailable.x > 0.5;
-        if(vStructureSurface.z > 0.5 && vStructureSurface.z < 3.5 && frontierStructuredetail > 0.5 && normalReady) {
-          vec3 structureNormal = vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterNormal, vUv).xyz : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneNormal, vUv).xyz : texture2D(frontierStructurewoodNormal, vUv).xyz;
+        bool normalReady = vStructureSurface.z > 3.5 ? frontierStructureroofPbr.y > 0.5 : vStructureSurface.z > 2.5 ? frontierStructurenormalAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurenormalAvailable.y > 0.5 : frontierStructurenormalAvailable.x > 0.5;
+        if(vStructureSurface.z > 0.5 && frontierStructuredetail > 0.5 && normalReady) {
+          vec3 structureNormal = vStructureSurface.z > 3.5 ? texture2D(frontierStructureroofNormal, vUv * 1.65).xyz : vStructureSurface.z > 2.5 ? texture2D(frontierStructureplasterNormal, vUv).xyz : vStructureSurface.z > 1.5 ? texture2D(frontierStructurestoneNormal, vUv).xyz : texture2D(frontierStructurewoodNormal, vUv).xyz;
           structureNormal = structureNormal * 2.0 - 1.0;
-          structureNormal.xy *= vStructureSurface.z > 2.5 ? 0.30 : vStructureSurface.z > 1.5 ? 0.54 : 0.38;
+          structureNormal.xy *= vStructureSurface.z > 3.5 ? 0.62 : vStructureSurface.z > 2.5 ? 0.30 : vStructureSurface.z > 1.5 ? 0.54 : 0.38;
           normal = normalize(tbn * structureNormal);
         }
         #endif`);
@@ -130,20 +167,23 @@ function paletteMaterial(view){
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v9';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v10';
     m.structurePalette=material;
   }
-  const material=m.structurePalette,u=material.frontierUniforms;
+  const material=m.structurePalette,u=material.frontierUniforms,roofMaps=roofSurfaceMaps();
   u.wood.value=m.wood.map||null;u.stone.value=m.stone.map||null;u.plaster.value=m.plaster.map||null;
-  u.roof.value=view.roofMaterials?.find(material=>material.map)?.map||null;
+  u.roof.value=roofMaps.color||view.roofMaterials?.find(material=>material.map)?.map||null;
   u.woodNormal.value=m.wood.normalMap||null;u.stoneNormal.value=m.stone.normalMap||null;
-  u.plasterNormal.value=m.plaster.normalMap||null;u.normalAvailable.value.set(u.woodNormal.value?1:0,u.stoneNormal.value?1:0,u.plasterNormal.value?1:0);
+  u.plasterNormal.value=m.plaster.normalMap||null;
+  u.roofNormal.value=view.settings?.quality==='low'?null:roofMaps.normal||null;
+  u.normalAvailable.value.set(u.woodNormal.value?1:0,u.stoneNormal.value?1:0,u.plasterNormal.value?1:0);
   u.woodArm.value=m.wood.roughnessMap||null;u.stoneArm.value=m.stone.roughnessMap||null;
-  u.plasterArm.value=m.plaster.roughnessMap||null;
-  u.armAvailable.value.set(u.woodArm.value?1:0,u.stoneArm.value?1:0,u.plasterArm.value?1:0);
+  u.roofArm.value=view.settings?.quality==='low'?null:roofMaps.arm||null;
+  u.armAvailable.value.set(u.woodArm.value?1:0,u.stoneArm.value?1:0,0);
+  u.roofPbr.value.set(roofMaps.color?1:0,u.roofNormal.value?1:0,u.roofArm.value?1:0);
   u.snow.value=Number(isSnowBiome(view.sim?.options?.map));
   u.detail.value=view.settings?.quality==='high'?2:view.settings?.quality==='medium'?1:0;
-  const normal=u.stoneNormal.value||u.woodNormal.value||u.plasterNormal.value||null;
+  const normal=u.stoneNormal.value||u.woodNormal.value||u.plasterNormal.value||u.roofNormal.value||null;
   if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}
   if(material.isNodeMaterial&&!material.colorNode)nodeRuntime().structurePalette(material,u);
   return material;
@@ -167,8 +207,10 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish){
   if(!geometry.attributes.uv)geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(count*2),2));
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,emissive=material.emissive?.toArray()||[0,0,0];
-  const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&material.map?4:0;
+  const hasRoofMap=Boolean(roofSurfaceMaps().color||material.map);
+  const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
   const mode=material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge);
+  if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
   const sourceColor=promotedWallColor(material,rawMode,mode,m);
   // Roofs use an age-specific finish with some of the faction colour mixed in.
   const styledRoof=mode===4&&roofFinish;

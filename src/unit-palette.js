@@ -32,15 +32,21 @@ function paletteMaterial(view){
       shader.uniforms.frontierTeamColors=teams;shader.uniforms.frontierRoofColors=roofs;
       for(const key of ['characterColor','characterNormal','characterReady','characterDetail'])shader.uniforms['frontierUnit'+key]=material.frontierUniforms[key];
       for(const key of ['wetness','night','sunDir','sunColor','iblSky','iblHorizon','iblGround','iblIntensity'])shader.uniforms['frontierUnitAtm'+key]=atm[key];
-      shader.vertexShader='attribute vec3 unitSurface;\nattribute float unitTeamMask;\n#ifdef USE_INSTANCING\nattribute float instanceOwner;\n#endif\nuniform vec3 frontierTeamColors[8];\nuniform vec3 frontierRoofColors[8];\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.vertexShader;
+      shader.vertexShader='attribute vec3 unitSurface;\nattribute float unitTeamMask;\n#ifdef USE_INSTANCING\nattribute float instanceOwner;\n#endif\nuniform vec3 frontierTeamColors[8];\nuniform vec3 frontierRoofColors[8];\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\nvarying float vUnitHeraldry;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>',`#include <color_vertex>
-        vUnitSurface = unitSurface; vUnitTeamColor = vec3(1.0);
+        vUnitSurface = unitSurface; vUnitTeamColor = vec3(1.0); vUnitHeraldry = 0.0;
         #ifdef USE_INSTANCING
         int owner = int(clamp(instanceOwner, 0.0, 7.0) + 0.5);
         if(unitTeamMask > 1.5) vUnitTeamColor = frontierRoofColors[owner];
-        else if(unitTeamMask > 0.01) vUnitTeamColor = mix(vec3(0.76, 0.71, 0.61), frontierTeamColors[owner], clamp(unitTeamMask, 0.0, 1.0));
+        else if(unitTeamMask > 0.01) {
+          float mask = clamp(unitTeamMask, 0.0, 1.0);
+          vec3 herald = mix(vec3(0.76, 0.71, 0.61), frontierTeamColors[owner], mask);
+          float bold = smoothstep(0.55, 0.98, mask);
+          vUnitTeamColor = herald * mix(1.0, 1.10, bold);
+          vUnitHeraldry = bold;
+        }
         #endif`);
-      shader.fragmentShader='uniform sampler2D frontierUnitWood;\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.fragmentShader;
+      shader.fragmentShader='uniform sampler2D frontierUnitWood;\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\nvarying float vUnitHeraldry;\n'+shader.fragmentShader;
       shader.fragmentShader=`uniform sampler2D frontierUnitcharacterColor;
         uniform sampler2D frontierUnitcharacterNormal;
         uniform float frontierUnitcharacterReady;
@@ -68,9 +74,9 @@ function paletteMaterial(view){
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vUnitSurface.x;
         if(unitCharacter && unitDetail > 0.001) roughnessFactor = mix(roughnessFactor, texture2D(frontierUnitcharacterNormal, unitCharacterUv).a, unitDetail);
-        if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) roughnessFactor *= 0.82;
+        if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) roughnessFactor *= 0.76;
         roughnessFactor = clamp(mix(roughnessFactor, roughnessFactor * 0.60, frontierUnitAtmwetness * 0.72), 0.04, 1.0);`);
-      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(min(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.08 : 0.0), 0.62), 0.0, 1.0);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(min(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.12 : 0.0), 0.68), 0.0, 1.0);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         if(unitCharacter && unitDetail > 0.001) {
@@ -92,11 +98,13 @@ function paletteMaterial(view){
             frontierUnitAtmiblSky, frontierUnitAtmiblHorizon, frontierUnitAtmiblGround,
             frontierUnitAtmiblIntensity, frontierUnitAtmnight, frontierUnitAtmwetness, unitLuma
           );
+          float heraldRim = pow(1.0 - clamp(dot(normal, unitViewDir), 0.0, 1.0), 3.0) * vUnitHeraldry * (1.0 - frontierUnitAtmnight * 0.55);
+          outgoingLight += vUnitTeamColor * heraldRim * 0.16;
         }
         #include <opaque_fragment>`);
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v7';}
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v8';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;
