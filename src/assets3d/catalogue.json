@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 14219612,
-    "low": 4545692,
-    "balanced": 13999828
+    "near": 13079040,
+    "low": 4317656,
+    "balanced": 12675308
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -534,45 +534,45 @@
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1412,
-    "visibleTriangles": 687202,
+    "meshes": 1392,
+    "visibleTriangles": 631420,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
-    "maxNormalDegrees": 0.0035814142672628817,
+    "maxNormalDegrees": 0.0018812330295769107,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 18773052,
-    "candidateBytes": 13999828,
-    "referenceDecodedBufferBytes": 39888302,
-    "candidateDecodedBufferBytes": 36035578,
-    "referenceSHA256": "5c68dc3653c111223e53863538e7a15d01fce5156285a051d723b3e4c08ad283",
-    "candidateSHA256": "9193ccf8f1b7c843bc1686ba372bc276a1026f26baccc91ed47673bbfa868a71"
+    "referenceBytes": 16841080,
+    "candidateBytes": 12675308,
+    "referenceDecodedBufferBytes": 36498908,
+    "candidateDecodedBufferBytes": 32985532,
+    "referenceSHA256": "25dc5924b96dec55526b4eee73d5d9088f4cea355625ac4726bdb9db74fe50c4",
+    "candidateSHA256": "3a3647e90eb7613beb9fa0d0fc454aef43bc55abdbd149ecdef4d48c4b6a0b79"
   },
   "balancedSourceHashes": {
-    "near": "85ee696cc7994001ac0e4f54fb188ed643a5842ce8dcbaee070746a5620e08cc",
-    "low": "4aa66d5c5e60549bdb16880c50fb4739c0e946f4ae9dc64e1079eeb35a0c97ba",
+    "near": "48facc56ce0dcea4b415b1e5dfcb7710b40de33ad5670ec368938ec91eca921a",
+    "low": "3dbfce590dc6d6dfc33a32610d47e3fa62af3223f7512a3ac6bf2f444c1603e3",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 2456020,
+    "bytes": 1333512,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "f60f70c5ac75a1b7b35eb2c60c07bbf6234eac5b0ca82fb71eb7bbf92e49f7f2",
+    "sha256": "fc0097ea53808d8cd384e74a8819fab01ebc45087ae8cb043c256bda3ef54bca",
     "precision": {
       "passed": true,
       "models": 24,
-      "meshes": 96,
-      "visibleTriangles": 114166,
+      "meshes": 88,
+      "visibleTriangles": 47480,
       "exactTrianglePositionsAndWinding": true,
       "normalLimitDegrees": 0.05,
-      "maxNormalDegrees": 0.0017690968713909463,
+      "maxNormalDegrees": 0.001881436636299954,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 13404952,
-      "candidateBytes": 2456020,
-      "referenceDecodedBufferBytes": 37915064,
-      "candidateDecodedBufferBytes": 5773620
+      "referenceBytes": 12278248,
+      "candidateBytes": 1333512,
+      "referenceDecodedBufferBytes": 35110228,
+      "candidateDecodedBufferBytes": 2985872
     }
   },
   "workerToolRevision": "craft-tools-v1",

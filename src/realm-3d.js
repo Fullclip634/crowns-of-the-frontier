@@ -23,8 +23,93 @@ import {forEachNearbyUnit} from './spatial-buckets.js';
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
   if(fall){const t=Math.max(0,Math.min(1,(view.clock-fall.at)/1.5));rotation.makeRotationZ(t*t*1.48);pose.multiply(rotation);}
-  else if(leaves&&view.settings.quality!=='low'&&!view.settings.reducedMotion){rotation.makeRotationZ(Math.sin(view.clock*1.1+id*.27)*(.009+(view.weatherState?.amount||0)*.014));pose.multiply(rotation);}
+  else if(leaves&&view.settings.quality!=='low'&&!view.settings.reducedMotion){
+    const wind=view.atmosphereUniforms?.wind?.value;
+    const wLen=wind?Math.hypot(wind.x,wind.z):0;
+    const speed=wLen>.001?Math.max(.55,Math.min(2.4,wLen*.7)):1;
+    const wx=wLen>.001?wind.x/wLen:1;
+    const wz=wLen>.001?wind.z/wLen:0;
+    const amp=.009+(view.weatherState?.amount||0)*.015;
+    const primary=Math.sin(view.clock*(1.08+.14*speed)+id*.27);
+    const gust=Math.sin(view.clock*(2.15+.25*speed)+id*.71)*.22;
+    const sway=(primary+gust)*amp;
+    rotation.makeRotationZ(sway*(wLen>.001?.75+.25*Math.abs(wx):1));
+    pose.multiply(rotation);
+    if(wLen>.001&&Math.abs(wz)>.08){
+      const cross=view.forestCrossRotation??=new THREE.Matrix4();
+      cross.makeRotationX(sway*wz*.45);
+      pose.multiply(cross);
+    }
+  }
   return pose;
+}
+
+function forestShadowTexture(){
+  const size=64,data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const u=(x+.5)/size*2-1,v=(y+.5)/size*2-1,r=Math.hypot(u,v);
+    // Soft multi-lobe humus + dappled canopy shadow fading cleanly to 0 at r=1.
+    const angle=Math.atan2(v,u);
+    const rim=Math.max(0,1-Math.min(1,r/(.94+.05*Math.sin(angle*5+.6)+.03*Math.cos(angle*3-1.1))));
+    const alpha=Math.pow(rim,1.65);
+    const i=(y*size+x)*4;
+    data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=Math.round(alpha*255);
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;
+  tex.magFilter=THREE.LinearFilter;
+  tex.minFilter=THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps=true;
+  tex.needsUpdate=true;
+  return tex;
+}
+
+export function volcanicSnagModel(view,variant=0,far=false){
+  const g=new THREE.Group(),m=view.materials,rng=seededRandom(7331+variant*137);
+  const segs=far?5:6;
+  const trunkMat=m.trunk||m.wood;
+  const addLimb=(mat,x,y,z,topR,botR,len,rx,ry,rz)=>{
+    const geo=new THREE.CylinderGeometry(topR,botR,len,segs,1,false);
+    geo.translate(0,len*.5,0);
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(x,y,z);
+    mesh.rotation.order='YXZ';
+    mesh.rotation.set(rx,ry,rz);
+    g.add(mesh);
+    return mesh;
+  };
+  const h1=1.85+rng()*.55,leanX=(rng()-.5)*.26,leanZ=(rng()-.5)*.26;
+  const baseR=.36+rng()*.08,midR=.21+rng()*.05;
+  // Flared root buttress + crooked lower charred trunk
+  addLimb(trunkMat,0,-.12,0,baseR*1.05,baseR*1.42,.58,0,rng()*6.28,0);
+  addLimb(trunkMat,0,.32,0,midR,baseR,h1,leanX,0,leanZ);
+  const topX=-Math.sin(leanZ)*h1,topY=.32+Math.cos(Math.hypot(leanX,leanZ))*h1,topZ=Math.sin(leanX)*h1;
+  const h2=1.95+rng()*.95,bendX=leanX+(rng()-.5)*.34,bendZ=leanZ+(rng()-.5)*.34;
+  addLimb(trunkMat,topX,topY-.08,topZ,.055+rng()*.03,midR*.96,h2,bendX,0,bendZ);
+  // Broken forked charred limbs
+  const limbCount=far?3:4;
+  for(let i=0;i<limbCount;i++){
+    const t=.28+(i/limbCount)*.62+rng()*.08;
+    const lx=topX-Math.sin(bendZ)*h2*t,ly=topY+Math.cos(Math.hypot(bendX,bendZ))*h2*t,lz=topZ+Math.sin(bendX)*h2*t;
+    const yaw=(i*(Math.PI*2/limbCount))+rng()*.7,pitch=.52+rng()*.48,len=1.05+rng()*1.15;
+    const r0=Math.max(.06,midR*(.65-t*.3));
+    addLimb(trunkMat,lx,ly,lz,r0*.24,r0,len,pitch,yaw,0);
+    if(!far&&i<3){
+      const midLen=len*.56;
+      const sx=lx+Math.sin(yaw)*Math.sin(pitch)*midLen,sy=ly+Math.cos(pitch)*midLen,sz=lz+Math.cos(yaw)*Math.sin(pitch)*midLen;
+      addLimb(trunkMat,sx,sy,sz,.018,r0*.42,.55+rng()*.45,pitch+.38,yaw+(i%2?1:-1)*.65,0);
+    }
+  }
+  // Subtle glowing ember cleft near charred root collar on near LOD
+  if(!far&&m.glow){
+    const cleftAngle=rng()*6.28;
+    const ember=new THREE.Mesh(new THREE.CylinderGeometry(.045,.11,.46,5,1,false),m.glow);
+    ember.position.set(Math.cos(cleftAngle)*baseR*.78,.24,Math.sin(cleftAngle)*baseR*.78);
+    ember.rotation.set(.18,cleftAngle,-.14);
+    g.add(ember);
+  }
+  g.userData.foliageSpecies='volcanic snag';
+  return g;
 }
 
 function foundation(view,e){
@@ -37,25 +122,43 @@ function buildForest(view){
   view.forest=[];const trees=view.sim.entities.filter(e=>e.type==='wood'&&(e.hp>0||view.sim.resourceMemory?.has(e.id))),rng=seededRandom(view.sim.options.seed+191);
   const materials=new Map();
   const leafy=new Set([view.materials.leaf,view.materials.leafDark]);
-  // Arid and volcanic frontiers reuse the authored woodland atlas but read as
-  // sparse, stunted scrub; tundra keeps full-height conifers.
-  const canopyScale=isAridBiome(view.sim.options.map)?.62:isSnowBiome(view.sim.options.map)?.92:view.sim.options.map==='woodland'?1.12:1;
+  const map=view.sim.options.map,volcanic=map==='volcanic';
+  // Arid frontiers read as sparse flat-topped desert acacias; volcanic frontiers
+  // use sculpted charred dead snags; tundra keeps snow-laden alpine spruces.
+  const canopyScale=volcanic?.95:isAridBiome(map)?.84:isSnowBiome(map)?.96:map==='woodland'?1.12:1;
+  const shadowColor=volcanic?0x14100e:isSnowBiome(map)?0x3a4d62:isAridBiome(map)?0x4a3822:0x172414;
+  const shadowOpacity=volcanic?.36:isSnowBiome(map)?.24:isAridBiome(map)?.26:.38;
+  const shadowMat=shadeBattlefieldFog(standardMaterial({
+    map:view.forestShadowMap??=forestShadowTexture(),
+    color:shadowColor,transparent:true,opacity:shadowOpacity,
+    roughness:1,metalness:0,depthWrite:false,
+    polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,
+  }),view);
+  const shadowGeo=view.geo.forestShadow??=(()=>{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;})();
+  view.forestShadow=trees.length?new THREE.InstancedMesh(shadowGeo,shadowMat,trees.length):null;
+  if(view.forestShadow){
+    view.forestShadow.count=0;view.forestShadow.castShadow=false;view.forestShadow.receiveShadow=false;
+    view.forestShadow.frustumCulled=false;view.forestShadow.renderOrder=1;
+    view.objects.add(view.forestShadow);
+  }
+  const up=new THREE.Vector3(0,1,0),slopeNormal=new THREE.Vector3(),slopeQuat=new THREE.Quaternion(),shadowDummy=new THREE.Object3D();
   for(let variant=0;variant<4;variant++){
     const entries=trees.filter(e=>e.id%4===variant);if(!entries.length)continue;
     const sets=[],footprint=[];
     // Bark keeps its authored colour; only the canopy varies per tree.
     const tints=entries.map(e=>{const tint=treeTint(e.id);return new THREE.Color().setRGB(tint.r,tint.g,tint.b);});
     for(const far of [false,true]){
-      const model=view.mergeModel(treeModel(view,view.sim.options.map,variant,far)),parts=[],ids=[];
+      const rawModel=volcanic?volcanicSnagModel(view,variant,far):treeModel(view,map,variant,far);
+      const model=view.mergeModel(rawModel),parts=[],ids=[];
       model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
       footprint.push(Math.max(size.x,size.z));
       model.traverse(part=>{
         if(!part.isMesh)return;
         if(view.settings.quality==='low'&&part.userData.foliageDetail==='closed leaf tips')return;
         const source=part.material;
-        if(!materials.has(source))materials.set(source,shadeBattlefieldFog(source.clone(),view));
+        if(!materials.has(source)){const cloned=shadeBattlefieldFog(source.clone(),view);if(source===view.materials.glow)cloned.emissiveIntensity=1.75;materials.set(source,cloned);}
         const mesh=new THREE.InstancedMesh(part.geometry,materials.get(source),entries.length);mesh.count=0;mesh.castShadow=!far&&part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
-        mesh.userData.foliageSway=leafy.has(source)||source===view.materials.snow;
+        mesh.userData.foliageSway=!volcanic&&(leafy.has(source)||source===view.materials.snow);
         // One forest built from a single canopy still reads as rows of copies.
         // A small per-tree tint breaks that up without new geometry, and it is
         // derived from the tree id so it never changes between frames.
@@ -64,7 +167,31 @@ function buildForest(view){
       });
       sets.push({parts,ids});
     }
-    const matrices=entries.map(e=>{const dummy=new THREE.Object3D();dummy.position.set(e.x,view.landscape.surfaceHeightAt(e.x,e.z),e.z);dummy.rotation.y=rng()*6.28;dummy.scale.setScalar((.75+rng()*.55)*canopyScale);dummy.updateMatrix();return dummy.matrix.clone();});
+    const matrices=[],shadowMatrices=[];
+    const canopyDiameter=Math.max(2.6,Math.min(5.6,(footprint[0]||3.2)*(volcanic?.78:1.18)));
+    for(const e of entries){
+      const dummy=new THREE.Object3D();
+      // Subtle sub-cell jitter (±0.42m) + varied height/width + natural trunk lean
+      // breaks up grid rows while keeping trunks inside their exact simulation cell.
+      const jx=(rng()-.5)*.84,jz=(rng()-.5)*.84,px=e.x+jx,pz=e.z+jz;
+      const py=view.landscape.surfaceHeightAt(px,pz);
+      const hL=view.landscape.surfaceHeightAt(px-.8,pz),hR=view.landscape.surfaceHeightAt(px+.8,pz);
+      const hD=view.landscape.surfaceHeightAt(px,pz-.8),hU=view.landscape.surfaceHeightAt(px,pz+.8);
+      const slope=Math.hypot(hR-hL,hU-hD)/1.6;
+      const hScale=(.72+rng()*.62)*canopyScale,wScale=hScale*(.88+rng()*.24);
+      dummy.position.set(px,py-Math.min(.22,slope*.24),pz);
+      dummy.rotation.set((rng()-.5)*.08,rng()*6.28,(rng()-.5)*.08);
+      dummy.scale.set(wScale,hScale,wScale);
+      dummy.updateMatrix();
+      matrices.push(dummy.matrix.clone());
+      slopeNormal.set(hL-hR,1.6,hD-hU).normalize();
+      slopeQuat.setFromUnitVectors(up,slopeNormal);
+      shadowDummy.position.set(px,py+.055,pz);
+      shadowDummy.quaternion.copy(slopeQuat);
+      shadowDummy.scale.set(canopyDiameter*wScale,1,canopyDiameter*wScale);
+      shadowDummy.updateMatrix();
+      shadowMatrices.push(shadowDummy.matrix.clone());
+    }
     // The authored far canopy is decimated and can also be smaller than the
     // near one. Restoring its footprint keeps distant trees reading as trees
     // instead of shrinking into a blob.
@@ -73,7 +200,7 @@ function buildForest(view){
     // trunk and make distant trees taller than the near model, which pops at
     // the swap distance.
     const farMatrices=matrices.map(matrix=>footprintScaledMatrix(matrix,farScale));
-    view.forest.push({entries,sets,matrices,farMatrices});
+    view.forest.push({entries,sets,matrices,farMatrices,shadowMatrices});
   }
   view.treeIndices.clear();view.forestFog(true);
 }
@@ -105,6 +232,7 @@ export function installRealm3D(WorldView){
   p.attach=function(sim){
     const sameSimulation=this.sim===sim;
     this.hideGhost();this.ghost.userData.type=null;
+    if(this.forestShadow){this.forestShadow.material?.dispose?.();this.forestShadow=null;}
     this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions,sim.startingSites);this.foundationHeights=new Map();this.forest=[];this.forestLodState=new Map();this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
     attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
@@ -116,9 +244,9 @@ export function installRealm3D(WorldView){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }
     const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&map!=='desert'&&!volcanic,lush=map==='woodland'||map==='riverland';
-    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x9c8952:treeKind==='desert'?0x8a8752:lush?0x3e5f35:0x526b3c);
-    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x574b2e:treeKind==='desert'?0x4a4830:lush?0x2b4429:0x344e30);
-    if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x3a322f:0x66563e);
+    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x878d4f:treeKind==='desert'?0x8a8752:lush?0x3e5f35:0x526b3c);
+    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x4f562e:treeKind==='desert'?0x4a4830:lush?0x2b4429:0x344e30);
+    if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x382f2b:dry?0x6c5941:0x66563e);
     buildLandscape(this);
   };
   p.buildForest=function(){buildForest(this);};
@@ -146,6 +274,7 @@ export function installRealm3D(WorldView){
     const lodOptions=quality==='low'?{base:115,maximum:168}:quality==='medium'?{base:70,maximum:118}:{base:46,maximum:92};
     const threshold=treeDetailThreshold(this.frameTimeMs,budgetMs,lodOptions);
     this.forestDetailThreshold=threshold;
+    let shadowCount=0;const useShadow=quality!=='low'&&this.forestShadow;
     this.fallSlots=new Map();for(const batch of this.forest||[]){for(const set of batch.sets)set.ids.length=0;batch.entries.forEach((e,i)=>{
       const current=this.sim.resourceMemory?.get(e.id)??this.sim.get(e.id),fall=this.treeFalls?.get(e.id);
       if(!(current?.hp>0||fall))return;
@@ -154,8 +283,9 @@ export function installRealm3D(WorldView){
       if(!(menu||this.settings.fog===false||this.sim.isExplored(e.x,e.z)))return;
       const along=length2>0?((e.x-this.target.x)*dx+(e.z-this.target.z)*dz)/length2:0,side=Math.hypot(e.x-this.target.x-along*dx,e.z-this.target.z-along*dz),lineHeight=this.target.y+(this.camera.position.y-this.target.y)*along;
       if(!menu&&this.tilt<.61&&along>.12&&along<1&&side<3.2&&lineHeight<groundY+8)return;
-      const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-groundY-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,quality,lod.get(e.id),{threshold}),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,part.userData.foliageSway,fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});
+      const distance=Math.hypot(this.camera.position.x-e.x,this.camera.position.y-groundY-3,this.camera.position.z-e.z),screenHeight=6*projection/Math.max(1,distance),detail=treeDetail(screenHeight,quality,lod.get(e.id),{threshold}),set=batch.sets[detail.near?0:1],index=set.ids.length,base=detail.near?batch.matrices[i]:batch.farMatrices[i];lod.set(e.id,detail);set.ids.push(e.id);for(const part of set.parts)part.setMatrixAt(index,forestTransform(this,base,e.id,part.userData.foliageSway,fall));if(fall)this.fallSlots.set(e.id,{parts:set.parts,index,base});else if(useShadow&&batch.shadowMatrices?.[i]){this.forestShadow.setMatrixAt(shadowCount++,batch.shadowMatrices[i]);}
     });for(const set of batch.sets)for(const part of set.parts){part.count=set.ids.length;markInstancePrefix(part);part.boundingSphere=null;}}
+    if(this.forestShadow){this.forestShadow.count=useShadow?shadowCount:0;markInstancePrefix(this.forestShadow);this.forestShadow.boundingSphere=null;}
   };
   p.foliageFog=function(menu){this.forestFog(menu);};
   p.releaseNode=function(node){

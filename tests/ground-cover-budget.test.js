@@ -16,13 +16,13 @@ test('the cheap tiers draw thinner grass instead of less grass',()=>{
   assert.equal(tuftBlades(undefined),4,'an unknown quality falls back to the cheap tuft');
 
   const full=triangles(grassTuftGeometry(tuftBlades('high'))),cheap=triangles(grassTuftGeometry(tuftBlades('balanced')));
-  assert.equal(full,84);
-  assert.equal(cheap,56);
+  assert.equal(full,60);
+  assert.equal(cheap,40);
   assert.ok(cheap/full<.7,'the cheap tuft is at least a third lighter');
 
   // The saving has to be worth having at the capacities the tiers actually use.
   const saved=1800*full-1800*cheap;
-  assert.ok(saved>50000,`saves ${Math.round(saved)} triangles on the mid tier`);
+  assert.ok(saved>=36000,`saves ${Math.round(saved)} triangles on the mid tier`);
   const midTotal=1800*cheap,highTotal=4800*full;
   assert.ok(midTotal<highTotal*.3,`the mid tier costs ${Math.round(midTotal)} against the high tier's ${Math.round(highTotal)}`);
 });

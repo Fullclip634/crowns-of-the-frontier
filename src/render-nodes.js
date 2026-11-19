@@ -60,11 +60,13 @@ export function battlefieldFog(material,fog,unexploredAlpha){
 
 export function grassWind(material,u){
   const time=value(u.time),strength=value(u.strength);
+  const dir=u.dir?value(u.dir,'vec2'):vec2(.84,.54);
   const bend=clamp(positionGeometry.y.mul(2.4),0,1),bendSq=bend.mul(bend);
-  const gust=sin(time.mul(1.9).add(positionLocal.x.mul(.24)).add(positionLocal.z.mul(.18)))
-    .add(sin(time.mul(3.1).sub(positionLocal.x.mul(.39)).add(positionLocal.z.mul(.33))).mul(.35));
+  const wavePhase=dot(positionLocal.xz,dir.mul(.22));
+  const gust=sin(time.mul(1.9).sub(wavePhase))
+    .add(sin(time.mul(3.1).sub(positionLocal.x.mul(.39)).add(positionLocal.z.mul(.33))).mul(.38));
   const offset=gust.mul(bendSq).mul(strength);
-  material.positionNode=positionLocal.add(vec3(offset.mul(.84),0,offset.mul(.54)));
+  material.positionNode=positionLocal.add(vec3(offset.mul(dir.x),0,offset.mul(dir.y)));
   material.needsUpdate=true;
 }
 

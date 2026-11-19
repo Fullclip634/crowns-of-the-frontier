@@ -28,8 +28,8 @@ test('Balanced covers all 126 original models and its composition preserves sele
   const manifest=JSON.parse(fs.readFileSync(asset('catalogue.json'))),near=fs.readFileSync(asset('frontier-near.glb')),low=fs.readFileSync(asset('frontier-low.glb')),foliage=fs.readFileSync(asset('frontier-foliage.glb')),balanced=fs.readFileSync(asset('frontier-balanced.glb'));
   const j=readGlb(balanced).json;assert.equal(j.scenes[0].nodes.length,126);assert.equal(j.nodes.filter(n=>n.extras?.assetKey).length,126);assert.equal(balanced.length,manifest.sizes.balanced);assert.ok(balanced.length<near.length);
   for(const [name,bytes]of [['near',near],['low',low],['foliage',foliage]])assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.balancedSourceHashes[name],'Rebuild Balanced after changing a source catalogue');
-  const trees=augmentBalancedTrees(low,foliage,near),{bytes:composed}=composeBalancedCatalogue({near,low,foliage,models:manifest.models});
-  for(const model of manifest.models){const source=/^(building|resource):/.test(model.key)?near:trees;assert.equal(fingerprint(composed,model.key),fingerprint(source,model.key),model.key+' retains its surfaces, joints and exact compressed mesh before repacking');}
+  const {bytes:composed}=composeBalancedCatalogue({near,low,foliage,models:manifest.models});
+  for(const model of manifest.models){const source=/^(building|resource):/.test(model.key)?near:low;assert.equal(fingerprint(composed,model.key),fingerprint(source,model.key),model.key+' retains its surfaces, joints and exact compressed mesh before repacking');}
   for(const v of j.bufferViews){const c=v.extensions?.EXT_meshopt_compression;if(c)assert.ok(c.buffer===0&&c.byteOffset+c.byteLength<=j.buffers[0].byteLength);else if(v.buffer===0)assert.ok((v.byteOffset||0)+v.byteLength<=j.buffers[0].byteLength);}
 });
 
@@ -43,8 +43,7 @@ test('the decoded Balanced geometry keeps visible triangles, silhouettes, surfac
     });for(const geometry of geometries)geometry.dispose();for(const material of materials)material.dispose();return models;
   };
   const balanced=await snapshot('balanced');assert.equal(balanced.size,126);
-  const trees=augmentBalancedTrees(fs.readFileSync(asset('frontier-low.glb')),fs.readFileSync(asset('frontier-foliage.glb')),fs.readFileSync(asset('frontier-near.glb')));
-  for(const source of ['near','low'])for(const [key,expected]of await snapshot(source==='near'?source:trees)){
+  for(const source of ['near','low'])for(const [key,expected]of await snapshot(source)){
     if((/^(building|resource):/.test(key)?'near':'low')!==source)continue;const actual=balanced.get(key);assert.equal(actual.solidTriangles,expected.solidTriangles,key+' keeps every nondegenerate triangle');assert.ok(actual.triangles>=actual.solidTriangles&&actual.triangles<=expected.triangles,'Packing may remove only invisible degenerate faces');assert.deepEqual(actual.surfaces,expected.surfaces,key+' keeps its visible surface coverage');assert.deepEqual(actual.semantics,expected.semantics,key+' keeps its animation semantics');
     for(const bound of ['min','max'])for(let i=0;i<3;i++)assert.ok(Math.abs(actual[bound][i]-expected[bound][i])<.025,key+' retains its authored silhouette');
   }

@@ -13,59 +13,152 @@ export const buildingSiteKey=(x,z)=>buildingCellKey(Math.floor(x/16),Math.floor(
 // Grass never casts shadows, so tip-weighted GPU vertex wind runs smoothly at
 // 60 FPS with zero stationary CPU instance-matrix rebuilds or depth hooks.
 function configureGrassWind(material){
-  const wind=material.frontierGrassWind={time:{value:0},strength:{value:0}};
+  const wind=material.frontierGrassWind={time:{value:0},strength:{value:0},dir:{value:new THREE.Vector2(.84,.54)}};
   if(material.isNodeMaterial){nodeRuntime()?.grassWind?.(material,wind);return wind;}
   const prepare=material.onBeforeCompile,programKey=material.customProgramCacheKey.call(material);
   material.onBeforeCompile=function(shader,renderer){
     prepare.call(this,shader,renderer);
     shader.uniforms.frontierGrassTime=wind.time;
     shader.uniforms.frontierGrassStrength=wind.strength;
+    shader.uniforms.frontierGrassDir=wind.dir;
     shader.vertexShader=`uniform float frontierGrassTime;
-      uniform float frontierGrassStrength;\n`+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      uniform float frontierGrassStrength;
+      uniform vec2 frontierGrassDir;\n`+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
       #ifdef USE_INSTANCING
         if (frontierGrassStrength > 0.0001) {
           vec3 grassWorldPosition = (instanceMatrix * vec4(position, 1.0)).xyz;
           float grassBend = clamp(position.y * 2.4, 0.0, 1.0);
           grassBend *= grassBend;
-          float grassGust = sin(frontierGrassTime * 1.9 + grassWorldPosition.x * 0.24 + grassWorldPosition.z * 0.18)
-            + 0.35 * sin(frontierGrassTime * 3.1 - grassWorldPosition.x * 0.39 + grassWorldPosition.z * 0.33);
-          vec2 grassWindWorld = vec2(0.84, 0.54) * (grassGust * grassBend * frontierGrassStrength);
+          float wavePhase = dot(grassWorldPosition.xz, frontierGrassDir * 0.22);
+          float grassGust = sin(frontierGrassTime * 1.9 - wavePhase)
+            + 0.38 * sin(frontierGrassTime * 3.1 - grassWorldPosition.x * 0.39 + grassWorldPosition.z * 0.33);
+          vec2 grassWindWorld = frontierGrassDir * (grassGust * grassBend * frontierGrassStrength);
           float grassScaleSq = max(dot(instanceMatrix[0].xz, instanceMatrix[0].xz), 0.0001);
           transformed.x += dot(grassWindWorld, instanceMatrix[0].xz) / grassScaleSq;
           transformed.z += dot(grassWindWorld, instanceMatrix[2].xz) / grassScaleSq;
         }
       #endif`);
   };
-  material.customProgramCacheKey=()=>`${programKey}:grass-wind-v1`;
+  material.customProgramCacheKey=()=>`${programKey}:grass-wind-v2`;
   material.needsUpdate=true;
   return wind;
 }
 
-// Both tiers use the same low, tapered silhouette. Performance and Balanced
-// draw four blades per tuft, while High draws six in the same instance batch.
+// Both tiers use curved, closed 3-sided ribbon blades with bent-upward normals
+// so grass blends seamlessly with terrain lighting while cutting triangles by 29%.
 export const tuftBlades=quality=>quality==='high'?6:4;
 export function grassTuftGeometry(blades=6){
   const vertices=[],indices=[],uv=[],colors=[];
-  const heights=[.38,.57,.47,.33,.65,.44];
+  const heights=[.42,.62,.50,.36,.68,.47];
   for(let blade=0;blade<blades;blade++){
-    const angle=blade*2.399,h=heights[blade%heights.length],w=.030+(blade%3)*.012,lean=.13+(blade%4)*.071;
-    const spread=.11+(blade%3)*.09;
+    const angle=blade*2.399,h=heights[blade%heights.length],w=.034+(blade%3)*.013,lean=.16+(blade%4)*.082;
+    const spread=.10+(blade%3)*.095;
     const center=new THREE.Vector3(Math.sin(angle)*spread,0,Math.cos(angle)*spread);
     const across=new THREE.Vector3(Math.cos(angle),0,-Math.sin(angle));
     const front=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));
     const base=vertices.length/3;
-    for(const [width,y,bend,thickness,tint] of [[w,0,0,.008,[.45,.48,.39]],[w*.65,h*.53,lean*.26,.005,[.82,.88,.72]]]){
-      for(const [side,depth] of [[-1,-1],[1,-1],[1,1],[-1,1]]){
-        const p=center.clone().addScaledVector(across,side*width).addScaledVector(front,bend+depth*thickness);p.y=y;
-        vertices.push(...p.toArray());uv.push((side+1)*.5,y/h);colors.push(...tint);
-      }
+    // Closed 3-sided curved prism: base triangle -> arched mid triangle -> tapered tip (10 tris/blade).
+    const rings=[
+      [w,0,0,.013,[.46,.50,.40]],
+      [w*.62,h*.54,lean*.34,.009,[.82,.89,.72]],
+    ];
+    for(const [width,y,bend,thickness,tint] of rings){
+      const left=center.clone().addScaledVector(across,-width).addScaledVector(front,bend);left.y=y;
+      const right=center.clone().addScaledVector(across,width).addScaledVector(front,bend);right.y=y;
+      const ridge=center.clone().addScaledVector(front,bend+thickness);ridge.y=y;
+      vertices.push(...left.toArray(),...right.toArray(),...ridge.toArray());
+      uv.push(0,y/h,1,y/h,.5,y/h);
+      colors.push(...tint,...tint,...tint);
     }
-    const tip=center.clone().addScaledVector(front,lean).addScaledVector(across,blade%2===0?w:-w);
-    tip.y=h;vertices.push(...tip.toArray());uv.push(.5,1);colors.push(1,.98,.72);
-    indices.push(base,base+1,base+2,base,base+2,base+3);
-    for(let i=0;i<4;i++){const next=(i+1)%4;indices.push(base+i,base+4+next,base+next,base+i,base+4+i,base+4+next,base+4+i,base+8,base+4+next);}
+    const tip=center.clone().addScaledVector(front,lean).addScaledVector(across,(blade%2===0?1:-1)*w*.75);
+    tip.y=h;vertices.push(...tip.toArray());uv.push(.5,1);colors.push(1,.99,.76);
+    indices.push(base,base+1,base+2);
+    for(let i=0;i<3;i++){
+      const next=(i+1)%3;
+      indices.push(
+        base+i,base+3+i,base+3+next,
+        base+i,base+3+next,base+next,
+        base+3+i,base+6,base+3+next,
+      );
+    }
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  // Bend blade normals softly upward (72% skyward) so sunlit meadows read lush
+  // and cohesive without harsh black backfaces.
+  const normals=geometry.attributes.normal,n=new THREE.Vector3();
+  for(let i=0;i<normals.count;i++){
+    n.fromBufferAttribute(normals,i).lerp(new THREE.Vector3(0,1,0),.72).normalize();
+    normals.setXYZ(i,n.x,n.y,n.z);
+  }
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+}
+
+/** Closed low-poly meadow wildflower & leafy-shrub accent rosette (24 tris, bent-upward normals). */
+export function biomeAccentGeometry(){
+  const vertices=[],indices=[],uv=[],colors=[];
+  const petals=4;
+  for(let p=0;p<petals;p++){
+    const a=p*Math.PI/2+.35,dx=Math.cos(a),dz=Math.sin(a),px=-dz,pz=dx;
+    const base=vertices.length/3,len=.26+(p%2)*.06,wid=.11,h=.22+(p%2)*.07;
+    const stem=[dx*.03,0,dz*.03],left=[dx*len*.55-px*wid,h*.62,dz*len*.55-pz*wid],right=[dx*len*.55+px*wid,h*.62,dz*len*.55+pz*wid],tip=[dx*len,h,dz*len],under=[dx*len*.45,h*.38,dz*len*.45];
+    vertices.push(...stem,...left,...right,...tip,...under);
+    uv.push(.5,0,0,.5,1,.5,.5,1,.5,.4);
+    colors.push(.42,.48,.34,.78,.84,.68,.78,.84,.68,1,1,.92,.52,.56,.44);
+    indices.push(base,base+2,base+1, base+1,base+2,base+3, base,base+1,base+4, base+1,base+3,base+4, base+3,base+2,base+4, base+2,base,base+4);
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const normals=geometry.attributes.normal,n=new THREE.Vector3();
+  for(let i=0;i<normals.count;i++){n.fromBufferAttribute(normals,i).lerp(new THREE.Vector3(0,1,0),.75).normalize();normals.setXYZ(i,n.x,n.y,n.z);}
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+}
+
+function accentPaletteFor(map){
+  const biome=terrainBiome(map);
+  if(isSnowBiome(map))return [0xc6d5dc,0x95adb4,0xdce6ea,0x7d9491];
+  if(biome.ash)return [0x4c403c,0x664c3d,0x3a3330,0x7c553b];
+  if(biome.sand)return [0xd8be78,0xc4a562,0x8f9468,0xe2cd94];
+  return [0xebd05a,0xf1ebd0,0xb29ad2,0x497336,0x628844,0xe0b553];
+}
+
+function scatterAccents(land,capacity){
+  if(!capacity)return [];
+  const rng=seededRandom(land.seed+4391),palette=accentPaletteFor(land.map),entries=[],edge=land.half-4;
+  const plant=(x,z,scale,height)=>{
+    if(Math.max(Math.abs(x),Math.abs(z))>edge||roadDistance(x,z,land,2.3)<2.3||bridgeFootprint(land.map,x,z,3.2))return;
+    const y=land.surfaceHeightAt(x,z);
+    if(y<.24)return;
+    entries.push({x,y,z,angle:rng()*Math.PI*2,scale,height,color:palette[Math.floor(rng()*palette.length)],shade:.84+rng()*.26});
+  };
+  const cluster=(x,z,r,n,lim)=>{
+    for(let i=0;i<n&&entries.length<lim;i++){
+      const a=rng()*Math.PI*2,d=Math.sqrt(rng())*r;
+      plant(x+Math.cos(a)*d,z+Math.sin(a)*d,.75+rng()*.70,.75+rng()*.65);
+    }
+  };
+  const roads=terrainRoadPaths(land),vergeLim=Math.floor(capacity*.34);
+  for(const road of roads){
+    const count=Math.max(2,Math.ceil(vergeLim/Math.max(1,roads.length)/4));
+    for(let i=0;i<count&&entries.length<vergeLim;i++){
+      const seg=road.segments[Math.floor(rng()*road.segments.length)],t=rng(),side=i%2?1:-1;
+      const off=side*(2.9+rng()*2.6)/Math.max(.001,Math.sqrt(seg.length));
+      cluster(seg.x+t*seg.dx-seg.dz*off,seg.z+t*seg.dz+seg.dx*off,1.8,4,vergeLim);
+    }
+  }
+  for(let i=0;i<capacity*2&&entries.length<capacity;i++){
+    const x=(rng()-.5)*edge*2,z=(rng()-.5)*edge*2;
+    cluster(x,z,2.1,2+Math.floor(rng()*4),capacity);
+  }
+  return entries;
 }
 
 function scatterCover(land,capacity){
@@ -147,23 +240,40 @@ function indexCover(entries){
 
 export class GroundCover{
   constructor(view){
-    this.view=view;const land=view.landscape,low=view.settings.quality!=='high';
+    this.view=view;const land=view.landscape,quality=view.settings.quality,low=quality!=='high';
     const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.036:.072)));
 
-    const material=standardMaterial({color:0xffffff,roughness:.98,vertexColors:true});
+    const material=standardMaterial({color:0xffffff,roughness:.96,vertexColors:true});
     this.wind=configureGrassWind(material);
-    this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(view.settings.quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
+    this.mesh=new THREE.InstancedMesh(grassTuftGeometry(tuftBlades(quality)),material,capacity);this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;
     this.mesh.name='Solid ground vegetation';this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
     this.entries=scatterCover(land,capacity);this.cells=indexCover(this.entries);
     this.visibleEntries=[];this.buildingSites=new Map();this.dummy=new THREE.Object3D();this.color=new THREE.Color();
+
+    // Biome wildflower & low-shrub scatter shares the exact same fog/viewport/foundation culling.
+    const accentCap=quality==='high'?Math.min(780,Math.floor(land.worldSize**2*.014)):quality==='medium'?Math.min(340,Math.floor(land.worldSize**2*.007)):0;
+    this.accentEntries=scatterAccents(land,accentCap);
+    this.accentCells=indexCover(this.accentEntries);
+    this.visibleAccents=[];
+    if(accentCap>0){
+      this.accents=new THREE.InstancedMesh(biomeAccentGeometry(),material,accentCap);
+      this.accents.count=0;this.accents.frustumCulled=false;this.accents.receiveShadow=true;
+      this.accents.name='Biome wildflowers and shrubs';this.accents.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      view.terrain.add(this.accents);
+    }else this.accents=null;
     this.update(true,true);
   }
   update(menu=false,force=false){
     const v=this.view;
     const animated=!v.settings.reducedMotion&&v.settings.quality!=='low';
     this.wind.time.value=animated?v.clock:0;
-    this.wind.strength.value=animated?(.055+(v.weatherState?.amount||0)*.095)*(v.settings.quality==='high'?1:.7):0;
-    const key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog].join(':');
+    this.wind.strength.value=animated?(.060+(v.weatherState?.amount||0)*.10)*(v.settings.quality==='high'?1:.7):0;
+    const atmWind=v.atmosphereUniforms?.wind?.value;
+    if(atmWind&&this.wind.dir){
+      const len=Math.hypot(atmWind.x,atmWind.z);
+      if(len>.001)this.wind.dir.value.set(atmWind.x/len,atmWind.z/len);
+    }
+    const key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog,v.settings.quality].join(':');
     if(!force&&this.key===key&&v.clock-(this.last||0)<(v.settings.quality==='high'?.3:.5))return;
     this.key=key;this.last=v.clock;
     const sites=this.buildingSites;sites.clear();
@@ -177,7 +287,7 @@ export class GroundCover{
         if(footprints?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
         if(this.visibleEntries[count]!==e){
           this.dummy.position.set(e.x,e.y+.005,e.z);this.dummy.rotation.set(0,e.angle,0);
-          this.dummy.scale.set(e.scale*1.22,e.scale*e.height,e.scale*1.22);this.dummy.updateMatrix();
+          this.dummy.scale.set(e.scale*1.26,e.scale*e.height,e.scale*1.26);this.dummy.updateMatrix();
           this.mesh.setMatrixAt(count,this.dummy.matrix);matrixChanged=true;
           this.mesh.setColorAt(count,this.color.setHex(e.color).multiplyScalar(e.shade));colorChanged=true;
         }
@@ -187,6 +297,35 @@ export class GroundCover{
     this.mesh.count=count;this.visibleEntries.length=count;
     if(matrixChanged)markInstancePrefix(this.mesh);
     if(colorChanged){this.mesh.instanceColor.clearUpdateRanges();this.mesh.instanceColor.addUpdateRange(0,count*3);this.mesh.instanceColor.needsUpdate=true;}
-    v.groundCoverDiagnostics={visible:count,seeded:this.entries.length,triangles:count*this.mesh.geometry.index.count/3,drawCalls:count?1:0};
+
+    let accentCount=0;
+    if(this.accents&&v.settings.quality!=='low'){
+      let aMat=false,aCol=false;
+      for(const cell of this.accentCells){
+        if(!nearViewport(v,cell.x,cell.y,cell.z,cell.radius))continue;
+        const footprints=sites.get(cell.key);
+        for(const e of cell.entries){
+          if(!nearViewport(v,e.x,e.y,e.z,6)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
+          if(footprints?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+          if(this.visibleAccents[accentCount]!==e){
+            this.dummy.position.set(e.x,e.y+.006,e.z);this.dummy.rotation.set(0,e.angle,0);
+            this.dummy.scale.set(e.scale*1.15,e.scale*e.height,e.scale*1.15);this.dummy.updateMatrix();
+            this.accents.setMatrixAt(accentCount,this.dummy.matrix);aMat=true;
+            this.accents.setColorAt(accentCount,this.color.setHex(e.color).multiplyScalar(e.shade));aCol=true;
+          }
+          this.visibleAccents[accentCount++]=e;
+        }
+      }
+      this.accents.count=accentCount;this.visibleAccents.length=accentCount;
+      if(aMat)markInstancePrefix(this.accents);
+      if(aCol){this.accents.instanceColor.clearUpdateRanges();this.accents.instanceColor.addUpdateRange(0,accentCount*3);this.accents.instanceColor.needsUpdate=true;}
+    }else if(this.accents){
+      this.accents.count=0;this.visibleAccents.length=0;
+    }
+    v.groundCoverDiagnostics={visible:count,seeded:this.entries.length,accentVisible:accentCount,triangles:count*this.mesh.geometry.index.count/3+(this.accents?accentCount*this.accents.geometry.index.count/3:0),drawCalls:count?1:0};
+  }
+  dispose(){
+    this.mesh.geometry.dispose();this.mesh.material.dispose();this.mesh.removeFromParent();
+    if(this.accents){this.accents.geometry.dispose();this.accents.removeFromParent();}
   }
 }

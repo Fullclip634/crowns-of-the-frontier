@@ -14,14 +14,14 @@ test('grass blades are closed solids with outward-facing surfaces and finite nor
   const positions=geometry.attributes.position,a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
   for(let blade=0;blade<6;blade++){
     let volume=0;
-    for(let i=blade*42;i<(blade+1)*42;i+=3){
+    for(let i=blade*30;i<(blade+1)*30;i+=3){
       a.fromBufferAttribute(positions,index[i]);b.fromBufferAttribute(positions,index[i+1]);c.fromBufferAttribute(positions,index[i+2]);
       volume+=a.dot(b.cross(c))/6;
     }
     assert.ok(volume>0,'each closed blade faces outward');
   }
   assert.ok(geometry.boundingBox.max.y>.4);assert.ok(geometry.boundingBox.max.z-geometry.boundingBox.min.z>.1);
-  assert.ok(geometry.attributes.normal.array.every(Number.isFinite));assert.equal(geometry.index.count/3,84);geometry.dispose();
+  assert.ok(geometry.attributes.normal.array.every(Number.isFinite));assert.equal(geometry.index.count/3,60);geometry.dispose();
 });
 
 test('seeded ground cover obeys terrain, exploration and newly built foundations with one draw call',()=>{

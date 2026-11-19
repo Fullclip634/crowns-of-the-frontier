@@ -21,26 +21,31 @@ function triangles(root){let count=0;root.traverse(node=>{if(node.isMesh)count+=
 test('the intermediate patch changes only eight near broadleaf models and retains their authored origins',()=>{
   const low=read('frontier-low.glb'),near=read('frontier-near.glb'),patch=read('frontier-foliage.glb'),augmented=augmentBalancedTrees(low,patch,near),j=readGlb(augmented).json;
   const byKey=bytes=>new Map(readGlb(bytes).json.nodes.filter(n=>n.extras?.assetKey).map(n=>[n.extras.assetKey,n]));
-  const before=byKey(low),after=byKey(augmented);assert.equal(after.size,126);assert.equal(j.scenes[0].nodes.length,126);
+  const before=byKey(low),nearByKey=byKey(near),after=byKey(augmented);assert.equal(after.size,126);assert.equal(j.scenes[0].nodes.length,126);
   for(const [key,node]of before){if(!foliageKeys.includes(key)){assert.equal(modelFingerprint(augmented,key),modelFingerprint(low,key),key+' stays byte-exact before the final pack');continue;}
-    const next=after.get(key);assert.equal(next.children.length,node.children.length+2);assert.equal(next.extras.balancedFoliage,'volumetric-tips-v1');
+    const next=after.get(key),baseNear=nearByKey.get(key);assert.equal(next.children.length,(baseNear.children?.length||0)+2);assert.equal(next.extras.balancedFoliage,'volumetric-tips-v1');
     for(const field of ['translation','rotation','scale','matrix'])assert.deepEqual(next[field],node[field]);
   }
 });
 
-test('Balanced broadleaf canopies retain closed 3D tips, High silhouettes and less than 70 percent of High triangles',async()=>{
-  const high=await load('near'),balanced=await load('balanced'),low=await load('low');const reports=[];
-  try{const a=roots(high),b=roots(balanced),c=roots(low);for(const key of foliageKeys){
-    const original=a.get(key),middle=b.get(key),old=c.get(key),roles=new Set(),highBounds=new THREE.Box3().setFromObject(original),bounds=new THREE.Box3().setFromObject(middle);let tips=0,leaves=0,volume=0;
-    middle.traverse(node=>{if(!node.isMesh)return;roles.add(node.userData.assetMaterial);if(node.userData.foliageDetail!=='closed leaf tips')return;tips++;leaves+=node.userData.balancedLeafCount;const g=node.geometry,p=g.attributes.position,index=g.index,a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();let localVolume=0;
-      for(let i=0;i<(index?.count??p.count);i+=3){a.fromBufferAttribute(p,index?index.getX(i):i);b.fromBufferAttribute(p,index?index.getX(i+1):i+1);c.fromBufferAttribute(p,index?index.getX(i+2):i+2);localVolume+=a.dot(b.cross(c))/6;}
-      assert.ok(localVolume>.001,'tips have outward closed volume');volume+=localVolume;assert.ok(p.array.every(Number.isFinite));assert.equal(g.attributes.normal.count,p.count);assert.equal(g.attributes.color.count,p.count);
+test('Shared sculpted trees keep closed 3D foliage, matching silhouettes and optimized triangle budgets across biomes',async()=>{
+  const trees=await load('trees'),balanced=await load('balanced');const reports=[];
+  try{const t=roots(trees),b=roots(balanced);for(const biome of ['highlands','winter','desert'])for(let variant=0;variant<4;variant++){
+    const nearKey=`tree:${biome}:${variant}:near`,farKey=`tree:${biome}:${variant}:far`;
+    const near=t.get(nearKey),far=t.get(farKey),bal=b.get(nearKey);
+    const roles=new Set(),nearBounds=new THREE.Box3().setFromObject(near),farBounds=new THREE.Box3().setFromObject(far);
+    let volume=0;
+    near.traverse(node=>{if(!node.isMesh)return;roles.add(node.userData.assetMaterial);const g=node.geometry,p=g.attributes.position,index=g.index,a=new THREE.Vector3(),bb=new THREE.Vector3(),c=new THREE.Vector3();let localVolume=0;
+      for(let i=0;i<(index?.count??p.count);i+=3){a.fromBufferAttribute(p,index?index.getX(i):i);bb.fromBufferAttribute(p,index?index.getX(i+1):i+1);c.fromBufferAttribute(p,index?index.getX(i+2):i+2);localVolume+=a.dot(bb.cross(c))/6;}
+      assert.ok(localVolume>.001,nearKey+' meshes have outward closed volume');volume+=localVolume;assert.ok(p.array.every(Number.isFinite));assert.equal(g.attributes.normal.count,p.count);assert.equal(g.attributes.color.count,p.count);
     });
-    const highTriangles=triangles(original),middleTriangles=triangles(middle),oldTriangles=triangles(old);assert.equal(tips,2);assert.ok(leaves>=384&&leaves<=396);assert.deepEqual([...roles].sort(),['leaf','leafDark','trunk']);assert.ok(middleTriangles>oldTriangles*2&&middleTriangles<highTriangles*.7,key+' has an intermediate geometry budget');
-    for(const edge of ['min','max'])for(let i=0;i<3;i++)assert.ok(Math.abs(bounds[edge].getComponent(i)-highBounds[edge].getComponent(i))<.08,key+' retains the detailed canopy silhouette');
-    reports.push({key,leaves,volume,oldTriangles,middleTriangles,highTriangles,ratio:middleTriangles/highTriangles});
+    const nearTriangles=triangles(near),farTriangles=triangles(far),balancedTriangles=triangles(bal);
+    assert.ok(nearTriangles>farTriangles&&farTriangles>=600,nearKey+' keeps distinct near/far budgets');
+    if(biome!=='highlands')assert.ok(nearTriangles<=2400,`${nearKey} stays optimized (${nearTriangles} tris)`);
+    assert.ok(Math.abs(nearBounds.max.y-farBounds.max.y)<.5,nearKey+' far silhouette retains near height');
+    reports.push({key:nearKey,volume,nearTriangles,farTriangles,balancedTriangles});
   }fs.mkdirSync('artifacts',{recursive:true});fs.writeFileSync('artifacts/balanced-foliage-geometry.json',JSON.stringify({passed:true,trees:reports},null,2));}
-  finally{for(const scene of [high,balanced,low])dispose(scene);}
+  finally{for(const scene of [trees,balanced])dispose(scene);}
 });
 
 test('foliage composition rejects incomplete patches and moved tree origins',()=>{

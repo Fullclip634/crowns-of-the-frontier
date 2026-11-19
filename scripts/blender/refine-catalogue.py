@@ -250,32 +250,122 @@ def crown_leaves(root, crowns, scale, rng):
             obj["foliageDetail"] = "closed leaf tips"
 
 def winter_boughs(root, height, variant, far, rng):
+    """Windswept snow-laden alpine spruces with drooping asymmetric boughs and carved snow caps."""
     bark_vertices, bark_faces = [], []
     foliage = {role: ([], []) for role in ["leafDark", "snow"]}
-    tiers, branches = (5, 7) if far else (7, 9)
+    tiers, branches = (5, 5) if far else (6, 7)
     for tier in range(tiers):
-        z = 1.5 + tier*(height-1.9)/(tiers-1)
-        radius = 2.15*(1-tier/(tiers+1))
-        droop = -.36 * (1 - tier / (tiers + 1) * .65)
+        progress = tier / max(1, tiers - 1)
+        z = 1.35 + progress * (height - 1.85)
+        radius = (2.35 * (1 - progress) ** .82 + .24) * (1.06 if far else 1.0)
+        droop = -.54 * (1 - progress * .62)
         for branch in range(branches):
-            angle = branch*math.tau/branches + tier*.43 + variant*.3
+            angle = branch * math.tau / branches + tier * .58 + variant * .41 + rng.uniform(-.18, .18)
             direction = Vector((math.cos(angle), math.sin(angle), 0))
-            root_point = Vector((.10, -.05, z))
-            tip = root_point + direction*(radius*rng.uniform(.88, 1.1)) + Vector((0, 0, droop))
-            rod_data(bark_vertices, bark_faces, root_point, tip, .075*(1-tier/tiers*.65), .12, 4 if far else 5)
-            for section in range(2 if far else 3):
-                fraction = .30 + section*(.55 if far else .30)
-                center = root_point.lerp(tip, fraction)
-                length = radius*(.7 if far else .55)
-                width = radius*(.22 if far else .18)*(1-section*.12)
-                verts, faces = foliage["leafDark"]
-                leaf_volume(verts, faces, center, direction, length, width, .13 if far else .11)
-                # Uneven patches sit on the boughs, leaving dark needle edges.
-                if (branch+tier+variant) % 3 != 0:
-                    verts, faces = foliage["snow"]
-                    leaf_volume(verts, faces, center+Vector((0, 0, .125)), direction,
-                                length*.72, width*.68, .06)
-    make_mesh(root, "trunk", bark_vertices, bark_faces, root.name + "_Boughs")
+            across = Vector((-direction.y, direction.x, 0))
+            asym = rng.uniform(.78, 1.22)
+            root_point = Vector((.12 * progress, -.06 * progress, z + rng.uniform(-.10, .10)))
+            tip = root_point + direction * (radius * asym) + Vector((0, 0, droop * asym))
+            if tier < (3 if far else 4):
+                rod_data(bark_vertices, bark_faces, root_point, tip.lerp(root_point, .22), .062 * (1 - progress * .65), .20, 4)
+            dark, dark_faces = foliage["leafDark"]
+            snow_v, snow_f = foliage["snow"]
+            # Two overlapping curved needle sprays per bough with irregular silhouette tips.
+            for section in range(2):
+                frac = .36 + section * .44
+                center = root_point.lerp(tip, frac) + across * (rng.uniform(-.08, .08) * radius)
+                bough_dir = (tip - root_point).normalized() + Vector((0, 0, -.12 if section == 1 else -.04))
+                length = radius * asym * (.68 if far else .62) * (1 - section * .14)
+                width = radius * (.29 if far else .23) * (1 - section * .16)
+                leaf_volume(dark, dark_faces, center, bough_dir, length, width, .14 if far else .12)
+                # Carved snow pillows settle heavily on upper/outer boughs, leaving dark evergreen undersides.
+                if (branch + tier + variant + section) % 4 != 0:
+                    snow_offset = Vector((0, 0, .115 if section == 0 else .095))
+                    leaf_volume(snow_v, snow_f, center + snow_offset, bough_dir + Vector((0, 0, .06)),
+                                length * .78, width * .74, .085)
+    # Sculpted evergreen spire leader + snowy cap at apex.
+    apex = Vector((.18, -.09, height))
+    dark, dark_faces = foliage["leafDark"]
+    snow_v, snow_f = foliage["snow"]
+    for k in range(3 if far else 4):
+        a = k * math.tau / (3 if far else 4) + variant * .5
+        d = Vector((math.cos(a) * .45, math.sin(a) * .45, .88)).normalized()
+        leaf_volume(dark, dark_faces, apex + Vector((math.cos(a) * .16, math.sin(a) * .16, -.35)), d, .78, .22, .11)
+    leaf_volume(snow_v, snow_f, apex + Vector((0, 0, -.05)), Vector((0, 0, 1)), .62, .20, .14)
+    if bark_vertices:
+        boughs = make_mesh(root, "trunk", bark_vertices, bark_faces, root.name + "_Boughs")
+        boughs["skipCraftedBevel"] = True
+    for role, (vertices, faces) in foliage.items():
+        make_mesh(root, role, vertices, faces, root.name + "_" + role)
+
+
+def desert_acacia(root, height, spread, variant, far, rng):
+    """Flat-topped layered desert acacias with gnarled V-forked limbs and sunlit umbrella fronds."""
+    bark, bark_faces = [], []
+    foliage = {"leaf": ([], []), "leafDark": ([], [])}
+    split_z = height * (.40 + (variant % 2) * .04)
+    trunk = [(0, 0, 0), (.11 * (-1 if variant % 2 else 1), -.05, split_z * .52),
+             (.16 * (-1 if variant % 2 else 1), .06, split_z)]
+    radii = [.26, .20, .15]
+    for s in range(len(trunk) - 1):
+        rod_data(bark, bark_faces, trunk[s], trunk[s + 1], radii[s], radii[s + 1] / radii[s], 6 if far else 8)
+    for r in range(2 if far else 3):
+        ra = r * math.tau / (2 if far else 3) + variant * .7
+        rod_data(bark, bark_faces, (0, 0, .28), (math.cos(ra) * .68, math.sin(ra) * .68, .03), .12, .22, 4 if far else 5)
+
+    split = Vector(trunk[-1])
+    pads = []
+    # Central crown leader slightly taller than outer umbrella tiers.
+    center_tip = split + Vector((rng.uniform(-.22, .22), rng.uniform(-.22, .22), height * .46))
+    rod_data(bark, bark_faces, split, center_tip, .10, .38, 4 if far else 5)
+    pads.append((center_tip + Vector((0, 0, .14)), 1.38 * spread, .22))
+
+    # 4 spreading gnarled primary limbs radiating into flat-topped umbrella crowns.
+    limb_count = 4
+    for i in range(limb_count):
+        ang = i * math.tau / limb_count + variant * .55 + rng.uniform(-.26, .26)
+        reach = (1.55 + rng.uniform(.05, .52)) * spread
+        tier_z = height * (.74 + (i % 2) * .09 + rng.uniform(-.04, .05))
+        dir_xy = Vector((math.cos(ang), math.sin(ang), 0))
+        elbow = split + dir_xy * (reach * .54) + Vector((0, 0, (tier_z - split_z) * .58))
+        tip = split + dir_xy * reach + Vector((0, 0, tier_z - split_z))
+        rod_data(bark, bark_faces, split, elbow, .105, .64, 4 if far else 5)
+        rod_data(bark, bark_faces, elbow, tip, .068, .35, 4)
+        pads.append((tip + Vector((0, 0, .10)), (1.18 + rng.uniform(.0, .26)) * spread, .19))
+        # Forked secondary sub-boughs create wide overlapping flat acacia terraces.
+        forks = (-1,) if far and i % 2 else (-1, 1) if not far else (1,)
+        for side in forks:
+            sub_ang = ang + side * (.52 + rng.uniform(-.10, .12))
+            sub_dir = Vector((math.cos(sub_ang), math.sin(sub_ang), 0))
+            sub_tip = elbow + sub_dir * (reach * .62) + Vector((0, 0, (tier_z - split_z) * .42 + rng.uniform(-.12, .16)))
+            if not far:
+                rod_data(bark, bark_faces, elbow, sub_tip, .052, .32, 4)
+            if not far or side > 0:
+                pads.append((sub_tip + Vector((0, 0, .08)), (.96 + rng.uniform(-.08, .20)) * spread, .16))
+
+    dark, dark_faces = foliage["leafDark"]
+    light, light_faces = foliage["leaf"]
+    # Build each umbrella pad from horizontal overlapping closed frond sprays (zero spherical blobs).
+    for idx, (pad_center, pad_r, pad_h) in enumerate(pads):
+        under_n = 4 if far else 6
+        upper_n = 5 if far else 8
+        for k in range(under_n):
+            a = k * math.tau / under_n + idx * 1.1 + rng.uniform(-.22, .22)
+            d = Vector((math.cos(a), math.sin(a), rng.uniform(-.16, -.02))).normalized()
+            pos = pad_center + Vector((math.cos(a) * pad_r * .42, math.sin(a) * pad_r * .42, -pad_h * .45))
+            leaf_volume(dark, dark_faces, pos, d, pad_r * (1.26 if far else 1.10), pad_r * (.44 if far else .36), .11)
+        for k in range(upper_n):
+            a = k * math.tau / upper_n + idx * 1.7 + .35 + rng.uniform(-.20, .20)
+            d = Vector((math.cos(a), math.sin(a), rng.uniform(.02, .16))).normalized()
+            pos = pad_center + Vector((math.cos(a) * pad_r * .46, math.sin(a) * pad_r * .46, pad_h * (.32 + (k % 2) * .28)))
+            leaf_volume(light, light_faces, pos, d, pad_r * (1.18 if far else 1.02), pad_r * (.40 if far else .33), .095)
+        # Crown cap closes the top flat terrace cleanly when viewed from RTS camera angle.
+        cap_ang = idx * 1.3 + variant
+        leaf_volume(light, light_faces, pad_center + Vector((0, 0, pad_h * .62)),
+                    Vector((math.cos(cap_ang), math.sin(cap_ang), .08)).normalized(), pad_r * 1.18, pad_r * .56, .10)
+
+    bark_mesh = make_mesh(root, "trunk", bark, bark_faces, root.name + "_Bark")
+    bark_mesh["skipCraftedBevel"] = True
     for role, (vertices, faces) in foliage.items():
         make_mesh(root, role, vertices, faces, root.name + "_" + role)
 
@@ -333,27 +423,31 @@ def author_tree(root):
     vertices, faces = [], []
     height, spread = [(6.3, 1.0), (7.2, .78), (6.5, 1.18), (5.8, 1.12)][variant]
     if biome == "winter":
-        height, spread = 5.8 + variant*.15, 1.0
+        height, spread = 6.0 + variant*.22, 1.0
     elif biome == "highlands":
         height, spread = [(7.8, .94), (8.6, .79), (7.5, 1.0), (7.15, .92)][variant]
     elif biome == "desert":
-        spread *= .85
-    root["foliageSpecies"] = {"winter": "pine", "highlands": "meadow conifer"}.get(biome, ["oak", "birch", "elm", "beech"][variant])
+        height, spread = [(5.4, 1.08), (6.1, .96), (5.2, 1.16), (4.8, 1.05)][variant]
+    root["foliageSpecies"] = {"winter": "pine", "highlands": "meadow conifer", "desert": "desert acacia"}.get(biome, ["oak", "birch", "elm", "beech"][variant])
+    if biome == "desert":
+        desert_acacia(root, height, spread, variant, far, rng)
+        return
     # A gently bent, tapering trunk avoids the straight toy-cylinder silhouette.
     trunk = [(0, 0, 0), (.06, -.025, height*.28),
              (.13+variant*.025, -.06, height*.56), (.18, -.10, height*.80)]
     radii = [.28, .235, .17, .105]
     for segment in range(len(trunk)-1):
         rod_data(vertices, faces, trunk[segment], trunk[segment+1], radii[segment],
-                 radii[segment+1]/radii[segment], 8 if far else 12)
-    if biome == "highlands":
-        rod_data(vertices, faces, trunk[-1], (.24, -.12, height), radii[-1], .10, 6 if far else 8)
-    for i in range(4 if not far else 2):
-        angle = i * math.tau / 4 + variant
+                 radii[segment+1]/radii[segment], 6 if far else 9)
+    if biome in ("highlands", "winter"):
+        rod_data(vertices, faces, trunk[-1], (.20, -.10, height * .96), radii[-1], .12, 5 if far else 6)
+    for i in range(3 if not far else 2):
+        angle = i * math.tau / (3 if not far else 2) + variant
         rod_data(vertices, faces, (0, 0, .35),
-                 (math.cos(angle) * .72, math.sin(angle) * .72, .035), .15, .22)
+                 (math.cos(angle) * .72, math.sin(angle) * .72, .035), .14, .22, 5 if not far else 4)
     if biome == "winter":
-        make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
+        trunk_mesh = make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
+        trunk_mesh["skipCraftedBevel"] = True
         winter_boughs(root, height, variant, far, rng)
         return
     if biome == "highlands":

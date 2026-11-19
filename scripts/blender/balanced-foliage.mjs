@@ -26,6 +26,8 @@ export function augmentBalancedTrees(low,foliage,near){
 
 export function composeBalancedCatalogue({near,low,foliage,models}){
   const richer=models.filter(m=>/^(building|resource):/.test(m.key)).map(m=>m.key),lighter=models.filter(m=>!richer.includes(m.key)).map(m=>m.key);assert.equal(richer.length+lighter.length,126);
-  const trees=augmentBalancedTrees(low,foliage,near);
-  return {bytes:composeQualityCatalogue([{bytes:near,keys:richer},{bytes:trees,keys:lighter}]),richer: richer.length,lighter:lighter.length};
+  // All presets share the sculpted Blender trees from frontier-trees.glb at runtime;
+  // Balanced keeps High buildings/resources and Low troops/trees without bloating
+  // the download with obsolete broadleaf leaf-tip patches.
+  return {bytes:composeQualityCatalogue([{bytes:near,keys:richer},{bytes:low,keys:lighter}]),richer:richer.length,lighter:lighter.length};
 }
