@@ -3,18 +3,30 @@ import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {architectureStyle,isAgeStyled,ageSurface} from './architecture-age.js';
 import {isSnowBiome} from './terrain-biomes.js';
+import {ensureAtmosphereUniforms,ANALYTIC_IBL_GLSL,CLOUD_SHADOW_GLSL} from './atmosphere-uniforms.js';
 
 function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
     const material=standardMaterial({vertexColors:true,roughness:.9});
-    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0},snow:{value:0}};
+    const atm=ensureAtmosphereUniforms(view);
+    const uniforms={wood:{value:null},stone:{value:null},plaster:{value:null},roof:{value:null},woodNormal:{value:null},stoneNormal:{value:null},plasterNormal:{value:null},woodArm:{value:null},stoneArm:{value:null},plasterArm:{value:null},normalAvailable:{value:new THREE.Vector3()},armAvailable:{value:new THREE.Vector3()},detail:{value:0},night:{value:0},snow:{value:0},atmosphere:atm};
     material.frontierUniforms=uniforms;
     material.defines={USE_UV:''};
     if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
-      for(const [key,uniform] of Object.entries(uniforms))shader.uniforms['frontierStructure'+key]=uniform;
-      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\nvarying vec3 vStructurePos;\nvarying float vStructureRoofUp;\n'+shader.vertexShader;
+      for(const [key,uniform] of Object.entries(uniforms))if(key!=='atmosphere')shader.uniforms['frontierStructure'+key]=uniform;
+      for(const key of ['cloudMap','cloudOffset','cloudScale','cloudStrength','wetness','sunDir','sunColor','iblSky','iblHorizon','iblGround','iblIntensity'])shader.uniforms['frontierAtm'+key]=atm[key];
+      shader.vertexShader='attribute vec3 structureSurface;\nattribute vec3 structureEmission;\nattribute float structureNightGlow;\nvarying vec3 vStructureSurface;\nvarying vec3 vStructureEmission;\nvarying float vStructureNightGlow;\nvarying vec3 vStructurePos;\nvarying vec3 vStructureWorldPos;\nvarying float vStructureRoofUp;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvStructureSurface = structureSurface;\nvStructureEmission = structureEmission;\nvStructureNightGlow = structureNightGlow;\nvStructurePos = position;\nvStructureRoofUp = normalize(normal).y;');
+      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+        vec4 frontierStructWorld = vec4(transformed, 1.0);
+        #ifdef USE_BATCHING
+          frontierStructWorld = batchingMatrix * frontierStructWorld;
+        #endif
+        #ifdef USE_INSTANCING
+          frontierStructWorld = instanceMatrix * frontierStructWorld;
+        #endif
+        vStructureWorldPos = (modelMatrix * frontierStructWorld).xyz;`);
       shader.fragmentShader=`uniform sampler2D frontierStructurewood;
         uniform sampler2D frontierStructurestone;
         uniform sampler2D frontierStructureplaster;
@@ -30,10 +42,24 @@ function paletteMaterial(view){
         uniform float frontierStructuredetail;
         uniform float frontierStructurenight;
         uniform float frontierStructuresnow;
+        uniform sampler2D frontierAtmcloudMap;
+        uniform vec2 frontierAtmcloudOffset;
+        uniform float frontierAtmcloudScale;
+        uniform float frontierAtmcloudStrength;
+        uniform float frontierAtmwetness;
+        uniform vec3 frontierAtmsunDir;
+        uniform vec3 frontierAtmsunColor;
+        uniform vec3 frontierAtmiblSky;
+        uniform vec3 frontierAtmiblHorizon;
+        uniform vec3 frontierAtmiblGround;
+        uniform float frontierAtmiblIntensity;
         varying float vStructureRoofUp;
         varying vec3 vStructureSurface;
         varying vec3 vStructureEmission;
-        varying vec3 vStructurePos;\n`+shader.fragmentShader;
+        varying vec3 vStructurePos;
+        varying vec3 vStructureWorldPos;
+        ${CLOUD_SHADOW_GLSL}
+        ${ANALYTIC_IBL_GLSL}\n`+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
         float plinthMask = 1.0 - smoothstep(0.0, 0.82, max(0.0, vStructurePos.y));
         float earthSkirt = 1.0 - smoothstep(0.0, 0.44, max(0.0, vStructurePos.y));
@@ -60,7 +86,9 @@ function paletteMaterial(view){
           float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
         }
-        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.88, 0.84, 0.75), earthSkirt * 0.45) * groundAo;`);
+        float structWetFace = frontierAtmwetness * mix(0.45, 1.0, smoothstep(0.15, 0.85, vStructureRoofUp));
+        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.88, 0.84, 0.75), earthSkirt * 0.45) * groundAo * mix(1.0, 0.84, structWetFace);
+        diffuseColor.rgb *= frontierCloudLight(vStructureWorldPos.xz, frontierAtmcloudMap, frontierAtmcloudOffset, frontierAtmcloudScale, frontierAtmcloudStrength * 0.85, frontierAtmiblSky);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
         roughnessFactor = vStructureSurface.x;
         float structureOcclusion = mix(0.84, 1.0, smoothstep(0.0, 1.1, max(0.0, vStructurePos.y)));
@@ -70,11 +98,12 @@ function paletteMaterial(view){
           roughnessFactor *= structureArm.g;
           structureOcclusion *= mix(1.0, structureArm.r, 0.72);
         }
-        roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
+        float rainGloss = frontierAtmwetness * mix(0.42, 0.92, smoothstep(0.10, 0.75, vStructureRoofUp));
+        roughnessFactor = clamp(mix(roughnessFactor, roughnessFactor * 0.42, rainGloss), 0.04, 1.0);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= structureOcclusion;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vStructureSurface.y, 0.0, 1.0);');
       shader.fragmentShader='varying float vStructureNightGlow;\n'+shader.fragmentShader;
-      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.5) + vec3(0.65, 0.3, 0.07) * vStructureNightGlow * frontierStructurenight;');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.65) + vec3(1.18, 0.56, 0.16) * vStructureNightGlow * frontierStructurenight;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         bool normalReady = vStructureSurface.z > 2.5 ? frontierStructurenormalAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurenormalAvailable.y > 0.5 : frontierStructurenormalAvailable.x > 0.5;
@@ -86,20 +115,22 @@ function paletteMaterial(view){
         }
         #endif`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
-        float structMetalMask = smoothstep(0.10, 0.45, metalnessFactor);
-        if (structMetalMask > 0.001) {
+        {
           vec3 structViewDir = normalize(vViewPosition);
+          vec3 structWorldNormal = normalize(inverseTransformDirection(normal, viewMatrix));
           vec3 structRefl = normalize(inverseTransformDirection(reflect(-structViewDir, normal), viewMatrix));
-          vec3 structEnv = mix(vec3(0.24, 0.23, 0.20), vec3(0.76, 0.86, 0.98), smoothstep(-0.35, 0.72, structRefl.y))
-            + vec3(0.95, 0.91, 0.82) * exp(-abs(structRefl.y) * 5.0) * 0.24;
-          float structFresnel = 0.22 + 0.78 * pow(1.0 - clamp(dot(normal, structViewDir), 0.0, 1.0), 4.0);
-          float structLightScale = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) * 1.4 + 0.22, 0.18, 1.0) * (1.0 - frontierStructurenight * 0.55);
-          vec3 structMetalTint = mix(vec3(0.75), diffuseColor.rgb, 0.78);
-          outgoingLight += structMetalTint * structEnv * structFresnel * (1.0 - roughnessFactor) * structMetalMask * structLightScale * 0.36;
+          float structLuma = dot(outgoingLight, vec3(0.3, 0.59, 0.11));
+          outgoingLight += frontierAnalyticIbl(
+            structWorldNormal, normal, structViewDir, structRefl,
+            diffuseColor.rgb, roughnessFactor, metalnessFactor,
+            frontierAtmsunDir, frontierAtmsunColor,
+            frontierAtmiblSky, frontierAtmiblHorizon, frontierAtmiblGround,
+            frontierAtmiblIntensity, frontierStructurenight, frontierAtmwetness, structLuma
+          );
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v8';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v9';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms;
@@ -121,7 +152,7 @@ function paletteMaterial(view){
 function promotedWallColor(material,rawMode,mode,m){
   if(mode===rawMode)return material.color.toArray();
   // Replace wood's brown multiplier or plaster's warm tint when age promotes a surface to another architectural class.
-  if(mode===1)return [.56,.44,.32];
+  if(mode===1)return [.68,.55,.41];
   if(mode===3)return m.plaster?.color?.toArray()||[.88,.82,.69];
   if(mode===2)return material===m.darkwood?[.64,.68,.75]:[.90,.92,.96];
   return material.color.toArray();

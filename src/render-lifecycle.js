@@ -10,6 +10,8 @@ export function releaseRenderers(view){
   view.impactEffects?.dispose();
   view.flightEffects?.dispose();
   view.attackEffects?.dispose();
+  view.bloomPipeline?.dispose?.();
+  view.bloomPipeline=null;
   disposeSkyDome(view);
   view.environmentTarget?.dispose();
   view.environmentTarget=null;

@@ -170,7 +170,7 @@ export function buildLandscape(view){
   const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
   const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
   geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
-  applyGroundSurface(material,land,view.settings.quality);
+  applyGroundSurface(material,land,view.settings.quality,view.atmosphereUniforms);
   view.battleFog.scale.value=1/land.worldSize;
   shadeBattlefieldFog(material,view);
   const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;

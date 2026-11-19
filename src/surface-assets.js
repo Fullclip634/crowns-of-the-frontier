@@ -4,6 +4,7 @@ import surfaceManifest from './assets3d/textures/manifest.json' with {type:'json
 import {SurfaceResidency,surfaceKeys,surfacePins} from './surface-residency.js';
 import {loadCompressedSurface,surfaceCodecState} from './surface-codecs.js';
 import {characterSurfaceKinds} from './character-surfaces.js';
+import {ensureAtmosphereUniforms,applyAnalyticIblToMaterial} from './atmosphere-uniforms.js';
 
 const files={
   grass:{color:new URL('./assets3d/textures/leafy_grass_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/leafy_grass_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/leafy_grass_arm.jpg',import.meta.url).href},
@@ -55,18 +56,20 @@ export function applySurfaceMaterials(view){
     if(structureChanged)material.needsUpdate=true;
   };
   bind(m.stone,'stone',0xe5e0d4);bind(m.brick,'stone',0xb8947b);
-  bind(m.plaster,'plaster',0xe5dbbf);
-  bind(m.wood,'wood',0xddd1b9);bind(m.darkwood,'wood',0x988674);bind(m.timberEdge,'wood',0x82715d);
+  bind(m.plaster,'plaster',0xe8dec3);
+  bind(m.wood,'wood',0xe4d7bf);bind(m.darkwood,'wood',0xb09c84);bind(m.timberEdge,'wood',0x9c8770);
   bind(m.rock,'boulder',0xd8ded8);
   // Dark granite-slate host rock contrasts cleanly against inlaid metallic gold
   // veins without crushing boulder albedo into flat charcoal black.
-  bind(m.oreRock,'boulder',0x8e8980,{metalness:.08,roughness:.88});
+  bind(m.oreRock,'boulder',0x969188,{metalness:.08,roughness:.84});
+  const atm=ensureAtmosphereUniforms(view);
+  for(const key of ['rock','oreRock','gold','iron'])applyAnalyticIblToMaterial(m[key],atm);
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 
-export function applyGroundSurface(material,land,quality){
+export function applyGroundSurface(material,land,quality,atmosphere=null){
   const dimension=id=>Math.max(.25,(surfaceManifest.find(asset=>asset.id===id)?.dimensionsMM?.[0]||2000)/1000);
-  applyTerrainShading(material,land,quality,surfaces,{grass:dimension('leafy_grass'),soil:dimension('brown_mud'),rock:dimension('rocky_terrain_02')});
+  applyTerrainShading(material,land,quality,surfaces,{grass:dimension('leafy_grass'),soil:dimension('brown_mud'),rock:dimension('rocky_terrain_02')},atmosphere);
 }
 
 export function retainedSurfaceTextures(){return cache.textures();}

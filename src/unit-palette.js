@@ -4,6 +4,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {ensureModelIndices} from './vertex-layout.js';
 import {characterSurfaceMode,characterAtlasGLSL} from './character-surfaces.js';
 import {characterSurfaceMaps} from './surface-assets.js';
+import {ensureAtmosphereUniforms,ANALYTIC_IBL_GLSL} from './atmosphere-uniforms.js';
 const GARMENT_TINT={
   villager:[1.02,.98,.87],spearman:[.78,.68,.53],swordsman:[.72,.65,.60],
   archer:[.61,.72,.51],marksman:[.69,.60,.47],knight:[.71,.67,.62],
@@ -24,11 +25,13 @@ const HORSE_COAT={
 function paletteMaterial(view){
   if(!view.materials.unitPalette){
     const material=standardMaterial({vertexColors:true,roughness:.9});
-    const wood={value:view.materials.wood.map||null},teams={value:Array.from({length:8},(_,i)=>view.teamMaterials[i]?.color||new THREE.Color())},roofs={value:Array.from({length:8},(_,i)=>view.roofMaterials?.[i]?.color||new THREE.Color())},characterColor={value:null},characterNormal={value:null},characterReady={value:0},characterDetail={value:0};material.frontierUniforms={wood,teams,roofs,characterColor,characterNormal,characterReady,characterDetail};
+    const atm=ensureAtmosphereUniforms(view);
+    const wood={value:view.materials.wood.map||null},teams={value:Array.from({length:8},(_,i)=>view.teamMaterials[i]?.color||new THREE.Color())},roofs={value:Array.from({length:8},(_,i)=>view.roofMaterials?.[i]?.color||new THREE.Color())},characterColor={value:null},characterNormal={value:null},characterReady={value:0},characterDetail={value:0};material.frontierUniforms={wood,teams,roofs,characterColor,characterNormal,characterReady,characterDetail,atmosphere:atm};
     if(!material.isNodeMaterial)material.onBeforeCompile=shader=>{
       shader.uniforms.frontierUnitWood=wood;
       shader.uniforms.frontierTeamColors=teams;shader.uniforms.frontierRoofColors=roofs;
       for(const key of ['characterColor','characterNormal','characterReady','characterDetail'])shader.uniforms['frontierUnit'+key]=material.frontierUniforms[key];
+      for(const key of ['wetness','night','sunDir','sunColor','iblSky','iblHorizon','iblGround','iblIntensity'])shader.uniforms['frontierUnitAtm'+key]=atm[key];
       shader.vertexShader='attribute vec3 unitSurface;\nattribute float unitTeamMask;\n#ifdef USE_INSTANCING\nattribute float instanceOwner;\n#endif\nuniform vec3 frontierTeamColors[8];\nuniform vec3 frontierRoofColors[8];\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>',`#include <color_vertex>
         vUnitSurface = unitSurface; vUnitTeamColor = vec3(1.0);
@@ -38,7 +41,19 @@ function paletteMaterial(view){
         else if(unitTeamMask > 0.01) vUnitTeamColor = mix(vec3(0.76, 0.71, 0.61), frontierTeamColors[owner], clamp(unitTeamMask, 0.0, 1.0));
         #endif`);
       shader.fragmentShader='uniform sampler2D frontierUnitWood;\nvarying vec3 vUnitSurface;\nvarying vec3 vUnitTeamColor;\n'+shader.fragmentShader;
-      shader.fragmentShader='uniform sampler2D frontierUnitcharacterColor;\nuniform sampler2D frontierUnitcharacterNormal;\nuniform float frontierUnitcharacterReady;\nuniform float frontierUnitcharacterDetail;\n'+characterAtlasGLSL+shader.fragmentShader;
+      shader.fragmentShader=`uniform sampler2D frontierUnitcharacterColor;
+        uniform sampler2D frontierUnitcharacterNormal;
+        uniform float frontierUnitcharacterReady;
+        uniform float frontierUnitcharacterDetail;
+        uniform float frontierUnitAtmwetness;
+        uniform float frontierUnitAtmnight;
+        uniform vec3 frontierUnitAtmsunDir;
+        uniform vec3 frontierUnitAtmsunColor;
+        uniform vec3 frontierUnitAtmiblSky;
+        uniform vec3 frontierUnitAtmiblHorizon;
+        uniform vec3 frontierUnitAtmiblGround;
+        uniform float frontierUnitAtmiblIntensity;
+        ${ANALYTIC_IBL_GLSL}\n`+characterAtlasGLSL+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
         diffuseColor.rgb *= vUnitTeamColor;
         bool unitCharacter = vUnitSurface.z > 1.5 && frontierUnitcharacterReady > 0.5;
@@ -54,7 +69,7 @@ function paletteMaterial(view){
         roughnessFactor = vUnitSurface.x;
         if(unitCharacter && unitDetail > 0.001) roughnessFactor = mix(roughnessFactor, texture2D(frontierUnitcharacterNormal, unitCharacterUv).a, unitDetail);
         if(vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5) roughnessFactor *= 0.82;
-        roughnessFactor = clamp(roughnessFactor, 0.04, 1.0);`);
+        roughnessFactor = clamp(mix(roughnessFactor, roughnessFactor * 0.60, frontierUnitAtmwetness * 0.72), 0.04, 1.0);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(min(vUnitSurface.y + (vUnitSurface.z > 3.5 && vUnitSurface.z < 4.5 ? 0.08 : 0.0), 0.62), 0.0, 1.0);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
@@ -65,21 +80,23 @@ function paletteMaterial(view){
         }
         #endif`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
-        float unitMetalMask = smoothstep(0.08, 0.45, metalnessFactor);
-        if (unitMetalMask > 0.001) {
+        {
           vec3 unitViewDir = normalize(vViewPosition);
+          vec3 unitWorldNormal = normalize(inverseTransformDirection(normal, viewMatrix));
           vec3 unitRefl = normalize(inverseTransformDirection(reflect(-unitViewDir, normal), viewMatrix));
-          vec3 unitEnv = mix(vec3(0.24, 0.23, 0.20), vec3(0.76, 0.86, 0.98), smoothstep(-0.35, 0.72, unitRefl.y))
-            + vec3(0.95, 0.91, 0.82) * exp(-abs(unitRefl.y) * 5.0) * 0.24;
-          float unitFresnel = 0.22 + 0.78 * pow(1.0 - clamp(dot(normal, unitViewDir), 0.0, 1.0), 4.0);
-          float unitLightScale = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) * 1.4 + 0.22, 0.18, 1.0);
-          vec3 unitMetalTint = mix(vec3(0.75), diffuseColor.rgb, 0.78);
-          outgoingLight += unitMetalTint * unitEnv * unitFresnel * (1.0 - roughnessFactor) * unitMetalMask * unitLightScale * 0.36;
+          float unitLuma = dot(outgoingLight, vec3(0.3, 0.59, 0.11));
+          outgoingLight += frontierAnalyticIbl(
+            unitWorldNormal, normal, unitViewDir, unitRefl,
+            diffuseColor.rgb, roughnessFactor, metalnessFactor,
+            frontierUnitAtmsunDir, frontierUnitAtmsunColor,
+            frontierUnitAtmiblSky, frontierUnitAtmiblHorizon, frontierUnitAtmiblGround,
+            frontierUnitAtmiblIntensity, frontierUnitAtmnight, frontierUnitAtmwetness, unitLuma
+          );
         }
         #include <opaque_fragment>`);
     };
     // A shared UV channel is needed for the optional wood sampling above.
-    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v6';}
+    if(!material.isNodeMaterial){material.defines={USE_UV:''};material.customProgramCacheKey=()=> 'frontier-unit-palette-v7';}
     view.materials.unitPalette=material;
   }
   const uniforms=view.materials.unitPalette.frontierUniforms;uniforms.wood.value=view.materials.wood.map||null;

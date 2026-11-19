@@ -1,18 +1,24 @@
 import * as THREE from 'three';
 import {environmentGenerator,basicMaterial,nodeRuntime} from './render-runtime.js';
 import {isSnowBiome,terrainBiome} from './terrain-biomes.js';
+import {ensureAtmosphereUniforms} from './atmosphere-uniforms.js';
 
 const ATMOSPHERES=Object.freeze({
-  winter:Object.freeze({skyHex:0xc2d0da,zenithHex:0x4e769e,hemiGroundHex:0x91a8b7,envZenith:'#4e769e',envHorizon:'#e4eef4',envGround:'#8b999f',
-    sunHex:0xfff4e7,fillHex:0xd0e5ff,keyIntensity:3.05,fillIntensity:1.28,exposure:1.19,hazeNear:77,hazeFar:228}),
-  arid:Object.freeze({skyHex:0xcbb99b,zenithHex:0x4473a6,hemiGroundHex:0xa08666,envZenith:'#4474a6',envHorizon:'#eadbc0',envGround:'#917851',
-    sunHex:0xffe0b9,fillHex:0xd4e1f1,keyIntensity:3.22,fillIntensity:1.13,exposure:1.15,hazeNear:112,hazeFar:288}),
-  volcanic:Object.freeze({skyHex:0x938884,zenithHex:0x3c4553,hemiGroundHex:0x695c58,envZenith:'#3d4653',envHorizon:'#bdb0a9',envGround:'#3d3735',
-    sunHex:0xf1d6b8,fillHex:0xc3c8d7,keyIntensity:2.82,fillIntensity:1.17,exposure:1.19,hazeNear:95,hazeFar:240}),
-  coastal:Object.freeze({skyHex:0xa7c0cb,zenithHex:0x356ea8,hemiGroundHex:0x697f66,envZenith:'#356ea8',envHorizon:'#deecf2',envGround:'#4d6542',
-    sunHex:0xffedda,fillHex:0xcfe7f5,keyIntensity:3,fillIntensity:1.22,exposure:1.16,hazeNear:78,hazeFar:230}),
-  temperate:Object.freeze({skyHex:0xa4b9c2,zenithHex:0x3b6c9e,hemiGroundHex:0x6f7e56,envZenith:'#3b6d9f',envHorizon:'#dce7ed',envGround:'#4a5a3a',
-    sunHex:0xffecd2,fillHex:0xd8e9f2,keyIntensity:3.12,fillIntensity:1.2,exposure:1.17,hazeNear:94,hazeFar:255}),
+  winter:Object.freeze({skyHex:0xc4d3df,zenithHex:0x4a739c,hemiGroundHex:0x9eb2c2,envZenith:'#4a739c',envHorizon:'#e6f0f6',envGround:'#94a4ad',
+    iblSkyHex:0x5e8ec0,iblHorizonHex:0xe2eef5,iblGroundHex:0x98aab6,iblIntensity:.48,
+    sunHex:0xfff2e0,fillHex:0xd3e6ff,keyIntensity:3.04,fillIntensity:1.48,exposure:1.10,hazeNear:78,hazeFar:228}),
+  arid:Object.freeze({skyHex:0xd1be9e,zenithHex:0x3f71a8,hemiGroundHex:0xb59670,envZenith:'#3f71a8',envHorizon:'#eedec2',envGround:'#9c8159',
+    iblSkyHex:0x4f84bc,iblHorizonHex:0xecdac0,iblGroundHex:0xa98c63,iblIntensity:.46,
+    sunHex:0xffdfaf,fillHex:0xd7e4f4,keyIntensity:3.34,fillIntensity:1.34,exposure:1.11,hazeNear:114,hazeFar:288}),
+  volcanic:Object.freeze({skyHex:0x978b85,zenithHex:0x3a4352,hemiGroundHex:0x76665f,envZenith:'#3a4352',envHorizon:'#c2b4ab',envGround:'#4b403c',
+    iblSkyHex:0x586274,iblHorizonHex:0xc4b3a8,iblGroundHex:0x6d584f,iblIntensity:.45,
+    sunHex:0xf3cfa8,fillHex:0xc6cbda,keyIntensity:2.96,fillIntensity:1.36,exposure:1.14,hazeNear:95,hazeFar:240}),
+  coastal:Object.freeze({skyHex:0xaac4d0,zenithHex:0x326ca8,hemiGroundHex:0x778b70,envZenith:'#326ca8',envHorizon:'#e0eef5',envGround:'#58704d',
+    iblSkyHex:0x4684be,iblHorizonHex:0xdcecf4,iblGroundHex:0x6a8064,iblIntensity:.47,
+    sunHex:0xffeece,fillHex:0xcde6f7,keyIntensity:3.18,fillIntensity:1.40,exposure:1.12,hazeNear:79,hazeFar:230}),
+  temperate:Object.freeze({skyHex:0xa9bec8,zenithHex:0x396b9f,hemiGroundHex:0x7c8a62,envZenith:'#396b9f',envHorizon:'#dfe9ef',envGround:'#586945',
+    iblSkyHex:0x4e82b8,iblHorizonHex:0xdee8ee,iblGroundHex:0x71805a,iblIntensity:.48,
+    sunHex:0xffe7c4,fillHex:0xd5e8f8,keyIntensity:3.24,fillIntensity:1.42,exposure:1.12,hazeNear:94,hazeFar:255}),
 });
 
 const STORM_ZENITH=0x4c5d69,NIGHT_ZENITH=0x060d1c;
@@ -66,12 +72,21 @@ export function applyBiomeAtmosphere(view){
   if(view.renderer)view.renderer.toneMappingExposure=profile.exposure;
   if(view.renderer){
     // CubeUV PMREM expands every PBR fragment shader across dozens of pipelines on both
-    // WebGPU DX12 and WebGL ANGLE DX11; sky dome and hemisphere bounce keep atmospheric parity without stalls.
+    // WebGPU DX12 and WebGL ANGLE DX11; unified analytic sky/horizon/ground IBL keeps atmospheric parity without stalls.
     if(view.environmentTarget){view.environmentTarget.dispose();view.environmentTarget=null;}
     if(view.scene)view.scene.environment=null;
     view.environmentBiome=key;
   }
-  view.scene.environmentIntensity=.42;
+  view.scene.environmentIntensity=profile.iblIntensity;
+  const atm=ensureAtmosphereUniforms(view);
+  atm.iblSky.value.setHex(profile.iblSkyHex);
+  atm.iblHorizon.value.setHex(profile.iblHorizonHex);
+  atm.iblGround.value.setHex(profile.iblGroundHex);
+  atm.iblIntensity.value=profile.iblIntensity;
+  atm.sunColor.value.setHex(profile.sunHex);
+  if(view.sun?.position&&view.sun?.target?.position){
+    atm.sunDir.value.subVectors(view.sun.position,view.sun.target.position).normalize();
+  }
 }
 
 /** Create a sky dome mesh rendered in lockstep between WebGL2 and WebGPU. */
@@ -106,15 +121,16 @@ export function createSkyDome(view){
         uniform float frontierSkyClouds;\n`+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
         vec3 skyDir = normalize(vFrontierSkyDir);
         float skyHeight = clamp(skyDir.y, 0.0, 1.0);
-        vec3 skyBase = mix(frontierSkyHorizon, frontierSkyZenith, pow(skyHeight, 0.52));
-        float horizonHaze = exp(-abs(skyDir.y) * 8.5) * 0.16 * (1.0 - frontierSkyNight * 0.72) * (1.0 - frontierSkyClouds * 0.65);
+        vec3 skyBase = mix(frontierSkyHorizon, frontierSkyZenith, pow(skyHeight, 0.50));
+        float horizonHaze = exp(-abs(skyDir.y) * 7.8) * 0.20 * (1.0 - frontierSkyNight * 0.72) * (1.0 - frontierSkyClouds * 0.58);
         float sunDot = max(dot(skyDir, normalize(frontierSkySunDir)), 0.0);
-        float solarClear = (1.0 - frontierSkyClouds * 0.86) * (1.0 - frontierSkyNight * 0.92);
-        vec3 sunGlow = frontierSkySunColor * (pow(sunDot, 10.0) * 0.22 + pow(sunDot, 84.0) * 0.46) * solarClear;
-        vec3 moonGlow = vec3(0.78, 0.86, 1.0) * pow(sunDot, 56.0) * 0.20 * frontierSkyNight * (1.0 - frontierSkyClouds * 0.84);
-        diffuseColor.rgb = clamp(skyBase + frontierSkyHorizon * horizonHaze + sunGlow + moonGlow, 0.0, 2.0);`);
+        float solarClear = (1.0 - frontierSkyClouds * 0.84) * (1.0 - frontierSkyNight * 0.92);
+        vec3 sunGlow = frontierSkySunColor * (pow(sunDot, 7.0) * 0.24 + pow(sunDot, 72.0) * 0.52) * solarClear;
+        float warmScatter = exp(-abs(skyDir.y) * 5.2) * pow(sunDot, 2.5) * 0.16 * solarClear;
+        vec3 moonGlow = vec3(0.78, 0.86, 1.0) * pow(sunDot, 52.0) * 0.24 * frontierSkyNight * (1.0 - frontierSkyClouds * 0.84);
+        diffuseColor.rgb = clamp(skyBase + frontierSkyHorizon * horizonHaze + frontierSkySunColor * warmScatter + sunGlow + moonGlow, 0.0, 2.0);`);
     };
-    material.customProgramCacheKey=()=>'frontier-sky-dome-v1';
+    material.customProgramCacheKey=()=>'frontier-sky-dome-v2';
   }
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,24,14),material);
   mesh.frustumCulled=false;mesh.castShadow=false;mesh.receiveShadow=false;mesh.renderOrder=-10;
@@ -141,6 +157,16 @@ export function updateSkyDome(view){
   }
   u.night.value=night;
   u.clouds.value=clouds;
+  const atm=view.atmosphereUniforms;
+  if(atm){
+    atm.iblSky.value.copy(u.zenith.value);
+    if(view.scene.background?.isColor)atm.iblHorizon.value.copy(view.scene.background);
+    if(view.hemi?.groundColor?.isColor)atm.iblGround.value.copy(view.hemi.groundColor);
+    atm.sunDir.value.copy(u.sunDir.value);
+    atm.sunColor.value.copy(u.sunColor.value);
+    atm.iblIntensity.value=view.scene.environmentIntensity??profile.iblIntensity;
+    atm.night.value=night;
+  }
 }
 
 /** Dispose sky dome GPU resources cleanly when tearing down renderers. */

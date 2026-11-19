@@ -75,6 +75,14 @@ export class DayNightLighting{
     v.scene.environmentIntensity=base.environment*(1-night*.38);v.renderer.toneMappingExposure=base.exposure*(1+night*.10);
     v.fogTint.copy(base.fog).lerp(this.tint.setHex(NIGHT_FOG),night*.55);
     const uniform=v.materials.structurePalette?.frontierUniforms?.night;if(uniform)uniform.value=night;
+    const atm=v.atmosphereUniforms;
+    if(atm){
+      atm.night.value=night;
+      atm.iblIntensity.value=v.scene.environmentIntensity;
+      atm.sunColor.value.copy(v.sun.color);
+      atm.iblHorizon.value.copy(v.scene.background);
+      atm.iblGround.value.copy(v.hemi.groundColor);
+    }
     v.lightingState={mode:LIGHTING_MODES[v.settings.lighting]?v.settings.lighting:'day',night,twilight,label:night>.85?'Night':night<.15?'Day':'Twilight'};
     captureInto(this.written,v);this.hasWritten=true;
   }
@@ -85,6 +93,14 @@ export class DayNightLighting{
     v.hemi.color.copy(b.hemiColor);v.hemi.groundColor.copy(b.hemiGround);v.hemi.intensity=b.hemiIntensity;
     v.scene.environmentIntensity=b.environment;v.renderer.toneMappingExposure=b.exposure;v.fogTint.copy(b.fog);
     const uniform=v.materials.structurePalette?.frontierUniforms?.night;if(uniform)uniform.value=0;
+    const atm=v.atmosphereUniforms;
+    if(atm){
+      atm.night.value=0;
+      atm.iblIntensity.value=b.environment;
+      atm.sunColor.value.copy(b.sunColor);
+      atm.iblHorizon.value.copy(b.background);
+      atm.iblGround.value.copy(b.hemiGround);
+    }
     this.hasWritten=false;this.amount=null;
   }
 }

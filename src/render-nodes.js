@@ -1,8 +1,9 @@
-import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial,MeshBasicMaterial} from 'three';
-import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMaterial as ThreeBasicNodeMaterial} from 'three/webgpu';
+import {DataTexture,RGBAFormat,UnsignedByteType,MeshStandardMaterial,MeshBasicMaterial,Color,Vector2,Vector3} from 'three';
+import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMaterial as ThreeBasicNodeMaterial,RenderPipeline} from 'three/webgpu';
+import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
-export {WebGPURenderer,PMREMGenerator,ClippingGroup} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup} from 'three/tsl';
+export {WebGPURenderer,PMREMGenerator,ClippingGroup,RenderPipeline} from 'three/webgpu';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup,pass} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -34,6 +35,13 @@ export class MeshBasicNodeMaterial extends ThreeBasicNodeMaterial {
 const pixel=(r,g,b)=>{const map=new DataTexture(new Uint8Array([r,g,b,255]),1,1,RGBAFormat,UnsignedByteType);map.needsUpdate=true;return map;};
 const white=pixel(255,255,255),flat=pixel(128,128,255);
 const value=(holder,type='float')=>reference('value',type,holder);
+// Keep the async WebGPU chunk completely independent of the main entry bundle.
+const fallbackAtmosphere=()=>({
+  cloudMap:{value:white},cloudOffset:{value:new Vector2(0,0)},cloudScale:{value:.0092},cloudStrength:{value:0},
+  wetness:{value:0},sunDir:{value:new Vector3(-48,62,32).normalize()},sunColor:{value:new Color(0xffe7c4)},
+  iblSky:{value:new Color(0x5282b4)},iblHorizon:{value:new Color(0xdce8ef)},iblGround:{value:new Color(0x6e7d56)},
+  iblIntensity:{value:.46},night:{value:0},
+});
 export function battlefieldFog(material,fog,unexploredAlpha){
   const surface=material.outputNode||output,scale=value(fog.scale),position=positionWorld.xz.mul(scale);
   const border=smoothstep(.5,scale.mul(4).add(.5),max(abs(position.x),abs(position.y)));
@@ -60,21 +68,63 @@ export function grassWind(material,u){
   material.needsUpdate=true;
 }
 
-function metallicSheen(albedo,metalness,roughness,nightFactor=float(0),minMetal=.08){
+function analyticIblOutput(albedo,metalness,roughness,atm,nightNode=null){
+  const sunDir=normalize(value(atm.sunDir,'vec3'));
+  const sunColor=value(atm.sunColor,'color');
+  const iblSky=value(atm.iblSky,'color');
+  const iblHorizon=value(atm.iblHorizon,'color');
+  const iblGround=value(atm.iblGround,'color');
+  const iblIntensity=value(atm.iblIntensity);
+  const nightAmount=nightNode||value(atm.night);
+  const wetness=value(atm.wetness);
   return Fn(()=>{
     const color=output.rgb.toVar();
-    const metalMask=smoothstep(minMetal,.45,metalness);
-    If(metalMask.greaterThan(.001),()=>{
-      const refl=normalize(reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix));
-      const env=mix(vec3(.24,.23,.20),vec3(.76,.86,.98),smoothstep(-.35,.72,refl.y))
-        .add(vec3(.95,.91,.82).mul(exp(abs(refl.y).mul(-5))).mul(.24));
-      const fresnel=float(.22).add(pow(float(1).sub(clamp(dot(normalView,positionViewDirection),0,1)),4).mul(.78));
-      const lightScale=clamp(dot(color,vec3(.3,.59,.11)).mul(1.4).add(.22),.18,1).mul(float(1).sub(nightFactor.mul(.55)));
-      const metalTint=mix(vec3(.75),albedo,float(.78));
-      color.addAssign(metalTint.mul(env).mul(fresnel).mul(float(1).sub(roughness)).mul(metalMask).mul(lightScale).mul(.36));
-    });
+    const nDotV=clamp(dot(normalView,positionViewDirection),0,1);
+    const fresnel=pow(float(1).sub(nDotV),4);
+    const worldNormal=normalize(normalView.transformDirection(cameraWorldMatrix));
+    const worldRefl=normalize(reflect(positionViewDirection.negate(),normalView).transformDirection(cameraWorldMatrix));
+    const skyUp=smoothstep(-.35,.78,worldRefl.y);
+    const horizonBand=exp(abs(worldRefl.y).mul(-4.6));
+    const envSpec=mix(iblGround.mul(.72),iblSky.mul(1.15),skyUp).add(iblHorizon.mul(horizonBand).mul(.34));
+    const upMix=worldNormal.y.mul(.5).add(.5);
+    const envDiffuse=mix(iblGround.mul(.85),mix(iblHorizon,iblSky,.45),upMix);
+    const sunAlign=max(dot(worldRefl,sunDir),0);
+    const gloss=clamp(float(1).sub(roughness),0,1);
+    const specExp=mix(10,96,gloss.mul(gloss));
+    const sunSpec=sunColor.mul(pow(sunAlign,specExp).mul(float(.28).add(gloss.mul(.62))).add(pow(sunAlign,12).mul(.07))).mul(float(1).sub(nightAmount.mul(.72)));
+    const metalMask=smoothstep(.06,.48,metalness);
+    const baseLuma=dot(color,vec3(.3,.59,.11));
+    const lightFloor=clamp(baseLuma.mul(1.15).add(.30),.24,1.15);
+    const shadowLift=float(1).sub(smoothstep(0,.55,baseLuma)).mul(float(1).sub(metalMask.mul(.75)));
+    const diffuseBounce=albedo.mul(envDiffuse).mul(iblIntensity).mul(float(.08).add(shadowLift.mul(.16))).mul(float(1).sub(nightAmount.mul(.45)));
+    const dielecSpecWeight=float(.04).add(fresnel.mul(.34)).mul(gloss.mul(gloss)).mul(float(.42).add(wetness.mul(.85))).mul(float(1).sub(metalMask.mul(.5)));
+    const dielecSpec=envSpec.mul(.55).add(sunSpec.mul(.45)).mul(dielecSpecWeight).mul(iblIntensity).mul(lightFloor);
+    const metalTint=mix(vec3(.78),albedo,float(.80));
+    const metalFresnel=float(.28).add(fresnel.mul(.72));
+    const metalSpec=metalTint.mul(envSpec.mul(.88).add(sunSpec.mul(.72))).mul(metalFresnel).mul(float(.22).add(gloss.mul(.78))).mul(metalMask).mul(iblIntensity).mul(lightFloor).mul(float(1).sub(nightAmount.mul(.42)));
+    color.addAssign(diffuseBounce.add(dielecSpec).add(metalSpec));
     return vec4(color,output.a);
   })();
+}
+
+function cloudLightNode(worldXZ,atm,strengthScale=1){
+  const strength=value(atm.cloudStrength).mul(strengthScale);
+  const scale=value(atm.cloudScale);
+  const offset=value(atm.cloudOffset,'vec2');
+  const skyTint=value(atm.iblSky,'color');
+  const cover=sample(atm.cloudMap,worldXZ.mul(scale).add(offset)).r;
+  const shade=clamp(cover.mul(strength),0,.55);
+  const coolTint=mix(vec3(.84,.90,1),normalize(max(skyTint,vec3(.15))).mul(1.15),.35);
+  return mix(vec3(1.03,1.015,.99),coolTint.mul(float(1).sub(shade.mul(.78))),shade);
+}
+
+export function createBloomPipeline(view){
+  const pipeline=new RenderPipeline(view.renderer);
+  const scenePass=pass(view.scene,view.camera);
+  const scenePassColor=scenePass.getTextureNode('output');
+  const bloomPass=bloom(scenePassColor,.22,.44,1.15);
+  pipeline.outputNode=scenePassColor.add(bloomPass);
+  return pipeline;
 }
 
 const sample=(holder,coords=uv(),fallback=white)=>{
@@ -140,7 +190,11 @@ export function terrain(material,u){
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(.36));
   const color=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z)).mul(value(u.tint,'color'));
   const packedGround=max(terrainPaving.mul(.72),terrainRoad.mul(.24));
-  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(packedGround)));
+  const atm=u.atmosphere||fallbackAtmosphere();
+  const wetness=value(atm.wetness);
+  const rainDarken=mix(1,.80,wetness.mul(float(.45).add(max(terrainRoad,max(terrainPaving,weights.z)).mul(.55))));
+  const cloudMod=cloudLightNode(worldPos.xz,atm,1);
+  material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(packedGround))).mul(rainDarken).mul(cloudMod);
   const rockCoordHigh=uv().mul(scale.z.mul(6.5));
   if(u.grassNormal.value){
     const grassNorm=sample(u.grassNormal,coords[0].mul(.42),flat).rgb;
@@ -151,7 +205,9 @@ export function terrain(material,u){
   if(u.grassArm.value){
     const armRough=sample(u.grassArm,coords[0].mul(.16)).g.mul(weights.x).add(sample(u.soilArm,coords[1].mul(.18)).g.mul(weights.y)).add(sample(u.rockArm,rockCoordHigh).g.mul(weights.z));
     const roughness=clamp(mix(mix(armRough,.34,shore.mul(.55)),.48,flags.x.mul(.35)),.22,1);
-    material.roughnessNode=materialRoughness.mul(mix(roughness,.94,terrainPaving));
+    const baseRough=materialRoughness.mul(mix(roughness,.94,terrainPaving));
+    const wetSurface=wetness.mul(float(.35).add(max(terrainRoad,max(terrainPaving,weights.z)).mul(.65)));
+    material.roughnessNode=clamp(mix(baseRough,.24,wetSurface.mul(.72)),.18,1);
   }else material.roughnessNode=null;
   material.needsUpdate=true;
 }
@@ -176,17 +232,20 @@ export function unitPalette(material,u){
     }).ElseIf(wood,()=>{color.assign(sample(u.wood).rgb);});
     return color;
   })();
+  const atm=u.atmosphere||fallbackAtmosphere();
+  const wetness=value(atm.wetness);
   material.colorNode=materialColor.rgb.mul(team).mul(tint);
   const steelRough=steel.select(.82,1);
-  material.roughnessNode=clamp(surface.x.mul(steelRough),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.08,0)),0,steel.select(.62,1));material.normalNode=null;
+  material.roughnessNode=clamp(mix(surface.x.mul(steelRough),surface.x.mul(steelRough).mul(.60),wetness.mul(.72)),.04,1);material.metalnessNode=clamp(surface.y.add(steel.select(.08,0)),0,steel.select(.62,1));material.normalNode=null;
   if(u.characterNormal.value){
     const detail=character.select(float(1).sub(smoothstep(42,110,positionView.length())),0);
     const amount=detail.mul(value(u.characterDetail)),active=amount.greaterThan(.001),strength=surface.z.greaterThan(4.5).select(.16,.38);
     const micro=Fn(()=>{const result=vec4(.5,.5,1,surface.x).toVar();If(active,()=>{result.assign(sample(u.characterNormal,coords,flat));});return result;})();
-    material.roughnessNode=clamp(mix(surface.x,micro.a,amount).mul(steelRough),.04,1);
+    const roughBase=mix(surface.x,micro.a,amount).mul(steelRough);
+    material.roughnessNode=clamp(mix(roughBase,roughBase.mul(.60),wetness.mul(.72)),.04,1);
     material.normalNode=normalMap(micro.rgb,vec2(strength.mul(amount)));
   }
-  material.outputNode=metallicSheen(materialColor.rgb.mul(team),material.metalnessNode,material.roughnessNode);
+  material.outputNode=analyticIblOutput(materialColor.rgb.mul(team),material.metalnessNode,material.roughnessNode,atm);
   material.needsUpdate=true;
 }
 
@@ -224,28 +283,35 @@ export function structurePalette(material,u){
   const structureOcclusion=mix(.84,1,smoothstep(0,1.1,max(0,worldPos.y)));
   const soot=mix(vec3(1),vec3(.88,.84,.75),earthSkirt.mul(.45));
   const roofUp=varying(normalLocal.y);
+  const atm=u.atmosphere||fallbackAtmosphere();
+  const wetness=value(atm.wetness);
+  const snowFlag=u.snow?value(u.snow):float(0);
+  const structWetFace=wetness.mul(mix(.45,1,smoothstep(.15,.85,roofUp)));
+  const cloudMod=cloudLightNode(positionWorld.xz,atm,.85);
   material.colorNode=Fn(()=>{
     const color=materialColor.rgb.mul(choose()).toVar();
-    If(value(u.snow).greaterThan(.5).and(mode.greaterThan(3.5)),()=>{
+    If(snowFlag.greaterThan(.5).and(mode.greaterThan(3.5)),()=>{
       const drift=sin(worldPos.x.mul(1.85).add(worldPos.z.mul(.71))).mul(cos(worldPos.z.mul(1.31).sub(worldPos.y.mul(.77))));
       const edging=sin(worldPos.x.mul(9.6).sub(worldPos.z.mul(12))).mul(.12);
       const settle=smoothstep(.23,.76,roofUp).mul(smoothstep(-.60,.45,drift.mul(.49).add(edging).add(.28)));
       const grain=float(.84).add(dot(sample(u.roof).rgb,vec3(.3,.59,.11)).mul(.16));
       color.assign(mix(color,vec3(.67,.76,.84).mul(grain),settle.mul(.88)));
     });
-    return color.mul(soot).mul(groundAo);
+    return color.mul(soot).mul(groundAo).mul(mix(1,.84,structWetFace)).mul(cloudMod);
   })();
   const active=mode.greaterThan(.5).and(mode.lessThan(3.5)).and(value(u.detail).greaterThan(.5));
   const arm=Fn(()=>{const result=vec3(1).toVar();If(active,()=>{result.assign(choose('Arm'));});return result;})();
   const normSample=Fn(()=>{const result=vec3(.5,.5,1).toVar();If(active,()=>{result.assign(choose('Normal',flat));});return result;})();
-  material.roughnessNode=clamp(surface.x.mul(arm.g),.04,1);
+  const rainGloss=wetness.mul(mix(.42,.92,smoothstep(.10,.75,roofUp)));
+  const baseRough=surface.x.mul(arm.g);
+  material.roughnessNode=clamp(mix(baseRough,baseRough.mul(.42),rainGloss),.04,1);
   material.metalnessNode=clamp(surface.y,0,1);
   material.aoNode=mix(1,arm.r,.72).mul(structureOcclusion);
   const normalScale=mode.greaterThan(2.5).select(.30,mode.greaterThan(1.5).select(.54,.38));
   material.normalNode=active.select(normalMap(normSample,vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
-  material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.5).add(1)).add(vec3(.65,.3,.07).mul(varying(attribute('structureNightGlow','float'))).mul(night));
-  material.outputNode=metallicSheen(materialColor.rgb,material.metalnessNode,material.roughnessNode,night,.10);
+  material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.65).add(1)).add(vec3(1.18,.56,.16).mul(varying(attribute('structureNightGlow','float'))).mul(night));
+  material.outputNode=analyticIblOutput(materialColor.rgb,material.metalnessNode,material.roughnessNode,atm,night);
   material.needsUpdate=true;
 }
 
@@ -340,13 +406,14 @@ export function skyDome(material,u){
   const dir=normalize(varying(positionGeometry)),horizon=value(u.horizon,'color'),zenith=value(u.zenith,'color');
   const sunDir=normalize(value(u.sunDir,'vec3')),sunColor=value(u.sunColor,'color');
   const night=value(u.night),clouds=value(u.clouds);
-  const height=clamp(dir.y,0,1),skyT=pow(height,.52);
+  const height=clamp(dir.y,0,1),skyT=pow(height,.50);
   const base=mix(horizon,zenith,skyT);
-  const haze=exp(abs(dir.y).mul(-8.5)).mul(.16).mul(float(1).sub(night.mul(.72))).mul(float(1).sub(clouds.mul(.65)));
+  const haze=exp(abs(dir.y).mul(-7.8)).mul(.20).mul(float(1).sub(night.mul(.72))).mul(float(1).sub(clouds.mul(.58)));
   const sunDot=max(dot(dir,sunDir),0);
-  const solarClear=float(1).sub(clouds.mul(.86)).mul(float(1).sub(night.mul(.92)));
-  const sunGlow=sunColor.mul(pow(sunDot,10).mul(.22).add(pow(sunDot,84).mul(.46))).mul(solarClear);
-  const moonGlow=vec3(.78,.86,1).mul(pow(sunDot,56).mul(.20)).mul(night).mul(float(1).sub(clouds.mul(.84)));
-  material.colorNode=clamp(base.add(horizon.mul(haze)).add(sunGlow).add(moonGlow),0,2);
+  const solarClear=float(1).sub(clouds.mul(.84)).mul(float(1).sub(night.mul(.92)));
+  const sunGlow=sunColor.mul(pow(sunDot,7).mul(.24).add(pow(sunDot,72).mul(.52))).mul(solarClear);
+  const warmScatter=exp(abs(dir.y).mul(-5.2)).mul(pow(sunDot,2.5)).mul(.16).mul(solarClear);
+  const moonGlow=vec3(.78,.86,1).mul(pow(sunDot,52).mul(.24)).mul(night).mul(float(1).sub(clouds.mul(.84)));
+  material.colorNode=clamp(base.add(horizon.mul(haze)).add(sunColor.mul(warmScatter)).add(sunGlow).add(moonGlow),0,2);
   material.needsUpdate=true;
 }

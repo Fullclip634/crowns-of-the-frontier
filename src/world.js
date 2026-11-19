@@ -38,6 +38,7 @@ import {createWorldRenderer} from './render-context.js';
 import {graphicsCheckpoint} from './graphics-checkpoint.js';
 import {installCombatPresentation,combatTime} from './combat-presentation.js';
 import {projectileTargetHeight} from './combat-timing.js';
+import {createAtmosphereUniforms} from './atmosphere-uniforms.js';
 
 function flameClusterGeometry(){
   const a=new THREE.ConeGeometry(.42,1.0,5).translate(0,.28,0);
@@ -82,8 +83,10 @@ export class WorldView {
     // GPU timer queries are an opt-in diagnostic: on ANGLE/D3D11 they can
     // more than halve the frame rate. Default quality adaptation uses CPU
     // frame time plus WebGPU queue pressure, which has no measurement cost.
-    this.renderer=renderer;this.gpuTimer=settings?.gpuTiming===true?createGpuFrameTimer(renderer):null;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;container.appendChild(this.renderer.domElement);
-    this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa5b4ad);this.scene.fog=new THREE.Fog(0xa5b4ad,105,230);
+    this.renderer=renderer;this.gpuTimer=settings?.gpuTiming===true?createGpuFrameTimer(renderer):null;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?2:settings.quality==='low'?1:1.25));this.renderer.setSize(container.clientWidth||innerWidth,container.clientHeight||innerHeight,false);this.renderer.shadowMap.enabled=settings.quality!=='low';this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.AgXToneMapping;this.renderer.toneMappingExposure=1.12;container.appendChild(this.renderer.domElement);
+    this.atmosphereUniforms=createAtmosphereUniforms();
+    this.bloomPipeline=null;
+    this.renderQuality=settings.quality;this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xa9bec8);this.scene.fog=new THREE.Fog(0xa9bec8,105,230);
     this.camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.5,400);this.raycaster=new THREE.Raycaster();this.mouse=new THREE.Vector2();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.clock=0;this.ruinClock=0;
     this.hemi=new THREE.HemisphereLight(0xc7def1,0x52633a,.9);this.scene.add(this.hemi);this.sun=new THREE.DirectionalLight(0xffe4bd,2.7);this.sun.position.set(-48,62,32);this.sun.castShadow=true;this.sun.shadow.mapSize.set(settings.quality==='high'?2048:1024,settings.quality==='high'?2048:1024);this.sun.shadow.radius=settings.quality==='high'?1.85:2.15;Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:180});this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.025;nodeRuntime()?.configureDirectionalShadow(this.sun,this.renderer);this.scene.add(this.sun,this.sun.target);
     this.materials={stone:mat(0xc1b9a4),stoneDark:mat(0x8c9288),plaster:mat(0xe6d5b4),wood:mat(0x756046),darkwood:mat(0x483c30),roof:mat(0x5a6c66),roofRed:mat(0x8b5949),gold:mat(0xd9b865,{metalness:.35,roughness:.55}),iron:mat(0x8a9ba0,{metalness:.45}),leaf:mat(0x617b4b),leafDark:mat(0x3e6550),trunk:mat(0x66563e),skin:mat(0xd2b08d),berry:mat(0x9d4d48),soil:mat(0x837052),furrow:mat(0x6b6343),crop:mat(0xc3ad62),water:mat(0x6a9fa6,{metalness:.35,roughness:.25,transparent:true,opacity:.85}),shadow:new THREE.MeshBasicMaterial({color:0x26382c,transparent:true,opacity:.14,depthWrite:false})};
@@ -440,7 +443,22 @@ export class WorldView {
     // Bracket only the draw call: the simulation/animation work above is CPU
     // time and belongs to the other half of the timing comparison.
     this.gpuTimer?.begin();
-    try{this.renderer.render(this.scene,this.camera);}
+    try{
+      const wantBloom=this.renderer?.backend?.isWebGPUBackend&&this.renderQuality==='high'&&this.settings?.bloom!==false&&!this.bloomFailed;
+      if(wantBloom&&!this.bloomPipeline&&nodeRuntime()?.createBloomPipeline){
+        try{this.bloomPipeline=nodeRuntime().createBloomPipeline(this);}
+        catch(error){this.bloomFailed=true;this.bloomPipeline=null;}
+      }else if(!wantBloom&&this.bloomPipeline){
+        try{this.bloomPipeline.dispose?.();}catch{}
+        this.bloomPipeline=null;
+      }
+      if(this.bloomPipeline){
+        try{this.bloomPipeline.render();}
+        catch(error){this.bloomFailed=true;try{this.bloomPipeline.dispose?.();}catch{}this.bloomPipeline=null;this.renderer.render(this.scene,this.camera);}
+      }else{
+        this.renderer.render(this.scene,this.camera);
+      }
+    }
     finally{this.gpuTimer?.end();}
   }
 }

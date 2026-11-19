@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {standardMaterial} from './render-runtime.js';
 import {applyBiomeAtmosphere,createSkyDome,updateSkyDome} from './sky-atmosphere.js';
+import {ensureAtmosphereUniforms,applyAnalyticIblToMaterial} from './atmosphere-uniforms.js';
 import {UNITS} from './data.js';
 import {decorateMaterials} from './world-polish.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
@@ -24,11 +25,13 @@ function initializeDepth(view){
   const m=view.materials;
   surfaceRelief(m.stone,.14);surfaceRelief(m.wood,.065);
   for(const roof of view.roofMaterials)surfaceRelief(roof,.095);
-  m.plaster.color.setHex(0xdfd0b0);m.stone.color.setHex(0xb8b7a6);
-  m.stoneDark.color.setHex(0x707b75);m.iron.metalness=.84;m.iron.roughness=.28;
-  m.gold.metalness=.8;m.gold.roughness=.26;m.shadow.opacity=.06;
-  m.glass=standardMaterial({color:0x263e42,roughness:.3,metalness:.08});
-  m.timberEdge=standardMaterial({color:0x473328,roughness:.92});
+  m.plaster.color.setHex(0xe5d6b8);m.stone.color.setHex(0xbcbba9);
+  m.stoneDark.color.setHex(0x7a857f);m.iron.metalness=.84;m.iron.roughness=.26;
+  m.gold.metalness=.84;m.gold.roughness=.24;m.shadow.opacity=.06;
+  m.glass=standardMaterial({color:0x2a454a,roughness:.24,metalness:.14});
+  m.timberEdge=standardMaterial({color:0x604838,roughness:.9});
+  const atm=ensureAtmosphereUniforms(view);
+  for(const key of ['gold','iron','stone','stoneDark'])applyAnalyticIblToMaterial(m[key],atm);
   view.geo.head=new THREE.SphereGeometry(1,10,8);
   view.geo.torso=new THREE.CylinderGeometry(.47,.53,1,8);
   view.geo.shield=new THREE.CylinderGeometry(.5,.5,1,12).rotateZ(Math.PI/2);
