@@ -28,13 +28,20 @@ function measureObject(root){
   return {width:Math.max(size.x,size.z),height:size.y,tris:Math.round(tris),materials};
 }
 
-test('Phase 3 Blender desert acacias and winter spruces slash triangle budgets while keeping biome silhouettes',async()=>{
+test('Shared Blender trees retain biome silhouettes within their distant triangle budgets',async()=>{
   const nearBytes=readGlb('near'),balancedBytes=readGlb('balanced'),treesBytes=readGlb('trees');
   assert.ok(balancedBytes.byteLength<nearBytes.byteLength,'Balanced catalogue remains strictly smaller than High');
   assert.ok(treesBytes.byteLength<1_600_000,'Shared trees archive stays compact under 1.6 MB');
   const trees=registerSharedTrees(await decodeGlb(treesBytes));
   try{
     for(let v=0;v<4;v++){
+      const meadowNear=measureObject(trees.templates.get('tree:highlands:'+v+':near'));
+      const meadowFar=measureObject(trees.templates.get('tree:highlands:'+v+':far'));
+      assert.ok(meadowFar.tris<900,'meadow conifers use the distant triangle budget');
+      assert.ok(Math.abs(meadowFar.width/meadowNear.width-1)<.05,'distant conifers keep the crown width');
+      assert.ok(Math.abs(meadowFar.height/meadowNear.height-1)<.03,'distant conifers keep the trunk and crown height');
+      assert.deepEqual(meadowFar.materials,meadowNear.materials,'distant conifers retain bark and two leaf tones');
+
       const dNear=measureObject(trees.templates.get(`tree:desert:${v}:near`));
       const dFar=measureObject(trees.templates.get(`tree:desert:${v}:far`));
       assert.ok(dNear.tris<=2400,`desert:${v}:near should stay <= 2400 tris (got ${dNear.tris})`);

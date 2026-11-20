@@ -387,28 +387,35 @@ def meadow_boughs(root, height, spread, variant, far):
             origin = Vector((.23 * progress, -.12 * progress, level + twig.uniform(-.12, .12)))
             elbow = origin + direction * radius * .64 + Vector((0, 0, .10))
             tip = origin + direction * radius * twig.uniform(.88, 1.18) + Vector((0, 0, -.28 * (1 - progress)))
-            if far and branch in (1, 3, 5):
-                continue
-            rod_data(bark, bark_faces, origin, elbow, .060 * (1 - .65 * progress), .62, 4)
-            if not far:
-                rod_data(bark, bark_faces, elbow, tip, .035 * (1 - .65 * progress), .25, 4)
             dark, dark_faces = foliage["leafDark"]
             green, green_faces = foliage["leaf"]
-            # Full-length twisted needle clusters cover the limb and form the
-            # same outer silhouette in both meshes. Near tips add split edges.
+            if far:
+                # Spend the overview budget on overlapping boughs in every
+                # direction. Individual twigs are too small to read here.
+                leaf_volume(dark, dark_faces, origin.lerp(tip, .46),
+                            direction + Vector((0, 0, -.18)),
+                            radius * 1.13, radius * .36, radius * .23)
+                if (branch + tier) % 2 == 0:
+                    leaf_volume(green, green_faces, tip.lerp(elbow, .30),
+                                direction + Vector((0, 0, -.09)),
+                                radius * .57, radius * .22, radius * .12)
+                continue
+            rod_data(bark, bark_faces, origin, elbow, .060 * (1 - .65 * progress), .62, 4)
+            rod_data(bark, bark_faces, elbow, tip, .035 * (1 - .65 * progress), .25, 4)
             leaf_volume(dark, dark_faces, origin.lerp(tip, .48), direction + Vector((0, 0, -.10)),
-                        radius * 1.05, radius * (.29 if far else .21), radius * .145)
+                        radius * 1.05, radius * .21, radius * .145)
             leaf_volume(green, green_faces, tip.lerp(elbow, .26), direction + Vector((0, 0, .10)),
                         radius * .50, radius * .17, radius * .10)
-            for side in (() if far else (-1, 1)):
+            for side in (-1, 1):
                 spray = direction * .64 + across * side * .78 + Vector((0, 0, -.26))
                 center = origin.lerp(tip, .51 + side * .085) + spray * radius * .13
                 leaf_volume(dark, dark_faces, center, spray, radius * .64, radius * .125, radius * .08)
                 needle = direction * .70 + across * side * .58 + Vector((0, 0, -.14))
                 leaf_volume(green, green_faces, center + direction * radius * .23,
                             needle, radius * .42, radius * .082, radius * .065)
-    limbs = make_mesh(root, "trunk", bark, bark_faces, root.name + "_Limbs")
-    limbs["skipCraftedBevel"] = True
+    if bark:
+        limbs = make_mesh(root, "trunk", bark, bark_faces, root.name + "_Limbs")
+        limbs["skipCraftedBevel"] = True
     for role, (vertices, faces) in foliage.items():
         make_mesh(root, role, vertices, faces, root.name + "_" + role)
 

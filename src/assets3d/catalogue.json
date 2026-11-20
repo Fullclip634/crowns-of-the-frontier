@@ -506,7 +506,7 @@
     }
   ],
   "sizes": {
-    "near": 13461804,
+    "near": 13337720,
     "low": 4572012,
     "balanced": 12917756
   },
@@ -541,38 +541,38 @@
     "maxNormalDegrees": 0.012546962601735412,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17083288,
+    "referenceBytes": 17087892,
     "candidateBytes": 12917756,
     "referenceDecodedBufferBytes": 36788984,
     "candidateDecodedBufferBytes": 33374192,
-    "referenceSHA256": "9b4dce82bdf344bd5124ba7af55ad3328881093c280463eed0c01d6e77b0ef92",
+    "referenceSHA256": "b4b9444c4483c6c76622493c759ac8f81624f4e173a1664ef9205090c5b78803",
     "candidateSHA256": "4fa422d547bbc9d9f5d0f57df9cb413d1983b2b704a0e8f8253c6f22410728c9"
   },
   "balancedSourceHashes": {
-    "near": "8f6e58df234bdc840b9acb4cf2bce3f364044e8ef331d24b1fd15bc57b2b5705",
+    "near": "a199b259f971af813f205ee951ce02d49d0eaa096605e50f25135254ab79f4d8",
     "low": "3dd63dac9743ecd130b7f6e5076d9b8ce505b72cae383e627d3c5d6773e96716",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
     "file": "frontier-trees.glb",
     "models": 24,
-    "bytes": 1333512,
+    "bytes": 1301756,
     "source": "High Blender tree geometry shared by every graphics preset; distance detail is independent of preset.",
-    "sha256": "fc0097ea53808d8cd384e74a8819fab01ebc45087ae8cb043c256bda3ef54bca",
+    "sha256": "afe4e0b546263c040a1c0b4cc467d54837cf2575b1abe0ee91fe567f23923587",
     "precision": {
       "passed": true,
       "models": 24,
-      "meshes": 88,
-      "visibleTriangles": 47480,
+      "meshes": 84,
+      "visibleTriangles": 45864,
       "exactTrianglePositionsAndWinding": true,
       "normalLimitDegrees": 0.05,
-      "maxNormalDegrees": 0.001881436636299954,
+      "maxNormalDegrees": 0.0017860242711124161,
       "maxUVError": 0,
       "maxColorError": 0,
-      "referenceBytes": 12278248,
-      "candidateBytes": 1333512,
-      "referenceDecodedBufferBytes": 35110228,
-      "candidateDecodedBufferBytes": 2985872
+      "referenceBytes": 12462420,
+      "candidateBytes": 1301756,
+      "referenceDecodedBufferBytes": 35594604,
+      "candidateDecodedBufferBytes": 2891952
     }
   },
   "workerToolRevision": "craft-tools-v1",
