@@ -388,7 +388,7 @@ test('every map uses an evergreen template at both camera distances',async()=>{
     for(const map of Object.keys(MAPS))for(let variant=0;variant<4;variant++)for(const far of [false,true]){
       const tree=treeModel(view,map,variant,far);
       const family=isSnowBiome(map)?'winter':'highlands';
-      const detail=far||isAridBiome(map)?'far':'near';
+      const detail=far||map==='desert'||isAridBiome(map)?'far':'near';
       assert.equal(tree.userData.assetKey,['tree',family,variant,detail].join(':'),map);
     }
   }finally{clearAuthoredAssets();}

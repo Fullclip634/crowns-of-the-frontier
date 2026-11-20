@@ -354,6 +354,6 @@ export function authoredResource(view,e){
 export function authoredTree(view,map,variant,far){
   const biome=treeBiome(map);
   // Keep the evergreen shape on arid maps with the compact canopy.
-  const detail=far||isAridBiome(map)?'far':'near';
+  const detail=far||map==='desert'||isAridBiome(map)?'far':'near';
   return cloneAsset(view,`tree:${biome}:${variant}:${detail}`);
 }

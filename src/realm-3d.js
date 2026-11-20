@@ -194,7 +194,7 @@ export function installRealm3D(WorldView){
     for(const [i,player] of this.sim.players.entries()){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }
-    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&!volcanic,lush=map==='woodland'||map==='riverland';
+    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=(map==='desert'||isAridBiome(map))&&!volcanic,lush=map==='woodland'||map==='riverland';
     this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x526047:dry?0x727e48:lush?0x3e5f35:0x526b3c);
     this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x344138:dry?0x485435:lush?0x2b4429:0x344e30);
     if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x382f2b:dry?0x6c5941:0x66563e);
