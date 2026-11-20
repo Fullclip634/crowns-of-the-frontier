@@ -263,10 +263,14 @@ export function fortifyGateModel(view,root){
   masonry(stoneDark,0,housing+.22,0,3.86,.44,1.76);
   masonry(stone,0,housing+.48,0,3.96,.16,1.88);
   for(const side of [-1,1]){
-    for(const x of [-1.28,0,1.28])masonry(stone,x,housing+.83,side*.75,.65,.62,.37);
+    for(const x of [-1.28,0,1.28])masonry(stoneDark,x,housing+.83,side*.75,.68,.64,.39);
     for(const x of [-1.77,1.77]){
-      masonry(stoneDark,x,1.79,side*.98,.48,3.26,.43);
-      masonry(stone,x,3.44,side*.98,.59,.23,.51);
+      masonry(stoneDark,x,1.79,side*.98,.52,3.26,.48);
+      masonry(stone,x,3.44,side*.98,.64,.24,.56);
+    }
+    for(const x of [-2.54,2.54]){
+      masonry(stoneDark,x,2.10,side*1.04,.74,3.85,.42);
+      masonry(stone,x,4.08,side*1.06,.86,.22,.50);
     }
   }
 }

@@ -233,6 +233,54 @@ export function manageRepairs(sim,owner,workers,buildings,visible,tc){
   }
 }
 
+export function manageFarming(sim,owner,workers,buildings,towns){
+  const player=sim.players[owner],farmDef=BUILDINGS.farm;
+  if(!player||!farmDef||player.age<farmDef.age)return false;
+  const dropSites=buildings.filter(b=>b.progress>=1&&(b.type==='towncenter'||b.type==='mill'));
+  if(!dropSites.length)return false;
+  const naturalFood=sim.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&e.amount>0&&dropSites.some(base=>distance(e,base)<52)).reduce((n,e)=>n+e.amount,0);
+  const farms=buildings.filter(b=>b.type==='farm'),completedFarms=farms.filter(b=>b.progress>=1),buildingFarms=farms.length-completedFarms.length;
+  // When no fruits remain, keep food workers actively harvesting completed farms immediately.
+  if(naturalFood<=0&&completedFarms.length){
+    const targetFarmers=Math.min(completedFarms.length,Math.max(2,Math.ceil(workers.length*.35)));
+    let farmers=workers.filter(w=>w.order?.type==='gather'&&w.gatherType==='food').length;
+    if(farmers<targetFarmers){
+      const busyFarmIds=new Set(workers.filter(w=>w.order?.type==='gather').map(w=>w.order.target));
+      const openFarms=completedFarms.filter(f=>!busyFarmIds.has(f.id));
+      const candidates=workers.filter(w=>!w.embarked&&!w.aiFleeing&&!w.carry&&(!w.order||(w.order.type==='gather'&&w.gatherType!=='food'&&!w.order.aiExpansion&&!w.order.aiFortification)));
+      for(const farm of openFarms){
+        if(farmers>=targetFarmers)break;
+        const worker=closestCandidates(candidates,1,w=>w.order?.target!==farm.id,w=>distance(w,farm))[0];
+        if(!worker)break;
+        candidates.splice(candidates.indexOf(worker),1);
+        worker.gatherType='food';
+        sim.command([worker.id],{type:'gather',target:farm.id});
+        farmers++;
+      }
+    }
+  }
+  const farmGoal=naturalFood<=0?Math.max(5,Math.ceil(workers.length*.42)):(naturalFood<1200||(player.resources.food<120&&sim.time>75))?Math.max(4,Math.ceil(workers.length*.34)):0;
+  if(!farmGoal||farms.length>=farmGoal)return false;
+  const maxConcurrent=naturalFood<=0&&completedFarms.length<2?2:1;
+  if(buildingFarms>=maxConcurrent)return false;
+  if(!sim.canAfford(sim.cost(farmDef.cost,owner,'building'),owner))return false;
+  const orderedDrops=[...dropSites].sort((a,b)=>farms.filter(f=>distance(f,a)<26).length-farms.filter(f=>distance(f,b)<26).length||Number(a.type!=='mill')-Number(b.type!=='mill')||a.id-b.id);
+  const limit=sim.halfWorld-6;
+  for(const site of orderedDrops){
+    const worker=closestCandidates(workers,1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification,w=>distance(w,site))[0];
+    if(!worker)return false;
+    for(let i=0;i<48;i++){
+      const angle=i*2.39996323,r=8.5+Math.floor(i/8)*3;
+      const point={x:Math.max(-limit,Math.min(limit,site.x+Math.cos(angle)*r)),z:Math.max(-limit,Math.min(limit,site.z+Math.sin(angle)*r))};
+      if(!sim.buildValid('farm',point.x,point.z,owner)||fortificationReserved(sim,'farm',point.x,point.z,owner))continue;
+      sim.pathTo(worker,point);
+      if(worker.pathStatus==='blocked')continue;
+      if(sim.build('farm',point.x,point.z,[worker.id],owner))return true;
+    }
+  }
+  return false;
+}
+
 export function installCommanderAI(Simulation){
   const p=Simulation.prototype,assignWorker=p.assignWorker,serialize=p.serialize,restore=Simulation.restore;
   p.assignWorker=function(e){
@@ -287,6 +335,8 @@ export function installCommanderAI(Simulation){
     const populationLimit=this.options.populationLimit||160,ageWorkerThreshold=Math.min(12,Math.max(8,Math.floor(populationLimit*.4)));
     state.budget={savingAge:!!(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&player.resources.food>=ageCost.food*.45),workerGoal:Math.min(profile.workers+Math.max(0,towns.length-1)*6,18+player.age*8,Math.floor(populationLimit*.5))};
     if(this.capacity(owner)<(this.options.populationLimit||160)&&this.capacity(owner)-this.population(owner)-this.reservedPopulation(owner)<6&&!buildings.some(b=>b.type==='house'&&b.progress<1))this.commanderBuild('house',null,owner);
+    // Prioritize farm transition before optional camps or military expansion once berries run low or dry.
+    manageFarming(this,owner,workers,buildings,towns);
     for(const town of towns.filter(b=>b.progress>=1))if(workers.length+countQueued(this,'villager',owner)<state.budget.workerGoal&&town.queue.length<2)this.train(town.id,'villager');
     if(this.time>12&&!this.count(owner,'unit','scout')&&!countQueued(this,'scout',owner)&&tc.queue.length<3)this.train(tc.id,'scout');
     if(ageCost&&!player.agePending&&workers.length>=ageWorkerThreshold&&this.canAfford(ageCost,owner))this.research(tc.id,'age');
@@ -294,10 +344,6 @@ export function installCommanderAI(Simulation){
     for(const [type,resource]of [['camp','wood'],['mine','gold'],['mine','stone']]){
       const active=workers.find(w=>w.gatherType===resource&&w.order?.type==='gather'),source=active&&this.get(active.order.target);
       if(source&&!buildings.some(b=>BUILDINGS[b.type].drop?.includes(resource)&&distance(b,source)<16)){if(this.commanderBuild(type,source,owner))break;}
-    }
-    const naturalFood=this.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&towns.some(base=>distance(e,base)<45)).reduce((n,e)=>n+e.amount,0);
-    if((naturalFood<1200||player.resources.food<100&&this.time>90)&&buildings.filter(b=>b.type==='farm').length<Math.max(4,workers.length/3)&&!buildings.some(b=>b.type==='farm'&&b.progress<1)){
-      const base=towns.filter(b=>b.progress>=1).sort((a,b)=>buildings.filter(f=>f.type==='farm'&&distance(f,a)<30).length-buildings.filter(f=>f.type==='farm'&&distance(f,b)<30).length)[0];this.commanderBuild('farm',base,owner);
     }
     fortifySettlements(this,state,owner,workers,buildings,baseThreats);
     fortifyKingdomWalls(this,state,owner,workers,this.owned(owner,'building'),baseThreats);

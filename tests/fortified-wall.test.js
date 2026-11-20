@@ -139,6 +139,13 @@ test('fortified connectors stay in two batches, change height and tint, and inva
     const color=new THREE.Color();visual.stone.getColorAt(0,color);
     assert.ok(color.r<1,'fortified stone is visibly darker');
     assert.ok(wallTierStyle('fortified').height>wallTierStyle('stone').height);
+
+    // Wall-to-gate connectors upgrade together with walls when fortifiedWall finishes.
+    const gate=sim.addBuilding('gate',0,8,20,true);
+    sim.revision++;
+    visual.update(false);
+    assert.equal(wallTier(sim,gate),'fortified');
+    assert.ok(visual.stone.count>=2,'gate-wall masonry connectors stay present after upgrade');
   }finally{
     visual.dispose();view.geo.box.dispose();for(const material of Object.values(view.materials))material.dispose();
   }

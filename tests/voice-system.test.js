@@ -134,3 +134,33 @@ test('AudioEngine voice and warHorn methods handle cooldowns, mute, and settings
   ctx.currentTime += HORN_COOLDOWN + 0.5;
   assert.equal(audio.warHorn(), false);
 });
+
+test('only human units speak; buildings, siege engines, and naval ships stay silent', () => {
+  const audio = new AudioEngine({ volume: 0.8, music: false, unitVoices: true });
+  const ctx = mockContext();
+  audio.context = ctx;
+  audio.master = ctx.createGain();
+
+  for (const silent of [
+    null,
+    { kind: 'building', type: 'towncenter' },
+    { kind: 'building', type: 'house' },
+    { kind: 'building', type: 'barracks' },
+    { kind: 'building', type: 'gate' },
+    { kind: 'unit', type: 'ram' },
+    { kind: 'unit', type: 'catapult' },
+    { kind: 'unit', type: 'fishingboat' },
+    { kind: 'unit', type: 'galley' },
+    { kind: 'unit', type: 'warship' },
+    { kind: 'unit', type: 'transport' },
+  ]) {
+    ctx.currentTime += VOICE_COOLDOWN + 0.2;
+    assert.equal(audio.voice('order', silent, 'alder'), false, `expected silence for ${JSON.stringify(silent)}`);
+    assert.equal(audio.voice('select', silent, 'alder'), false, `expected select silence for ${JSON.stringify(silent)}`);
+  }
+
+  for (const human of ['villager', 'spearman', 'swordsman', 'archer', 'scout', 'knight', 'monk', 'king']) {
+    ctx.currentTime += VOICE_COOLDOWN + 0.2;
+    assert.equal(audio.voice('order', { kind: 'unit', type: human }, 'alder'), true, `expected voice for ${human}`);
+  }
+});

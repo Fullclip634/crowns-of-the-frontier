@@ -4,7 +4,7 @@
 // ambience loops, and 4-stage adaptive medieval music), and when the pack is
 // unavailable every call falls straight through to the Web Audio synthesis.
 import {createSampleBank,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES} from './sample-bank.js';
-import {HORN_COOLDOWN,VOICE_COOLDOWN} from './voice-system.js';
+import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit} from './voice-system.js';
 
 const HORN_FUNDAMENTAL=174.61;
 const BIOME_AMBIENCE={
@@ -92,6 +92,7 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.voice=function(kind='order',unit=null,faction='alder',pan=0){
+    if(!isHumanVoiceUnit(unit))return false;
     const cue=VOICE_MAP[kind]||VOICE_MAP.order;
     if(this.sampleBank?.has(cue)&&this.context?.state==='running'&&this.settings.volume>0&&this.settings.unitVoices!==false){
       const now=this.context.currentTime;

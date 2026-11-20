@@ -27,7 +27,7 @@ export class WallVisuals{
     if(revisionChanged){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
     if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
-    const tierOf=link=>wallTier(v.sim,link.a),shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
+    const tierOf=link=>(wallTier(v.sim,link.a)==='fortified'||wallTier(v.sim,link.b)==='fortified')?'fortified':'stone',shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
     const signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}:${tierOf(link)}`).join('|');
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}
     let visible=0;

@@ -1,5 +1,14 @@
 // Procedural Unit Voice & Brass War Horn System for Crowns of the Frontier
 // Uses vocal tract formant filters and harmonic brass synthesis via Web Audio API.
+import {UNITS} from './data.js';
+
+export function isHumanVoiceUnit(entity) {
+  if (!entity) return false;
+  if (entity.kind && entity.kind !== 'unit') return false;
+  const def = entity.type ? UNITS[entity.type] : null;
+  if (!def) return false;
+  return !def.naval && def.role !== 'siege';
+}
 
 const FORMANTS = {
   // F1, F2, F3 formant frequencies (Hz) for vowel shapes
@@ -141,6 +150,7 @@ export function installVoiceSystem(AudioEngine) {
   const p = AudioEngine.prototype;
 
   p.voice = function(kind = 'order', unit = null, faction = 'alder', pan = 0) {
+    if (!isHumanVoiceUnit(unit)) return false;
     if (!this.context || this.context.state !== 'running' || this.settings.volume <= 0) return false;
     if (this.settings.unitVoices === false) return false;
 

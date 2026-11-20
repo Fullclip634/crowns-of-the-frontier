@@ -297,12 +297,13 @@ export function installRealm3D(WorldView){
     }
   };
   p.showGhost=function(type,x,z,valid){
-    if(this.ghost.userData.type!==type){
+    const ghostKey=(type==='wall'||type==='gate')?`${type}:${wallTier(this.sim,{kind:'building',type,owner:0})}`:type;
+    if(this.ghost.userData.type!==ghostKey){
       this.ghost.userData.farmGroundX=this.ghost.userData.farmGroundZ=undefined;
       this.ghost.userData.foundationGroundX=this.ghost.userData.foundationGroundZ=undefined;
       this.ghost.traverse(mesh=>{if(mesh.isMesh){if(!Object.values(this.geo).includes(mesh.geometry)&&!this.authoredGeometry?.has(mesh.geometry)&&!this.sharedModelGeometry?.has(mesh.geometry))mesh.geometry.dispose();if(mesh.userData.previewMaterial)mesh.material.dispose();}});this.clearGroup(this.ghost);
       const model=this.mergeModel(this.makeBuilding({kind:'building',type,owner:0,r:BUILDINGS[type]?.r||2.5,x,z}));
-      model.traverse(mesh=>{if(!mesh.isMesh)return;const original=mesh.material;mesh.material=original.clone();mesh.material.defines={...original.defines};mesh.material.onBeforeCompile=original.onBeforeCompile;mesh.material.customProgramCacheKey=original.customProgramCacheKey;mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=type;
+      model.traverse(mesh=>{if(!mesh.isMesh)return;const original=mesh.material;mesh.material=original.clone();mesh.material.defines={...original.defines};mesh.material.onBeforeCompile=original.onBeforeCompile;mesh.material.customProgramCacheKey=original.customProgramCacheKey;mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=ghostKey;
     }
     this.ghost.position.set(x,foundation(this,{type,r:BUILDINGS[type]?.r||2.5,x,z}),z);this.ghost.visible=true;
     if(type==='farm'&&(this.ghost.userData.farmGroundX!==x||this.ghost.userData.farmGroundZ!==z)){fitFarmTerrain(this.ghost,this.landscape,true);this.ghost.userData.farmGroundX=x;this.ghost.userData.farmGroundZ=z;}

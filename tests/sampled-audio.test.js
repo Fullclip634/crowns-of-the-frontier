@@ -210,6 +210,9 @@ test('decoded samples take over UI, horn, weather and music cues while procedura
   assert.equal(engine.sampleLoops.get('music-peace').gain.gain.value,0,'peace stem fades out on battle');
   assert.ok(engine.sampleLoops.get('music-battle').gain.gain.value>0,'battle stem fades in smoothly');
 
+  assert.equal(engine.voice('order',{kind:'building',type:'towncenter'},'alder',0),false,'buildings never trigger sampled human voice');
+  assert.equal(engine.voice('order',{kind:'unit',type:'ram'},'alder',0),false,'siege engines never trigger sampled human voice');
+  assert.equal(engine.voice('order',{kind:'unit',type:'warship'},'alder',0),false,'ships never trigger sampled human voice');
   assert.equal(engine.voice('order',{type:'knight'},'alder',.2),true,'real CC0 human voice plays');
   assert.ok(!engine.procedural.includes('voice:order'),'sampled voice does not double with synth');
   assert.equal(engine.grunt(.1,.22),true,'real CC0 combat grunt plays');

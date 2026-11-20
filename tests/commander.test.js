@@ -178,6 +178,29 @@ test('AI villagers repair moderately damaged buildings using the closest worker,
   assert.ok(naval.owned(nOwner,'unit','villager').some(w=>w.order?.type==='repair'&&w.order.target===ship.id),'reachable villager repairs damaged coastal ship');
   assert.ok(shoreWorker.hp>0);
 });
+
+test('AI builds farms around town centers and mills when no fruits remain and assigns farmers immediately',()=>{
+  const s=new Simulation({seed:512}),owner=1,tc=s.owned(owner,'building','towncenter')[0];
+  // Deplete all berry bushes on the map so zero natural fruit remains.
+  for(const e of s.entities)if(e.kind==='resource'&&e.type==='food'&&!e.water){e.amount=0;e.hp=0;}
+  s.players[owner].resources={food:350,wood:600,gold:200,stone:200};
+  s.revision++;
+  s.time=45;
+  s.tickAI(owner);
+  const startedFarms=s.owned(owner,'building','farm');
+  assert.ok(startedFarms.length>=1,'AI immediately starts building farms when no fruits are left');
+  assert.ok(s.owned(owner,'unit','villager').some(w=>w.order?.type==='build'&&startedFarms.some(f=>f.id===w.order.target)),'a villager is dispatched to construct the farm');
+
+  // Complete a couple farms and ensure AI assigns villagers to harvest them and keeps scaling farms.
+  for(const f of startedFarms){f.progress=1;f.hp=f.maxHp;}
+  for(const w of s.owned(owner,'unit','villager')){w.order=null;w.carry=0;w.gatherType=null;}
+  s.time=60;
+  s.tickAI(owner);
+  const allFarms=s.owned(owner,'building','farm');
+  assert.ok(allFarms.length>=2,'AI continues expanding farms while fruit is absent');
+  const farmers=s.owned(owner,'unit','villager').filter(w=>w.order?.type==='gather'&&s.get(w.order.target)?.type==='farm');
+  assert.ok(farmers.length>=1,'villagers harvest completed farms immediately once berries are gone');
+});
 test('AI monks heal wounded living troops near home instead of escorting the field army over siege engines',()=>{
   const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];
   for(const unit of s.owned(owner,'unit')){unit.hp=unit.maxHp;unit.order=null;unit.orders=[];}

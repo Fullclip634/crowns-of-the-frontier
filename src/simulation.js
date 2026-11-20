@@ -501,7 +501,8 @@ export class Simulation {
     if(p.age<3&&!p.agePending&&workers.length>=10&&this.canAfford(AGE_COSTS[p.age],1))this.research(tc.id,'age');
     const priorities=['barracks',...(p.age>=1?['range','stable','blacksmith','market']:[]),...(p.age>=2?['workshop','tower','monastery']:[])];
     for(const type of priorities)if(!this.owned(1,'building',type).length&&this.canAfford(BUILDINGS[type].cost,1)){this.aiBuild(type);break;}
-    if(p.resources.food<150&&this.owned(1,'building','farm').length<5)this.aiBuild('farm');
+    const berries=this.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&e.amount>0&&distance(e,tc)<52);
+    if((!berries||p.resources.food<150)&&this.owned(1,'building','farm').length<Math.max(5,Math.ceil(workers.length*.35)))this.aiBuild('farm');
     for(const b of this.owned(1,'building').filter(e=>e.progress>=1&&e.queue.length<2)){
       const choices=Object.entries(UNITS).filter(([type,d])=>type!=='villager'&&type!=='scout'&&d.age<=p.age&&d.at.includes(b.type));
       if(choices.length){const [type]=choices[Math.floor(this.rng()*choices.length)];this.train(b.id,type);}
