@@ -3,7 +3,7 @@ import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMater
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup,RenderPipeline} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup,pass} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,diffuseColor,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup,pass} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -70,7 +70,9 @@ export function grassWind(material,u){
   material.needsUpdate=true;
 }
 
-function analyticIblOutput(albedo,metalness,roughness,atm,nightNode=null){
+function analyticIblOutput(metalness,roughness,atm,nightNode=null){
+  // Use the same textured and vertex-tinted albedo as the direct lighting.
+  const albedo=diffuseColor.rgb;
   const sunDir=normalize(value(atm.sunDir,'vec3'));
   const sunColor=value(atm.sunColor,'color');
   const iblSky=value(atm.iblSky,'color');
@@ -279,7 +281,7 @@ export function unitPalette(material,u){
     material.roughnessNode=clamp(mix(roughBase,roughBase.mul(.60),wetness.mul(.72)),.04,1);
     material.normalNode=normalMap(micro.rgb,vec2(strength.mul(amount)));
   }
-  material.outputNode=analyticIblOutput(materialColor.rgb.mul(team),material.metalnessNode,material.roughnessNode,atm);
+  material.outputNode=analyticIblOutput(material.metalnessNode,material.roughnessNode,atm);
   material.needsUpdate=true;
 }
 
@@ -354,7 +356,7 @@ export function structurePalette(material,u){
   material.normalNode=active.select(normalMap(normSample,vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
   material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.65).add(1)).add(vec3(1.18,.56,.16).mul(varying(attribute('structureNightGlow','float'))).mul(night));
-  material.outputNode=analyticIblOutput(materialColor.rgb,material.metalnessNode,material.roughnessNode,atm,night);
+  material.outputNode=analyticIblOutput(material.metalnessNode,material.roughnessNode,atm,night);
   material.needsUpdate=true;
 }
 
