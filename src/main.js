@@ -647,9 +647,8 @@ if(view){const canvas=view.renderer.domElement;canvas.addEventListener('contextm
     if(old.dragged){if(!old.touch&&old.button===0){const rect=canvas.getBoundingClientRect(),minX=Math.min(old.x,e.clientX),maxX=Math.max(old.x,e.clientX),minY=Math.min(old.y,e.clientY),maxY=Math.max(old.y,e.clientY);const units=sim.owned(0,'unit').filter(unit=>{const p=view.project(unit,rect);return p.visible&&p.x>=minX&&p.x<=maxX&&p.y>=minY&&p.y<=maxY;});setSelection(e.shiftKey?[...selection,...units.map(u=>u.id)]:units.map(u=>u.id));}return;}
     if(unloadMode&&point){const ship=selected().find(e=>e.type==='transport');if(ship&&sim.unload(ship.id,point.x,point.z)){unloadMode=false;$('#order-hint').textContent='Select units to issue orders.';view.mark(point.x,point.z);}return;}
     if(old.button===2||attackMove||tacticalMode){issue(point,target,e.shiftKey);return;}
-    const hasOwnedUnits=selected().some(e=>e.owner===0&&e.kind==='unit');
-    if(old.touch&&hasOwnedUnits&&(target?.owner!==0||target?.type==='transport'&&selected().some(e=>e.kind==='unit'&&!UNITS[e.type].naval)||(workers().length&&(target?.kind==='building'&&(target.progress<1||target.type==='farm'||target.hp<target.maxHp)||mechanicalUnit(target)&&target.hp<target.maxHp)))){issue(point,target);return;}
-    if(target)setSelection(e.shiftKey?[...selection,target.id]:[target.id]);else if(old.touch&&hasOwnedUnits)issue(point,null);else setSelection([]);
+    if(old.touch&&canCommandSelection(selected())&&(target?.owner!==0||target?.type==='transport'&&selected().some(e=>e.kind==='unit'&&!UNITS[e.type].naval)||(workers().length&&(target?.kind==='building'&&(target.progress<1||target.type==='farm'||target.hp<target.maxHp)||mechanicalUnit(target)&&target.hp<target.maxHp)))){issue(point,target);return;}
+    if(target)setSelection(e.shiftKey?[...selection,target.id]:[target.id]);else if(old.touch&&selection.length)issue(point,null);else setSelection([]);
   });
   canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);pointer=null;pinch=touches.size?{distance:null}:null;$('#selection-box').style.display='none';});
   canvas.addEventListener('dblclick',e=>selectNearbyTroops(e.clientX,e.clientY));
