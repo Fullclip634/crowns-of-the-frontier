@@ -28,10 +28,55 @@ export function meleeFootprint(target){
 }
 function local(point,target){const angle=target.wallAngle||0,c=Math.cos(angle),s=Math.sin(angle),dx=point.x-target.x,dz=point.z-target.z;return {x:c*dx-s*dz,z:s*dx+c*dz,c,s};}
 export function meleeBuildingAttack(unit,target){const def=UNITS[unit.type];return unit.kind==='unit'&&target.kind==='building'&&!!def?.damage&&!def.naval&&def.range<=5;}
+export function meleeMinClearance(unit){return Math.max(.48,(unit.r||.65)*.78);}
 export function meleeReach(unit){const def=UNITS[unit.type];return Math.max((unit.r||.65)+.15,Math.min(unit.type==='ram'?2.1:1.65,Math.max(1.2,(def?.range||2)*.65)));}
 export function meleeSurfaceDistance(unit,target){
   const p=local(unit,target),half=meleeFootprint(target),x=Math.abs(p.x)-half.x,z=Math.abs(p.z)-half.z;
   return Math.hypot(Math.max(0,x),Math.max(0,z))+Math.min(0,Math.max(x,z));
+}
+export function buildingClearanceStep(sim,unit,fromX,fromZ,nx,nz){
+  const def=UNITS[unit.type];
+  if(!def||def.naval)return {x:nx,z:nz};
+  const minGap=meleeMinClearance(unit);
+  let x=nx,z=nz;
+  const check=b=>{
+    if(b.hp<=0||b.kind!=='building'||b.type==='farm'||(b.type==='gate'&&sim.allied(unit.owner,b.owner)))return;
+    const dx=x-b.x,dz=z-b.z,reach=(b.r||3)+minGap+2.2;
+    if(dx*dx+dz*dz>reach*reach)return;
+    const nextGap=meleeSurfaceDistance({x,z},b);
+    if(nextGap>=minGap)return;
+    const curGap=meleeSurfaceDistance({x:fromX,z:fromZ},b);
+    if(nextGap>=curGap-1e-4)return;
+    const p=local({x,z},b),half=meleeFootprint(b);
+    const cx=Math.max(-half.x,Math.min(half.x,p.x)),cz=Math.max(-half.z,Math.min(half.z,p.z));
+    let ox=p.x-cx,oz=p.z-cz,len=Math.hypot(ox,oz);
+    if(len<1e-5){
+      const px=half.x-Math.abs(p.x),pz=half.z-Math.abs(p.z);
+      if(px<=pz){ox=p.x>=0?1:-1;oz=0;}else{ox=0;oz=p.z>=0?1:-1;}
+      len=1;
+    }
+    const push=Math.min(minGap,Math.max(0,curGap))-nextGap;
+    if(push>0){
+      const lnx=ox/len*push,lnz=oz/len*push;
+      x+=p.c*lnx+p.s*lnz;
+      z+=-p.s*lnx+p.c*lnz;
+    }
+  };
+  if(sim.entityBuckets){
+    const range=(sim.maxEntityRadius||8)+minGap+3;
+    const minBx=Math.floor((x-range)/8),maxBx=Math.floor((x+range)/8);
+    const minBz=Math.floor((z-range)/8),maxBz=Math.floor((z+range)/8);
+    for(let bx=minBx;bx<=maxBx;bx++){
+      const col=sim.entityBuckets.get(bx);if(!col)continue;
+      for(let bz=minBz;bz<=maxBz;bz++){
+        const bucket=col.get(bz);if(!bucket)continue;
+        for(const b of bucket)check(b);
+      }
+    }
+  }else{
+    for(const b of sim.entities)check(b);
+  }
+  return {x,z};
 }
 export function meleeHeading(unit,target){
   const p=local(unit,target),half=meleeFootprint(target),x=Math.max(-half.x,Math.min(half.x,p.x)),z=Math.max(-half.z,Math.min(half.z,p.z));

@@ -33,6 +33,96 @@ function smoothShallowCreases(geometry,cosLimit=.52){
   nrm.array.set(out);nrm.needsUpdate=true;
 }
 
+/**
+ * Bake deterministic architectural Vertex AO into the merged building geometry
+ * (once per cached archetype, 0 per-frame GPU cost across WebGL2 & WebGPU).
+ * Darkens roof-overhang soffits, archway/buttress/porch crevices, and plinth
+ * ground contact while gently lifting open sky-facing roof ridges.
+ */
+export function bakeBuildingVertexAO(geometry){
+  const pos=geometry.attributes.position,nrm=geometry.attributes.normal,col=geometry.attributes.color;
+  const surf=geometry.attributes.structureSurface,emis=geometry.attributes.structureEmission;
+  if(!pos||!nrm||!col||!surf)return;
+  if(!geometry.boundingBox)geometry.computeBoundingBox();
+  const bb=geometry.boundingBox,size=bb.getSize(new THREE.Vector3());
+  if(size.x<.05&&size.y<.05&&size.z<.05)return;
+
+  // Measure roof overhang bounding footprint from roof vertices (mode === 4).
+  let roofMinX=Infinity,roofMaxX=-Infinity,roofMinZ=Infinity,roofMaxZ=-Infinity,roofMinY=Infinity,roofMaxY=-Infinity;
+  for(let i=0;i<pos.count;i++){
+    if(surf.getZ(i)<=3.5)continue;
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    if(x<roofMinX)roofMinX=x;if(x>roofMaxX)roofMaxX=x;
+    if(z<roofMinZ)roofMinZ=z;if(z>roofMaxZ)roofMaxZ=z;
+    if(y<roofMinY)roofMinY=y;if(y>roofMaxY)roofMaxY=y;
+  }
+  const hasRoof=Number.isFinite(roofMinY);
+
+  // Coarse 3D occupancy grid (max 16x16x16) for fast concave corner & soffit occlusion.
+  const cell=Math.max(.55,Math.max(size.x,size.y,size.z)/14);
+  const gx=Math.min(18,Math.max(1,Math.ceil(size.x/cell)+2));
+  const gy=Math.min(18,Math.max(1,Math.ceil(size.y/cell)+2));
+  const gz=Math.min(18,Math.max(1,Math.ceil(size.z/cell)+2));
+  const ox=bb.min.x-cell,oy=bb.min.y-cell,oz=bb.min.z-cell;
+  const grid=new Uint8Array(gx*gy*gz);
+  const idx=(x,y,z)=>{
+    const ix=Math.floor((x-ox)/cell),iy=Math.floor((y-oy)/cell),iz=Math.floor((z-oz)/cell);
+    if(ix<0||ix>=gx||iy<0||iy>=gy||iz<0||iz>=gz)return -1;
+    return (iy*gz+iz)*gx+ix;
+  };
+  for(let i=0;i<pos.count;i++){
+    const k=idx(pos.getX(i),pos.getY(i),pos.getZ(i));
+    if(k>=0)grid[k]=1;
+  }
+  const probe=(x,y,z)=>{const k=idx(x,y,z);return k>=0&&grid[k]?1:0;};
+
+  const minY=bb.min.y,hSpan=Math.max(.5,size.y);
+  for(let i=0;i<pos.count;i++){
+    if(emis&&(emis.getX(i)+emis.getY(i)+emis.getZ(i))>.08)continue;
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    const nx=nrm.getX(i),ny=nrm.getY(i),nz=nrm.getZ(i);
+    const mode=surf.getZ(i);
+
+    // 1. Ground plinth contact & sky-hemisphere shading
+    const hNorm=Math.max(0,Math.min(1,(y-minY)/Math.min(1.4,hSpan)));
+    const groundAO=.84+.16*Math.sqrt(hNorm);
+    const skyAO=.91+.09*Math.max(-1,Math.min(1,ny));
+
+    // 2. Roof overhang eave shadow onto upper walls/porches/doors underneath
+    let eaveAO=1;
+    if(hasRoof&&mode<3.5&&x>=roofMinX-.35&&x<=roofMaxX+.35&&z>=roofMinZ-.35&&z<=roofMaxZ+.35){
+      const under=roofMinY-y;
+      if(under>=-.15&&under<=1.65){
+        const band=1-Math.min(1,Math.abs(under-.22)/1.45);
+        const downMask=1-Math.max(0,ny)*.65;
+        eaveAO=1-.24*band*downMask;
+      }
+    }
+
+    // 3. Concave crevice / archway / buttress-joint voxel occlusion
+    const px=x+nx*cell*.75,py=y+ny*cell*.75,pz=z+nz*cell*.75;
+    let hits=0;
+    hits+=probe(px,py+cell*.85,pz);
+    hits+=probe(px+cell*.65,py+cell*.35,pz);
+    hits+=probe(px-cell*.65,py+cell*.35,pz);
+    hits+=probe(px,py+cell*.35,pz+cell*.65);
+    hits+=probe(px,py+cell*.35,pz-cell*.65);
+    hits+=probe(px+nx*cell*.55,py+ny*cell*.55,pz+nz*cell*.55);
+    const creviceAO=1-(hits/6)*.22;
+
+    // 4. Subtle ridge pop on upward-facing roof planes
+    let roofLift=1;
+    if(mode>3.5&&hasRoof&&roofMaxY>roofMinY+.1){
+      const rNorm=Math.max(0,Math.min(1,(y-roofMinY)/(roofMaxY-roofMinY)));
+      roofLift=.94+.09*rNorm*Math.max(0,ny);
+    }
+
+    const ao=Math.max(.66,Math.min(1.04,groundAO*skyAO*eaveAO*creviceAO*roofLift));
+    col.setXYZ(i,col.getX(i)*ao,col.getY(i)*ao,col.getZ(i)*ao);
+  }
+  col.needsUpdate=true;
+}
+
 function paletteMaterial(view){
   const m=view.materials;
   if(!m.structurePalette){
@@ -244,7 +334,7 @@ export function packBuildingModel(view,root,e){
   const style=architectureStyle(ageStyled?surfaceAge:0),masonry=e.type==='wall'||e.type==='gate';
   const tint=masonry?(fortified?[.70,.81,.93]:[.88,.95,1.03]):style.tint,roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
-    view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier].join(':');
+    view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier,isSnowBiome(view.sim?.options?.map)?'snow':'dry'].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
   root.updateMatrixWorld(true);
   const pack=(group,path)=>{
@@ -262,6 +352,7 @@ export function packBuildingModel(view,root,e){
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();
+      bakeBuildingVertexAO(geometry);
       view.structureGeometryCache.set(cacheKey,geometry);view.sharedModelGeometry.add(geometry);
     }
     const shared=new Set([...Object.values(view.geo),...(view.authoredGeometry||[]),...view.sharedModelGeometry]);

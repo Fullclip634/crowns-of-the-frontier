@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {packBuildingModel} from '../src/structure-palette.js';
+import {packBuildingModel,bakeBuildingVertexAO} from '../src/structure-palette.js';
+import {strengthenArchitecture} from '../src/architecture-age.js';
+import {meleeMinClearance,buildingClearanceStep,meleeSurfaceDistance} from '../src/melee-contact.js';
+import {Simulation} from '../src/simulation.js';
 import {crossedPlumeGeometry,fireTongueTexture,smokePlumeTexture,craterScorchTexture,dustPuffTexture,FlightEffects,ImpactEffects} from '../src/battle-effects.js';
 
 function borderAlphaMax(tex){
@@ -113,4 +116,77 @@ test('Phase 4 WebGPU render-nodes mirrors roof slate PBR and heraldic unit reada
   assert.match(src,/roofPbr/,'WebGPU structurePalette mirrors roof PBR maps');
   assert.match(src,/herald/,'WebGPU unitPalette mirrors crisp heraldic team readability');
   assert.doesNotMatch(src,/surface-assets\.js|atmosphere-uniforms\.js/,'render-nodes remains chunk-independent');
+});
+
+test('Phase 4 baked building Vertex AO darkens eaves and ground bases while lived-in props stay one draw',()=>{
+  const map=new THREE.DataTexture(new Uint8Array(4),1,1);
+  const makeView=(biome='riverland',age=2)=>({
+    settings:{quality:'high'},
+    sim:{options:{map:biome},players:[{faction:'alder',age}]},
+    materials:{
+      wood:new THREE.MeshStandardMaterial({color:0x9c7248,map}),
+      darkwood:new THREE.MeshStandardMaterial({color:0x66492d,map}),
+      timberEdge:new THREE.MeshStandardMaterial({color:0x745435,map}),
+      stone:new THREE.MeshStandardMaterial({color:0xb8b2a6,map}),
+      stoneDark:new THREE.MeshStandardMaterial({color:0x7e7a72,map}),
+      brick:new THREE.MeshStandardMaterial({color:0x9a5846,map}),
+      plaster:new THREE.MeshStandardMaterial({color:0xdfd0b0,map}),
+      glass:new THREE.MeshStandardMaterial({color:0x334455}),
+    },
+    teamMaterials:[new THREE.MeshStandardMaterial({color:0x397f8c})],
+    roofMaterials:[new THREE.MeshStandardMaterial({color:0x687982,map})],
+    geo:{box:new THREE.BoxGeometry(1,1,1),cylinder:new THREE.CylinderGeometry(1,1,1,8),cone:new THREE.ConeGeometry(1,1,6)},
+  });
+  const makeHouse=(view,age)=>{
+    const root=new THREE.Group();
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(3.2,2.4,3.2),view.materials.plaster);
+    wall.position.y=1.2;wall.userData.assetMaterial='plaster';root.add(wall);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(2.8,1.8,4),view.roofMaterials[0]);
+    roof.position.y=3.3;roof.userData.assetMaterial='teamRoof';root.add(roof);
+    root.userData.model3d={kind:'building',type:'house',architectureAge:age};
+    const e={id:1,kind:'building',type:'house',owner:0,r:2.4};
+    strengthenArchitecture(view,root,e,age);
+    return packBuildingModel(view,root,e);
+  };
+  const dry=makeHouse(makeView('riverland',2),2);
+  const winter=makeHouse(makeView('tundra',2),2);
+  const dryMesh=dry.children.find(c=>c.userData.structureSurface);
+  const winterMesh=winter.children.find(c=>c.userData.structureSurface);
+  assert.ok(dryMesh&&winterMesh,'both pack to one static structureSurface');
+  assert.ok(winterMesh.geometry.attributes.position.count>dryMesh.geometry.attributes.position.count,'winter biome adds roof-eave icicles');
+  // Directly verify bakeBuildingVertexAO darkens under-eave & ground vertices relative to open mid-wall on neutral white geometry.
+  const aoGeo=dryMesh.geometry.clone();
+  const white=new Float32Array(aoGeo.attributes.position.count*3).fill(1);
+  aoGeo.setAttribute('color',new THREE.BufferAttribute(white,3));
+  bakeBuildingVertexAO(aoGeo);
+  const aoCol=aoGeo.attributes.color,aoPos=aoGeo.attributes.position,aoSurf=aoGeo.attributes.structureSurface;
+  let underEaveSum=0,underEaveN=0,ridgeSum=0,ridgeN=0,baseSum=0,baseN=0;
+  for(let i=0;i<aoPos.count;i++){
+    const lum=aoCol.getX(i);
+    assert.ok(Number.isFinite(lum)&&lum>=.65&&lum<=1.05,'baked AO factor stays bounded and finite');
+    if(aoSurf.getZ(i)<3.5&&aoPos.getY(i)>1.95&&aoPos.getY(i)<2.45){underEaveSum+=lum;underEaveN++;}
+    if(aoSurf.getZ(i)<3.5&&aoPos.getY(i)<=.15){baseSum+=lum;baseN++;}
+    if(aoSurf.getZ(i)>3.5&&aoPos.getY(i)>3.8){ridgeSum+=lum;ridgeN++;}
+  }
+  assert.ok(underEaveN>0&&ridgeN>0&&baseN>0,'samples under-eave walls, ground base, and roof ridge');
+  assert.ok(underEaveSum/underEaveN<.92,'under-eave vertices receive roof overhang shadow AO');
+  assert.ok(baseSum/baseN<.94,'ground plinth base receives contact AO');
+  assert.ok(ridgeSum/ridgeN>underEaveSum/underEaveN,'sky-facing roof ridge stays brighter than under-eave shadow');
+  aoGeo.dispose();map.dispose();
+});
+
+test('Phase 4 melee building-collision clearance blocks inward wall clipping without trapping escaping units',()=>{
+  const sim=new Simulation({mode:'sandbox',map:'highlands',seed:512});
+  sim.entities=[];sim.index=new Map();sim.grids={};sim.revision++;sim.visible.fill(1);
+  const house=sim.addBuilding('house',1,0,0,true);
+  const soldier=sim.addUnit('swordsman',0,0,-6);
+  const minGap=meleeMinClearance(soldier);
+  assert.ok(minGap>=.48,'minimum wall clearance keeps melee bodies outside masonry');
+  // Attempting to push inward across clearance boundary is clamped back out.
+  const fromZ=-house.r-minGap-.15;
+  const pushedIn=buildingClearanceStep(sim,soldier,0,fromZ,0,-house.r-.05);
+  assert.ok(meleeSurfaceDistance(pushedIn,house)>=minGap-1e-3,'inward crowd push cannot embed troop inside building wall');
+  // A unit already inside moving outward is never trapped.
+  const escaping=buildingClearanceStep(sim,soldier,0,-house.r+.3,0,-house.r-.05);
+  assert.ok(escaping.z<-house.r,'escaping unit moves freely outward');
 });

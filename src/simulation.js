@@ -18,7 +18,7 @@ import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './m
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
 import {constructionFace,constructionHeading} from './construction-contact.js';
 import {approachConstruction,approachMelee} from './construction-approach.js';
-import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading} from './melee-contact.js';
+import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading,meleeMinClearance,buildingClearanceStep} from './melee-contact.js';
 import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
@@ -315,6 +315,7 @@ export class Simulation {
       const neighbors=column.get(bz+oz);if(!neighbors)continue;
       for(const other of neighbors){if(other===e||other.embarked||!!UNITS[other.type].naval!==!!d.naval)continue;const sx=nx-other.x,sz=nz-other.z,min=(e.r+other.r)*.8;if(sx*sx+sz*sz>=min*min)continue;const sep=Math.hypot(sx,sz);if(sep<min&&sep>.01){nx+=sx/sep*(min-sep)*.2;nz+=sz/sep*(min-sep)*.2;}}
     }}
+    if(!d.naval){const cleared=buildingClearanceStep(this,e,e.x,e.z,nx,nz);nx=cleared.x;nz=cleared.z;}
     const c=this.cell(nx,nz),current=this.cell(e.x,e.z),oldX=e.x,oldZ=e.z,radius=bridgeUnitClearance(e),map=this.options.map;
     if((!grid[c.z*this.gridSize+c.x]||grid[current.z*this.gridSize+current.x])&&(d.naval||bridgeStepClear(map,e.x,e.z,nx,nz,radius))){e.x=clamp(nx,-this.halfWorld+3,this.halfWorld-3);e.z=clamp(nz,-this.halfWorld+3,this.halfWorld-3);}else{
       const horizontal=this.cell(nx,e.z),vertical=this.cell(e.x,nz);
@@ -420,7 +421,7 @@ export class Simulation {
     }
     if(combat&&meleeBuildingAttack(e,combat)){
       const gap=meleeSurfaceDistance(e,combat);
-      if(gap>meleeReach(e)||gap<0){if(e.stance!=='hold'||order?.type==='attack')approachMelee(this,e,combat,dt);}
+      if(gap>meleeReach(e)||gap<meleeMinClearance(e)*.65){if(e.stance!=='hold'||order?.type==='attack')approachMelee(this,e,combat,dt);}
       else{e.heading=meleeHeading(e,combat);this.hit(e,combat);}return;
     }
     if(combat){const range=Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0)+combat.r,combat.kind==='building'?combat.r+3:0);

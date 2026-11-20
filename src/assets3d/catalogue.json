@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 13092552,
-    "low": 4325172,
-    "balanced": 12671892
+    "near": 13461804,
+    "low": 4572012,
+    "balanced": 12917756
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -530,27 +530,27 @@
   "lowContentBudgetBytes": 4980736,
   "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedFoliage": "volumetric-tips-v1",
-  "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
+  "balancedEncoding": "Floating-point positions and UVs; source-preserving normals and colors; retained compact surfaces; no additional triangle simplification.",
   "balancedPrecision": {
     "passed": true,
     "models": 126,
     "meshes": 1392,
-    "visibleTriangles": 630736,
+    "visibleTriangles": 630846,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
-    "maxNormalDegrees": 0.0018812330295769107,
+    "maxNormalDegrees": 0.012546962601735412,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 16836092,
-    "candidateBytes": 12671892,
-    "referenceDecodedBufferBytes": 36488540,
-    "candidateDecodedBufferBytes": 32976164,
-    "referenceSHA256": "f89794590a470e7bdef8b5642e0573ae0cb2e290681762d49c2ed345a8b8f386",
-    "candidateSHA256": "a3545b25991cb15cef6d7018cf416c3661687cc585f6fa8c3730d7ffa9085e53"
+    "referenceBytes": 17083288,
+    "candidateBytes": 12917756,
+    "referenceDecodedBufferBytes": 36788984,
+    "candidateDecodedBufferBytes": 33374192,
+    "referenceSHA256": "9b4dce82bdf344bd5124ba7af55ad3328881093c280463eed0c01d6e77b0ef92",
+    "candidateSHA256": "4fa422d547bbc9d9f5d0f57df9cb413d1983b2b704a0e8f8253c6f22410728c9"
   },
   "balancedSourceHashes": {
-    "near": "5bb17269da05a5a3a037416bf5437dcf97453f853ae42d22a38a407f452c2ea4",
-    "low": "8dbad8109c517b27dc6c7e44327401740276da26e87850a5c5e703f998530f09",
+    "near": "8f6e58df234bdc840b9acb4cf2bce3f364044e8ef331d24b1fd15bc57b2b5705",
+    "low": "3dd63dac9743ecd130b7f6e5076d9b8ce505b72cae383e627d3c5d6773e96716",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {

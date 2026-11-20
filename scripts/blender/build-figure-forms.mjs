@@ -13,7 +13,7 @@ for(const detail of ['low','near'])await run(process.env.GLTFPACK_BIN||path.join
 const checks=[],manifest=JSON.parse(fs.readFileSync(path.join(source,'catalogue.json')));
 for(const detail of ['low','balanced','near']){
   const file=`frontier-${detail}.glb`,patch=fs.readFileSync(path.join(stage,`optimized/frontier-${detail==='near'?'near':'low'}.glb`)),base=fs.readFileSync(path.join(source,file)),result=replaceFigureParts(base,patch,author);
-  assert.ok(result.bytes.length-base.length<100000,'Bound the figure-part download growth');if(detail==='low')assert.ok(result.bytes.length<=lowCatalogueBudget(manifest),'Retain the existing phone catalogue budget');
+  assert.ok(result.bytes.length-base.length<400000,'Bound the figure-part download growth');if(detail==='low')assert.ok(result.bytes.length<=lowCatalogueBudget(manifest),'Retain the existing phone catalogue budget');
   fs.writeFileSync(path.join(target,file),result.bytes);checks.push({detail,bytes:result.bytes.length,growthBytes:result.bytes.length-base.length,unchangedModels:result.unchangedModels,changedFigures:result.changedFigures,removedParts:result.removedParts,insertedParts:result.insertedParts});
 }
 for(const file of ['frontier-trees.glb','frontier-foliage.glb'])fs.copyFileSync(path.join(source,file),path.join(target,file));

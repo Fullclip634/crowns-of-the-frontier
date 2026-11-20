@@ -6,6 +6,7 @@ The complete editable scene keeps the unchanged source objects for inspection.
 import bpy, bmesh, math, json, hashlib, argparse, sys
 from pathlib import Path
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 project=Path(__file__).resolve().parents[2]
 parser=argparse.ArgumentParser();parser.add_argument('--source',default=str(project/'art/figures/figure-source.blend'))
@@ -24,7 +25,10 @@ def fingerprint(obj):
     return hashlib.sha256(repr(data).encode()).hexdigest()
 def selected(obj,unit):
     role=obj.get('assetMaterial');motion=obj.get('motion');kind=motion.get('type') if motion else None
-    return (kind=='head' and role in {'skin','hair'} or kind=='knee' and role=='leather' or kind=='forearm' and role=='skin' or
+    return (kind=='head' and role in {'skin','hair'} or
+            kind=='head' and role=='team' and unit in {'archer','marksman','scout','outrider'} or
+            kind=='head' and role=='canvas' and unit=='monk' or
+            kind=='knee' and role=='leather' or kind=='forearm' and role=='skin' or
             role=='pants' and kind in {'torso','leg','knee'} or unit=='villager' and role=='canvas' and kind=='torso' or
             kind=='torso' and role==('steel' if unit in {'spearman','swordsman','knight','sentinel','king'} else 'team') or
             kind in {'arm','forearm'} and role=='team' and unit not in {'spearman','swordsman','knight','sentinel','king'})
@@ -53,6 +57,73 @@ def limb(vertices,faces,a,b,rings,sides=10):
     for row in range(len(rings)-1):
         for i in range(sides):j=(i+1)%sides;polys.append((row*sides+i,row*sides+j,(row+1)*sides+j,(row+1)*sides+i))
     polys.append(tuple((len(rings)-1)*sides+i for i in range(sides)));append(vertices,faces,verts,polys)
+
+def loft_shifted(vertices,faces,center,rings,sides=12,fold=0):
+    verts=[]
+    for height,cz,width,front,back in rings:
+        for i in range(sides):
+            angle=math.tau*i/sides;wave=1+fold*math.sin(angle*5+height*4)
+            verts.append((center[0]+math.sin(angle)*width*wave,center[1]+height,center[2]+cz+math.cos(angle)*(front if math.cos(angle)>=0 else back)*wave))
+    polys=[tuple(range(sides-1,-1,-1))]
+    for row in range(len(rings)-1):
+        for i in range(sides):j=(i+1)%sides;polys.append((row*sides+i,row*sides+j,(row+1)*sides+j,(row+1)*sides+i))
+    polys.append(tuple((len(rings)-1)*sides+i for i in range(sides)));append(vertices,faces,verts,polys)
+
+def bake_figure_ao(root_obj,target_objs,floor_offset):
+    """Bake real Blender BVH hemisphere raycast Vertex AO into BakedDepth."""
+    ao_bm=bmesh.new()
+    inv_root=root_obj.matrix_world.inverted()
+    for obj in descendants(root_obj)[1:]:
+        if obj.type!='MESH' or not obj.data.polygons:continue
+        xf=inv_root@obj.matrix_world
+        tmp=bmesh.new();tmp.from_mesh(obj.data)
+        bmesh.ops.transform(tmp,matrix=xf,verts=tmp.verts)
+        verts_map=[ao_bm.verts.new(v.co) for v in tmp.verts]
+        for f in tmp.faces:
+            try:ao_bm.faces.new([verts_map[v.index] for v in f.verts])
+            except ValueError:pass
+        tmp.free()
+    bmesh.ops.triangulate(ao_bm,faces=list(ao_bm.faces))
+    bvh=BVHTree.FromBMesh(ao_bm)
+    ao_bm.free()
+    # 16 Fibonacci hemisphere directions in tangent space (+Z normal)
+    samples=[]
+    golden=math.pi*(3.0-math.sqrt(5.0))
+    for i in range(16):
+        z=0.14+0.84*(i+0.5)/16.0
+        r=math.sqrt(max(0.0,1.0-z*z))
+        theta=golden*i
+        samples.append((r*math.cos(theta),r*math.sin(theta),z))
+    for obj in target_objs:
+        mesh=obj.data
+        colors=mesh.color_attributes.get('BakedDepth') or mesh.color_attributes.new(name='BakedDepth',type='BYTE_COLOR',domain='POINT')
+        mesh.color_attributes.active_color=colors
+        xf=inv_root@obj.matrix_world
+        nxf=xf.to_3x3()
+        label=obj.get('figurePart','')
+        for v in mesh.vertices:
+            p=xf@v.co
+            n=(nxf@v.normal).normalized()
+            if n.length<1e-4:n=Vector((0,0,1))
+            ref=Vector((1,0,0)) if abs(n.x)<0.85 else Vector((0,1,0))
+            t=n.cross(ref).normalized()
+            b=n.cross(t).normalized()
+            occ=0.0
+            origin=p+n*0.006
+            for sx,sy,sz in samples:
+                d=(t*sx+b*sy+n*sz).normalized()
+                hit=bvh.ray_cast(origin,d,0.58)
+                if hit[0] is not None:
+                    occ+=(1.0-hit[3]/0.58)**0.85
+            ao=1.0-0.40*(occ/len(samples))
+            # Gentle upward sky-dome & ground contact shaping in Blender Z-up space
+            sky=0.92+0.08*max(-1.0,min(1.0,n.z))
+            shade=max(0.64,min(1.0,ao*sky))
+            if label.startswith('Boot') and p.z-floor_offset<0.08:
+                shade=min(shade,0.63)
+            # Quantize to 32 clean AO steps so meshopt compresses tightly without visible banding
+            shade=round(shade*32.0)/32.0
+            colors.data[v.index].color=(shade,shade,shade,1.0)
 
 def drape(vertices,faces):
     # A closed, curved bib follows the chest and falls clear of the tunic hem.
@@ -101,7 +172,7 @@ def part(role,vertices,faces,label):
     obj=bpy.data.objects.new(root.name+'_'+label,data);bpy.context.collection.objects.link(obj);obj.parent=root;obj['assetMaterial']=role;obj['motion']=motion;obj['figurePart']=label;data.materials.append(materials[role])
     uv=data.uv_layers.new(name='UVMap')
     for loop in data.loops:p=data.vertices[loop.vertex_index].co;uv.data[loop.index].uv=(p.x*.25,p.z*.25+p.y*.1)
-    colors=data.color_attributes.new(name='BakedDepth',type='FLOAT_COLOR',domain='POINT');data.color_attributes.active_color=colors
+    colors=data.color_attributes.new(name='BakedDepth',type='BYTE_COLOR',domain='POINT');data.color_attributes.active_color=colors
     for vertex in data.vertices:
         shade=.95
         if label.startswith('Boot') and vertex.co.z-offset<.08:shade=.67
@@ -118,6 +189,7 @@ for key in keys:
         if unit=='villager' and role=='canvas' and m['type']=='torso':preserve_apron_straps(obj)
     selectors[key]=[{'role':role,'joint':kind,'side':side} for role,kind,side in groups]
     for obj in targets:bpy.data.objects.remove(obj,do_unlink=True)
+    figure_created=[]
     for (role,kind,side),motion in groups.items():
         verts=[];faces=[]
         if kind=='head' and role=='skin':
@@ -126,56 +198,92 @@ for key in keys:
             for sign in [-1,1]:loft(verts,faces,(sign*.14,2.31+offset,-.007),[(-.04,.009,.015,.015),(-.025,.018,.024,.023),(.022,.019,.024,.023),(.043,.008,.013,.013)],sides=8)
             nose=[(-.019,2.37+offset,.124),(.019,2.37+offset,.124),(-.021,2.29+offset,.125),(.021,2.29+offset,.125),(-.012,2.315+offset,.151),(.012,2.315+offset,.151),(-.022,2.285+offset,.137),(.022,2.285+offset,.137)]
             append(verts,faces,nose,[(0,1,5,4),(0,4,6,2),(1,3,7,5),(2,6,7,3),(4,5,7,6),(0,2,3,1)])
-            part(role,verts,faces,'Head with cheek jaw and nasal planes')
+            figure_created.append(part(role,verts,faces,'Head with cheek jaw and nasal planes'))
         elif kind=='head' and role=='hair':
             loft(verts,faces,(0,2.32+offset,-.005),[(.082,.143,.122,.125),(.135,.137,.116,.118),(.185,.105,.088,.095),(.205,.035,.03,.034)],sides=16)
             for sign in [-1,1]:
                 loft(verts,faces,(sign*.055,2.355+offset,.129),[(-.007,.009,.003,.003),(.003,.012,.0035,.0035),(.009,.007,.002,.002)],sides=8)
                 limb(verts,faces,(sign*.035,2.389+offset,.127),(sign*.085,2.383+offset,.126),[(0,.0035),(1,.003)],sides=6)
             limb(verts,faces,(-.023,2.25+offset,.129),(.023,2.25+offset,.129),[(0,.002),(1,.002)],sides=6)
-            part(role,verts,faces,'Hairline inset eyes and facial creases')
+            figure_created.append(part(role,verts,faces,'Hairline inset eyes and facial creases'))
+        elif kind=='head' and role in {'team','canvas'}:
+            # Sculpted medieval pointed ranger hood/cowl (archer/marksman/scout/outrider)
+            # or deep monastic robe cowl (monk). Keeps face and eyes clear in front (+Z)
+            # while arching over the crown and sweeping back into a tapered liripipe tail.
+            if role=='canvas':
+                hood_rings=[
+                    (-.31,-.015,.225,.135,.185),
+                    (-.18,-.028,.190,.092,.182),
+                    (-.03,-.045,.176,.078,.178),
+                    (.10,-.042,.174,.095,.176),
+                    (.20,-.028,.148,.112,.152),
+                    (.255,-.040,.084,.072,.105),
+                ]
+                loft_shifted(verts,faces,(0,2.32+offset,0),hood_rings,sides=14,fold=.018)
+                figure_created.append(part(role,verts,faces,'Hood sculpted monastic cowl and shoulder mantle'))
+            else:
+                hood_rings=[
+                    (-.29,-.022,.202,.105,.168),
+                    (-.15,-.038,.176,.074,.172),
+                    (-.01,-.050,.170,.072,.175),
+                    (.11,-.044,.168,.094,.178),
+                    (.205,-.030,.142,.118,.156),
+                    (.252,-.045,.074,.068,.095),
+                ]
+                loft_shifted(verts,faces,(0,2.32+offset,0),hood_rings,sides=14,fold=.015)
+                limb(verts,faces,(0,2.44+offset,-.135),(0,2.23+offset,-.355),[(0,.092),(.36,.072),(.74,.044),(1,.018)],sides=8)
+                figure_created.append(part(role,verts,faces,'Hood sculpted pointed medieval cowl and liripipe'))
         elif kind=='forearm' and role=='skin':
             hand=(side*.5,1.38+offset,.115)
             loft(verts,faces,hand,[(-.074,.025,.032,.03),(-.05,.045,.052,.044),(.025,.05,.053,.045),(.063,.037,.04,.036)],sides=10)
             loft(verts,faces,(hand[0]-side*.042,hand[1]-.008,hand[2]+.02),[(-.042,.012,.02,.016),(-.014,.023,.028,.023),(.021,.014,.02,.015)],sides=8)
-            part(role,verts,faces,'Hand palm fingers and opposing thumb')
+            figure_created.append(part(role,verts,faces,'Hand palm fingers and opposing thumb'))
         elif kind=='knee' and role=='leather':
             x=side*(.52 if riding else .18)
             loft(verts,faces,(x,offset,.025),[(0,.087,.222,.098),(.045,.10,.235,.105),(.115,.101,.228,.10),(.17,.086,.15,.09),(.235,.066,.086,.075),(.29,.068,.079,.072),(.315,.073,.084,.077)],sides=12)
-            part(role,verts,faces,'Boot shaped last heel sole and cuff')
+            figure_created.append(part(role,verts,faces,'Boot shaped last heel sole and cuff'))
         elif role=='pants':
             if kind=='torso':
                 loft(verts,faces,(0,offset,0),[(1.05,.23,.145,.155),(1.13,.266,.175,.18),(1.24,.265,.175,.18),(1.32,.25,.16,.17)],sides=14)
-                part(role,verts,faces,'Trousers shaped seat and waist')
+                figure_created.append(part(role,verts,faces,'Trousers shaped seat and waist'))
             elif kind=='leg':
                 knee=groups[('pants','knee',side)]['pivot'];limb(verts,faces,motion['pivot'],knee,[(0,.101),(.15,.12),(.53,.112),(.84,.091),(1,.089)],sides=12)
-                part(role,verts,faces,'Trousers articulated thigh and knee')
+                figure_created.append(part(role,verts,faces,'Trousers articulated thigh and knee'))
             elif kind=='knee':
                 ankle=(side*(.52 if riding else .18),.285+offset,.025);limb(verts,faces,motion['pivot'],ankle,[(0,.089),(.22,.103),(.56,.096),(.83,.075),(1,.063)],sides=12)
-                part(role,verts,faces,'Trousers articulated calf and cuff')
+                figure_created.append(part(role,verts,faces,'Trousers articulated calf and cuff'))
             else:raise AssertionError((key,role,kind))
         elif role=='canvas' and kind=='torso':
-            drape(verts,faces);part(role,verts,faces,'Apron curved bib waist and hanging cloth')
+            drape(verts,faces);figure_created.append(part(role,verts,faces,'Apron curved bib waist and hanging cloth'))
         elif kind=='torso':
             if role=='steel':
-                rings=[(1.235,.245,.168,.16),(1.35,.267,.18,.168),(1.54,.29,.215,.18),(1.75,.33,.222,.186),(1.9,.305,.177,.16),(2.015,.145,.132,.128)]
+                # Sculpted fluted plate cuirass with flanged waist fauld, breastplate keel, gorget rim and rounded shoulder pauldrons.
+                rings=[(1.195,.276,.190,.180),(1.275,.252,.174,.166),(1.36,.268,.182,.170),(1.55,.296,.222,.184),(1.76,.338,.228,.190),(1.91,.312,.182,.166),(1.995,.195,.152,.148),(2.035,.142,.132,.128)]
                 loft(verts,faces,(0,offset,0),rings,sides=14)
-                limb(verts,faces,(0,1.42+offset,.223),(0,1.87+offset,.193),[(0,.01),(1,.011)],sides=6)
-                part(role,verts,faces,'Cuirass curved breast waist and collar')
+                limb(verts,faces,(0,1.38+offset,.228),(0,1.89+offset,.196),[(0,.011),(.5,.016),(1,.011)],sides=6)
+                for pside in [-1,1]:
+                    loft(verts,faces,(pside*.325,1.935+offset,0),[(-.085,.088,.105,.102),(-.015,.118,.126,.122),(.055,.106,.114,.110),(.102,.056,.064,.062)],sides=8)
+                figure_created.append(part(role,verts,faces,'Cuirass curved breast fauld pauldrons and gorget'))
             else:
-                rings=[(1.08,.315,.205,.195),(1.19,.310,.206,.194),(1.275,.294,.195,.184),(1.345,.266,.174,.166),(1.51,.279,.191,.18),(1.73,.321,.204,.185),(1.91,.309,.17,.157),(2.015,.147,.132,.13)]
-                loft(verts,faces,(0,offset,0),rings,sides=14,fold=.012)
-                part(role,verts,faces,'Tunic tailored shoulder waist and hem folds')
+                if unit in {'archer','marksman'}:
+                    rings=[(1.08,.318,.206,.196),(1.19,.312,.207,.195),(1.275,.294,.195,.184),(1.345,.264,.174,.166),(1.51,.280,.192,.182),(1.73,.326,.206,.188),(1.88,.348,.212,.198),(1.96,.332,.194,.184),(2.025,.152,.136,.134)]
+                    loft(verts,faces,(0,offset,0),rings,sides=14,fold=.018)
+                else:
+                    rings=[(1.08,.315,.205,.195),(1.19,.310,.206,.194),(1.275,.294,.195,.184),(1.345,.266,.174,.166),(1.51,.279,.191,.18),(1.73,.321,.204,.185),(1.91,.309,.17,.157),(2.015,.147,.132,.13)]
+                    loft(verts,faces,(0,offset,0),rings,sides=14,fold=.012)
+                figure_created.append(part(role,verts,faces,'Tunic tailored shoulder waist and hem folds'))
         elif kind in {'arm','forearm'} and role=='team':
             if kind=='arm':a=(side*.35,1.925+offset,0);b=(side*.46,1.63+offset,.035);rings=[(0,.099),(.2,.108),(.6,.093),(.88,.088),(1,.085)]
             else:a=(side*.46,1.63+offset,.035);b=(side*.5,1.38+offset,.115);rings=[(0,.082),(.22,.084),(.65,.069),(.88,.063),(.96,.07),(1,.064)]
-            limb(verts,faces,a,b,rings,sides=10);part(role,verts,faces,'Sleeve shaped elbow and cuff')
+            limb(verts,faces,a,b,rings,sides=10);figure_created.append(part(role,verts,faces,'Sleeve shaped elbow and cuff'))
         else:raise AssertionError((key,role,kind))
+    bpy.context.view_layer.update()
+    bake_figure_ao(root,figure_created,offset)
     data=plain(root['model3d']);data['figureRevision']='field-forms-v1';root['model3d']=data
 
 bpy.context.view_layer.update()
 for name,digest in untouched.items():assert name in bpy.data.objects and fingerprint(bpy.data.objects[name])==digest,name
-low_limits={'Head':128,'Hairline':96,'Hand':48,'Boot':64,'Trousers':40,'Cuirass':100,'Tunic':96,'Sleeve':40,'Apron':96}
+low_limits={'Head':128,'Hairline':84,'Hood':88,'Hand':48,'Boot':64,'Trousers':40,'Cuirass':120,'Tunic':96,'Sleeve':40,'Apron':96}
 low_checks=[]
 for detail in ['low','near']:
     temporary=[]

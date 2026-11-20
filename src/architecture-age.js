@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {isSnowBiome} from './terrain-biomes.js';
 
 // Age-driven architecture. Only the Town Center has four authored Blender
 // variants; every other landmark reuses its single authored base and gains
@@ -133,10 +134,20 @@ function detailMesh(root,geometry,material,x,y,z,sx,sy,sz){
   return mesh;
 }
 
-/** Add stepped stone piers, castle buttresses, and imperial bastion crowns by age so every age looks structurally stronger. */
+const PORCH_BUILDINGS=new Set(['house','barracks','market','workshop','stable','range']);
+const SUPPLY_BUILDINGS=new Set(['house','barracks','market','workshop','camp','mine','mill']);
+const CHIMNEY_BUILDINGS=new Set(['house','blacksmith','workshop']);
+const BANNER_BUILDINGS=new Set(['keep','tower','barracks','stable','range','workshop','monastery','wonder']);
+
+function icicleMaterial(view){
+  view.materials.icicle??=new THREE.MeshStandardMaterial({color:0xd8eeff,roughness:.18,metalness:.06});
+  return view.materials.icicle;
+}
+
+/** Add stepped stone piers, castle buttresses, imperial bastion crowns, lived-in medieval props (timber porches, supply barrels/crates, stone chimneys, hanging heraldic banners), and winter roof-eave icicles so every age and biome reads with hand-crafted depth inside one single merged draw call. */
 export function strengthenArchitecture(view,root,entity,age){
-  if(!root||!entity||age<=0||!view?.geo?.box||!view?.materials?.stone||root.userData.strengthened)return root;
-  if(['farm','dock','wall','gate','mill','towncenter'].includes(entity.type))return root;
+  if(!root||!entity||age<0||!view?.geo?.box||!view?.materials?.stone||root.userData.strengthened)return root;
+  if(['farm','dock','wall','gate','towncenter'].includes(entity.type))return root;
   const {wall,eave,roof}=measureLocalBoxes(root);
   if(wall.isEmpty())return root;
   const eaveSize=!eave.isEmpty()?eave.getSize(new THREE.Vector3()):null;
@@ -144,9 +155,16 @@ export function strengthenArchitecture(view,root,entity,age){
   const size=core.getSize(new THREE.Vector3()),center=core.getCenter(new THREE.Vector3());
   if(size.x<1.2||size.z<1.2)return root;
   root.userData.strengthened=true;
-  const {stone,stoneDark}=view.materials,boxGeo=view.geo.box,cylGeo=view.geo.cylinder||boxGeo;
+  const m=view.materials,{stone,stoneDark}=m;
+  const wood=m.darkwood||m.wood||stone,crateWood=m.wood||wood;
+  const bannerMat=view.teamMaterials?.[entity.owner]||stone;
+  const boxGeo=view.geo.box,cylGeo=view.geo.cylinder||boxGeo,coneGeo=view.geo.cone||boxGeo;
   const eaveY=!eave.isEmpty()?Math.min(wall.max.y,Math.max(eave.max.y,1.8)):roof.isEmpty()?wall.max.y:Math.min(wall.max.y,roof.min.y+.45);
   const pierW=Math.max(.26,Math.min(.50,Math.min(size.x,size.z)*.105));
+  const hx=size.x*.5,hz=size.z*.5;
+  const snow=isSnowBiome(view.sim?.options?.map);
+
+  // 1. Tower masonry tiers + Castle/Imperial heraldic wall banners + winter eave icicles.
   if(entity.type==='tower'){
     const radius=Math.min(size.x,size.z)*.5;
     if(age>=1)detailMesh(root,cylGeo,stoneDark||stone,center.x,.48,center.z,radius*1.14,.96,radius*1.14);
@@ -156,29 +174,116 @@ export function strengthenArchitecture(view,root,entity,age){
         detailMesh(root,boxGeo,stoneDark||stone,center.x+dx*radius*.94,height*.38,center.z+dz*radius*.94,.44,height*.76,.44);
         detailMesh(root,boxGeo,stone,center.x+dx*radius*.86,height*.52,center.z+dz*radius*.86,.34,height,.34);
       }
+      // Hanging heraldic tower banner beneath parapet on front face.
+      const bannerY=Math.max(1.8,eaveY*.74);
+      detailMesh(root,boxGeo,wood,center.x,bannerY+.52,center.z+radius*1.04,.64,.08,.10);
+      detailMesh(root,boxGeo,bannerMat,center.x,bannerY,center.z+radius*1.05,.52,.98,.06);
     }
     if(age>=3){
       detailMesh(root,cylGeo,stoneDark||stone,center.x,eaveY*.92,center.z,radius*1.12,.36,radius*1.12);
     }
+    if(snow&&!roof.isEmpty()){
+      const ice=icicleMaterial(view),ry=Math.max(1.4,roof.min.y-.14);
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3,r=radius*1.02;
+        const ic=detailMesh(root,coneGeo,ice,center.x+Math.cos(a)*r,ry,center.z+Math.sin(a)*r,.07,.32+(i%2)*.14,.07);
+        ic.rotation.x=Math.PI;
+      }
+    }
     return root;
   }
-  const hx=size.x*.5,hz=size.z*.5;
-  const height=eaveY*(age>=3?1.04:age===2?.94:.80);
-  // Corner piers reinforce weak timber corners in Feudal, widen into battered stone buttresses in Castle, and rise into crowned stone bastions in Imperial.
-  for(const sx of [-1,1])for(const sz of [-1,1]){
-    const x=center.x+sx*(hx-pierW*.14),z=center.z+sz*(hz-pierW*.14);
-    if(age===1){
-      detailMesh(root,boxGeo,stone,x,height*.5,z,pierW,height,pierW);
-      continue;
+
+  // 2. Mill stays clear of its front spinning blades; tuck barrels/crates cleanly on its back/side flank.
+  if(entity.type==='mill'){
+    detailMesh(root,cylGeo,wood,center.x+hx*.68,.30,center.z-hz*.62,.24,.52,.24);
+    detailMesh(root,boxGeo,crateWood,center.x+hx*.34,.25,center.z-hz*.72,.46,.42,.44);
+    if(snow&&!roof.isEmpty()){
+      const ice=icicleMaterial(view),ry=Math.max(1.6,roof.min.y-.14);
+      for(const sx of [-.65,0,.65]){
+        const ic=detailMesh(root,coneGeo,ice,center.x+sx*hx*.85,ry,center.z-hz*1.02,.07,.34,.07);
+        ic.rotation.x=Math.PI;
+      }
     }
-    const baseH=Math.max(.75,height*(age>=3?.52:.42));
-    detailMesh(root,boxGeo,stoneDark||stone,center.x+sx*hx,baseH*.5,center.z+sz*hz,pierW*1.42,baseH,pierW*1.42);
-    detailMesh(root,boxGeo,stone,x,height*.5,z,pierW*1.12,height,pierW*1.12);
-    if(age>=3){
-      const capY=height+.14;
-      detailMesh(root,boxGeo,stoneDark||stone,x,capY,z,pierW*1.34,.28,pierW*1.34);
-      if(MILITARY_CREST.has(entity.type))detailMesh(root,boxGeo,stone,x,capY+.25,z,pierW*.92,.24,pierW*.92);
+    return root;
+  }
+
+  // 3. Age-progressive corner masonry:
+  // Age 0 (Frontier): rustic timber corner posts & supply crates.
+  // Age 1 (Feudal): stone corner piers + timber entry porch + stone chimney.
+  // Age 2 (Castle): battered stepped stone buttresses + hanging heraldic banners.
+  // Age 3 (Imperial): tall crowned stone bastions + military merlon crests + double banner trim.
+  const height=eaveY*(age>=3?1.04:age===2?.94:.80);
+  if(age===0){
+    for(const sx of [-1,1])for(const sz of [-1,1]){
+      const x=center.x+sx*(hx-pierW*.18),z=center.z+sz*(hz-pierW*.18);
+      detailMesh(root,boxGeo,wood,x,Math.max(.65,height*.42),z,pierW*.76,Math.max(1.2,height*.78),pierW*.76);
+    }
+  }else{
+    for(const sx of [-1,1])for(const sz of [-1,1]){
+      const x=center.x+sx*(hx-pierW*.14),z=center.z+sz*(hz-pierW*.14);
+      if(age===1){
+        detailMesh(root,boxGeo,stone,x,height*.5,z,pierW,height,pierW);
+        continue;
+      }
+      const baseH=Math.max(.75,height*(age>=3?.52:.42));
+      detailMesh(root,boxGeo,stoneDark||stone,center.x+sx*hx,baseH*.5,center.z+sz*hz,pierW*1.42,baseH,pierW*1.42);
+      detailMesh(root,boxGeo,stone,x,height*.5,z,pierW*1.12,height,pierW*1.12);
+      if(age>=3){
+        const capY=height+.14;
+        detailMesh(root,boxGeo,stoneDark||stone,x,capY,z,pierW*1.34,.28,pierW*1.34);
+        if(MILITARY_CREST.has(entity.type))detailMesh(root,boxGeo,stone,x,capY+.25,z,pierW*.92,.24,pierW*.92);
+      }
     }
   }
+
+  // 4. Lived-in timber entry porch beam & posts (Feudal+ on everyday civic/military buildings).
+  if(age>=1&&PORCH_BUILDINGS.has(entity.type)&&size.x>=2.0&&eaveY>=1.5){
+    const porchW=Math.min(1.55,size.x*.42),porchH=Math.min(1.48,eaveY*.62),porchZ=center.z+hz+.26;
+    detailMesh(root,boxGeo,wood,center.x-porchW*.46,porchH*.5+.04,porchZ,.13,porchH,.13);
+    detailMesh(root,boxGeo,wood,center.x+porchW*.46,porchH*.5+.04,porchZ,.13,porchH,.13);
+    detailMesh(root,boxGeo,wood,center.x,porchH+.08,porchZ-.08,porchW+.24,.14,.52);
+  }
+
+  // 5. Lived-in grounded supply barrels & wooden crates tucked neatly beside the side/front flank.
+  if(SUPPLY_BUILDINGS.has(entity.type)&&size.x>=1.6){
+    const sideX=center.x+hx+.24,baseZ=center.z+hz*.32;
+    detailMesh(root,boxGeo,crateWood,sideX,.26,baseZ,.46,.44,.44);
+    detailMesh(root,cylGeo,wood,sideX+.02,.30,baseZ-.52,.21,.52,.21);
+    if(age>=2&&entity.type!=='house'){
+      detailMesh(root,boxGeo,crateWood,sideX-.04,.64,baseZ-.04,.34,.32,.34);
+    }
+  }
+
+  // 6. Stone hearth chimney stack rising cleanly beside the roof ridge (Feudal+ on houses, workshops, blacksmiths).
+  if(age>=1&&CHIMNEY_BUILDINGS.has(entity.type)&&!roof.isEmpty()){
+    const chTop=Math.max(eaveY+.75,roof.max.y+.36),chBase=Math.max(.4,eaveY*.55),chH=Math.max(.7,chTop-chBase);
+    const cx=center.x-hx*.52,cz=center.z-hz*.45;
+    detailMesh(root,boxGeo,stoneDark||stone,cx,chBase+chH*.5,cz,.44,chH,.44);
+    detailMesh(root,boxGeo,stone,cx,chTop+.08,cz,.54,.16,.54);
+  }
+
+  // 7. Hanging heraldic faction banners on fortified / military / civic landmarks (Castle+ & Imperial+).
+  if(age>=2&&BANNER_BUILDINGS.has(entity.type)&&eaveY>=1.7){
+    const bannerY=Math.max(1.25,eaveY*.68),bannerZ=center.z+hz+.16;
+    const spanX=Math.min(hx*.52,1.15);
+    for(const sx of [-1,1]){
+      const bx=center.x+sx*spanX;
+      detailMesh(root,boxGeo,wood,bx,bannerY+.52,bannerZ,.56,.08,.10);
+      detailMesh(root,boxGeo,bannerMat,bx,bannerY,bannerZ+.02,.44,.94,.06);
+      if(age>=3)detailMesh(root,boxGeo,stone,bx,bannerY+.60,bannerZ,.16,.14,.16);
+    }
+  }
+
+  // 8. Winter biome roof-eave icicles (tundra/winter maps only).
+  if(snow&&!roof.isEmpty()){
+    const ice=icicleMaterial(view),ry=Math.max(1.2,roof.min.y-.13);
+    const rCenter=roof.getCenter(new THREE.Vector3()),rSize=roof.getSize(new THREE.Vector3());
+    const spanX=Math.max(.6,rSize.x*.36),edgeZ=rCenter.z+rSize.z*.48;
+    for(let i=-2;i<=2;i++){
+      const ic=detailMesh(root,coneGeo,ice,rCenter.x+(i/2)*spanX,ry,edgeZ,.065,.28+(Math.abs(i)%2)*.14,.065);
+      ic.rotation.x=Math.PI;
+    }
+  }
+
   return root;
 }
