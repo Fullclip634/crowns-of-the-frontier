@@ -20,7 +20,7 @@ import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './sur
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
-import {updateFlight,releaseEffect,witnessedEffect,ImpactEffects,AttackEffects,crossedPlumeGeometry,fireTongueTexture,smokePlumeTexture} from './battle-effects.js';
+import {updateFlight,releaseEffect,witnessedEffect,ImpactEffects,AttackEffects,BuildingDamageEffects} from './battle-effects.js';
 import {LocalMotion,smoothHeading,renderPosition} from './motion-smoothing.js';
 import {pickFruitVolume} from './resource-picking.js';
 import {UnitLocomotion} from './locomotion.js';
@@ -91,12 +91,7 @@ export class WorldView {
     this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint}};
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
-    this.fireMap=fireTongueTexture();
-    this.smokeMap=smokePlumeTexture();
-    this.burning=new THREE.InstancedMesh(crossedPlumeGeometry(1.8,2.9,1.1),new THREE.MeshBasicMaterial({map:this.fireMap,color:0xff8b2c,transparent:true,opacity:.78,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),80);this.burning.count=0;this.burning.frustumCulled=false;this.burning.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.burning.renderOrder=3;this.scene.add(this.burning);
-    // `smoke()` is also the damage-effect factory. Keep the persistent fire
-    // plume batch under a distinct name so it cannot shadow that method.
-    this.smokeMesh=new THREE.InstancedMesh(crossedPlumeGeometry(2.6,2.6,1.15),new THREE.MeshBasicMaterial({map:this.smokeMap,color:0xffffff,transparent:true,opacity:.68,depthWrite:false,side:THREE.DoubleSide}),80);this.smokeMesh.count=0;this.smokeMesh.frustumCulled=false;this.smokeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.smokeMesh.renderOrder=2;this.scene.add(this.smokeMesh);
+    this.buildingDamage=new BuildingDamageEffects(this.scene);
   }
   piece(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1,ry=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   box(g,m,x,y,z,w,h,d,ry=0){return this.piece(g,this.geo.box,m,x,y,z,w,h,d,ry);}
@@ -241,9 +236,6 @@ export class WorldView {
   crater(x,z,size=1.4,duration=3.5){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('crater'),gh=this.groundHeight?.bind(this),ground=(gh?.(x,z)||0)+.08;object.position.set(x,ground,z);object.scale.setScalar(size);if(gh){const hL=gh(x-.8,z),hR=gh(x+.8,z),hD=gh(x,z-.8),hU=gh(x,z+.8),n=new THREE.Vector3(hL-hR,1.6,hD-hU).normalize(),q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),n);object.quaternion.copy(q);}else object.rotation.x=-Math.PI/2;this.scene.add(object);this.fx.push({object,time:0,duration,crater:true,size,recycle:mesh=>pool.release(mesh)});}
   wake(x,z,heading,size=1){const budget=vfxBudget(this.renderQuality||this.settings.quality).effects;if(!effectsAllowed(this.fx.length+8,budget))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('wake');object.position.set(x,.095,z);object.rotation.set(0,heading,0);object.scale.setScalar(size);this.scene.add(object);this.fx.push({object,time:0,duration:1.15,wake:true,size,recycle:mesh=>pool.release(mesh)});}
   dust(x,z,size=1,color=0xd8cbb0){const budget=vfxBudget(this.renderQuality||this.settings.quality).effects;if(!effectsAllowed(this.fx.length+10,budget))return;const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('dust',color);object.position.set(x,(this.groundHeight?.(x,z)||0)+.08,z);object.rotation.set(0,Math.random()*Math.PI*2,0);object.scale.setScalar(size);this.scene.add(object);this.fx.push({object,time:0,duration:.75,dust:true,size,recycle:mesh=>pool.release(mesh)});}
-  // Damage has to be readable without selecting the building. A smoking roof is
-  // the cheapest honest signal: it needs no shader variant, no second material
-  // and no geometry, and it reads at any zoom.
   smoke(x,y,z,size=1){
     if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return false;
     const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('burst',0x4a4640),dummy=this.effectDummy??=new THREE.Object3D(),velocities=object.userData.velocities;
@@ -253,21 +245,6 @@ export class WorldView {
     markInstancePrefix(object,count);this.scene.add(object);
     this.fx.push({object,time:0,duration:1.8,particles:velocities,smoke:true,size,recycle:mesh=>pool.release(mesh)});
     return true;
-  }
-  damageSmoke(dt){
-    const sim=this.sim;if(!sim)return;
-    this.smokeClock=(this.smokeClock??0)+dt;if(this.smokeClock<.55)return;this.smokeClock=0;
-    let emitted=0;
-    for(const e of sim.entities){
-      if(emitted>=6)break;
-      if(e.kind!=='building'||e.hp<=0||e.progress<1)continue;
-      const ratio=e.hp/e.maxHp;if(ratio>.6)continue;
-      if(e.owner!==0&&!sim.isVisible(e.x,e.z))continue;
-      const ground=this.groundHeight(e.x,e.z);
-      if(!nearViewport(this,e.x,ground,e.z))continue;
-      const height=Math.min(6,Math.max(2,(e.r||1.5)*1.7));
-      if(this.smoke(e.x,ground+height,e.z,ratio<.3?1.5:1))emitted++;
-    }
   }
   effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;
     if(event.type==='death'&&!witnessedEffect(this,e))return;
@@ -399,7 +376,8 @@ export class WorldView {
     this.battleFog.enabled.value=Number(!menu&&this.settings.fog!==false&&!this.sim.options.spectator);
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
-    let fireCount=0;const fireDummy=this.fireDummy??=new THREE.Object3D();
+    this.buildingDamage?.beginFrame();
+    const wind=this.atmosphereUniforms?.wind?.value;
     const remembered=menu?null:this.sim.resourceMemory;
     for(const entity of this.sim.entities){const e=remembered?.get(entity.id)??entity;let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
         if(e.hp<=0&&this.treeIndices.has(e.id)){const i=this.treeIndices.get(e.id),dummy=new THREE.Object3D();dummy.scale.set(0,0,0);dummy.updateMatrix();this.treeTrunks.setMatrixAt(i,dummy.matrix);this.treeLeaves.setMatrixAt(i*2,dummy.matrix);this.treeLeaves.setMatrixAt(i*2+1,dummy.matrix);this.treeTrunks.instanceMatrix.needsUpdate=true;this.treeLeaves.instanceMatrix.needsUpdate=true;this.treeIndices.delete(e.id);}continue;
@@ -428,13 +406,12 @@ export class WorldView {
       node.position.set(rx,ground,rz);if(e.kind==='unit'){node.rotation.y=heading;const body=node.userData.body;if(body){body.position.y=e.moving?Math.sin(this.clock*10+e.id)*.065:0;if(e.type==='villager'&&e.order?.type==='gather'&&!e.moving)body.rotation.z=Math.sin(this.clock*6)*.08;else body.rotation.z=0;}}
       if(e.kind==='building'){
         if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);
-        if(e.hp>0&&e.hp<e.maxHp*.5&&e.progress>=1&&fireCount<80&&(e.owner===0||this.sim.isVisible(e.x,e.z))){const severity=1-e.hp/(e.maxHp*.5),phase=(this.clock*.95+e.id*.37)%1.8,flicker=.88+Math.sin(this.clock*11.5+e.id*2.1)*.15+Math.cos(this.clock*17.3+e.id)*.08,wind=this.atmosphereUniforms?.wind?.value,wx=wind?wind.x*.22:.25,wz=wind?wind.z*.22:.12;if(node.userData.fireHeight===undefined){node.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(node);node.userData.fireHeight=Number.isFinite(b.max.y)?Math.max(2.6,b.max.y-node.position.y):Math.max(3.6,(e.r||2)*1.5);}const roofH=node.userData.fireHeight*.78,ox=Math.min(1.5,(e.r||2)*.32),oz=Math.min(1.5,(e.r||2)*.32);fireDummy.position.set(e.x+ox,ground+roofH,e.z+oz);fireDummy.rotation.set(0,e.id*.7+this.clock*.45,0);fireDummy.scale.set((1.15+severity*.72)*flicker,(1.28+severity*.85)*flicker,(1.15+severity*.72)*flicker);fireDummy.updateMatrix();this.burning.setMatrixAt(fireCount,fireDummy.matrix);fireDummy.position.set(e.x+ox+wx*phase*2.2,ground+node.userData.fireHeight*.92+phase*2.8,e.z+oz+wz*phase*2.2);fireDummy.rotation.set(0,e.id*1.3-this.clock*.35,0);fireDummy.scale.setScalar((1.18+phase*1.35)*(1+severity*.42));fireDummy.updateMatrix();this.smokeMesh.setMatrixAt(fireCount,fireDummy.matrix);fireCount++;}
+        this.buildingDamage?.add(e,node,this.clock,dt,wind,this.settings.reducedMotion);
       }if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
       animateSceneDecorations(this,node,e);
     }
-    this.damageSmoke(dt);
     this.updateBattleEffects(dt,stepWall);
-    this.burning.count=fireCount;this.smokeMesh.count=this.settings.quality==='low'?0:fireCount;markInstancePrefix(this.burning);markInstancePrefix(this.smokeMesh);
+    this.buildingDamage?.endFrame();
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     this.interactions?.alignCargoFeet();
     endUnitFrame(this);

@@ -70,6 +70,9 @@ test('WeatherRenderer uses lightweight crossed rain streaks, 2-tri splash discs,
     groundHeight:()=>0,entityHeight:()=>0,
   };
   view.camera.position.set(0,30,35);view.camera.lookAt(0,0,0);view.camera.updateMatrixWorld();
+  const forge=new THREE.Group();
+  forge.position.set(8,2,4);forge.userData.chimneyOutlet=new THREE.Vector3(-.8,6,-.4);
+  view.nodes=new Map([[2,forge]]);
   const weather=new WeatherRenderer(view);
   const rainTris=(weather.rain.geometry.index?weather.rain.geometry.index.count:weather.rain.geometry.attributes.position.count)/3;
   const rippleTris=(weather.ripples.geometry.index?weather.ripples.geometry.index.count:weather.ripples.geometry.attributes.position.count)/3;
@@ -81,8 +84,8 @@ test('WeatherRenderer uses lightweight crossed rain streaks, 2-tri splash discs,
   assert.equal(view.atmosphereUniforms.wetness.value,weather.wetness);
   assert.ok(view.atmosphereUniforms.cloudOffset.value.length()>0,'cloud shadows drift over time');
   assert.equal(weather.nightAtmosphere.groundGlows.count,2,'night ground glows illuminate both completed buildings');
-  assert.equal(weather.nightAtmosphere.chimneySmoke.count,8,'high quality emits 4 chimney smoke wisps per hearth');
-  assert.ok(weather.nightAtmosphere.hearthSparks.count>=4,'high quality emits rising glowing hearth sparks above forges & hearths');
+  assert.equal(weather.nightAtmosphere.chimneySmoke.count,4,'only the building with a chimney emits hearth smoke');
+  assert.ok(weather.nightAtmosphere.hearthSparks.count===2,'the forge emits a few sparks at night');
   assert.equal(view.weatherDiagnostics.hearthSparks,weather.nightAtmosphere.hearthSparks.count);
 
   view.settings.weather='clear';view.settings.lighting='day';
@@ -163,10 +166,25 @@ test('NightAtmosphere illuminates burning buildings during daylight and disposes
     groundHeight:()=>0,
   };
   view.camera.position.set(2,25,25);view.camera.lookAt(2,0,2);view.camera.updateMatrixWorld();
+  const house=new THREE.Group();
+  house.position.set(2,3,2);house.userData.chimneyOutlet=new THREE.Vector3(-.5,4,-.5);
+  view.nodes=new Map([[9,house]]);
   const atm=new NightAtmosphere(view,group);
   atm.update(1,0,1,.5,false);
   assert.equal(atm.groundGlows.count,1,'burning building gets warm firelight pool even during daytime');
-  assert.equal(atm.chimneySmoke.count,2,'medium quality emits 2 chimney wisps per hearth');
+  assert.equal(atm.chimneySmoke.count,0,'damage smoke replaces the normal chimney wisps');
+  view.sim.entities[0].hp=300;
+  atm.update(1,0,1,.5,false);
+  assert.equal(atm.groundGlows.count,0);
+  assert.equal(atm.hearthSparks.count,0);
+  assert.equal(atm.chimneySmoke.count,2);
+  const matrix=new THREE.Matrix4();
+  atm.chimneySmoke.getMatrixAt(0,matrix);
+  const position=new THREE.Vector3().setFromMatrixPosition(matrix);
+  assert.ok(position.y>=7&&position.y<=9.8,'smoke begins at the visible chimney outlet above the foundation');
+  view.settings.reducedMotion=true;
+  atm.update(1,0,1,.5,false);
+  assert.equal(atm.chimneySmoke.count,0);
   atm.dispose();
   assert.equal(group.children.length,0);
 });

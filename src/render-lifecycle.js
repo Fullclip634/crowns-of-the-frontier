@@ -8,6 +8,7 @@ export function releaseRenderers(view){
   view.releaseRendererWatch?.();
   view.gpuTimer?.dispose();
   view.impactEffects?.dispose();
+  view.buildingDamage?.dispose();
   view.flightEffects?.dispose();
   view.attackEffects?.dispose();
   view.bloomPipeline?.dispose?.();

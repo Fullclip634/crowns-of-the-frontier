@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 
-const HEARTH_BUILDINGS=new Set(['towncenter','house','blacksmith','workshop','mill','barracks','market','monastery','keep','wonder']);
+import {buildingFireLevel,buildingSmokeLevel} from './battle-effects.js';
 const GLOW_BUILDINGS=new Set(['towncenter','house','blacksmith','workshop','mill','barracks','range','stable','market','monastery','keep','tower','wonder','gate']);
 const FORGE_BUILDINGS=new Set(['blacksmith','towncenter','wonder']);
 
@@ -112,7 +112,7 @@ export class NightAtmosphere {
     const v=this.view,sim=v.sim;
     if(!sim){this.groundGlows.count=0;this.chimneySmoke.count=0;this.hearthSparks.count=0;return;}
     const quality=v.settings?.quality||'medium',reduced=!!v.settings?.reducedMotion;
-    const allowSmoke=quality!=='low'&&!reduced;
+    const allowParticles=quality!=='low'&&!reduced;
     const smokePerHearth=quality==='high'?4:2;
     const sparksPerForge=quality==='high'?4:2;
     const fogActive=!menu&&v.settings?.fog!==false&&!sim.options?.spectator;
@@ -123,81 +123,77 @@ export class NightAtmosphere {
     for(const e of entities){
       if(e.kind!=='building'||e.hp<=0||e.progress<1)continue;
       if(fogActive&&e.owner!==0&&!sim.isVisible(e.x,e.z))continue;
-      const ground=v.groundHeight?v.groundHeight(e.x,e.z):0;
+      const hpRatio=e.hp/e.maxHp,fire=buildingFireLevel(e,hpRatio);
+      const forge=FORGE_BUILDINGS.has(e.type);
+      const wantsGlow=fire>0||(night>.035&&GLOW_BUILDINGS.has(e.type));
+      const node=v.nodes?.get(e.id),outlet=node?.userData.chimneyOutlet;
+      const hearth=allowParticles&&outlet&&buildingSmokeLevel(hpRatio)===0;
+      if(!hearth&&!wantsGlow)continue;
+
+      const ground=node?.position.y??v.groundHeight?.(e.x,e.z)??0;
       const radius=Math.max(1.6,e.r||2);
       if(!nearViewport(v,e.x,ground,e.z,radius+10))continue;
 
-      const burning=e.hp<e.maxHp*.5;
-      const forge=FORGE_BUILDINGS.has(e.type);
-      const wantsGlow=burning||(night>.035&&GLOW_BUILDINGS.has(e.type));
       if(wantsGlow&&glowCount<256){
         const flicker=reduced?1:.90+.07*Math.sin(time*4.7+e.id*1.3)+.04*Math.sin(time*9.1+e.id*2.7);
-        const strength=burning?(.55+.42*night)*flicker:night*(forge?.74:e.type==='tower'?.44:.54)*flicker;
-        const span=radius*(burning?3.9:forge?3.85:3.2);
+        const hearthGlow=GLOW_BUILDINGS.has(e.type)?night*(forge?.74:e.type==='tower'?.44:.54):0;
+        const fireGlow=fire*(.45+.36*night);
+        const strength=Math.max(fireGlow,hearthGlow)*flicker;
+        const span=radius*(forge?3.85:3.2+.65*fire);
         this.dummy.position.set(e.x,ground+.065,e.z);
         this.dummy.rotation.set(0,0,0);
         this.dummy.scale.set(span,1,span);
         this.dummy.updateMatrix();
         this.groundGlows.setMatrixAt(glowCount,this.dummy.matrix);
-        if(burning)this.color.setRGB(Math.min(1,1.0*strength),.44*strength,.12*strength);
+        if(fireGlow>hearthGlow)this.color.setRGB(Math.min(1,1.0*strength),.44*strength,.12*strength);
         else if(forge)this.color.setRGB(Math.min(1,1.0*strength),.56*strength,.18*strength);
         else this.color.setRGB(Math.min(1,.98*strength),.60*strength,.22*strength);
         this.groundGlows.setColorAt(glowCount,this.color);
         glowCount++;
       }
 
-      if(allowSmoke&&HEARTH_BUILDINGS.has(e.type)&&smokeCount+smokePerHearth<=192){
-        const chimneyH=Math.min(7.8,Math.max(2.9,radius*1.48));
-        const ox=(e.type==='blacksmith'?radius*.38:radius*.24)*Math.cos(e.id*1.1);
-        const oz=(e.type==='blacksmith'?-radius*.22:-radius*.18)*Math.sin(e.id*1.7);
-        const warmForge=e.type==='blacksmith'||e.type==='towncenter';
+      if(hearth&&smokeCount+smokePerHearth<=192){
+        const x=node.position.x+outlet.x,y=ground+outlet.y,z=node.position.z+outlet.z;
         for(let p=0;p<smokePerHearth;p++){
-          const cycle=((time*.18+e.id*.29+p/smokePerHearth)%1+1)%1;
-          const rise=cycle*(warmForge?5.8:4.4);
-          const drift=cycle*cycle*(1.6+Math.hypot(windX,windZ)*.9);
-          const sway=Math.sin(time*1.3+e.id+p*2.1)*.25*cycle;
-          this.dummy.position.set(e.x+ox+windX*drift+sway,ground+chimneyH+rise,e.z+oz+windZ*drift);
+          const cycle=(time*.16+e.id*.29+p/smokePerHearth)%1;
+          const rise=cycle*(forge?3.7:2.8);
+          const drift=cycle*cycle*.85;
+          const sway=Math.sin(time*1.3+e.id+p*2.1)*.14*cycle;
+          this.dummy.position.set(x+windX*drift+sway,y+rise,z+windZ*drift);
           if(camQuat)this.dummy.quaternion.copy(camQuat);else this.dummy.rotation.set(0,0,0);
-          const fade=Math.sin(cycle*Math.PI);
-          const size=(.58+cycle*1.55)*(warmForge?1.15:.92)*(0.35+0.65*fade);
+          const fade=Math.sin(cycle*Math.PI),size=fade*(.32+cycle*.96);
           this.dummy.scale.set(size,size,1);
           this.dummy.updateMatrix();
           this.chimneySmoke.setMatrixAt(smokeCount,this.dummy.matrix);
-          // Warm hearth tint near chimney lip at night/blacksmith, cooling to soft wood-smoke aloft.
-          const ember=(warmForge?(.25+.45*night):.28*night)*(1-cycle)*(1-cycle);
-          const baseShade=(.74-night*.28)*fade;
-          this.color.setRGB(
-            Math.min(1,baseShade+ember*.75),
-            Math.min(1,baseShade+ember*.28),
-            Math.min(1,baseShade*(1+night*.16))
-          );
-          this.chimneySmoke.setColorAt(smokeCount,this.color);
-          smokeCount++;
+          const shade=(.47-night*.14)*fade;
+          this.color.setRGB(shade*1.04,shade,shade*1.03);
+          this.chimneySmoke.setColorAt(smokeCount++,this.color);
         }
       }
 
-      if(allowSmoke&&(burning||forge||(night>.25&&HEARTH_BUILDINGS.has(e.type)))&&sparkCount+sparksPerForge<=128){
-        const chimneyH=Math.min(7.8,Math.max(2.9,radius*1.48));
-        const ox=(e.type==='blacksmith'?radius*.38:radius*.24)*Math.cos(e.id*1.1);
-        const oz=(e.type==='blacksmith'?-radius*.22:-radius*.18)*Math.sin(e.id*1.7);
-        const count=burning?sparksPerForge:forge?Math.max(2,sparksPerForge-1):Math.min(2,sparksPerForge);
+      const forgeSparks=hearth&&e.type==='blacksmith'&&night>.25;
+      if(allowParticles&&(fire>0||forgeSparks)&&sparkCount<128){
+        const ox=Math.min(1.1,(e.r||2)*.22);
+        const x=forgeSparks?node.position.x+outlet.x:e.x+ox;
+        const y=ground+(forgeSparks?outlet.y:(node?.userData.fireHeight??radius*1.48)*.76);
+        const z=forgeSparks?node.position.z+outlet.z:e.z+ox*.7;
+        const count=fire>0?sparksPerForge:2;
         for(let p=0;p<count&&sparkCount<128;p++){
-          const cycle=((time*.52+e.id*.41+p/count)%1+1)%1;
-          const rise=cycle*(burning?5.6:3.6);
-          const drift=cycle*cycle*(1.4+Math.hypot(windX,windZ)*.85);
-          const swirl=Math.sin(time*5.5+e.id*2.3+p*3.7)*(.22+cycle*.45);
-          const swirlZ=Math.cos(time*4.8+e.id*1.9+p*2.9)*(.20+cycle*.38);
-          this.dummy.position.set(e.x+ox+windX*drift+swirl,ground+chimneyH-.2+rise,e.z+oz+windZ*drift+swirlZ);
+          const cycle=(time*.43+e.id*.41+p/count)%1;
+          const rise=cycle*(fire>0?2.0+fire*2.6:1.7);
+          const drift=cycle*cycle*.75;
+          const swirl=Math.sin(time*3.4+e.id*2.3+p*3.7)*cycle*.26;
+          const swirlZ=Math.cos(time*2.8+e.id*1.9+p*2.9)*cycle*.24;
+          this.dummy.position.set(x+windX*drift+swirl,y+rise,z+windZ*drift+swirlZ);
           if(camQuat)this.dummy.quaternion.copy(camQuat);else this.dummy.rotation.set(0,0,0);
           const life=Math.sin(cycle*Math.PI);
-          const sz=(burning?.28:.19)*(.55+.65*life);
-          this.dummy.scale.set(sz,sz*1.35,1);
+          const size=(fire>0?fire*.25:.13)*life;
+          this.dummy.scale.set(size,size*1.25,1);
           this.dummy.updateMatrix();
           this.hearthSparks.setMatrixAt(sparkCount,this.dummy.matrix);
-          const heat=life*(burning?1.0:(.42+.58*night));
-          this.color.setRGB(Math.min(1,1.0*heat),Math.min(1,(.72-.38*cycle)*heat),Math.min(1,.20*(1-cycle)*heat));
-          this.hearthSparks.setColorAt(sparkCount,this.color);
-          sparkCount++;
+          const heat=life*(fire>0?fire:night*.62);
+          this.color.setRGB(heat,(.72-.38*cycle)*heat,.20*(1-cycle)*heat);
+          this.hearthSparks.setColorAt(sparkCount++,this.color);
         }
       }
     }
@@ -215,7 +211,7 @@ export class NightAtmosphere {
 
     this.chimneySmoke.count=smokeCount;
     this.chimneySmoke.visible=smokeCount>0;
-    this.chimneySmoke.material.opacity=.26+.08*(1-night);
+    this.chimneySmoke.material.opacity=.17+.04*night;
     if(smokeCount>0){
       markInstancePrefix(this.chimneySmoke,smokeCount);
       if(this.chimneySmoke.instanceColor){

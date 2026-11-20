@@ -1,50 +1,80 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WorldView} from '../src/world.js';
+import * as THREE from 'three';
+import {BuildingDamageEffects} from '../src/battle-effects.js';
 
-// Damaged buildings used to look exactly like healthy ones: nothing in the
-// scene changed until the entity vanished. The smoke pass is the signal, so its
-// selection rules are what matter: only wounded buildings, only a few at once,
-// and never more often than the cooldown allows.
-function stub(entities,{visible=true}={}){
-  const calls=[];
-  const view={
-    sim:{entities,isVisible:()=>visible},
-    groundHeight:()=>0,
-    smoke:(x,y,z,size)=>{calls.push({x,y,z,size});return true;},
-    calls,
+const building=(ratio,extra={})=>({id:1,kind:'building',type:'house',hp:ratio*100,maxHp:100,progress:1,r:2,...extra});
+
+function setup(t){
+  const scene=new THREE.Scene(),effects=new BuildingDamageEffects(scene),node=new THREE.Group();
+  const geometry=new THREE.BoxGeometry(3,5,3),material=new THREE.MeshBasicMaterial();
+  const roof=new THREE.Mesh(geometry,material);
+  roof.position.y=2.5;node.add(roof);
+  node.position.set(6,9,-3);
+  const render=(entity,dt=.05)=>{
+    effects.beginFrame();effects.add(entity,node,2,dt,null,true);effects.endFrame();
   };
-  return view;
+  t.after(()=>{effects.dispose();geometry.dispose();material.dispose();});
+  return {effects,render,node};
 }
-const building=(id,ratio,extra={})=>({id,kind:'building',hp:ratio*100,maxHp:100,progress:1,x:id,z:0,r:2,...extra});
 
-test('only wounded buildings smoke, and worse damage smokes harder',()=>{
-  const view=stub([building(1,1),building(2,.8),building(3,.5),building(4,.2)]);
-  WorldView.prototype.damageSmoke.call(view,1);
-  assert.equal(view.calls.length,2,'two of the four buildings are below sixty percent');
-  assert.equal(view.calls[0].size,1,'light damage smokes lightly');
-  assert.equal(view.calls[1].size,1.5,'critical damage smokes harder');
-  assert.ok(view.calls[0].y>1,'smoke starts above the roof line, not on the ground');
+function pose(mesh){
+  const matrix=new THREE.Matrix4();
+  mesh.getMatrixAt(0,matrix);
+  return {position:new THREE.Vector3().setFromMatrixPosition(matrix),scale:new THREE.Vector3().setFromMatrixScale(matrix)};
+}
+
+test('damage smoke starts below 60% and gets denser before flames appear',t=>{
+  const {effects,render}=setup(t);
+  render(building(.60));
+  assert.equal(effects.smoke.count,0);
+  render(building(.55));
+  const early=pose(effects.smoke);
+  assert.equal(effects.smoke.count,1);
+  assert.equal(effects.flames.count,0);
+  render(building(.30));
+  const later=pose(effects.smoke);
+  assert.equal(effects.flames.count,0);
+  assert.ok(later.scale.y>early.scale.y);
+  assert.ok(Math.abs(later.position.y-13.8)<1e-5,'smoke follows the model roof even above sloped terrain');
 });
 
-test('unfinished, dead and hidden buildings never smoke',()=>{
-  const view=stub([
-    building(1,.1,{progress:.4}),
-    building(2,0),
-    building(3,.1),
-  ],{visible:false});
-  WorldView.prototype.damageSmoke.call(view,1);
-  assert.equal(view.calls.length,0,'a construction site is not a burning building, and the unseen is not drawn');
+test('critical fire grows over time and clears when repaired',t=>{
+  const {effects,render}=setup(t);
+  const e=building(.10);
+  render(e);
+  assert.equal(effects.flames.count,1);
+  const initial=pose(effects.flames).scale.y;
+  render(e,.4);
+  assert.ok(pose(effects.flames).scale.y>initial*3);
+  assert.equal(e.hp,10,'visual effects cannot drain building health');
+  render(building(.4));
+  assert.equal(effects.flames.count,0);
+  assert.equal(effects.smoke.count,1);
+  render(building(1));
+  assert.deepEqual([effects.flames.count,effects.smoke.count],[0,0]);
+  render(e);
+  assert.equal(pose(effects.flames).scale.y,initial);
 });
 
-test('smoke is rate limited and capped so a burning town cannot flood the effect budget',()=>{
-  const many=Array.from({length:20},(_,i)=>building(i+1,.1));
-  const view=stub(many);
-  WorldView.prototype.damageSmoke.call(view,.1);
-  assert.equal(view.calls.length,0,'the cooldown holds before the first emission');
-  WorldView.prototype.damageSmoke.call(view,1);
-  assert.ok(view.calls.length<=6,`at most six buildings smoke per burst, got ${view.calls.length}`);
-  const first=view.calls.length;
-  WorldView.prototype.damageSmoke.call(view,.1);
-  assert.equal(view.calls.length,first,'a second call inside the cooldown emits nothing');
+test('unfinished and destroyed buildings stay clear, stone walls only smoke',t=>{
+  const {effects,render}=setup(t);
+  for(const e of [building(.10,{progress:.5}),building(0)]){
+    render(e);
+    assert.deepEqual([effects.flames.count,effects.smoke.count],[0,0]);
+  }
+  render(building(.10,{type:'wall'}));
+  assert.deepEqual([effects.flames.count,effects.smoke.count],[0,1]);
+});
+
+test('a damaged town uses capped batches and uploads only their active instances',t=>{
+  const {effects,node}=setup(t);
+  effects.beginFrame();
+  for(let id=1;id<=100;id++)effects.add(building(.10,{id}),node,2,.05,null,true);
+  effects.endFrame();
+  assert.deepEqual([effects.flames.count,effects.smoke.count],[80,80]);
+  for(const batch of [effects.flames,effects.smoke]){
+    assert.equal(batch.material.forceSinglePass,true);
+    assert.deepEqual(batch.instanceMatrix.updateRanges,[{start:0,count:80*16}]);
+  }
 });

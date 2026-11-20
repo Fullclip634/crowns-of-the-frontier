@@ -260,6 +260,7 @@ export function strengthenArchitecture(view,root,entity,age){
     const cx=center.x-hx*.52,cz=center.z-hz*.45;
     detailMesh(root,boxGeo,stoneDark||stone,cx,chBase+chH*.5,cz,.44,chH,.44);
     detailMesh(root,boxGeo,stone,cx,chTop+.08,cz,.54,.16,.54);
+    root.userData.chimneyOutlet=new THREE.Vector3(cx,chTop+.16,cz);
   }
 
   // 7. Hanging heraldic faction banners on fortified / military / civic landmarks (Castle+ & Imperial+).

@@ -162,6 +162,78 @@ export function smokePlumeTexture(size=64){
   tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
   return tex;
 }
+
+export function buildingSmokeLevel(hpRatio){
+  return clamp(1-hpRatio/.60,0,1);
+}
+
+export function buildingFireLevel(building,hpRatio){
+  return building.type==='wall'?0:clamp(1-hpRatio/.30,0,1);
+}
+
+function plumeBatch(geometry,material,renderOrder){
+  const mesh=new THREE.InstancedMesh(geometry,material,80);
+  mesh.count=0;mesh.frustumCulled=false;mesh.renderOrder=renderOrder;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  return mesh;
+}
+
+export class BuildingDamageEffects {
+  constructor(scene){
+    this.dummy=new THREE.Object3D();
+    this.bounds=new THREE.Box3();
+    const transparent={transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true};
+    this.flames=plumeBatch(crossedPlumeGeometry(1.8,2.9,1.45),new THREE.MeshBasicMaterial({
+      ...transparent,map:fireTongueTexture(),color:0xff9c4c,opacity:.78,blending:THREE.AdditiveBlending,
+    }),3);
+    this.smoke=plumeBatch(crossedPlumeGeometry(2.6,2.6,.85),new THREE.MeshBasicMaterial({
+      ...transparent,map:smokePlumeTexture(),opacity:.48,
+    }),2);
+    scene.add(this.flames,this.smoke);
+  }
+  beginFrame(){this.flames.count=0;this.smoke.count=0;}
+  add(e,node,time,dt,wind,reducedMotion){
+    if(e.hp<=0||e.progress<1)return;
+    const data=node.userData,hpRatio=e.hp/e.maxHp,smokeLevel=buildingSmokeLevel(hpRatio);
+    const target=buildingFireLevel(e,hpRatio);
+    if(target<=0)data.fireGrowth=0;
+    const smoke=this.smoke,flames=this.flames;
+    if(smokeLevel<=0||smoke.count>=smoke.instanceMatrix.count)return;
+
+    if(data.fireHeight===undefined){
+      this.bounds.setFromObject(node);
+      data.fireHeight=this.bounds.isEmpty()?Math.max(1,(e.r||2)*1.5):Math.max(.4,this.bounds.max.y-node.position.y);
+    }
+
+    const grows=Math.min(target,(data.fireGrowth??0)+dt*1.5);
+    data.fireGrowth=grows;
+    const dummy=this.dummy,{x,y,z}=node.position,height=data.fireHeight;
+    const ox=Math.min(1.1,(e.r||2)*.22),oz=ox*.7;
+    const sway=reducedMotion?0:Math.sin(time*1.7+e.id*.71);
+    const smokeSize=Math.sqrt(smokeLevel)*(.76+.45*smokeLevel);
+    const drift=(.29+sway*.07)*smokeLevel;
+    dummy.position.set(x+ox+(wind?.x??.4)*drift,y+height*.96,z+oz+(wind?.z??.2)*drift);
+    dummy.rotation.set(0,e.id*.7,0);
+    dummy.scale.set(smokeSize*(1+sway*.10),smokeSize*(1.15+sway*.13),smokeSize*(1+sway*.10));
+    dummy.updateMatrix();
+    smoke.setMatrixAt(smoke.count++,dummy.matrix);
+
+    if(grows<=0)return;
+    const flicker=reducedMotion?1:1+Math.sin(time*7.5+e.id*2.1)*.09;
+    const flameSize=grows*flicker;
+    dummy.position.set(x+ox,y+height*.76,z+oz);
+    dummy.scale.set(flameSize*1.15,flameSize*1.45,flameSize*1.15);
+    dummy.updateMatrix();
+    flames.setMatrixAt(flames.count++,dummy.matrix);
+  }
+  endFrame(){markInstancePrefix(this.flames);markInstancePrefix(this.smoke);}
+  dispose(){
+    for(const batch of [this.flames,this.smoke]){
+      batch.removeFromParent();batch.geometry.dispose();batch.material.map.dispose();batch.material.dispose();batch.dispose();
+    }
+  }
+}
+
 export function craterScorchTexture(size=64){
   const data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++){

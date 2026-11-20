@@ -2,26 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {WorldView} from '../src/world.js';
+import {BuildingDamageEffects} from '../src/battle-effects.js';
 
-// Regression: the constructor used to store the persistent fire-plume batch as
-// `this.smoke`, shadowing the `smoke()` damage-effect method on the prototype.
-// Any building below 60% HP then crashed the render loop with
-// "this.smoke is not a function".
-test('damageSmoke can emit puffs while the plume batch is present', () => {
+test('collapse dust still emits while the persistent damage batches are present', () => {
   const view = Object.create(WorldView.prototype);
   view.scene = new THREE.Scene();
   view.fx = [];
   view.settings = {quality: 'low'};
-  view.renderQuality = 'low';
-  view.smokeMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshBasicMaterial(), 80);
-  view.sim = {
-    entities: [{id: 1, kind: 'building', type: 'house', hp: 20, maxHp: 100, progress: 1, owner: 0, x: 0, z: 0, r: 2}],
-    isVisible: () => true,
-  };
-  view.groundHeight = () => 0;
-  view.frameFrustum = null; // nearViewport short-circuits to visible
+  view.buildingDamage = new BuildingDamageEffects(view.scene);
 
-  assert.equal(typeof view.smoke, 'function', 'the smoke() factory must remain callable');
-  assert.doesNotThrow(() => view.damageSmoke(0.6));
-  assert.ok(view.fx.length > 0, 'a damaged building emits a smoke puff');
+  try {
+    assert.equal(view.smoke(0,1,0),true);
+    assert.equal(view.fx.length,1);
+    assert.equal(view.fx[0].smoke,true);
+  } finally {
+    view.impactEffects?.dispose();
+    view.buildingDamage.dispose();
+  }
 });
