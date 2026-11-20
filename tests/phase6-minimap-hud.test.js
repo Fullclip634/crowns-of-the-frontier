@@ -89,6 +89,8 @@ test('Phase 6 renderHealthBars adds high-contrast building, selected and low-HP 
   assert.match(css,/#health-layer\{[^}]*z-index:0/,'#health-layer keeps z-index:0 behind HUD panels');
   assert.match(css,/\.world-health\.building\{/,'buildings get distinct wider health bars');
   assert.match(css,/\.world-health \.armor-pips/,'forged armor pips CSS is defined');
+  assert.match(css,/@media\(pointer:coarse\)\{[\s\S]*?\.objective-toggle\{[^}]*min-height:44px/,'coarse touch devices keep >=44px objective toggle targets');
+  assert.match(css,/@media\(pointer:coarse\)\{[\s\S]*?backdrop-filter:none/,'touch devices avoid costly canvas backdrop-filter blur');
 });
 
 test('Phase 6 forged armor/shield pips scale cleanly by defense tier and objectives auto-collapse after read window',()=>{
