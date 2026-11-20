@@ -41,7 +41,7 @@ export class Landscape {
       if(d<channel.width){
         const baseBed=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
         const sandbar=(this.map==='coast'||this.map==='archipelago')?Math.sin(z*.085+channel.center)*Math.cos(x*.21)*.20*(1-smooth(Math.max(0,channel.width-3.2),channel.width-.4,d)):0;
-        h=Math.min(.04,baseBed+sandbar);
+        h=Math.min(.08,baseBed+sandbar);
       }
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
       const span=bridgeSpans(this.map).find(span=>span.center===channel.center);

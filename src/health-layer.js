@@ -33,12 +33,13 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
       root.style.top='0px';
       root.append(bar,label);
       layer.append(root);
-      entry={root,bar,label,rival:null,width:'',progress:'',x:'',y:'',stamp:0};
+      entry={root,bar,label,cls:'',width:'',progress:'',x:'',y:'',stamp:0};
       active.set(e.id,entry);
     }
     entry.stamp=stamp;
-    const rival=sim.hostile(0,e.owner);
-    if(entry.rival!==rival){entry.rival=rival;entry.root.className=rival?'world-health rival':'world-health';}
+    const rival=sim.hostile(0,e.owner),ratio=Math.max(0,Math.min(1,e.hp/e.maxHp)),isBuilding=e.kind==='building',isSelected=view.selection.has(e.id);
+    const cls=`world-health${rival?' rival':''}${isBuilding?' building':''}${isSelected?' selected':''}${ratio<=.35?' low':ratio<=.65?' mid':''}`;
+    if(entry.cls!==cls){entry.cls=cls;entry.root.className=cls;}
     const x=`${p.x.toFixed(1)}px`,y=`${p.y.toFixed(1)}px`;
     if(entry.x!==x||entry.y!==y){
       entry.x=x;entry.y=y;

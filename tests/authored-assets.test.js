@@ -246,7 +246,7 @@ test('broadleaf tips, meadow conifer sprays and winter boughs use solid foliage'
     for(let variant=0;variant<4;variant++){
       const root=high.templates.get(`tree:${biome}:${variant}:near`);let leaves=0;
       root.traverse(part=>{
-        if(!part.isMesh||part.userData.foliageDetail!=='closed leaf tips')return;
+        if(!part.isMesh||!['leaf','leafDark'].includes(part.userData.assetMaterial))return;
         leaves++;const g=part.geometry,p=g.attributes.position,index=g.index;
         const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();let volume=0;
         for(let i=0;i<(index?.count??p.count);i+=3){

@@ -317,3 +317,44 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
 #hud .empty-selection .empty-crest{font-size:23px;line-height:0}
 #hud .empty-selection h3{font-size:18px;line-height:1.15;margin:0}
 #hud .empty-selection p{font-size:11px;line-height:1.3;margin:3px 0 0}
+
+/* Phase 6: High-Contrast Medieval Combat Health Bars & Forged Brass HUD Trim */
+.world-health{
+  width:38px;
+  height:5px;
+  background:rgba(10,16,13,.88);
+  border:1px solid rgba(10,14,12,.95);
+  border-radius:1.5px;
+  box-shadow:0 1.5px 4px rgba(0,0,0,.72),0 0 0 .5px rgba(235,205,138,.28);
+  overflow:visible;
+}
+.world-health.building{width:54px;height:6px}
+.world-health.selected{box-shadow:0 2px 6px rgba(0,0,0,.80),0 0 0 1px rgba(242,212,138,.72)}
+.world-health>i{
+  border-radius:1px;
+  background:linear-gradient(180deg,#7ee29c 0%,#49b56e 58%,#338750 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+.world-health.mid:not(.rival)>i{background:linear-gradient(180deg,#f5d678 0%,#d9a13b 62%,#ab741d 100%)}
+.world-health.low:not(.rival)>i{background:linear-gradient(180deg,#f59573 0%,#dc5b42 60%,#aa3622 100%)}
+.world-health.rival>i{background:linear-gradient(180deg,#f07a72 0%,#d14942 60%,#9e2b26 100%)}
+.world-health small{
+  font-weight:700;
+  letter-spacing:.4px;
+  text-shadow:0 1px 2px #000,0 0 4px rgba(0,0,0,.85);
+}
+#hud .map-panel{
+  border-color:rgba(218,183,108,.48);
+  box-shadow:0 14px 36px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,235,182,.16),inset 0 0 0 1px rgba(196,160,88,.14);
+}
+#hud .map-panel #minimap{
+  border:1px solid rgba(206,172,102,.52);
+  box-shadow:inset 0 0 10px rgba(0,0,0,.42),0 2px 8px rgba(0,0,0,.4);
+}
+#hud .game-header{
+  border-bottom:1px solid rgba(218,183,108,.42);
+  box-shadow:0 6px 24px rgba(0,0,0,.52),inset 0 -1px 0 rgba(255,236,188,.08);
+}
+#hud .bottom-hud>*,#hud .objective-panel{
+  box-shadow:var(--ui-shadow,0 14px 36px rgba(0,0,0,.58)),inset 0 1px 0 rgba(255,236,188,.14),inset 0 -1px 0 rgba(0,0,0,.35);
+}
