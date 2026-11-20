@@ -82,6 +82,8 @@ test('WeatherRenderer uses lightweight crossed rain streaks, 2-tri splash discs,
   assert.ok(view.atmosphereUniforms.cloudOffset.value.length()>0,'cloud shadows drift over time');
   assert.equal(weather.nightAtmosphere.groundGlows.count,2,'night ground glows illuminate both completed buildings');
   assert.equal(weather.nightAtmosphere.chimneySmoke.count,8,'high quality emits 4 chimney smoke wisps per hearth');
+  assert.ok(weather.nightAtmosphere.hearthSparks.count>=4,'high quality emits rising glowing hearth sparks above forges & hearths');
+  assert.equal(view.weatherDiagnostics.hearthSparks,weather.nightAtmosphere.hearthSparks.count);
 
   view.settings.weather='clear';view.settings.lighting='day';
   const peakWet=weather.wetness;

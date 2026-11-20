@@ -103,17 +103,33 @@ export class Landscape {
     return null;
   }
   waterGeometry(channel,quality='low'){
-    const vertices=[],uv=[],depth=[],shore=[],indices=[],across=quality==='low'?8:Math.max(8,Math.ceil(channel.width*2/1.4)),length=this.worldSize/2;
+    const vertices=[],uv=[],depth=[],shore=[],pier=[],indices=[],across=quality==='low'?8:Math.max(8,Math.ceil(channel.width*2/1.4)),length=this.worldSize/2;
+    const span=bridgeSpans(this.map).find(s=>s.center===channel.center);
     // Give the shallow water more samples without adding rows or triangles.
     const offsets=Array.from({length:across+1},(_,col)=>{
       const u=2*col/across-1;
       return channel.width*u*(1+.44*(1-Math.abs(u)));
     });
     for(let row=0;row<=length;row++){const z=-this.half+row*2,mid=channel.center+Math.sin(z*channel.frequency)*channel.bend;
-      for(const offset of offsets){const x=mid+offset;vertices.push(x,.08,z);uv.push(1+offset/channel.width,row*.07);depth.push(Math.max(0,.08-this.surfaceHeightAt(x,z)));shore.push(channel.width-Math.abs(offset));}
+      for(const offset of offsets){
+        const x=mid+offset;vertices.push(x,.08,z);uv.push(1+offset/channel.width,row*.07);
+        depth.push(Math.max(0,.08-this.surfaceHeightAt(x,z)));shore.push(channel.width-Math.abs(offset));
+        let wake=0;
+        if(span&&z>-bridgeOuterHalfWidth-3.5&&z<bridgeOuterHalfWidth+9.5){
+          // Bridge stone piers sit at +-halfLength*.48 and abutments at +-halfLength*.92; emit animated wake downstream (+z).
+          for(const px of [span.center-span.halfLength*.48,span.center+span.halfLength*.48,span.center-span.halfLength*.90,span.center+span.halfLength*.90]){
+            const dx=Math.abs(x-px),dz=z-bridgeOuterHalfWidth*.35;
+            const spread=dz>0?1.35+dz*.26:1.35;
+            const along=dz>0?Math.max(0,1-dz/9.0):Math.max(0,1-Math.abs(dz)/4.2);
+            const acrossW=Math.max(0,1-dx/spread);
+            wake=Math.max(wake,acrossW*acrossW*along);
+          }
+        }
+        pier.push(wake);
+      }
     }
     for(let row=0;row<length;row++)for(let col=0;col<across;col++){const a=row*(across+1)+col,b=a+across+1;indices.push(a,b,a+1,b,b+1,a+1);}
-    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setAttribute('frontierWaterDepth',new THREE.Float32BufferAttribute(depth,1));geo.setAttribute('frontierWaterShore',new THREE.Float32BufferAttribute(shore,1));geo.setIndex(indices);geo.computeVertexNormals();
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setAttribute('frontierWaterDepth',new THREE.Float32BufferAttribute(depth,1));geo.setAttribute('frontierWaterShore',new THREE.Float32BufferAttribute(shore,1));geo.setAttribute('frontierWaterPier',new THREE.Float32BufferAttribute(pier,1));geo.setIndex(indices);geo.computeVertexNormals();
     geo.computeBoundingBox();geo.boundingBox.min.y-=WATER_WAVE_BOUND;geo.boundingBox.max.y+=WATER_WAVE_BOUND;
     geo.computeBoundingSphere();geo.boundingSphere.radius+=WATER_WAVE_BOUND;return geo;
   }

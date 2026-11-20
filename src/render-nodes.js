@@ -389,6 +389,7 @@ export function water(material){
   const time=value(material.frontierWaveTime),motion=value(material.frontierWaterMotion),ripples=value(material.frontierWaterRipples),detail=value(material.frontierWaterDetail),sky=value(material.frontierWaterSky,'color'),light=value(material.frontierWaterLight);
   const foamStrength=value(material.frontierWaterFoam),sunDir=normalize(value(material.frontierWaterSunDir,'vec3')),sunColor=value(material.frontierWaterSunColor,'color');
   const shore=attribute('frontierWaterShore','float'),bank=varying(vec2(attribute('frontierWaterDepth','float'),shore));
+  const pierWake=Fn(builder=>builder.geometry?.hasAttribute?.('frontierWaterPier')?attribute('frontierWaterPier','float'):float(0))().toVarying();
   const xz=varying(positionGeometry.xz),a=positionGeometry.x.mul(.9).add(positionGeometry.z.mul(.36)).add(time.mul(1.3)),b=positionGeometry.z.mul(.65).sub(time);
   const fade=smoothstep(0,1,shore).mul(motion);
   const wave=vec3(sin(a).mul(.05).add(cos(b).mul(.025)),cos(a).mul(.045),cos(a).mul(.018).sub(sin(b).mul(.01625))).mul(fade);
@@ -456,6 +457,12 @@ export function water(material){
       const foamMask=clamp(waterline.mul(.85).add(surfBand.mul(.55)).mul(lacing).mul(foamStrength),0,.92);
       const foamCol=mix(vec3(.82,.87,.84),vec3(.95,.97,.95),surfBand).mul(light);
       color.assign(mix(color,foamCol,foamMask));
+    });
+    If(pierWake.greaterThan(.02),()=>{
+      const pierPulse=sin(xz.y.mul(3.8).sub(time.mul(4.4)).add(abs(xz.x).mul(1.4))).mul(.5).add(.5);
+      const pierNoise=noise(xz.mul(2.9).sub(vec2(0,time.mul(.65))));
+      const pierFoam=clamp(pierWake.mul(float(.48).add(pierPulse.mul(.52))).mul(smoothstep(.22,.78,pierNoise.add(pierWake.mul(.35)))),0,.78);
+      color.assign(mix(color,vec3(.90,.94,.93).mul(light),pierFoam));
     });
     return vec4(color,output.a);
   })();

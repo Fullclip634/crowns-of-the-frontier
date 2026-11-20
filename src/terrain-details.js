@@ -6,6 +6,7 @@ import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
+import {biomeCliffGeometry} from './biome-art.js';
 
 export function pebbleGeometry(detail=1){
   const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
@@ -39,8 +40,9 @@ export class TerrainDetails{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
     const capacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
-    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=false;
-    this.mesh=new THREE.InstancedMesh(pebbleGeometry(high?2:1),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
+    const cliffGeo=low?null:biomeCliffGeometry(land.map);
+    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=Boolean(cliffGeo?.attributes?.color);
+    this.mesh=new THREE.InstancedMesh(cliffGeo||pebbleGeometry(high?2:1),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     const coastal=land.map==='coast'||land.map==='archipelago';
     const rocky=isRockyBiome(land.map);

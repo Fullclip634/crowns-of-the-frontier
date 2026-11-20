@@ -18,6 +18,7 @@ import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
+import {biomeVolcanicTreeModel} from './biome-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
@@ -149,7 +150,7 @@ function buildForest(view){
     // Bark keeps its authored colour; only the canopy varies per tree.
     const tints=entries.map(e=>{const tint=treeTint(e.id);return new THREE.Color().setRGB(tint.r,tint.g,tint.b);});
     for(const far of [false,true]){
-      const rawModel=volcanic?volcanicSnagModel(view,variant,far):treeModel(view,map,variant,far);
+      const rawModel=volcanic?(biomeVolcanicTreeModel(view,variant,far)||volcanicSnagModel(view,variant,far)):treeModel(view,map,variant,far);
       const model=view.mergeModel(rawModel),parts=[],ids=[];
       model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
       footprint.push(Math.max(size.x,size.z));

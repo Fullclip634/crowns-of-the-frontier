@@ -56,8 +56,9 @@ export function configureWaterSurface(material){
       uniform float frontierWaterMotion;
       attribute float frontierWaterDepth;
       attribute float frontierWaterShore;
+      attribute float frontierWaterPier;
       varying vec2 vFrontierWaterXZ;
-      varying vec2 vFrontierWaterBank;
+      varying vec3 vFrontierWaterBank;
       ${WATER_WAVES_GLSL}\n`+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
       float frontierWaveFade = smoothstep(0.0, 1.0, frontierWaterShore) * frontierWaterMotion;
@@ -66,7 +67,7 @@ export function configureWaterSurface(material){
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
       transformed.y += frontierWave.x;
       vFrontierWaterXZ = transformed.xz;
-      vFrontierWaterBank = vec2(frontierWaterDepth, frontierWaterShore);`);
+      vFrontierWaterBank = vec3(frontierWaterDepth, frontierWaterShore, frontierWaterPier);`);
     shader.fragmentShader=`uniform vec3 frontierWaterSky;
       uniform vec3 frontierWaterShallow;
       uniform vec3 frontierWaterDeep;
@@ -78,7 +79,7 @@ export function configureWaterSurface(material){
       uniform vec3 frontierWaterSunDir;
       uniform vec3 frontierWaterSunColor;
       varying vec2 vFrontierWaterXZ;
-      varying vec2 vFrontierWaterBank;
+      varying vec3 vFrontierWaterBank;
       float frontierWaterNoise(vec2 point) {
         vec2 cell = floor(point), f = fract(point); f = f * f * (3.0 - 2.0 * f);
         vec3 p = fract(vec3(cell.xyx) * 0.1031); p += dot(p, p.yzx + 33.33);
@@ -167,9 +168,16 @@ export function configureWaterSurface(material){
         vec3 frontierFoamColor = mix(vec3(0.82, 0.87, 0.84), vec3(0.95, 0.97, 0.95), frontierSurfBand) * frontierWaterLight;
         outgoingLight = mix(outgoingLight, frontierFoamColor, frontierFoamMask);
       }
+      if (vFrontierWaterBank.z > 0.02) {
+        float frontierPierWake = vFrontierWaterBank.z;
+        float frontierPierPulse = 0.5 + 0.5 * sin(vFrontierWaterXZ.y * 3.8 - frontierWaterTime * 4.4 + abs(vFrontierWaterXZ.x) * 1.4);
+        float frontierPierNoise = frontierWaterNoise(vFrontierWaterXZ * 2.9 - vec2(0.0, frontierWaterTime * 0.65));
+        float frontierPierFoam = clamp(frontierPierWake * (0.48 + 0.52 * frontierPierPulse) * smoothstep(0.22, 0.78, frontierPierNoise + frontierPierWake * 0.35), 0.0, 0.78);
+        outgoingLight = mix(outgoingLight, vec3(0.90, 0.94, 0.93) * frontierWaterLight, frontierPierFoam);
+      }
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v11';material.needsUpdate=true;
+  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v12';material.needsUpdate=true;
 }
 
 export function animateWaterSurface(view){

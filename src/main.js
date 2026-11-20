@@ -27,6 +27,7 @@ import {WorldView,CAMERA_PRESETS} from './world.js';
 import {loadAuthoredAssets,preloadDistantAssets} from './authored-assets.js';
 import {onAssetProgress,resetAssetProgress} from './load-progress.js';
 import {loadBridgeArtwork} from './bridge-art.js';
+import {loadBiomeArtwork} from './biome-art.js';
 import {loadSurfaceAssets} from './surface-assets.js';
 import {AudioEngine} from './audio.js';
 import {createCombatListener} from './combat-audio.js';
@@ -137,6 +138,7 @@ for(;!startupFailure;){
       Promise.all([
         loadAuthoredAssets(settings.quality),
         loadBridgeArtwork(),
+        loadBiomeArtwork().catch(error=>{console.warn('Biome artwork could not load:',error.message);return null;}),
         // Optional: a missing or failed distant catalogue must never prevent
         // the game from starting. It only enables the extra LOD tier.
         settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),

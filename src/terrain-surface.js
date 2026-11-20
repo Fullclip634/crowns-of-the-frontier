@@ -34,11 +34,15 @@ export function roadMask(land){
     }
     ctx.putImageData(mask,0,0);
   }
-  // Red values above the lane range identify the flagstone pads.
+  // Red values above the lane range identify the flagstone pads; twin wheel ruts
+  // stay <= 196 so cart tracks read with a grassy center crown and never trigger paving.
   for(const road of paths){
+    const wheelOffset=(road.local?.62:.92)*scale,rutWidth=(road.local?.74:.96)*scale;
     strokeTaperedRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,layers:[
-      {width:(road.local?3.2:4.6)*scale,rgba:t=>`rgba(196,0,0,${(.39*t).toFixed(3)})`},
-      {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(196,0,0,${(.72*t).toFixed(3)})`},
+      {width:(road.local?3.4:4.9)*scale,rgba:t=>`rgba(196,0,0,${(.28*t).toFixed(3)})`},
+      {width:(road.local?1.2:1.6)*scale,rgba:t=>`rgba(196,0,0,${(.30*t).toFixed(3)})`},
+      {width:rutWidth,offset:-wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
+      {width:rutWidth,offset:wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
     ],gravelColor:a=>`rgba(196,0,0,${a.toFixed(3)})`});
   }
   paintSettlementPaving(ctx,land,half,scale,true);

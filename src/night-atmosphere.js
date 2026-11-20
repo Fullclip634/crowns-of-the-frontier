@@ -43,9 +43,26 @@ function smokeWispTexture(size=64){
   tex.needsUpdate=true;return tex;
 }
 
+function sparkEmberTexture(size=16){
+  const data=new Uint8Array(size*size*4),half=(size-1)*.5;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const r=Math.min(1,Math.hypot((x-half)/half,(y-half)/half));
+    const core=Math.pow(1-r,2.2);
+    const idx=(y*size+x)*4;
+    data[idx]=255;
+    data[idx+1]=Math.round(160+95*core);
+    data[idx+2]=Math.round(45+120*core*core);
+    data[idx+3]=Math.round(core*255);
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat,THREE.UnsignedByteType);
+  tex.colorSpace=THREE.SRGBColorSpace;
+  tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearFilter;
+  tex.needsUpdate=true;return tex;
+}
+
 /**
- * Instanced night ground-glow pools & wispy chimney smoke for medieval settlements.
- * Zero per-building PointLights: runs in at most 2 instanced draw calls across the entire map.
+ * Instanced night ground-glow pools, wispy chimney smoke & rising hearth sparks.
+ * Zero per-building PointLights: runs in at most 3 instanced draw calls across the entire map.
  */
 export class NightAtmosphere {
   constructor(view,parent){
@@ -53,6 +70,7 @@ export class NightAtmosphere {
     this.dummy=new THREE.Object3D();this.color=new THREE.Color();
     this.glowTex=radialGlowTexture(64);
     this.smokeTex=smokeWispTexture(64);
+    this.sparkTex=sparkEmberTexture(16);
 
     const glowGeo=new THREE.PlaneGeometry(1,1);glowGeo.rotateX(-Math.PI/2);
     const glowMat=new THREE.MeshBasicMaterial({
@@ -76,19 +94,31 @@ export class NightAtmosphere {
     this.chimneySmoke.renderOrder=3;
     this.chimneySmoke.userData.nightAtmosphere=true;
 
-    parent.add(this.groundGlows,this.chimneySmoke);
+    const sparkGeo=new THREE.PlaneGeometry(1,1);
+    const sparkMat=new THREE.MeshBasicMaterial({
+      map:this.sparkTex,color:0xffffff,transparent:true,opacity:.92,
+      blending:THREE.AdditiveBlending,depthWrite:false,
+    });
+    this.hearthSparks=new THREE.InstancedMesh(sparkGeo,sparkMat,128);
+    this.hearthSparks.count=0;this.hearthSparks.frustumCulled=false;
+    this.hearthSparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.hearthSparks.renderOrder=4;
+    this.hearthSparks.userData.nightAtmosphere=true;
+
+    parent.add(this.groundGlows,this.chimneySmoke,this.hearthSparks);
   }
 
   update(time,night,windX,windZ,menu=false){
     const v=this.view,sim=v.sim;
-    if(!sim){this.groundGlows.count=0;this.chimneySmoke.count=0;return;}
+    if(!sim){this.groundGlows.count=0;this.chimneySmoke.count=0;this.hearthSparks.count=0;return;}
     const quality=v.settings?.quality||'medium',reduced=!!v.settings?.reducedMotion;
     const allowSmoke=quality!=='low'&&!reduced;
     const smokePerHearth=quality==='high'?4:2;
+    const sparksPerForge=quality==='high'?4:2;
     const fogActive=!menu&&v.settings?.fog!==false&&!sim.options?.spectator;
     const camQuat=v.camera?.quaternion;
 
-    let glowCount=0,smokeCount=0;
+    let glowCount=0,smokeCount=0,sparkCount=0;
     const entities=sim.entities||[];
     for(const e of entities){
       if(e.kind!=='building'||e.hp<=0||e.progress<1)continue;
@@ -145,6 +175,31 @@ export class NightAtmosphere {
           smokeCount++;
         }
       }
+
+      if(allowSmoke&&(burning||forge||(night>.25&&HEARTH_BUILDINGS.has(e.type)))&&sparkCount+sparksPerForge<=128){
+        const chimneyH=Math.min(7.8,Math.max(2.9,radius*1.48));
+        const ox=(e.type==='blacksmith'?radius*.38:radius*.24)*Math.cos(e.id*1.1);
+        const oz=(e.type==='blacksmith'?-radius*.22:-radius*.18)*Math.sin(e.id*1.7);
+        const count=burning?sparksPerForge:forge?Math.max(2,sparksPerForge-1):Math.min(2,sparksPerForge);
+        for(let p=0;p<count&&sparkCount<128;p++){
+          const cycle=((time*.52+e.id*.41+p/count)%1+1)%1;
+          const rise=cycle*(burning?5.6:3.6);
+          const drift=cycle*cycle*(1.4+Math.hypot(windX,windZ)*.85);
+          const swirl=Math.sin(time*5.5+e.id*2.3+p*3.7)*(.22+cycle*.45);
+          const swirlZ=Math.cos(time*4.8+e.id*1.9+p*2.9)*(.20+cycle*.38);
+          this.dummy.position.set(e.x+ox+windX*drift+swirl,ground+chimneyH-.2+rise,e.z+oz+windZ*drift+swirlZ);
+          if(camQuat)this.dummy.quaternion.copy(camQuat);else this.dummy.rotation.set(0,0,0);
+          const life=Math.sin(cycle*Math.PI);
+          const sz=(burning?.28:.19)*(.55+.65*life);
+          this.dummy.scale.set(sz,sz*1.35,1);
+          this.dummy.updateMatrix();
+          this.hearthSparks.setMatrixAt(sparkCount,this.dummy.matrix);
+          const heat=life*(burning?1.0:(.42+.58*night));
+          this.color.setRGB(Math.min(1,1.0*heat),Math.min(1,(.72-.38*cycle)*heat),Math.min(1,.20*(1-cycle)*heat));
+          this.hearthSparks.setColorAt(sparkCount,this.color);
+          sparkCount++;
+        }
+      }
     }
 
     this.groundGlows.count=glowCount;
@@ -169,12 +224,23 @@ export class NightAtmosphere {
         this.chimneySmoke.instanceColor.needsUpdate=true;
       }
     }
+
+    this.hearthSparks.count=sparkCount;
+    this.hearthSparks.visible=sparkCount>0;
+    if(sparkCount>0){
+      markInstancePrefix(this.hearthSparks,sparkCount);
+      if(this.hearthSparks.instanceColor){
+        this.hearthSparks.instanceColor.clearUpdateRanges();
+        this.hearthSparks.instanceColor.addUpdateRange(0,sparkCount*3);
+        this.hearthSparks.instanceColor.needsUpdate=true;
+      }
+    }
   }
 
   dispose(){
-    for(const mesh of [this.groundGlows,this.chimneySmoke]){
+    for(const mesh of [this.groundGlows,this.chimneySmoke,this.hearthSparks]){
       mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();mesh.removeFromParent();
     }
-    this.glowTex.dispose();this.smokeTex.dispose();
+    this.glowTex.dispose();this.smokeTex.dispose();this.sparkTex.dispose();
   }
 }

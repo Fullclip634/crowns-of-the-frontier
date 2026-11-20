@@ -6,6 +6,9 @@ import {Landscape} from '../src/landscape.js';
 import {applyTerrainShading} from '../src/terrain-surface.js';
 import {configureWaterSurface} from '../src/water-surface.js';
 import {pebbleGeometry} from '../src/terrain-details.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffGeometry} from '../src/biome-art.js';
 import {installNodeRuntime} from '../src/render-runtime.js';
 import {MeshStandardNodeMaterial,terrain as nodeTerrain,water as nodeWater} from '../src/render-nodes.js';
 
@@ -111,7 +114,17 @@ test('Phase 2 water shader delivers spectral depth transmittance, shallow pebble
   assert.match(shader.fragmentShader,/frontierPebbles/);
   assert.match(shader.fragmentShader,/frontierSurfBand/);
   assert.match(shader.fragmentShader,/frontierRippleE/);
+  assert.match(shader.fragmentShader,/frontierPierWake/,'water shader renders animated bridge-pier wake foam');
   mat.dispose();
+
+  const riverLand=new Landscape(512,'riverland');
+  const riverGeo=riverLand.waterGeometry(riverLand.channels()[0],'high');
+  const pierAttr=riverGeo.attributes.frontierWaterPier;
+  assert.ok(pierAttr,'river water geometry carries bridge-pier wake attribute');
+  let maxWake=0;
+  for(let i=0;i<pierAttr.count;i++)maxWake=Math.max(maxWake,pierAttr.getX(i));
+  assert.ok(maxWake>.4,'bridge spans produce nonzero pier wake intensity');
+  riverGeo.dispose();
 
   installNodeRuntime({terrain:nodeTerrain,water:nodeWater,MeshStandardNodeMaterial});
   try{
@@ -122,4 +135,22 @@ test('Phase 2 water shader delivers spectral depth transmittance, shallow pebble
   }finally{
     installNodeRuntime(null);
   }
+});
+
+test('Phase 2 Blender frontier-biome-art.glb delivers 3 closed stratified cliff meshes & twin-rutted roads',async()=>{
+  const terrainSrc=fs.readFileSync(new URL('../src/terrain-surface.js',import.meta.url),'utf8');
+  assert.match(terrainSrc,/offset:-wheelOffset[\s\S]*offset:wheelOffset/,'roadMask strokes twin cart wheel ruts');
+
+  const bytes=fs.readFileSync(new URL('../src/assets3d/frontier-biome-art.glb',import.meta.url));
+  const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+  registerBiomeArtwork(gltf.scene);
+  try{
+    for(const map of ['riverland','arid','volcanic']){
+      const geo=biomeCliffGeometry(map);
+      assert.ok(geo&&geo.attributes.position.count>=36,`${map} resolves a Blender cliff outcrop`);
+      assert.ok(geo.attributes.color,'Blender cliff carries baked crevice AO vertex colors');
+      assert.ok(geo.attributes.normal.array.every(Number.isFinite));
+      geo.dispose();
+    }
+  }finally{clearBiomeArtwork();}
 });

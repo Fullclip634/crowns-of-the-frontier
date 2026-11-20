@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {registerSharedTrees,clearAuthoredAssets} from '../src/authored-assets.js';
+import {registerBiomeArtwork,clearBiomeArtwork,biomeVolcanicTreeModel} from '../src/biome-art.js';
 import {volcanicSnagModel,forestTransform} from '../src/realm-3d.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {Landscape} from '../src/landscape.js';
@@ -117,4 +118,24 @@ test('Phase 3 forest-floor shadow stain uses transparent radial alpha map and ne
   const src=fs.readFileSync(new URL('../src/realm-3d.js',import.meta.url),'utf8');
   assert.match(src,/standardMaterial\(\{\s*map:view\.forestShadowMap/s,'forestShadow passes options directly as first arg to standardMaterial');
   assert.match(src,/transparent:true,opacity:shadowOpacity[\s\S]*depthWrite:false/,'forestShadow disables depthWrite and stays transparent');
+});
+
+test('Phase 3 Blender frontier-biome-art.glb ships all 8 sculpted volcanic dead trees with lean budgets',async()=>{
+  const bytes=fs.readFileSync(new URL('../src/assets3d/frontier-biome-art.glb',import.meta.url));
+  const gltf=await decodeGlb(bytes);
+  registerBiomeArtwork(gltf.scene);
+  const materials={trunk:new THREE.MeshStandardMaterial(),wood:new THREE.MeshStandardMaterial(),glow:new THREE.MeshStandardMaterial()};
+  try{
+    for(let v=0;v<4;v++){
+      const near=biomeVolcanicTreeModel({materials},v,false),far=biomeVolcanicTreeModel({materials},v,true);
+      assert.ok(near&&far,`Blender volcanic tree variant ${v} near/far loads`);
+      const mNear=measureObject(near),mFar=measureObject(far);
+      assert.ok(mNear.tris>=180&&mNear.tris<=900,`Blender volcanic:${v}:near tris ${mNear.tris} stays lean`);
+      assert.ok(mFar.tris>=80&&mFar.tris<mNear.tris,`Blender volcanic:${v}:far tris ${mFar.tris} is lighter than near`);
+      assert.ok(mNear.materials.has('glow'),`Blender volcanic:${v}:near includes ember cleft`);
+    }
+  }finally{
+    clearBiomeArtwork();
+    for(const m of Object.values(materials))m.dispose();
+  }
 });
