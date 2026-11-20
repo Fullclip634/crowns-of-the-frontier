@@ -36,6 +36,18 @@ export function toggleMinimapSize(root){
   for(const button of root.querySelectorAll('[data-action=map-expand]')){button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',`${expanded?'Shrink':'Expand'} minimap`);}
 }
 
+export const OBJECTIVE_AUTO_COLLAPSE_SECONDS=14;
+
+/**
+ * After players have read the opening match objective, gracefully fold the
+ * upper-left card into its compact brass toggle pill so the battlefield stays
+ * unobstructed (keeps tutorial, custom battle roster, and manual toggles open).
+ */
+export function shouldAutoCollapseObjectives({mode='',interactive=false,simTime=0,userToggled=false,changedAt=0}={}){
+  if(userToggled||interactive||mode==='tutorial'||mode==='custom')return false;
+  return simTime-changedAt>=OBJECTIVE_AUTO_COLLAPSE_SECONDS;
+}
+
 export function resetCompactHud(root){
   const compactObjectives=typeof matchMedia==='function'&&matchMedia('(pointer:coarse) and (max-height:520px) and (orientation:landscape), (pointer:coarse) and (max-width:600px) and (orientation:portrait)').matches;
   root.querySelector('#objectives')?.classList.toggle('objectives-expanded',!compactObjectives);

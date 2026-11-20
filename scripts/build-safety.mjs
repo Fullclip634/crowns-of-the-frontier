@@ -102,11 +102,19 @@ export function validateBuild(root, {sourceDir = null, minimumCatalogues = 0} = 
   // failure that produced a broken deployed bundle.
   let emitted = 0;
   const catalogues = [];
+  const knownSources = sourceDir && fs.existsSync(sourceDir)
+    ? fs.readdirSync(sourceDir).filter(name => name.endsWith('.glb')).sort((a, b) => b.length - a.length)
+    : [];
   if (fs.existsSync(assets)) {
     for (const file of walk(assets)) {
       emitted += 1;
-      if (fs.statSync(file).size === 0) failures.push(`zero-byte-asset:${path.basename(file)}`);
-      const match = path.basename(file).match(HASHED_GLB);
+      const base = path.basename(file);
+      if (fs.statSync(file).size === 0) failures.push(`zero-byte-asset:${base}`);
+      const known = base.endsWith('.glb') && base.startsWith('frontier-')
+        ? knownSources.find(name => base.startsWith(name.slice(0, -4) + '-'))
+        : null;
+      if (known) { catalogues.push({file, sourceName: known}); continue; }
+      const match = base.match(HASHED_GLB);
       if (match) catalogues.push({file, sourceName: `${match[1]}.glb`});
     }
   }
