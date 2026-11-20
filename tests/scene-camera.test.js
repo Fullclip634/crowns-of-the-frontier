@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installVisualDepth} from '../src/visual-depth.js';
 import {installRealm3D} from '../src/realm-3d.js';
+import {WorldView,CAMERA_PRESETS} from '../src/world.js';
 
 function fixture(){
   class View{
@@ -16,6 +17,28 @@ function fixture(){
   const view=new View();Object.assign(view,{sim,target:new THREE.Vector3(125,2,-75),zoom:37,angle:-.8,tilt:.72,settings:{cameraPreset:'balanced'},camera:new THREE.PerspectiveCamera(),scene:{fog:{}},ghost:new THREE.Group(),teamMaterials:[{},{}],polished:true,depthInitialized:true,attached:0,focused:[],presets:0});
   return {view,sim};
 }
+
+test('gameplay cameras clamp zoom by distance for perspective and tactical views',()=>{
+  const camera=new THREE.PerspectiveCamera(),target=new THREE.Vector3(10,2,-20);
+  const view=Object.assign(Object.create(WorldView.prototype),{
+    camera,target,zoom:44,angle:.35,tilt:CAMERA_PRESETS.balanced.tilt,
+    settings:{cameraPreset:'balanced'},sim:{options:{mode:'custom'}},
+  });
+  view.zoomBy(400);
+  assert.equal(view.zoom,84,'custom maps use the same overview limit');
+  assert.ok(camera.position.distanceTo(target)<120);
+  const limit=camera.position.clone();
+  view.zoomBy(1);
+  assert.deepEqual(camera.position.toArray(),limit.toArray());
+  view.setCameraPreset('tactical');
+  assert.ok(Math.abs(camera.position.distanceTo(target)-120)<1e-9);
+  assert.ok(view.zoom<84,'steeper views have a lower horizontal zoom limit');
+  view.zoom=160;
+  view.updateCamera();
+  assert.ok(camera.position.distanceTo(target)<=120+1e-9,'restored camera positions use the same limit');
+  view.zoomBy(-200);
+  assert.equal(view.zoom,16);
+});
 
 test('graphics scene extensions preserve the current distant camera throughout a rebuild of the same battle',()=>{
   const {view,sim}=fixture(),pose={target:view.target.clone(),zoom:view.zoom,angle:view.angle,tilt:view.tilt};

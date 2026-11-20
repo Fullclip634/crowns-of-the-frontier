@@ -68,6 +68,7 @@ function normalizeMergeGeometries(geometries){
 }
 
 const mat=(color,extra={})=>standardMaterial({color,roughness:1,...extra});
+const MIN_CAMERA_ZOOM=16,MAX_CAMERA_ZOOM=84,MAX_CAMERA_DISTANCE=120;
 export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
 export class WorldView {
   constructor(container,settings,renderer=createWorldRenderer()){
@@ -224,9 +225,12 @@ export class WorldView {
   project(e,rect=this.renderer.domElement.getBoundingClientRect()){const x=e.renderX??e.x,z=e.renderZ??e.z,v=(this.projectVec??=new THREE.Vector3()).set(x,this.entityHeight(e,x,z)+(e.kind==='building'?7:UNITS[e.type]?.naval?5:3),z).project(this.camera);return {x:rect.left+(v.x+1)*rect.width/2,y:rect.top+(1-v.y)*rect.height/2,visible:v.z>-1&&v.z<1};}
   focus(x,z){if(!Number.isFinite(x)||!Number.isFinite(z))return;const limit=(this.sim?.worldSize||WORLD)/2-8,xx=Math.max(-limit,Math.min(limit,x)),zz=Math.max(-limit,Math.min(limit,z));this.target.set(xx,this.groundHeight?.(xx,zz)||0,zz);this.updateCamera();}
   pan(dx,dz){const c=Math.cos(this.angle),s=Math.sin(this.angle);this.focus(this.target.x+dx*c+dz*s,this.target.z-dx*s+dz*c);}
-  updateCamera(){this.camera.position.set(this.target.x+Math.sin(this.angle)*this.zoom,this.target.y+Math.tan(this.tilt)*this.zoom,this.target.z+Math.cos(this.angle)*this.zoom);this.camera.lookAt(this.target);this.camera.updateMatrixWorld();if(this.sun){const span=Math.max(34,Math.min(110,this.zoom*.95)),camera=this.sun.shadow.camera;Object.assign(camera,{left:-span,right:span,top:span,bottom:-span});camera.updateProjectionMatrix();positionShadowLight(this,span);}}
+  updateCamera(){
+    // A steep overview can pull farther back at the same horizontal zoom.
+    this.zoom=THREE.MathUtils.clamp(this.zoom,MIN_CAMERA_ZOOM,Math.min(MAX_CAMERA_ZOOM,MAX_CAMERA_DISTANCE*Math.cos(this.tilt)));
+    this.camera.position.set(this.target.x+Math.sin(this.angle)*this.zoom,this.target.y+Math.tan(this.tilt)*this.zoom,this.target.z+Math.cos(this.angle)*this.zoom);this.camera.lookAt(this.target);this.camera.updateMatrixWorld();if(this.sun){const span=Math.max(34,Math.min(110,this.zoom*.95)),camera=this.sun.shadow.camera;Object.assign(camera,{left:-span,right:span,top:span,bottom:-span});camera.updateProjectionMatrix();positionShadowLight(this,span);}}
   setCameraPreset(value,resetZoom=false){const key=CAMERA_PRESETS[value]?value:'balanced',preset=CAMERA_PRESETS[key];this.settings.cameraPreset=key;this.tilt=preset.tilt;if(resetZoom)this.zoom=preset.zoom+(matchMedia('(pointer: coarse)').matches?4:0);this.updateCamera();return preset.label;}
-  zoomBy(delta){this.zoom=Math.max(16,Math.min(this.sim?.options.mode==='custom'?160:112,this.zoom+delta));this.updateCamera();}
+  zoomBy(delta){this.zoom+=delta;this.updateCamera();}
   showGhost(type,x,z,valid){if(this.ghost.userData.type!==type){this.clearGroup(this.ghost);const d=BUILDINGS[type];const m=new THREE.Mesh(new THREE.BoxGeometry(d.r*2,2,d.r*2),new THREE.MeshBasicMaterial({color:0x78c7ac,transparent:true,opacity:.35,depthWrite:false}));m.position.y=1;this.ghost.add(m);const edges=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0x78c7ac}));edges.position.y=1;this.ghost.add(edges);this.ghost.userData.type=type;}this.ghost.position.set(x,.2,z);this.ghost.visible=true;this.ghost.children.forEach(c=>c.material.color.setHex(valid?0x9de2bc:0xeb7b65));}
   hideGhost(){this.ghost.visible=false;}
   vfxReport(){return vfxFrameReport(this);}
