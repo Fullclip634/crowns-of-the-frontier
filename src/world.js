@@ -68,8 +68,8 @@ function normalizeMergeGeometries(geometries){
 }
 
 const mat=(color,extra={})=>standardMaterial({color,roughness:1,...extra});
-const MIN_CAMERA_ZOOM=16,MAX_CAMERA_ZOOM=84,MAX_CAMERA_DISTANCE=120;
-export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:44},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:30},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:62}};
+const MIN_CAMERA_ZOOM=16,MAX_CAMERA_ZOOM=60,MAX_CAMERA_DISTANCE=84;
+export const CAMERA_PRESETS={balanced:{label:'Perspective',tilt:32*Math.PI/180,zoom:42},cinematic:{label:'Close view',tilt:20*Math.PI/180,zoom:28},tactical:{label:'Overview',tilt:56*Math.PI/180,zoom:46}};
 export class WorldView {
   constructor(container,settings,renderer=createWorldRenderer()){
     this.container=container;this.settings=settings;this.nodes=new Map();this.selection=new Set();this.fx=[];this.treeIndices=new Map();this.unitBatches=new Map();this.dynamicScale=1;this.frameAverage=.016;this.performanceClock=0;this.vfxTimer=createFrameTimer({targetSeconds:1/targetFrameRate(settings)});this.target=new THREE.Vector3(-37,0,29);this.angle=Math.PI/4;this.zoom=48;this.tilt=(CAMERA_PRESETS[settings.cameraPreset]||CAMERA_PRESETS.balanced).tilt;

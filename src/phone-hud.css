@@ -20,7 +20,7 @@
 
   #hud .bottom-hud{left:8px;right:8px;bottom:calc(8px + var(--safe));gap:6px;align-items:flex-end;justify-content:space-between;pointer-events:none}
   #hud .bottom-hud>*{pointer-events:auto}
-  #hud .map-panel{position:relative;width:84px;min-width:84px;height:auto;min-height:0;max-height:none;padding:3px;flex-shrink:0}
+  #hud .map-panel{position:relative;width:84px;min-width:84px;height:auto;min-height:0;max-height:none;padding:0;flex-shrink:0;overflow:hidden}
   #hud .map-heading,#hud .map-footer{display:none}
   #hud #minimap{display:block;width:100%;height:auto;aspect-ratio:1}
   #hud .map-panel.map-expanded{position:fixed;left:8px;bottom:calc(8px + var(--safe));width:min(220px,48vw);z-index:30;padding:5px}

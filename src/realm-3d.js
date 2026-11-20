@@ -14,7 +14,7 @@ import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 import {wallTier} from './fortified-walls.js';
-import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
+import {treePalette,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
@@ -108,7 +108,7 @@ function buildForest(view){
         if(view.settings.quality==='low'&&part.userData.foliageDetail==='closed leaf tips')return;
         const source=part.material;
         if(!materials.has(source)){const cloned=shadeBattlefieldFog(source.clone(),view);materials.set(source,cloned);}
-        const mesh=new THREE.InstancedMesh(part.geometry,materials.get(source),entries.length);mesh.count=0;mesh.castShadow=!far&&part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
+        const mesh=new THREE.InstancedMesh(part.geometry,materials.get(source),entries.length);mesh.count=0;mesh.castShadow=part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
         mesh.userData.foliageSway=leafy.has(source)||source===view.materials.snow;
         // One forest built from a single canopy still reads as rows of copies.
         // A small per-tree tint breaks that up without new geometry, and it is
@@ -119,7 +119,7 @@ function buildForest(view){
       sets.push({parts,ids});
     }
     const matrices=[],shadowMatrices=[];
-    const canopyDiameter=Math.max(2.6,Math.min(5.6,(footprint[0]||3.2)*(volcanic?.78:1.18)));
+    const canopyDiameter=Math.max(2.6,Math.min(5.6,(footprint[0]||3.2)*1.18));
     for(const e of entries){
       const dummy=new THREE.Object3D();
       // Subtle sub-cell jitter (±0.42m) + varied height/width + natural trunk lean
@@ -194,10 +194,11 @@ export function installRealm3D(WorldView){
     for(const [i,player] of this.sim.players.entries()){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }
-    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=(map==='desert'||isAridBiome(map))&&!volcanic,lush=map==='woodland'||map==='riverland';
-    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x526047:dry?0x727e48:lush?0x3e5f35:0x526b3c);
-    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x344138:dry?0x485435:lush?0x2b4429:0x344e30);
-    if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x382f2b:dry?0x6c5941:0x66563e);
+    const palette=treePalette(this.sim.options.map);
+    this.materials.leaf.color.setHex(palette.leaf);
+    this.materials.leafDark.color.setHex(palette.leafDark);
+    if(this.materials.trunk)this.materials.trunk.color.setHex(palette.trunk);
+    if(this.materials.snow)this.materials.snow.color.setHex(palette.snow);
     buildLandscape(this);
   };
   p.buildForest=function(){buildForest(this);};
@@ -213,16 +214,17 @@ export function installRealm3D(WorldView){
   p.forestFog=function(menu=false){
     if(this.camera?.isCamera&&this.camera.matrixWorldInverse)prepareViewport(this);
     const dx=this.camera.position.x-this.target.x,dz=this.camera.position.z-this.target.z,length2=dx*dx+dz*dz;
-    // Choose detail by projected size, so normal RTS zoom does not turn every
-    // prominent tree into its coarsest mesh merely because the camera is high.
-    const pixels=this.container?.clientHeight||globalThis.innerHeight||720;
+    // Normalize projected height to at least 720px so phones keep the same
+    // detailed spruce silhouettes and shadows as desktops at identical framing.
+    const pixels=Math.max(720,this.container?.clientHeight||globalThis.innerHeight||720);
     const projection=pixels/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov)*.5));
     const lod=this.forestLodState??=new Map();
-    // Real GPU time when available, CPU frame time otherwise. A bound frame
-    // raises the swap threshold so more forest uses the decimated canopy.
+    // Real GPU time when available, CPU frame time otherwise. Keep trees
+    // consistently on the detailed conifer mesh across normal RTS zoom and
+    // reserve the lighter mesh only for genuine GPU overload or far edges.
     const budgetMs=1000/targetFrameRate(this.settings);
     const quality=this.settings.quality;
-    const lodOptions=quality==='low'?{base:115,maximum:168}:quality==='medium'?{base:70,maximum:118}:{base:46,maximum:92};
+    const lodOptions=quality==='low'?{base:54,maximum:96}:quality==='medium'?{base:28,maximum:62}:{base:22,maximum:52};
     const threshold=treeDetailThreshold(this.frameTimeMs,budgetMs,lodOptions);
     this.forestDetailThreshold=threshold;
     let shadowCount=0;const useShadow=quality!=='low'&&this.forestShadow;

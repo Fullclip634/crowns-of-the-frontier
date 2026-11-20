@@ -14,6 +14,10 @@ const GARMENT_TINT={
 const FIELD_FABRIC={
   villager:{canvas:new THREE.Color(0xc1bba4).toArray(),pants:new THREE.Color(0x72806d).toArray()},
   scout:{canvas:new THREE.Color(0xb2ad96).toArray(),pants:new THREE.Color(0x687a72).toArray()},
+  galley:{canvas:new THREE.Color(0xe6deca).toArray()},
+  warship:{canvas:new THREE.Color(0xebe3d0).toArray()},
+  transport:{canvas:new THREE.Color(0xdfd5be).toArray()},
+  fishingboat:{canvas:new THREE.Color(0xd5cab2).toArray()},
 };
 const HORSE_COAT={
   knight:new THREE.Color(0x584337).toArray(),

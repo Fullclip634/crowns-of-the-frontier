@@ -12,7 +12,7 @@ import {animatePart} from '../src/world-polish.js';
 import {UnitActions} from '../src/unit-actions.js';
 import {mergeUnitModel} from '../src/unit-palette.js';
 import {packBuildingModel} from '../src/structure-palette.js';
-import {isAridBiome,isSnowBiome} from '../src/terrain-biomes.js';
+import {isSnowBiome} from '../src/terrain-biomes.js';
 import {LOW_CATALOGUE_BUDGET} from '../scripts/blender/content-budget.mjs';
 
 async function assetGLTF(bytes){
@@ -388,7 +388,7 @@ test('every map uses an evergreen template at both camera distances',async()=>{
     for(const map of Object.keys(MAPS))for(let variant=0;variant<4;variant++)for(const far of [false,true]){
       const tree=treeModel(view,map,variant,far);
       const family=isSnowBiome(map)?'winter':'highlands';
-      const detail=far||map==='desert'||isAridBiome(map)?'far':'near';
+      const detail=far?'far':'near';
       assert.equal(tree.userData.assetKey,['tree',family,variant,detail].join(':'),map);
     }
   }finally{clearAuthoredAssets();}

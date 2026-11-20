@@ -81,6 +81,11 @@ function customNavy(sim,owner,visible,known,army,tc){
   if(aid)ships.sort((a,b)=>distance(a,aid)-distance(b,aid));
   const fleetOrders=new Map();
   for(const [i,ship] of ships.entries()){
+    if(dock&&!defense&&ship.hp<ship.maxHp*.65){
+      const repairSpot={x:mid(dock.z)+Math.sign(dock.x)*13,z:dock.z};
+      if(!ship.order||ship.order.type!=='move'||distance(ship.order,repairSpot)>5)sim.command([ship.id],{type:'move',...repairSpot});
+      continue;
+    }
     const assignment=i<aidCount?aid.base:null;
     if(!fleetOrders.has(assignment))fleetOrders.set(assignment,{ships:[],refresh:false,order:{type:i<aidCount||launch||defense?'attackmove':'move',x:i<aidCount?mid(aid.z):defense?.x??(launch?target?.x??mid(enemy.start.z):mid(home.z)),z:i<aidCount?aid.z:defense?.z??(launch?target?.z??enemy.start.z:home.z)}});
     const group=fleetOrders.get(assignment);group.ships.push(ship);
@@ -167,6 +172,67 @@ export function chooseArmyUnit(sim,building,state,owner=1,plan=null){
   }return best;
 }
 
+const BUILDING_REPAIR_THRESHOLD=.92,ALLIED_REPAIR_THRESHOLD=.75,MECHANICAL_REPAIR_THRESHOLD=.9;
+function buildingRepairPriority(b){
+  if(b.type==='towncenter'||b.type==='wonder')return 0;
+  if(b.type==='keep')return 1;
+  if(b.type==='tower'||b.type==='gate'||b.type==='wall')return 2;
+  if(['barracks','range','stable','workshop','dock'].includes(b.type))return 3;
+  return 4;
+}
+function canAffordRepair(sim,owner,target){
+  const resources=sim.players[owner]?.resources;if(!resources)return false;
+  if(mechanicalUnit(target)){
+    const step=Math.min(target.maxHp-target.hp,2.3);if(!(step>0))return false;
+    return Object.entries(UNITS[target.type].cost||{}).every(([r,n])=>(resources[r]||0)>=n*.35*step/target.maxHp);
+  }
+  const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';
+  return (resources[resource]||0)>=.6;
+}
+function canReachRepairTarget(sim,worker,target){
+  if(distance(worker,target)<=target.r+3)return true;
+  if(distance(worker,target)>42)return false;
+  const probe={...worker,stuckTime:0},route=findPath(sim,probe,target,target.r+2.7);
+  if(probe.pathStatus==='blocked')return false;
+  const end=route.at(-1)||worker;
+  return distance(end,target)<=target.r+3.2;
+}
+export function manageRepairs(sim,owner,workers,buildings,visible,tc){
+  const free=target=>{
+    const pool=workers.filter(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification).sort((a,b)=>distance(a,target)-distance(b,target));
+    if(!UNITS[target.type]?.naval)return pool[0]||null;
+    return pool.find(w=>canReachRepairTarget(sim,w,target))||null;
+  };
+  const damagedMechanical=sim.owned(owner,'unit').filter(unit=>unit.hp>0&&!unit.embarked&&mechanicalUnit(unit)&&unit.hp<unit.maxHp*MECHANICAL_REPAIR_THRESHOLD).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);
+  let siegeRepairs=workers.filter(worker=>worker.order?.type==='repair'&&mechanicalUnit(sim.get(worker.order.target))).length;
+  for(const target of damagedMechanical){
+    if(siegeRepairs>=2)break;
+    if(workers.some(worker=>worker.order?.type==='repair'&&worker.order.target===target.id))continue;
+    if(!canAffordRepair(sim,owner,target))continue;
+    if(visible.some(enemy=>enemy.kind==='unit'&&sim.hostile(owner,enemy.owner)&&distance(enemy,target)<18))continue;
+    const worker=free(target);
+    if(!worker)continue;
+    sim.command([worker.id],{type:'repair',target:target.id});siegeRepairs++;
+  }
+  const ownDamaged=buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*BUILDING_REPAIR_THRESHOLD);
+  const alliedDamaged=tc?sim.entities.filter(b=>b.hp>0&&b.kind==='building'&&b.owner!==owner&&sim.allied(owner,b.owner)&&b.progress>=1&&b.hp<b.maxHp*ALLIED_REPAIR_THRESHOLD&&['towncenter','keep','tower','gate','wonder'].includes(b.type)&&distance(b,tc)<42):[];
+  const repairBuildings=[...ownDamaged,...alliedDamaged].sort((a,b)=>Number(a.owner!==owner)-Number(b.owner!==owner)||buildingRepairPriority(a)-buildingRepairPriority(b)||a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);
+  let buildingRepairs=workers.filter(w=>w.order?.type==='repair'&&sim.get(w.order.target)?.kind==='building').length;
+  const maxBuildingRepairs=workers.length>=8?3:workers.length>=5?2:1;
+  for(const building of repairBuildings){
+    if(buildingRepairs>=maxBuildingRepairs)break;
+    if(!canAffordRepair(sim,owner,building))continue;
+    const citadel=['towncenter','keep','wonder'].includes(building.type);
+    if(!citadel&&visible.some(enemy=>enemy.kind==='unit'&&sim.hostile(owner,enemy.owner)&&distance(enemy,building)<8))continue;
+    const wanted=citadel&&building.hp<building.maxHp*.5&&workers.length>=8?2:1;
+    let assigned=workers.filter(w=>w.order?.type==='repair'&&w.order.target===building.id).length;
+    while(assigned<wanted&&buildingRepairs<maxBuildingRepairs){
+      const worker=free(building);if(!worker)break;
+      sim.command([worker.id],{type:'repair',target:building.id});assigned++;buildingRepairs++;
+    }
+  }
+}
+
 export function installCommanderAI(Simulation){
   const p=Simulation.prototype,assignWorker=p.assignWorker,serialize=p.serialize,restore=Simulation.restore;
   p.assignWorker=function(e){
@@ -214,6 +280,7 @@ export function installCommanderAI(Simulation){
     if(this.options.mode==='custom'&&this.time-(state.lastDeposits??-20)>=10){rememberDeposits(this,state,owner);state.lastDeposits=this.time;}
     protectWorkers(this,state,owner,workers,buildings,visible);
     staffSettlements(this,state,owner,workers,buildings);
+    manageRepairs(this,owner,workers,buildings,visible,tc);
     manageExpansion(this,state,owner,workers,baseThreats);
     if(this.options.map==='coast'&&!buildings.some(site=>site.type==='dock')){const z=player.start?.z??tc.z;this.commanderBuild('dock',{x:Math.sin(z*.03)*2+Math.sign(tc.x)*20,z},owner);}
     const ageCost=AGE_COSTS[player.age];
@@ -263,21 +330,6 @@ export function installCommanderAI(Simulation){
       // Fortifying an empty kingdom is wasted spending; only upgrade a real perimeter.
       if(tech==='fortifiedWall'&&!buildings.some(b=>b.type==='wall'||b.type==='gate'))continue;
       const site=buildings.find(b=>b.progress>=1&&!b.queue.length&&TECHS[tech].at.includes(b.type));if(site&&this.canAfford(Object.fromEntries(Object.entries(TECHS[tech].cost).map(([r,c])=>[r,c*(player.tech[tech]+1)])),owner)){this.research(site.id,tech);break;}
-    }
-    const damagedSiege=this.owned(owner,'unit').filter(unit=>unit.hp>0&&!unit.embarked&&mechanicalUnit(unit)&&unit.hp<unit.maxHp*.8).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);
-    let siegeRepairs=workers.filter(worker=>worker.order?.type==='repair'&&mechanicalUnit(this.get(worker.order.target))).length;
-    for(const target of damagedSiege){
-      if(siegeRepairs>=2)break;
-      if(workers.some(worker=>worker.order?.type==='repair'&&worker.order.target===target.id))continue;
-      if(visible.some(enemy=>enemy.kind==='unit'&&this.hostile(owner,enemy.owner)&&distance(enemy,target)<18))continue;
-      const worker=workers.find(candidate=>!candidate.embarked&&!['build','repair','garrison'].includes(candidate.order?.type)&&!candidate.aiFleeing&&!candidate.order?.aiExpansion&&!candidate.order?.aiFortification);
-      if(!worker)break;
-      if(UNITS[target.type].naval&&distance(worker,target)>target.r+3)continue;
-      this.command([worker.id],{type:'repair',target:target.id});siegeRepairs++;
-    }
-    for(const building of buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*.65)){
-      if(workers.some(w=>w.order?.type==='repair'&&w.order.target===building.id))continue;
-      const worker=workers.find(w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification);if(worker)this.command([worker.id],{type:'repair',target:building.id});break;
     }
     const scout=this.owned(owner,'unit','scout')[0],waypoints=this.options.mode==='custom'?this.spawnPositions.flatMap((point,i)=>{
       if(!this.hostile(owner,i)||this.options.map==='coast'&&Math.sign(point.x)!==Math.sign(tc.x))return [];

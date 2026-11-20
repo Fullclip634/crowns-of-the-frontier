@@ -148,6 +148,36 @@ test('AI repairs its damaged buildings and retreats badly injured troops',()=>{
   s.tickAI();assert.ok(s.owned(1,'unit','villager').some(w=>w.order?.type==='repair'&&w.order.target===tc.id));
   assert.equal(soldier.order.type,'move');assert.ok(distance(soldier.order,tc)<15);
 });
+test('AI villagers repair moderately damaged buildings using the closest worker, prioritize citadels, respect resources, and repair coastal ships',()=>{
+  const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];
+  for(const w of s.owned(owner,'unit','villager'))s.hurt(w,w.hp+1,null);
+  const farWorker=s.addUnit('villager',owner,tc.x-35,tc.z),nearWorker=s.addUnit('villager',owner,tc.x+4,tc.z+4);
+  const house=s.addBuilding('house',owner,tc.x+10,tc.z,true),tower=s.addBuilding('tower',owner,tc.x-8,tc.z+8,true);
+  house.hp=house.maxHp*.78;tower.hp=tower.maxHp*.82;
+  s.players[owner].resources.stone=0;s.players[owner].resources.wood=200;
+  s.tickAI(owner);
+  assert.equal(nearWorker.order?.type,'repair','closest villager handles repair');
+  assert.equal(nearWorker.order?.target,house.id,'skips unpayable stone tower and repairs affordable wood house');
+  assert.notEqual(farWorker.order?.target,tower.id,'does not loop on unpayable stone repair');
+
+  // With stone available, critical TC gets 2 workers when enough villagers exist.
+  s.players[owner].resources.stone=200;
+  for(let i=0;i<7;i++)s.addUnit('villager',owner,tc.x+5+i,tc.z+5);
+  tc.hp=tc.maxHp*.4;
+  s.tickAI(owner);
+  const tcRepairers=s.owned(owner,'unit','villager').filter(w=>w.order?.type==='repair'&&w.order.target===tc.id);
+  assert.equal(tcRepairers.length,2,'critically damaged town center draws two repair villagers');
+
+  // Coastal AI repairs damaged ship near shore with a reachable villager.
+  const naval=new Simulation({mode:'tides',seed:512}),nOwner=1,dock=naval.owned(nOwner,'building','dock')[0];
+  for(const w of naval.owned(nOwner,'unit','villager'))w.order=null;
+  const shoreWorker=naval.addUnit('villager',nOwner,dock.x+3,dock.z+2);
+  const ship=naval.addUnit('galley',nOwner,Math.sin(dock.z*.03)*2+Math.sign(dock.x)*13,dock.z);
+  ship.hp=ship.maxHp*.6;
+  naval.tickAI(nOwner);
+  assert.ok(naval.owned(nOwner,'unit','villager').some(w=>w.order?.type==='repair'&&w.order.target===ship.id),'reachable villager repairs damaged coastal ship');
+  assert.ok(shoreWorker.hp>0);
+});
 test('AI monks heal wounded living troops near home instead of escorting the field army over siege engines',()=>{
   const s=new Simulation(),owner=1,tc=s.owned(owner,'building','towncenter')[0];
   for(const unit of s.owned(owner,'unit')){unit.hp=unit.maxHp;unit.order=null;unit.orders=[];}

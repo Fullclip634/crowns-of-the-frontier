@@ -25,17 +25,17 @@ test('gameplay cameras clamp zoom by distance for perspective and tactical views
     settings:{cameraPreset:'balanced'},sim:{options:{mode:'custom'}},
   });
   view.zoomBy(400);
-  assert.equal(view.zoom,84,'custom maps use the same overview limit');
-  assert.ok(camera.position.distanceTo(target)<120);
+  assert.equal(view.zoom,60,'custom maps use the same overview limit');
+  assert.ok(camera.position.distanceTo(target)<84);
   const limit=camera.position.clone();
   view.zoomBy(1);
   assert.deepEqual(camera.position.toArray(),limit.toArray());
   view.setCameraPreset('tactical');
-  assert.ok(Math.abs(camera.position.distanceTo(target)-120)<1e-9);
-  assert.ok(view.zoom<84,'steeper views have a lower horizontal zoom limit');
+  assert.ok(Math.abs(camera.position.distanceTo(target)-84)<1e-9);
+  assert.ok(view.zoom<60,'steeper views have a lower horizontal zoom limit');
   view.zoom=160;
   view.updateCamera();
-  assert.ok(camera.position.distanceTo(target)<=120+1e-9,'restored camera positions use the same limit');
+  assert.ok(camera.position.distanceTo(target)<=84+1e-9,'restored camera positions use the same limit');
   view.zoomBy(-200);
   assert.equal(view.zoom,16);
 });

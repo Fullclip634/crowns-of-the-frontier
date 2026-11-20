@@ -48,6 +48,23 @@ export const BIOME_PROFILES=Object.freeze({
   archipelago:Object.freeze({strength:1.7,cliffs:1.05,wood:.75,gold:1.2,stone:1.1,food:1.3}),
 });
 
+export const TREE_PALETTES=Object.freeze({
+  highlands:Object.freeze({leaf:0x4f6d3b,leafDark:0x2f4b2d,trunk:0x63513b,snow:0xe3e9e5,minimap:'#254b30'}),
+  valley:Object.freeze({leaf:0x4d6e3c,leafDark:0x2d4a2d,trunk:0x62503a,snow:0xe3e9e5,minimap:'#254b30'}),
+  rivers:Object.freeze({leaf:0x4c6e3e,leafDark:0x2c4b2f,trunk:0x61513b,snow:0xe3e9e5,minimap:'#244c31'}),
+  desert:Object.freeze({leaf:0x6e8242,leafDark:0x45582d,trunk:0x6c583e,snow:0xe3e9e5,minimap:'#3d5b2d'}),
+  canyon:Object.freeze({leaf:0x596d43,leafDark:0x384930,trunk:0x695542,snow:0xe3e9e5,minimap:'#334b31'}),
+  coast:Object.freeze({leaf:0x486b42,leafDark:0x2b4933,trunk:0x615342,snow:0xe3e9e5,minimap:'#244a35'}),
+  winter:Object.freeze({leaf:0x6b7f6e,leafDark:0x324b40,trunk:0x564c44,snow:0xe8eff0,minimap:'#4a6860'}),
+  arid:Object.freeze({leaf:0x8c8748,leafDark:0x57572e,trunk:0x7a6244,snow:0xe3e9e5,minimap:'#6a6735'}),
+  tundra:Object.freeze({leaf:0x5c7578,leafDark:0x2d464d,trunk:0x4e4a49,snow:0xdfecf2,minimap:'#45666e'}),
+  volcanic:Object.freeze({leaf:0x4f4a3d,leafDark:0x2b2926,trunk:0x342c28,snow:0xd8dde0,minimap:'#312b26'}),
+  highland:Object.freeze({leaf:0x54694f,leafDark:0x334536,trunk:0x5d5348,snow:0xe3e9e5,minimap:'#344c3a'}),
+  woodland:Object.freeze({leaf:0x395c32,leafDark:0x213d22,trunk:0x524231,snow:0xe3e9e5,minimap:'#1e4224'}),
+  riverland:Object.freeze({leaf:0x447548,leafDark:0x285137,trunk:0x5f4e39,snow:0xe3e9e5,minimap:'#24563a'}),
+  archipelago:Object.freeze({leaf:0x5e7844,leafDark:0x3a5430,trunk:0x6d5a41,snow:0xe3e9e5,minimap:'#355532'}),
+});
+
 export function terrainBiome(map){return styles[map]||styles.highlands;}
 // Unknown/legacy save map ids must keep the original neutral relief strength.
 const FALLBACK_PROFILE=Object.freeze({strength:1,cliffs:0,wood:1,gold:1,stone:1,food:1});
@@ -56,3 +73,4 @@ export function isSnowBiome(map){return map==='winter'||!!styles[map]?.snow;}
 export function isAridBiome(map){return !!styles[map]?.sand||!!styles[map]?.ash;}
 export function isRockyBiome(map){return !!styles[map]?.rocky||!!styles[map]?.ash;}
 export function treeBiome(map){return isSnowBiome(map)?'winter':'highlands';}
+export function treePalette(map){return TREE_PALETTES[map]||TREE_PALETTES.highlands;}

@@ -8,7 +8,7 @@ import {terrainRelief,broadRelief,tacticalHeight,terrainPhase,highGroundMultipli
 import {terrainWeights} from '../src/terrain-layout.js';
 import {waterChannels,channelAt,dryBankFootprint,landBank} from '../src/map-water.js';
 import {bridgeSpans} from '../src/bridge-layout.js';
-import {terrainBiome,biomeProfile,isSnowBiome,isAridBiome,LEGACY_MEADOW_MAPS,NEW_BIOME_MAPS} from '../src/terrain-biomes.js';
+import {terrainBiome,biomeProfile,isSnowBiome,isAridBiome,treePalette,LEGACY_MEADOW_MAPS,NEW_BIOME_MAPS} from '../src/terrain-biomes.js';
 import {updateBattlePreview} from '../src/custom-battle-ui.js';
 import {BATTLE_SIZES} from '../src/custom-battle.js';
 
@@ -40,6 +40,15 @@ test('new map kinds are registered with distinct palettes and gameplay profiles'
   assert.equal(isSnowBiome('arid'),false);
   assert.equal(isAridBiome('arid'),true);
   assert.equal(isAridBiome('volcanic'),true);
+  // Every registered map gets a distinct climate-matched conifer palette.
+  for(const map of Object.keys(MAPS)){
+    const pal=treePalette(map);
+    assert.ok(Number.isInteger(pal.leaf)&&Number.isInteger(pal.leafDark)&&Number.isInteger(pal.trunk),map+' has tree colors');
+    assert.match(pal.minimap,/^#[0-9a-f]{6}$/i,map+' has minimap wood tint');
+  }
+  assert.notEqual(treePalette('arid').leaf,treePalette('highlands').leaf,'arid uses warm desert cedar foliage');
+  assert.notEqual(treePalette('volcanic').leaf,treePalette('highlands').leaf,'volcanic uses ash-charred conifer foliage');
+  assert.notEqual(treePalette('tundra').leaf,treePalette('winter').leaf,'tundra uses cooler glacial blue-spruce foliage');
 });
 
 test('cliffs and plateaus create measurable elevation range on every new map',()=>{

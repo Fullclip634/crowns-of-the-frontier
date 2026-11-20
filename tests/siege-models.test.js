@@ -39,3 +39,39 @@ for(const detail of ['low','balanced','near'])test(`${detail} siege keeps solid 
   }
   const geometries=new Set(),materials=new Set();gltf.scene.traverse(n=>{if(n.isMesh){geometries.add(n.geometry);materials.add(n.material);}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();
 });
+
+for(const detail of ['low','balanced','near'])test(`${detail} naval fleet keeps sculpted hulls, billowing sails, animated joints and bounded geometry`,async t=>{
+  const bytes=fs.readFileSync(new URL(`frontier-${detail}.glb`,directory)),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+  const keys=['unit:fishingboat','unit:galley','unit:warship','unit:transport'];
+  const roots=[];gltf.scene.traverse(n=>{if(keys.includes(n.userData.assetKey))roots.push(n);});assert.equal(roots.length,4);
+  for(const root of roots){
+    assert.equal(root.userData.model3d.navalRevision,'carvel-timber-v1');root.updateMatrixWorld(true);
+    const type=root.userData.model3d.type,roles=new Set(),motions=new Set(),bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+    let triangles=0,animatedSails=0,oars=new Set();
+    assert.ok(size.x>2.0&&size.y>2.2&&size.z>4.5,`${type} has full naval silhouette (${size.toArray().map(v=>v.toFixed(2))})`);
+    root.traverse(part=>{
+      if(!part.isMesh)return;
+      roles.add(part.userData.assetMaterial);
+      const m=part.userData.motion,p=part.geometry.attributes.position,index=part.geometry.index;
+      triangles+=(index?.count||p.count)/3;
+      if(m?.type){
+        motions.add(m.type);
+        const e={id:7,type,moving:true,cooldown:0};
+        const a=animatePart({clock:0.2},part,e,new THREE.Matrix4()).clone();
+        const b=animatePart({clock:1.1},part,e,new THREE.Matrix4()).clone();
+        assert.ok(a.elements.every(Number.isFinite)&&b.elements.every(Number.isFinite));
+        assert.notDeepEqual(a.elements,b.elements,`${type} ${m.type} animates over time`);
+        if(m.type==='sail')animatedSails++;
+        if(m.type==='oar')oars.add(JSON.stringify(m.pivot));
+      }
+    });
+    assert.ok(roles.has('wood')&&roles.has('darkwood')&&roles.has('canvas'),`${type} keeps timber hull and canvas rigging`);
+    if(type==='fishingboat')assert.ok(roles.has('teamRoof')&&roles.has('iron'));
+    if(type!=='fishingboat')assert.ok(animatedSails>=2&&roles.has('team'),`${type} carries animated billowing sails with team heraldry`);
+    if(type==='galley')assert.equal(oars.size,8,'galley keeps 8 articulated rowing oars');
+    if(type==='warship')assert.ok(roles.has('steel')&&roles.has('gold')&&size.z>6.0,'warship carries metallic broadside cannons and galleon scale');
+    assert.ok(triangles<8000,`${type} remains bounded (${triangles} tris)`);
+    t.diagnostic(JSON.stringify({detail,type,triangles:Math.round(triangles),size:size.toArray().map(v=>+v.toFixed(2))}));
+  }
+  const geometries=new Set(),materials=new Set();gltf.scene.traverse(n=>{if(n.isMesh){geometries.add(n.geometry);materials.add(n.material);}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();
+});

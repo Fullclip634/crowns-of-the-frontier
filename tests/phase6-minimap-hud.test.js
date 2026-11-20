@@ -142,3 +142,12 @@ test('relief samples the rendered terrain and shows the actual bridge deck',()=>
     ['fillRect',33.5,(80-bridgeOuterHalfWidth)*.5,13,bridgeOuterHalfWidth],
   ]);
 });
+
+test('minimap removes dark black outlines on both canvas and HUD container CSS',()=>{
+  const js=fs.readFileSync(new URL('../src/minimap.js',import.meta.url),'utf8');
+  assert.ok(!js.includes('#14221b'),'camera viewport box has no thick black outline');
+  assert.ok(!js.includes('#101915'),'building pips have no black square outline');
+  assert.ok(!js.includes('#16251f'),'camera center dot has no black outline');
+  const css=fs.readFileSync(new URL('../src/interface-design.css',import.meta.url),'utf8');
+  assert.match(css,/#hud \.map-panel #minimap\{[^}]*border:0;[^}]*outline:0;[^}]*box-shadow:none;/,'minimap canvas removes dark inset shadow and double border');
+});

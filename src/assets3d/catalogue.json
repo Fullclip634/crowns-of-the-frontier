@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 13337720,
-    "low": 4572012,
-    "balanced": 12917756
+    "near": 13821488,
+    "low": 4959168,
+    "balanced": 13158632
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -526,31 +526,31 @@
   "windmillRevision": "axle-clearance-v1",
   "windmillSourceSHA256": "a7180128c0325ab76c1b96bb73e56f7a059ff9be405c65f23decadec0ad22fcf",
   "siegeRevision": "solid-timber-v1",
-  "siegeSourceSHA256": "37c275f60c8c6073c5182f29ff2c207a59574b84ba6e43de2fdfd4ac200ba316",
+  "siegeSourceSHA256": "9752b1faef9b5e3b5c8cdde5dd09d9d735eba584c8db49a7342bcbd183608fed",
   "lowContentBudgetBytes": 4980736,
   "balancedComposition": "High buildings/resources and near broadleaf canopies with sparse closed Blender leaf tips; Low troops, evergreen and distant forests; no second simplification pass.",
   "balancedFoliage": "volumetric-tips-v1",
-  "balancedEncoding": "Floating-point positions and UVs; source-preserving normals and colors; retained compact surfaces; no additional triangle simplification.",
+  "balancedEncoding": "Floating-point positions and UVs; 16-bit normals; source-precision 8-bit colors; no triangle simplification.",
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1392,
-    "visibleTriangles": 630846,
+    "meshes": 1412,
+    "visibleTriangles": 641624,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
-    "maxNormalDegrees": 0.012546962601735412,
+    "maxNormalDegrees": 0.0034318130265659674,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17087892,
-    "candidateBytes": 12917756,
-    "referenceDecodedBufferBytes": 36788984,
-    "candidateDecodedBufferBytes": 33374192,
-    "referenceSHA256": "b4b9444c4483c6c76622493c759ac8f81624f4e173a1664ef9205090c5b78803",
-    "candidateSHA256": "4fa422d547bbc9d9f5d0f57df9cb413d1983b2b704a0e8f8253c6f22410728c9"
+    "referenceBytes": 17445916,
+    "candidateBytes": 13158632,
+    "referenceDecodedBufferBytes": 37565892,
+    "candidateDecodedBufferBytes": 33945044,
+    "referenceSHA256": "d45ce3657eb1f9d2c216a0de81f1d0c4aab1fc5ebfbb412676dc66f378e94c93",
+    "candidateSHA256": "55937d2ccf81b0df88d70575adeedee099bb86bf294770cac1c5431149de6601"
   },
   "balancedSourceHashes": {
-    "near": "a199b259f971af813f205ee951ce02d49d0eaa096605e50f25135254ab79f4d8",
-    "low": "3dd63dac9743ecd130b7f6e5076d9b8ce505b72cae383e627d3c5d6773e96716",
+    "near": "ee3ba18dd8dcd9095c918ab45337b86609db4f10b8a576b3d8d0c717fb615cac",
+    "low": "e98b226ed7523313a84f67563465243953a385232a3797902f26a9e9a92d6c53",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
@@ -579,5 +579,7 @@
   "figureRevision": "field-forms-v1",
   "bowRevision": "drawn-bows-v1",
   "horseLegRevision": "articulated-hooves-v1",
-  "mountedFormRevision": "shaped-horses-and-bridles-v1"
+  "mountedFormRevision": "shaped-horses-and-bridles-v1",
+  "navalRevision": "carvel-timber-v1",
+  "navalSourceSHA256": "9752b1faef9b5e3b5c8cdde5dd09d9d735eba584c8db49a7342bcbd183608fed"
 }

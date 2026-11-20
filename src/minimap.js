@@ -2,7 +2,7 @@ import {WORLD} from './data.js';
 import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
 import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
-import {terrainBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome,treePalette} from './terrain-biomes.js';
 
 const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
 function parseHex(hex){
@@ -15,7 +15,7 @@ function paintBridges(ctx,map,coord,scale){
     const x=coord(span.center-span.halfLength),z=coord(-bridgeOuterHalfWidth);
     const width=span.halfLength*2*scale,height=bridgeOuterHalfWidth*2*scale;
     ctx.fillStyle='#b8a47c';ctx.fillRect(x,z,width,height);
-    ctx.strokeStyle='#3c3428';ctx.lineWidth=1;
+    ctx.strokeStyle='#7a684b';ctx.lineWidth=1;
     ctx.strokeRect(x+.5,z+.5,Math.max(1,width-1),Math.max(1,height-1));
   }
 }
@@ -40,18 +40,15 @@ export function renderReliefBase(bctx,size,sim,view){
       }
     }
     for(let py=0;py<size;py++){
-      const vy=py/size*2-1;
       for(let px=0;px<size;px++){
-        const vx=px/size*2-1,idx=py*size+px,o=idx*4;
+        const idx=py*size+px,o=idx*4;
         const h=heightGrid[idx],isWater=waterGrid[idx]===1;
-        const edgeDist=Math.max(Math.abs(vx),Math.abs(vy));
-        const vignette=1-Math.max(0,(edgeDist-.72)/.28)*.16;
         const paper=1+(((px*73+py*151)&15)/15-.5)*.045;
         let r,g,b;
         if(isWater){
           const nearLand=(px>0&&!waterGrid[idx-1])||(px+1<size&&!waterGrid[idx+1])||(py>0&&!waterGrid[idx-size])||(py+1<size&&!waterGrid[idx+size]);
           if(nearLand){
-            r=28;g=46;b=48;
+            r=48;g=90;b=100;
           }else{
             const depth=Math.max(0,Math.min(1,(-h-.12)/2.1));
             const shoal=1-depth;
@@ -80,9 +77,9 @@ export function renderReliefBase(bctx,size,sim,view){
           b=(bb*(1-rockMix)+rb*rockMix)*shade*contour;
           if(volcanic&&slope>.14&&(((px*19+py*31)%23)===0)){r+=44;g+=16;b+=4;}
         }
-        data[o]=clampByte(r*vignette*paper);
-        data[o+1]=clampByte(g*vignette*paper);
-        data[o+2]=clampByte(b*vignette*paper);
+        data[o]=clampByte(r*paper);
+        data[o+1]=clampByte(g*paper);
+        data[o+2]=clampByte(b*paper);
         data[o+3]=255;
       }
     }
@@ -117,7 +114,7 @@ export function drawMinimap(canvas,sim,view,settings){
   if(base)ctx.drawImage(base,0,0);
   else renderReliefBase(ctx,size,sim,view);
 
-  const woodColor=map==='volcanic'?'#2d2421':isSnowBiome(map)?'#4b6862':isAridBiome(map)?'#5a6738':'#254b30';
+  const woodColor=treePalette(map).minimap;
   const resourceColors={wood:woodColor,gold:'#ecc55e',stone:'#c4cac0',food:'#b57960'};
   for(const entity of sim.entities){
     const e=sim.resourceMemory?.get(entity.id)??entity;
@@ -125,23 +122,21 @@ export function drawMinimap(canvas,sim,view,settings){
     const fill=e.kind==='resource'?(e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type]):e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?('#'+(sim.players[e.owner].color??(e.owner===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):'#e3d3a2';
     const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
     const ex=coord(e.x),ez=coord(e.z);
-    if(e.kind==='building'){ctx.fillStyle='#101915';ctx.fillRect(ex-r-.75,ez-r-.75,r*2+1.5,r*2+1.5);}
     ctx.fillStyle=fill;ctx.fillRect(ex-r,ez-r,r*2,r*2);
   }
   if(settings.fog)ctx.drawImage(view.fogCanvas,0,0,size,size);
-  const goal=campaignObjective(sim)?.marker;if(goal){const x=coord(goal.x),z=coord(goal.z);ctx.beginPath();ctx.moveTo(x,z-5);ctx.lineTo(x+5,z);ctx.lineTo(x,z+5);ctx.lineTo(x-5,z);ctx.closePath();ctx.fillStyle='#f2ce77';ctx.fill();ctx.strokeStyle='#18251f';ctx.lineWidth=1.5;ctx.stroke();}
+  const goal=campaignObjective(sim)?.marker;if(goal){const x=coord(goal.x),z=coord(goal.z);ctx.beginPath();ctx.moveTo(x,z-5);ctx.lineTo(x+5,z);ctx.lineTo(x,z+5);ctx.lineTo(x-5,z);ctx.closePath();ctx.fillStyle='#f2ce77';ctx.fill();ctx.strokeStyle='#8f7440';ctx.lineWidth=1.2;ctx.stroke();}
   const box=cameraMapBox(view.camera,view.groundHeight(view.target.x,view.target.z),worldSize);
   if(box){
     const x=coord(box.minX),z=coord(box.minZ),width=(box.maxX-box.minX)*scale,height=(box.maxZ-box.minZ)*scale;
-    ctx.fillStyle='#f5e8bd14';ctx.fillRect(x,z,width,height);ctx.strokeStyle='#14221b';ctx.lineWidth=3;ctx.strokeRect(x,z,width,height);ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.4;ctx.strokeRect(x,z,width,height);
+    ctx.fillStyle='#f5e8bd14';ctx.fillRect(x,z,width,height);ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.strokeRect(x,z,width,height);
   }
   // Keep the current rectangle available for input diagnostics and browser QA.
   view.minimapCameraBox=box;
   // A center marker stays readable even when an overview covers almost the whole map.
-  ctx.beginPath();ctx.arc(coord(view.target.x),coord(view.target.z),2.3,0,Math.PI*2);ctx.fillStyle='#f5e8bd';ctx.fill();ctx.strokeStyle='#16251f';ctx.lineWidth=1;ctx.stroke();
-  // Aged brass cartographic border & subtle cardinal compass ticks.
-  ctx.strokeStyle='#b89a5e';ctx.lineWidth=1;ctx.strokeRect(.5,.5,size-1,size-1);
-  ctx.strokeStyle='#d9bc7a';ctx.beginPath();
+  ctx.beginPath();ctx.arc(coord(view.target.x),coord(view.target.z),2.2,0,Math.PI*2);ctx.fillStyle='#f5e8bd';ctx.fill();
+  // Subtle cardinal compass ticks without a dark outline frame.
+  ctx.strokeStyle='#d9bc7a';ctx.lineWidth=1;ctx.beginPath();
   const mid=size/2;
   ctx.moveTo(mid,1);ctx.lineTo(mid,5);ctx.moveTo(mid,size-1);ctx.lineTo(mid,size-5);
   ctx.moveTo(1,mid);ctx.lineTo(5,mid);ctx.moveTo(size-1,mid);ctx.lineTo(size-5,mid);
