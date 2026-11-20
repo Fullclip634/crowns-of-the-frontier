@@ -699,7 +699,7 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
         lastRender=now;renderHealth();presentBattlefield();
       }
     }
-    audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);if(weatherLabelEl){const weatherType=view.weatherState?.type,weatherName=WEATHER_NAMES[weatherType]||'Clear',weatherText=weatherType==='clear'?'Clear':weatherName.split(' ')[0],weatherTitle=`Weather: ${weatherName}. Mode: ${settings.weather}. Click to change.`;if(weatherText!==lastWeatherText){lastWeatherText=weatherText;weatherLabelEl.textContent=weatherText;}if(weatherButtonEl&&weatherTitle!==lastWeatherTitle){lastWeatherTitle=weatherTitle;weatherButtonEl.title=weatherTitle;}}
+    audio.tick(dt);audio.weather(view.weatherState,playing&&!paused&&!sim.ended);audio.updateScene?.({dt,view,sim,active:playing&&!paused&&!sim.ended});if(weatherLabelEl){const weatherType=view.weatherState?.type,weatherName=WEATHER_NAMES[weatherType]||'Clear',weatherText=weatherType==='clear'?'Clear':weatherName.split(' ')[0],weatherTitle=`Weather: ${weatherName}. Mode: ${settings.weather}. Click to change.`;if(weatherText!==lastWeatherText){lastWeatherText=weatherText;weatherLabelEl.textContent=weatherText;}if(weatherButtonEl&&weatherTitle!==lastWeatherTitle){lastWeatherTitle=weatherTitle;weatherButtonEl.title=weatherTitle;}}
     audio.updateCombat();
   }frameRequest=requestAnimationFrame(frame);
 }

@@ -54,13 +54,16 @@ export function synthesizeCombat(kind,sampleRate=44100,variant=0){
       value+=bright*.38*Math.exp(-t/.004)+(noise-low)*.21*Math.exp(-t/.022)+Math.sin(2*Math.PI*185*t)*.09*Math.exp(-t/.018);
       if(t>.016)value+=bright*.12*Math.exp(-(t-.016)/.010);
     }else if(kind==='arrow'){
-      value=Math.sin(2*Math.PI*(310*t+30*(1-Math.exp(-t/.04))))*.58*Math.exp(-t/.04)+bright*.18*Math.exp(-t/.012);
+      // Bowstring twang + high-speed air whoosh + fletching flutter
+      value=Math.sin(2*Math.PI*(295*t+34*(1-Math.exp(-t/.038))))*.54*Math.exp(-t/.042)+bright*.22*Math.exp(-t/.016)+(noise-low)*.16*Math.exp(-Math.max(0,t-.015)/.045);
     }else if(kind==='wood'){
-      value=Math.sin(2*Math.PI*(105+variant*13)*t)*.65*Math.exp(-t/.045)+Math.sin(2*Math.PI*247*t)*.17*Math.exp(-t/.018)+noise*.3*Math.exp(-t/.02);
+      // Heavy timber impact: low resonant chest + mid wood crack + splinter crunch
+      value=Math.sin(2*Math.PI*(98+variant*13)*t)*.60*Math.exp(-t/.048)+Math.sin(2*Math.PI*(235+variant*19)*t)*.20*Math.exp(-t/.020)+noise*.34*Math.exp(-t/.019)+bright*.14*Math.exp(-t/.009);
     }else if(kind==='earth'){
-      value=low*.9*Math.exp(-t/.035)+noise*.10*Math.exp(-t/.016);
+      value=low*.92*Math.exp(-t/.038)+noise*.12*Math.exp(-t/.016);
     }else{
-      value=low*2.4*Math.exp(-t/.18)+Math.sin(2*Math.PI*64*t)*.3*Math.exp(-t/.12)+bright*.14*Math.exp(-t/.018);
+      // Siege impact: deep sub-earth thump + shattering stone debris + dust tail
+      value=low*2.35*Math.exp(-t/.19)+Math.sin(2*Math.PI*(58+variant*5)*t)*.36*Math.exp(-t/.14)+Math.sin(2*Math.PI*142*t)*.14*Math.exp(-t/.045)+bright*.20*Math.exp(-t/.022)+(noise-low)*.24*Math.exp(-Math.max(0,t-.02)/.095);
     }
     // A brief attack and tail avoid clicks even on the smallest audio buffer.
     value*=Math.min(1,t/.0015)*Math.min(1,(data.length-i)/(sampleRate*.012));data[i]=value;peak=Math.max(peak,Math.abs(value));
@@ -103,11 +106,26 @@ export function installCombatAudio(AudioEngine){
     const variant=(this.combatSequence=(this.combatSequence||0)+1)%4,key=`${kind}:${variant}`;
     let buffer=this.combatBuffers.get(key);
     if(!buffer){const samples=synthesizeCombat(kind,ctx.sampleRate,variant);buffer=ctx.createBuffer(1,samples.length,ctx.sampleRate);buffer.getChannelData(0).set(samples);this.combatBuffers.set(key,buffer);}
-    const source=ctx.createBufferSource(),gain=ctx.createGain(),pan=ctx.createStereoPanner?.();source.buffer=buffer;gain.gain.value=spatial.gain*LEVELS[kind];source.connect(gain);
-    if(pan){pan.pan.value=spatial.pan;gain.connect(pan);pan.connect(this.master);}else gain.connect(this.master);
-    const voice={source,gain,pan,kind,level:spatial.gain,point:{x:entity.x,z:entity.z,owner:entity.owner,kind:entity.kind,type:entity.type},retiring:false};
+    const source=ctx.createBufferSource(),gain=ctx.createGain(),pan=ctx.createStereoPanner?.();source.buffer=buffer;
+    // Organic ±8% pitch & gain variation eliminates robotic combat repetition.
+    const jitter=((this.combatSequence*37+variant*13)%17)/16-.5;
+    if(source.playbackRate)source.playbackRate.value=1+jitter*.16;
+    const gainJitter=1+(((this.combatSequence*29)%11)/10-.5)*.14;
+    gain.gain.value=spatial.gain*LEVELS[kind]*gainJitter;
+    // Distance low-pass attenuation softens far clashes into atmospheric battlefield depth.
+    let filter=null;
+    if(ctx.createBiquadFilter&&spatial.gain<.74){
+      filter=ctx.createBiquadFilter();filter.type='lowpass';
+      filter.frequency.value=1450+spatial.gain*8200;
+      source.connect(filter);filter.connect(gain);
+    }else source.connect(gain);
+    const outBus=this.sfxBus||this.master;
+    if(pan){pan.pan.value=spatial.pan;gain.connect(pan);pan.connect(outBus);if(this.reverbSend&&spatial.gain<.85)pan.connect(this.reverbSend);}
+    else{gain.connect(outBus);if(this.reverbSend&&spatial.gain<.85)gain.connect(this.reverbSend);}
+    const voice={source,gain,pan,filter,kind,level:spatial.gain,point:{x:entity.x,z:entity.z,owner:entity.owner,kind:entity.kind,type:entity.type},retiring:false};
     this.combatVoices.add(voice);this.lastCombatAt=ctx.currentTime;
-    source.onended=()=>{this.combatVoices.delete(voice);source.disconnect();gain.disconnect();pan?.disconnect();};
+    this.noteCombatActivity?.(kind==='siege'?.30:.12);
+    source.onended=()=>{this.combatVoices.delete(voice);source.disconnect();filter?.disconnect();gain.disconnect();pan?.disconnect();};
     source.start();return true;
   };
 }

@@ -40,37 +40,45 @@ export function synthesizeVocalBark(context, faction = 'alder', kind = 'order', 
     const dur = syl.d / profile.speed;
     const startTime = t0 + timeOffset;
 
-    // Glottal excitation: pulse-rich sawtooth/triangle wave
+    // Warm resonant glottal vocal excitation (replaces harsh buzzy raw sawtooth).
     const osc = context.createOscillator();
-    osc.type = 'sawtooth';
+    osc.type = 'triangle';
     const targetFreq = baseFreq * syl.p * profile.inflection;
-    osc.frequency.setValueAtTime(targetFreq * 0.92, startTime);
-    osc.frequency.exponentialRampToValueAtTime(targetFreq, startTime + dur * 0.4);
-    osc.frequency.exponentialRampToValueAtTime(targetFreq * 0.88, startTime + dur);
+    osc.frequency.setValueAtTime(targetFreq * 0.91, startTime);
+    osc.frequency.exponentialRampToValueAtTime(targetFreq * 1.03, startTime + dur * 0.38);
+    osc.frequency.exponentialRampToValueAtTime(targetFreq * 0.87, startTime + dur);
 
-    // Formant filter chain (F1, F2 resonance for human vowel timbre)
+    // Three-formant vocal tract chain (F1, F2, F3 resonance for natural timbre)
     const f1 = context.createBiquadFilter();
     f1.type = 'bandpass';
     f1.frequency.value = vowel[0];
-    f1.Q.value = 4.5;
+    f1.Q.value = 3.8;
 
     const f2 = context.createBiquadFilter();
     f2.type = 'bandpass';
     f2.frequency.value = vowel[1];
-    f2.Q.value = 5.0;
+    f2.Q.value = 4.2;
 
-    // Amplitude envelope
+    const f3 = context.createBiquadFilter();
+    f3.type = 'bandpass';
+    f3.frequency.value = vowel[2] || 2450;
+    f3.Q.value = 5.5;
+
+    // Smooth human vocal amplitude envelope with clean onended disconnect
     const env = context.createGain();
     env.gain.setValueAtTime(0.0001, startTime);
-    env.gain.exponentialRampToValueAtTime(0.18, startTime + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.19, startTime + 0.025);
     env.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
 
     osc.connect(f1);
     osc.connect(f2);
+    osc.connect(f3);
     f1.connect(env);
     f2.connect(env);
+    f3.connect(env);
     env.connect(masterEnv);
 
+    osc.onended = () => { osc.disconnect(); f1.disconnect(); f2.disconnect(); f3.disconnect(); env.disconnect(); };
     osc.start(startTime);
     osc.stop(startTime + dur + 0.03);
 
@@ -145,18 +153,22 @@ export function installVoiceSystem(AudioEngine) {
     if (!env) return false;
 
     const voiceGain = this.context.createGain();
-    voiceGain.gain.value = (this.settings.volume || 0.65) * 0.38;
+    voiceGain.gain.value = (this.settings.volume || 0.65) * 0.36;
+    const outBus = this.voiceBus || this.master;
 
     if (this.context.createStereoPanner) {
       const panner = this.context.createStereoPanner();
       panner.pan.value = Math.max(-0.8, Math.min(0.8, pan));
       env.connect(voiceGain);
       voiceGain.connect(panner);
-      panner.connect(this.master);
+      panner.connect(outBus);
+      if (this.reverbSend) panner.connect(this.reverbSend);
     } else {
       env.connect(voiceGain);
-      voiceGain.connect(this.master);
+      voiceGain.connect(outBus);
+      if (this.reverbSend) voiceGain.connect(this.reverbSend);
     }
+    this.duckMusic?.(0.85, 0.70);
 
     return true;
   };
@@ -172,9 +184,12 @@ export function installVoiceSystem(AudioEngine) {
     const horn = synthesizeWarHorn(this.context, fundamental);
     const hornGain = this.context.createGain();
     hornGain.gain.value = (this.settings.volume || 0.65) * 0.42;
+    const outBus = this.voiceBus || this.master;
 
     horn.output.connect(hornGain);
-    hornGain.connect(this.master);
+    hornGain.connect(outBus);
+    if (this.reverbSend) hornGain.connect(this.reverbSend);
+    this.duckMusic?.(1.9, 0.58);
     return true;
   };
 }

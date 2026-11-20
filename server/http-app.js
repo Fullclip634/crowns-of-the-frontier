@@ -4,7 +4,7 @@ import path from 'node:path';
 import {attachRooms} from './rooms.js';
 import {inspectRelease} from './release.js';
 
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.webmanifest':'application/manifest+json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.woff2':'font/woff2','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.ktx2':'image/ktx2','.wasm':'application/wasm','.wav':'audio/wav','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.webmanifest':'application/manifest+json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.woff2':'font/woff2','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.ktx2':'image/ktx2','.wasm':'application/wasm','.wav':'audio/wav','.ogg':'audio/ogg','.mp3':'audio/mpeg','.txt':'text/plain; charset=utf-8'};
 export function createGameServer({root,environment=process.env,roomOptions}={}){
   root=path.resolve(root);const readiness=inspectRelease(root,environment);
   const server=http.createServer((request,response)=>{try{

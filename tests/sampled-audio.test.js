@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
-import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
+import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
 import {installSampledAudio} from '../src/sampled-audio.js';
 
 const audioDir=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/audio');
@@ -35,9 +35,11 @@ test('the shipped sample pack is a complete, valid, deterministic CC0 PCM bank',
   assert.equal(manifest.proceduralFallback,true);
   assert.match(license,/CC0 1\.0/);
   const names=Object.keys(manifest.cues);
-  assert.equal(names.length,29);
+  assert.equal(names.length,39);
   assert.equal(fs.readdirSync(audioDir).filter(f=>f.endsWith('.wav')).length,names.length,'no unreferenced or stale WAVs');
   for(const cue of UI_SAMPLE_CUES)assert.ok(manifest.cues[cue],`UI cue ${cue} exists`);
+  for(const cue of FOLEY_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Foley cue ${cue} exists`);
+  for(const cue of AMBIENCE_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Ambience cue ${cue} exists`);
   for(const kind of COMBAT_KINDS)for(let v=0;v<COMBAT_VARIANTS;v++)assert.ok(manifest.cues[combatCue(kind,v)],`combat cue ${combatCue(kind,v)} exists`);
   for(const cue of ['horn','rain','pad'])assert.ok(manifest.cues[cue]);
   let total=0;

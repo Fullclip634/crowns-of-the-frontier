@@ -8,6 +8,8 @@ export const MAX_PARALLEL_SAMPLE_LOADS=4;
 export const MAX_SAMPLE_BYTES=1_500_000;
 
 export const UI_SAMPLE_CUES=Object.freeze(['select','order','coin','complete','alarm','victory']);
+export const FOLEY_SAMPLE_CUES=Object.freeze(['chop','mine','hammer','anvil','hoof','fire']);
+export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-coast','amb-river','amb-tundra','amb-volcanic']);
 export const COMBAT_KINDS=Object.freeze(['metal','arrow','wood','siege','earth']);
 export const COMBAT_VARIANTS=4;
 export function combatCue(kind,variant=0){return `${kind}-${((variant%COMBAT_VARIANTS)+COMBAT_VARIANTS)%COMBAT_VARIANTS}`;}

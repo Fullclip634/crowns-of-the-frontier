@@ -37,7 +37,7 @@
       "duration": 0.72,
       "bytes": 31796,
       "loop": false,
-      "sha256": "4026eb24e6d4e9e9a57e93b87b15fc70cb8b7f6f086f2b09932500074f008069"
+      "sha256": "18ba3566a3152db51fffd505a733420dbebad41fc5286bce3704bc5be594b610"
     },
     "alarm": {
       "file": "alarm.wav",
@@ -45,7 +45,7 @@
       "duration": 1.3,
       "bytes": 57374,
       "loop": false,
-      "sha256": "e61ea08de580f9c79d17daa803f8d178b1f4744085458e13d4405a4ae417ecb0"
+      "sha256": "2566e7c782e21312d0057fff891e72d8b223fb13114c07341e866af948f0d317"
     },
     "victory": {
       "file": "victory.wav",
@@ -53,7 +53,55 @@
       "duration": 1.6,
       "bytes": 70604,
       "loop": false,
-      "sha256": "0277b197bd66f74bcb9b3a79b006b9ea775b8b92619a1eb19ce97352afee2401"
+      "sha256": "ed2d48594cb90d79a79a66024a001e69322c6276c67581ac73724cbdbc07ef57"
+    },
+    "chop": {
+      "file": "chop.wav",
+      "group": "foley",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "a7f0c7ade46be140afdd8e14a920864490af9b06483ea7b0d1cec1abc50bcf3b"
+    },
+    "mine": {
+      "file": "mine.wav",
+      "group": "foley",
+      "duration": 0.22,
+      "bytes": 9746,
+      "loop": false,
+      "sha256": "d08a3a37dfb8de5d751fab1e247498595540e46e7a20ab76d6faacdfbdd7f012"
+    },
+    "hammer": {
+      "file": "hammer.wav",
+      "group": "foley",
+      "duration": 0.18,
+      "bytes": 7982,
+      "loop": false,
+      "sha256": "6651ba2f565b5b2595a5e140f1bddaca0c2ae5a055e0caa38baacdb4ac643515"
+    },
+    "anvil": {
+      "file": "anvil.wav",
+      "group": "foley",
+      "duration": 0.28,
+      "bytes": 12394,
+      "loop": false,
+      "sha256": "8858c2b681cb0f776644889b77f8bc9ceca893d64c3e3b9fd3a18936840c0156"
+    },
+    "hoof": {
+      "file": "hoof.wav",
+      "group": "foley",
+      "duration": 0.2,
+      "bytes": 8864,
+      "loop": false,
+      "sha256": "a8392571c22f4a5d4a099d0bc6ad465320f071983d561d49ee0aee90353b02c0"
+    },
+    "fire": {
+      "file": "fire.wav",
+      "group": "foley",
+      "duration": 0.34,
+      "bytes": 15040,
+      "loop": false,
+      "sha256": "a1efd2d6691d99d1fdb95705a43f24afc6188a385a4f9e78214e01b6d74e015c"
     },
     "metal-0": {
       "file": "metal-0.wav",
@@ -61,7 +109,7 @@
       "duration": 0.34,
       "bytes": 15040,
       "loop": false,
-      "sha256": "ec4980bae6d55f587d66cf03845ef2c462f72ff0ce47515928e9a026c854eabc"
+      "sha256": "e216d0de3c39bd4cb0692ea3198a6a4917af36e85d22aa26664ab5f94f6f4f53"
     },
     "metal-1": {
       "file": "metal-1.wav",
@@ -69,7 +117,7 @@
       "duration": 0.34,
       "bytes": 15040,
       "loop": false,
-      "sha256": "79986e3b636206e62653afa7498e7fff2ea0f2ed8758d5e8520638f02c88372f"
+      "sha256": "7323115d5e66585b05f0576916ec37e375b890a180f9cc305b17f6e141ceab10"
     },
     "metal-2": {
       "file": "metal-2.wav",
@@ -77,7 +125,7 @@
       "duration": 0.34,
       "bytes": 15040,
       "loop": false,
-      "sha256": "743a5342a540e94c7c61218ba59d23ef2eedfe2a28e15082826599ab87acd0df"
+      "sha256": "1bafc59ede8c5e684d8125cca66c76caf86413dceacc218a796d2dbf5319bf65"
     },
     "metal-3": {
       "file": "metal-3.wav",
@@ -85,7 +133,7 @@
       "duration": 0.34,
       "bytes": 15040,
       "loop": false,
-      "sha256": "c76967f6fea55dd02d82a93c33eb8e2fa7741b9827ac79c2048f437944edd4f9"
+      "sha256": "ad77770266cc6af5ecb021156e28661b2c57e9205ef2f1aefeb25b755cfef7b8"
     },
     "arrow-0": {
       "file": "arrow-0.wav",
@@ -93,7 +141,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "7b81f2dba3a3cdd8271d47a5d225db7de52e19ed7baaa22eeb6fdfb933335e30"
+      "sha256": "40aba045b1842c70ed2b38305d2eff4b8c7efda73ea567535522902be24c618b"
     },
     "arrow-1": {
       "file": "arrow-1.wav",
@@ -101,7 +149,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "df3e6f03791a5f3e0956a7c2b6c45ac61c9be752450b2dfc3299896383c92898"
+      "sha256": "282dbd9f7f712bdd4580e24ca8382b4e5aed6a8bb946013b860398a5768133c9"
     },
     "arrow-2": {
       "file": "arrow-2.wav",
@@ -109,7 +157,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "a308ddd6fa41cd9511e65f747693a0d5a5577a337af9d4b6bdd6e9e571ef1817"
+      "sha256": "2cac3e93fb2cf2a61598a719185a638da2f6e27868c971aaa8ebb81195d22af9"
     },
     "arrow-3": {
       "file": "arrow-3.wav",
@@ -117,7 +165,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "427232e0af0f73af4cc104c5ef40424fc300dc5797cb1611838cf5656aab86fc"
+      "sha256": "0f5e1b1b60c17832301eb7961b5bbde7dfde4fa4fee98961bd1e97e3071b10ac"
     },
     "wood-0": {
       "file": "wood-0.wav",
@@ -125,7 +173,7 @@
       "duration": 0.28,
       "bytes": 12394,
       "loop": false,
-      "sha256": "11a4837232bbcc5e7d5990008e7d798d0271e69c0fb781a858d2142aa638f231"
+      "sha256": "310bdb8300cbe0ef3bb0a8b3f18623d069c563581885e0b6932d07ba64cdc9e1"
     },
     "wood-1": {
       "file": "wood-1.wav",
@@ -133,7 +181,7 @@
       "duration": 0.28,
       "bytes": 12394,
       "loop": false,
-      "sha256": "faea8d06f9ca89161460b06c44b0d9467a768d3c271fc647ea96c3cd7c723fc5"
+      "sha256": "a3872b1e7bb7927572587b321ec96dd940b1f44fba5811406ed4dc60598cac10"
     },
     "wood-2": {
       "file": "wood-2.wav",
@@ -141,7 +189,7 @@
       "duration": 0.28,
       "bytes": 12394,
       "loop": false,
-      "sha256": "5d42ce55e686f7db0298ce337a6f9811ad5063aa20232eae7bffe383660ec431"
+      "sha256": "0552841a5c646174cd4aab5dfa290ed01247978869b6f8b077974e717cffef7f"
     },
     "wood-3": {
       "file": "wood-3.wav",
@@ -149,7 +197,7 @@
       "duration": 0.28,
       "bytes": 12394,
       "loop": false,
-      "sha256": "20df674f7505720ae7468cd27c3b1c5f8e195da2cb304472ba514acae849bca4"
+      "sha256": "b5530df9cdbc1acb91d648af56051c05b76b3ab17a67f9eacd625b35d1653295"
     },
     "siege-0": {
       "file": "siege-0.wav",
@@ -157,7 +205,7 @@
       "duration": 0.7,
       "bytes": 30914,
       "loop": false,
-      "sha256": "fb29b8bee660801484588cd7b9c064b64bad9a7937f3639a9856dba6e9406739"
+      "sha256": "5418f4a9237abc3e17d134b3c71b29e44149d69310728ccd76ec2c316e43e822"
     },
     "siege-1": {
       "file": "siege-1.wav",
@@ -165,7 +213,7 @@
       "duration": 0.7,
       "bytes": 30914,
       "loop": false,
-      "sha256": "abd4389ed45a03eb83d5560b9db6e2c8a57ceb314482bc52326b660421bb391e"
+      "sha256": "4e0b67dd23c12066b088438be7220864ce9222c0b370037a676879dcb4013300"
     },
     "siege-2": {
       "file": "siege-2.wav",
@@ -173,7 +221,7 @@
       "duration": 0.7,
       "bytes": 30914,
       "loop": false,
-      "sha256": "826d5629d8aba3dc2d0ca85b8ae4846eece4b6179c925b4fca56fd662ca0c92b"
+      "sha256": "158033ab5b00d4556b4799e94297842687233791d00938be463b4922d23cc59b"
     },
     "siege-3": {
       "file": "siege-3.wav",
@@ -181,7 +229,7 @@
       "duration": 0.7,
       "bytes": 30914,
       "loop": false,
-      "sha256": "1bd2672cedcbac8a6c14ccec56044b11f991e583be82ea24aa177dd97bb78d49"
+      "sha256": "000ebdb0620813aeb11a4ebc085b389af4d5187e8726b6ce45d24678f1acf05f"
     },
     "earth-0": {
       "file": "earth-0.wav",
@@ -189,7 +237,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "45c345b95e2c3f051a03764a1c1018e18977892446791bb944d7e9ab403b3200"
+      "sha256": "543d421b7f68c78fe433f7508b3c5eb53c3afb81f910f0cd2e0d70d19543824f"
     },
     "earth-1": {
       "file": "earth-1.wav",
@@ -197,7 +245,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "479ffc50af3ab323e210cab3c80cb9a66875f1b1eaa6b1754251f6a7471d2d99"
+      "sha256": "4e3f542e77a087c47d5a6da74519ad1118587cd26520fe8902b813e8d31b3c29"
     },
     "earth-2": {
       "file": "earth-2.wav",
@@ -205,7 +253,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "01ce7c89c2cf012b3a2e0a25d4c5660e0c95da80de7ef8a46beb25ecb50aa86b"
+      "sha256": "b13952ba2fe4178aef6e0ec00f915c0d7d9af099eeb43a1d9ba7940c3e8e8f54"
     },
     "earth-3": {
       "file": "earth-3.wav",
@@ -213,7 +261,7 @@
       "duration": 0.2,
       "bytes": 8864,
       "loop": false,
-      "sha256": "ae3ed92be5b2918ea08d41dad967d84680949946ab4536be17192ab0bb5cc300"
+      "sha256": "dcbff792ec912eaca3c423d3c15f9abc69b3000482be7afdaddf869359e9f467"
     },
     "horn": {
       "file": "horn.wav",
@@ -221,23 +269,55 @@
       "duration": 1.15,
       "bytes": 50760,
       "loop": false,
-      "sha256": "08b76bf9f44b111e7c82aa0a6bf2707b3cb6e64d22ea89e2302b320e42fad881"
+      "sha256": "aa7ee00b302f9ed03cdb524aa80d9a319a794e530098f87f2f292aad6337a5e3"
     },
     "rain": {
       "file": "rain.wav",
       "group": "weather",
-      "duration": 1.62,
-      "bytes": 71486,
+      "duration": 1.57,
+      "bytes": 69282,
       "loop": true,
-      "sha256": "e49fc3cfa102dca1842755c7e1df3a08648f463f411e5a840f4ae4c3ac7a91db"
+      "sha256": "b9193c744350110f733be28872de031efc6ad5f94496b9e4bcc9f6738a4f91c4"
+    },
+    "amb-coast": {
+      "file": "amb-coast.wav",
+      "group": "weather",
+      "duration": 1.17,
+      "bytes": 51642,
+      "loop": true,
+      "sha256": "2c8dd96d9277a665bd0f16f69057275e7232b8aad50c804d8e9b00a038b5b4ef"
+    },
+    "amb-river": {
+      "file": "amb-river.wav",
+      "group": "weather",
+      "duration": 1.17,
+      "bytes": 51642,
+      "loop": true,
+      "sha256": "ce5afa963d0e03e0618598336c8aea9ff6bdeab5788793309cf35a2fb1768a1c"
+    },
+    "amb-tundra": {
+      "file": "amb-tundra.wav",
+      "group": "weather",
+      "duration": 1.17,
+      "bytes": 51642,
+      "loop": true,
+      "sha256": "812baa91d8f36782ae585db7349f2037408388d422ab57cf80d33bf85ee54dc7"
+    },
+    "amb-volcanic": {
+      "file": "amb-volcanic.wav",
+      "group": "weather",
+      "duration": 1.17,
+      "bytes": 51642,
+      "loop": true,
+      "sha256": "48f358a35396e21df54f61333e047b4989b18e9e722ba7f5854d286a8d1e4c36"
     },
     "pad": {
       "file": "pad.wav",
       "group": "music",
-      "duration": 2.52,
-      "bytes": 111176,
+      "duration": 2.32,
+      "bytes": 102356,
       "loop": true,
-      "sha256": "a8798f712ddc2ab64ec0d2e5df550a2d8bc904405a7982df9f0a46f6f2ff420a"
+      "sha256": "6580e7be7329a9bf9e57b09419a83b46486eb1e6c4000ab264a1c477ef3c038f"
     }
   }
 }
