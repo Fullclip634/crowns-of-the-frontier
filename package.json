@@ -24,6 +24,8 @@
     "start": "node server/index.js"
   },
   "dependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
     "three": "0.186.1",
     "ws": "^8.22.0"
   },

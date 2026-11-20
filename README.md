@@ -71,6 +71,8 @@ Choose **Balanced** for economy and army buildup before major AI offensives, **G
 
 For real people, choose **Human slot** for each friend and **Host multiplayer battle**. Friends join using the room code and can choose an available Human slot. Every human must be connected and ready before the host starts; AI slots are ready automatically. Human and AI kingdoms can fight together or against each other. A defeated host can watch surviving allies, and the match continues until one alliance remains. Each client receives its own command perspective and private economy.
 
+No internet? Choose **Play with friends → Nearby**. One device hosts and friends on the same Wi-Fi or phone hotspot join by scanning a QR invite. See [Nearby multiplayer](NEARBY_MULTIPLAYER.md).
+
 ### Weather and graphics
 
 Automatic weather changes from clear skies to clouds, rain or storms; Winterwood can receive snow, and the desert is drier. Rain, snow, clouds and splash rings use 3D meshes with pooled instances. Weather changes atmosphere without altering resource or combat rules. Settings provide automatic or forced weather, independent weather audio, and optional lightning flashes; reduced motion disables flashes.

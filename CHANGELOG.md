@@ -1,3 +1,16 @@
+## 21 November 2026 — Nearby battles without internet
+
+Friends on the same Wi-Fi or phone hotspot can now play multiplayer with no
+internet and no server. Choose **Play with friends → Nearby**: one device hosts
+the room and friends join by scanning its QR invite, then show a reply QR for
+the host to scan. Copy/paste codes cover devices without a camera.
+
+The host browser runs the same room authority as the hosted server, now shared
+in src/room-core.js, inside a Worker. Guests connect over direct WebRTC data
+channels, with the same validation, fog of war and two-minute reconnect window.
+A dropped friend rejoins their kingdom by scanning a fresh invite from the
+host's commander menu. See [NEARBY_MULTIPLAYER.md](NEARBY_MULTIPLAYER.md).
+
 ## 9 November 2026 — Ruins stand, and the first age looks weak
 
 Destroyed buildings used to vanish, leaving a scatter of stones that sank out of

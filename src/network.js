@@ -3,8 +3,19 @@ import {VisibilityReceiver} from './network-visibility.js';
 // Leave a small margin inside the server's two-minute reservation. A socket
 // opening is not recovery until the server returns a lobby or full snapshot.
 const RECONNECT_WINDOW=115000,RECONNECT_DELAYS=[2000,3000,5000,8000,10000],RESUME_TIMEOUT=15000;
+const readOnlineSession=()=>{try{return JSON.parse(sessionStorage.getItem('crowns-lan'));}catch{return null;}};
+// One client for both multiplayer paths. By default it reaches the hosted room
+// server over WebSocket. With a transport (offline "Nearby" mode) the same
+// protocol runs over a host-browser room: a loopback link for the host and a
+// WebRTC data channel for each guest. Nearby sessions live only in memory
+// because the room disappears with the host's page.
 export class LanClient {
-  constructor(callbacks){this.callbacks=callbacks;this.active=false;this.retry=0;this.socket=null;this.ping=0;this.session=null;try{this.session=JSON.parse(sessionStorage.getItem('crowns-lan'));}catch{};}
+  constructor(callbacks){this.callbacks=callbacks;this.active=false;this.retry=0;this.socket=null;this.ping=0;this.transport=null;this.session=readOnlineSession();}
+  get nearby(){return !!this.transport;}
+  // Switch to an offline transport. Keeps a nearby session so a guest can
+  // resume after scanning a fresh invite from the same host.
+  useTransport(transport){const wasNearby=!!this.transport;if(this.transport&&this.transport!==transport)this.transport.dispose?.();this.transport=transport;if(!wasNearby)this.session=null;}
+  useOnline(){if(!this.transport)return;this.transport.dispose?.();this.transport=null;this.session=readOnlineSession();}
   scheduleReconnect(){
     if(this.leaving||!this.session)return;
     clearTimeout(this.reconnectTimer);
@@ -16,11 +27,14 @@ export class LanClient {
   }
   reconnectStopped(){this.callbacks.notice(this.active?'Automatic reconnection stopped. Open the pause menu to try reconnecting again.':'Automatic reconnection stopped. Open Play with friends to try reconnecting again.');}
   recovered(){clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;}
-  connect(message,{automatic=false}={}){clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;if(!automatic){this.reconnectUntil=0;this.retry=0;}this.intent=message;this.leaving=false;let endpoint;try{endpoint=multiplayerEndpoint(location,import.meta.env?.VITE_MULTIPLAYER_URL||'',import.meta.env?.VITE_STATIC_HOST==='true');if(!endpoint){this.callbacks.notice('AI battles are ready. Online multiplayer has not been enabled on this hosted game yet.');return;}this.socket?.close();this.socket=new WebSocket(endpoint);}catch(error){if(this.session&&message.type==='resume'){if(!automatic)this.callbacks.notice('Connection interrupted. Trying to reconnect.');this.scheduleReconnect();}else this.callbacks.notice(error.message);return;}const socket=this.socket;
+  connect(message,{automatic=false}={}){clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;if(!automatic){this.reconnectUntil=0;this.retry=0;}this.intent=message;this.leaving=false;try{
+      if(this.transport){this.socket?.close();this.socket=this.transport.open();}
+      else{const endpoint=multiplayerEndpoint(location,import.meta.env?.VITE_MULTIPLAYER_URL||'',import.meta.env?.VITE_STATIC_HOST==='true');if(!endpoint){this.callbacks.notice('Online multiplayer has not been enabled on this hosted game yet. Choose Nearby to play on the same Wi-Fi or hotspot.');return;}this.socket?.close();this.socket=new WebSocket(endpoint);}
+    }catch(error){if(this.transport&&!this.transport.reconnectable){this.callbacks.notice(error.message);return;}if(this.session&&message.type==='resume'){if(!automatic)this.callbacks.notice('Connection interrupted. Trying to reconnect.');this.scheduleReconnect();}else this.callbacks.notice(error.message);return;}const socket=this.socket;
     this.visibility=new VisibilityReceiver();this.visibilityResync=false;
     if(message.type==='resume')this.handshakeTimer=setTimeout(()=>{if(this.socket===socket)socket.close();},RESUME_TIMEOUT);
     socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.send({...message,protocol:2});clearInterval(this.pinger);this.pinger=setInterval(()=>this.send({type:'ping',stamp:Date.now()}),3000);});
-    socket.addEventListener('message',event=>{if(this.socket!==socket)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}
+    socket.addEventListener('message',event=>{if(this.socket!==socket)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};if(!this.transport){try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}}
       if(data.type==='lobby'){this.recovered();this.callbacks.lobby(data);}
       if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.recovered();this.visibilityResync=false;this.active=true;this.commandReady=true;this.waiting=!!data.waiting;this.code=data.code;this.callbacks.begin(state);this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
       if(data.type==='chat')this.callbacks.chat?.(data.message);
@@ -31,12 +45,19 @@ export class LanClient {
       if(data.type==='closed'){this.leave();this.callbacks.closed?.();this.callbacks.notice(data.message);}
       if(data.type==='pong')this.ping=Date.now()-data.stamp;
     });
-    socket.addEventListener('close',()=>{if(this.socket!==socket)return;clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;this.callbacks.connection?.(false);if(this.leaving)return;if(!this.reconnectUntil)this.callbacks.notice(this.active?'Connection interrupted. The match waits while you reconnect.':'Could not connect to multiplayer. The server may be waking up; try again shortly.');this.scheduleReconnect();});
-    socket.addEventListener('error',()=>{if(this.socket===socket&&!this.reconnectUntil)this.callbacks.notice('Could not reach the multiplayer server. Please try again shortly.');});
+    socket.addEventListener('close',()=>{if(this.socket!==socket)return;clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;this.callbacks.connection?.(false);if(this.leaving)return;
+      // A data channel cannot be redialled without a fresh QR handshake; keep
+      // the session so scanning a new invite resumes the same commander.
+      if(this.transport&&!this.transport.reconnectable){this.callbacks.notice(this.transport.lostMessage);this.callbacks.lost?.();return;}
+      if(!this.reconnectUntil)this.callbacks.notice(this.transport?(this.active?'The nearby room is reconnecting.':'Could not open the nearby room. Try again.'):this.active?'Connection interrupted. The match waits while you reconnect.':'Could not connect to multiplayer. The server may be waking up; try again shortly.');this.scheduleReconnect();});
+    socket.addEventListener('error',()=>{if(this.socket===socket&&!this.reconnectUntil&&!this.transport)this.callbacks.notice('Could not reach the multiplayer server. Please try again shortly.');});
   }
-  send(message){if(this.socket?.readyState===WebSocket.OPEN){this.socket.send(JSON.stringify(message));return true;}return false;}
+  send(message){if(this.socket?.readyState===1){this.socket.send(JSON.stringify(message));return true;}return false;}
   chat(text,channel,requestId){return this.send({type:'chat',text,channel,requestId});}
   action(method,args){const normalized=args.map(arg=>arg?.id!==undefined?arg.id:arg),sent=this.commandReady&&!this.waiting&&this.send({type:'action',method,args:normalized});if(!sent)this.callbacks.notice(this.commandReady&&this.waiting?'The match is waiting for another commander to reconnect.':'Orders cannot be sent until the room reconnects.');return !!sent;}
   bind(sim){for(const method of ['build','buildWallLine','train','research','cancelQueue','trade','donateResources','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign','townBell','returnToWork','seekShelter'])sim[method]=(...args)=>{const sent=method==='buildWallLine'?this.action(method,[args[0]?.x,args[0]?.z,args[1]?.x,args[1]?.z,args[2]]):this.action(method,args);if(sent&&['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return sent;};}
-  leave(){this.leaving=true;this.active=false;this.commandReady=false;this.waiting=false;clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;this.callbacks.chatReset?.();try{sessionStorage.removeItem('crowns-lan');}catch{}}
+  leave(){this.leaving=true;this.active=false;this.commandReady=false;this.waiting=false;clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;this.callbacks.chatReset?.();
+    // Leaving a nearby room ends its transport (and, for the host, the room).
+    if(this.transport){const transport=this.transport;this.transport=null;transport.dispose?.();this.session=readOnlineSession();this.callbacks.nearbyEnded?.();}
+    else{try{sessionStorage.removeItem('crowns-lan');}catch{}}}
 }
