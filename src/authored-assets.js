@@ -222,20 +222,53 @@ export function authoredBuilding(view,e){
     let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
     part.rotation.y=-angle;
   });
-  // Fortified walls reuse the identical Blender template. The heavier tier is
-  // authored as a transform + baked surface tint, never a new mesh or material.
   if(root&&(e.type==='wall'||e.type==='gate')){
     const tier=wallTier(view.sim,e);
     root.userData.model3d={...root.userData.model3d,wallTier:tier};
-    if(tier==='fortified')root.traverse(part=>{
-      if(!part.isMesh)return;
-      // The portcullis is a separate animated pivot; keep its lift geometry exact.
-      for(let node=part;node&&node!==root;node=node.parent)if(node.userData.gate)return;
-      part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
-    });
-    if(e.type==='wall')crenellate(view,root,tier);
+    if(e.type==='wall'){
+      if(tier==='fortified')root.traverse(part=>{
+        if(part.isMesh)part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
+      });
+      crenellate(view,root,tier);
+    }else if(tier==='fortified')fortifyGateModel(view,root);
   }
   return root;
+}
+
+// The parapet and piers merge into the existing static masonry batch.
+export function fortifyGateModel(view,root){
+  const gate=root.userData.portcullis;
+  const {box}=view.geo,{stone,stoneDark}=view.materials;
+  if(!gate||!box||!stone||!stoneDark)return;
+
+  const rise=1.19,housing=(root.userData.model3d.gateHousingHeight??3.5)*rise;
+  root.userData.model3d.gateHousingHeight=housing;
+  for(const part of root.children){
+    if(!part.isMesh)continue;
+    part.scale.set(part.scale.x*1.06,part.scale.y*rise,part.scale.z*1.14);
+    part.position.y*=rise;
+  }
+  // Keep the moving leaf the same width and fit it to the taller arch.
+  gate.traverse(part=>{
+    if(!part.isMesh)return;
+    part.position.y*=rise;part.scale.y*=rise;
+  });
+
+  const masonry=(material,x,y,z,width,height,depth)=>{
+    const piece=new THREE.Mesh(box,material);
+    piece.position.set(x,y,z);
+    piece.scale.set(width,height,depth);
+    root.add(piece);
+  };
+  masonry(stoneDark,0,housing+.22,0,3.86,.44,1.76);
+  masonry(stone,0,housing+.48,0,3.96,.16,1.88);
+  for(const side of [-1,1]){
+    for(const x of [-1.28,0,1.28])masonry(stone,x,housing+.83,side*.75,.65,.62,.37);
+    for(const x of [-1.77,1.77]){
+      masonry(stoneDark,x,1.79,side*.98,.48,3.26,.43);
+      masonry(stone,x,3.44,side*.98,.59,.23,.51);
+    }
+  }
 }
 
 // The authored buildings were modelled with their walls meeting the ground

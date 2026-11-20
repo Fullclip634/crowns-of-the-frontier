@@ -1,7 +1,7 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
-import {authoredUnit,authoredBuilding,authoredResource,authoredTree} from './authored-assets.js';
+import {authoredUnit,authoredBuilding,authoredResource,authoredTree,fortifyGateModel} from './authored-assets.js';
 import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
 
@@ -341,7 +341,9 @@ export function buildingModel(view,e){
     for(let x=-2.3;x<=2.3;x+=.85){b.box(m.furrow,x,.22,0,.15,.1,5.2);for(let z=-2.2;z<=2.2;z+=.65){b.rod(m.grain,[x,.22,z],[x,.88,z],.018);for(const side of [-1,1])for(let k=0;k<3;k++)b.piece(view.geo.grain3d,m.grain,x+side*.045,.74+k*.065,z,.05,.075,.035);}}
     for(const side of [-1,1]){for(let x=-2.9;x<=2.9;x+=1.45)b.rod(m.wood,[x,0,side*2.9],[x,.85,side*2.9],.045);b.rod(m.wood,[-2.9,.55,side*2.9],[2.9,.55,side*2.9],.04);}
   }else throw new Error('Missing 3D building model: '+type);
-  g.userData.model3d={kind:'building',type,volumetric:true,architectureAge:age,artRevision:'civic-arcades',wallTier:(type==='wall'||type==='gate')?wallTier(view.sim,e):'stone'};return g;
+  g.userData.model3d={kind:'building',type,volumetric:true,architectureAge:age,artRevision:'civic-arcades',wallTier:(type==='wall'||type==='gate')?wallTier(view.sim,e):'stone'};
+  if(type==='gate'&&g.userData.model3d.wallTier==='fortified')fortifyGateModel(view,g);
+  return g;
 }
 
 export function resourceModel(view,e){

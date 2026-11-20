@@ -382,7 +382,15 @@ export function installRealm3D(WorldView){
     for(const e of this.sim?.entities||[]){
       if(e.kind!=='building')continue;
       let node=this.nodes.get(e.id);if(!node)continue;
-      if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e)))){this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);}
+      if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e)))){
+        const previousGate=node.userData.portcullis;
+        const prevOpenLift=previousGate?.userData.terrainGate?.openLift;
+        this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);
+        const upgradedGate=node.userData.portcullis;
+        if(prevOpenLift&&upgradedGate?.userData.terrainGate){
+          upgradedGate.position.y=THREE.MathUtils.clamp(previousGate.position.y/prevOpenLift,0,1)*upgradedGate.userData.terrainGate.openLift;
+        }
+      }
       const gate=node.userData.portcullis;
       if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
       if(gate){

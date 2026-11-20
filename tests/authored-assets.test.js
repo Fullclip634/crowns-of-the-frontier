@@ -306,6 +306,34 @@ test('wall segments carry real battlements instead of a bare authored box',async
   }finally{clearAuthoredAssets();}
 });
 
+test('fortified gates add a parapet around a taller portcullis and keep one static draw',async()=>{
+  try{
+    const assets=await catalogue('low');
+    for(const faction of ['alder','sun','raven']){
+      const view=fixture(assets,faction);view.settings={quality:'low'};
+      const e={kind:'building',type:'gate',owner:0,r:BUILDINGS.gate.r,x:0,z:0};
+      const stone=buildingModel(view,e),stoneLeaf=new THREE.Box3().setFromObject(stone.userData.portcullis);
+      view.sim.players[0].tech={fortifiedWall:1};
+      const fortified=buildingModel(view,e),leaf=new THREE.Box3().setFromObject(fortified.userData.portcullis);
+      assert.equal(fortified.userData.model3d.wallTier,'fortified');
+      const housing=fortified.userData.model3d.gateHousingHeight;
+      assert.ok(housing>stone.userData.model3d.gateHousingHeight);
+      assert.equal(leaf.min.x,stoneLeaf.min.x);
+      assert.equal(leaf.max.x,stoneLeaf.max.x);
+      assert.ok(leaf.max.y>stoneLeaf.max.y&&leaf.max.y<housing);
+      const additions=fortified.children.filter(part=>part.geometry===view.geo.box);
+      assert.equal(additions.filter(part=>part.position.y>housing+.7).length,6,'both faces have a fortified parapet');
+      for(const part of additions){
+        const bounds=new THREE.Box3().setFromObject(part);
+        if(bounds.min.y<housing)assert.ok(bounds.max.x<leaf.min.x||bounds.min.x>leaf.max.x,'the piers stay outside the passage');
+      }
+      const packed=packBuildingModel(view,fortified,e);
+      assert.equal(packed.children.filter(part=>part.isMesh&&part.userData.structureSurface).length,1);
+      assert.equal(packed.userData.portcullis.children.filter(part=>part.isMesh).length,1);
+    }
+  }finally{clearAuthoredAssets();}
+});
+
 test('authored buildings sit on a foundation instead of on bare grass',async()=>{
   try{
     const assets=await catalogue('low'),view=fixture(assets);
