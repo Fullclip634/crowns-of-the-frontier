@@ -102,8 +102,10 @@ test('Phase 5 combat audio adds distance low-pass filtering, pitch variation and
       entities:[{id:1,kind:'unit',type:'villager',hp:50,maxHp:50,moving:false,order:{type:'gather',target:2},x:0,z:0,owner:0}],
       get:id=>id===2?{id:2,type:'wood'}:null,
     };
-    audio.updateScene({dt:.5,view:{zoom:40},sim,active:true});
+    audio.updateScene({dt:.5,view:{zoom:40,lightingState:{night:.9},weatherState:{amount:.6}},sim,active:true});
     assert.equal(audio.currentMap,'volcanic');
+    assert.equal(audio.isNight,true,'night state tracked from view lighting');
+    assert.equal(audio.isStormy,true,'storm state tracked from view weather');
     assert.ok(audio.windFilter.frequency.value<200,'volcanic biome shifts ambient wind into deep rumble');
   }finally{globalThis.window=original;}
 });

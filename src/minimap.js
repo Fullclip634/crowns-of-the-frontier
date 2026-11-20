@@ -96,7 +96,7 @@ export function renderReliefBase(bctx,size,sim,view){
 
 export function drawMinimap(canvas,sim,view,settings){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
-  const map=sim.options.map,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}`;
+  const map=sim.options.map,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}:${view?.landscape?.heightAt?1:0}`;
   if(canvas.cachedBaseKey!==baseKey&&typeof document!=='undefined'){
     try{
       const baseCanvas=document.createElement('canvas');baseCanvas.width=size;baseCanvas.height=size;

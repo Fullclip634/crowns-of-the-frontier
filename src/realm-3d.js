@@ -128,15 +128,16 @@ function buildForest(view){
   const canopyScale=volcanic?.95:isAridBiome(map)?.84:isSnowBiome(map)?.96:map==='woodland'?1.12:1;
   const shadowColor=volcanic?0x14100e:isSnowBiome(map)?0x3a4d62:isAridBiome(map)?0x4a3822:0x172414;
   const shadowOpacity=volcanic?.36:isSnowBiome(map)?.24:isAridBiome(map)?.26:.38;
-  const shadowMat=shadeBattlefieldFog(standardMaterial({
-    map:view.forestShadowMap??=forestShadowTexture(),
-    color:shadowColor,transparent:true,opacity:shadowOpacity,
-    roughness:1,metalness:0,depthWrite:false,
-    polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,
-  }),view);
-  const shadowGeo=view.geo.forestShadow??=(()=>{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;})();
-  view.forestShadow=trees.length?new THREE.InstancedMesh(shadowGeo,shadowMat,trees.length):null;
-  if(view.forestShadow){
+  view.forestShadow=null;
+  if(trees.length){
+    const shadowMat=shadeBattlefieldFog(standardMaterial({
+      map:view.forestShadowMap??=forestShadowTexture(),
+      color:shadowColor,transparent:true,opacity:shadowOpacity,
+      roughness:1,metalness:0,depthWrite:false,
+      polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,
+    }),view);
+    const shadowGeo=view.geo.forestShadow??=(()=>{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;})();
+    view.forestShadow=new THREE.InstancedMesh(shadowGeo,shadowMat,trees.length);
     view.forestShadow.count=0;view.forestShadow.castShadow=false;view.forestShadow.receiveShadow=false;
     view.forestShadow.frustumCulled=false;view.forestShadow.renderOrder=1;
     view.objects.add(view.forestShadow);

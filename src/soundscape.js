@@ -181,6 +181,8 @@ export function installSoundscape(AudioEngine){
     if(view?.zoom)this.setCameraZoom(view.zoom);
     const map=sim?.options?.map||'highlands';
     this.currentMap=map;
+    this.isNight=(view?.lightingState?.night??view?.atmosphereUniforms?.night?.value??0)>.45;
+    this.isStormy=(view?.weatherState?.amount??view?.atmosphereUniforms?.wetness?.value??0)>.30;
     // Tune ambient wind filter color to the current biome.
     if(this.windFilter){
       const targetFreq=map==='volcanic'?165:map==='tundra'||map==='winter'?490:map==='arid'||map==='canyon'?360:map==='coast'||map==='archipelago'?310:250;
@@ -268,7 +270,7 @@ export function installSoundscape(AudioEngine){
     this.birdTimer-=dt;
     if(this.birdTimer<0){
       this.birdTimer=12+Math.random()*11;
-      if(meadow&&stage==='peace'){
+      if(meadow&&stage==='peace'&&!this.isNight&&!this.isStormy){
         const base=1950+Math.random()*420;
         this.busTone(this.ambienceBus,base,.09,'sine',.016,0,true);
         this.busTone(this.ambienceBus,base*1.24,.11,'sine',.014,.11,true);
