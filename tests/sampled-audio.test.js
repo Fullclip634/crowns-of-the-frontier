@@ -5,60 +5,65 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
-import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
+import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,VOICE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
 import {installSampledAudio} from '../src/sampled-audio.js';
 
 const audioDir=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/audio');
 const manifest=JSON.parse(fs.readFileSync(path.join(audioDir,'manifest.json'),'utf8'));
 const license=fs.readFileSync(path.resolve(audioDir,'../AUDIO_LICENSES.txt'),'utf8');
 
-function parseWav(bytes){
-  assert.equal(bytes.toString('ascii',0,4),'RIFF');
-  assert.equal(bytes.readUInt32LE(4),bytes.length-8);
-  assert.equal(bytes.toString('ascii',8,12),'WAVE');
-  assert.equal(bytes.toString('ascii',12,16),'fmt ');
-  assert.equal(bytes.readUInt32LE(16),16,'canonical PCM fmt chunk');
-  assert.equal(bytes.readUInt16LE(20),1,'uncompressed PCM');
-  const channels=bytes.readUInt16LE(22),rate=bytes.readUInt32LE(24),bits=bytes.readUInt16LE(34);
-  assert.equal(bytes.toString('ascii',36,40),'data');
-  const dataBytes=bytes.readUInt32LE(40);
-  assert.equal(bytes.length,44+dataBytes);
-  return {channels,rate,bits,frames:dataBytes/(bits/8)/channels};
+function assertValidOggVorbis(bytes,name){
+  assert.equal(bytes.toString('ascii',0,4),'OggS',`${name} begins with OggS container header`);
+  assert.ok(bytes.includes(Buffer.from('vorbis')),`${name} contains a Vorbis audio stream`);
 }
 
-test('the shipped sample pack is a complete, valid, deterministic CC0 PCM bank',()=>{
-  assert.equal(manifest.schema,1);
+function assertValidMp3(bytes,name){
+  const hasId3=bytes.toString('ascii',0,3)==='ID3';
+  const hasSync=bytes[0]===0xff&&(bytes[1]&0xe0)===0xe0;
+  assert.ok(hasId3||hasSync,`${name} begins with valid ID3 or MPEG frame sync`);
+}
+
+test('the shipped sample pack is a complete, valid, real recorded CC0 Ogg Vorbis + MP3 fallback bank',()=>{
+  assert.equal(manifest.schema,2);
   assert.equal(manifest.license,'CC0-1.0');
-  assert.equal(manifest.channels,1);
-  assert.equal(manifest.encoding,'pcm_s16le');
-  assert.equal(manifest.sampleRate,22050);
+  assert.equal(manifest.encoding,'ogg_vorbis');
+  assert.equal(manifest.fallbackEncoding,'mp3');
+  assert.equal(manifest.sampleRate,44100);
   assert.equal(manifest.proceduralFallback,true);
   assert.match(license,/CC0 1\.0/);
   const names=Object.keys(manifest.cues);
-  assert.equal(names.length,39);
-  assert.equal(fs.readdirSync(audioDir).filter(f=>f.endsWith('.wav')).length,names.length,'no unreferenced or stale WAVs');
+  assert.equal(names.length,53);
+  const diskAudio=fs.readdirSync(audioDir).filter(f=>/\.(ogg|mp3|wav)$/i.test(f));
+  assert.equal(diskAudio.filter(f=>f.endsWith('.wav')).length,0,'no stale synthetic WAVs left behind');
+  assert.equal(diskAudio.filter(f=>f.endsWith('.ogg')).length,names.length,'no unreferenced or stale OGGs');
+  assert.equal(diskAudio.filter(f=>f.endsWith('.mp3')).length,names.length,'every cue ships a matching Safari MP3 fallback');
   for(const cue of UI_SAMPLE_CUES)assert.ok(manifest.cues[cue],`UI cue ${cue} exists`);
   for(const cue of FOLEY_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Foley cue ${cue} exists`);
   for(const cue of AMBIENCE_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Ambience cue ${cue} exists`);
+  for(const cue of VOICE_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Voice cue ${cue} exists`);
+  for(const cue of GRUNT_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Grunt cue ${cue} exists`);
+  for(const cue of MUSIC_STEM_CUES)assert.ok(manifest.cues[cue],`Music stem ${cue} exists`);
   for(const kind of COMBAT_KINDS)for(let v=0;v<COMBAT_VARIANTS;v++)assert.ok(manifest.cues[combatCue(kind,v)],`combat cue ${combatCue(kind,v)} exists`);
   for(const cue of ['horn','rain','pad'])assert.ok(manifest.cues[cue]);
-  let total=0;
+  let totalOgg=0,totalMp3=0;
   for(const [name,cue]of Object.entries(manifest.cues)){
-    const bytes=fs.readFileSync(path.join(audioDir,cue.file));
-    assert.equal(bytes.length,cue.bytes,`${name} size matches manifest`);
-    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),cue.sha256,`${name} is reproducible`);
-    const wav=parseWav(bytes);
-    assert.equal(wav.channels,1);assert.equal(wav.rate,manifest.sampleRate);assert.equal(wav.bits,16);
-    assert.ok(Math.abs(wav.frames/wav.rate-cue.duration)<.001,`${name} duration matches manifest`);
-    assert.ok(cue.duration>.05&&cue.duration<4,`${name} has a sane duration`);
-    let peak=0,energy=0;
-    for(let i=0;i<wav.frames;i++){const value=bytes.readInt16LE(44+i*2);peak=Math.max(peak,Math.abs(value));energy+=value*value;}
-    assert.ok(peak>2000&&peak<32768,`${name} is audible but never clips`);
-    assert.ok(Math.sqrt(energy/wav.frames)>200,`${name} carries real signal`);
+    const ogg=fs.readFileSync(path.join(audioDir,cue.file));
+    const mp3=fs.readFileSync(path.join(audioDir,cue.fallbackFile));
+    assert.equal(ogg.length,cue.bytes,`${name} OGG size matches manifest`);
+    assert.equal(mp3.length,cue.fallbackBytes,`${name} MP3 size matches manifest`);
+    assert.equal(crypto.createHash('sha256').update(ogg).digest('hex'),cue.sha256,`${name} OGG checksum matches manifest`);
+    assert.equal(crypto.createHash('sha256').update(mp3).digest('hex'),cue.fallbackSha256,`${name} MP3 checksum matches manifest`);
+    assertValidOggVorbis(ogg,name);
+    assertValidMp3(mp3,name);
+    assert.ok(cue.duration>.05&&cue.duration<=30,`${name} has a sane duration (${cue.duration}s)`);
     assert.equal(cue.loop,cue.group==='weather'||cue.group==='music');
-    total+=bytes.length;
+    assert.ok(cue.source&&/CC0 1\.0/.test(cue.source),`${name} records verified CC0 1.0 provenance`);
+    assert.ok(license.includes(`- ${name} (`),`${name} provenance appears in AUDIO_LICENSES.txt`);
+    totalOgg+=ogg.length;
+    totalMp3+=mp3.length;
   }
-  assert.ok(total<1_000_000,'the whole pack stays under 1 MB');
+  assert.ok(totalOgg<2_500_000,`primary OGG bank stays under 2.5 MB (${totalOgg} bytes)`);
+  assert.ok(totalOgg+totalMp3<4_500_000,`combined OGG+MP3 pack stays under 4.5 MB (${totalOgg+totalMp3} bytes)`);
 });
 
 function localFetch(url){
@@ -73,7 +78,7 @@ const decoded=()=>({decodeAudioData:async data=>({decoded:true,bytes:data.byteLe
 
 test('sample URLs resolve beneath a deployed subpath',()=>{
   const base='https://game.test/app/';
-  assert.equal(sampleURL('select.wav',base),'https://game.test/app/audio/select.wav');
+  assert.equal(sampleURL('select.ogg',base),'https://game.test/app/audio/select.ogg');
   assert.equal(new URL('audio/manifest.json',base).toString(),'https://game.test/app/audio/manifest.json');
 });
 
@@ -110,7 +115,7 @@ test('a missing manifest or a corrupt sample degrades to the procedural fallback
   let calls=0;
   const partial=createSampleBank({context:decoded(),fetchData:async url=>{
     const name=new URL(url).pathname.split('/').pop();calls++;
-    if(name==='metal-0.wav')return {ok:false};
+    if(name==='metal-0.ogg'||name==='metal-0.mp3')return {ok:false};
     return localFetch(url);
   },base:'https://game.test/'});
   const partialReport=await partial.load();
@@ -120,6 +125,19 @@ test('a missing manifest or a corrupt sample degrades to the procedural fallback
   assert.equal(partial.status('select'),'loaded');
   assert.ok(calls>1);
   const engine={};assert.equal(partial.seedCombatBuffers(engine),19);
+
+  // When primary OGG fails decoding (e.g. Safari), the bank transparently falls back to MP3.
+  let mp3FallbackHits=0;
+  const safariCtx={decodeAudioData:async data=>{
+    const head=Buffer.from(data).toString('ascii',0,4);
+    if(head==='OggS')throw new Error('Ogg unsupported');
+    mp3FallbackHits++;
+    return {decoded:true,codec:'mp3',bytes:data.byteLength};
+  }};
+  const safariBank=createSampleBank({context:safariCtx,fetchData:localFetch,base:'https://game.test/'});
+  const safariReport=await safariBank.load();
+  assert.equal(safariReport.failed,0,'every cue decodes via MP3 fallback when Ogg is rejected');
+  assert.equal(mp3FallbackHits,Object.keys(manifest.cues).length);
 });
 
 function fakeContext(){
@@ -136,8 +154,10 @@ function engineClass(options){
     constructor(settings={}){this.settings={volume:1,music:true,...settings};this.procedural=[];}
     unlock(){this.context=fakeContext();this.master={connect(){}};}
     play(name){this.procedural.push(name);}
+    voice(kind){this.procedural.push('voice:'+kind);return true;}
     warHorn(){this.procedural.push('horn');return true;}
     weather(){this.weatherCalls=(this.weatherCalls||0)+1;this.rainGain={gain:{value:1,setTargetAtTime(v){this.value=v;}}};}
+    scoreStage(){return this.stage||'peace';}
     tick(){this.tickCalls=(this.tickCalls||0)+1;}
   }
   installSampledAudio(Engine,options);
@@ -182,6 +202,17 @@ test('decoded samples take over UI, horn, weather and music cues while procedura
   engine.tick(.016);
   assert.equal(engine.tickCalls,1,'procedural score still runs');
   assert.ok(engine.sampleLoops.has('pad'));
+  assert.ok(engine.sampleLoops.has('music-peace'),'peace stage activates real medieval lute stem');
+  assert.ok(engine.sampleLoops.get('music-peace').gain.gain.value>0);
+
+  engine.stage='battle';
+  engine.tick(.016);
+  assert.equal(engine.sampleLoops.get('music-peace').gain.gain.value,0,'peace stem fades out on battle');
+  assert.ok(engine.sampleLoops.get('music-battle').gain.gain.value>0,'battle stem fades in smoothly');
+
+  assert.equal(engine.voice('order',{type:'knight'},'alder',.2),true,'real CC0 human voice plays');
+  assert.ok(!engine.procedural.includes('voice:order'),'sampled voice does not double with synth');
+  assert.equal(engine.grunt(.1,.22),true,'real CC0 combat grunt plays');
 
   engine.settings.volume=0;engine.play('coin');
   assert.ok(engine.procedural.includes('coin'),'muted settings fall back safely');

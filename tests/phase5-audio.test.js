@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
-import {FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES} from '../src/sample-bank.js';
+import {FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,VOICE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES} from '../src/sample-bank.js';
 
 function richMockWindow(){
   const nodes=[];
@@ -110,18 +110,21 @@ test('Phase 5 combat audio adds distance low-pass filtering, pitch variation and
   }finally{globalThis.window=original;}
 });
 
-test('Phase 5 rain.wav eliminates the old 0.37s periodic click and ships all biome ambience + Foley cues',()=>{
+test('Phase 5 ships real recorded CC0 OGG+MP3 biome ambience, Foley, voice, grunt and 4-stage adaptive medieval music stems',()=>{
   const audioDir=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/audio');
   const manifest=JSON.parse(fs.readFileSync(path.join(audioDir,'manifest.json'),'utf8'));
-  for(const cue of [...FOLEY_SAMPLE_CUES,...AMBIENCE_SAMPLE_CUES])assert.ok(manifest.cues[cue],`shipped cue ${cue}`);
-  const bytes=fs.readFileSync(path.join(audioDir,'rain.wav'));
-  const frames=(bytes.length-44)/2,rate=bytes.readUInt32LE(24);
-  const lag=Math.floor(rate*.37);
-  let num=0,den=0;
-  for(let i=0;i<frames-lag;i++){
-    const a=bytes.readInt16LE(44+i*2)/32768,b=bytes.readInt16LE(44+(i+lag)*2)/32768;
-    num+=a*b;den+=a*a;
+  for(const cue of [...FOLEY_SAMPLE_CUES,...AMBIENCE_SAMPLE_CUES,...VOICE_SAMPLE_CUES,...GRUNT_SAMPLE_CUES,...MUSIC_STEM_CUES]){
+    assert.ok(manifest.cues[cue],`shipped real CC0 cue ${cue}`);
+    const ogg=fs.readFileSync(path.join(audioDir,manifest.cues[cue].file));
+    const mp3=fs.readFileSync(path.join(audioDir,manifest.cues[cue].fallbackFile));
+    assert.equal(ogg.toString('ascii',0,4),'OggS',`${cue} OGG is a valid Ogg container`);
+    assert.ok(mp3.length>1000,`${cue} MP3 fallback is non-empty`);
   }
-  const corr=Math.abs(num/Math.max(1e-9,den));
-  assert.ok(corr<.06,`rain.wav has no 0.37s periodic click (autocorrelation ${corr.toFixed(4)})`);
+  // Rain is a real field-recorded 10s crossfaded loop (not the old synthetic 0.37s clicking WAV).
+  assert.ok(manifest.cues.rain.duration>=8,`rain is a long seamless field loop (${manifest.cues.rain.duration}s)`);
+  assert.equal(manifest.cues.rain.loop,true);
+  for(const stem of MUSIC_STEM_CUES){
+    assert.ok(manifest.cues[stem].duration>=20,`${stem} is a full medieval music loop (${manifest.cues[stem].duration}s)`);
+    assert.equal(manifest.cues[stem].channels,2,`${stem} is stereo`);
+  }
 });

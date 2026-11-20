@@ -1,10 +1,66 @@
-CC0 1.0 Universal (public domain dedication)
-
-All files in /audio/ are original waveforms synthesised by
-scripts/author-audio-samples.mjs for Crowns of the Frontier.
-No third-party recordings, samples or libraries were used. The author
-dedicates these generated audio files to the public domain under CC0 1.0:
+CC0 1.0 Universal (Public Domain Dedication)
 https://creativecommons.org/publicdomain/zero/1.0/
 
-The runtime keeps a procedural Web Audio fallback, so the game remains
-fully playable when the sample pack cannot be fetched or decoded.
+All audio assets in /audio/ are real recorded studio and field-recorded CC0 1.0
+Public Domain audio files mastered offline for Crowns of the Frontier by
+scripts/master-cc0-audio.py (encoded to gapless 44.1 kHz Ogg Vorbis with
+universal MP3 fallback for Safari/iOS). All files are bundled locally for
+100% offline playback with zero runtime network dependencies.
+
+The runtime retains a procedural Web Audio fallback so the game remains
+playable even if audio assets cannot be fetched or decoded.
+
+Verified CC0 1.0 Source Provenance (per cue):
+- select (select.ogg / select.mp3): Kenney - 50 RPG sound effects (metalClick.ogg, CC0 1.0)
+- order (order.ogg / order.mp3): Kenney - 50 RPG sound effects (beltHandle1.ogg, CC0 1.0)
+- coin (coin.ogg / coin.mp3): Kenney - 50 RPG sound effects (handleCoins.ogg, CC0 1.0)
+- complete (complete.ogg / complete.mp3): Kenney - 85 Short music jingles (jingles_STEEL02.ogg, CC0 1.0)
+- alarm (alarm.ogg / alarm.mp3): OpenGameArt - Their Coming horn (theircoming3.ogg, CC0 1.0)
+- victory (victory.ogg / victory.mp3): Kenney - 85 Short music jingles (jingles_STEEL00.ogg, CC0 1.0)
+- chop (chop.ogg / chop.mp3): Kenney - 50 RPG sound effects (chop.ogg, CC0 1.0)
+- mine (mine.ogg / mine.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_hit_01.ogg, CC0 1.0)
+- hammer (hammer.ogg / hammer.mp3): OpenGameArt - Blacksmith Hammer (blacksmithhammer.wav, CC0 1.0)
+- anvil (anvil.ogg / anvil.mp3): Snabisch - Hammer on Anvil (forger.ogg, CC0 1.0)
+- hoof (hoof.ogg / hoof.mp3): KobatoGames - Horse Trotting (Trot.ogg, CC0 1.0)
+- march (march.ogg / march.mp3): Artisticdude/HaelDB - RPG Sound Pack (chainmail1.wav, CC0 1.0)
+- fire (fire.ogg / fire.mp3): StarNinjas - Fireplace Sound loop (fire.wav, CC0 1.0)
+- metal-0 (metal-0.ogg / metal-0.mp3): StarNinjas - 20 Sword Sound Effects (sword_clash.1.ogg, CC0 1.0)
+- metal-1 (metal-1.ogg / metal-1.mp3): StarNinjas - 20 Sword Sound Effects (sword_clash.2.ogg, CC0 1.0)
+- metal-2 (metal-2.ogg / metal-2.mp3): StarNinjas - 20 Sword Sound Effects (sword_clash.4.ogg, CC0 1.0)
+- metal-3 (metal-3.ogg / metal-3.mp3): StarNinjas - 20 Sword Sound Effects (sword_clash.7.ogg, CC0 1.0)
+- arrow-0 (arrow-0.ogg / arrow-0.mp3): remaxim - Battle Sound Effects (Bow.wav, CC0 1.0)
+- arrow-1 (arrow-1.ogg / arrow-1.mp3): remaxim - Battle Sound Effects (swish_2.wav, CC0 1.0)
+- arrow-2 (arrow-2.ogg / arrow-2.mp3): remaxim - Battle Sound Effects (swish_3.wav, CC0 1.0)
+- arrow-3 (arrow-3.ogg / arrow-3.mp3): remaxim - Battle Sound Effects (swish_4.wav, CC0 1.0)
+- wood-0 (wood-0.ogg / wood-0.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_wood_hit_01.ogg, CC0 1.0)
+- wood-1 (wood-1.ogg / wood-1.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_wood_hit_02.ogg, CC0 1.0)
+- wood-2 (wood-2.ogg / wood-2.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_wood_hit_03.ogg, CC0 1.0)
+- wood-3 (wood-3.ogg / wood-3.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_wood_breaking_01.ogg, CC0 1.0)
+- siege-0 (siege-0.ogg / siege-0.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_breaking_01.ogg, CC0 1.0)
+- siege-1 (siege-1.ogg / siege-1.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_breaking_02.ogg, CC0 1.0)
+- siege-2 (siege-2.ogg / siege-2.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_breaking_03.ogg, CC0 1.0)
+- siege-3 (siege-3.ogg / siege-3.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_breaking_01.ogg, CC0 1.0)
+- earth-0 (earth-0.ogg / earth-0.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_01.ogg, CC0 1.0)
+- earth-1 (earth-1.ogg / earth-1.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_03.ogg, CC0 1.0)
+- earth-2 (earth-2.ogg / earth-2.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_05.ogg, CC0 1.0)
+- earth-3 (earth-3.ogg / earth-3.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_08.ogg, CC0 1.0)
+- horn (horn.ogg / horn.mp3): OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)
+- voice-select (voice-select.ogg / voice-select.mp3): Kenney - Voiceover Pack (Male/ready.ogg, CC0 1.0)
+- voice-order (voice-order.ogg / voice-order.mp3): Kenney - Voiceover Pack (Male/go.ogg, CC0 1.0)
+- voice-attack (voice-attack.ogg / voice-attack.mp3): Kenney - Voiceover Pack (Male/war_target_engaged.ogg, CC0 1.0)
+- voice-work (voice-work.ogg / voice-work.mp3): Kenney - Voiceover Pack (Male/set.ogg, CC0 1.0)
+- grunt-0 (grunt-0.ogg / grunt-0.mp3): alket - 5 Hit Sounds + Dying (hit1.ogg, CC0 1.0)
+- grunt-1 (grunt-1.ogg / grunt-1.mp3): alket - 5 Hit Sounds + Dying (hit3.ogg, CC0 1.0)
+- grunt-2 (grunt-2.ogg / grunt-2.mp3): alket - 5 Hit Sounds + Dying (die1.ogg, CC0 1.0)
+- rain (rain.ogg / rain.mp3): Snabisch - Rain loopable (1.ogg, CC0 1.0)
+- amb-meadow (amb-meadow.ogg / amb-meadow.mp3): Isaiah658 - Ambient Bird Sounds (birds-isaiah658.ogg, CC0 1.0)
+- amb-coast (amb-coast.ogg / amb-coast.mp3): Jasinski - Beach Ocean Waves (CC0 1.0)
+- amb-river (amb-river.ogg / amb-river.mp3): Transitking - Water Waves / River (CC0 1.0)
+- amb-tundra (amb-tundra.ogg / amb-tundra.mp3): WolfTech - Wind (Wind.ogg, CC0 1.0)
+- amb-arid (amb-arid.ogg / amb-arid.mp3): qubodup - Wind field recording (wind1.wav, CC0 1.0)
+- amb-volcanic (amb-volcanic.ogg / amb-volcanic.mp3): IgnasD - Loopable Dungeon Ambience rumble (dungeon_ambient_1.ogg, CC0 1.0)
+- pad (pad.ogg / pad.mp3): RandomMind / Flixberry - Medieval: The Bard Tale (CC0 1.0)
+- music-peace (music-peace.ogg / music-peace.mp3): RandomMind / AntumDeluge - Medieval: The Old Tower Inn (CC0 1.0)
+- music-tension (music-tension.ogg / music-tension.mp3): RandomMind / Snabisch - Fantasy: Lament for a Warriors Soul (CC0 1.0)
+- music-battle (music-battle.ogg / music-battle.mp3): CynicMusic / JaidynReiman - Battle Theme A (CC0 1.0)
+- music-climax (music-climax.ogg / music-climax.mp3): Snabisch - Fantasy Choir 1 (CC0 1.0)

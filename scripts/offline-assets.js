@@ -6,6 +6,8 @@ const RUNTIME_ONLY=[
 const LOW_COMPRESSED=/_color-[^/]+\.ktx2$/i;
 export function precacheFiles(files){
   return files.filter(file=>{
+    // Keep Safari MP3 fallbacks runtime-cached on first use rather than doubling SW precache size.
+    if(file.startsWith('/audio/')&&file.endsWith('.mp3'))return false;
     // Texture names may include "normal"; font names use it for upright style.
     if(!file.startsWith('/assets/'))return true;
     const name=file.split('/').pop();

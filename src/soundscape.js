@@ -160,6 +160,7 @@ export function installSoundscape(AudioEngine){
     else if(kind==='hammer'){this.impact(320,.07,g*.42,pan);this.busTone(this.sfxBus,172,.07,'triangle',g*.22,0,false);}
     else if(kind==='anvil'){this.busTone(this.sfxBus,1160,.22,'sine',g*.18,0,true);this.busTone(this.sfxBus,1740,.14,'sine',g*.10,0,true);}
     else if(kind==='hoof'){this.impact(130,.06,g*.32,pan);this.impact(145,.06,g*.26,pan);}
+    else if(kind==='march'){this.impact(620,.05,g*.22,pan);}
     else if(kind==='fire'){this.impact(950,.11,g*.18,pan);}
     return true;
   };
@@ -212,6 +213,8 @@ export function installSoundscape(AudioEngine){
         }else if(e.order?.type==='build'||e.order?.type==='repair')kind='hammer';
       }else if(e.kind==='unit'&&['knight','scout','outrider'].includes(e.type)&&e.moving){
         kind='hoof';weight=.18;
+      }else if(e.kind==='unit'&&['spearman','swordsman','archer','sentinel','marksman'].includes(e.type)&&e.moving){
+        kind='march';weight=.13;
       }else if(e.kind==='building'&&e.progress>=1&&e.hp<e.maxHp*.5){
         kind='fire';weight=.22;
       }else if(e.kind==='building'&&e.type==='blacksmith'&&e.progress>=1&&e.queue?.length){
@@ -238,8 +241,11 @@ export function installSoundscape(AudioEngine){
     if(this.musicBus&&now>=(this.musicDuckUntil||0)){
       setParamSmooth(this.musicBus.gain,this.settings.music?1:0,now,.35);
     }
-    if(this.windGain)this.windGain.gain.value=this.settings.music?.024:0;
+    if(this.windGain&&!this.sampleLoops?.size)this.windGain.gain.value=this.settings.music?.024:0;
     if(!this.settings.music||this.settings.volume<=0)return;
+    // When real recorded CC0 medieval music stems are decoded and crossfading,
+    // skip the procedural D-Dorian oscillator synth so keys never clash.
+    if(this.hasSampledMusic)return;
 
     // Adaptive D-Dorian medieval modal score (peace -> tension -> battle -> climax).
     const stage=this.scoreStage();

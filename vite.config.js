@@ -43,8 +43,9 @@ export default defineConfig({
         const manifestPath=path.join(projectRoot,'public','audio','manifest.json');
         if(fs.existsSync(manifestPath)){
           const cues=JSON.parse(fs.readFileSync(manifestPath,'utf8')).cues||{};
-          const expected=new Set(['manifest.json',...Object.values(cues).map(cue=>cue.file)]);
-          audio.push('/audio/manifest.json',...Object.values(cues).map(cue=>'/audio/'+cue.file));
+          const cueFiles=Object.values(cues).flatMap(cue=>cue.fallbackFile?[cue.file,cue.fallbackFile]:[cue.file]);
+          const expected=new Set(['manifest.json',...cueFiles]);
+          audio.push('/audio/manifest.json',...cueFiles.map(file=>'/audio/'+file));
           const directory=path.join(outputDirectory,'audio');
           if(fs.existsSync(directory))for(const file of fs.readdirSync(directory))if(!expected.has(file))fs.unlinkSync(path.join(directory,file));
         }

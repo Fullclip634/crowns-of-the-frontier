@@ -36,7 +36,7 @@ self.addEventListener('fetch', event => {
     return fetch(event.request).then(response => {
       // Optional quality assets are cached after their first real use instead
       // of enlarging every player's install package.
-      if (response.status === 200 && !event.request.headers.has('range') && url.pathname.startsWith('/assets/')) {
+      if (response.status === 200 && !event.request.headers.has('range') && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/audio/'))) {
         const copy = response.clone();
         event.waitUntil(caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(() => {}));
       }

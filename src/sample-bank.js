@@ -8,14 +8,25 @@ export const MAX_PARALLEL_SAMPLE_LOADS=4;
 export const MAX_SAMPLE_BYTES=1_500_000;
 
 export const UI_SAMPLE_CUES=Object.freeze(['select','order','coin','complete','alarm','victory']);
-export const FOLEY_SAMPLE_CUES=Object.freeze(['chop','mine','hammer','anvil','hoof','fire']);
-export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-coast','amb-river','amb-tundra','amb-volcanic']);
+export const FOLEY_SAMPLE_CUES=Object.freeze(['chop','mine','hammer','anvil','hoof','march','fire']);
+export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-meadow','amb-coast','amb-river','amb-tundra','amb-arid','amb-volcanic']);
+export const VOICE_SAMPLE_CUES=Object.freeze(['voice-select','voice-order','voice-attack','voice-work']);
+export const GRUNT_SAMPLE_CUES=Object.freeze(['grunt-0','grunt-1','grunt-2']);
+export const MUSIC_STEM_CUES=Object.freeze(['music-peace','music-tension','music-battle','music-climax']);
 export const COMBAT_KINDS=Object.freeze(['metal','arrow','wood','siege','earth']);
 export const COMBAT_VARIANTS=4;
 export function combatCue(kind,variant=0){return `${kind}-${((variant%COMBAT_VARIANTS)+COMBAT_VARIANTS)%COMBAT_VARIANTS}`;}
 
 export function sampleURL(file,base='http://localhost/',directory=SAMPLE_DIRECTORY){
   return new URL(directory+file,base).toString();
+}
+
+function preferFallbackCodec(){
+  try{
+    if(typeof globalThis.Audio!=='function')return false;
+    const probe=new globalThis.Audio();
+    return typeof probe.canPlayType==='function'&&!probe.canPlayType('audio/ogg; codecs="vorbis"');
+  }catch{return false;}
 }
 
 // Loading is best-effort and bounded. Any missing, corrupt or unsupported
@@ -43,18 +54,32 @@ export function createSampleBank({context,fetchData=globalThis.fetch,base=global
           const manifest=await response.json();
           const entries=Object.entries(manifest.cues||{});
           for(const [name,cue]of entries){cues.set(name,cue);status.set(name,'pending');}
+          const useFallbackFirst=preferFallbackCodec();
           for(let i=0;i<entries.length;i+=Math.max(1,concurrency)){
             const batch=entries.slice(i,i+Math.max(1,concurrency));
             await Promise.allSettled(batch.map(async([name,cue])=>{
               try{
-                if(cue.bytes>MAX_SAMPLE_BYTES)throw new Error('Sample exceeds the size budget');
-                const asset=await fetchData(sampleURL(cue.file,base));
-                if(!asset?.ok)throw new Error('Sample request failed');
-                const data=await asset.arrayBuffer();
-                const decode=context.decodeAudioData.bind(context);
-                const buffer=await decode(data);
-                if(!buffer)throw new Error('Decoder returned no buffer');
-                buffers.set(name,{buffer,cue});status.set(name,'loaded');totalBytes+=cue.bytes||0;
+                const candidates=useFallbackFirst&&cue.fallbackFile
+                  ?[[cue.fallbackFile,cue.fallbackBytes??cue.bytes],[cue.file,cue.bytes]]
+                  :cue.fallbackFile
+                    ?[[cue.file,cue.bytes],[cue.fallbackFile,cue.fallbackBytes??cue.bytes]]
+                    :[[cue.file,cue.bytes]];
+                let buffer=null,loadedBytes=0,lastError='Sample request failed';
+                for(const [file,expectedBytes]of candidates){
+                  if(!file)continue;
+                  if((expectedBytes||0)>MAX_SAMPLE_BYTES){lastError='Sample exceeds the size budget';continue;}
+                  const asset=await fetchData(sampleURL(file,base));
+                  if(!asset?.ok){lastError='Sample request failed';continue;}
+                  const data=await asset.arrayBuffer();
+                  const decode=context.decodeAudioData.bind(context);
+                  try{
+                    buffer=await decode(data);
+                    if(buffer){loadedBytes=expectedBytes||data.byteLength||0;break;}
+                    lastError='Decoder returned no buffer';
+                  }catch(decodeErr){lastError=decodeErr?.message||'Decode failed';}
+                }
+                if(!buffer)throw new Error(lastError);
+                buffers.set(name,{buffer,cue});status.set(name,'loaded');totalBytes+=loadedBytes;
               }catch(error){status.set(name,'failed');errors.push(`${name}: ${error.message}`);}
             }));
           }

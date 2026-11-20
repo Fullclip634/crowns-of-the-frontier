@@ -125,6 +125,9 @@ export function installCombatAudio(AudioEngine){
     const voice={source,gain,pan,filter,kind,level:spatial.gain,point:{x:entity.x,z:entity.z,owner:entity.owner,kind:entity.kind,type:entity.type},retiring:false};
     this.combatVoices.add(voice);this.lastCombatAt=ctx.currentTime;
     this.noteCombatActivity?.(kind==='siege'?.30:.12);
+    if(target?.kind==='unit'&&(kind==='metal'||kind==='arrow')&&this.combatSequence%3===0){
+      this.grunt?.(spatial.pan,spatial.gain*.20);
+    }
     source.onended=()=>{this.combatVoices.delete(voice);source.disconnect();filter?.disconnect();gain.disconnect();pan?.disconnect();};
     source.start();return true;
   };
