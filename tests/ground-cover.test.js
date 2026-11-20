@@ -60,6 +60,23 @@ test('high-quality grass animates via GPU wind uniforms with zero stationary CPU
   assert.equal(cover.mesh.instanceMatrix.version,matrixVersion,'stationary High grass never re-uploads instance matrices');
   assert.equal(cover.mesh.instanceColor.version,colorVersion,'stationary High grass never re-uploads instance colors');
 
+  const fullGrass=[...cover.visibleEntries],fullAccents=[...cover.visibleAccents];
+  const fullTriangles=view.groundCoverDiagnostics.triangles;
+  view.settings.reduceFoliage=true;
+  cover.update(false);
+  assert.equal(cover.wind.strength.value,0);
+  assert.equal(cover.wind.time.value,0);
+  assert.ok(cover.mesh.count>0&&cover.mesh.count<fullGrass.length*.65);
+  assert.ok(cover.accents.count>0&&cover.accents.count<fullAccents.length);
+  assert.ok(view.groundCoverDiagnostics.triangles<fullTriangles*.65);
+  assert.ok(cover.visibleEntries.every(entry=>fullGrass.includes(entry)));
+
+  view.settings.reduceFoliage=false;
+  cover.update(false);
+  assert.ok(cover.wind.strength.value>0);
+  assert.deepEqual(cover.visibleEntries,fullGrass);
+  assert.deepEqual(cover.visibleAccents,fullAccents);
+
   view.settings.reducedMotion=true;view.clock=5;
   cover.update(false,false);
   assert.equal(cover.wind.time.value,0);

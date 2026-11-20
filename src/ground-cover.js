@@ -265,7 +265,8 @@ export class GroundCover{
   }
   update(menu=false,force=false){
     const v=this.view;
-    const animated=!v.settings.reducedMotion&&v.settings.quality!=='low';
+    const reduced=!!v.settings.reduceFoliage;
+    const animated=!reduced&&!v.settings.reducedMotion&&v.settings.quality!=='low';
     this.wind.time.value=animated?v.clock:0;
     this.wind.strength.value=animated?(.060+(v.weatherState?.amount||0)*.10)*(v.settings.quality==='high'?1:.7):0;
     const atmWind=v.atmosphereUniforms?.wind?.value;
@@ -273,16 +274,18 @@ export class GroundCover{
       const len=Math.hypot(atmWind.x,atmWind.z);
       if(len>.001)this.wind.dir.value.set(atmWind.x/len,atmWind.z/len);
     }
-    const key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog,v.settings.quality].join(':');
+    const key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog,v.settings.quality,reduced].join(':');
     if(!force&&this.key===key&&v.clock-(this.last||0)<(v.settings.quality==='high'?.3:.5))return;
     this.key=key;this.last=v.clock;
     const sites=this.buildingSites;sites.clear();
     for(const e of v.sim.entities)if(e.kind==='building'&&e.hp>0){const r=e.r+(e.type==='towncenter'?1.8:1.15),site={x:e.x,z:e.z,radiusSquared:r*r};for(let x=Math.floor((e.x-r)/16);x<=Math.floor((e.x+r)/16);x++)for(let z=Math.floor((e.z-r)/16);z<=Math.floor((e.z+r)/16);z++){const cellKey=buildingCellKey(x,z);let list=sites.get(cellKey);if(!list){list=[];sites.set(cellKey,list);}list.push(site);}}
+    const stride=reduced?2:1;
     let count=0,matrixChanged=false,colorChanged=false;
     for(const cell of this.cells){
       if(!nearViewport(v,cell.x,cell.y,cell.z,cell.radius))continue;
       const footprints=sites.get(cell.key);
-      for(const e of cell.entries){
+      for(let i=0;i<cell.entries.length;i+=stride){
+        const e=cell.entries[i];
         if(!nearViewport(v,e.x,e.y,e.z,6)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
         if(footprints?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
         if(this.visibleEntries[count]!==e){
@@ -304,7 +307,8 @@ export class GroundCover{
       for(const cell of this.accentCells){
         if(!nearViewport(v,cell.x,cell.y,cell.z,cell.radius))continue;
         const footprints=sites.get(cell.key);
-        for(const e of cell.entries){
+        for(let i=0;i<cell.entries.length;i+=stride){
+          const e=cell.entries[i];
           if(!nearViewport(v,e.x,e.y,e.z,6)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
           if(footprints?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
           if(this.visibleAccents[accentCount]!==e){

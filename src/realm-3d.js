@@ -24,7 +24,7 @@ import {forEachNearbyUnit} from './spatial-buckets.js';
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
   if(fall){const t=Math.max(0,Math.min(1,(view.clock-fall.at)/1.5));rotation.makeRotationZ(t*t*1.48);pose.multiply(rotation);}
-  else if(leaves&&view.settings.quality!=='low'&&!view.settings.reducedMotion){
+  else if(leaves&&view.settings.quality!=='low'&&!view.settings.reducedMotion&&!view.settings.reduceFoliage){
     const wind=view.atmosphereUniforms?.wind?.value;
     const wLen=wind?Math.hypot(wind.x,wind.z):0;
     const speed=wLen>.001?Math.max(.55,Math.min(2.4,wLen*.7)):1;
@@ -400,9 +400,10 @@ export function installRealm3D(WorldView){
     }
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);
-    const cameraChanged=this.lastForestAngle!==this.angle||this.lastForestZoom!==this.zoom||this.lastForestX!==this.target.x||this.lastForestZ!==this.target.z||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight;
+    const swayDisabled=!!(this.settings.reducedMotion||this.settings.reduceFoliage);
+    const cameraChanged=this.lastForestAngle!==this.angle||this.lastForestZoom!==this.zoom||this.lastForestX!==this.target.x||this.lastForestZ!==this.target.z||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight||this.lastForestSwayDisabled!==swayDisabled;
     const forestInterval=this.settings.quality==='high'?.16:this.settings.quality==='medium'?.26:.45;
-    if(cameraChanged||this.forestRefresh===undefined||this.clock-this.forestRefresh>forestInterval){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;}
+    if(cameraChanged||this.forestRefresh===undefined||this.clock-this.forestRefresh>forestInterval){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;this.lastForestSwayDisabled=swayDisabled;}
     render.call(this,dt,menu);
     if(!menu)renderModelPortrait(this);
   };

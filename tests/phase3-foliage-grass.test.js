@@ -112,6 +112,10 @@ test('Phase 3 forestTransform responds to shared atmosphere wind without skewing
   const pose=forestTransform(view,base,9,true).clone();
   assert.ok(Math.abs(pose.determinant()-1)<1e-4,'Forest sway remains a pure orthogonal rotation');
   assert.deepEqual(new THREE.Vector3().setFromMatrixPosition(pose).toArray(),[12,3,8]);
+  assert.notDeepEqual(pose.elements,base.elements);
+  view.settings.reduceFoliage=true;
+  assert.deepEqual(forestTransform(view,base,9,true).elements,base.elements);
+  assert.notDeepEqual(forestTransform(view,base,9,true,{at:0}).elements,base.elements,'harvested trees still fall');
 });
 
 test('Phase 3 forest-floor shadow stain uses transparent radial alpha map and never opaque white cards',()=>{

@@ -65,6 +65,19 @@ test('real storm states strengthen water motion and night light dims the shoreli
   view.sun.intensity=.62;view.hemi.intensity=.56;view.scene.background.setHex(0x152640);animateWaterSurface(view);assert.ok(material.frontierWaterLight.value<dayLight*.4);assert.ok(material.frontierWaterSky.value.equals(view.scene.background));assert.equal(material.frontierWaterDetail.value,1);view.settings.quality='low';animateWaterSurface(view);assert.equal(material.frontierWaterDetail.value,0);assert.ok(material.frontierWaterRipples.value<calmRipples);material.dispose();
 });
 
+test('reduced foliage leaves animated waves and storm ripples running',()=>{
+  const {material,view}=fixture();
+  view.weatherState=weatherAt(512,'coast',97,'storm');
+  animateWaterSurface(view);
+  const ripples=material.frontierWaterRipples.value,amplitude=material.frontierWaterMotion.value;
+  view.settings.reduceFoliage=true;view.clock=11;
+  animateWaterSurface(view);
+  assert.equal(material.frontierWaveTime.value,11);
+  assert.equal(material.frontierWaterRipples.value,ripples);
+  assert.equal(material.frontierWaterMotion.value,amplitude);
+  material.dispose();
+});
+
 test('reduced motion keeps static ripples and shallow detail at a fixed water phase',()=>{
   const {material,view}=fixture();view.settings.reducedMotion=true;const choice={...view.settings};
   animateWaterSurface(view);assert.equal(material.frontierWaveTime.value,0);assert.ok(material.frontierWaterRipples.value>0);assert.equal(material.frontierWaterDetail.value,1);
