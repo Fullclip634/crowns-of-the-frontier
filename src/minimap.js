@@ -1,6 +1,7 @@
 import {WORLD} from './data.js';
 import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
+import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
 import {terrainBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 
 const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
@@ -9,11 +10,21 @@ function parseHex(hex){
   return [(n>>16)&255,(n>>8)&255,n&255];
 }
 
+function paintBridges(ctx,map,coord,scale){
+  for(const span of bridgeSpans(map)){
+    const x=coord(span.center-span.halfLength),z=coord(-bridgeOuterHalfWidth);
+    const width=span.halfLength*2*scale,height=bridgeOuterHalfWidth*2*scale;
+    ctx.fillStyle='#b8a47c';ctx.fillRect(x,z,width,height);
+    ctx.strokeStyle='#3c3428';ctx.lineWidth=1;
+    ctx.strokeRect(x+.5,z+.5,Math.max(1,width-1),Math.max(1,height-1));
+  }
+}
+
 export function renderReliefBase(bctx,size,sim,view){
   const worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
   const map=sim.options?.map||'highlands',biome=terrainBiome(map);
-  const land=view?.landscape;
-  if(land?.heightAt&&typeof bctx.createImageData==='function'&&typeof bctx.putImageData==='function'){
+  const land=view?.landscape,sampleHeight=land?.surfaceHeightAt??land?.heightAt;
+  if(typeof sampleHeight==='function'&&typeof bctx.createImageData==='function'&&typeof bctx.putImageData==='function'){
     const img=bctx.createImageData(size,size),data=img.data;
     const [br,bg,bb]=parseHex(biome.map);
     const snow=isSnowBiome(map),volcanic=map==='volcanic',arid=map==='arid';
@@ -24,7 +35,7 @@ export function renderReliefBase(bctx,size,sim,view){
       const wz=-half+(py+.5)*step;
       for(let px=0;px<size;px++){
         const wx=-half+(px+.5)*step,idx=py*size+px;
-        heightGrid[idx]=land.heightAt(wx,wz);
+        heightGrid[idx]=sampleHeight.call(land,wx,wz);
         waterGrid[idx]=sim.isWater?.(wx,wz)?1:0;
       }
     }
@@ -76,44 +87,42 @@ export function renderReliefBase(bctx,size,sim,view){
       }
     }
     bctx.putImageData(img,0,0);
-    // Stone bridges drawn cleanly with timber/stone deck + dark ink rail lines
-    for(const channel of land.channels?.()||[]){
-      if(map==='coast')continue;
-      const bx=coord(channel.center-channel.width-3),by=coord(-7.75),bw=(channel.width+3)*2*scale,bh=15.5*scale;
-      bctx.fillStyle='#b8a47c';bctx.fillRect(bx,by,bw,bh);
-      bctx.strokeStyle='#3c3428';bctx.lineWidth=1;bctx.strokeRect(bx+.5,by+.5,Math.max(1,bw-1),Math.max(1,bh-1));
-    }
+    paintBridges(bctx,map,coord,scale);
     return true;
   }
   bctx.fillStyle=biome.map;bctx.fillRect(0,0,size,size);
   for(const channel of land?.channels?.()||[]){
     bctx.strokeStyle='#5d9298';bctx.lineWidth=channel.width*2*scale;bctx.lineCap='butt';bctx.beginPath();
     for(let z=-half;z<=half;z+=2){const x=coord(channel.center+Math.sin(z*channel.frequency)*channel.bend),y=coord(z);if(z===-half)bctx.moveTo(x,y);else bctx.lineTo(x,y);}bctx.stroke();
-    if(map!=='coast'){bctx.fillStyle='#b8a47c';bctx.fillRect(coord(channel.center-channel.width-3),coord(-7.75),(channel.width+3)*2*scale,15.5*scale);}
   }
+  paintBridges(bctx,map,coord,scale);
   return false;
 }
 
 export function drawMinimap(canvas,sim,view,settings){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
-  const map=sim.options.map,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}:${view?.landscape?.heightAt?1:0}`;
-  if(canvas.cachedBaseKey!==baseKey&&typeof document!=='undefined'){
+  const map=sim.options.map,land=view?.landscape,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}`;
+  let base=canvas.cachedBaseKey===baseKey&&canvas.cachedLandscape===land?canvas.cachedBase:null;
+  if(!base&&typeof document!=='undefined'){
     try{
       const baseCanvas=document.createElement('canvas');baseCanvas.width=size;baseCanvas.height=size;
       const bctx=baseCanvas.getContext('2d');
-      renderReliefBase(bctx,size,sim,view);
-      canvas.cachedBase=baseCanvas;canvas.cachedBaseKey=baseKey;
+      if(bctx){
+        renderReliefBase(bctx,size,sim,view);
+        base=canvas.cachedBase=baseCanvas;canvas.cachedBaseKey=baseKey;canvas.cachedLandscape=land;
+      }
     }catch{}
   }
   ctx.clearRect(0,0,size,size);
-  if(canvas.cachedBase)ctx.drawImage(canvas.cachedBase,0,0);
+  if(base)ctx.drawImage(base,0,0);
   else renderReliefBase(ctx,size,sim,view);
 
   const woodColor=map==='volcanic'?'#2d2421':isSnowBiome(map)?'#4b6862':isAridBiome(map)?'#5a6738':'#254b30';
+  const resourceColors={wood:woodColor,gold:'#ecc55e',stone:'#c4cac0',food:'#b57960'};
   for(const entity of sim.entities){
     const e=sim.resourceMemory?.get(entity.id)??entity;
     if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;
-    const fill=e.kind==='resource'?{wood:woodColor,gold:'#ecc55e',stone:'#c4cac0',food:e.water?'#c5dee2':'#b57960'}[e.type]:e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?('#'+(sim.players[e.owner].color??(e.owner===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):'#e3d3a2';
+    const fill=e.kind==='resource'?(e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type]):e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?('#'+(sim.players[e.owner].color??(e.owner===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):'#e3d3a2';
     const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
     const ex=coord(e.x),ez=coord(e.z);
     if(e.kind==='building'){ctx.fillStyle='#101915';ctx.fillRect(ex-r-.75,ez-r-.75,r*2+1.5,r*2+1.5);}

@@ -7,6 +7,7 @@ import {renderHealthBars,entityArmorTier} from '../src/health-layer.js';
 import {shouldAutoCollapseObjectives,OBJECTIVE_AUTO_COLLAPSE_SECONDS} from '../src/compact-hud.js';
 import {Landscape} from '../src/landscape.js';
 import {Simulation} from '../src/simulation.js';
+import {bridgeOuterHalfWidth} from '../src/bridge-layout.js';
 
 function fakeCanvasContext(size){
   let imageData=null;
@@ -50,7 +51,7 @@ test('Phase 6 renderReliefBase produces directional hillshading, shoreline ink a
   }
 });
 
-test('Phase 6 drawMinimap keys relief cache by seed so new map seeds never reuse stale terrain',()=>{
+test('the relief cache follows the actual landscape even when the seed is reused',()=>{
   const ctx=fakeCanvasContext(48);
   const canvas={width:48,height:48,getContext:()=>ctx};
   const camera=new THREE.PerspectiveCamera(45,16/9,1,200);
@@ -65,9 +66,12 @@ test('Phase 6 drawMinimap keys relief cache by seed so new map seeds never reuse
     drawMinimap(canvas,sim,view,{fog:false});
     drawMinimap(canvas,sim,view,{fog:false});
     assert.equal(baseBuilds,1,'same seed reuses cached relief base (0 per-frame hillshading)');
+    view.landscape=new Landscape(101,'highland',sim.worldSize,[{x:14,z:26}],sim.startingSites);
+    drawMinimap(canvas,sim,view,{fog:false});
+    assert.equal(baseBuilds,2,'a new layout with the same seed refreshes the relief');
     sim.options.seed=202;
     drawMinimap(canvas,sim,view,{fog:false});
-    assert.equal(baseBuilds,2,'new seed invalidates and rebakes relief base');
+    assert.equal(baseBuilds,3,'new seed invalidates and rebakes relief base');
   }finally{globalThis.document=prevDoc;}
 });
 
@@ -122,4 +126,19 @@ test('Phase 6 forged armor/shield pips scale cleanly by defense tier and objecti
   assert.equal(shouldAutoCollapseObjectives({mode:'skirmish',simTime:30,userToggled:true,changedAt:0}),false,'respects manual player toggle');
   assert.equal(shouldAutoCollapseObjectives({mode:'tutorial',simTime:60,userToggled:false,changedAt:0}),false,'tutorial objectives never auto-collapse');
   assert.equal(shouldAutoCollapseObjectives({mode:'custom',simTime:60,userToggled:false,changedAt:0}),false,'custom battle roster stays open');
+});
+
+test('relief samples the rendered terrain and shows the actual bridge deck',()=>{
+  const size=80,sim={worldSize:160,options:{map:'valley'},isWater:()=>false};
+  const ctx=fakeCanvasContext(size);
+  let samples=0;
+  const terrain={
+    heightAt(){throw new Error('Use the rendered surface when it exists');},
+    surfaceHeightAt(x,z){samples++;return x*.04+z*.02;},
+  };
+  assert.equal(renderReliefBase(ctx,size,sim,{landscape:terrain}),true);
+  assert.equal(samples,size*size);
+  assert.deepEqual(ctx.calls.filter(call=>Array.isArray(call)&&call[0]==='fillRect'),[
+    ['fillRect',33.5,(80-bridgeOuterHalfWidth)*.5,13,bridgeOuterHalfWidth],
+  ]);
 });

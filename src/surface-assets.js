@@ -43,9 +43,12 @@ async function texture(role,kind,renderer){
   });
 }
 export async function loadSurfaceAssets(quality,renderer){
-  const kinds=quality==='high'?['color','normal','arm']:quality==='medium'?['color','normal']:['color'];
-  await Promise.all([...Object.keys(files).flatMap(role=>kinds.map(kind=>texture(role,kind,renderer))),...characterSurfaceKinds(quality).map(kind=>texture('character',kind,renderer))]);
-  if(quality==='medium')await Promise.all(['stone','wood','plaster','roof'].map(role=>texture(role,'arm',renderer)));
+  const keys=surfaceKeys(quality,Object.keys(files));
+  for(const kind of characterSurfaceKinds(quality))keys.add('character:'+kind);
+  await Promise.all(Array.from(keys,key=>{
+    const [role,kind]=key.split(':');
+    return texture(role,kind,renderer);
+  }));
 }
 export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',characters:{source:'Original Blender artwork',atlases:Object.keys(surfaces.character||{})},loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
 export function characterSurfaceMaps(){return surfaces.character||{};}
