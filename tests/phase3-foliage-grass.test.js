@@ -6,7 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {registerSharedTrees,clearAuthoredAssets} from '../src/authored-assets.js';
 import {registerBiomeArtwork,clearBiomeArtwork,biomeVolcanicTreeModel} from '../src/biome-art.js';
-import {volcanicSnagModel,forestTransform} from '../src/realm-3d.js';
+import {forestTransform} from '../src/realm-3d.js';
 import {GroundCover} from '../src/ground-cover.js';
 import {Landscape} from '../src/landscape.js';
 import {createAtmosphereUniforms} from '../src/atmosphere-uniforms.js';
@@ -56,26 +56,6 @@ test('Shared Blender trees retain biome silhouettes within their distant triangl
       assert.ok(wNear.materials.has('snow'),`winter:${v} carries drooping snow-laden boughs`);
     }
   }finally{clearAuthoredAssets();}
-});
-
-test('Phase 3 volcanic dead snags stay lean, leafless and carry subtle root ember clefts',()=>{
-  const materials={
-    trunk:new THREE.MeshStandardMaterial({color:0x282220}),
-    wood:new THREE.MeshStandardMaterial({color:0x4a3828}),
-    leaf:new THREE.MeshStandardMaterial({color:0x446633}),
-    glow:new THREE.MeshStandardMaterial({color:0xff7a2a,emissive:0xff5511}),
-  };
-  for(let v=0;v<4;v++){
-    const near=volcanicSnagModel({materials},v,false),far=volcanicSnagModel({materials},v,true);
-    let nearTris=0,farTris=0,hasLeaf=false,hasGlow=false;
-    near.traverse(p=>{if(!p.isMesh)return;nearTris+=(p.geometry.index?p.geometry.index.count:p.geometry.attributes.position.count)/3;if(p.material===materials.leaf)hasLeaf=true;if(p.material===materials.glow)hasGlow=true;});
-    far.traverse(p=>{if(!p.isMesh)return;farTris+=(p.geometry.index?p.geometry.index.count:p.geometry.attributes.position.count)/3;});
-    assert.ok(nearTris>=120&&nearTris<=380,`volcanic snag near tris ${nearTris} stays crisp and ultra-lean`);
-    assert.ok(farTris>=60&&farTris<nearTris,`volcanic snag far tris ${farTris} is lighter than near`);
-    assert.equal(hasLeaf,false,'volcanic snags carry no lush leaves');
-    assert.equal(hasGlow,true,'near volcanic snags include subtle smoldering ember clefts');
-  }
-  for(const m of Object.values(materials))m.dispose();
 });
 
 test('Phase 3 curved ribbon grass uses skyward bent normals, synchronized wind and biome accent scatter',()=>{

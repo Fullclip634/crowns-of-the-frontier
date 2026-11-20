@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
 import {authoredUnit,authoredBuilding,authoredResource,authoredTree,fortifyGateModel} from './authored-assets.js';
 import {wallTier} from './fortified-walls.js';
-import {treeBiome} from './terrain-biomes.js';
+import {isSnowBiome} from './terrain-biomes.js';
 
 const Y=new THREE.Vector3(0,1,0);
 function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
@@ -38,7 +38,7 @@ export function ensureModels(view){
   m.brick.map=m.stone.map;m.brick.bumpMap=m.stone.bumpMap;m.brick.bumpScale=.1;m.snow=standard(0xe3e9e5);
   m.rock=standard(0xa3aca3);m.oreRock=standard(0x878279,{metalness:.08,roughness:.88});m.oreGold=standard(0xffd654,{metalness:.46,roughness:.24,emissive:0x664509,emissiveIntensity:.28});
   const capsule=new THREE.CapsuleGeometry(.5,.5,2,8);capsule.scale(1,2/3,1);
-  Object.assign(view.geo,{capsule,anatomy:new THREE.SphereGeometry(1,10,7),foliageNear:new THREE.IcosahedronGeometry(1,1),foliageFar:new THREE.IcosahedronGeometry(1,0),grain3d:new THREE.OctahedronGeometry(1),limb:new THREE.CylinderGeometry(.86,1,1,7),cloth3d:closedCloth(),arch3d:archGeometry(),roof3d:gableGeometry(),hull3d:hullGeometry(),wheel3d:new THREE.TorusGeometry(.5,.09,5,16).rotateY(Math.PI/2),ring3d:new THREE.TorusGeometry(1,.075,5,20),rock3d:new THREE.DodecahedronGeometry(1,0),helmet3d:new THREE.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.68),dome3d:new THREE.SphereGeometry(1,16,8,0,Math.PI*2,0,Math.PI/2)});
+  Object.assign(view.geo,{capsule,anatomy:new THREE.SphereGeometry(1,10,7),grain3d:new THREE.OctahedronGeometry(1),limb:new THREE.CylinderGeometry(.86,1,1,7),cloth3d:closedCloth(),arch3d:archGeometry(),roof3d:gableGeometry(),hull3d:hullGeometry(),wheel3d:new THREE.TorusGeometry(.5,.09,5,16).rotateY(Math.PI/2),ring3d:new THREE.TorusGeometry(1,.075,5,20),rock3d:new THREE.DodecahedronGeometry(1,0),helmet3d:new THREE.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.68),dome3d:new THREE.SphereGeometry(1,16,8,0,Math.PI*2,0,Math.PI/2)});
   // These props can share materials with baked-color Blender meshes. Supply a
   // neutral attribute so that absent colors never multiply their surfaces black.
   for(const geometry of Object.values(view.geo))if(!geometry.getAttribute('color'))geometry.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(geometry.attributes.position.count*3).fill(1),3));
@@ -368,14 +368,13 @@ export function resourceModel(view,e){
 
 export function treeModel(view,map,variant=0,far=false){
   ensureModels(view);const authored=authoredTree(view,map,variant,far);if(authored)return authored;
-  ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(variant+128),kind=treeBiome(map),pine=kind==='winter',desert=kind==='desert';
+  ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(variant+128),snow=isSnowBiome(map);
   b.rod(m.trunk,[0,0,0],[.07,4.5,0],.22);
   if(!far){for(let i=0;i<4;i++){const angle=i*Math.PI/2+variant;b.rod(m.trunk,[0,.4,0],[Math.sin(angle)*.75,.04,Math.cos(angle)*.75],.12);}b.rod(m.trunk,[.02,2.2,0],[.45,4.8,.15],.12);}
-  for(let i=0;i<(far?3:pine?4:6);i++){
-    const a=i*2.4+variant,level=2.5+i*.48,x=Math.sin(a)*(1+i*.08),z=Math.cos(a)*(1+i*.08);
-    b.rod(m.trunk,[0,level-.7,0],[x,level+.15,z],.075);
-    if(pine){const radius=2.1-i*.35,leaves=b.piece(view.geo.cone,m.leafDark,0,2.9+i*.75,0,radius,2.6,radius);leaves.rotation.y=rng()*6;b.piece(view.geo.cone,m.snow,0,3.24+i*.75,0,radius*.79,2.02,radius*.79);}
-    else b.piece(far?view.geo.foliageFar:view.geo.foliageNear,i%2?m.leafDark:m.leaf,x*.55,level+.6,z*.55,1.25+rng()*.3,desert?.8:1.1+rng()*.3,1.3+rng()*.3);
+  for(let i=0;i<(far?3:4);i++){
+    const radius=2.1-i*.35,y=2.9+i*.75,angle=rng()*6;
+    b.piece(view.geo.cone,i%2?m.leaf:m.leafDark,0,y,0,radius,2.6,radius).rotation.y=angle;
+    if(snow)b.piece(view.geo.cone,m.snow,0,y+.34,0,radius*.79,2.02,radius*.79).rotation.y=angle;
   }
   g.userData.model3d={kind:'resource',type:'wood',volumetric:true};return g;
 }

@@ -5,13 +5,14 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {WorldView} from '../src/world.js';
-import {BUILDINGS,UNITS} from '../src/data.js';
+import {BUILDINGS,UNITS,MAPS} from '../src/data.js';
 import {buildingModel,unitModel,treeModel,resourceModel} from '../src/models-3d.js';
 import {registerAuthoredAssets,registerSharedTrees,useSharedTrees,clearAuthoredAssets,workerVisualTask} from '../src/authored-assets.js';
 import {animatePart} from '../src/world-polish.js';
 import {UnitActions} from '../src/unit-actions.js';
 import {mergeUnitModel} from '../src/unit-palette.js';
 import {packBuildingModel} from '../src/structure-palette.js';
+import {isAridBiome,isSnowBiome} from '../src/terrain-biomes.js';
 import {LOW_CATALOGUE_BUDGET} from '../scripts/blender/content-budget.mjs';
 
 async function assetGLTF(bytes){
@@ -378,5 +379,17 @@ test('each age gives a building a taller, steeper roof that stays attached to it
       assert.ok(current.chimney>previous.chimney+.1,`age ${current.age} raises the chimney with the roof`);
     }
     assert.ok(measured[3].roofTop>measured[0].roofTop*1.35,'Imperial is visibly taller than Dark Age');
+  }finally{clearAuthoredAssets();}
+});
+
+test('every map uses an evergreen template at both camera distances',async()=>{
+  try{
+    const assets=await catalogue('high'),view=fixture(assets);
+    for(const map of Object.keys(MAPS))for(let variant=0;variant<4;variant++)for(const far of [false,true]){
+      const tree=treeModel(view,map,variant,far);
+      const family=isSnowBiome(map)?'winter':'highlands';
+      const detail=far||isAridBiome(map)?'far':'near';
+      assert.equal(tree.userData.assetKey,['tree',family,variant,detail].join(':'),map);
+    }
   }finally{clearAuthoredAssets();}
 });

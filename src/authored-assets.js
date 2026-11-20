@@ -6,7 +6,7 @@ import {bindWorkerToolJoints} from './worker-tool-rig.js';
 import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
-import {treeBiome} from './terrain-biomes.js';
+import {treeBiome,isAridBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {readAssetResponse} from './load-progress.js';
 
@@ -353,5 +353,7 @@ export function authoredResource(view,e){
 }
 export function authoredTree(view,map,variant,far){
   const biome=treeBiome(map);
-  return cloneAsset(view,`tree:${biome}:${variant}:${far?'far':'near'}`);
+  // Keep the evergreen shape on arid maps with the compact canopy.
+  const detail=far||isAridBiome(map)?'far':'near';
+  return cloneAsset(view,`tree:${biome}:${variant}:${detail}`);
 }

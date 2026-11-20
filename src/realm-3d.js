@@ -18,7 +18,6 @@ import {treeBiome,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
-import {biomeVolcanicTreeModel} from './biome-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
@@ -65,54 +64,6 @@ function forestShadowTexture(){
   return tex;
 }
 
-export function volcanicSnagModel(view,variant=0,far=false){
-  const g=new THREE.Group(),m=view.materials,rng=seededRandom(7331+variant*137);
-  const segs=far?5:6;
-  const trunkMat=m.trunk||m.wood;
-  const addLimb=(mat,x,y,z,topR,botR,len,rx,ry,rz)=>{
-    const geo=new THREE.CylinderGeometry(topR,botR,len,segs,1,false);
-    geo.translate(0,len*.5,0);
-    const mesh=new THREE.Mesh(geo,mat);
-    mesh.position.set(x,y,z);
-    mesh.rotation.order='YXZ';
-    mesh.rotation.set(rx,ry,rz);
-    g.add(mesh);
-    return mesh;
-  };
-  const h1=1.85+rng()*.55,leanX=(rng()-.5)*.26,leanZ=(rng()-.5)*.26;
-  const baseR=.36+rng()*.08,midR=.21+rng()*.05;
-  // Flared root buttress + crooked lower charred trunk
-  addLimb(trunkMat,0,-.12,0,baseR*1.05,baseR*1.42,.58,0,rng()*6.28,0);
-  addLimb(trunkMat,0,.32,0,midR,baseR,h1,leanX,0,leanZ);
-  const topX=-Math.sin(leanZ)*h1,topY=.32+Math.cos(Math.hypot(leanX,leanZ))*h1,topZ=Math.sin(leanX)*h1;
-  const h2=1.95+rng()*.95,bendX=leanX+(rng()-.5)*.34,bendZ=leanZ+(rng()-.5)*.34;
-  addLimb(trunkMat,topX,topY-.08,topZ,.055+rng()*.03,midR*.96,h2,bendX,0,bendZ);
-  // Broken forked charred limbs
-  const limbCount=far?3:4;
-  for(let i=0;i<limbCount;i++){
-    const t=.28+(i/limbCount)*.62+rng()*.08;
-    const lx=topX-Math.sin(bendZ)*h2*t,ly=topY+Math.cos(Math.hypot(bendX,bendZ))*h2*t,lz=topZ+Math.sin(bendX)*h2*t;
-    const yaw=(i*(Math.PI*2/limbCount))+rng()*.7,pitch=.52+rng()*.48,len=1.05+rng()*1.15;
-    const r0=Math.max(.06,midR*(.65-t*.3));
-    addLimb(trunkMat,lx,ly,lz,r0*.24,r0,len,pitch,yaw,0);
-    if(!far&&i<3){
-      const midLen=len*.56;
-      const sx=lx+Math.sin(yaw)*Math.sin(pitch)*midLen,sy=ly+Math.cos(pitch)*midLen,sz=lz+Math.cos(yaw)*Math.sin(pitch)*midLen;
-      addLimb(trunkMat,sx,sy,sz,.018,r0*.42,.55+rng()*.45,pitch+.38,yaw+(i%2?1:-1)*.65,0);
-    }
-  }
-  // Subtle glowing ember cleft near charred root collar on near LOD
-  if(!far&&m.glow){
-    const cleftAngle=rng()*6.28;
-    const ember=new THREE.Mesh(new THREE.CylinderGeometry(.045,.11,.46,5,1,false),m.glow);
-    ember.position.set(Math.cos(cleftAngle)*baseR*.78,.24,Math.sin(cleftAngle)*baseR*.78);
-    ember.rotation.set(.18,cleftAngle,-.14);
-    g.add(ember);
-  }
-  g.userData.foliageSpecies='volcanic snag';
-  return g;
-}
-
 function foundation(view,e){
   if(e.type==='farm')return view.landscape.surfaceHeightAt(e.x,e.z);
   const r=e.r*.65;let height=view.landscape.surfaceHeightAt(e.x,e.z);
@@ -124,8 +75,6 @@ function buildForest(view){
   const materials=new Map();
   const leafy=new Set([view.materials.leaf,view.materials.leafDark]);
   const map=view.sim.options.map,volcanic=map==='volcanic';
-  // Arid frontiers read as sparse flat-topped desert acacias; volcanic frontiers
-  // use sculpted charred dead snags; tundra keeps snow-laden alpine spruces.
   const canopyScale=volcanic?.95:isAridBiome(map)?.84:isSnowBiome(map)?.96:map==='woodland'?1.12:1;
   const shadowColor=volcanic?0x14100e:isSnowBiome(map)?0x3a4d62:isAridBiome(map)?0x4a3822:0x172414;
   const shadowOpacity=volcanic?.36:isSnowBiome(map)?.24:isAridBiome(map)?.26:.38;
@@ -150,7 +99,7 @@ function buildForest(view){
     // Bark keeps its authored colour; only the canopy varies per tree.
     const tints=entries.map(e=>{const tint=treeTint(e.id);return new THREE.Color().setRGB(tint.r,tint.g,tint.b);});
     for(const far of [false,true]){
-      const rawModel=volcanic?(biomeVolcanicTreeModel(view,variant,far)||volcanicSnagModel(view,variant,far)):treeModel(view,map,variant,far);
+      const rawModel=treeModel(view,map,variant,far);
       const model=view.mergeModel(rawModel),parts=[],ids=[];
       model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
       footprint.push(Math.max(size.x,size.z));
@@ -158,9 +107,9 @@ function buildForest(view){
         if(!part.isMesh)return;
         if(view.settings.quality==='low'&&part.userData.foliageDetail==='closed leaf tips')return;
         const source=part.material;
-        if(!materials.has(source)){const cloned=shadeBattlefieldFog(source.clone(),view);if(source===view.materials.glow)cloned.emissiveIntensity=1.75;materials.set(source,cloned);}
+        if(!materials.has(source)){const cloned=shadeBattlefieldFog(source.clone(),view);materials.set(source,cloned);}
         const mesh=new THREE.InstancedMesh(part.geometry,materials.get(source),entries.length);mesh.count=0;mesh.castShadow=!far&&part.userData.foliageDetail!=='closed leaf tips';mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.treeIds=ids;mesh.userData.model3d={kind:'resource',type:'wood'};
-        mesh.userData.foliageSway=!volcanic&&(leafy.has(source)||source===view.materials.snow);
+        mesh.userData.foliageSway=leafy.has(source)||source===view.materials.snow;
         // One forest built from a single canopy still reads as rows of copies.
         // A small per-tree tint breaks that up without new geometry, and it is
         // derived from the tree id so it never changes between frames.
@@ -245,9 +194,9 @@ export function installRealm3D(WorldView){
     for(const [i,player] of this.sim.players.entries()){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }
-    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&map!=='desert'&&!volcanic,lush=map==='woodland'||map==='riverland';
-    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x4d433d:dry?0x878d4f:treeKind==='desert'?0x8a8752:lush?0x3e5f35:0x526b3c);
-    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x2b2421:dry?0x4f562e:treeKind==='desert'?0x4a4830:lush?0x2b4429:0x344e30);
+    const map=this.sim.options.map,treeKind=treeBiome(map),volcanic=map==='volcanic',dry=isAridBiome(map)&&!volcanic,lush=map==='woodland'||map==='riverland';
+    this.materials.leaf.color.setHex(treeKind==='winter'?0x74836e:volcanic?0x526047:dry?0x727e48:lush?0x3e5f35:0x526b3c);
+    this.materials.leafDark.color.setHex(treeKind==='winter'?0x364d40:volcanic?0x344138:dry?0x485435:lush?0x2b4429:0x344e30);
     if(this.materials.trunk)this.materials.trunk.color.setHex(volcanic?0x382f2b:dry?0x6c5941:0x66563e);
     buildLandscape(this);
   };
