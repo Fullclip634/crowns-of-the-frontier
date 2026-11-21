@@ -85,7 +85,7 @@ export function updateContacts(view,menu){
   }
   if(view.clock-(view.contactPrunedAt||0)>2){for(const id of view.contactCache?.keys()||[])if(!view.sim.get(id))view.contactCache.delete(id);view.contactPrunedAt=view.clock;}
   mesh.count=count;slots.length=count;let matrixUploadBytes=0;
-  if(lastChanged>=0){mesh.instanceMatrix.addUpdateRange(firstChanged*16,(lastChanged-firstChanged+1)*16);mesh.instanceMatrix.needsUpdate=true;matrixUploadBytes=(lastChanged-firstChanged+1)*64;}
+  if(lastChanged>=0){mesh.instanceMatrix.clearUpdateRanges();mesh.instanceMatrix.addUpdateRange(firstChanged*16,(lastChanged-firstChanged+1)*16);mesh.instanceMatrix.needsUpdate=true;matrixUploadBytes=(lastChanged-firstChanged+1)*64;}
   view.contactDiagnostics={visible:count,culled,computed,reused,cached:view.contactCache?.size||0,matrixUploadBytes};
 }
 

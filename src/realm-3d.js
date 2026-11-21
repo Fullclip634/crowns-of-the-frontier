@@ -331,7 +331,8 @@ export function installRealm3D(WorldView){
     if(this.materials.glow)this.materials.glow.emissiveIntensity=1.4+Math.sin(this.clock*8)*.25;
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     let landUnits=null;
-    for(const e of this.sim?.entities||[]){
+    const buildings=typeof this.sim?.candidatesFor==='function'?this.sim.candidatesFor('building'):(this.sim?.entities||[]);
+    for(const e of buildings){
       if(e.kind!=='building')continue;
       let node=this.nodes.get(e.id);if(!node)continue;
       if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e)))){
@@ -352,7 +353,7 @@ export function installRealm3D(WorldView){
             if(!nearby&&u.hp>0&&!u.embarked&&!UNITS[u.type]?.naval&&this.sim.allied(u.owner,e.owner)&&(u.x-e.x)**2+(u.z-e.z)**2<30.25)nearby=true;
           });
         }else{
-          landUnits??=this.sim.entities.filter(u=>u.hp>0&&u.kind==='unit'&&!u.embarked&&!UNITS[u.type].naval);
+          landUnits??=(typeof this.sim.candidatesFor==='function'?this.sim.candidatesFor('unit'):this.sim.entities).filter(u=>u.hp>0&&u.kind==='unit'&&!u.embarked&&!UNITS[u.type].naval);
           nearby=landUnits.some(u=>this.sim.allied(u.owner,e.owner)&&(u.x-e.x)**2+(u.z-e.z)**2<30.25);
         }
         const desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);

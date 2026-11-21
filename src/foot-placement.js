@@ -80,5 +80,7 @@ export function visualBodyOffset(view,entity){
 }
 
 export function pruneFootPlacements(view,sim){
-  if(!view.footPoses?.size)return;const alive=new Set(sim.entities.filter(e=>e.hp>0).map(e=>e.id));for(const id of view.footPoses.keys())if(!alive.has(id))view.footPoses.delete(id);
+  if(!view.footPoses?.size)return;
+  if(typeof sim.get==='function'){for(const id of view.footPoses.keys())if(!sim.get(id))view.footPoses.delete(id);return;}
+  const alive=new Set(sim.entities.filter(e=>e.hp>0).map(e=>e.id));for(const id of view.footPoses.keys())if(!alive.has(id))view.footPoses.delete(id);
 }

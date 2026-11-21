@@ -23,8 +23,16 @@ export class WallVisuals{
   update(menu){const v=this.view,fogVersion=v.fogTexture?.version??0;const revisionChanged=this.revision!==v.sim.revision||this.entities!==v.sim.entities;
     // A researched masonry upgrade changes appearance without necessarily
     // changing the entity list, so track the tech table in the cheap guard too.
-    const tierVersion=v.sim.players?.map(player=>player.tech?.[FORTIFIED_WALL_TECH]||0).join(',')||'';
-    if(revisionChanged){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities),...wallSupportConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
+    let tierVersion=0;
+    const players=v.sim.players;
+    if(players)for(let i=0;i<players.length;i++)tierVersion=tierVersion*16+Math.min(15,(players[i]?.tech?.[FORTIFIED_WALL_TECH]||0)+1);
+    if(revisionChanged){
+      const buildings=typeof v.sim.candidatesFor==='function'?v.sim.candidatesFor('building'):v.sim.entities;
+      let hasWall=false,hasGate=false;
+      for(const e of buildings)if(e.hp>0&&e.kind==='building'){if(e.type==='wall'){hasWall=true;break;}if(e.type==='gate')hasGate=true;}
+      this.links=hasWall||hasGate?[...wallConnections(buildings),...(hasWall?wallTreeConnections(v.sim.entities):[]),...(hasWall?wallSupportConnections(v.sim.entities):[])].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12):[];
+      this.revision=v.sim.revision;this.entities=v.sim.entities;
+    }
     if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
     const tierOf=link=>(wallTier(v.sim,link.a)==='fortified'||wallTier(v.sim,link.b)==='fortified')?'fortified':'stone',shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
@@ -38,7 +46,7 @@ export class WallVisuals{
       this.piece(this.foundation,link,start,end,ga,gb,.29-depth/2,depth,style.foundationDepth,style.foundationColor);
       if(progress>.8){this.piece(this.stone,link,start,end,ga,gb,(style.bodyY+style.height/2-.02)*progress,.18,style.depth+.03,style.color);const mid={x:(start.x+end.x)/2,z:(start.z+end.z)/2},half=Math.min(.275,link.gap*.35),capA={x:mid.x-dx*half,z:mid.z-dz*half},capB={x:mid.x+dx*half,z:mid.z+dz*half};this.piece(this.stone,link,capA,capB,ga,gb,style.capY*progress,style.capHeight*progress,style.depth+.03,style.color);}
     }
-    for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}v.wallDiagnostics={connections:this.links.length,visible,batches:2,stoneInstances:this.stone.count};
+    for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;if(mesh.instanceColor&&mesh.count>0){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,mesh.count*3);mesh.instanceColor.needsUpdate=true;}}v.wallDiagnostics={connections:this.links.length,visible,batches:2,stoneInstances:this.stone.count};
   }
   dispose(){for(const mesh of this.meshes){mesh.removeFromParent();mesh.dispose();}this.group.removeFromParent();}
 }

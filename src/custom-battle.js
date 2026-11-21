@@ -208,13 +208,14 @@ export function installCustomBattle(Simulation){
   p.resign=function(owner=0){if(this.options.mode!=='custom'||this.ended)return false;this.eliminateKingdom(owner,'Resigned');this.checkVictory();return true;};
   p.checkVictory=function(){
     if(this.options.mode!=='custom')return checkVictory.call(this);
-    const kingdoms=this.players.map(()=>({buildings:[],units:0}));
-    for(const e of this.entities)if(e.hp>0&&e.owner>=0){if(e.kind==='building')kingdoms[e.owner].buildings.push(e);else if(e.kind==='unit')kingdoms[e.owner].units++;}
+    const kingdoms=this.players.map(()=>({buildings:0,hasTownCenter:false,units:0}));
+    for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner>=0){const k=kingdoms[e.owner];k.buildings++;if(e.type==='towncenter')k.hasTownCenter=true;}
+    for(const e of this.candidatesFor('unit'))if(e.hp>0&&e.owner>=0)kingdoms[e.owner].units++;
     for(let owner=0;owner<this.players.length;owner++){
       const player=this.players[owner];if(player.defeated)continue;
-      const {buildings,units}=kingdoms[owner];
-      if(this.options.victory==='capital'?!buildings.some(e=>e.type==='towncenter'):this.options.victory==='conquest'?!buildings.length&&!units:!buildings.length)this.eliminateKingdom(owner,'Victory condition reached');
-      if(this.options.revealRemnants&&!player.defeated&&!buildings.some(e=>e.type==='towncenter')&&buildings.length<=5&&!this.revealedOwners.includes(owner)){
+      const {buildings,hasTownCenter,units}=kingdoms[owner];
+      if(this.options.victory==='capital'?!hasTownCenter:this.options.victory==='conquest'?!buildings&&!units:!buildings)this.eliminateKingdom(owner,'Victory condition reached');
+      if(this.options.revealRemnants&&!player.defeated&&!hasTownCenter&&buildings<=5&&!this.revealedOwners.includes(owner)){
         this.revealedOwners.push(owner);this.emit('remnants-revealed',{owner,name:player.name});this.updateFog();
       }
     }
@@ -235,7 +236,12 @@ export function visibilityFor(sim,owner,explored,observer=false){
   const size=sim.gridSize,visible=new Uint8Array(size*size);
   if(observer){visible.fill(1);explored.fill(1);return visible;}
   const reveal=(e,r)=>{const c=sim.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(visible,explored,size,c.x,c.z,rc);};
-  for(const e of sim.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||sim.options.mode==='custom'&&sim.options.shareVision&&sim.allied(owner,e.owner))){if(e.kind==='unit')reveal(e,UNITS[e.type].vision);else if(e.kind==='building'&&e.progress>0)reveal(e,BUILDINGS[e.type].vision||18);else if(e.kind==='shrine')reveal(e,18);}
+  const shared=sim.options.mode==='custom'&&sim.options.shareVision;
+  if(typeof sim.candidatesFor==='function'){
+    for(const e of sim.candidatesFor('unit'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,UNITS[e.type].vision);
+    for(const e of sim.candidatesFor('building'))if(e.hp>0&&!e.embarked&&e.progress>0&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,BUILDINGS[e.type].vision||18);
+    for(const e of sim.candidatesFor('shrine'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,18);
+  }else for(const e of sim.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner))){if(e.kind==='unit')reveal(e,UNITS[e.type].vision);else if(e.kind==='building'&&e.progress>0)reveal(e,BUILDINGS[e.type].vision||18);else if(e.kind==='shrine')reveal(e,18);}
   for(const side of sim.revealedOwners||[])for(const e of sim.owned(side,'building'))reveal(e,e.r+4);
   return visible;
 }

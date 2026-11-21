@@ -32,7 +32,7 @@ export function installRenderFrame(WorldView){
 }
 
 export function markInstancePrefix(mesh,count=mesh.count){
-  if(!count)return;
+  if(!(count>0))return;
   const attribute=mesh.instanceMatrix;attribute.clearUpdateRanges();attribute.addUpdateRange(0,count*16);attribute.needsUpdate=true;
 }
 

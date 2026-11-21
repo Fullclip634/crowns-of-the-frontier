@@ -445,7 +445,7 @@ function renderSelection(){if(!playing)return;selection=selection.filter(id=>{co
   if(mine&&first.kind==='building'&&(first.type!=='towncenter'||sim.owned(0,'building','towncenter').length>1))panel.innerHTML+=`<button class="demolish" data-demolish="${first.id}">${first.progress<1?'Cancel construction (70% refund)':'Demolish (20% refund)'}</button>`;
   }finally{updateSelectionLive(panel,ordered);restorePosition();updateAffordability();}
 }
-function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('context-command',!!buildType||attackMove||!!tacticalMode||unloadMode);const p=sim.players[0],spectator=isAISpectator();const resourceRoot=$('#resource-bar');if(spectator){if(!resourceRoot.querySelector('.spectator-banner'))resourceRoot.innerHTML=sim.options.multiplayer?'<div class="spectator-banner">SPECTATING | FULL MAP</div>':'<div class="spectator-banner">SPECTATING | ALL KINGDOMS AI</div>';}else updateResourceBar(resourceRoot,p,sim.population(0),sim.capacity(0));$('#hud').classList.toggle('ai-spectator',spectator);$('#production-toggle').classList.toggle('hidden',spectator);
+function renderHUD(includeCanvas=true){if(!playing)return;$('.game-bottomline').classList.toggle('context-command',!!buildType||attackMove||!!tacticalMode||unloadMode);const p=sim.players[0],spectator=isAISpectator();const resourceRoot=$('#resource-bar');if(spectator){if(!resourceRoot.querySelector('.spectator-banner'))resourceRoot.innerHTML=sim.options.multiplayer?'<div class="spectator-banner">SPECTATING | FULL MAP</div>':'<div class="spectator-banner">SPECTATING | ALL KINGDOMS AI</div>';}else updateResourceBar(resourceRoot,p,sim.population(0),sim.capacity(0));$('#hud').classList.toggle('ai-spectator',spectator);$('#production-toggle').classList.toggle('hidden',spectator);
   $('#alliance-toggle').classList.toggle('hidden',spectator||sim.options.mode!=='custom'||!sim.players.some((player,i)=>i!==0&&sim.allied(0,i)&&!player.defeated));
   setUIText($('#age-label'),spectator?'SPECTATOR':AGES[p.age]);setUIText($('#game-time'),formatTime(sim.time));if(net.active)setUIText($('#control-hint'),`ROOM ${net.code} · ${net.ping}ms`);setUIText($('#speed-button'),`${speed}×`);
   const m=MODES.find(m=>m.id===sim.options.mode)||sim.mission;let objective=m.objective;
@@ -466,7 +466,7 @@ function renderHUD(){if(!playing)return;$('.game-bottomline').classList.toggle('
   body.hidden=!expanded;
   if(toggle.getAttribute('aria-expanded')!==String(expanded)){toggle.setAttribute('aria-expanded',String(expanded));toggle.setAttribute('aria-label',`${expanded?'Close':'Open'} battle objectives`);toggle.title=`${expanded?'Close':'Open'} objectives`;toggle.innerHTML=`${expanded?'Close objectives':'Objectives'} <span class="objective-icon" aria-hidden="true">${uiIcon(expanded?'x':'chevron-down')}</span>`;}
   setUIText($('#army-count'),spectator?`${sim.players.filter(player=>!player.defeated).length} active kingdoms`:`${sim.owned(0,'unit').filter(e=>e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='cart'&&!e.embarked).length} soldiers`);setUIText($('#map-label'),sim.options.map.toUpperCase());setUIText($('#control-hint'),spectator?'SPECTATOR | SELECT A KINGDOM TO FOLLOW':net.active?`ROOM ${net.code} | ${net.ping}ms`:touchDevice?'TAP TO COMMAND · PINCH TO ZOOM':'MOUSE EDGES TO PAN | RIGHT-CLICK TO COMMAND');
-  renderMinimap();renderHealth();renderProduction();renderControlGroups();updateAffordability();
+  if(includeCanvas){renderMinimap();renderHealth();}renderProduction();renderControlGroups();updateAffordability();
 }
 function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings);}
 function renderHealth(){if(!playing||hudEl.classList.contains('panels-hidden'))return;renderHealthBars(healthLayerEl,sim,view);}
@@ -721,7 +721,7 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(edgeMoved&&buildType&&buildType!=='wall'&&edgeScroll.point){const point=view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);if(point)view.showGhost(buildType,point.x,point.z,sim.buildValid(buildType,point.x,point.z));else view.hideGhost();}
     if(buildType==='wall')updateWallPlacement();
     if(playing&&!firstFrame&&!paused&&!sim.ended&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
-      const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){renderHUD();renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
+      const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){renderHUD(false);renderSelection();uiTime=0;}if(sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}
     }
     if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
@@ -730,7 +730,7 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(playing&&framePacer.due(now,renderInterval)){
       const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;
       view.wallStep=firstFrame?0:paused?dt:renderGap*Math.max(1,speed);
-      if(view.render(firstFrame?0:Math.min(.2,(now-lastRender)/1000),false)!==false){
+      if(view.render(firstFrame?0:Math.min(.2,Math.max(0,(now-lastRender)/1000)),false)!==false){
         lastRender=now;renderHealth();presentBattlefield();
       }
     }

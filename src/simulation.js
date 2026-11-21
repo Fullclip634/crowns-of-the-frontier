@@ -92,14 +92,14 @@ export class Simulation {
   on(fn){this.listeners.push(fn);}
   emit(type,data={}){const event={type,...data};this.events.push(event);for(const fn of this.listeners)fn(event);}
   get(id){return this.entities.find(e=>e.id===id&&e.hp>0);}
-  // The unit/building shortlist is rebuilt at most once per tick and shared by
-  // owned() and count(). Building it through one helper keeps the two in step.
+  // The unit/building/shrine shortlist is rebuilt at most once per tick and shared
+  // by owned(), count(), visibility, fog, and rendering.
   candidatesFor(kind){
-    if(kind!=='unit'&&kind!=='building')return this.entities;
+    if(kind!=='unit'&&kind!=='building'&&kind!=='shrine')return this.entities;
     let cache=this.ownedCandidates;
     if(!cache||cache.entities!==this.entities||cache.length!==this.entities.length||cache.time!==this.time||cache.revision!==this.revision){
-      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[]};
-      for(const e of this.entities)if(e.kind==='unit'||e.kind==='building')cache[e.kind].push(e);
+      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[],shrine:[]};
+      for(const e of this.entities)if(e.kind==='unit'||e.kind==='building'||e.kind==='shrine')cache[e.kind].push(e);
       this.ownedCandidates=cache;
     }
     return cache[kind];
@@ -344,7 +344,7 @@ export class Simulation {
       }
     }
     const data=this.grids.landBase.data.slice();
-    for(const e of this.entities)if(e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&this.allied(e.owner,owner))){
+    for(const e of this.candidatesFor('building'))if(e.hp>0&&e.type!=='farm'&&!(e.type==='gate'&&this.allied(e.owner,owner))){
       const a=this.cell(e.x-e.r-.3,e.z-e.r-.3),b=this.cell(e.x+e.r+.3,e.z+e.r+.3);
       for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.9)data[z*size+x]=1;
     }
@@ -595,16 +595,20 @@ export class Simulation {
     // Supply caravans reward surviving a wave without removing the need for an economy.
     if(this.wave>1)for(const key of ['food','wood','gold'])this.players[0].resources[key]+=80+this.wave*15;
   }
-  tickShrines(dt){for(const s of this.entities.filter(e=>e.kind==='shrine')){const troops=[0,1].map(owner=>this.owned(owner,'unit').filter(e=>e.type!=='villager'&&distance(s,e)<7).length);const side=troops[0]>0&&troops[1]===0?0:troops[1]>0&&troops[0]===0?1:-1;
+  tickShrines(dt){const shrines=this.candidatesFor('shrine');if(!shrines.length)return;
+    for(const s of shrines){const troops=[0,1].map(owner=>this.owned(owner,'unit').filter(e=>e.type!=='villager'&&distance(s,e)<7).length);const side=troops[0]>0&&troops[1]===0?0:troops[1]>0&&troops[0]===0?1:-1;
       if(side>=0&&s.owner!==side){if(s.capturer!==side){s.capturer=side;s.progress=0;}s.progress+=dt;if(s.progress>=18){s.owner=side;s.progress=0;this.emit('capture',{owner:side});}}else if(side<0)s.progress=Math.max(0,s.progress-dt*.5);
       if(s.owner>=0)this.players[s.owner].resources.gold+=dt*.55;
     }
-    const shrines=this.entities.filter(e=>e.kind==='shrine');if(shrines.length){this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,'The rival kingdom united the sacred valley.');}
+    this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,'The rival kingdom united the sacred valley.');
   }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
-  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}for(const e of this.entities.filter(e=>e.hp>0&&(e.owner===0||this.options.mode==='custom'&&this.options.shareVision&&this.allied(0,e.owner))&&!e.embarked&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))){let r=e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18;if(this.tacticalEnabled()&&e.kind==='unit'){const phase=this.tacticalPhase();r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),tacticalHeight(this.options.map,this.options.seed,0,0,phase))+biomeVisionModifier(this.options.map));}const c=this.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,rc);}
-    for(const s of this.entities.filter(e=>e.kind==='shrine'&&e.owner===0)){const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
+  updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
+    const shared=this.options.mode==='custom'&&this.options.shareVision,tactical=this.tacticalEnabled(),phase=tactical?this.tacticalPhase():0,originHeight=tactical?tacticalHeight(this.options.map,this.options.seed,0,0,phase):0,biomeBonus=tactical?biomeVisionModifier(this.options.map):0;
+    for(const e of this.candidatesFor('unit')){if(e.hp<=0||e.embarked||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;let r=UNITS[e.type].vision;if(tactical)r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),originHeight)+biomeBonus);const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil(r/2));}
+    for(const e of this.candidatesFor('building')){if(e.hp<=0||e.embarked||e.progress<=0||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil((BUILDINGS[e.type].vision||18)/2));}
+    for(const s of this.candidatesFor('shrine')){if(s.owner!==0)continue;const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
     revealResourceChanges(this);
     this.fogRevision++;
   }

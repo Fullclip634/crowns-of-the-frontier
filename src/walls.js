@@ -114,12 +114,22 @@ export function wallSupportConnections(entities){
   return links;
 }
 
-export function blockWallConnections(sim,grid){
-  if(sim.wallTreeLinkCache?.entities!==sim.entities||sim.wallTreeLinkCache.revision!==sim.revision)sim.wallTreeLinkCache={entities:sim.entities,revision:sim.revision,links:[...wallTreeConnections(sim.entities),...wallSupportConnections(sim.entities)]};
-  for(const {collisionStart:a,collisionEnd:b} of [...wallConnections(sim.entities),...sim.wallTreeLinkCache.links]){
-    const from=sim.cell(Math.min(a.x,b.x)-.85,Math.min(a.z,b.z)-.85),to=sim.cell(Math.max(a.x,b.x)+.85,Math.max(a.z,b.z)+.85),dx=b.x-a.x,dz=b.z-a.z,squared=dx*dx+dz*dz;
-    for(let z=from.z;z<=to.z;z++)for(let x=from.x;x<=to.x;x++){const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,t=squared?Math.max(0,Math.min(1,((wx-a.x)*dx+(wz-a.z)*dz)/squared)):0;
-      if(Math.hypot(wx-a.x-t*dx,wz-a.z-t*dz)<.85)grid[z*sim.gridSize+x]=1;
-    }
+function blockWallSegment(sim,grid,a,b){
+  const from=sim.cell(Math.min(a.x,b.x)-.85,Math.min(a.z,b.z)-.85),to=sim.cell(Math.max(a.x,b.x)+.85,Math.max(a.z,b.z)+.85),dx=b.x-a.x,dz=b.z-a.z,squared=dx*dx+dz*dz;
+  for(let z=from.z;z<=to.z;z++)for(let x=from.x;x<=to.x;x++){const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,t=squared?Math.max(0,Math.min(1,((wx-a.x)*dx+(wz-a.z)*dz)/squared)):0;
+    if(Math.hypot(wx-a.x-t*dx,wz-a.z-t*dz)<.85)grid[z*sim.gridSize+x]=1;
   }
+}
+
+export function blockWallConnections(sim,grid){
+  const buildings=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):sim.entities;
+  let hasWall=false,hasGate=false;
+  for(const e of buildings)if(e.hp>0&&e.kind==='building'){if(e.type==='wall'){hasWall=true;break;}if(e.type==='gate')hasGate=true;}
+  if(!hasWall&&!hasGate){
+    if(sim.wallTreeLinkCache?.entities!==sim.entities||sim.wallTreeLinkCache.revision!==sim.revision)sim.wallTreeLinkCache={entities:sim.entities,revision:sim.revision,links:[]};
+    return;
+  }
+  if(sim.wallTreeLinkCache?.entities!==sim.entities||sim.wallTreeLinkCache.revision!==sim.revision)sim.wallTreeLinkCache={entities:sim.entities,revision:sim.revision,links:hasWall?[...wallTreeConnections(sim.entities),...wallSupportConnections(sim.entities)]:[]};
+  for(const {collisionStart:a,collisionEnd:b} of wallConnections(buildings))blockWallSegment(sim,grid,a,b);
+  for(const {collisionStart:a,collisionEnd:b} of sim.wallTreeLinkCache.links)blockWallSegment(sim,grid,a,b);
 }

@@ -119,7 +119,7 @@ export class NightAtmosphere {
     const camQuat=v.camera?.quaternion;
 
     let glowCount=0,smokeCount=0,sparkCount=0;
-    const entities=sim.entities||[];
+    const entities=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):(sim.entities||[]);
     for(const e of entities){
       if(e.kind!=='building'||e.hp<=0||e.progress<1)continue;
       if(fogActive&&e.owner!==0&&!sim.isVisible(e.x,e.z))continue;

@@ -7,6 +7,7 @@ import {isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {biomeAtmosphere} from './sky-atmosphere.js';
 import {ensureAtmosphereUniforms} from './atmosphere-uniforms.js';
 import {NightAtmosphere} from './night-atmosphere.js';
+import {markInstancePrefix} from './render-batches.js';
 
 export const WEATHER_NAMES={clear:'Clear skies',cloudy:'Cloudy',rain:'Rain',storm:'Storm',snow:'Snowfall'};
 const clamp=n=>Math.max(0,Math.min(1,n));
@@ -110,7 +111,7 @@ export function weatherAt(seed,map,time,preference='auto'){
 
 export class WeatherRenderer {
   constructor(view){
-    this.view=view;this.seed=view.sim.options.seed;this.map=view.sim.options.map;this.group=new THREE.Group();this.group.name='3D weather';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.tint=new THREE.Color();this.roofs=new Map();this.roofStamp='';this.strength=0;this.cloudiness=0;this.wetness=0;
+    this.view=view;this.seed=view.sim.options.seed;this.map=view.sim.options.map;this.group=new THREE.Group();this.group.name='3D weather';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.tint=new THREE.Color();this.roofs=new Map();this.surfaceCache=new Map();this.roofStamp='';this.strength=0;this.cloudiness=0;this.wetness=0;
     this.atmosphere=biomeAtmosphere(this.map);
     this.atmosphereUniforms=ensureAtmosphereUniforms(view);
     this.base={background:view.scene.background.clone(),fog:view.scene.fog.color.clone(),sun:view.sun.color.clone(),hemi:view.hemi.color.clone(),ground:view.groundSurface.material.color.clone(),
@@ -135,15 +136,26 @@ export class WeatherRenderer {
   }
   instances(geometry,material,capacity){const mesh=new THREE.InstancedMesh(geometry,material,capacity);mesh.count=0;mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.userData.weather3d=true;this.group.add(mesh);return mesh;}
   updateRoofs(){
-    const v=this.view,stamp=`${v.sim.revision}:${Math.floor(v.sim.time/4)}`;if(stamp===this.roofStamp)return;this.roofStamp=stamp;this.roofs.clear();
-    for(const e of v.sim.entities)if(e.hp>0&&e.kind==='building'&&(e.owner===0||v.sim.isVisible(e.x,e.z))){const h=v.entityHeight(e)+Math.max(2,e.r*1.5)*Math.max(.15,e.progress);
+    const v=this.view,stamp=`${v.sim.revision}:${Math.floor(v.sim.time/4)}`;if(stamp===this.roofStamp)return;this.roofStamp=stamp;this.roofs.clear();this.surfaceCache.clear();
+    const buildings=typeof v.sim.candidatesFor==='function'?v.sim.candidatesFor('building'):v.sim.entities;
+    for(const e of buildings)if(e.hp>0&&e.kind==='building'&&(e.owner===0||v.sim.isVisible(e.x,e.z))){const h=v.entityHeight(e)+Math.max(2,e.r*1.5)*Math.max(.15,e.progress);
       for(let x=Math.floor((e.x-e.r)/3);x<=Math.floor((e.x+e.r)/3);x++)for(let z=Math.floor((e.z-e.r)/3);z<=Math.floor((e.z+e.r)/3);z++){const key=(x+16384)*32768+(z+16384);this.roofs.set(key,Math.max(h,this.roofs.get(key)||-Infinity));}
     }
   }
   surface(x,z){const v=this.view,key=(Math.floor(x/3)+16384)*32768+(Math.floor(z/3)+16384);return Math.max(v.sim.isWater(x,z)?.1:v.groundHeight(x,z),this.roofs.get(key)||-Infinity);}
+  particleSurface(x,z){
+    const cx=Math.floor(x),cz=Math.floor(z),key=(cx+16384)*32768+(cz+16384);
+    let h=this.surfaceCache.get(key);
+    if(h===undefined){
+      if(this.surfaceCache.size>=4096)this.surfaceCache.clear();
+      h=this.surface(cx+.5,cz+.5);
+      this.surfaceCache.set(key,h);
+    }
+    return h;
+  }
   update(dt,menu=false){
     const v=this.view,time=v.sim.time,preference=menu?'clear':v.settings.weather||'auto',state=weatherAt(this.seed,this.map,time,preference);v.weatherState=state;
-    const blend=1-Math.exp(-dt*.7);this.strength+=(state.amount-this.strength)*blend;this.cloudiness+=(state.cloud-this.cloudiness)*blend;
+    const safeDt=Math.max(0,dt||0),blend=1-Math.exp(-safeDt*.7);this.strength=clamp(this.strength+(state.amount-this.strength)*blend);this.cloudiness=clamp(this.cloudiness+(state.cloud-this.cloudiness)*blend);
     const dark=this.cloudiness*.48,flash=state.flash&&v.settings.lightning!==false&&!v.settings.reducedMotion?1:0;
     const haze=battlefieldHaze(this.atmosphere,v.camera.position.distanceTo(v.target),this.cloudiness);
     v.scene.background.copy(this.base.background).lerp(this.tint.setHex(0x637780),dark);v.scene.fog.color.copy(v.scene.background);v.scene.fog.near=haze.near;v.scene.fog.far=haze.far;
@@ -172,17 +184,17 @@ export class WeatherRenderer {
       atm.cloudStrength.value=baseDapple*(1-night*.76);
     }
     this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?240:quality==='medium'?700:1400;
-    const count=v.settings.reducedMotion?Math.min(100,Math.floor(budget*this.strength)):Math.floor(budget*this.strength*scale);this.rain.count=snow?0:count;this.snow.count=snow?Math.min(1000,count):0;
+    const count=Math.max(0,v.settings.reducedMotion?Math.min(100,Math.floor(budget*this.strength)):Math.floor(budget*this.strength*scale));this.rain.count=snow?0:count;this.snow.count=snow?Math.min(1000,count):0;
     this.rain.material.opacity=clamp(.16+this.strength*.24)*(1-night*.22);
     if(count){
       this.updateRoofs();const span=Math.min(150,Math.max(55,v.zoom*1.5)),speed=snow?2.4:24,mesh=snow?this.snow:this.rain;
       for(let i=0;i<mesh.count;i++){const p=this.particles[i],phase=((p.phase-time*speed*p.speed/40)%1+1)%1,flutter=snow?Math.sin(time*1.5+p.phase*6.283)*.95:0,x=v.target.x+((p.x+time*state.wind/180)%1-.5)*span+flutter,z=v.target.z+(p.z-.5)*span;
-        const y=this.surface(x,z)+phase*40+.4;this.dummy.position.set(x,y,z);this.dummy.rotation.set(snow?time*.5+p.phase:0,snow?time*.8:p.phase*3.14,snow?Math.sin(time+p.phase)*.35:-state.wind*.055);this.dummy.scale.set(snow?p.scale*1.05:(.8+p.scale*.35),snow?p.scale*1.05:(.9+state.wind*.32)*p.scale,snow?p.scale*1.05:(.8+p.scale*.35));this.dummy.updateMatrix();mesh.setMatrixAt(i,this.dummy.matrix);
-      }mesh.instanceMatrix.needsUpdate=true;
+        const y=this.particleSurface(x,z)+phase*40+.4;this.dummy.position.set(x,y,z);this.dummy.rotation.set(snow?time*.5+p.phase:0,snow?time*.8:p.phase*3.14,snow?Math.sin(time+p.phase)*.35:-state.wind*.055);this.dummy.scale.set(snow?p.scale*1.05:(.8+p.scale*.35),snow?p.scale*1.05:(.9+state.wind*.32)*p.scale,snow?p.scale*1.05:(.8+p.scale*.35));this.dummy.updateMatrix();mesh.setMatrixAt(i,this.dummy.matrix);
+      }markInstancePrefix(mesh,mesh.count);
       this.ripples.count=snow?0:Math.floor((quality==='low'?12:quality==='medium'?28:60)*this.strength);this.ripples.material.opacity=this.strength*.30;
       for(let i=0;i<this.ripples.count;i++){const p=this.particles[i+140],x=v.target.x+(p.x-.5)*span,z=v.target.z+(p.z-.5)*span,t=(time*.9+p.phase)%1,r=.18+t*.82;
         this.dummy.position.set(x,this.surface(x,z)+.05,z);this.dummy.rotation.set(0,p.phase*6.28,0);this.dummy.scale.set(r,1,r);this.dummy.updateMatrix();this.ripples.setMatrixAt(i,this.dummy.matrix);
-      }this.ripples.instanceMatrix.needsUpdate=true;
+      }markInstancePrefix(this.ripples,this.ripples.count);
     }else this.ripples.count=0;
     this.clouds.count=this.cloudiness>.02?(quality==='low'?10:quality==='medium'?22:36):0;this.clouds.material.opacity=this.cloudiness*.24;
     const stormShade=clamp(this.strength*(state.type==='storm'?1:.65));
@@ -190,7 +202,7 @@ export class WeatherRenderer {
       this.dummy.position.set(v.target.x+((p.x+motion+110)%220)-110,p.y,v.target.z+p.z);this.dummy.rotation.set(0,p.x,0);this.dummy.scale.set(p.scale*1.15,p.scale*.24,p.scale*.72);this.dummy.updateMatrix();this.clouds.setMatrixAt(i,this.dummy.matrix);
       this.cloudTint.copy(BRIGHT_CLOUD_COLOR).lerp(STORM_CLOUD_COLOR,stormShade).multiplyScalar(.9+((i*7)%5)*.025+flash*.28);
       this.clouds.setColorAt(i,this.cloudTint);
-    }if(this.clouds.count>0){this.clouds.instanceMatrix.needsUpdate=true;if(this.clouds.instanceColor)this.clouds.instanceColor.needsUpdate=true;}
+    }if(this.clouds.count>0){markInstancePrefix(this.clouds,this.clouds.count);if(this.clouds.instanceColor){this.clouds.instanceColor.clearUpdateRanges();this.clouds.instanceColor.addUpdateRange(0,this.clouds.count*3);this.clouds.instanceColor.needsUpdate=true;}}
     this.nightAtmosphere.update(time,night,windX,windZ,menu);
     v.weatherDiagnostics={type:state.type,rain:this.rain.count,snow:this.snow.count,ripples:this.ripples.count,clouds:this.clouds.count,wetness:this.wetness,nightGlows:this.nightAtmosphere.groundGlows.count,chimneySmoke:this.nightAtmosphere.chimneySmoke.count,hearthSparks:this.nightAtmosphere.hearthSparks.count,drawCalls:[this.rain,this.snow,this.ripples,this.clouds,this.nightAtmosphere.groundGlows,this.nightAtmosphere.chimneySmoke,this.nightAtmosphere.hearthSparks].filter(mesh=>mesh.count>0).length};
   }

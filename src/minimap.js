@@ -111,18 +111,63 @@ export function drawMinimap(canvas,sim,view,settings){
     }catch{}
   }
   ctx.clearRect(0,0,size,size);
-  if(base)ctx.drawImage(base,0,0);
-  else renderReliefBase(ctx,size,sim,view);
-
   const woodColor=treePalette(map).minimap;
   const resourceColors={wood:woodColor,gold:'#ecc55e',stone:'#c4cac0',food:'#b57960'};
-  for(const entity of sim.entities){
-    const e=sim.resourceMemory?.get(entity.id)??entity;
-    if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;
-    const fill=e.kind==='resource'?(e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type]):e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?('#'+(sim.players[e.owner].color??(e.owner===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):'#e3d3a2';
-    const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
-    const ex=coord(e.x),ez=coord(e.z);
-    ctx.fillStyle=fill;ctx.fillRect(ex-r,ez-r,r*2,r*2);
+  const playerColors=sim.players?sim.players.map((player,i)=>'#'+(player?.color??(i===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):[];
+  const canCacheResources=typeof HTMLCanvasElement!=='undefined'&&base instanceof HTMLCanvasElement&&typeof sim.candidatesFor==='function'&&view?.exploredRevision!==undefined;
+  if(canCacheResources){
+    const resKey=`${baseKey}:${sim.entities.length}:${sim.resourceRevision||0}:${sim.resourceMemory?.size||0}:${view.exploredRevision}:${!!sim.options?.spectator}`;
+    let resCanvas=canvas.cachedResources;
+    if(!resCanvas||resCanvas.width!==size||resCanvas.height!==size){
+      resCanvas=canvas.cachedResources=document.createElement('canvas');
+      resCanvas.width=size;resCanvas.height=size;canvas.cachedResourceKey='';
+    }
+    if(canvas.cachedResourceKey!==resKey||canvas.cachedResourceLandscape!==land||canvas.cachedResourceSim!==sim||canvas.cachedResourceEntities!==sim.entities){
+      const rctx=resCanvas.getContext('2d');
+      if(rctx){
+        rctx.clearRect(0,0,size,size);
+        rctx.drawImage(base,0,0);
+        let lastFill='';
+        for(const entity of sim.entities){
+          if(entity.kind!=='resource')continue;
+          const e=sim.resourceMemory?.get(entity.id)??entity;
+          if(e.hp<=0||e.embarked||!(sim.isVisible(e.x,e.z)||sim.isExplored(e.x,e.z)))continue;
+          const fill=e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type];
+          if(fill!==lastFill){rctx.fillStyle=fill;lastFill=fill;}
+          const ex=coord(e.x),ez=coord(e.z);
+          rctx.fillRect(ex-1.5,ez-1.5,3,3);
+        }
+        canvas.cachedResourceKey=resKey;canvas.cachedResourceLandscape=land;canvas.cachedResourceSim=sim;canvas.cachedResourceEntities=sim.entities;
+      }
+    }
+    ctx.drawImage(resCanvas,0,0);
+    let lastFill='';
+    const drawDynamic=list=>{
+      for(const e of list){
+        if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)))continue;
+        const fill=e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?(playerColors[e.owner]||'#e3d3a2'):'#e3d3a2';
+        if(fill!==lastFill){ctx.fillStyle=fill;lastFill=fill;}
+        const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
+        const ex=coord(e.x),ez=coord(e.z);
+        ctx.fillRect(ex-r,ez-r,r*2,r*2);
+      }
+    };
+    drawDynamic(sim.candidatesFor('shrine'));
+    drawDynamic(sim.candidatesFor('building'));
+    drawDynamic(sim.candidatesFor('unit'));
+  }else{
+    if(base)ctx.drawImage(base,0,0);
+    else renderReliefBase(ctx,size,sim,view);
+    let lastFill='';
+    for(const entity of sim.entities){
+      const e=sim.resourceMemory?.get(entity.id)??entity;
+      if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;
+      const fill=e.kind==='resource'?(e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type]):e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?(playerColors[e.owner]||'#e3d3a2'):'#e3d3a2';
+      if(fill!==lastFill){ctx.fillStyle=fill;lastFill=fill;}
+      const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
+      const ex=coord(e.x),ez=coord(e.z);
+      ctx.fillRect(ex-r,ez-r,r*2,r*2);
+    }
   }
   if(settings.fog)ctx.drawImage(view.fogCanvas,0,0,size,size);
   const goal=campaignObjective(sim)?.marker;if(goal){const x=coord(goal.x),z=coord(goal.z);ctx.beginPath();ctx.moveTo(x,z-5);ctx.lineTo(x+5,z);ctx.lineTo(x,z+5);ctx.lineTo(x-5,z);ctx.closePath();ctx.fillStyle='#f2ce77';ctx.fill();ctx.strokeStyle='#8f7440';ctx.lineWidth=1.2;ctx.stroke();}

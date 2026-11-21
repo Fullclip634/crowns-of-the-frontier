@@ -12,6 +12,7 @@ export function takeFromResource(sim, site, amount) {
   if (!(site.amount <= 0)) return false;
   if (hidden && site.type === 'wood') unseenFelling.add(site);
   site.hp = 0;
+  sim.resourceRevision = (sim.resourceRevision || 0) + 1;
   return true;
 }
 
@@ -20,9 +21,11 @@ export const wasFelledOutOfSight = site => unseenFelling.has(site);
 export function revealResourceChanges(sim) {
   const memory = sim.resourceMemory;
   if (!memory) return;
+  let changed = false;
   for (const [id, site] of memory) {
-    if (sim.isVisible(site.x, site.z)) memory.delete(id);
+    if (sim.isVisible(site.x, site.z)) {memory.delete(id); changed = true;}
   }
+  if (changed) sim.resourceRevision = (sim.resourceRevision || 0) + 1;
   if (!memory.size) sim.resourceMemory = undefined;
 }
 
@@ -48,4 +51,5 @@ export function restoreResourceMemory(sim, data) {
     (sim.resourceMemory ??= new Map()).set(site.id, {...site, ...observed});
     if (site.type === 'wood' && site.hp <= 0) unseenFelling.add(site);
   }
+  if (sim.resourceMemory?.size) sim.resourceRevision = (sim.resourceRevision || 0) + 1;
 }

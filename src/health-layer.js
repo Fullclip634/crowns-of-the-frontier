@@ -35,9 +35,13 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
   let state=pools.get(layer);
   if(!state){state={active:new Map(),stamp:0};pools.set(layer,state);}
   const active=state.active,stamp=++state.stamp;
-  // Read the canvas rect once before writing any bar transforms so projection
-  // never interleaves layout reads with DOM mutations (forced reflows).
-  const rect=view.renderer?.domElement?.getBoundingClientRect?.();
+  // Reuse WorldView's cached canvas rect between resizes to avoid per-frame
+  // layout flushes; views without an opt-in cache still measure once per call.
+  let rect=view.canvasRect;
+  if(!rect||rect.width<=0||rect.height<=0){
+    rect=view.renderer?.domElement?.getBoundingClientRect?.();
+    if(view.canvasRect===null&&rect&&rect.width>0&&rect.height>0)view.canvasRect=rect;
+  }
   visitHealthEntities(sim, e=>{
     if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))return;
     if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)return;

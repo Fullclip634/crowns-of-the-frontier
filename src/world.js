@@ -91,7 +91,8 @@ export class WorldView {
     this.fogTint=new THREE.Color(0x13201e);
     this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint}};
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
-    this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
+    this.canvasRect=null;
+    this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.canvasRect=null;this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
     this.buildingDamage=new BuildingDamageEffects(this.scene);
   }
   piece(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1,ry=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
@@ -139,7 +140,7 @@ export class WorldView {
     for(const sign of [1,-1]){ctx.strokeStyle='#ab9d78';ctx.lineWidth=20;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(((-39*sign+80)/160)*1024,((30*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((24*sign+80)/160)*1024);ctx.lineTo(((-27*sign+80)/160)*1024,((0+80)/160)*1024);ctx.stroke();}
     const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;return texture;
   }
-  attach(sim){const camera=this.sim===sim?{target:this.target.clone(),zoom:this.zoom,angle:this.angle,tilt:this.tilt}:null;this.sim=sim;
+  attach(sim){const camera=this.sim===sim?{target:this.target.clone(),zoom:this.zoom,angle:this.angle,tilt:this.tilt}:null;this.sim=sim;this.canvasRect=null;
     this.wallVisuals?.dispose();this.wallVisuals=null;
     this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;

@@ -82,6 +82,52 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
   material.defines={...material.defines};delete material.defines.FRONTIER_TERRAIN_ARM;
   if(quality==='high')material.defines.FRONTIER_TERRAIN_ARM='';
   if(material.isNodeMaterial){nodeRuntime().terrain(material,uniforms);return;}
+  const desert=arid&&!volcanic;
+  const beachDeclGlsl=shore
+    ? 'float terrainBeach = smoothstep(0.06, 0.76, roadSample.g + edgeNoise * 0.55 * roadSample.g) * (1.0 - smoothstep(0.32, 0.80, terrainBlend.z)) * (1.0 - terrainRoad * 0.85);'
+    : 'float terrainBeach = 0.0;';
+  const grassGlsl=snow ? `
+      // Real CC0 snow_02 albedo with cool wind-drifted troughs and sunlit alpine crests.
+      float driftWave = sin(vTerrainWorldPos.x * 0.36 - vTerrainWorldPos.z * 0.18 + sin(vTerrainWorldPos.z * 0.13) * 1.4);
+      float snowSparkle = sin(vTerrainWorldPos.x * 5.1 + vTerrainWorldPos.z * 4.3) * cos(vTerrainWorldPos.z * 4.7 - vTerrainWorldPos.x * 3.8);
+      vec3 snowTint = mix(vec3(0.84, 0.91, 0.98), vec3(1.03, 1.04, 1.06), smoothstep(-0.65, 0.65, driftWave));
+      vec3 lushGrass = grassSample * snowTint * (0.97 + 0.04 * snowSparkle) * mix(vec3(1.0), terrainMacro, 0.65);`
+    : desert ? `
+      // Real CC0 sand_01 albedo with wind-carved dune warmth and dry desert grit.
+      float sandRipple = sin(vTerrainWorldPos.x * 2.8 + vTerrainWorldPos.z * 1.15 + sin(vTerrainWorldPos.z * 0.45) * 1.6);
+      vec3 duneShade = mix(vec3(0.92, 0.80, 0.62), vec3(1.10, 0.99, 0.80), smoothstep(-0.7, 0.7, sandRipple));
+      vec3 lushGrass = grassSample * mix(vec3(1.0), frontierTerraingrassTint * 1.18, 0.48) * duneShade * terrainMacro;`
+    : volcanic ? `
+      // Real CC0 dark rock_face_03 basalt crust with organic ash & fissure soot.
+      float ashDrift = sin(vTerrainWorldPos.x * 0.52 - vTerrainWorldPos.z * 0.39 + sin(vTerrainWorldPos.z * 0.25) * 1.5);
+      vec3 lushGrass = mix(grassSample, soilSample * 0.85, 0.30) * frontierTerraingrassTint * mix(vec3(0.76, 0.72, 0.70), vec3(1.06, 0.99, 0.94), smoothstep(-0.55, 0.55, ashDrift)) * terrainMacro;`
+    : `
+      float cloverDapple = sin(vTerrainWorldPos.x * 0.42 + vTerrainWorldPos.z * 0.36) * cos(vTerrainWorldPos.x * 0.29 - vTerrainWorldPos.z * 0.48);
+      float tuftGrain = sin(vTerrainWorldPos.x * 2.8 + cos(vTerrainWorldPos.z * 2.1)) * cos(vTerrainWorldPos.z * 2.6 - sin(vTerrainWorldPos.x * 1.9));
+      vec3 lushGrass = grassSample * frontierTerraingrassTint * terrainMacro * mix(vec3(0.88, 0.94, 0.84), vec3(1.08, 1.12, 0.94), smoothstep(-0.42, 0.48, cloverDapple)) * (0.96 + 0.09 * tuftGrain);`;
+  const rockGlsl=volcanic ? `
+      float crevice = frontierVolcanicFissure(vTerrainWorldPos);
+      float ledgeDust = smoothstep(0.66, 0.91, vTerrainNormalY);
+      vec3 rawRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.42);
+      // Dark charred volcanic basalt with molten fissures concentrated on rocky slopes & ravines.
+      rawRock *= vec3(0.74, 0.72, 0.74);
+      float slopeCrag = 1.0 - smoothstep(0.76, 0.96, vTerrainNormalY);
+      float emberMask = smoothstep(0.28, 0.86, crevice) * smoothstep(0.32, 0.78, terrainBlend.z) * (0.22 + 0.78 * slopeCrag);
+      float coreHot = smoothstep(0.62, 0.95, crevice) * emberMask;
+      rawRock += (vec3(1.65, 0.34, 0.04) * emberMask * 0.78 + vec3(2.1, 1.05, 0.30) * coreHot * 0.75);`
+    : `
+      float crevice = smoothstep(0.42, 0.88, sin(vTerrainWorldPos.x * 1.45 - vTerrainWorldPos.y * 2.6) * cos(vTerrainWorldPos.z * 1.45 + vTerrainWorldPos.y * 2.3));
+      float ledgeDust = smoothstep(0.66, 0.91, vTerrainNormalY);
+      vec3 rawRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.42);`;
+  const beachSoilGlsl=shore ? `
+      if (terrainBeach > 0.01) {
+        // Real CC0 sand_01 coastal cove sand with dark wet swash zone near the waterline.
+        float swashRipple = sin(vTerrainWorldPos.x * 2.6 + vTerrainWorldPos.z * 1.5 + sin(vTerrainWorldPos.z * 0.42) * 1.3);
+        vec3 beachWarmth = mix(vec3(0.86, 0.78, 0.60), vec3(1.08, 0.99, 0.80), smoothstep(-0.65, 0.65, swashRipple));
+        vec3 beachSand = soilSample * beachWarmth * mix(1.0, 0.68, terrainShore);
+        finalSoil = mix(finalSoil, beachSand, terrainBeach);
+      }` : '';
+  const snowRoughGlsl=snow ? 'terrainRoughness = mix(terrainRoughness, 0.44, 0.38);' : '';
   material.onBeforeCompile=shader=>{
     for(const [key,value]of Object.entries(uniforms))if(key!=='atmosphere')shader.uniforms['frontierTerrain'+key]=value;
     shader.vertexShader='attribute vec3 terrainMix;\nvarying vec3 vTerrainMix;\nvarying vec3 vTerrainWorldPos;\nvarying vec3 vTerrainWorldNormal;\nvarying float vTerrainNormalY;\n'+shader.vertexShader;
@@ -147,8 +193,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       float edgeNoise = sin(vTerrainWorldPos.x * 1.45 + vTerrainWorldPos.z * 1.15) * cos(vTerrainWorldPos.x * 0.85 - vTerrainWorldPos.z * 1.65) * 0.14;
       float terrainRoad = smoothstep(0.08, 0.88, roadStrength + edgeNoise * roadStrength);
       float terrainShore = smoothstep(0.05, 0.75, roadSample.b) * (1.0 - smoothstep(0.35, 0.85, terrainBlend.z));
-      float terrainBeach = frontierTerrainbiomeFlags.w > 0.5 ? smoothstep(0.06, 0.76, roadSample.g + edgeNoise * 0.55 * roadSample.g) * (1.0 - smoothstep(0.32, 0.80, terrainBlend.z)) * (1.0 - terrainRoad * 0.85) : 0.0;
-      terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), clamp(terrainRoad * 0.78 + max(terrainShore, terrainBeach) * 0.68, 0.0, 0.94));
+      ${beachDeclGlsl}
+      terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), clamp(terrainRoad * 0.78 + ${shore?'max(terrainShore, terrainBeach)':'terrainShore'} * 0.68, 0.0, 0.94));
       vec2 grassUv = vMapUv * frontierTerrainscale.x;
       vec2 soilUv = vMapUv * frontierTerrainscale.y;
       vec2 rockUv = vMapUv * frontierTerrainscale.z;
@@ -167,51 +213,11 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 rockSample = rockSideX * triW.x + rockTop * triW.y + rockSideZ * triW.z;
       vec3 sampleLuma = vec3(dot(grassSample, vec3(0.3, 0.59, 0.11)), dot(soilSample, vec3(0.3, 0.59, 0.11)), dot(rockSample, vec3(0.3, 0.59, 0.11)) + 0.16);
       terrainBlend = frontierHeightBlend(terrainBlend, sampleLuma);
-      vec3 terrainMacro = mix(vec3(1.0), clamp(diffuseColor.rgb / frontierTerrainmacroReference, vec3(0.68), vec3(1.26)), frontierTerrainmacroStrength);
-      float cloverDapple = sin(vTerrainWorldPos.x * 0.42 + vTerrainWorldPos.z * 0.36) * cos(vTerrainWorldPos.x * 0.29 - vTerrainWorldPos.z * 0.48);
-      float tuftGrain = sin(vTerrainWorldPos.x * 2.8 + cos(vTerrainWorldPos.z * 2.1)) * cos(vTerrainWorldPos.z * 2.6 - sin(vTerrainWorldPos.x * 1.9));
-      vec3 lushGrass = grassSample * frontierTerraingrassTint * terrainMacro * mix(vec3(0.88, 0.94, 0.84), vec3(1.08, 1.12, 0.94), smoothstep(-0.42, 0.48, cloverDapple)) * (0.96 + 0.09 * tuftGrain);
-      if (frontierTerrainbiomeFlags.x > 0.5) {
-        // Real CC0 snow_02 albedo with cool wind-drifted troughs and sunlit alpine crests.
-        float driftWave = sin(vTerrainWorldPos.x * 0.36 - vTerrainWorldPos.z * 0.18 + sin(vTerrainWorldPos.z * 0.13) * 1.4);
-        float snowSparkle = sin(vTerrainWorldPos.x * 5.1 + vTerrainWorldPos.z * 4.3) * cos(vTerrainWorldPos.z * 4.7 - vTerrainWorldPos.x * 3.8);
-        vec3 snowTint = mix(vec3(0.84, 0.91, 0.98), vec3(1.03, 1.04, 1.06), smoothstep(-0.65, 0.65, driftWave));
-        lushGrass = grassSample * snowTint * (0.97 + 0.04 * snowSparkle) * mix(vec3(1.0), terrainMacro, 0.65);
-      } else if (frontierTerrainbiomeFlags.y > 0.5) {
-        // Real CC0 sand_01 albedo with wind-carved dune warmth and dry desert grit.
-        float sandRipple = sin(vTerrainWorldPos.x * 2.8 + vTerrainWorldPos.z * 1.15 + sin(vTerrainWorldPos.z * 0.45) * 1.6);
-        vec3 duneShade = mix(vec3(0.92, 0.80, 0.62), vec3(1.10, 0.99, 0.80), smoothstep(-0.7, 0.7, sandRipple));
-        lushGrass = grassSample * mix(vec3(1.0), frontierTerraingrassTint * 1.18, 0.48) * duneShade * terrainMacro;
-      } else if (frontierTerrainbiomeFlags.z > 0.5) {
-        // Real CC0 dark rock_face_03 basalt crust with organic ash & fissure soot.
-        float ashDrift = sin(vTerrainWorldPos.x * 0.52 - vTerrainWorldPos.z * 0.39 + sin(vTerrainWorldPos.z * 0.25) * 1.5);
-        vec3 basaltGround = mix(grassSample, soilSample * 0.85, 0.30) * frontierTerraingrassTint * mix(vec3(0.76, 0.72, 0.70), vec3(1.06, 0.99, 0.94), smoothstep(-0.55, 0.55, ashDrift)) * terrainMacro;
-        lushGrass = basaltGround;
-      }
+      vec3 terrainMacro = mix(vec3(1.0), clamp(diffuseColor.rgb / frontierTerrainmacroReference, vec3(0.68), vec3(1.26)), frontierTerrainmacroStrength);${grassGlsl}
       float strataWarp = sin(vTerrainWorldPos.x * 0.19) * 1.5 + cos(vTerrainWorldPos.z * 0.19) * 1.5;
-      float strata = 0.84 + 0.20 * sin(vTerrainWorldPos.y * 6.4 + strataWarp) + 0.08 * cos(vTerrainWorldPos.y * 15.2 + strataWarp * 1.7);
-      float crevice = frontierTerrainbiomeFlags.z > 0.5
-        ? frontierVolcanicFissure(vTerrainWorldPos)
-        : smoothstep(0.42, 0.88, sin(vTerrainWorldPos.x * 1.45 - vTerrainWorldPos.y * 2.6) * cos(vTerrainWorldPos.z * 1.45 + vTerrainWorldPos.y * 2.3));
-      float ledgeDust = smoothstep(0.66, 0.91, vTerrainNormalY);
-      vec3 rawRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.42);
-      if (frontierTerrainbiomeFlags.z > 0.5) {
-        // Dark charred volcanic basalt with molten fissures concentrated on rocky slopes & ravines.
-        rawRock *= vec3(0.74, 0.72, 0.74);
-        float slopeCrag = 1.0 - smoothstep(0.76, 0.96, vTerrainNormalY);
-        float emberMask = smoothstep(0.28, 0.86, crevice) * smoothstep(0.32, 0.78, terrainBlend.z) * (0.22 + 0.78 * slopeCrag);
-        float coreHot = smoothstep(0.62, 0.95, crevice) * emberMask;
-        rawRock += (vec3(1.65, 0.34, 0.04) * emberMask * 0.78 + vec3(2.1, 1.05, 0.30) * coreHot * 0.75);
-      }
-      vec3 finalRock = mix(rawRock, lushGrass * 0.90, ledgeDust * (frontierTerrainbiomeFlags.x > 0.5 ? 0.58 : 0.34));
-      vec3 finalSoil = soilSample * frontierTerrainsoilTint * mix(1.0, 0.70, terrainShore) * mix(1.0, 0.88, terrainRoad);
-      if (frontierTerrainbiomeFlags.w > 0.5 && terrainBeach > 0.01) {
-        // Real CC0 sand_01 coastal cove sand with dark wet swash zone near the waterline.
-        float swashRipple = sin(vTerrainWorldPos.x * 2.6 + vTerrainWorldPos.z * 1.5 + sin(vTerrainWorldPos.z * 0.42) * 1.3);
-        vec3 beachWarmth = mix(vec3(0.86, 0.78, 0.60), vec3(1.08, 0.99, 0.80), smoothstep(-0.65, 0.65, swashRipple));
-        vec3 beachSand = soilSample * beachWarmth * mix(1.0, 0.68, terrainShore);
-        finalSoil = mix(finalSoil, beachSand, terrainBeach);
-      }
+      float strata = 0.84 + 0.20 * sin(vTerrainWorldPos.y * 6.4 + strataWarp) + 0.08 * cos(vTerrainWorldPos.y * 15.2 + strataWarp * 1.7);${rockGlsl}
+      vec3 finalRock = mix(rawRock, lushGrass * 0.90, ledgeDust * ${snow?'0.58':'0.34'});
+      vec3 finalSoil = soilSample * frontierTerrainsoilTint * mix(1.0, 0.70, terrainShore) * mix(1.0, 0.88, terrainRoad);${beachSoilGlsl}
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
       // Real 1k CC0 medieval flagstone cobblestone plazas around settlements.
       float pavingLuma = 0.5;
@@ -259,7 +265,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       terrainAo = mix(1.0, terrainArm.r, 0.65);
       float terrainRoughness = terrainArm.g;
       terrainRoughness = mix(terrainRoughness, 0.30, terrainShore * 0.62);
-      terrainRoughness = mix(terrainRoughness, 0.44, frontierTerrainbiomeFlags.x * 0.38);
+      ${snowRoughGlsl}
       float pavingRough = mix(0.92, 0.62, smoothstep(0.22, 0.78, pavingLuma));
       roughnessFactor *= mix(clamp(terrainRoughness, 0.22, 1.0), pavingRough, terrainPaving);
       #endif

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS,seededRandom} from './data.js';
 import {workerVisualTask} from './authored-assets.js';
-import {nearViewport} from './render-batches.js';
+import {nearViewport,markInstancePrefix} from './render-batches.js';
 
 function fallenGeometry(view,e){
   const model=view.mergeModel(view.makeUnit({...e,moving:false,cooldown:0,order:null})),parts=[];
@@ -37,9 +37,11 @@ function createPoolMesh(geometry,material,capacity,name,quality,group){
 }
 
 function flushInstances(mesh,count){
-  mesh.count=count;mesh.visible=count>0;mesh.boundingSphere=null;mesh.instanceMatrix.needsUpdate=true;
-  if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
-  return count?1:0;
+  mesh.count=count;mesh.visible=count>0;
+  if(!count)return 0;
+  mesh.boundingSphere=null;markInstancePrefix(mesh,count);
+  if(mesh.instanceColor){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,count*3);mesh.instanceColor.needsUpdate=true;}
+  return 1;
 }
 
 const ruinTime=view=>view.ruinClock??view.clock;
@@ -102,7 +104,7 @@ export class BattleRemains{
   }
   update(){
     const v=this.view,now=ruinTime(v);
-    this.items=this.items.filter(e=>{const alive=now-e.at<e.life;if(!alive)this.retire(e);return alive;});
+    if(this.items.length)this.items=this.items.filter(e=>{const alive=now-e.at<e.life;if(!alive)this.retire(e);return alive;});
     for(const batch of this.batches.values())batch.mesh.count=0;
     let rubble=0,piers=0,timbers=0,bodies=0;
     for(const e of this.items){
@@ -146,8 +148,8 @@ export class BattleRemains{
       }
     }
     let calls=flushInstances(this.rubble,rubble)+flushInstances(this.piers,piers)+flushInstances(this.timbers,timbers);
-    for(const [key,batch] of this.batches){batch.mesh.visible=batch.mesh.count>0;batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.boundingSphere=null;if(batch.mesh.count)calls++;
-      if(!batch.mesh.count&&!this.items.some(e=>e.key===key)&&(now-batch.last>30||this.batches.size>this.limit*2)){batch.mesh.geometry.dispose();batch.mesh.dispose();batch.mesh.removeFromParent();this.batches.delete(key);}
+    for(const [key,batch] of this.batches){const count=batch.mesh.count;batch.mesh.visible=count>0;if(count){markInstancePrefix(batch.mesh,count);batch.mesh.boundingSphere=null;calls++;}
+      if(!count&&!this.items.some(e=>e.key===key)&&(now-batch.last>30||this.batches.size>this.limit*2)){batch.mesh.geometry.dispose();batch.mesh.dispose();batch.mesh.removeFromParent();this.batches.delete(key);}
     }
     v.remainsDiagnostics={bodies,rubble,piers,timbers,retained:this.items.length,limit:this.limit,drawCalls:calls};
   }
