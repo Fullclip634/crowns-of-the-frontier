@@ -506,8 +506,7 @@ export class Simulation {
         for(const resource of nearSources)if(tryAssign(resource))return;
         if(nearSources.length===8){
           const tried=new Set(nearSources),grid=unitNavigationGrid(this,e),labels=navigationRegions(this,grid),size=this.gridSize,startCell=this.cell(e.x,e.z);
-          let startRegion=labels[startCell.z*size+startCell.x];
-          if(!startRegion){for(let ring=1;ring<6&&!startRegion;ring++)for(let z=Math.max(0,startCell.z-ring);z<=Math.min(size-1,startCell.z+ring)&&!startRegion;z++)for(let x=Math.max(0,startCell.x-ring);x<=Math.min(size-1,startCell.x+ring);x++)if(labels[z*size+x]){startRegion=labels[z*size+x];break;}}
+          const startRegion=labels[startCell.z*size+startCell.x];
           const regionReachable=t=>{
             if(!eligible(t)||tried.has(t))return false;
             if(!startRegion)return true;
