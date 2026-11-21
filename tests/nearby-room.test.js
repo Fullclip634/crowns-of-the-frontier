@@ -146,3 +146,26 @@ test('custom Nearby battles start with two connected humans and AI kingdoms',asy
   assert.equal(host.record.begins[0].options.slots.filter(slot=>slot.controller==='ai').length,2);
   await until(()=>host.record.states.some(([state])=>state.time>0),'match advances');
 });
+
+test('a Nearby host can watch a friend fight an AI kingdom with custom health',async t=>{
+  const room=new LocalRoomHost({useWorker:false}),host=client(),guest=client();
+  t.after(()=>{host.lan.leave();guest.lan.leave();room.teardown();});
+  const slots=battlePreset('2v2');slots[1].controller='human';slots[0].aiHealth=80;
+  const options=customHostOptions({map:'highlands',mapSize:'spacious',seed:512,playerSlot:0,spectator:true,slots});
+  host.lan.useTransport(hostTransport(room));host.lan.connect({type:'create',name:'Host observer',options});
+  await until(()=>host.record.lobbies.length,'spectator lobby');
+  const lobby=host.record.lobbies.at(-1);
+  assert.equal(lobby.spectator,true);
+  const [hostEnd,guestEnd]=channelPair();room.addChannel(hostEnd);
+  guest.lan.useTransport(guestTransport(guestEnd,null));guest.lan.connect({type:'join',name:'Friend',code:lobby.code,slot:2});
+  await until(()=>guest.record.lobbies.length,'friend joins');
+  guest.lan.send({type:'ready',ready:true});
+  await until(()=>host.record.lobbies.at(-1)?.canStart,'one friend ready');
+  host.lan.send({type:'start'});
+  await until(()=>host.record.begins.length&&guest.record.begins.length,'observed Nearby match');
+  const watched=host.record.begins[0],played=guest.record.begins[0];
+  assert.equal(watched.options.spectator,true);assert.equal(played.options.spectator,false);
+  assert.equal(watched.players[0].aiHealth,80);
+  assert.equal(host.lan.action('resign',[]),false);
+  await until(()=>host.record.states.some(([state])=>state.time>0),'spectator receives ongoing battle');
+});

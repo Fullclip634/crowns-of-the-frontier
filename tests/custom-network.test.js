@@ -172,3 +172,34 @@ test('authoritative siege repairs charge the repairing commander and healers can
     host.send({type:'action',method:'smartCommand',args:[[monk.id],ram.id,ram.x,ram.z,false,false]});await until(()=>monk.order);sim.tickUnit(monk,1);assert.equal(ram.hp,123,'networked healer orders cannot refill mechanical units');
   }finally{sim.tick=tick;}
 });
+
+test('an online spectator host starts a read-only custom room and can reconnect without pausing players',async t=>{
+  const {service,connect}=await fixture(t),host=await connect(),guest=await connect();
+  const slots=battlePreset('2v2');slots[0].aiHealth=60;slots[1].controller='human';slots[1].aiHealth=50;
+  host.send({type:'create',name:'Observer',options:{mode:'custom',map:'highlands',mapSize:'spacious',hostSpectator:true,playerSlot:0,slots}});
+  const session=await host.inbox.next('session'),lobby=await host.inbox.next('lobby');
+  assert.equal(lobby.spectator,true);assert.equal(lobby.canStart,false);assert.equal(lobby.slots[0].controller,'ai');
+  guest.send({type:'join',name:'Guest',slot:2,code:session.code});await guest.inbox.next('session');await guest.inbox.next('lobby');
+  guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}
+  guest.send({type:'ai-health',slot:1,health:50});await pause(60);
+  assert.equal(service.rooms.get(session.code).options.slots[0].aiHealth,60);
+  host.send({type:'ai-health',slot:1,health:70});
+  const revised=await host.inbox.next('lobby');assert.equal(revised.slots[0].aiHealth,70);assert.equal(revised.canStart,false);
+  guest.send({type:'ready',ready:true});while(!(await host.inbox.next('lobby')).canStart){}
+  host.send({type:'start'});
+  const watching=await host.inbox.next('begin'),playing=await guest.inbox.next('begin');
+  assert.equal(watching.state.options.spectator,true);assert.ok(watching.state.visible.every(Boolean));assert.equal(watching.chat,null);
+  assert.equal(playing.state.options.spectator,false);assert.ok(playing.state.visible.some(value=>value===0));
+  assert.equal(playing.state.players[0].name,'Guest');
+  const room=service.rooms.get(session.code),villager=room.sim.owned(0,'unit','villager')[0];
+  assert.equal(room.sim.players[0].controller,'ai');assert.equal(villager.maxHp,room.sim.maxHP(villager));
+  assert.ok(Math.abs(villager.maxHp/room.sim.owned(1,'unit','villager')[0].maxHp-.7)<1e-9);
+  host.send({type:'action',method:'resign',args:[]});host.send({type:'chat',channel:'all',text:'spectator message'});
+  host.send({type:'ai-health',slot:1,health:50});
+  await pause(100);assert.equal(room.chat.messages.length,0);assert.equal(room.options.slots[0].aiHealth,70);assert.ok(room.sim.players.every(player=>!player.defeated));
+  host.ws.terminate();
+  const time=room.sim.time;await until(()=>room.sim.time>time+.2);
+  const reconnect=await connect();reconnect.send({type:'resume',code:session.code,token:session.token});
+  const resumed=await reconnect.inbox.next('begin');
+  assert.equal(resumed.state.options.spectator,true);assert.ok(resumed.state.time>time);assert.equal(resumed.waiting,false);
+});

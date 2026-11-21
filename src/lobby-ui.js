@@ -9,7 +9,11 @@ export function refreshRoomLobby(root,room){
   for(const selector of ['.room-grid','.room-players','#lobby-slot']){
     const current=root.querySelector(selector),incoming=next.querySelector(selector);
     if(!!current!==!!incoming)return false;
-    if(current&&current.innerHTML!==incoming.innerHTML)current.innerHTML=incoming.innerHTML;
+    if(current&&current.innerHTML!==incoming.innerHTML){
+      const focused=root.ownerDocument.activeElement,focusId=current.contains(focused)?focused.id:null;
+      current.innerHTML=incoming.innerHTML;
+      if(focusId)root.ownerDocument.getElementById(focusId)?.focus({preventScroll:true});
+    }
   }
   for(const action of ['lan-ready','lan-start']){
     const current=root.querySelector(`[data-action="${action}"]`),incoming=next.querySelector(`[data-action="${action}"]`);

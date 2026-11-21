@@ -187,3 +187,8 @@
   .camera-controls.options-open{z-index:13}
   #toasts{top:216px;max-width:calc(100vw - 24px)}
 }
+
+.battle-slot label[for^="custom-ai-health-"]{margin-top:7px}
+
+.room-grid select[data-ai-health-slot]{width:100%;min-height:44px}
+.room-grid label[for^="lobby-ai-health-"]{font-size:10px;color:#b0c3a2}

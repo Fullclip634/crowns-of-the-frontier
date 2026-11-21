@@ -12,7 +12,7 @@
 // `message(raw)` handler and a closed link through `close()`.
 import {Simulation} from './simulation.js';
 import {FACTIONS,MAPS} from './data.js';
-import {normalizeBattle,visibilityFor} from './custom-battle.js';
+import {AI_HEALTH_LEVELS,normalizeBattle,visibilityFor} from './custom-battle.js';
 import {BattleChat} from '../server/battle-chat.js';
 import {entityPerspective} from '../server/entity-perspective.js';
 import {projectileVisualEvents} from './projectile-combat.js';
@@ -30,11 +30,12 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
   const send=(ws,message)=>{if(!canSend(ws,message.type))return false;ws.send(JSON.stringify(message));return true;};
   const commitSnapshot=(room,side,state)=>{const commit=state?.[snapshotCommit];if(!commit)return;if(commit.visibility)room.visibility[side]=commit.visibility;for(const [id,value]of commit.resources)room.resources[side].set(id,value);};
   const custom=room=>room.options.mode==='custom';
-  const observing=(room,side)=>custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
+  const watching=(room,side)=>room.options.hostSpectator===true&&side===room.options.slots.length;
+  const observing=(room,side)=>watching(room,side)||custom(room)&&room.sim.players.filter(p=>p.team===room.sim.players[side].team).every(p=>p.defeated);
   const humanSlots=room=>custom(room)?room.options.slots.map((slot,i)=>slot.controller==='human'?i:-1).filter(i=>i>=0):[0,1];
   const connected=player=>player.ws?.readyState===1;
   const releaseVacantRoom=room=>{if(rooms.get(room.code)!==room||!room.players.length||room.players.some(player=>connected(player)||!player.conceded))return false;rooms.delete(room.code);return true;};
-  const requiredPlayers=room=>room.players.filter(player=>!player.conceded&&!room.sim?.players[player.side]?.defeated);
+  const requiredPlayers=room=>room.players.filter(player=>!watching(room,player.side)&&!player.conceded&&!room.sim?.players[player.side]?.defeated);
   const waiting=room=>requiredPlayers(room).some(player=>!connected(player));
   const canStart=room=>humanSlots(room).every(side=>room.players.some(player=>player.side===side&&connected(player)&&player.ready));
   function restoreLobbySlot(room,side){
@@ -42,13 +43,13 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
   }
   function lobby(room){
     const slots=custom(room)?room.options.slots.map((slot,side)=>({...slot,side,participant:room.players.find(p=>p.side===side)?.name||null,ready:room.players.find(p=>p.side===side)?.ready||false})):[];
-    for(const player of room.players)send(player.ws,{type:'lobby',code:room.code,host:player.host,selfSide:player.side,selfReady:player.ready,canStart:canStart(room),slots,players:room.players.map(p=>({side:p.side,name:p.name,faction:p.faction,ready:p.ready,connected:connected(p)})),options:room.options});
+    for(const player of room.players)send(player.ws,{type:'lobby',code:room.code,host:player.host,selfSide:player.side,spectator:watching(room,player.side),selfReady:player.ready,canStart:canStart(room),slots,players:room.players.map(p=>({side:p.side,name:p.name,faction:p.faction,ready:p.ready,connected:connected(p)})),options:room.options});
   }
   function closeLobby(room,message,leaving=null){
     if(rooms.get(room.code)!==room)return;rooms.delete(room.code);
     for(const player of room.players)if(player!==leaving){send(player.ws,{type:'closed',message});player.ws?.close(1000,'Room closed');}
   }
-  const orderFor=(room,side)=>[side,...room.sim.players.map((_,i)=>i).filter(i=>i!==side)];
+  const orderFor=(room,side)=>{const sides=room.sim.players.map((_,i)=>i);return watching(room,side)?sides:[side,...sides.filter(i=>i!==side)];};
   function frameVisibility(room,side,observer,cache){
     const key=observer?'observer':custom(room)&&room.sim.options.shareVision?`team:${room.sim.players[side].team}`:`side:${side}`,explored=room.explored[side];
     let visible=cache.get(key);
@@ -75,9 +76,10 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     for(const [id,entity]of known)if(shown(entity)&&!alive.has(id))known.delete(id);
   }
   function perspective(room,side,compact=false,deltaVisibility=false,forceVisibility=false,frameVisible=null,memoryCache=null){
-    const sim=room.sim,order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
+    const sim=room.sim,spectator=watching(room,side),order=orderFor(room,side),mapOwner=owner=>owner<0?owner:order.indexOf(owner),observer=observing(room,side);
     const explored=room.explored[side],visible=frameVisible||visibilityFor(sim,side,explored,observer),shown=e=>{const cell=sim.cell(e.x,e.z);return !!visible[cell.z*sim.gridSize+cell.x];};
     const data=compact?{time:sim.time,wave:sim.wave,nextWave:sim.nextWave,hold:sim.hold,enemyHold:sim.enemyHold,wonderTime:sim.wonderTime}:sim.serialize({omitProjectiles:true}),known=room.known[side],entities=[];
+    if(!compact&&spectator)data.options={...data.options,spectator:true};
     data.projectiles=[];data.nextProjectileId=0;
     data.visualProjectiles=projectileVisualEvents(sim.projectiles,sim.time).map(event=>combatPerspective(sim,side,event,{observer})).filter(Boolean).map(event=>({...event,entity:{...event.entity,owner:mapOwner(event.entity.owner)},target:{...event.target,owner:mapOwner(event.target.owner)}}));
     for(const e of sim.entities){
@@ -97,10 +99,10 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!shownIds.has(id))entities.push({...e,owner:mapOwner(e.owner)});}
     data.entities=entities;
     data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
-    data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
-    data.ended=sim.ended?{...sim.ended,won:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won}:null;
+    data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=spectator?emptyStats():custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
+    data.ended=sim.ended?{...sim.ended,won:spectator?false:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won,...(spectator?{spectator:true}:{})}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
-    if(data.ended)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
+    if(data.ended&&!spectator)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
     const resourceChanges=[];
     if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities){if(e.kind!=='resource'||!observer&&!shown(e))continue;const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
     const previous=compact&&deltaVisibility&&!forceVisibility?room.visibility[side]:null,sequence=previous?previous.sequence+1:0;
@@ -125,6 +127,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       for(const e of room.sim.owned(1).filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=room.sim.maxHP(e);e.hp=e.maxHp;}
     }
     room.explored=room.sim.players.map(()=>new Uint8Array(room.sim.gridSize**2));room.visibility=room.sim.players.map(()=>null);room.stats=room.sim.players.map(emptyStats);room.known=room.sim.players.map(()=>new Map());room.resources=room.sim.players.map(()=>new Map());room.effects=[];
+    if(room.options.hostSpectator){room.explored.push(new Uint8Array(room.sim.gridSize**2));room.visibility.push(null);room.known.push(new Map());room.resources.push(new Map());}
     room.sim.on(event=>{
       if(event.type==='gathered')room.stats[event.owner].gathered+=event.amount;
       if(event.type==='trained'||event.type==='stat-trained')room.stats[event.entity.owner].trained++;
@@ -134,10 +137,10 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
       if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
     });
-    for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
+    for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:watching(room,player.side)?null:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
   }
   function action(player,room,message){
-    const s=room.sim;if(!s||s.ended||s.players[player.side]?.defeated||waiting(room))return;
+    const s=room.sim;if(!s||s.ended||watching(room,player.side)||s.players[player.side]?.defeated||waiting(room))return;
     const owner=player.side,args=message.args||[],owns=id=>s.get(id)?.owner===owner,ids=list=>Array.isArray(list)?list.filter(owns).slice(0,160):[];
     switch(message.method){
       case 'smartCommand':{const target=s.get(args[1]);if(target&&target.owner!==owner&&!s.canSee(owner,target))return;s.smartCommand(ids(args[0]),target,args[2],args[3],!!args[4],!!args[5],owner);break;}
@@ -167,7 +170,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
   }
   function concede(room,player,reason){
     player.conceded=true;delete player.disconnected;
-    if(room.sim&&!room.sim.ended){if(custom(room)){room.sim.eliminateKingdom(player.side,reason);room.sim.checkVictory();}else room.sim.end(player.side!==0,reason);}
+    if(room.sim&&!room.sim.ended&&!watching(room,player.side)){if(custom(room)){room.sim.eliminateKingdom(player.side,reason);room.sim.checkVictory();}else room.sim.end(player.side!==0,reason);}
   }
   // Attach one transport connection. Returns the handlers the transport calls
   // for inbound text and for a closed link.
@@ -179,11 +182,11 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       if(message.type==='create'&&!player){
         if(rooms.size>=maxRooms)return send(ws,{type:'error',message:'All match slots are busy. Try again after a match finishes.'});
         const input=message.options||{},base={map:MAPS[input.map]?input.map:'highlands',seed:Number.isFinite(input.seed)?input.seed:2026};let options;
-        if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<2)return send(ws,{type:'error',message:'Choose at least two human slots for a multiplayer room.'});}
+        if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<(options.hostSpectator?1:2))return send(ws,{type:'error',message:options.hostSpectator?'Open at least one Human slot for a friend.':'Choose at least two human slots for a multiplayer room.'});}
         else options={...base,mode:['skirmish','regicide','dominion','wonder','tides'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
         room={code:code(),options,players:[],created:now,slotDefaults:options.mode==='custom'?options.slots.map(({name,faction})=>({name,faction})):null};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
-        player={side:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomHex(16),ws};room.players.push(player);
-        if(custom(room)){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
+        player={side:options.hostSpectator?options.slots.length:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomHex(16),ws};room.players.push(player);
+        if(custom(room)&&!options.hostSpectator){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
         send(ws,{type:'session',code:room.code,token:player.token});lobby(room);return;
       }
       if(message.type==='join'&&!player){
@@ -196,15 +199,24 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       }
       if(message.type==='resume'&&!player){
         room=rooms.get(String(message.code||'').toUpperCase());player=room?.players.find(p=>p.token===message.token&&!p.conceded);if(!player)return send(ws,{type:'error',code:'session-ended',message:'That network session has ended.'});
-        player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
+        player.ws?.close();player.ws=ws;player.protocol=Number(message.protocol)>=2?2:1;delete player.disconnected;if(room.sim){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:watching(room,player.side)?null:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}else lobby(room);return;
       }
       if(!player||!room||player.ws!==ws||rooms.get(room.code)!==room)return;
       if(message.type==='visibility-resync'){if(player.ws===ws&&room.sim&&custom(room)&&player.protocol>=2)player.visibilityResync=true;return;}
       if(message.type==='chat'){
-        if(!room.sim||player.ws!==ws||!rooms.has(room.code))return;
+        if(!room.sim||watching(room,player.side)||player.ws!==ws||!rooms.has(room.code))return;
         const result=room.chat.accept(room,player,message);
         if(result.error)send(ws,{type:'chat-error',message:result.error});
-        else for(const recipient of room.players)if((!result.duplicate||recipient===player)&&room.chat.allowed(room,recipient.side,result.message))send(recipient.ws,{type:'chat',message:room.chat.packet(result.message)});
+        else for(const recipient of room.players)if(!watching(room,recipient.side)&&(!result.duplicate||recipient===player)&&room.chat.allowed(room,recipient.side,result.message))send(recipient.ws,{type:'chat',message:room.chat.packet(result.message)});
+        return;
+      }
+      if(message.type==='ai-health'&&player.host&&!room.sim&&custom(room)){
+        const slot=room.options.slots.find(slot=>slot.slotNumber===message.slot&&slot.controller==='ai');
+        if(slot&&AI_HEALTH_LEVELS.includes(message.health)&&slot.aiHealth!==message.health){
+          slot.aiHealth=message.health;
+          for(const commander of room.players)if(!commander.host)commander.ready=false;
+          lobby(room);
+        }
         return;
       }
       if(message.type==='ready'&&!room.sim){player.ready=!!message.ready;lobby(room);}
@@ -242,7 +254,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       // resource, effect and fog-delta packets for this connection.
       if(!canSend(player.ws,'state')){observeHeldState(room,player.side,visible,observer,memoryCache);continue;}
       const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner);
-      const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?room.sim.allied(player.side,e.ally):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
+      const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?(watching(room,player.side)||room.sim.allied(player.side,e.ally)):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
       const state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync,visible,memoryCache);
       if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}

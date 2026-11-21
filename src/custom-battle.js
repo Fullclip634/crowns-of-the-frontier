@@ -6,6 +6,8 @@ import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
 
+export const AI_HEALTH_LEVELS=Object.freeze([100,90,80,70,60,50]);
+
 export const POPULATION_LIMITS=Object.freeze([40,60,80,120,160]);
 
 export const BATTLE_SIZES={spacious:{name:'Spacious',size:240,desc:'2.25× standard area'},large:{name:'Large',size:320,desc:'4× standard area'},huge:{name:'Huge',size:400,desc:'6.25× standard area'},vast:{name:'Vast',size:480,desc:'9× standard area'},epic:{name:'Epic',size:560,desc:'12.25× standard area'}};
@@ -26,17 +28,19 @@ export function battlePreset(preset='2v2'){
 }
 export function normalizeBattle(options){
   const raw=Array.isArray(options.slots)?options.slots:battlePreset(),source=raw.slice(0,8).map((slot,i)=>({...slot,slotNumber:slot.slotNumber||i+1}));
-  const spectator=!options.multiplayer&&(options.spectator===true||Number(options.playerSlot)===0),requested=Number(options.playerSlot),chosen=spectator?-1:requested>0?source.findIndex(slot=>slot.slotNumber===requested):source.findIndex(slot=>slot.enabled!==false);
-  if(!spectator&&(chosen<0||source[chosen].enabled===false))throw new Error('Choose an enabled kingdom to play.');
+  const hostSpectator=options.multiplayer===true&&options.hostSpectator===true;
+  const spectator=!options.multiplayer&&(options.spectator===true||Number(options.playerSlot)===0),requested=Number(options.playerSlot),chosen=spectator||hostSpectator?-1:requested>0?source.findIndex(slot=>slot.slotNumber===requested):source.findIndex(slot=>slot.enabled!==false);
+  if(!spectator&&!hostSpectator&&(chosen<0||source[chosen].enabled===false))throw new Error('Choose an enabled kingdom to play.');
   if(chosen>0)source.unshift(...source.splice(chosen,1));
   const slots=source.filter(slot=>slot.enabled!==false).map((slot,i)=>({
     name:String(slot.name||(i===0?'Your kingdom':`Kingdom ${i+1}`)).trim().slice(0,24)||`Kingdom ${i+1}`,
-    faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:spectator?'ai':i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
+    faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:spectator?'ai':!hostSpectator&&i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
+    aiHealth:AI_HEALTH_LEVELS.includes(Number(slot.aiHealth))?Number(slot.aiHealth):100,
   }));
   if(slots.length<2)throw new Error('Enable at least one opposing kingdom.');
   if(slots.every(slot=>slot.team===slots[0].team))throw new Error('Place at least one kingdom on a different team.');
   const mapSize=BATTLE_SIZES[options.mapSize]?options.mapSize:'vast';
-  return {...options,mode:'custom',slots,playerSlot:spectator?0:slots[0].slotNumber,spectator,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:POPULATION_LIMITS.includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
+  return {...options,mode:'custom',slots,playerSlot:spectator||hostSpectator?0:slots[0].slotNumber,spectator,hostSpectator,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:POPULATION_LIMITS.includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
 }
 export function battleSpawns(slots,worldSize){
   const ordered=slots.map((slot,i)=>({team:slot.team,slotNumber:slot.slotNumber||i+1,i})).sort((a,b)=>a.team-b.team||a.slotNumber-b.slotNumber),anchor=ordered.reduce((best,slot,index)=>slot.slotNumber<ordered[best].slotNumber?index:best,0),r=worldSize*.34,result=[];

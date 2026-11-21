@@ -33,7 +33,7 @@ test('solo commanders can choose a kingdom slot and keep its authored starting p
 });
 test('custom battle setup exposes a direct all-AI spectator role choice',()=>{
   const markup=customBattleMarkup({map:'highlands',mapSize:'vast',startAge:0,resourceLevel:'standard',populationLimit:80,seed:512,victory:'annihilation',shareVision:true,revealRemnants:true,aiPace:'balanced',slots:battlePreset('2v2'),playerSlot:1});
-  assert.match(markup,/id="custom-player-slot"/);assert.match(markup,/Watch AI · Spectator/);assert.match(markup,/data-play-slot="1"/);assert.match(markup,/aria-label="Play as kingdom slot 3"/);
+  assert.match(markup,/id="custom-player-slot"/);assert.match(markup,/<option value="0"[^>]*>Spectator<\/option>/);assert.match(markup,/data-play-slot="1"/);assert.match(markup,/aria-label="Play as kingdom slot 3"/);
 });
 test('closed first slot stays closed for spectators and commanders in another slot',()=>{
   const slots=battlePreset('2v2');slots[0].enabled=false;
@@ -149,4 +149,22 @@ test('every kingdom starts on dry land on every map that has water',()=>{
       assert.ok(Math.hypot(a.x-b.x,a.z-b.z)>30,`${map}/${mapSize}/${preset} kingdoms ${i} and ${j} start on top of each other`);
     }
   }
+});
+
+test('custom AI health scales starting and newly created assets and never scales human kingdoms',()=>{
+  const slots=battlePreset('2v2');slots[0].aiHealth=50;slots[1].aiHealth=70;slots[2].aiHealth=20;
+  const options={mode:'custom',map:'highlands',mapSize:'spacious',slots,playerSlot:1,seed:512};
+  const sim=new Simulation(options);
+  const standard=new Simulation({...options,slots:slots.map(slot=>({...slot,aiHealth:100}))});
+  for(const type of ['villager','towncenter']){
+    for(const owner of [0,1,2]){
+      const kind=type==='villager'?'unit':'building',entity=sim.owned(owner,kind,type)[0],base=standard.owned(owner,kind,type)[0];
+      assert.equal(entity.maxHp,base.maxHp*(owner===1?.7:1));
+      assert.equal(entity.hp,entity.maxHp);
+    }
+  }
+  const trained=sim.addUnit('spearman',1,0,20),normal=standard.addUnit('spearman',1,0,20);
+  assert.equal(trained.maxHp,normal.maxHp*.7);
+  const reloaded=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));
+  assert.equal(reloaded.maxHP(reloaded.get(trained.id)),trained.maxHp);
 });

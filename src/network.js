@@ -36,7 +36,7 @@ export class LanClient {
     socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.send({...message,protocol:2});clearInterval(this.pinger);this.pinger=setInterval(()=>this.send({type:'ping',stamp:Date.now()}),3000);});
     socket.addEventListener('message',event=>{if(this.socket!==socket)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};if(!this.transport){try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}}
       if(data.type==='lobby'){this.recovered();this.callbacks.lobby(data);}
-      if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.recovered();this.visibilityResync=false;this.active=true;this.commandReady=true;this.waiting=!!data.waiting;this.code=data.code;this.callbacks.begin(state);this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
+      if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.recovered();this.visibilityResync=false;this.active=true;this.commandReady=!state.options?.spectator;this.waiting=!!data.waiting;this.code=data.code;this.callbacks.begin(state);if(state.options?.spectator)this.callbacks.chatReset?.();else this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
       if(data.type==='chat')this.callbacks.chat?.(data.message);
       if(data.type==='chat-error')this.callbacks.chatError?.(data.message);
       if(data.type==='donation')this.callbacks.donation?.(data);
