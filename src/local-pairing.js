@@ -8,12 +8,15 @@
 //      shared Wi-Fi or phone hotspot.
 // Devices on one local network reach each other through host ICE candidates,
 // so no STUN/TURN servers are needed (and none could be reached offline).
+import {deflateSync,inflateSync} from 'three/addons/libs/fflate.module.js';
+
 const PREFIX='CF1',GATHER_TIMEOUT=5000;
+// JSON can escape each of the 12,000 SDP characters as six bytes.
+const MAX_SIGNAL_BYTES=80*1024;
 export const PAIRING_TIMEOUT=180000;
 
 const toBase64Url=bytes=>{let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const fromBase64Url=text=>{const binary=atob(text.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((text.length+3)%4));const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;};
-async function transform(bytes,Stream){const stream=new Blob([bytes]).stream().pipeThrough(new Stream('deflate-raw'));return new Uint8Array(await new Response(stream).arrayBuffer());}
 
 // TCP candidates never help on a local network and only enlarge the QR code.
 export function compactSdp(sdp){
@@ -27,7 +30,8 @@ export function compactSdp(sdp){
 
 export async function encodeSignal(signal){
   const bytes=new TextEncoder().encode(JSON.stringify(signal));
-  if(typeof CompressionStream==='function'){try{return `${PREFIX}z.${toBase64Url(await transform(bytes,CompressionStream))}`;}catch{}}
+  const compressed=deflateSync(bytes);
+  if(compressed.length<bytes.length)return `${PREFIX}z.${toBase64Url(compressed)}`;
   return `${PREFIX}j.${toBase64Url(bytes)}`;
 }
 
@@ -35,10 +39,12 @@ export async function decodeSignal(text){
   const value=String(text||'').trim().replace(/\s+/g,'');
   const match=/^CF1([zj])\.([A-Za-z0-9_-]+)$/.exec(value);
   if(!match)throw new Error('That is not a Crowns of the Frontier nearby code.');
+  if(match[2].length>Math.ceil(MAX_SIGNAL_BYTES*4/3))throw new Error('That nearby code is too large. Create a fresh code.');
   let bytes;try{bytes=fromBase64Url(match[2]);}catch{throw new Error('That nearby code is incomplete. Copy or scan it again.');}
   if(match[1]==='z'){
-    if(typeof DecompressionStream!=='function')throw new Error('This browser cannot read compressed nearby codes. Update the browser and try again.');
-    try{bytes=await transform(bytes,DecompressionStream);}catch{throw new Error('That nearby code is incomplete. Copy or scan it again.');}
+    // Use the shipped codec on iOS 15 and browsers without raw deflate streams.
+    try{bytes=inflateSync(bytes,{out:new Uint8Array(MAX_SIGNAL_BYTES+1)});}catch{throw new Error('That nearby code is incomplete. Copy or scan it again.');}
+    if(bytes.length>MAX_SIGNAL_BYTES)throw new Error('That nearby code is too large. Create a fresh code.');
   }
   let signal;try{signal=JSON.parse(new TextDecoder().decode(bytes));}catch{throw new Error('That nearby code is damaged. Copy or scan it again.');}
   if(!signal||signal.v!==1||!['offer','answer'].includes(signal.k)||typeof signal.sdp!=='string'||signal.sdp.length>12000)throw new Error('That nearby code is from an incompatible version of the game.');

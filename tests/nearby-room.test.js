@@ -169,3 +169,15 @@ test('a Nearby host can watch a friend fight an AI kingdom with custom health',a
   assert.equal(host.lan.action('resign',[]),false);
   await until(()=>host.record.states.some(([state])=>state.time>0),'spectator receives ongoing battle');
 });
+
+test('compressed Nearby codes interoperate with raw deflate independently of browser compression streams',async()=>{
+  const {deflateRawSync,inflateRawSync}=await import('node:zlib');
+  const offer={v:1,k:'offer',room:'ABC123',sdp:'a=candidate:1 1 udp 2122260223 192.168.1.4 51000 typ host\r\n'};
+  const olderCode='CF1z.'+deflateRawSync(JSON.stringify(offer)).toString('base64url');
+  assert.deepEqual(await decodeSignal(olderCode),offer);
+  const encoded=await encodeSignal({...offer,sdp:offer.sdp.repeat(10)});
+  assert.match(encoded,/^CF1z\./);
+  assert.deepEqual(JSON.parse(inflateRawSync(Buffer.from(encoded.slice(5),'base64url'))),{...offer,sdp:offer.sdp.repeat(10)});
+  assert.deepEqual(await decodeSignal('CF1j.'+Buffer.from(JSON.stringify(offer)).toString('base64url')),offer);
+  await assert.rejects(decodeSignal('CF1z.'+deflateRawSync('x'.repeat(100000)).toString('base64url')),/too large/);
+});
