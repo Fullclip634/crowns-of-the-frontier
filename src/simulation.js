@@ -2,7 +2,7 @@ import {retireDeadUnits} from './dead-unit-cleanup.js';
 import {revealVisionCircle} from './vision-circle.js';
 import {takeFromResource,revealResourceChanges,serializeResourceMemory,restoreResourceMemory} from './resource-vision.js';
 import {installFrontiers} from './frontiers.js';
-import {findPath,clearSegment,unitNavigationGrid} from './navigation.js';
+import {findPath,clearSegment,unitNavigationGrid,navigationRegions} from './navigation.js';
 import {installTactics,formationSlot,formationDestinations} from './tactics.js';
 import {installCommanderAI} from './commander-ai.js';
 import {installCampaigns} from './campaigns.js';
@@ -325,15 +325,24 @@ export class Simulation {
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
     const size=this.gridSize,teamKey='team-'+(this.players[owner].team??owner);if(this.grids[teamKey]?.revision===this.revision){this.grids[owner]=this.grids[teamKey];return this.grids[owner].data;}
-    let resHash=this.entities.length;
-    for(let i=0;i<this.entities.length;i++){
-      const e=this.entities[i];
-      if(e.hp>0&&e.kind==='resource'&&!e.water&&(e.type==='wood'||e.type==='gold'||e.type==='stone'))resHash=(Math.imul(resHash,31)+e.id)|0;
+    if(this.grids.landBase?.revision!==this.revision||this.grids.landBase?.size!==size){
+      let resHash=0,resCount=0;
+      for(let i=0;i<this.entities.length;i++){
+        const e=this.entities[i];
+        if(e.hp>0&&e.kind==='resource'&&!e.water&&(e.type==='wood'||e.type==='gold'||e.type==='stone')){
+          resHash=(Math.imul(resHash,31)+e.id)|0;
+          resCount++;
+        }
+      }
+      if(this.grids.landBase?.resHash!==resHash||this.grids.landBase?.resCount!==resCount||this.grids.landBase?.size!==size){const base=baseWaterGrid(this).slice();
+        for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
+        this.grids.landBase={revision:this.revision,resHash,resCount,size,data:base};
+      }else this.grids.landBase.revision=this.revision;
+      const parent=Object.getPrototypeOf(this),parentGrids=parent?.grids;
+      if(parentGrids&&parentGrids!==this.grids&&parent.revision===this.revision&&(!parentGrids.landBase||parentGrids.landBase.revision!==this.revision||parentGrids.landBase.resHash!==resHash||parentGrids.landBase.resCount!==resCount||parentGrids.landBase.size!==size)){
+        parentGrids.landBase={...this.grids.landBase};
+      }
     }
-    if(this.grids.landBase?.resHash!==resHash||this.grids.landBase?.size!==size){const base=baseWaterGrid(this).slice();
-      for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
-      this.grids.landBase={revision:this.revision,resHash,size,data:base};
-    }else this.grids.landBase.revision=this.revision;
     const data=this.grids.landBase.data.slice();
     for(const e of this.entities)if(e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&this.allied(e.owner,owner))){
       const a=this.cell(e.x-e.r-.3,e.z-e.r-.3),b=this.cell(e.x+e.r+.3,e.z+e.r+.3);
@@ -487,9 +496,27 @@ export class Simulation {
       if(order.type==='gather'){
         if(e.orders.length){this.finishOrder(e);return;}
         if(this.players[e.owner].controller==='ai'||e.owner>0&&this.players[e.owner].controller!=='human'){this.assignWorker(e);return;}
-        const sources=closestCandidates(this.entities,8,t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1),resource=>distance(e,resource));
-        for(const resource of sources){const range=gatheringPathRange(e,resource),route=this.pathTo(e,resource,range);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>gatheringRange(e,resource))continue;
-          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=range;return;
+        const eligible=t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1);
+        const tryAssign=resource=>{
+          const range=gatheringPathRange(e,resource),route=this.pathTo(e,resource,range);
+          if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>gatheringRange(e,resource))return false;
+          e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=range;return true;
+        };
+        const nearSources=closestCandidates(this.entities,8,eligible,resource=>distance(e,resource));
+        for(const resource of nearSources)if(tryAssign(resource))return;
+        if(nearSources.length===8){
+          const tried=new Set(nearSources),grid=unitNavigationGrid(this,e),labels=navigationRegions(this,grid),size=this.gridSize,startCell=this.cell(e.x,e.z);
+          let startRegion=labels[startCell.z*size+startCell.x];
+          if(!startRegion){for(let ring=1;ring<6&&!startRegion;ring++)for(let z=Math.max(0,startCell.z-ring);z<=Math.min(size-1,startCell.z+ring)&&!startRegion;z++)for(let x=Math.max(0,startCell.x-ring);x<=Math.min(size-1,startCell.x+ring);x++)if(labels[z*size+x]){startRegion=labels[z*size+x];break;}}
+          const regionReachable=t=>{
+            if(!eligible(t)||tried.has(t))return false;
+            if(!startRegion)return true;
+            const range=gatheringPathRange(e,t),low=this.cell(t.x-range,t.z-range),high=this.cell(t.x+range,t.z+range);
+            for(let z=low.z;z<=high.z;z++)for(let x=low.x;x<=high.x;x++)if(labels[z*size+x]===startRegion)return true;
+            return false;
+          };
+          const fallback=this.entities.filter(regionReachable).sort((a,b)=>distance(e,a)-distance(e,b));
+          for(const resource of fallback)if(tryAssign(resource))return;
         }
       }
       if(order.type==='build'&&e.type==='villager'&&(order.wallConstruction||this.entities.some(wall=>wall.id===order.target&&wall.type==='wall'&&wall.owner===e.owner)))this.finishWallOrder(e,this.entities.find(wall=>wall.id===order.target));else this.finishOrder(e);return;
