@@ -56,7 +56,11 @@ export function wallPlacementPlan(sim,draft,workerIds,owner=0,requireVisibility=
   const from=copy(startContact||rawStart),end=copy(endContact||rawEnd);
   const anchored=!!anchorStart&&!!(anchorEnd||existingEnd),usableDirection=!anchorStart||startContact&&anchorStart.id!==anchorEnd?.id;
   const exactPoints=anchored&&usableDirection?wallLinePoints(from,end,true):[];
-  const points=(usableDirection?(exactPoints.length?exactPoints:wallLinePoints(from,end)):[]).slice(existingStart?1:0);
+  const clearance=2*BUILDINGS.wall.r-.3;
+  // Rounded coordinates at the exact clearance can overlap under a strict
+  // footprint check. Use regular spacing when the anchored run is that tight.
+  const exactFits=exactPoints.length>0&&exactPoints.every((point,i)=>i===0||distance(point,exactPoints[i-1])>=clearance+1e-9);
+  const points=(usableDirection?(exactFits?exactPoints:wallLinePoints(from,end)):[]).slice(existingStart?1:0);
   const costEach=sim.cost(BUILDINGS.wall.cost,owner,'building'),budget={...sim.players[owner].resources},cost={},segments=[];
   let blocked=0,unaffordable=0,reused=0,count=0,buildTo=null;
   for(let index=0;index<points.length;index++){
@@ -83,8 +87,8 @@ export function wallPlacementPlan(sim,draft,workerIds,owner=0,requireVisibility=
   const workers=workerIds.map(id=>sim.get(id)).filter(unit=>unit?.type==='villager'&&unit.owner===owner&&unit.hp>0&&!unit.embarked);
   const ageReady=sim.players[owner].age>=BUILDINGS.wall.age,canBuild=count>0&&workers.length>0&&ageReady&&!draft.panning;
   const skipped=[blocked&&`${blocked} blocked`,unaffordable&&`${unaffordable} beyond budget`,reused&&`${reused} already built`].filter(Boolean);
-  const attachment=anchorStart?.type==='wood'&&anchorEnd?.type==='wood'&&exactPoints.length?' Joined to both trees.':'';
+  const attachment=anchorStart?.type==='wood'&&anchorEnd?.type==='wood'&&exactFits?' Joined to both trees.':'';
   const message=draft.panning?panMessage:!workers.length?'Select a villager to build these walls.':!ageReady?`Advance to the ${AGES[BUILDINGS.wall.age]} to build stone walls.`
     :skipped.length?`${count?count+' ready. ':''}${skipped.join(' · ')}.`:!count?'Choose another end point to extend the wall.':`${count} ${count===1?'section':'sections'} ready.${attachment}`;
-  return {segments,count,cost,canBuild,message,from,to:exactPoints.length?end:buildTo,angle:-Math.atan2(end.z-from.z,end.x-from.x),reverse,blocked,unaffordable,reused,start:copy(draft.start),end:copy(draft.end)};
+  return {segments,count,cost,canBuild,message,from,to:exactFits?end:buildTo,angle:-Math.atan2(end.z-from.z,end.x-from.x),reverse,blocked,unaffordable,reused,start:copy(draft.start),end:copy(draft.end)};
 }

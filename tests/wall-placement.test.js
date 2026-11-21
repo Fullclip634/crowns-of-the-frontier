@@ -159,3 +159,11 @@ test('corner, unfinished section and obstructed footprint cannot be converted or
   assert.deepEqual(sim.players[0].resources,resources);
   assert.equal(deposit.hp,1);
 });
+
+test('an anchored run at the strict wall clearance keeps its build count in sync with the preview',()=>{
+  const {sim,worker}=fixture();
+  const left=sim.addResource('wood',0,20,600),right=sim.addResource('wood',10.25-1e-10,20,600);
+  const p=plan(sim,worker,left,right);
+  assert.equal(p.canBuild,true);
+  assert.equal(sim.buildWallDraft(p.start,p.end,[worker.id]).length,p.count);
+});
