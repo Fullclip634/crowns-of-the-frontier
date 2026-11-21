@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 13821488,
-    "low": 4959168,
-    "balanced": 13158632
+    "near": 14059088,
+    "low": 4690328,
+    "balanced": 13034444
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -534,23 +534,23 @@
   "balancedPrecision": {
     "passed": true,
     "models": 126,
-    "meshes": 1412,
-    "visibleTriangles": 641624,
+    "meshes": 1431,
+    "visibleTriangles": 645144,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
-    "maxNormalDegrees": 0.0034318130265659674,
+    "maxNormalDegrees": 0.004284129732609737,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17445916,
-    "candidateBytes": 13158632,
-    "referenceDecodedBufferBytes": 37565892,
-    "candidateDecodedBufferBytes": 33945044,
-    "referenceSHA256": "d45ce3657eb1f9d2c216a0de81f1d0c4aab1fc5ebfbb412676dc66f378e94c93",
-    "candidateSHA256": "55937d2ccf81b0df88d70575adeedee099bb86bf294770cac1c5431149de6601"
+    "referenceBytes": 17260284,
+    "candidateBytes": 13034444,
+    "referenceDecodedBufferBytes": 37157480,
+    "candidateDecodedBufferBytes": 33570136,
+    "referenceSHA256": "b5d3d684815fdf22bfb09e83df44bdaa52dda1b46e1f1cc50f4ef59431e97e97",
+    "candidateSHA256": "0ddd727fd954799b886f0918888464b74bfcc4eeacf066081290b3190ce41e20"
   },
   "balancedSourceHashes": {
-    "near": "ee3ba18dd8dcd9095c918ab45337b86609db4f10b8a576b3d8d0c717fb615cac",
-    "low": "e98b226ed7523313a84f67563465243953a385232a3797902f26a9e9a92d6c53",
+    "near": "17d5c60225f7fe921a7c70d17bf4f955f4a5b6f2d96555ba2fea328240768288",
+    "low": "27f03ad5ae13835cede9b8fe484d43fabc0620195131ea1c9c51d0bb4b3c80ab",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
@@ -581,5 +581,7 @@
   "horseLegRevision": "articulated-hooves-v1",
   "mountedFormRevision": "shaped-horses-and-bridles-v1",
   "navalRevision": "carvel-timber-v1",
-  "navalSourceSHA256": "9752b1faef9b5e3b5c8cdde5dd09d9d735eba584c8db49a7342bcbd183608fed"
+  "navalSourceSHA256": "9752b1faef9b5e3b5c8cdde5dd09d9d735eba584c8db49a7342bcbd183608fed",
+  "castleRevision": "aoe2-fortress-v1",
+  "castleSourceSHA256": "053e17dff23ecf2e900a893204a5c69b9f8f30b21418d621ac9e9553d0f53b76"
 }

@@ -147,7 +147,11 @@ function icicleMaterial(view){
 /** Add stepped stone piers, castle buttresses, imperial bastion crowns, lived-in medieval props (timber porches, supply barrels/crates, stone chimneys, hanging heraldic banners), and winter roof-eave icicles so every age and biome reads with hand-crafted depth inside one single merged draw call. */
 export function strengthenArchitecture(view,root,entity,age){
   if(!root||!entity||age<0||!view?.geo?.box||!view?.materials?.stone||root.userData.strengthened)return root;
-  if(['farm','dock','wall','gate','towncenter'].includes(entity.type))return root;
+  // The Blender Castle already carries hand-sculpted AoE2 corner bastions,
+  // stepped flank buttresses, a cylindrical round tower, a recessed drawbridge
+  // gatehouse, and a vertical chevron banner; generic box piers and floating
+  // front banners would clip through the round tower and drawbridge.
+  if(['farm','dock','wall','gate','towncenter','keep'].includes(entity.type))return root;
   const {wall,eave,roof}=measureLocalBoxes(root);
   if(wall.isEmpty())return root;
   const eaveSize=!eave.isEmpty()?eave.getSize(new THREE.Vector3()):null;

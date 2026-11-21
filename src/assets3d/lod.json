@@ -2,16 +2,16 @@
   "source": "frontier-low.glb",
   "output": "frontier-far.glb",
   "ratio": 0.35,
-  "sourceBytes": 4959168,
-  "lodBytes": 2708652,
-  "sourceSHA256": "e98b226ed7523313a84f67563465243953a385232a3797902f26a9e9a92d6c53",
-  "lodSHA256": "56c6bcf5bfcc4b6ff22b268a50d12affd99567f5073c89c9df248a7c05e89e99",
+  "sourceBytes": 4690328,
+  "lodBytes": 2739196,
+  "sourceSHA256": "27f03ad5ae13835cede9b8fe484d43fabc0620195131ea1c9c51d0bb4b3c80ab",
+  "lodSHA256": "1c04359a4ccd84000ab13e64adb3ef3cdcc0e27d39fee55df47556bbc9ddc75c",
   "triangles": {
-    "source": 225040,
-    "lod": 146927,
-    "reduction": 0.3471
+    "source": 222464,
+    "lod": 145089,
+    "reduction": 0.3478
   },
   "assetKeys": 126,
-  "restoredMeshNodes": 1171,
+  "restoredMeshNodes": 1198,
   "tool": "gltfpack -si -se -ke -kn -km -c + restoreMeshExtras"
 }

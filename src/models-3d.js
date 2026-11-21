@@ -307,10 +307,18 @@ export function buildingModel(view,e){
   }else if(type==='tower'){
     turret(view,g,o,0,0,7,1.25,true);flag(view,g,team,0,10,0,.8);
   }else if(type==='keep'){
-    b.box(m.stone,0,3.2,0,6.2,6.7,5.7);for(const x of [-3,3])for(const z of [-2.8,2.8])turret(view,g,o,x,z,7.6,1.2);
-    b.roof(view.roofMaterials[o],0,6.7,0,6.7,3.1,6.1);b.arch(m.stoneDark,0,0,2.91,2.4,3.3,.5);b.box(m.darkwood,0,1.4,3.09,1.5,2.6,.15);
-    for(const side of [-1,1])for(const yy of [2.7,4.7])b.arch(m.stoneDark,side*1.8,yy,2.92,.72,1.1,.22);
-    flag(view,g,team,0,11,0,1.3);
+    b.box(m.stone,-.35,2.46,.05,5.3,4.92,5.2);
+    for(const [bx,bz]of [[-2.82,2.48],[2.12,2.48],[-2.82,-2.38]])b.box(m.stone,bx,2.74,bz,1.24,4.4,1.24);
+    b.box(m.stoneDark,-.35,4.94,.05,5.12,.14,5.02);
+    for(let x=-2.8;x<=2.1;x+=.82)for(const z of [-2.65,2.75])b.box(m.stone,x,5.65,z,.5,.75,.42);
+    for(let z=-2.1;z<=2.2;z+=.86)for(const x of [-3.05,2.35])b.box(m.stone,x,5.65,z,.42,.75,.5);
+    turret(view,g,o,2.48,-1.95,6.5,1.36,false);
+    b.box(team,3.44,4.28,-0.88,.72,2.4,.08,Math.PI/4);
+    b.box(m.stone,-2.28,5.76,-1.92,1.66,1.72,1.66);
+    b.arch(m.stoneDark,-.35,0,2.66,1.8,2.5,.45);b.box(m.glow,-.35,1.12,2.32,1.1,1.5,.08);
+    b.box(m.wood,-.35,.22,3.28,1.52,.14,1.26);
+    for(const side of [-1,1])b.rod(m.iron,[-.35+side*.94,2.24,2.68],[-.35+side*.80,.36,3.80],.036);
+    flag(view,g,team,-2.28,9.05,-1.92,1.35,6.95);
   }else if(type==='wall'){
     const heavy=wallTier(view.sim,e)==='fortified',s=heavy?1.19:1,w=heavy?1.06:1,d=heavy?1.14:1,body=heavy?m.stoneDark:m.stone;
     b.box(body,0,1.67*s,0,2.85*w,3.55*s,1.45*d);for(const x of [-1,0,1])b.box(body,x,3.65*s,0,.55*w,.85*s,1.5*d);

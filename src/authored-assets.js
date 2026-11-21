@@ -287,7 +287,7 @@ function foundation(view,root,e,age=0){
   // already authored. A mill keeps a plinth but one that does not protrude at
   // all, because its blades sweep close to the front wall.
   if(['farm','dock','wall','gate','tower'].includes(e.type))return;
-  const overhang=e.type==='mill'?1:1.12;
+  const overhang=['mill','keep'].includes(e.type)?1:1.12;
   root.updateMatrixWorld(true);
   // Measure the building only. A rotor or a moving gate sits outside the walls
   // and would otherwise inflate the plinth until it clipped the blades.
@@ -305,9 +305,10 @@ function foundation(view,root,e,age=0){
   // Divide the measured world size by that scale to keep the plinth flush with
   // the walls instead of overshooting them at higher ages.
   const sx=root.scale.x||1,sy=root.scale.y||1,sz=root.scale.z||1;
-  const slabH=e.type==='mill'?.46:.46+Math.max(0,Math.min(3,age))*.08;
+  const slabH=e.type==='keep'?.34:e.type==='mill'?.46:.46+Math.max(0,Math.min(3,age))*.08;
+  const slabY=e.type==='keep'?bounds.min.y+slabH*.5:bounds.min.y+.10+(slabH-.46)*.5;
   const slab=new THREE.Mesh(view.geo.box,body);
-  slab.position.set((bounds.min.x+bounds.max.x)/2/sx,(bounds.min.y+.10+(slabH-.46)*.5)/sy,(bounds.min.z+bounds.max.z)/2/sz);
+  slab.position.set((bounds.min.x+bounds.max.x)/2/sx,slabY/sy,(bounds.min.z+bounds.max.z)/2/sz);
   slab.scale.set(size.x*overhang/sx,slabH/sy,size.z*overhang/sz);
   slab.userData.architectureDetail=true;
   root.add(slab);
