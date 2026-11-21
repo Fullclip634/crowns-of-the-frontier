@@ -70,6 +70,7 @@ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))||fa
 const modestDevice=(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrency||8)<=4;
 const recommendedQuality=modestDevice?'low':matchMedia('(pointer: coarse)').matches?'medium':'high';
 const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,music:true,unitVoices:true,warHorns:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,reduceFoliage:false,colorblind:false,...read('crowns-settings',{})};
+delete settings.gpuTiming;
 settings.frameRate=normalizeFrameRate(settings.frameRate);
 let offlineGraphicsPreference=null;
 function saveSettings(){
@@ -330,7 +331,6 @@ function showSettings(){
     <label class="toggle"><input id="weather-lightning" type="checkbox" ${settings.lightning?'checked':''}> Lightning flashes <small>Reduced motion also disables flashes.</small></label>
     <label class="toggle"><input id="fog" type="checkbox" ${settings.fog?'checked':''}> Fog overlay <small>Enemy visibility rules remain active.</small></label>
     <label class="toggle"><input id="distant-units" type="checkbox" ${settings.distantUnits!==false?'checked':''}> Distant unit detail <small>Uses a lighter model for troops that are small on screen. Takes effect after reloading.</small></label>
-    <label class="toggle"><input id="gpu-timing" type="checkbox" ${settings.gpuTiming===true?'checked':''}> GPU frame timing (diagnostic) <small>Reports real GPU milliseconds. Can reduce frame rate on some drivers. Takes effect after reloading.</small></label>
     <label class="toggle"><input id="high-contrast" type="checkbox" ${settings.highContrast?'checked':''}> Higher contrast interface</label>
     <label class="toggle"><input id="colorblind" type="checkbox" ${settings.colorblind?'checked':''}> Colour-blind safe team colours <small>Swaps the eight kingdom colours for a palette that stays distinct without red/green separation.</small></label>
     <label class="toggle"><input id="reduced-motion" type="checkbox" ${settings.reducedMotion?'checked':''}> Reduce decorative motion</label>
@@ -527,7 +527,7 @@ function action(name){
     const previousQuality=view.renderQuality,graphicsChoice=$('#quality').value;
     const graphicsChanged=graphicsChoice!==graphicsSelection(settings);
     if(graphicsChanged){offlineGraphicsPreference=null;applyGraphicsChoice(settings,graphicsChoice,recommendedQuality);}
-    settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.distantUnits=$('#distant-units').checked;settings.gpuTiming=$('#gpu-timing').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();
+    settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.distantUnits=$('#distant-units').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();
     const reloadGraphics=graphicsChanged||previousQuality!==settings.quality||view.graphicsLoading||view.graphicsFatal||view.graphicsError||view.graphicsSceneValid===false;
     const graphicsReady=reloadGraphics?view.quality(settings.quality):Promise.resolve(true),graphicsRequest=view.graphicsRequest;
     graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();saveSettings();if(!view?.graphicsLoading&&previousQuality===settings.quality)audio.unlock();else graphicsReady.finally(()=>{if(!view?.graphicsLoading)audio.unlock();});closeModal();return;}
