@@ -3,6 +3,11 @@ const fortification=e=>e.kind==='building'&&(e.type==='wall'||e.type==='gate');
 const axis=e=>({x:Math.cos(e.wallAngle||0),z:-Math.sin(e.wallAngle||0)});
 const length=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 
+export function wallSupport(entity,sim,owner){
+  return entity.hp>0&&(entity.kind==='resource'&&!entity.water&&['wood','stone','gold'].includes(entity.type)
+    ||entity.kind==='building'&&entity.type!=='farm'&&!fortification(entity)&&entity.progress>=1&&sim.allied(owner,entity.owner));
+}
+
 // Snap the drag length to complete sections instead of stretching a fixed
 // number of sections apart. A section's half-width covers the final cursor.
 export function wallLinePoints(from,to,exactEnd=false){
@@ -92,8 +97,25 @@ export function wallTreeConnections(entities){
   return links;
 }
 
+export function wallSupportConnections(entities){
+  const attached=entities.filter(wall=>wall.hp>0&&wall.type==='wall'&&wall.wallSupports?.length);
+  if(!attached.length)return[];
+  const supports=new Map(entities.filter(e=>e.hp>0).map(e=>[e.id,e])),links=[];
+  for(const wall of attached)for(const id of wall.wallSupports){
+    const support=supports.get(id);
+    if(!support)continue;
+    const d=length(wall,support);
+    if(!d)continue;
+    const start=wallEdge(wall,support),radius=support.r-.1;
+    const end={x:support.x+(wall.x-support.x)*radius/d,z:support.z+(wall.z-support.z)*radius/d};
+    const gap=length(wall,end)-length(wall,start);
+    if(gap>0)links.push({a:wall,b:support,start,end,gap,collisionStart:wall,collisionEnd:support});
+  }
+  return links;
+}
+
 export function blockWallConnections(sim,grid){
-  if(sim.wallTreeLinkCache?.entities!==sim.entities||sim.wallTreeLinkCache.revision!==sim.revision)sim.wallTreeLinkCache={entities:sim.entities,revision:sim.revision,links:wallTreeConnections(sim.entities)};
+  if(sim.wallTreeLinkCache?.entities!==sim.entities||sim.wallTreeLinkCache.revision!==sim.revision)sim.wallTreeLinkCache={entities:sim.entities,revision:sim.revision,links:[...wallTreeConnections(sim.entities),...wallSupportConnections(sim.entities)]};
   for(const {collisionStart:a,collisionEnd:b} of [...wallConnections(sim.entities),...sim.wallTreeLinkCache.links]){
     const from=sim.cell(Math.min(a.x,b.x)-.85,Math.min(a.z,b.z)-.85),to=sim.cell(Math.max(a.x,b.x)+.85,Math.max(a.z,b.z)+.85),dx=b.x-a.x,dz=b.z-a.z,squared=dx*dx+dz*dz;
     for(let z=from.z;z<=to.z;z++)for(let x=from.x;x<=to.x;x++){const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,t=squared?Math.max(0,Math.min(1,((wx-a.x)*dx+(wz-a.z)*dz)/squared)):0;

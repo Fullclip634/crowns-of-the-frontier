@@ -1,12 +1,12 @@
 import {UNITS} from './data.js';
 import {constructionHalfSize} from './construction-contact.js';
-import {wallConnections,wallTreeConnections} from './walls.js';
+import {wallConnections,wallSupportConnections,wallTreeConnections} from './walls.js';
 
 const wallCache=new WeakMap();
 const workGridCache=new WeakMap();
 function wallsNear(sim,target){
   let cache=wallCache.get(sim);if(!cache||cache.entities!==sim.entities||cache.revision!==sim.revision){
-    cache={entities:sim.entities,revision:sim.revision,walls:sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&['wall','gate'].includes(e.type)),links:[...wallConnections(sim.entities),...wallTreeConnections(sim.entities)],nearby:new WeakMap()};wallCache.set(sim,cache);
+    cache={entities:sim.entities,revision:sim.revision,walls:sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&['wall','gate'].includes(e.type)),links:[...wallConnections(sim.entities),...wallTreeConnections(sim.entities),...wallSupportConnections(sim.entities)],nearby:new WeakMap()};wallCache.set(sim,cache);
   }
   if(cache.nearby.has(target))return cache.nearby.get(target);
   const radius=target.r+12;

@@ -6,6 +6,8 @@ import {encodeSignal,decodeSignal,compactSdp} from '../src/local-pairing.js';
 import {qrSvg} from '../src/qr-code.js';
 import jsQR from 'jsqr';
 import {LanClient} from '../src/network.js';
+import {battlePreset} from '../src/custom-battle.js';
+import {customHostOptions} from '../src/custom-host.js';
 
 // An in-memory stand-in for a connected pair of RTCDataChannels.
 function channelPair(){
@@ -118,4 +120,29 @@ test('the nearby room refuses a second room and closes guests when the host leav
   await until(()=>guest.record.closed===1,'guest told the room closed');
   assert.ok(guest.record.notices.some(message=>/host closed this room/i.test(message)));
   assert.equal(guest.lan.transport,null,'leaving a closed nearby room releases its transport');
+});
+
+
+test('custom Nearby battles start with two connected humans and AI kingdoms',async t=>{
+  const room=new LocalRoomHost({useWorker:false}),host=client(),guest=client();
+  t.after(()=>{host.lan.leave();guest.lan.leave();room.teardown();});
+  const slots=battlePreset('2v2');slots[1].controller='human';
+  const options=customHostOptions({map:'highlands',seed:512,playerSlot:1,slots});
+  host.lan.useTransport(hostTransport(room));
+  host.lan.connect({type:'create',name:'Host',faction:'alder',options});
+  await until(()=>host.record.lobbies.length,'custom Nearby lobby');
+  const lobby=host.record.lobbies.at(-1);
+  assert.deepEqual(lobby.slots.map(slot=>slot.controller),['human','human','ai','ai']);
+  assert.equal(lobby.canStart,false);
+  const [hostEnd,guestEnd]=channelPair();room.addChannel(hostEnd);
+  guest.lan.useTransport(guestTransport(guestEnd,null));
+  guest.lan.connect({type:'join',name:'Ally',faction:'raven',code:lobby.code,slot:2});
+  await until(()=>guest.record.lobbies.length,'guest enters custom lobby');
+  guest.lan.send({type:'ready',ready:true});
+  await until(()=>host.record.lobbies.at(-1)?.canStart,'human slots ready');
+  host.lan.send({type:'start'});
+  await until(()=>host.record.begins.length&&guest.record.begins.length,'match starts with AI');
+  assert.equal(host.record.begins[0].players.length,4);
+  assert.equal(host.record.begins[0].options.slots.filter(slot=>slot.controller==='ai').length,2);
+  await until(()=>host.record.states.some(([state])=>state.time>0),'match advances');
 });

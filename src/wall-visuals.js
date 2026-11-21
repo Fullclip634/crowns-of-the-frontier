@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {wallConnections,wallTreeConnections} from './walls.js';
+import {wallConnections,wallSupportConnections,wallTreeConnections} from './walls.js';
 import {markInstancePrefix} from './render-batches.js';
 import {terrainFloor} from './building-grounding.js';
 import {wallTier,wallTierStyle,FORTIFIED_WALL_TECH} from './fortified-walls.js';
@@ -24,7 +24,7 @@ export class WallVisuals{
     // A researched masonry upgrade changes appearance without necessarily
     // changing the entity list, so track the tech table in the cheap guard too.
     const tierVersion=v.sim.players?.map(player=>player.tech?.[FORTIFIED_WALL_TECH]||0).join(',')||'';
-    if(revisionChanged){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
+    if(revisionChanged){this.links=[...wallConnections(v.sim.entities),...wallTreeConnections(v.sim.entities),...wallSupportConnections(v.sim.entities)].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12);this.revision=v.sim.revision;this.entities=v.sim.entities;}
     if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
     const tierOf=link=>(wallTier(v.sim,link.a)==='fortified'||wallTier(v.sim,link.b)==='fortified')?'fortified':'stone',shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);

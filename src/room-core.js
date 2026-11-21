@@ -143,6 +143,8 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       case 'smartCommand':{const target=s.get(args[1]);if(target&&target.owner!==owner&&!s.canSee(owner,target))return;s.smartCommand(ids(args[0]),target,args[2],args[3],!!args[4],!!args[5],owner);break;}
       case 'build':if(!s.canSee(owner,{x:args[1],z:args[2],r:0})){send(player.ws,{type:'error',message:'Construct buildings within your visible territory.'});break;}s.build(args[0],args[1],args[2],ids(args[3]),owner,!!args[5]);break;
       case 'buildWallLine':s.buildWallLine({x:args[0],z:args[1]},{x:args[2],z:args[3]},ids(args[4]),owner,true);break;
+      case 'buildWallDraft':if(!s.buildWallDraft({x:args[0],z:args[1]},{x:args[2],z:args[3]},ids(args[4]),owner,true).length)send(player.ws,{type:'error',message:'No sections can be built there now. Check the wall preview.'});break;
+      case 'convertWallToGate':if(owns(args[0])&&!s.convertWallToGate(args[0],owner))send(player.ws,{type:'error',message:'This wall cannot be converted. Check the site and your resources.'});break;
       case 'train':if(owns(args[0]))s.train(args[0],args[1]);break;
       case 'research':if(owns(args[0]))s.research(args[0],args[1]);break;
       case 'stop':s.stop(ids(args[0]));break;

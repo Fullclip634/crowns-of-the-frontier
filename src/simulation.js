@@ -10,6 +10,8 @@ import {installCustomBattle,normalizeBattle,BATTLE_SIZES,PLAYER_COLORS} from './
 import {SpatialBuckets,forEachNearbyUnit} from './spatial-buckets.js';
 import {placementCollision,recordPlacementAppend} from './placement-obstacles.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints,wallEndpointTree} from './walls.js';
+import {wallPlacementPlan} from './wall-placement.js';
+import {gateConversionPlan} from './gate-conversion.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {installGarrison} from './garrison.js';
@@ -201,7 +203,7 @@ export class Simulation {
   addNaturalResource(type,x,z,baseAmount){return this.addResource(type,x,z,baseAmount*2);}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
   maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;return base*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
-  addBuilding(type,owner,x,z,complete=false){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
+  addBuilding(type,owner,x,z,complete=false,layout){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);if(layout?.angle!==undefined)e.wallAngle=layout.angle;if(layout?.links)e.wallLinks=layout.links;else connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const previousRevision=this.revision,e={id:this.nextId++,kind:'unit',type,owner,x,z,r:UNITS[type].radius??(type==='ram'?1.35:type==='catapult'?1.1:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   population(owner){return this.count(owner,'unit');}
   capacity(owner){const limit=this.options.populationLimit||160;let total=0;for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner===owner&&e.progress>=1)total+=BUILDINGS[e.type].cap||0;return Math.min(limit,total);}
@@ -210,16 +212,16 @@ export class Simulation {
   canAfford(cost,owner=0){return Object.entries(cost).every(([r,n])=>this.players[owner].resources[r]>=n);}
   spend(cost,owner){if(!this.canAfford(cost,owner))return false;for(const[r,n]of Object.entries(cost))this.players[owner].resources[r]-=n;return true;}
   fail(message,owner=0){this.emit('notice',{message,owner,tone:'warning'});return false;}
-  buildValid(type,x,z,owner=0){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
+  buildValid(type,x,z,owner=0,ignored){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
-    return !placementCollision(this,type,x,z,d.r);
+    return !placementCollision(this,type,x,z,d.r,ignored);
   }
-  build(type,x,z,workerIds,owner=0,append=false){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
+  build(type,x,z,workerIds,owner=0,append=false,layout){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
     const workers=workerIds.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.type==='villager'&&!e.embarked);if(!workers.length)return this.fail('Select a villager to construct buildings.',owner);
     if(!this.buildValid(type,x,z,owner))return this.fail('Choose open, visible land for this building.',owner);
     if(!this.spend(this.cost(d.cost,owner,'building'),owner))return this.fail('Not enough resources.',owner);
-    const e=this.addBuilding(type,owner,x,z);this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
+    const e=this.addBuilding(type,owner,x,z,false,layout);this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
   }
   buildWallLine(from,to,workerIds,owner=0,requireVisibility=false){
     if(!from||!to||![from.x,from.z,to.x,to.z].every(Number.isFinite)||[from.x,from.z,to.x,to.z].some(n=>Math.abs(n)>this.halfWorld))return[];
@@ -230,6 +232,33 @@ export class Simulation {
       if(endWall&&distance(point,endWall)<1.8&&built.length&&distance(built.at(-1),endWall)<=3.35)break;
       const wall=this.build('wall',point.x,point.z,workerIds,owner,built.length>0);if(!wall)break;wall.wallRun=existing?.wallRun||built[0]?.id||wall.id;wall.wallIndex=(existing?.wallIndex||0)+built.length+1;built.push(wall);
     }return built;
+  }
+  buildWallDraft(start,end,workerIds,owner=0,requireVisibility=false){
+    const plan=wallPlacementPlan(this,{start,end},workerIds,owner,requireVisibility);
+    if(!plan.canBuild){this.fail(plan.message,owner);return [];}
+    const built=[];
+    for(const point of plan.segments){
+      if(!point.valid||!point.affordable)continue;
+      const wall=this.build('wall',point.x,point.z,workerIds,owner,built.length>0,{angle:plan.angle});
+      if(!wall)continue;
+      wall.wallRun=built[0]?.id??wall.id;
+      wall.wallIndex=built.length;
+      if(point.supports.length)wall.wallSupports=point.supports;
+      built.push(wall);
+    }
+    return built;
+  }
+  convertWallToGate(id,owner=0){
+    const plan=gateConversionPlan(this,id,owner);
+    if(!plan)return this.fail('Choose the middle of three completed straight wall sections with space for a gatehouse.',owner);
+    if(!this.spend(plan.cost,owner))return this.fail('Not enough resources for this gatehouse.',owner);
+    const health=Math.min(...plan.sections.map(wall=>wall.hp/wall.maxHp));
+    for(const wall of plan.sections){wall.hp=0;wall.demolished=true;}
+    const {x,z}=plan.center;
+    const gate=this.addBuilding('gate',owner,x,z,true,{angle:plan.angle,links:plan.outer.map(wall=>wall.id)});
+    gate.hp=gate.maxHp*health;
+    for(const wall of plan.outer)wall.wallLinks=[...wall.wallLinks.filter(id=>!plan.ids.has(id)),gate.id];
+    return gate;
   }
   train(buildingId,type){const b=this.get(buildingId),d=UNITS[type];if(!b||b.kind!=='building'||b.progress<1||!d||!d.at.includes(b.type))return false;
     const owner=b.owner,p=this.players[owner];if(p.age<d.age)return this.fail('This troop requires a later age.',owner);

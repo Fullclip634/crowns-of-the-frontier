@@ -25,16 +25,16 @@ function obstacleIndex(sim){
   return index;
 }
 
-export function placementCollision(sim,type,x,z,radius){
+export function placementCollision(sim,type,x,z,radius,ignored){
   x=Number(x);z=Number(z);
   const index=obstacleIndex(sim),reach=radius+index.radius+.8,columns=index.buckets.columns;
   const lowX=Math.floor((x-reach)/8),highX=Math.floor((x+reach)/8),lowZ=Math.floor((z-reach)/8),highZ=Math.floor((z+reach)/8);
   for(let bx=lowX;bx<=highX;bx++){
     const column=columns.get(bx);if(!column)continue;
     for(let bz=lowZ;bz<=highZ;bz++)for(const entity of column.get(bz)||[]){
-      if(entity.hp<=0||entity.kind==='resource'&&(entity.water||!['wood','gold','stone'].includes(entity.type)))continue;
+      if(entity.hp<=0||ignored?.has(entity.id)||entity.kind==='resource'&&(entity.water||!['wood','gold','stone'].includes(entity.type)))continue;
       const clearance=type==='wall'&&entity.kind==='resource'&&entity.type==='wood'?entity.r+.8:entity.r+radius+(type==='wall'&&entity.type==='wall'?-.3:.8);
-      const dx=entity.x-x,dz=entity.z-z;if(Math.sqrt(dx*dx+dz*dz)<clearance)return true;
+      const dx=entity.x-x,dz=entity.z-z;if(Math.hypot(dx,dz)+1e-8<clearance)return true;
     }
   }
   return false;

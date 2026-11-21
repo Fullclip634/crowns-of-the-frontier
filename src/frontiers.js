@@ -58,7 +58,7 @@ export function installFrontiers(Simulation){
   p.grid=function(owner,naval=false){if(!naval)return original.grid.call(this,owner);const key='sea'+owner;if(this.grids[key]?.revision===this.revision)return this.grids[key].data;
     const size=this.gridSize,half=this.halfWorld,data=new Uint8Array(size*size);data.naval=true;for(let z=0;z<size;z++)for(let x=0;x<size;x++)data[z*size+x]=this.isWater(x*2-half+1,z*2-half+1)?0:1;this.grids[key]={revision:this.revision,data};return data;
   };
-  p.buildValid=function(type,x,z,owner=0){if(type!=='dock')return original.buildValid.call(this,type,x,z,owner);
+  p.buildValid=function(type,x,z,owner=0,ignored){if(type!=='dock')return original.buildValid.call(this,type,x,z,owner,ignored);
     if(Math.abs(x)>this.halfWorld-6||Math.abs(z)>this.halfWorld-6||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,BUILDINGS.dock.r)||owner===0&&!this.isVisible(x,z))return false;
     let shore=false;for(let i=0;i<16;i++)if(this.isWater(x+Math.cos(i*Math.PI/8)*7,z+Math.sin(i*Math.PI/8)*7))shore=true;
     return shore&&!this.entities.some(e=>e.hp>0&&(e.kind==='building'||e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type))&&distance(e,{x,z})<e.r+BUILDINGS.dock.r+.8);
