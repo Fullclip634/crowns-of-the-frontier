@@ -298,12 +298,17 @@ export function installCommanderAI(Simulation){
     }e.order=null;e.path=[];
   };
   p.commanderBuild=function(type,near=null,owner=1){
-    const player=this.players[owner],definition=BUILDINGS[type],tc=this.owned(owner,'building','towncenter')[0];
+    const player=this.players[owner],definition=BUILDINGS[type],towns=this.owned(owner,'building','towncenter'),tc=towns[0];
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
-    const worker=closestCandidates(this.owned(owner,'unit','villager'),1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification,w=>distance(w,near||tc))[0];if(!worker)return false;
-    for(let i=0;i<32;i++){const angle=i*2.39996323,base=near||tc,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
-      if(!this.buildValid(type,point.x,point.z,owner)||fortificationReserved(this,type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
-      return this.build(type,point.x,point.z,[worker.id],owner);
+    const villagers=this.owned(owner,'unit','villager');
+    const bases=near?[near]:[tc,...towns.slice(1).filter(b=>b.progress>=1)];
+    for(const base of bases){
+      const worker=closestCandidates(villagers,1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification,w=>distance(w,base))[0];
+      if(!worker)continue;
+      for(let i=0;i<32;i++){const angle=i*2.39996323,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
+        if(!this.buildValid(type,point.x,point.z,owner)||fortificationReserved(this,type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
+        return this.build(type,point.x,point.z,[worker.id],owner);
+      }
     }return false;
   };
   p.tickAI=function(owner=1){
