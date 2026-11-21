@@ -2,6 +2,8 @@ import {UNITS,BUILDINGS,TECHS,AGE_COSTS,DIFFICULTIES,availableTo} from './data.j
 import {customOpening,alliedSupport,customAttackTarget} from './allied-ai.js';
 import {rememberDeposits,economicDanger,manageExpansion,fortifySettlements,staffSettlements,settlementThreats,protectWorkers,replaceTownCentre} from './ai-settlements.js';
 import {orderSiegeAssault} from './ai-siege.js';
+import {adaptAssault} from './ai-assault.js';
+import {manageArchipelagoNavy} from './ai-waterways.js';
 import {chooseLandingShore,coastalApproach} from './ai-landings.js';
 import {closestCandidates} from './closest-candidates.js';
 import {gatheringRange,gatheringPathRange} from './work-ranges.js';
@@ -139,8 +141,14 @@ export function coastalArmyOrders(sim,owner,fighters,visible,known,phase,tc,stat
     const capital=buildings.find(e=>e.type==='towncenter'),unscouted=starts.find(point=>!state.scoutedSpawns?.[point.owner]);
     let search=null;if(!capital&&!unscouted&&!buildings.length&&starts.length){const start=starts[Math.floor(sim.time/45)%starts.length],angle=Math.floor(sim.time/20)*2.39996323,radius=24+(Math.floor(sim.time/20)%3)*16;search={x:Math.max(-sim.halfWorld+8,Math.min(sim.halfWorld-8,start.x+Math.cos(angle)*radius)),z:Math.max(-sim.halfWorld+8,Math.min(sim.halfWorld-8,start.z+Math.sin(angle)*radius))};if(Math.sign(search.x)!==sign||sim.isWater(search.x,search.z))search={x:sign*24,z:search.z};}
     const target=threat||((phase==='attack'||Math.sign(tc.x)!==sign)&&(capital||unscouted||buildings[0]||search));
-    if(target)sim.command(group.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});
-    else{const base=bases.filter(e=>Math.sign(e.x)===sign).sort(nearby)[0],rally=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(center.z*.03)*2+sign*22,z:center.z};sim.command(group.filter(unit=>distance(unit,rally)>12).map(unit=>unit.id),{type:'move',...rally});}
+    if(target){
+      const fronts=state.shoreAssaults??={},front=fronts[sign]??={};
+      if(threat)delete front.assault;
+      const objective=threat?target:adaptAssault(sim,front,target,group,visible,buildings,center);
+      if(objective!==center)advanceArmy(sim,group,objective,threat?'defend':'attack');
+      else sim.command(group.filter(unit=>unit.pathStatus==='blocked'||unit.order?.commanderObjective?.phase==='attack').map(unit=>unit.id),{type:'move',x:center.x,z:center.z});
+    }
+    else{if(state.shoreAssaults?.[sign])delete state.shoreAssaults[sign].assault;const base=bases.filter(e=>Math.sign(e.x)===sign).sort(nearby)[0],rally=base?{x:base.x+8,z:base.z-6}:{x:Math.sin(center.z*.03)*2+sign*22,z:center.z};sim.command(group.filter(unit=>distance(unit,rally)>12).map(unit=>unit.id),{type:'move',...rally});}
   }
 }
 
@@ -297,7 +305,7 @@ export function installCommanderAI(Simulation){
       }
     }e.order=null;e.path=[];
   };
-  p.commanderBuild=function(type,near=null,owner=1){
+  p.commanderBuild=function(type,near=null,owner=1,requireVisibility=false){
     const player=this.players[owner],definition=BUILDINGS[type],towns=this.owned(owner,'building','towncenter'),tc=towns[0];
     if(!tc||!definition||player.age<definition.age||!this.canAfford(this.cost(definition.cost,owner,'building'),owner))return false;
     const villagers=this.owned(owner,'unit','villager');
@@ -306,7 +314,7 @@ export function installCommanderAI(Simulation){
       const worker=closestCandidates(villagers,1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification,w=>distance(w,base))[0];
       if(!worker)continue;
       for(let i=0;i<32;i++){const angle=i*2.39996323,r=near?4+Math.floor(i/8)*3:12+Math.floor(i/8)*7,point={x:base.x+Math.cos(angle)*r,z:base.z+Math.sin(angle)*r};
-        if(!this.buildValid(type,point.x,point.z,owner)||fortificationReserved(this,type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
+        if(requireVisibility&&!this.canSee(owner,point)||!this.buildValid(type,point.x,point.z,owner)||fortificationReserved(this,type,point.x,point.z,owner)||!constructionPreservesArmyRoutes(this,type,point.x,point.z,owner,worker.id))continue;this.pathTo(worker,point);if(worker.pathStatus==='blocked')continue;
         return this.build(type,point.x,point.z,[worker.id],owner);
       }
     }return false;
@@ -428,10 +436,13 @@ export function installCommanderAI(Simulation){
       phase='attack';target=this.options.mode==='custom'?customAttackTarget(this,owner,state,tc,knownBuildings):knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
     }
     if(this.options.map==='coast')this.commanderNavy(state,visible,knownBuildings,landArmy.filter(e=>!support.has(e.id)),tc,owner);
+    else if(this.options.map==='archipelago')manageArchipelagoNavy(this,owner,state,tc,visible,knownBuildings);
     if(this.time-state.lastOrders>=8||state.phase!==phase){state.lastOrders=this.time;state.phase=phase;
       const fighters=ready.filter(e=>UNITS[e.type].damage>0&&e.order?.type!=='board'&&(this.options.mode==='custom'||this.options.map!=='coast'||(phase==='defend'?e.x>0:e.x<0)));
+      if(phase!=='attack')delete state.assault;
       if(this.options.mode==='custom'&&this.options.map==='coast')coastalArmyOrders(this,owner,fighters,visible,knownBuildings,phase,tc,state);
       else if(phase==='attack'||phase==='defend'){
+        if(phase==='attack')target=adaptAssault(this,state,target,fighters,visible,knownBuildings,tc);
         const guardCount=this.options.mode==='custom'&&phase==='attack'?Math.min(6,Math.max(2,Math.floor(fighters.length*.15))):0;
         const guards=guardCount?fighters.filter(e=>UNITS[e.type].role!=='siege'&&shouldRetryBlockedOrder(this,e,tc.x+8,tc.z-6)).sort((a,b)=>distance(a,tc)-distance(b,tc)).slice(0,guardCount):[],ids=new Set(guards.map(e=>e.id));
         const assault=fighters.filter(e=>!ids.has(e.id)&&shouldRetryBlockedOrder(this,e,target.x,target.z));

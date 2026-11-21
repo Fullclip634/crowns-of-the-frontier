@@ -3,6 +3,7 @@ import {disembarkSlots} from './disembark.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {navigationRegions} from './navigation.js';
 import {takeFromResource} from './resource-vision.js';
+import {seedArchipelagoFish,waterwayRegion} from './ai-waterways.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 // Sight buckets are rebuilt for every owner on every tick, so the key must not
 // allocate. Coordinates are bounded by the world half-size, well inside the
@@ -35,6 +36,7 @@ export function installFrontiers(Simulation){
   Simulation.restore=function(data){const sim=restore.call(this,data);sim.index=new Map(sim.entities.map(e=>[e.id,e]));sim.sightCache=null;for(const player of sim.players)for(const key of Object.keys(TECHS))player.tech[key]??=0;sim.intel=data.intel||{};return sim;};
   p.initialize=function(){this.intel={};if(this.options.mode==='tides')this.options.map='coast';original.initialize.call(this);
     this.players.forEach(player=>{player.tech.seamanship??=0;});
+    if(this.options.map==='archipelago')seedArchipelagoFish(this);
     if(this.options.map==='coast'){
       this.players.forEach(player=>{player.age=Math.max(1,player.age);player.resources.wood+=350;player.resources.gold+=180;});
       for(const owner of [0,1]){
@@ -55,7 +57,8 @@ export function installFrontiers(Simulation){
   };
   const water=p.isWater;
   p.isWater=function(x,z){return this.options.map==='coast'?Math.abs(x-Math.sin(z*.03)*2)<14:water.call(this,x,z);};
-  p.grid=function(owner,naval=false){if(!naval)return original.grid.call(this,owner);const key='sea'+owner;if(this.grids[key]?.revision===this.revision)return this.grids[key].data;
+  p.grid=function(owner,naval=false){if(!naval)return original.grid.call(this,owner);const islandChannels=this.options.map==='archipelago',key=islandChannels?'archipelagoSea':'sea'+owner;
+    if(this.grids[key]&&(islandChannels||this.grids[key].revision===this.revision))return this.grids[key].data;
     const size=this.gridSize,half=this.halfWorld,data=new Uint8Array(size*size);data.naval=true;for(let z=0;z<size;z++)for(let x=0;x<size;x++)data[z*size+x]=this.isWater(x*2-half+1,z*2-half+1)?0:1;this.grids[key]={revision:this.revision,data};return data;
   };
   p.buildValid=function(type,x,z,owner=0,ignored){if(type!=='dock')return original.buildValid.call(this,type,x,z,owner,ignored);
@@ -71,7 +74,8 @@ export function installFrontiers(Simulation){
       if(unit.type==='fishingboat')this.assignWorker(unit);
     }
   };
-  p.assignWorker=function(e){if(e.type==='fishingboat'){const fish=this.nearest(e,t=>t.kind==='resource'&&t.water&&t.amount>0);if(fish){e.gatherType='food';e.order={type:'gather',target:fish.id};e.path=[];}return;}original.assignWorker.call(this,e);};
+  p.assignWorker=function(e){if(e.type==='fishingboat'){const region=this.options.map==='archipelago'?waterwayRegion(this,e):null;
+      const fish=this.nearest(e,t=>t.kind==='resource'&&t.water&&t.amount>0&&(region===null||region>0&&waterwayRegion(this,t,e.owner)===region));if(fish){e.gatherType='food';e.order={type:'gather',target:fish.id};e.path=[];}return;}original.assignWorker.call(this,e);};
   p.smartCommand=function(ids,target,x,z,append=false,attackMove=false,owner=0){
     if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>this.halfWorld||Math.abs(z)>this.halfWorld)return false;
     const units=ids.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.kind==='unit');if(this.allied(owner,target?.owner)&&target.kind==='unit'&&UNITS[target.type].naval&&(target.type!=='transport'||target.hp<target.maxHp)&&units.every(e=>e.type==='villager')){this.command(units.map(e=>e.id),{type:'repair',target:target.id},append);return;}
@@ -103,7 +107,16 @@ export function installFrontiers(Simulation){
       e.moving=false;e.cooldown=Math.max(0,e.cooldown-dt);const order=e.order;if(!order){if(e.stance!=='hold')this.assignWorker(e);return;}
       if(order.type!=='gather')return original.tickUnit.call(this,e,dt);
       const target=this.get(order.target);if(!target&&e.carry>0)order.returning=true;else if(!target){this.assignWorker(e);return;}
-      if(e.carry>=75||order.returning){order.returning=true;const dock=this.nearestDrop(e,'food',true);if(!dock)return;if(distance(e,dock)>dock.r+5.5){this.move(e,dock,dt,dock.r+5);return;}
+      if(e.carry>=75||order.returning){order.returning=true;let dock=this.nearestDrop(e,'food',true);
+        if(this.options.map==='archipelago'){
+          const region=waterwayRegion(this,e),previous=this.get(order.returnDock);
+          dock=previous?.hp>0?previous:this.owned(e.owner,'building','dock').filter(site=>{
+            const port=site.progress>=1&&this.spawnPoint(site,true);
+            return port&&region>0&&waterwayRegion(this,port,e.owner)===region;
+          }).sort((a,b)=>distance(a,e)-distance(b,e))[0];
+          order.returnDock=dock?.id;
+        }
+        if(!dock)return;if(distance(e,dock)>dock.r+5.5){this.move(e,dock,dt,dock.r+5);return;}
         this.players[e.owner].resources.food+=e.carry;this.emit('gathered',{owner:e.owner,amount:e.carry,resource:'food',source:'fishingboat'});if(e.owner===0)this.stats.gathered+=e.carry;e.carry=0;e.carryType=null;order.returning=false;e.path=[];return;}
       if(distance(e,target)>target.r+2){this.move(e,target,dt,target.r+1.5);return;}
       const n=Math.min(75-e.carry,target.amount,dt*4*(1+this.players[e.owner].tech.economy*.25));e.carry+=n;e.carryType='food';if(takeFromResource(this,target,n))order.returning=true;return;
@@ -111,7 +124,7 @@ export function installFrontiers(Simulation){
     const site=e.order?.type==='build'?this.get(e.order.target):null,progress=site?.progress;
     original.tickUnit.call(this,e,dt);
     if(e.owner>0&&site&&progress<1&&site.progress>=1)this.emit('stat-complete',{entity:site});
-    if(!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:-24};}
+    if(this.options.map==='coast'&&!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:-24};}
   };
   p.hurt=function(e,amount,attacker){const hp=e.hp;if(attacker?.owner>=0)e.lastAttacker=attacker.owner;original.hurt.call(this,e,amount,attacker);if(hp>0&&e.hp<=0&&e.kind==='unit'){this.revision--;for(const id of e.passengers||[]){const passenger=this.get(id);if(passenger)this.hurt(passenger,passenger.hp,attacker);}}};
   p.canSee=function(owner,entity){

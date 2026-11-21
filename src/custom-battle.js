@@ -4,6 +4,7 @@ import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
+import {seedArchipelagoFish} from './ai-waterways.js';
 
 export const POPULATION_LIMITS=Object.freeze([40,60,80,120,160]);
 
@@ -171,6 +172,7 @@ function initializeBattle(sim){
   if(sim.options.map==='coast'){
     for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addNaturalResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
+  if(sim.options.map==='archipelago')seedArchipelagoFish(sim);
   for(let owner=0;owner<sim.players.length;owner++)sim.assignEconomy(owner);
   for(const unit of sim.entities.filter(e=>e.type==='fishingboat'))sim.assignWorker(unit);
   sim.updateFog();
