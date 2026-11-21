@@ -26,7 +26,7 @@ import {WallPreview} from './wall-preview.js';
 import {mechanicalUnit} from './maintenance.js';
 import {Simulation,distance} from './simulation.js';
 import {WorldView,CAMERA_PRESETS} from './world.js';
-import {loadAuthoredAssets,preloadDistantAssets} from './authored-assets.js';
+import {loadStartupAuthoredAssets,preloadDistantAssets} from './authored-assets.js';
 import {onAssetProgress,resetAssetProgress} from './load-progress.js';
 import {loadBridgeArtwork} from './bridge-art.js';
 import {loadBiomeArtwork} from './biome-art.js';
@@ -70,6 +70,10 @@ const modestDevice=(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrenc
 const recommendedQuality=modestDevice?'low':matchMedia('(pointer: coarse)').matches?'medium':'high';
 const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,music:true,unitVoices:true,warHorns:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,reduceFoliage:false,colorblind:false,...read('crowns-settings',{})};
 settings.frameRate=normalizeFrameRate(settings.frameRate);
+let offlineGraphicsPreference=null;
+function saveSettings(){
+  try{localStorage.setItem('crowns-settings',JSON.stringify({...settings,quality:offlineGraphicsPreference??settings.quality}));}catch{}
+}
 const progress=read('crowns-progress',{});const audio=new AudioEngine(settings);
 let customDraft={map:'highlands',mapSize:'vast',playerSlot:1,spectator:false,startAge:0,resourceLevel:'standard',populationLimit:80,seed:2026,victory:'annihilation',shareVision:true,revealRemnants:true,slots:battlePreset('2v2'),...read('crowns-custom-setup',{})};
 settings.bindings=readBindings(settings.bindings);
@@ -133,23 +137,30 @@ function recordGraphicsFailure(failure,phase){lastGraphicsFailure=rememberGraphi
 function graphicsSupport(){return graphicsSupportMarkup({current:currentGraphicsReport(),lastFailure:lastGraphicsFailure});}
 let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>{recordGraphicsFailure(error,'initialization');console.warn('WebGPU could not start; using WebGL 2:',error.message);}});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;recordGraphicsFailure(error,'initialization');}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
-// A missing/old catalogue must not silently replace the promised Blender art.
+// Keep using the authored battlefield catalogue, including on a cached launch.
 for(;!startupFailure;){
   let attemptActive=true;
   try{
     let modelsReady=false,surfacesReady=false;
     const status=()=>{if(attemptActive&&bootProgress.hidden)bootLabel.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
-    await Promise.all([
+    const requestedQuality=settings.quality;
+    const [loadedQuality]=await Promise.all([
       Promise.all([
-        loadAuthoredAssets(settings.quality),
+        loadStartupAuthoredAssets(requestedQuality),
         loadBridgeArtwork(),
         loadBiomeArtwork().catch(error=>{console.warn('Biome artwork could not load:',error.message);return null;}),
         // Optional: a missing or failed distant catalogue must never prevent
         // the game from starting. It only enables the extra LOD tier.
         settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
-      ]).then(()=>{modelsReady=true;status();}),
-      loadSurfaceAssets(settings.quality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
-    ]);break;
+      ]).then(([quality])=>{modelsReady=true;status();return quality;}),
+      loadSurfaceAssets(requestedQuality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
+    ]);
+    if(loadedQuality!==requestedQuality){
+      offlineGraphicsPreference=requestedQuality;
+      settings.quality=loadedQuality;
+      await loadSurfaceAssets(loadedQuality,startupRenderer).catch(error=>console.warn('Cached battlefield surfaces could not load:',error.message));
+    }
+    break;
   }
   catch(error){
     attemptActive=false;
@@ -512,15 +523,15 @@ function action(name){
   if(name==='apply-settings'){const draft=settingsBindings($('#modal-root')),errors=bindingErrors(draft);if(errors.length){$('#modal-root .binding-feedback').textContent=errors.join(' ');$('#modal-root .binding-feedback').classList.add('binding-error');return;}settings.bindings=draft;settings.highContrast=$('#high-contrast').checked;settings.reducedMotion=$('#reduced-motion').checked;settings.reduceFoliage=$('#reduce-foliage').checked;settings.colorblind=$('#colorblind').checked;applyAccessibility();applyPlayerPalette();refreshShortcutLabels();keys.clear();
     const previousQuality=view.renderQuality,graphicsChoice=$('#quality').value;
     const graphicsChanged=graphicsChoice!==graphicsSelection(settings);
-    if(graphicsChanged)applyGraphicsChoice(settings,graphicsChoice,recommendedQuality);
+    if(graphicsChanged){offlineGraphicsPreference=null;applyGraphicsChoice(settings,graphicsChoice,recommendedQuality);}
     settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.distantUnits=$('#distant-units').checked;settings.gpuTiming=$('#gpu-timing').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();
     const reloadGraphics=graphicsChanged||previousQuality!==settings.quality||view.graphicsLoading||view.graphicsFatal||view.graphicsError||view.graphicsSceneValid===false;
     const graphicsReady=reloadGraphics?view.quality(settings.quality):Promise.resolve(true),graphicsRequest=view.graphicsRequest;
-    graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}if(!view?.graphicsLoading&&previousQuality===settings.quality)audio.unlock();else graphicsReady.finally(()=>{if(!view?.graphicsLoading)audio.unlock();});closeModal();return;}
+    graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();saveSettings();if(!view?.graphicsLoading&&previousQuality===settings.quality)audio.unlock();else graphicsReady.finally(()=>{if(!view?.graphicsLoading)audio.unlock();});closeModal();return;}
   if(name==='fullscreen'){document.documentElement.requestFullscreen?.().then(()=>{screen.orientation?.lock?.('landscape').catch(()=>{});}).catch(()=>toast('Use your browser fullscreen control on this device.'));return;}
   if(!playing||sim.ended)return;
   if(name==='objectives-expand'){objectivesUserToggled=true;if(!$('#objectives').classList.contains('objectives-expanded')&&isCompactHUD(document)){closeSelectionDetails(document);closeCompactCommands(document);}$('#objectives').classList.toggle('objectives-expanded');renderHUD();return;}
-  if(name.startsWith('camera-')){if(name==='camera-options'){const expanded=$('.camera-controls').classList.toggle('options-open');$('[data-action=camera-options]').setAttribute('aria-expanded',String(expanded));return;}if(name==='camera-panels'){const hidden=$('#hud').classList.toggle('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed',String(hidden));return;}if(name==='camera-left')view.angle+=Math.PI/8;else if(name==='camera-right')view.angle-=Math.PI/8;else if(name==='camera-closer')view.zoomBy(-6);else if(name==='camera-farther')view.zoomBy(6);else if(name==='camera-view'){const presets=Object.keys(CAMERA_PRESETS);view.setCameraPreset(presets[(presets.indexOf(settings.cameraPreset)+1)%presets.length],true);updateCameraLabel();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}}view.updateCamera();return;}
+  if(name.startsWith('camera-')){if(name==='camera-options'){const expanded=$('.camera-controls').classList.toggle('options-open');$('[data-action=camera-options]').setAttribute('aria-expanded',String(expanded));return;}if(name==='camera-panels'){const hidden=$('#hud').classList.toggle('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed',String(hidden));return;}if(name==='camera-left')view.angle+=Math.PI/8;else if(name==='camera-right')view.angle-=Math.PI/8;else if(name==='camera-closer')view.zoomBy(-6);else if(name==='camera-farther')view.zoomBy(6);else if(name==='camera-view'){const presets=Object.keys(CAMERA_PRESETS);view.setCameraPreset(presets[(presets.indexOf(settings.cameraPreset)+1)%presets.length],true);updateCameraLabel();saveSettings();}view.updateCamera();return;}
   if(name==='inspect'){const e=selected()[0];if(e){view.setCameraPreset('cinematic',true);view.angle=Math.PI/4;view.focus(e.x,e.z);view.target.y=view.entityHeight(e)+(e.kind==='building'?3:e.kind==='unit'?(UNITS[e.type].naval?2.2:1):1);view.zoom=e.kind==='unit'?(UNITS[e.type].naval?26:['ram','catapult'].includes(e.type)?22:16):e.kind==='building'?Math.max(24,e.r*6):20;view.updateCamera();view.forestFog(false);updateCameraLabel();toast('Drag to pan, rotate with the arrows, and pinch or scroll to zoom.');}return;}
   if(name==='speed'){if(net.active)return toast('Network matches run at a shared 1× speed.');speed=speed===1?1.5:speed===1.5?2:1;return;}if(name==='home'){const tc=sim.owned(0,'building','towncenter')[0];if(tc){view.focus(tc.x,tc.z);setSelection([tc.id]);}return;}
   if(name==='army'){setSelection(sim.owned(0,'unit').filter(e=>e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='cart'&&!e.embarked).map(e=>e.id));return;}
@@ -528,7 +539,7 @@ function action(name){
   if(name==='idle'){const idle=sim.owned(0,'unit','villager').filter(e=>!e.order&&!e.embarked);setSelection(idle.map(e=>e.id));if(idle.length)view.focus(idle[0].x,idle[0].z);else toast('Every villager has an assignment.');return;}
   if(name==='build')return toggleBuild();if(name==='cancel-build')return cancelBuild();
   if(name==='deselect'){cancelBuild();tacticalMode=null;unloadMode=false;setAttackMove(false);setSelection([]);return;}
-  if(name==='weather'){const modes=['auto','clear','rain','storm','snow'];settings.weather=modes[(modes.indexOf(settings.weather)+1)%modes.length];audio.unlock();try{localStorage.setItem('crowns-settings',JSON.stringify(settings));}catch{}toast(settings.weather==='auto'?'Automatic weather enabled.':`${WEATHER_NAMES[settings.weather]} selected.`);return;}
+  if(name==='weather'){const modes=['auto','clear','rain','storm','snow'];settings.weather=modes[(modes.indexOf(settings.weather)+1)%modes.length];audio.unlock();saveSettings();toast(settings.weather==='auto'?'Automatic weather enabled.':`${WEATHER_NAMES[settings.weather]} selected.`);return;}
   if(name==='production'){productionOpen=!productionOpen;if(productionOpen)cancelBuild();$('#production-panel').classList.toggle('hidden',!productionOpen);$('#production-toggle').setAttribute('aria-expanded',String(productionOpen));productionKey='';renderProduction();return;}
   if(name==='patrol'||name==='guard'){cancelBuild();setAttackMove(false);tacticalMode=tacticalMode===name?null:name;$('#order-hint').textContent=tacticalMode==='guard'?'Choose a friendly unit or building to protect.':tacticalMode==='patrol'?'Choose the other end of the patrol route.':'Select units to issue orders.';return;}if(name==='stop'){tacticalMode=null;setAttackMove(false);sim.stop(selection);return;}if(name==='auto-work'){let assigned=0;for(const e of selected().filter(e=>e.type==='villager')){if(net.active){if(sim.assignWorker(e))assigned++;}else{e.order=null;sim.assignWorker(e);assigned++;}}if(assigned)toast('Villagers assigned to nearby resources.');return;}
   if(name==='attackmove'){tacticalMode=null;setAttackMove(!attackMove);}
@@ -737,7 +748,7 @@ let netMode=(()=>{try{return localStorage.getItem('crowns-net-mode')==='nearby'?
 // Online rooms use the hosted server; Nearby rooms are hosted by one player's
 // browser and joined by QR code over a shared Wi-Fi or hotspot, with no internet.
 function setNetMode(mode){netMode=mode==='nearby'?'nearby':'online';try{localStorage.setItem('crowns-net-mode',netMode);}catch{}const shell=$('#modal-root .net-shell');if(!shell)return;shell.dataset.netMode=netMode;for(const tab of shell.querySelectorAll('[role=tab]')){const on=tab.dataset.action==='lan-mode-'+netMode;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;}}
-function showLan(error=''){if(net.active)return showPause();const offline=navigator.onLine===false;if(offline)netMode='nearby';const tab=(mode,icon,title,detail)=>`<button class="net-tab" role="tab" data-action="lan-mode-${mode}" aria-selected="${netMode===mode}" tabindex="${netMode===mode?0:-1}">${icon}<span><strong>${title}</strong><small>${detail}</small></span></button>`;
+function showLan(error=''){if(net.active)return showPause();if(offlineGraphicsPreference)toast('Using cached Performance graphics for this session.');const offline=navigator.onLine===false;if(offline)netMode='nearby';const tab=(mode,icon,title,detail)=>`<button class="net-tab" role="tab" data-action="lan-mode-${mode}" aria-selected="${netMode===mode}" tabindex="${netMode===mode?0:-1}">${icon}<span><strong>${title}</strong><small>${detail}</small></span></button>`;
   showModal(`<div class="eyebrow">TWO COMMANDERS. ONE FRONTIER.</div><h2>Play with friends</h2>${error?`<p class="modal-intro network-error" role="status">${esc(error)}</p>`:''}<div class="net-shell" data-net-mode="${netMode}"><div class="net-mode" role="tablist" aria-label="How to connect">${tab('online',NEARBY_ICONS.globe,'Online','Room codes over the internet')}${tab('nearby',NEARBY_ICONS.wifi,'Nearby','Same Wi-Fi or hotspot · no internet')}</div>${offline?'<p class="net-offline" role="status">You are offline. Nearby battles work without any internet connection.</p>':''}<p class="modal-intro online-only">Open the same game address on every device. Join a room by code, or create a custom battle with up to eight kingdoms and a mix of friends and AI.</p><p class="modal-intro nearby-only">One device hosts the battle and friends join by scanning its QR invite. Everyone connects to the same Wi-Fi or to the host's phone hotspot. No internet or server is needed.</p><div class="setup-grid"><div><label class="field-label" for="lan-name">COMMANDER NAME</label><input id="lan-name" maxlength="24" value="Commander"></div><div><label class="field-label" for="lan-faction">CIVILIZATION</label><select id="lan-faction">${Object.entries(FACTIONS).map(([id,f])=>`<option value="${id}">${f.name}</option>`).join('')}</select></div><div><label class="field-label" for="lan-mode">VICTORY CONDITION</label><select id="lan-mode">${MODES.filter(m=>['skirmish','regicide','dominion','wonder','tides'].includes(m.id)).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div><div><label class="field-label" for="lan-map">BATTLEFIELD</label><select id="lan-map">${Object.entries(MAPS).map(([id,m])=>`<option value="${id}">${m.name}</option>`).join('')}</select></div></div><div class="net-actions online-only"><button class="primary full lan-create" data-action="lan-host">Create a room ${uiIcon("chevron-right")}</button><button class="secondary full" data-action="custom-battle">Create custom multiplayer battle</button></div><div class="net-actions nearby-only"><button class="primary full" data-action="lan-host">${NEARBY_ICONS.wifi} Host a nearby room</button><button class="secondary full" data-action="lan-join-nearby">${NEARBY_ICONS.camera} Join a nearby room</button><button class="secondary full" data-action="custom-battle">Create custom nearby battle</button></div><label class="field-label" for="lan-slot">CUSTOM ROOM SLOT</label><select id="lan-slot"><option value="0">Automatic assignment</option><option value="2">Slot 2</option><option value="3">Slot 3</option><option value="4">Slot 4</option><option value="5">Slot 5</option><option value="6">Slot 6</option><option value="7">Slot 7</option><option value="8">Slot 8</option></select><div class="lan-join online-only"><input id="lan-code" maxlength="6" placeholder="ROOM CODE" aria-label="Room code"><button class="secondary" data-action="lan-join">Join a room ${uiIcon("chevron-right")}</button></div>${net.session&&!net.transport?'<button class="text-button online-only" data-action="lan-resume">Rejoin your previous network session</button>':''}<p class="settings-note online-only">Share this game address and your room code with friends. Matches pause during a connection interruption and allow up to two minutes to reconnect.</p><p class="settings-note nearby-only">Keep the host's screen on during the battle. A friend who drops out can rejoin within two minutes by scanning a fresh invite from the host's commander menu.</p></div>`,'lan',true);}
 function connectLan(host,forceNearby=false){const name=$('#lan-name').value.trim()||'Commander',faction=$('#lan-faction').value,mode=$('#lan-mode').value,map=$('#lan-map').value,room=$('#lan-code').value.trim().toUpperCase(),create={type:'create',name,faction,options:{mode,map,seed:Math.floor(Math.random()*999999)}};
   if(netMode==='nearby'||forceNearby){if(host)return nearby.hostRoom(create);return nearby.showJoin({name,faction,slot:Number($('#lan-slot').value)});}

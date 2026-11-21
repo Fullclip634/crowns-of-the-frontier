@@ -9,6 +9,7 @@ import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {readAssetResponse} from './load-progress.js';
+import {loadStartupGraphics} from './offline-registration.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -115,6 +116,10 @@ export function detailForQuality(quality='high',{distant=false}={}){
 
 export async function loadAuthoredAssets(quality='high',options={}){
   const serial=++loadSerial,catalogue=await catalogueFor(detailForQuality(quality,options));if(serial===loadSerial)active=catalogue;return catalogue;
+}
+
+export function loadStartupAuthoredAssets(quality){
+  return loadStartupGraphics(quality,sources,loadAuthoredAssets);
 }
 
 // Leases retain source meshes rather than a duplicate rendered battlefield.

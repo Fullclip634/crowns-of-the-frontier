@@ -7,3 +7,27 @@ export function registerOfflineGame(runtime=globalThis){
   else runtime.window.addEventListener('load',install,{once:true});
   return true;
 }
+
+export async function loadStartupGraphics(quality, urls, load, runtime=globalThis){
+  if(quality==='low'){await load(quality);return quality;}
+
+  // Only a controlling service worker can deliver the cached game assets.
+  const cached=async url=>{
+    if(!url||!runtime.navigator?.serviceWorker?.controller)return false;
+    try{return !!await runtime.caches?.match(url);}catch{return false;}
+  };
+  const cachedLow=async()=>await cached(urls.low)&&await cached(urls.trees);
+  if(runtime.navigator?.onLine===false&&!await cached(urls[quality])&&await cachedLow()){
+    await load('low');
+    return 'low';
+  }
+  try{
+    await load(quality);
+    return quality;
+  }catch(error){
+    // A hotspot may have a network link even when it cannot reach the site.
+    if(!await cachedLow())throw error;
+    await load('low');
+    return 'low';
+  }
+}
