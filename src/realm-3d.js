@@ -361,9 +361,12 @@ export function installRealm3D(WorldView){
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);
     const swayDisabled=!!(this.settings.reducedMotion||this.settings.reduceFoliage);
-    const cameraChanged=this.lastForestAngle!==this.angle||this.lastForestZoom!==this.zoom||this.lastForestX!==this.target.x||this.lastForestZ!==this.target.z||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight||this.lastForestSwayDisabled!==swayDisabled;
+    const configChanged=this.lastForestAngle!==this.angle||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight||this.lastForestSwayDisabled!==swayDisabled;
+    const panChanged=Math.hypot((this.target.x||0)-(this.lastForestX??Infinity),(this.target.z||0)-(this.lastForestZ??Infinity))>=2||Math.abs((this.zoom||0)-(this.lastForestZoom??Infinity))>=1.2;
+    const cameraMoved=this.lastForestX!==this.target.x||this.lastForestZ!==this.target.z||this.lastForestZoom!==this.zoom;
     const forestInterval=this.settings.quality==='high'?.16:this.settings.quality==='medium'?.26:.45;
-    if(cameraChanged||this.forestRefresh===undefined||this.clock-this.forestRefresh>forestInterval){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;this.lastForestSwayDisabled=swayDisabled;}
+    const panInterval=Math.min(forestInterval,.05);
+    if(configChanged||panChanged||this.forestRefresh===undefined||this.clock-this.forestRefresh>(cameraMoved?panInterval:forestInterval)){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;this.lastForestSwayDisabled=swayDisabled;}
     render.call(this,dt,menu);
     if(!menu)renderModelPortrait(this);
   };

@@ -275,10 +275,17 @@ export class GroundCover{
       if(len>.001)this.wind.dir.value.set(atmWind.x/len,atmWind.z/len);
     }
     const key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog,v.settings.quality,reduced].join(':');
-    if(!force&&this.key===key&&v.clock-(this.last||0)<(v.settings.quality==='high'?.3:.5))return;
-    this.key=key;this.last=v.clock;
-    const sites=this.buildingSites;sites.clear();
-    for(const e of v.sim.entities)if(e.kind==='building'&&e.hp>0){const r=e.r+(e.type==='towncenter'?1.8:1.15),site={x:e.x,z:e.z,radiusSquared:r*r};for(let x=Math.floor((e.x-r)/16);x<=Math.floor((e.x+r)/16);x++)for(let z=Math.floor((e.z-r)/16);z<=Math.floor((e.z+r)/16);z++){const cellKey=buildingCellKey(x,z);let list=sites.get(cellKey);if(!list){list=[];sites.set(cellKey,list);}list.push(site);}}
+    const configKey=[v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog,v.settings.quality,reduced].join(':');
+    const moved=Math.hypot((v.target.x||0)-(this.lastX??Infinity),(v.target.z||0)-(this.lastZ??Infinity))>=1.5||Math.abs((v.zoom||0)-(this.lastZoom??Infinity))>=1;
+    const interval=this.key===key?(v.settings.quality==='high'?.3:.5):.05;
+    if(!force&&this.configKey===configKey&&!moved&&v.clock-(this.last||0)<interval&&v.clock>=(this.last||0))return;
+    this.key=key;this.configKey=configKey;this.lastX=v.target.x;this.lastZ=v.target.z;this.lastZoom=v.zoom;this.last=v.clock;
+    const sites=this.buildingSites;
+    if(force||this.sitesRevision!==v.sim.revision||this.sitesEntities!==v.sim.entities||this.sitesLength!==v.sim.entities.length){
+      sites.clear();
+      for(const e of v.sim.entities)if(e.kind==='building'&&e.hp>0){const r=e.r+(e.type==='towncenter'?1.8:1.15),site={x:e.x,z:e.z,radiusSquared:r*r};for(let x=Math.floor((e.x-r)/16);x<=Math.floor((e.x+r)/16);x++)for(let z=Math.floor((e.z-r)/16);z<=Math.floor((e.z+r)/16);z++){const cellKey=buildingCellKey(x,z);let list=sites.get(cellKey);if(!list){list=[];sites.set(cellKey,list);}list.push(site);}}
+      this.sitesRevision=v.sim.revision;this.sitesEntities=v.sim.entities;this.sitesLength=v.sim.entities.length;
+    }
     const stride=reduced?2:1;
     let count=0,matrixChanged=false,colorChanged=false;
     for(const cell of this.cells){

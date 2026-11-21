@@ -120,8 +120,11 @@ export class TerrainDetails{
   }
   update(menu=false,force=false){
     const v=this.view,key=[v.target.x,v.target.z,v.zoom,v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog].join(':');
-    if(!force&&this.key===key&&v.clock-(this.last||0)<.5)return;
-    this.key=key;this.last=v.clock;
+    const configKey=[v.angle,v.tilt,v.camera?.aspect,menu,v.settings.fog].join(':');
+    const moved=Math.hypot((v.target.x||0)-(this.lastX??Infinity),(v.target.z||0)-(this.lastZ??Infinity))>=1.5||Math.abs((v.zoom||0)-(this.lastZoom??Infinity))>=1;
+    const interval=this.key===key?.5:.05;
+    if(!force&&this.configKey===configKey&&!moved&&v.clock-(this.last||0)<interval&&v.clock>=(this.last||0))return;
+    this.key=key;this.configKey=configKey;this.lastX=v.target.x;this.lastZ=v.target.z;this.lastZoom=v.zoom;this.last=v.clock;
     const visible=this.nextEntries,sites=v.groundCover?.buildingSites;
     visible.length=0;
     let changed=force;

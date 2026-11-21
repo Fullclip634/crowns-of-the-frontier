@@ -28,11 +28,24 @@ import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './for
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
+import {closestCandidates} from './closest-candidates.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
 const CELL=2, GRID=WORLD/CELL;
 const FIELD_RECOVERY_DELAY=8,FIELD_RECOVERY_RADIUS=18,FIELD_RECOVERY_RATE=.015;
+const waterGrids=new Map();
+
+function baseWaterGrid(sim){
+  const size=sim.gridSize,custom=sim.isWater!==Simulation.prototype.isWater;
+  const key=custom?null:`${sim.options.map}:${size}:${sim.halfWorld}`;
+  if(key&&waterGrids.has(key))return waterGrids.get(key);
+  const base=new Uint8Array(size*size);
+  for(let z=0;z<size;z++)for(let x=0;x<size;x++)if(sim.isWater(x*CELL-sim.halfWorld+1,z*CELL-sim.halfWorld+1))base[z*size+x]=1;
+  blockBridgeNavigation(sim,base);
+  if(key)waterGrids.set(key,base);
+  return base;
+}
 
 // Replenish only resources lost to water or the map edge during relocation.
 function replaceMissingShoreResources(sim,owner){
@@ -312,10 +325,15 @@ export class Simulation {
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
     const size=this.gridSize,teamKey='team-'+(this.players[owner].team??owner);if(this.grids[teamKey]?.revision===this.revision){this.grids[owner]=this.grids[teamKey];return this.grids[owner].data;}
-    if(this.grids.landBase?.revision!==this.revision){const base=new Uint8Array(size*size);for(let z=0;z<size;z++)for(let x=0;x<size;x++)if(this.isWater(x*CELL-this.halfWorld+1,z*CELL-this.halfWorld+1))base[z*size+x]=1;
-      for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
-      blockBridgeNavigation(this,base);this.grids.landBase={revision:this.revision,data:base};
+    let resHash=this.entities.length;
+    for(let i=0;i<this.entities.length;i++){
+      const e=this.entities[i];
+      if(e.hp>0&&e.kind==='resource'&&!e.water&&(e.type==='wood'||e.type==='gold'||e.type==='stone'))resHash=(Math.imul(resHash,31)+e.id)|0;
     }
+    if(this.grids.landBase?.resHash!==resHash||this.grids.landBase?.size!==size){const base=baseWaterGrid(this).slice();
+      for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
+      this.grids.landBase={revision:this.revision,resHash,size,data:base};
+    }else this.grids.landBase.revision=this.revision;
     const data=this.grids.landBase.data.slice();
     for(const e of this.entities)if(e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&this.allied(e.owner,owner))){
       const a=this.cell(e.x-e.r-.3,e.z-e.r-.3),b=this.cell(e.x+e.r+.3,e.z+e.r+.3);
@@ -469,7 +487,7 @@ export class Simulation {
       if(order.type==='gather'){
         if(e.orders.length){this.finishOrder(e);return;}
         if(this.players[e.owner].controller==='ai'||e.owner>0&&this.players[e.owner].controller!=='human'){this.assignWorker(e);return;}
-        const sources=this.entities.filter(t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1)).sort((a,b)=>distance(e,a)-distance(e,b));
+        const sources=closestCandidates(this.entities,8,t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===(e.gatherType||'wood')&&t.amount>0||t.type==='farm'&&e.gatherType==='food'&&t.owner===e.owner&&t.progress>=1),resource=>distance(e,resource));
         for(const resource of sources){const range=gatheringPathRange(e,resource),route=this.pathTo(e,resource,range);if(e.pathStatus==='blocked'||!route.length||distance(route.at(-1),resource)>gatheringRange(e,resource))continue;
           e.order={type:'gather',target:resource.id};e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=resource.x;e.pathTargetZ=resource.z;e.pathTargetId=resource.id;e.pathRange=range;return;
         }

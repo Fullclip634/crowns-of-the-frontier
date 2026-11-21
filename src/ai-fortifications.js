@@ -39,8 +39,9 @@ function plannedSimulation(sim,plan,owner){
     entities.push(entity);added.push(entity);
   }
   for(const entity of added)connectWall(entity,entities);
+  if(sim.grids?.landBase?.revision!==sim.revision)sim.grid(owner);
   const preview=Object.create(sim);
-  Object.assign(preview,{entities,index:new Map(entities.map(entity=>[entity.id,entity])),grids:{},unitEscapeGrids:new Map(),pathScratch:null,regionQueue:null,entityBuckets:null,unitBuckets:null});
+  Object.assign(preview,{entities,index:new Map(entities.map(entity=>[entity.id,entity])),grids:sim.grids?.landBase?{landBase:sim.grids.landBase}:{},unitEscapeGrids:new Map(),pathScratch:null,regionQueue:null,entityBuckets:null,unitBuckets:null});
   return preview;
 }
 
