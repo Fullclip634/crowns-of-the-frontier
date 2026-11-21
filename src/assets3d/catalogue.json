@@ -506,9 +506,9 @@
     }
   ],
   "sizes": {
-    "near": 14059088,
-    "low": 4690328,
-    "balanced": 13034444
+    "near": 13987424,
+    "low": 4691068,
+    "balanced": 12952644
   },
   "stage": "full",
   "completeCatalogue": true,
@@ -535,22 +535,22 @@
     "passed": true,
     "models": 126,
     "meshes": 1431,
-    "visibleTriangles": 645144,
+    "visibleTriangles": 636324,
     "exactTrianglePositionsAndWinding": true,
     "normalLimitDegrees": 0.05,
     "maxNormalDegrees": 0.004284129732609737,
     "maxUVError": 0,
     "maxColorError": 0,
-    "referenceBytes": 17260284,
-    "candidateBytes": 13034444,
-    "referenceDecodedBufferBytes": 37157480,
-    "candidateDecodedBufferBytes": 33570136,
-    "referenceSHA256": "b5d3d684815fdf22bfb09e83df44bdaa52dda1b46e1f1cc50f4ef59431e97e97",
-    "candidateSHA256": "0ddd727fd954799b886f0918888464b74bfcc4eeacf066081290b3190ce41e20"
+    "referenceBytes": 17158356,
+    "candidateBytes": 12952644,
+    "referenceDecodedBufferBytes": 36915560,
+    "candidateDecodedBufferBytes": 33353136,
+    "referenceSHA256": "4c91d4757f6ec80fc333dfb369bed5354076d1438686cc4a22f34cd592d78046",
+    "candidateSHA256": "eca4bfb98d9dde75ce251dd1caa0b249d0fa373b009775fc8fb4ce2e8d41b45d"
   },
   "balancedSourceHashes": {
-    "near": "17d5c60225f7fe921a7c70d17bf4f955f4a5b6f2d96555ba2fea328240768288",
-    "low": "27f03ad5ae13835cede9b8fe484d43fabc0620195131ea1c9c51d0bb4b3c80ab",
+    "near": "16ac8e7386cfc5aef83485b771d17b6622ffc4e2afe0e6c60b1d6b2f27091e0b",
+    "low": "4af8f931459750eba098705614a2b4ab9cdb1ef061bd91fff91652a64553964d",
     "foliage": "ed53993fc578cc5c2d4d1d74aea046812b422a87081cceac9d8d9ce644f244c0"
   },
   "sharedTrees": {
@@ -583,5 +583,5 @@
   "navalRevision": "carvel-timber-v1",
   "navalSourceSHA256": "9752b1faef9b5e3b5c8cdde5dd09d9d735eba584c8db49a7342bcbd183608fed",
   "castleRevision": "aoe2-fortress-v1",
-  "castleSourceSHA256": "053e17dff23ecf2e900a893204a5c69b9f8f30b21418d621ac9e9553d0f53b76"
+  "castleSourceSHA256": "4100152d23a04082583236e41af7eba907cf7351f3048effdbf922107c5459ac"
 }

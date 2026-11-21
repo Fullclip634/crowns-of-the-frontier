@@ -110,9 +110,9 @@ test('AoE2 castle models preserve rich fortress materials, grounded plinth, anim
       }
     }
 
-    assert.ok(stats.low.tris <= 5500, `Low castle stays lean for phones (${stats.low.tris} tris)`);
-    assert.ok(stats.high.tris <= 11000, `High castle stays below previous triangle cost (${stats.high.tris} tris)`);
-    assert.ok(stats.low.tris < stats.high.tris * 0.65, `Low (${stats.low.tris}) is meaningfully lighter than High (${stats.high.tris})`);
+    assert.ok(stats.low.tris <= 5500, `Low castle stays ultra-lean for phones (${stats.low.tris} tris)`);
+    assert.ok(stats.high.tris <= 7800, `High castle stays >25% below previous 10,588-tri keep (${stats.high.tris} tris)`);
+    assert.ok(stats.low.tris < stats.high.tris * 0.78, `Low (${stats.low.tris}) is meaningfully lighter than High (${stats.high.tris})`);
     assert.equal(stats.medium.tris, stats.high.tris, 'Balanced receives the full High castle architecture');
     assert.equal(stats.low.sharedGeoCount, 13, 'All three factions share the 13 castle mesh datablocks on Low');
     assert.equal(stats.high.sharedGeoCount, 13, 'All three factions share the 13 castle mesh datablocks on High');

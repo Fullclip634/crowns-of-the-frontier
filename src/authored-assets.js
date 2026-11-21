@@ -310,7 +310,7 @@ function foundation(view,root,e,age=0){
   // Divide the measured world size by that scale to keep the plinth flush with
   // the walls instead of overshooting them at higher ages.
   const sx=root.scale.x||1,sy=root.scale.y||1,sz=root.scale.z||1;
-  const slabH=e.type==='keep'?.34:e.type==='mill'?.46:.46+Math.max(0,Math.min(3,age))*.08;
+  const slabH=e.type==='keep'?.14:e.type==='mill'?.46:.46+Math.max(0,Math.min(3,age))*.08;
   const slabY=e.type==='keep'?bounds.min.y+slabH*.5:bounds.min.y+.10+(slabH-.46)*.5;
   const slab=new THREE.Mesh(view.geo.box,body);
   slab.position.set((bounds.min.x+bounds.max.x)/2/sx,slabY/sy,(bounds.min.z+bounds.max.z)/2/sz);

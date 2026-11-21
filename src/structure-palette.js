@@ -204,7 +204,10 @@ function paletteMaterial(view){
           diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65);
         } else if(vStructureSurface.z > 1.5) {
           float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
-          diffuseColor.rgb *= texture2D(frontierStructurestone, vUv * 1.25).rgb * ashlarCourse * mix(1.0, 0.83, plinthMask * 0.52);
+          vec3 stoneSample = texture2D(frontierStructurestone, vUv * 1.25).rgb;
+          float stoneLuma = dot(stoneSample, vec3(0.30, 0.59, 0.11));
+          vec3 coolAshlar = mix(stoneSample, vec3(stoneLuma * 1.22, stoneLuma * 1.23, stoneLuma * 1.26), 0.72);
+          diffuseColor.rgb *= coolAshlar * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
           float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
