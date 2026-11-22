@@ -307,28 +307,52 @@ class PartBuilder:
         ]
         self._paint_faces(bm, faces, tint, z_grad=0.18)
 
-    def split_flag(self, x, y, z0, z1, flag_w=1.05, flag_h=0.58, dir_x=1.0, pole_role="trunk"):
-        """Authentic AoE II two-tone (team top + bright white bottom) split-tail pennant flag!"""
+    def split_flag(self, x, y, z0, z1, flag_w=1.05, flag_h=0.58, dir_x=1.0, pole_role="trunk", col=None):
+        """Authentic AoE II two-tone (team top + bright white bottom) split-tail pennant flag!
+        When `col` is passed, the waving cloth is placed in an animated `flag=True` pivot group."""
         self.cylinder(pole_role, x, y, z0, z1 + 0.08, 0.055, 0.042, segs=5, tint=(0.82, 0.80, 0.77))
         self.box("iron", x, y, z1 + 0.08, 0.11, 0.11, 0.11)
-        # Wave slightly in 2 segments with a notched swallowtail tip
+        target = self
+        fx, fy, fz = x, y, z1
+        if col is not None:
+            fg = bpy.data.objects.new(f"{self.key}:flag_{len(self.root.children)}", None)
+            fg["flag"] = True
+            fg.location = (x, y, z1)
+            fg.parent = self.root
+            col.objects.link(fg)
+            target = PartBuilder(fg.name, self.mats, parent=fg)
+            fx, fy, fz = 0.0, 0.0, 0.0
         for seg, (u0, u1, dz0, dz1, w_scale) in enumerate([
             (0.04, 0.56, 0.00, 0.06, 1.00),
             (0.54, 1.00, 0.06, 0.16, 0.72),
         ]):
-            cx = x + dir_x * (u0 + u1) * 0.5 * flag_w
+            cx = fx + dir_x * (u0 + u1) * 0.5 * flag_w
             sw = (u1 - u0) * flag_w
             y_off = 0.05 if seg == 0 else -0.05
-            # Top half: vibrant team color
-            z_mid = z1 - flag_h * 0.48 + (dz0 + dz1) * 0.5
-            self.box("team", cx, y + y_off, z_mid + flag_h * 0.22 * w_scale, sw, 0.055, flag_h * 0.48 * w_scale)
-            # Bottom half: crisp bright white (matches AoE2 palisade banner!)
-            self.box("snow", cx, y + y_off, z_mid - flag_h * 0.22 * w_scale, sw * 0.94, 0.055, flag_h * 0.44 * w_scale)
+            z_mid = fz - flag_h * 0.48 + (dz0 + dz1) * 0.5
+            target.box("team", cx, fy + y_off, z_mid + flag_h * 0.22 * w_scale, sw, 0.055, flag_h * 0.48 * w_scale)
+            target.box("snow", cx, fy + y_off, z_mid - flag_h * 0.22 * w_scale, sw * 0.94, 0.055, flag_h * 0.44 * w_scale)
+        if col is not None:
+            _, ftris = target.finalize(col, link_root=False)
+            return ftris
+        return 0
 
-    def banner_pole(self, x, y, z0, z1, flag_w=0.72, flag_h=0.44, dir_x=1.0, pole_role="darkwood"):
+    def banner_pole(self, x, y, z0, z1, flag_w=0.72, flag_h=0.44, dir_x=1.0, pole_role="darkwood", col=None):
         self.cylinder(pole_role, x, y, z0, z1 + 0.08, 0.055, 0.042, segs=5)
         self.box("gold", x, y, z1 + 0.08, 0.12, 0.12, 0.12)
+        if col is not None:
+            fg = bpy.data.objects.new(f"{self.key}:flag_{len(self.root.children)}", None)
+            fg["flag"] = True
+            fg.location = (x, y, z1)
+            fg.parent = self.root
+            col.objects.link(fg)
+            fb = PartBuilder(fg.name, self.mats, parent=fg)
+            fb.box("team", dir_x * flag_w * 0.30, 0.03, -flag_h * 0.48, flag_w * 0.56, 0.05, flag_h)
+            fb.box("team", dir_x * flag_w * 0.78, -0.03, -flag_h * 0.44, flag_w * 0.48, 0.05, flag_h * 0.86)
+            _, ftris = fb.finalize(col, link_root=False)
+            return ftris
         self.box("team", x + dir_x * flag_w * 0.52, y, z1 - flag_h * 0.50, flag_w, 0.055, flag_h)
+        return 0
 
     def moss(self, x, y, z0, sx=0.55, sy=0.45, sz=0.65):
         """Low-poly organic green climbing ivy/moss cluster hugging stone & timber."""
@@ -402,137 +426,182 @@ def _palisade_row(b, x0, y0, x1, y1, count, z0, z_base_h, radius=0.135, seed=1, 
 
 
 def _draped_canvas_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_border=True, guy_ropes=True):
-    """Authentic AoE2 Dark Age silky-smooth catenary-draped golden-tan canvas cloth roof with flush zero-gap team hem!"""
+    """Authentic AoE2 Dark Age 2D sculpted rippled catenary-draped parchment canvas tent cloth with slim tucked team valance!"""
     hx, hy = sx * 0.5, sy * 0.5
-    # Smooth closed-manifold draped catenary tent cloth (7 profile stations across span -> zero stair-steps, zero gaps!)
-    us = (-1.0, -0.72, -0.38, 0.0, 0.38, 0.72, 1.0)
-    thick = 0.075
+    us = (-1.0, -0.74, -0.40, 0.0, 0.40, 0.74, 1.0)
+    vs = tuple(-1.0 + 2.0 * j / 8.0 for j in range(9))
+    thick = 0.068
 
-    def profile_z(u):
+    def cloth_z(u, v):
         au = abs(u)
-        # Natural sagging canvas drape: crisp peak at u=0, gentle catenary dip mid-slope, flared eave at |u|=1
-        return z_eave + ridge_h * ((1.0 - au) ** 1.38)
+        base = z_eave + ridge_h * ((1.0 - au) ** 1.42)
+        # Organic woven cloth folds & stitched ripples running ridge-to-eave + gentle draped eave scallops!
+        ripple = math.sin(v * math.pi * 3.5 + au * 1.4) * 0.048 * (0.25 + 0.75 * au)
+        sag_along = -0.042 * (1.0 - v * v) * (0.35 + 0.65 * au)
+        return base + ripple + sag_along
 
     bm = b._bm("canvas")
-    top_a, top_b, bot_a, bot_b = [], [], [], []
-    for u in us:
-        zp = profile_z(u)
-        if along_y:
-            x = cx + u * hx
-            top_a.append(bm.verts.new((x, cy - hy, zp)))
-            top_b.append(bm.verts.new((x, cy + hy, zp)))
-            bot_a.append(bm.verts.new((x, cy - hy, zp - thick)))
-            bot_b.append(bm.verts.new((x, cy + hy, zp - thick)))
-        else:
-            y = cy + u * hy
-            top_a.append(bm.verts.new((cx - hx, y, zp)))
-            top_b.append(bm.verts.new((cx + hx, y, zp)))
-            bot_a.append(bm.verts.new((cx - hx, y, zp - thick)))
-            bot_b.append(bm.verts.new((cx + hx, y, zp - thick)))
+    nu, nv = len(us), len(vs)
+    top = [[None] * nv for _ in range(nu)]
+    bot = [[None] * nv for _ in range(nu)]
+    for i, u in enumerate(us):
+        for j, v in enumerate(vs):
+            zp = cloth_z(u, v)
+            if along_y:
+                x, y = cx + u * hx, cy + v * hy
+            else:
+                x, y = cx + v * hx, cy + u * hy
+            top[i][j] = bm.verts.new((x, y, zp))
+            bot[i][j] = bm.verts.new((x, y, zp - thick))
 
-    faces = []
-    n = len(us)
-    for i in range(n - 1):
-        # Upper cloth slope & underside
-        faces.append(bm.faces.new((top_a[i], top_a[i + 1], top_b[i + 1], top_b[i])))
-        faces.append(bm.faces.new((bot_b[i], bot_b[i + 1], bot_a[i + 1], bot_a[i])))
-        # Gable end thickness strips (completely watertight, zero air gaps!)
-        faces.append(bm.faces.new((bot_a[i], bot_a[i + 1], top_a[i + 1], top_a[i])))
-        faces.append(bm.faces.new((top_b[i], top_b[i + 1], bot_b[i + 1], bot_b[i])))
-    # Close left & right eave edges
-    faces.append(bm.faces.new((top_a[0], top_b[0], bot_b[0], bot_a[0])))
-    faces.append(bm.faces.new((bot_a[-1], bot_b[-1], top_b[-1], top_a[-1])))
-    b._paint_faces(bm, faces, tint=(0.98, 0.94, 0.86), z_grad=0.14)
+    for i in range(nu - 1):
+        for j in range(nv - 1):
+            u_mid = 0.5 * (us[i] + us[i + 1])
+            v_mid = 0.5 * (vs[j] + vs[j + 1])
+            fold = math.sin(v_mid * math.pi * 3.5 + abs(u_mid) * 1.4)
+            # Rich parchment-cream sunlit cloth crests + warm ochre shadowed fold troughs!
+            lum = 0.90 + 0.14 * fold + 0.10 * (1.0 - abs(u_mid))
+            tint = (min(1.06, lum * 1.03), min(1.02, lum * 0.97), min(0.95, lum * 0.85))
+            f_top = bm.faces.new((top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1]))
+            f_bot = bm.faces.new((bot[i][j + 1], bot[i + 1][j + 1], bot[i + 1][j], bot[i][j]))
+            b._paint_faces(bm, (f_top, f_bot), tint=tint, z_grad=0.06)
 
-    # Weathered silver-grey driftwood ridge pole poking slightly past both ends (ZERO brown wood!)
+    # Close perimeter gable & eave strips cleanly (watertight manifold)
+    edge_faces = []
+    for i in range(nu - 1):
+        edge_faces.append(bm.faces.new((bot[i][0], bot[i + 1][0], top[i + 1][0], top[i][0])))
+        edge_faces.append(bm.faces.new((top[i][-1], top[i + 1][-1], bot[i + 1][-1], bot[i][-1])))
+    for j in range(nv - 1):
+        edge_faces.append(bm.faces.new((top[0][j], top[0][j + 1], bot[0][j + 1], bot[0][j])))
+        edge_faces.append(bm.faces.new((bot[-1][j], bot[-1][j + 1], top[-1][j + 1], top[-1][j])))
+    b._paint_faces(bm, edge_faces, tint=(0.86, 0.80, 0.68), z_grad=0.08)
+
+    # Weathered warm driftwood ridge pole poking slightly past both ends (ZERO brown wood!)
     if along_y:
-        b.box("trunk", cx, cy, z_eave + ridge_h + 0.02, 0.11, sy + 0.32, 0.11, tint=(0.82, 0.80, 0.77))
+        b.box("trunk", cx, cy, z_eave + ridge_h + 0.01, 0.10, sy + 0.28, 0.10, tint=(0.82, 0.79, 0.74))
     else:
-        b.box("trunk", cx, cy, z_eave + ridge_h + 0.02, sx + 0.32, 0.11, 0.11, tint=(0.82, 0.80, 0.77))
+        b.box("trunk", cx, cy, z_eave + ridge_h + 0.01, sx + 0.28, 0.10, 0.10, tint=(0.82, 0.79, 0.74))
 
     if team_border:
-        # Flush team-colored woven cloth valance hem hugging the exact catenary drape & bottom eaves (ZERO floating gap!)
-        bh = 0.15
-        if along_y:
-            b.box("team", cx - hx - 0.01, cy, z_eave - 0.04, 0.07, sy + 0.06, bh)
-            b.box("team", cx + hx + 0.01, cy, z_eave - 0.04, 0.07, sy + 0.06, bh)
-            for gy in (cy - hy - 0.015, cy + hy + 0.015):
-                for i in range(n - 1):
-                    p0 = (cx + us[i] * hx, gy, profile_z(us[i]) - 0.025)
-                    p1 = (cx + us[i + 1] * hx, gy, profile_z(us[i + 1]) - 0.025)
-                    b.rod("team", p0, p1, 0.058, segs=4)
-        else:
-            b.box("team", cx, cy - hy - 0.01, z_eave - 0.04, sx + 0.06, 0.07, bh)
-            b.box("team", cx, cy + hy + 0.01, z_eave - 0.04, sx + 0.06, 0.07, bh)
-            for gx in (cx - hx - 0.015, cx + hx + 0.015):
-                for i in range(n - 1):
-                    p0 = (gx, cy + us[i] * hy, profile_z(us[i]) - 0.025)
-                    p1 = (gx, cy + us[i + 1] * hy, profile_z(us[i + 1]) - 0.025)
-                    b.rod("team", p0, p1, 0.058, segs=4)
+        # Slim, organic draped team-colored cloth hem flush against the canvas rim (ZERO gap at any zoom!)
+        for j in range(nv - 1):
+            v0, v1 = vs[j], vs[j + 1]
+            for s_eave in (-1.0, 1.0):
+                if along_y:
+                    p0 = (cx + s_eave * hx * 0.99, cy + v0 * hy, cloth_z(s_eave, v0) - 0.035)
+                    p1 = (cx + s_eave * hx * 0.99, cy + v1 * hy, cloth_z(s_eave, v1) - 0.035)
+                else:
+                    p0 = (cx + v0 * hx, cy + s_eave * hy * 0.99, cloth_z(s_eave, v0) - 0.035)
+                    p1 = (cx + v1 * hx, cy + s_eave * hy * 0.99, cloth_z(s_eave, v1) - 0.035)
+                b.rod("team", p0, p1, 0.056, segs=4)
+        for i in range(nu - 1):
+            u0, u1 = us[i], us[i + 1]
+            for s_end in (-1.0, 1.0):
+                if along_y:
+                    p0 = (cx + u0 * hx, cy + s_end * hy * 0.99, cloth_z(u0, s_end) - 0.018)
+                    p1 = (cx + u1 * hx, cy + s_end * hy * 0.99, cloth_z(u1, s_end) - 0.018)
+                else:
+                    p0 = (cx + s_end * hx * 0.99, cy + u0 * hy, cloth_z(u0, s_end) - 0.018)
+                    p1 = (cx + s_end * hx * 0.99, cy + u1 * hy, cloth_z(u1, s_end) - 0.018)
+                b.rod("team", p0, p1, 0.048, segs=4)
 
     if guy_ropes:
         for sx_s in (-1.0, 1.0):
             for sy_s in (-1.0, 1.0):
-                p_top = (cx + sx_s * hx * 0.96, cy + sy_s * hy * 0.96, z_eave - 0.02)
-                p_peg = (cx + sx_s * (hx + 0.46), cy + sy_s * (hy + 0.40), -0.06)
-                b.rod("trunk", p_top, p_peg, 0.026, segs=4, tint=(0.74, 0.72, 0.68))
+                p_top = (cx + sx_s * hx * 0.96, cy + sy_s * hy * 0.96, z_eave - 0.04)
+                p_peg = (cx + sx_s * (hx + 0.44), cy + sy_s * (hy + 0.38), -0.06)
+                b.rod("trunk", p_top, p_peg, 0.025, segs=4, tint=(0.74, 0.71, 0.66))
 
 
 def _shaggy_thatch_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_gable=True, hay_eaves=False):
-    """Authentic AoE2 Feudal multi-layered thick shaggy golden-wheat straw thatch roof!"""
-    # 4 thick stepped overlapping shaggy thatch courses create lush shadowed layers
-    layers = [
-        (0.00, 1.04, 1.02, 0.44, (0.84, 0.78, 0.68)),  # deep shadowed overhanging lower thatch eave
-        (0.22, 0.88, 0.99, 0.48, (0.94, 0.89, 0.78)),  # chunky lower-mid thatch course
-        (0.46, 0.68, 0.96, 0.48, (1.00, 0.95, 0.85)),  # sunlit upper-mid thatch course
-        (0.68, 0.44, 0.94, 0.36, (1.00, 0.98, 0.90)),  # bright straw crown bundle
-    ]
-    for frac_z, w_sc, l_sc, h_sc, tint in layers:
-        w = sx * (w_sc if along_y else l_sc)
-        l = sy * (l_sc if along_y else w_sc)
-        b.gable_prism("straw", cx, cy, z_eave + ridge_h * frac_z, w, l, ridge_h * h_sc,
-                      along_y=along_y, tint=tint, z_grad=0.18)
-
-    # Scalloped ragged overhanging thatch tuft bundles along both lower eaves (breaks flat silhouette!)
+    """Authentic AoE2 Feudal deeply ribbed, ragged overhanging golden-brown reed thatch roof (matches Image 5!)."""
     hx, hy = sx * 0.5, sy * 0.5
+    # Sculpted corrugated reed-straw thatch bmesh: vertical straw bundle grooves + ragged scalloped eaves!
+    us = (-1.04, -0.78, -0.48, -0.18, 0.0, 0.18, 0.48, 0.78, 1.04)
+    n_ribs = max(10, int((sy if along_y else sx) / 0.34))
+    if n_ribs % 2 == 1:
+        n_ribs += 1
+    vs = tuple(-1.0 + 2.0 * j / n_ribs for j in range(n_ribs + 1))
+    thick = 0.16
+
+    def thatch_z(u, v, j):
+        au = min(1.04, abs(u))
+        # Slightly curved chunky thatched pitch with heavy overhanging eave lip
+        slope = max(0.0, 1.0 - au / 1.04)
+        base = z_eave + ridge_h * (slope ** 0.92)
+        if au >= 0.98:
+            base -= 0.08 + (j % 3) * 0.045  # ragged uneven overhanging straw eave fringe!
+        # Deep physical reed-bundle corrugation running ridge-to-eave
+        rib = (1.0 if j % 2 == 0 else -1.0) * 0.062 * (0.28 + 0.72 * au)
+        tier_step = 0.045 * math.sin(au * math.pi * 3.0)
+        return base + rib + tier_step
+
+    bm = b._bm("straw")
+    nu, nv = len(us), len(vs)
+    top = [[None] * nv for _ in range(nu)]
+    bot = [[None] * nv for _ in range(nu)]
+    for i, u in enumerate(us):
+        for j, v in enumerate(vs):
+            au = abs(u)
+            zp = thatch_z(u, v, j)
+            flare = 1.0 + (0.045 if (au >= 0.98 and j % 2 == 0) else 0.0)
+            if along_y:
+                x, y = cx + u * hx * flare, cy + v * hy
+            else:
+                x, y = cx + v * hx, cy + u * hy * flare
+            top[i][j] = bm.verts.new((x, y, zp))
+            bot[i][j] = bm.verts.new((x, y, zp - thick))
+
+    for i in range(nu - 1):
+        for j in range(nv - 1):
+            u_mid = abs(0.5 * (us[i] + us[i + 1]))
+            # Deep dark-umber straw valleys alternating with sunlit golden-brown reed crests!
+            rib_bright = 1.08 if j % 2 == 0 else 0.68
+            eave_shade = 0.80 + 0.24 * (1.0 - min(1.0, u_mid))
+            var = 0.92 + ((i * 11 + j * 17) % 5) * 0.035
+            v_l = rib_bright * eave_shade * var
+            tint = (min(1.12, v_l * 1.02), min(1.04, v_l * 0.94), min(0.92, v_l * 0.80))
+            f_top = bm.faces.new((top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1]))
+            f_bot = bm.faces.new((bot[i][j + 1], bot[i + 1][j + 1], bot[i + 1][j], bot[i][j]))
+            b._paint_faces(bm, (f_top, f_bot), tint=tint, z_grad=0.04)
+
+    edge_faces = []
+    for i in range(nu - 1):
+        edge_faces.append(bm.faces.new((bot[i][0], bot[i + 1][0], top[i + 1][0], top[i][0])))
+        edge_faces.append(bm.faces.new((top[i][-1], top[i + 1][-1], bot[i + 1][-1], bot[i][-1])))
+    for j in range(nv - 1):
+        edge_faces.append(bm.faces.new((top[0][j], top[0][j + 1], bot[0][j + 1], bot[0][j])))
+        edge_faces.append(bm.faces.new((bot[-1][j], bot[-1][j + 1], top[-1][j + 1], top[-1][j])))
+    b._paint_faces(bm, edge_faces, tint=(0.66, 0.59, 0.46), z_grad=0.06)
+
+    # Thick braided straw ridge bundle + dark weathered oak gable bargeboards + cream-plaster & tasteful team gable!
     if along_y:
-        n_tufts = max(4, int(sy / 0.62))
-        for i in range(n_tufts):
-            ty = cy - hy * 0.86 + (i / max(1, n_tufts - 1)) * (sy * 0.86)
-            tv = 0.86 + (i % 3) * 0.07
-            for side in (-1.0, 1.0):
-                b.box("straw", cx + side * (hx * 0.94), ty, z_eave + 0.06, 0.28, 0.42, 0.22 + (i % 2) * 0.06,
-                      tint=(tv, tv * 0.94, tv * 0.84))
-        b.box("straw", cx, cy, z_eave + ridge_h + 0.04, 0.38, sy * 1.04, 0.26, tint=(0.94, 0.88, 0.76))
-        for gy in (cy - hy * 0.98, cy + hy * 0.98):
-            b.rod("darkwood", (cx - hx * 1.00, gy, z_eave + 0.02), (cx, gy, z_eave + ridge_h + 0.10), 0.09, segs=4)
-            b.rod("darkwood", (cx + hx * 1.00, gy, z_eave + 0.02), (cx, gy, z_eave + ridge_h + 0.10), 0.09, segs=4)
+        b.box("straw", cx, cy, z_eave + ridge_h + 0.06, 0.34, sy * 1.03, 0.24, tint=(0.86, 0.78, 0.64))
+        b.gable_prism("plaster", cx, cy, z_eave - 0.02, sx * 0.88, sy * 0.92, ridge_h * 0.86, along_y=True, tint=(0.96, 0.93, 0.86))
+        for gy in (cy - hy * 0.97, cy + hy * 0.97):
+            b.rod("darkwood", (cx - hx * 1.02, gy, z_eave - 0.06), (cx, gy, z_eave + ridge_h + 0.10), 0.095, segs=4)
+            b.rod("darkwood", (cx + hx * 1.02, gy, z_eave - 0.06), (cx, gy, z_eave + ridge_h + 0.10), 0.095, segs=4)
+            b.box("darkwood", cx, gy, z_eave + 0.02, sx * 0.92, 0.12, 0.14)
         if team_gable:
-            b.gable_prism("team", cx, cy, z_eave + 0.06, sx * 0.74, sy * 1.01, ridge_h * 0.70, along_y=True)
-            for gy in (cy - hy * 0.505, cy + hy * 0.505):
-                b.box("darkwood", cx, gy, z_eave + 0.04, sx * 0.80, 0.12, 0.14)
+            # Tasteful recessed team-colored heraldic gable inset framed inside dark oak beams (matches Image 5!)
+            b.gable_prism("team", cx, cy, z_eave + 0.12, sx * 0.46, sy * 0.95, ridge_h * 0.48, along_y=True)
     else:
-        n_tufts = max(4, int(sx / 0.62))
-        for i in range(n_tufts):
-            tx = cx - hx * 0.86 + (i / max(1, n_tufts - 1)) * (sx * 0.86)
-            tv = 0.86 + (i % 3) * 0.07
-            for side in (-1.0, 1.0):
-                b.box("straw", tx, cy + side * (hy * 0.94), z_eave + 0.06, 0.42, 0.28, 0.22 + (i % 2) * 0.06,
-                      tint=(tv, tv * 0.94, tv * 0.84))
-        b.box("straw", cx, cy, z_eave + ridge_h + 0.04, sx * 1.04, 0.38, 0.26, tint=(0.94, 0.88, 0.76))
-        for gx in (cx - hx * 0.98, cx + hx * 0.98):
-            b.rod("darkwood", (gx, cy - hy * 1.00, z_eave + 0.02), (gx, cy, z_eave + ridge_h + 0.10), 0.09, segs=4)
-            b.rod("darkwood", (gx, cy + hy * 1.00, z_eave + 0.02), (gx, cy, z_eave + ridge_h + 0.10), 0.09, segs=4)
+        b.box("straw", cx, cy, z_eave + ridge_h + 0.06, sx * 1.03, 0.34, 0.24, tint=(0.86, 0.78, 0.64))
+        b.gable_prism("plaster", cx, cy, z_eave - 0.02, sx * 0.92, sy * 0.88, ridge_h * 0.86, along_y=False, tint=(0.96, 0.93, 0.86))
+        for gx in (cx - hx * 0.97, cx + hx * 0.97):
+            b.rod("darkwood", (gx, cy - hy * 1.02, z_eave - 0.06), (gx, cy, z_eave + ridge_h + 0.10), 0.095, segs=4)
+            b.rod("darkwood", (gx, cy + hy * 1.02, z_eave - 0.06), (gx, cy, z_eave + ridge_h + 0.10), 0.095, segs=4)
+            b.box("darkwood", gx, cy, z_eave + 0.02, 0.12, sy * 0.92, 0.14)
         if team_gable:
-            b.gable_prism("team", cx, cy, z_eave + 0.06, sx * 1.01, sy * 0.74, ridge_h * 0.70, along_y=False)
+            b.gable_prism("team", cx, cy, z_eave + 0.12, sx * 0.95, sy * 0.46, ridge_h * 0.48, along_y=False)
 
     if hay_eaves:
-        # Loose golden straw sheaves resting on the lower eave (classic AoE2 Feudal Stable look!)
-        for off in (-0.95, 0.15, 1.05):
+        # Loose bright golden hay sheaves resting cleanly ON TOP of the Feudal Stable thatch slope (EXACT Image 5!)
+        for off in (-1.15, -0.05, 1.05):
             if along_y:
-                b.box("grain", cx + hx * 0.66, cy + off, z_eave + 0.44, 0.48, 0.66, 0.22, rot_z=0.18)
+                b.box("grain", cx + hx * 0.68, cy + off, z_eave + ridge_h * 0.34 + 0.14, 0.56, 0.72, 0.26, rot_z=0.18)
             else:
-                b.box("grain", cx + off, cy - hy * 0.66, z_eave + 0.44, 0.66, 0.48, 0.22, rot_z=0.18)
+                b.box("grain", cx + off, cy - hy * 0.68, z_eave + ridge_h * 0.34 + 0.14, 0.72, 0.56, 0.26, rot_z=0.18)
 
 
 def _feudal_alder_shell(b, cx, cy, sx, sy, wall_h, cobble_h=0.62, x_brace=True, moss=True, team_trim=True):
@@ -727,17 +796,17 @@ def build_palisade_corner(mats, col):
     b.tapered_box("soil", 0.0, 0.0, -0.46, 0.04, 2.90, 0.86, 2.86, 0.72, tint=(0.88, 0.80, 0.66))
     b.tapered_box("soil", 0.0, 0.0, -0.46, 0.04, 0.86, 2.90, 0.72, 2.86, tint=(0.88, 0.80, 0.66))
 
-    # Solid weathered inner crib core & recessed flat log roof deck (z = 3.18m inside the spiked rim!)
-    b.box_z("trunk", 0.0, 0.0, -0.46, 3.18, 1.62, 1.62, tint=(0.86, 0.84, 0.80), z_grad=0.14)
+    # Recessed weathered inner crib core & flat log roof deck (completely hidden behind rounded outer stakes!)
+    b.box_z("trunk", 0.0, 0.0, -0.46, 3.18, 1.38, 1.38, tint=(0.76, 0.74, 0.70), z_grad=0.14)
     for k in range(-3, 4):
-        b.box_z("trunk", 0.0, k * 0.22, 3.14, 3.28, 1.62, 0.18, tint=(0.94 + (k % 2) * 0.05, 0.92, 0.88))
+        b.box_z("trunk", 0.0, k * 0.21, 3.14, 3.28, 1.48, 0.17, tint=(0.94 + (k % 2) * 0.05, 0.91, 0.85))
 
     # Dense tightly-packed square perimeter of tall sharpened weathered stakes rising to 3.95..4.25m!
     hs = 0.92
-    _palisade_row(b, -hs, -hs, hs, -hs, count=7, z0=-0.46, z_base_h=3.72, radius=0.142, seed=11, abatis=True)
-    _palisade_row(b, -hs, hs, hs, hs, count=7, z0=-0.46, z_base_h=3.72, radius=0.142, seed=17, abatis=True)
-    _palisade_row(b, -hs, -hs + 0.22, -hs, hs - 0.22, count=5, z0=-0.46, z_base_h=3.72, radius=0.142, seed=23, abatis=True)
-    _palisade_row(b, hs, -hs + 0.22, hs, hs - 0.22, count=5, z0=-0.46, z_base_h=3.72, radius=0.142, seed=29, abatis=True)
+    _palisade_row(b, -hs, -hs, hs, -hs, count=8, z0=-0.46, z_base_h=3.72, radius=0.148, seed=11, abatis=True)
+    _palisade_row(b, -hs, hs, hs, hs, count=8, z0=-0.46, z_base_h=3.72, radius=0.148, seed=17, abatis=True)
+    _palisade_row(b, -hs, -hs + 0.20, -hs, hs - 0.20, count=6, z0=-0.46, z_base_h=3.72, radius=0.148, seed=23, abatis=True)
+    _palisade_row(b, hs, -hs + 0.20, hs, hs - 0.20, count=6, z0=-0.46, z_base_h=3.72, radius=0.148, seed=29, abatis=True)
 
     # Flush 4-way docking cheek-stakes reaching +/-1.36m at matching tall wall height (ZERO gap!)
     for side in (-1.0, 1.0):
@@ -757,39 +826,41 @@ def build_palisade_corner(mats, col):
         b.box("trunk", -0.16, 0.0, zy, 0.08, 2.88, 0.12, tint=(0.72, 0.70, 0.67))
         b.box("trunk", 0.16, 0.0, zy, 0.08, 2.88, 0.12, tint=(0.72, 0.70, 0.67))
 
-    # Iconic AoE2 two-tone (team + bright white) split-tail war pennant rising proudly from the corner deck!
-    b.split_flag(0.0, 0.0, 3.18, 5.55, flag_w=1.24, flag_h=0.62, dir_x=1.0, pole_role="trunk")
-    return b.finalize(col)
+    # Iconic AoE2 two-tone (team + bright white) fluttering split-tail war pennant rising proudly from corner deck!
+    ftris = b.split_flag(0.0, 0.0, 3.18, 5.55, flag_w=1.24, flag_h=0.62, dir_x=1.0, pole_role="trunk", col=col)
+    root, tris = b.finalize(col)
+    return root, tris + ftris
 
 
 def build_palisade_gate(mats, col):
     """Exact AoE II:DE tall Palisade Gate (Image 3 center!): twin tall spiked silver-driftwood towers,
-    curved arched log header bridge, bright open-lattice wooden barred portcullis, two-tone split flags (ZERO brown wood!)."""
+    curved arched log header bridge, bright open-lattice wooden barred portcullis, fluttering split flags (ZERO brown wood!)."""
     key = "building:gate:palisade"
     b = PartBuilder(key, mats)
+    ftris = 0
 
     # TWO TALL SQUARE PALISADE STOCKADE TOWERS flanking x = +/-2.14 (wide clear passage [-1.26, +1.26])
     for side in (-1.0, 1.0):
         px = side * 2.14
         hs = 0.80
         b.tapered_box("soil", px, 0.0, -0.46, 0.05, 2.10, 2.10, 1.84, 1.84, tint=(0.90, 0.82, 0.68))
-        # Inner solid weathered silver-driftwood tower shaft + recessed flat log top deck at z = 4.55m
-        b.box_z("trunk", px, 0.0, -0.46, 4.55, 1.42, 1.42, tint=(0.86, 0.84, 0.80), z_grad=0.14)
+        # Recessed inner weathered driftwood tower shaft (hidden behind rounded outer logs!) + flat log top deck
+        b.box_z("trunk", px, 0.0, -0.46, 4.55, 1.18, 1.18, tint=(0.76, 0.74, 0.70), z_grad=0.14)
         for k in range(-2, 3):
-            b.box_z("trunk", px, k * 0.26, 4.50, 4.64, 1.42, 0.20, tint=(0.94, 0.92, 0.88))
+            b.box_z("trunk", px, k * 0.25, 4.50, 4.64, 1.32, 0.19, tint=(0.94, 0.91, 0.85))
         # Dense vertical sharpened stakes wrapping all 4 faces up to jagged 5.15..5.45m rim!
-        _palisade_row(b, px - hs, -hs, px + hs, -hs, count=6, z0=-0.46, z_base_h=4.92, radius=0.140, seed=int(41 + side * 7), abatis=True)
-        _palisade_row(b, px - hs, hs, px + hs, hs, count=6, z0=-0.46, z_base_h=4.92, radius=0.140, seed=int(53 + side * 7), abatis=True)
-        _palisade_row(b, px - hs, -hs + 0.22, px - hs, hs - 0.22, count=5, z0=-0.46, z_base_h=4.92, radius=0.140, seed=int(61 + side * 7), abatis=True)
-        _palisade_row(b, px + hs, -hs + 0.22, px + hs, hs - 0.22, count=5, z0=-0.46, z_base_h=4.92, radius=0.140, seed=int(67 + side * 7), abatis=True)
+        _palisade_row(b, px - hs, -hs, px + hs, -hs, count=7, z0=-0.46, z_base_h=4.92, radius=0.146, seed=int(41 + side * 7), abatis=True)
+        _palisade_row(b, px - hs, hs, px + hs, hs, count=7, z0=-0.46, z_base_h=4.92, radius=0.146, seed=int(53 + side * 7), abatis=True)
+        _palisade_row(b, px - hs, -hs + 0.20, px - hs, hs - 0.20, count=6, z0=-0.46, z_base_h=4.92, radius=0.146, seed=int(61 + side * 7), abatis=True)
+        _palisade_row(b, px + hs, -hs + 0.20, px + hs, hs - 0.20, count=6, z0=-0.46, z_base_h=4.92, radius=0.146, seed=int(67 + side * 7), abatis=True)
         # 4 horizontal weathered silver-grey lashing bands wrapping all 4 faces of each tower (matches Image 3!)
         for zy in (0.95, 2.15, 3.35, 4.35):
             b.box("trunk", px, -hs - 0.14, zy, hs * 2 + 0.32, 0.09, 0.13, tint=(0.72, 0.70, 0.67))
             b.box("trunk", px, hs + 0.14, zy, hs * 2 + 0.32, 0.09, 0.13, tint=(0.72, 0.70, 0.67))
             b.box("trunk", px - hs - 0.14, 0.0, zy, 0.09, hs * 2 + 0.32, 0.13, tint=(0.72, 0.70, 0.67))
             b.box("trunk", px + hs + 0.14, 0.0, zy, 0.09, hs * 2 + 0.32, 0.13, tint=(0.72, 0.70, 0.67))
-        # Prominent two-tone split-tail war-pennant on top of EACH tower!
-        b.split_flag(px, 0.0, 4.55, 6.85, flag_w=1.34, flag_h=0.65, dir_x=1.0, pole_role="trunk")
+        # Prominent fluttering two-tone split-tail war-pennant on top of EACH tower!
+        ftris += b.split_flag(px, 0.0, 4.55, 6.85, flag_w=1.34, flag_h=0.65, dir_x=1.0, pole_role="trunk", col=col)
         # Team-colored cloth pennant/wrap hanging down the inner gatepost jamb (matches Image 3!)
         b.box("team", px - side * (hs + 0.15), -0.34, 3.15, 0.10, 0.24, 1.38)
 
@@ -828,7 +899,7 @@ def build_palisade_gate(mats, col):
         for zy in (0.45, 3.12):
             gb.box("iron", sx, 0.0, zy, 0.11, 0.11, 0.11)
     _, gate_tris = gb.finalize(col, link_root=False)
-    return root, tris + gate_tris
+    return root, tris + gate_tris + ftris
 
 
 def build_stone_corner(mats, col):
@@ -1076,43 +1147,59 @@ def build_frontier_camp(mats, col):
 
 
 def build_frontier_barracks(mats, col):
-    """Exact AoE II:DE Dark Age Barracks compound (inspired directly by Image 4!):
-    Weathered silver-driftwood palisade stockade with 4 mini corner bastions + split-tail flags,
-    inner draped golden-tan canvas command tent with sleek team trim, moss shrubs, spears & shields (ZERO brown wood!)"""
+    """Exact AoE II:DE Dark Age Barracks compound (1-to-1 match with uploaded Image 4!):
+    Wide open warm weathered-driftwood palisade courtyard, 4 stake-wrapped mini corner bastions
+    with fluttering split-tail pennants, centered cozy rippled-canvas command hut & moss (ZERO brown wood!)"""
     key = "building:barracks:frontier"
     b = PartBuilder(key, mats)
-    # Rear, side, and partial front weathered silver-driftwood stockade perimeter (open entrance at front center!)
-    _palisade_row(b, -2.15, 2.05, 2.15, 2.05, count=14, z0=-0.46, z_base_h=2.05, radius=0.125, seed=91, abatis=True)
-    _palisade_row(b, -2.15, -1.95, -2.15, 1.95, count=12, z0=-0.46, z_base_h=1.95, radius=0.125, seed=97, abatis=True)
-    _palisade_row(b, 2.15, -1.95, 2.15, 1.95, count=12, z0=-0.46, z_base_h=1.95, radius=0.125, seed=101, abatis=True)
-    _palisade_row(b, -2.15, -1.95, -0.85, -1.95, count=5, z0=-0.46, z_base_h=1.88, radius=0.125, seed=103, abatis=False)
-    _palisade_row(b, 0.85, -1.95, 2.15, -1.95, count=5, z0=-0.46, z_base_h=1.88, radius=0.125, seed=107, abatis=False)
-    # Horizontal silver-grey lashings along palisade perimeter
-    for zy in (0.72, 1.48):
-        b.box("trunk", 0.0, 2.18, zy, 4.55, 0.09, 0.11, tint=(0.72, 0.70, 0.67))
-        b.box("trunk", -2.28, 0.05, zy, 0.09, 4.25, 0.11, tint=(0.72, 0.70, 0.67))
-        b.box("trunk", 2.28, 0.05, zy, 0.09, 4.25, 0.11, tint=(0.72, 0.70, 0.67))
-    # 4 mini spiked corner watch-cribs + iconic split-tail flags on ALL 4 corners (EXACT Image 4 match!)
-    for cx_c in (-2.12, 2.12):
-        for cy_c in (-1.92, 2.02):
-            b.box_z("trunk", cx_c, cy_c, -0.46, 2.38, 0.78, 0.78, tint=(0.86, 0.84, 0.80))
-            for ox in (-0.36, 0.36):
-                for oy in (-0.36, 0.36):
-                    b.stake("trunk", cx_c + ox, cy_c + oy, -0.46, 2.48, 2.76, 0.11, segs=5, tint=(0.94, 0.92, 0.88))
-            b.split_flag(cx_c, cy_c, 2.38, 4.02, flag_w=0.88, flag_h=0.45, dir_x=1.0, pole_role="trunk")
+    ftris = 0
+    # Wide open weathered driftwood palisade stockade perimeter (+/-2.42m courtyard, open front entrance!)
+    _palisade_row(b, -2.35, 2.32, 2.35, 2.32, count=16, z0=-0.46, z_base_h=1.88, radius=0.122, seed=91, abatis=True)
+    _palisade_row(b, -2.38, -2.22, -2.38, 2.22, count=14, z0=-0.46, z_base_h=1.82, radius=0.122, seed=97, abatis=True)
+    _palisade_row(b, 2.38, -2.22, 2.38, 2.22, count=14, z0=-0.46, z_base_h=1.82, radius=0.122, seed=101, abatis=True)
+    _palisade_row(b, -2.35, -2.28, -0.82, -2.28, count=6, z0=-0.46, z_base_h=1.78, radius=0.122, seed=103, abatis=True)
+    _palisade_row(b, 0.82, -2.28, 2.35, -2.28, count=6, z0=-0.46, z_base_h=1.78, radius=0.122, seed=107, abatis=True)
+    # Horizontal driftwood lashing poles wrapping all 4 perimeter faces
+    for zy in (0.68, 1.38):
+        b.box("trunk", 0.0, 2.44, zy, 4.95, 0.085, 0.105, tint=(0.72, 0.69, 0.64))
+        b.box("trunk", -2.50, 0.02, zy, 0.085, 4.75, 0.105, tint=(0.72, 0.69, 0.64))
+        b.box("trunk", 2.50, 0.02, zy, 0.085, 4.75, 0.105, tint=(0.72, 0.69, 0.64))
+        b.box("trunk", -1.62, -2.40, zy, 1.65, 0.085, 0.105, tint=(0.72, 0.69, 0.64))
+        b.box("trunk", 1.62, -2.40, zy, 1.65, 0.085, 0.105, tint=(0.72, 0.69, 0.64))
 
-    # Inner draped golden-tan canvas command tent with weathered stake walls & lush moss!
-    cx, cy = 0.0, 0.25
-    b.box_z("trunk", cx, cy, -0.46, 1.88, 2.65, 2.10, tint=(0.84, 0.82, 0.78))
-    b.box_z("team", cx, cy - 1.08, 0.06, 1.48, 0.76, 0.10)
-    _draped_canvas_roof(b, cx, cy, 1.84, 3.15, 2.55, 1.15, along_y=False, team_border=True, guy_ropes=False)
-    b.moss(cx - 1.42, cy - 0.35, -0.02, sx=0.58, sy=0.62, sz=0.95)
-    b.moss(cx + 1.42, cy + 0.15, -0.02, sx=0.54, sy=0.58, sz=0.85)
-    # Front sparring dummy & shield/spear rack
-    for sx in (-1.25, 1.25):
-        b.box("team", sx, -1.35, 0.68, 0.44, 0.10, 0.56)
-        b.rod("trunk", (sx, -1.25, 0.04), (sx + 0.10, -1.15, 2.05), 0.038, segs=4, tint=(0.92, 0.90, 0.86))
-    return b.finalize(col)
+    # 4 FULLY STAKE-WRAPPED MINI CORNER PALISADE BASTIONS + 4 FLUTTERING SPLIT-TAIL PENNANTS (ZERO flat cubes!)
+    for idx_c, (cx_c, cy_c) in enumerate(((-2.38, -2.28), (2.38, -2.28), (-2.38, 2.32), (2.38, 2.32))):
+        ch = 0.56
+        b.box_z("trunk", cx_c, cy_c, -0.46, 2.15, 0.82, 0.82, tint=(0.76, 0.73, 0.68))
+        _palisade_row(b, cx_c - ch, cy_c - ch, cx_c + ch, cy_c - ch, count=5, z0=-0.46, z_base_h=2.40, radius=0.118, seed=111 + idx_c * 7, abatis=False)
+        _palisade_row(b, cx_c - ch, cy_c + ch, cx_c + ch, cy_c + ch, count=5, z0=-0.46, z_base_h=2.40, radius=0.118, seed=115 + idx_c * 7, abatis=False)
+        _palisade_row(b, cx_c - ch, cy_c - ch + 0.18, cx_c - ch, cy_c + ch - 0.18, count=4, z0=-0.46, z_base_h=2.40, radius=0.118, seed=119 + idx_c * 7, abatis=False)
+        _palisade_row(b, cx_c + ch, cy_c - ch + 0.18, cx_c + ch, cy_c + ch - 0.18, count=4, z0=-0.46, z_base_h=2.40, radius=0.118, seed=123 + idx_c * 7, abatis=False)
+        for zy in (0.78, 1.72):
+            b.box("trunk", cx_c, cy_c - ch - 0.11, zy, ch * 2 + 0.24, 0.08, 0.11, tint=(0.70, 0.67, 0.62))
+            b.box("trunk", cx_c, cy_c + ch + 0.11, zy, ch * 2 + 0.24, 0.08, 0.11, tint=(0.70, 0.67, 0.62))
+            b.box("trunk", cx_c - ch - 0.11, cy_c, zy, 0.08, ch * 2 + 0.24, 0.11, tint=(0.70, 0.67, 0.62))
+            b.box("trunk", cx_c + ch + 0.11, cy_c, zy, 0.08, ch * 2 + 0.24, 0.11, tint=(0.70, 0.67, 0.62))
+        ftris += b.split_flag(cx_c, cy_c, 2.15, 3.88, flag_w=0.92, flag_h=0.46, dir_x=1.0, pole_role="trunk", col=col)
+
+    # Cozy rustic centered rippled-canvas command hut inside the open courtyard + lush green moss!
+    cx, cy = 0.0, 0.15
+    hx, hy, wh = 1.18, 0.96, 1.56
+    b.box_z("trunk", cx, cy, -0.46, wh - 0.12, hx * 2 - 0.14, hy * 2 - 0.14, tint=(0.82, 0.79, 0.74))
+    _palisade_row(b, cx - hx, cy - hy, cx + hx, cy - hy, count=8, z0=-0.46, z_base_h=wh - 0.44, radius=0.105, seed=141, abatis=False)
+    _palisade_row(b, cx - hx, cy + hy, cx + hx, cy + hy, count=8, z0=-0.46, z_base_h=wh - 0.44, radius=0.105, seed=143, abatis=False)
+    _palisade_row(b, cx - hx, cy - hy + 0.16, cx - hx, cy + hy - 0.16, count=6, z0=-0.46, z_base_h=wh - 0.44, radius=0.105, seed=147, abatis=False)
+    _palisade_row(b, cx + hx, cy - hy + 0.16, cx + hx, cy + hy - 0.16, count=6, z0=-0.46, z_base_h=wh - 0.44, radius=0.105, seed=149, abatis=False)
+    b.box_z("team", cx, cy - hy - 0.06, 0.04, 1.24, 0.64, 0.10)
+    _draped_canvas_roof(b, cx, cy, wh - 0.04, hx * 2 + 0.48, hy * 2 + 0.46, 1.02, along_y=False, team_border=True, guy_ropes=True)
+    b.moss(cx - hx - 0.16, cy - 0.25, -0.02, sx=0.58, sy=0.60, sz=0.92)
+    b.moss(cx + hx + 0.14, cy + 0.15, -0.02, sx=0.54, sy=0.56, sz=0.84)
+    # Courtyard sparring rack & shields
+    for sx in (-1.35, 1.35):
+        b.box("team", sx, -1.48, 0.62, 0.42, 0.10, 0.52)
+        b.rod("trunk", (sx, -1.38, 0.04), (sx + 0.08, -1.28, 1.88), 0.036, segs=4, tint=(0.92, 0.89, 0.84))
+    root, tris = b.finalize(col)
+    return root, tris + ftris
 
 
 def build_frontier_mill(mats, col):
@@ -1166,59 +1253,62 @@ def build_frontier_mine(mats, col):
 
 def build_frontier_dock(mats, col):
     """Authentic AoE II:DE Dark Age / Frontier Harbor Dock (ZERO brown wood!):
-    Weathered pale silver-driftwood piling wharf + long braced jetty reaching deep into the sea,
-    draped golden-tan canvas fishing awning with sleek team hem, barrels, crates, rope coils, drying nets & bollards!"""
+    Compact weathered ash-driftwood piling wharf + sturdy 3m front jetty (never clips ships!),
+    sculpted rippled canvas fishing awning, draped drying nets, stacked barrels, crates, rope coils & fluttering pennant!"""
     key = "building:dock:frontier"
     b = PartBuilder(key, mats)
-    # Main weathered silver-driftwood piling wharf deck (deep pilings to -2.20m for shoreline water!)
-    for px in (-2.55, -1.25, 0.0, 1.25, 2.55):
-        for py in (-2.25, -0.75, 0.75, 2.25):
-            b.cylinder("trunk", px, py, -2.20, 0.62, 0.18, 0.16, segs=6, tint=(0.82, 0.80, 0.76))
-    b.box_z("trunk", 0.0, 0.0, 0.18, 0.52, 5.80, 5.30, tint=(0.94, 0.92, 0.88))
-    # Team cloth mooring valance along wharf sides
-    b.box("team", 0.0, -2.66, 0.36, 5.84, 0.12, 0.22)
-    b.box("team", 0.0, 2.66, 0.36, 5.84, 0.12, 0.22)
+    # Compact weathered ash-driftwood piling wharf deck (5.4 x 5.0m, deep pilings to -2.20m)
+    for px in (-2.40, -1.20, 0.0, 1.20, 2.40):
+        for py in (-2.15, -0.72, 0.72, 2.15):
+            b.cylinder("trunk", px, py, -2.20, 0.68, 0.17, 0.15, segs=6, tint=(0.80, 0.77, 0.72))
+    b.box_z("trunk", 0.0, 0.0, 0.18, 0.52, 5.45, 4.95, tint=(0.94, 0.91, 0.85))
+    # Subtle deck planking ribs + diagonal timber piling braces
+    for px in (-2.0, -1.0, 0.0, 1.0, 2.0):
+        b.box("trunk", px, 0.0, 0.54, 0.14, 4.88, 0.04, tint=(0.82, 0.79, 0.74))
+    b.box("team", 0.0, -2.49, 0.36, 5.48, 0.11, 0.20)
+    b.box("team", 0.0, 2.49, 0.36, 5.48, 0.11, 0.20)
+    b.box("team", 2.74, 0.0, 0.36, 0.11, 4.98, 0.20)
 
-    # Open-sided weathered driftwood & golden-tan draped canvas fisherman shelter on wharf
-    sx, sy = -0.85, 0.75
-    for ox in (-1.35, 1.35):
-        for oy in (-1.05, 1.05):
-            b.cylinder("trunk", sx + ox, sy + oy, 0.46, 2.38, 0.11, 0.095, segs=5, tint=(0.94, 0.92, 0.88))
-    _draped_canvas_roof(b, sx, sy, 2.30, 3.25, 2.55, 1.08, along_y=False, team_border=True, guy_ropes=False)
-    # Drying fish & net rack + clustered barrels, crates, sacks & moss
-    for ox in (-0.85, 0.85):
-        b.cylinder("trunk", 1.55, -1.35 + ox * 0.75, 0.46, 1.95, 0.075, 0.065, segs=5, tint=(0.88, 0.86, 0.82))
-    b.box("trunk", 1.55, -1.35, 1.90, 0.10, 1.45, 0.10, tint=(0.86, 0.84, 0.80))
-    b.box("canvas", 1.55, -1.35, 1.32, 0.06, 1.15, 0.95, tint=(0.92, 0.88, 0.80))
-    for bx, by in ((1.15, 0.95), (1.72, 1.15), (1.42, 1.62), (-1.75, -1.45), (-1.22, -1.65)):
+    # Open-sided weathered driftwood & rippled parchment-canvas fisherman shelter on wharf
+    sx, sy = -0.85, 0.65
+    for ox in (-1.30, 1.30):
+        for oy in (-1.00, 1.00):
+            b.cylinder("trunk", sx + ox, sy + oy, 0.46, 2.38, 0.11, 0.095, segs=5, tint=(0.94, 0.91, 0.85))
+    _draped_canvas_roof(b, sx, sy, 2.30, 3.15, 2.45, 1.06, along_y=False, team_border=True, guy_ropes=False)
+    # Drying fishing net rack + draped side nets + clustered barrels, crates, rope coils & painted pots
+    for ox in (-0.80, 0.80):
+        b.cylinder("trunk", 1.48, -1.25 + ox * 0.70, 0.46, 1.95, 0.075, 0.065, segs=5, tint=(0.86, 0.83, 0.78))
+    b.box("trunk", 1.48, -1.25, 1.90, 0.10, 1.38, 0.10, tint=(0.84, 0.81, 0.76))
+    b.box("canvas", 1.48, -1.25, 1.30, 0.06, 1.12, 0.96, tint=(0.92, 0.86, 0.76))
+    for bx, by in ((1.10, 0.88), (1.62, 1.08), (1.35, 1.54), (-1.70, -1.35), (-1.18, -1.58), (0.65, 1.55)):
         b.barrel(bx, by, 0.52, r=0.23, h=0.58, role="trunk")
-    b.crate(0.35, -1.35, 0.52, s=0.64, role="trunk", trim_role="trunk")
-    b.crate(0.45, -1.30, 1.16, s=0.46, role="trunk", trim_role="trunk")
-    b.pot(-1.85, -0.75, 0.52, colored=True)
-    b.split_flag(2.45, -2.15, 0.52, 4.25, flag_w=1.08, flag_h=0.54, dir_x=1.0, pole_role="trunk")
+    b.crate(0.32, -1.28, 0.52, s=0.62, role="trunk", trim_role="trunk")
+    b.crate(0.42, -1.24, 1.14, s=0.44, role="trunk", trim_role="trunk")
+    b.cylinder("canvas", 1.85, 0.32, 0.52, 0.82, 0.30, 0.26, segs=8, tint=(0.95, 0.88, 0.74))
+    b.pot(-1.75, -0.68, 0.52, colored=True)
+    ftris = b.split_flag(2.35, -2.02, 0.52, 4.18, flag_w=1.02, flag_h=0.52, dir_x=1.0, pole_role="trunk", col=col)
     root, tris = b.finalize(col)
 
-    # LONG, WIDE, BRACED SILVER-DRIFTWOOD JETTY REACHING DEEP INTO THE SEA (x = 2.0 .. 9.6m!)
+    # COMPACT STURDY DRIFTWOOD FRONT JETTY (x = 1.65 .. 4.55m -> matches DOCK_PIER_OFFSET=3.1, ZERO ship overlap!)
     pier = bpy.data.objects.new(f"{key}:pier", None)
     pier["dockPier"] = True
     pier.parent = root
     col.objects.link(pier)
     pb = PartBuilder(f"{key}:pier", mats, parent=pier)
-    pb.box_z("trunk", 5.80, 0.0, 0.18, 0.46, 7.60, 2.75, tint=(0.94, 0.92, 0.88))
-    # Individual weathered deck planks & heavy pilings plunging deep underwater (-2.2m)
-    for x in (2.60, 4.30, 6.00, 7.70, 9.25):
-        for side in (-1.22, 1.22):
-            pb.cylinder("trunk", x, side, -2.20, 1.02, 0.16, 0.145, segs=6, tint=(0.80, 0.78, 0.74))
-        pb.rod("trunk", (x, -1.20, -0.65), (x, 1.20, 0.22), 0.075, segs=4, tint=(0.76, 0.74, 0.70))
-    pb.box("team", 5.80, -1.39, 0.34, 7.60, 0.10, 0.20)
-    pb.box("team", 5.80, 1.39, 0.34, 7.60, 0.10, 0.20)
-    # Cargo crates, barrels & coiled rope right out on the jetty!
-    pb.barrel(4.95, 0.72, 0.46, r=0.22, h=0.56, role="trunk")
-    pb.barrel(5.45, 0.82, 0.46, r=0.22, h=0.56, role="trunk")
-    pb.crate(7.15, -0.68, 0.46, s=0.60, role="trunk", trim_role="trunk")
-    pb.cylinder("canvas", 8.55, 0.55, 0.46, 0.76, 0.32, 0.28, segs=8, tint=(0.96, 0.90, 0.78))
+    pb.box_z("trunk", 3.10, 0.0, 0.18, 0.46, 2.95, 2.85, tint=(0.94, 0.91, 0.85))
+    for x in (2.05, 3.25, 4.35):
+        for side in (-1.24, 1.24):
+            pb.cylinder("trunk", x, side, -2.20, 1.02, 0.16, 0.145, segs=6, tint=(0.78, 0.75, 0.70))
+        pb.rod("trunk", (x, -1.20, -0.65), (x, 1.20, 0.22), 0.075, segs=4, tint=(0.74, 0.71, 0.66))
+    pb.box("team", 3.10, -1.44, 0.34, 2.95, 0.10, 0.20)
+    pb.box("team", 3.10, 1.44, 0.34, 2.95, 0.10, 0.20)
+    # Draped fishing net hanging off front pilings + barrels & rope coil!
+    pb.box("canvas", 4.58, 0.0, -0.05, 0.08, 2.15, 0.82, tint=(0.90, 0.84, 0.74))
+    pb.barrel(3.15, 0.82, 0.46, r=0.22, h=0.55, role="trunk")
+    pb.barrel(3.65, 0.88, 0.46, r=0.22, h=0.55, role="trunk")
+    pb.crate(3.55, -0.78, 0.46, s=0.56, role="trunk", trim_role="trunk")
     _, p_tris = pb.finalize(col, link_root=False)
-    return root, tris + p_tris
+    return root, tris + p_tris + ftris
 
 
 # ---------------------------------------------------------------------------
@@ -1257,8 +1347,9 @@ def build_feudal_towncenter(civ, mats, col):
         b.barrel(side * 2.25, -1.25, 0.0, r=0.22, h=0.54)
         b.crate(side * 2.85, -1.55, 0.0, s=0.52)
 
-    b.banner_pole(0.0, cy - 1.75, 2.25, 5.85, flag_w=0.92, flag_h=0.52, dir_x=1.0)
-    return b.finalize(col)
+    ftris = b.banner_pole(0.0, cy - 1.75, 2.25, 5.85, flag_w=0.92, flag_h=0.52, dir_x=1.0, col=col)
+    root, tris = b.finalize(col)
+    return root, tris + ftris
 
 
 def build_feudal_house(civ, mats, col):
@@ -1319,12 +1410,13 @@ def build_feudal_tower(civ, mats, col):
             a = i * math.pi / 4.0
             b.box_z("darkwood", math.cos(a) * 1.48, math.sin(a) * 1.48, 4.46, 5.46, 0.16, 0.16, rot_z=a)
         b.cylinder("darkwood", 0.0, 0.0, 5.26, 5.48, 1.58, 1.58, segs=8)
-        # Iconic conical ribbed golden-oak wooden plank roof (EXACT Image 1!)
-        b.cone("wood", 0.0, 0.0, 5.46, 6.96, 1.72, segs=8, tint=(1.00, 0.94, 0.80), z_grad=0.22)
+        # Iconic conical ribbed golden-oak wooden plank roof (EXACT Image 5 Watch Towers!)
+        b.cone("straw", 0.0, 0.0, 5.44, 6.96, 1.74, segs=8, tint=(1.04, 0.88, 0.62), z_grad=0.24)
         for i in range(8):
             a = i * math.pi / 4.0
-            b.rod("darkwood", (math.cos(a) * 1.70, math.sin(a) * 1.70, 5.46), (0.0, 0.0, 7.00), 0.055, segs=4)
-        b.box("iron", 0.0, 0.0, 7.06, 0.16, 0.16, 0.24)
+            b.rod("darkwood", (math.cos(a) * 1.72, math.sin(a) * 1.72, 5.44), (0.0, 0.0, 7.00), 0.068, segs=4)
+        b.box("darkwood", 0.0, 0.0, 7.04, 0.22, 0.22, 0.26)
+        b.box("iron", 0.0, 0.0, 7.22, 0.10, 0.10, 0.22)
     elif civ == "sun":
         # Tapered warm golden-ochre desert mud-brick watchtower + terracotta base + cedar vigas + woven shade canopy (NO dome!)
         b.tapered_box("brick", 0.0, 0.0, -0.46, 0.62, 2.75, 2.75, 2.38, 2.38, tint=(0.98, 0.90, 0.78))
@@ -1390,8 +1482,9 @@ def build_feudal_barracks(civ, mats, col):
         for ix in range(-3, 4):
             b.box_z("darkwood", 0.92 + ix * 0.38, -2.00, 0.94, 1.74, 0.11, 0.11)
         b.box("darkwood", 0.92, -2.00, 1.74, 2.72, 0.14, 0.12)
-    b.banner_pole(2.15, -1.95, 0.96, 4.45, flag_w=0.86, flag_h=0.48, dir_x=1.0)
-    return b.finalize(col)
+    ftris = b.banner_pole(2.15, -1.95, 0.96, 4.45, flag_w=0.86, flag_h=0.48, dir_x=1.0, col=col)
+    root, tris = b.finalize(col)
+    return root, tris + ftris
 
 
 def build_feudal_stable(civ, mats, col):
@@ -1509,83 +1602,99 @@ def build_feudal_market(civ, mats, col):
 
 
 def build_feudal_mill(civ, mats, col):
-    """Exact AoE II:DE Feudal Mill (Image 1 lower-center!):
-    Chunky half-timber & stone windmill with HUGE 4-sail sweeping canvas rotor (`windmill = True`)!"""
+    """Exact AoE II:DE Feudal Mill (Image 5 lower-center!):
+    Cozy timber-and-stone millhouse + rounded shaggy thatch turret dome +
+    4 CHUNKY TRAPEZOIDAL WOOD-LATTICE & CANVAS SPINNING SAILS (`windmill = True`, min.y > 2.45m)!"""
     key = f"building:mill:{civ}:1"
     b = PartBuilder(key, mats)
     if civ == "alder":
-        # Chunky battered cobblestone base + half-timbered cream octagonal mill tower + thick shaggy golden thatch cap!
-        b.tapered_box("stoneDark", 0.0, 0.25, -0.46, 1.35, 3.15, 3.15, 2.55, 2.55)
-        b.cylinder("plaster", 0.0, 0.25, 1.28, 3.85, 1.48, 1.26, segs=8, tint=(1.00, 0.98, 0.92))
+        # Ground-floor rustic stone-and-timber mill base + octagonal half-timber shaft + shaggy rounded reed-thatch dome!
+        b.tapered_box("stoneDark", 0.0, 0.25, -0.46, 1.15, 3.05, 2.85, 2.55, 2.45)
+        b.box_z("wood", 0.0, 0.25, 1.08, 2.55, 2.48, 2.35, tint=(0.94, 0.86, 0.74))
+        b.cylinder("plaster", 0.0, 0.25, 2.25, 4.05, 1.34, 1.18, segs=8, tint=(0.98, 0.95, 0.88))
         for i in range(8):
             a = i * math.pi / 4.0
-            b.box_z("darkwood", math.cos(a) * 1.42, 0.25 + math.sin(a) * 1.42, 1.26, 3.88, 0.16, 0.16, rot_z=a)
-        b.cylinder("darkwood", 0.0, 0.25, 2.50, 2.66, 1.42, 1.42, segs=8)
-        b.cylinder("team", 0.0, 0.25, 3.68, 3.92, 1.38, 1.38, segs=8)
-        # Multi-tiered shaggy golden straw dome cap
-        b.cylinder("straw", 0.0, 0.25, 3.86, 4.35, 1.66, 1.38, segs=8, tint=(0.90, 0.84, 0.74))
-        b.cone("straw", 0.0, 0.25, 4.30, 5.38, 1.42, segs=8, tint=(1.00, 0.96, 0.86))
-        b.moss(-1.35, -0.85, -0.02, sx=0.72, sy=0.70, sz=1.55)
-        b.moss(1.25, 0.95, -0.02, sx=0.62, sy=0.62, sz=1.22)
+            b.box_z("darkwood", math.cos(a) * 1.30, 0.25 + math.sin(a) * 1.30, 1.12, 4.08, 0.15, 0.15, rot_z=a)
+        b.cylinder("darkwood", 0.0, 0.25, 2.52, 2.68, 1.40, 1.40, segs=8)
+        b.cylinder("team", 0.0, 0.25, 3.82, 4.04, 1.30, 1.30, segs=8)
+        # Rounded shaggy dark-golden reed thatch turret dome cap (matches AoE2 Feudal Windmill!)
+        b.cylinder("straw", 0.0, 0.25, 3.98, 4.52, 1.54, 1.36, segs=8, tint=(0.76, 0.68, 0.54))
+        b.cylinder("straw", 0.0, 0.25, 4.46, 4.92, 1.38, 0.96, segs=8, tint=(0.92, 0.84, 0.68))
+        b.cone("straw", 0.0, 0.25, 4.86, 5.42, 1.00, segs=8, tint=(1.00, 0.92, 0.76))
+        # Cozy side thatch porch awning over grain sacks
+        _shaggy_thatch_roof(b, 1.32, 0.35, 1.65, 1.45, 1.85, 0.76, along_y=True, team_gable=False)
+        b.moss(-1.32, -0.78, -0.02, sx=0.70, sy=0.68, sz=1.45)
+        b.moss(1.20, 1.02, -0.02, sx=0.60, sy=0.60, sz=1.15)
     elif civ == "sun":
-        b.tapered_box("brick", 0.0, 0.25, -0.46, 0.65, 3.15, 3.15, 2.85, 2.85, tint=(0.98, 0.90, 0.78))
-        b.tapered_box("plaster", 0.0, 0.25, 0.58, 4.05, 2.80, 2.80, 2.15, 2.15, tint=(1.00, 0.96, 0.88))
-        b.box("team", 0.0, 0.25, 3.86, 2.28, 2.28, 0.24)
-        b.box_z("brick", 0.0, 0.25, 4.02, 4.46, 2.24, 2.24, tint=(0.98, 0.90, 0.78))
+        b.tapered_box("brick", 0.0, 0.25, -0.46, 0.68, 3.05, 2.95, 2.72, 2.62, tint=(0.98, 0.90, 0.78))
+        b.tapered_box("plaster", 0.0, 0.25, 0.62, 4.35, 2.65, 2.55, 2.02, 2.02, tint=(1.00, 0.96, 0.88))
+        b.box("team", 0.0, 0.25, 4.10, 2.18, 2.18, 0.24)
+        b.box_z("brick", 0.0, 0.25, 4.28, 4.72, 2.14, 2.14, tint=(0.98, 0.90, 0.78))
     else:
-        b.tapered_box("stoneDark", 0.0, 0.25, -0.46, 1.35, 3.15, 3.15, 2.55, 2.55)
-        b.cylinder("wood", 0.0, 0.25, 1.28, 3.85, 1.46, 1.24, segs=8, tint=(0.94, 0.88, 0.78))
-        b.cone("straw", 0.0, 0.25, 3.78, 5.32, 1.62, segs=6, tint=(0.92, 0.86, 0.76))
-        b.box("team", 0.0, 0.25, 3.68, 2.48, 2.48, 0.22)
+        b.tapered_box("stoneDark", 0.0, 0.25, -0.46, 1.25, 3.05, 2.95, 2.50, 2.45)
+        b.cylinder("wood", 0.0, 0.25, 1.18, 4.15, 1.40, 1.18, segs=8, tint=(0.94, 0.88, 0.78))
+        b.cone("straw", 0.0, 0.25, 4.08, 5.55, 1.56, segs=6, tint=(0.88, 0.80, 0.66))
+        b.box("team", 0.0, 0.25, 3.92, 2.38, 2.38, 0.22)
 
-    # Front rotor mount axle (hub at Blender (0, -1.62, 3.25) -> Three.js (0, 3.25, +1.62))
-    b.box("darkwood", 0.0, -1.18, 3.25, 0.42, 0.95, 0.42)
-    b.cylinder("iron", 0.0, -1.58, 3.10, 3.40, 0.20, 0.20, segs=6)
-    # Grain sacks & barrels around mill base (grounded directly on grass!)
-    for gx, gy in ((1.55, -0.95), (1.88, -0.48), (-1.62, -0.92)):
+    # Front rotor mount bearing + axle protruding cleanly forward (hub at Blender (0, -1.68, 4.25) -> Three.js (0, 4.25, +1.68))
+    b.box("darkwood", 0.0, -1.08, 4.25, 0.44, 1.25, 0.44)
+    b.cylinder("iron", 0.0, -1.64, 4.08, 4.42, 0.22, 0.22, segs=6)
+    # Grain sacks & barrels around mill base
+    for gx, gy in ((1.52, -0.78), (1.84, -0.32), (-1.58, -0.82)):
         b.cylinder("canvas", gx, gy, -0.10, 0.68, 0.30, 0.22, segs=6)
-    b.barrel(1.60, 0.65, 0.0, r=0.24, h=0.56)
+    b.barrel(1.55, 0.78, 0.0, r=0.24, h=0.56)
 
     root, tris = b.finalize(col)
 
-    # HUGE ICONIC SPINNING 4-BLADE WINDMILL SAIL ROTOR (`windmill = True`, 3.05m sweep radius!)
+    # CHUNKY ICONIC AO2 4-BLADE TRAPEZOIDAL WOOD-LATTICE & CANVAS SPINNING SAIL ROTOR (`windmill = True`)!
+    # Hub at z=4.25 with radius 1.78m -> min.y >= 2.47m (clears ground cleanly!) and y=-1.74 clears turret front by >0.35m!
     rotor = bpy.data.objects.new(f"{key}:rotor", None)
     rotor["windmill"] = True
-    rotor.location = (0.0, -1.64, 3.25)
+    rotor.location = (0.0, -1.74, 4.25)
     rotor.parent = root
     col.objects.link(rotor)
     rb = PartBuilder(f"{key}:rotor", mats, parent=rotor)
-    rb.box("iron", 0.0, 0.0, 0.0, 0.40, 0.24, 0.40)
+    rb.box("iron", 0.0, 0.0, 0.0, 0.44, 0.26, 0.44)
     for k in range(4):
         ang = k * math.pi * 0.5 + math.pi * 0.25
         ca, sa = math.cos(ang), math.sin(ang)
-        # Long timber sail spar (3.05m radius -> 6.1m sweeping windmill wheel!)
-        rb.rod("darkwood", (0.0, 0.0, 0.0), (ca * 3.05, 0.0, sa * 3.05), 0.075, segs=4)
         sx_n, sz_n = -sa, ca
-        for d0, d1 in ((0.62, 1.45), (1.45, 2.25), (2.25, 2.98)):
-            dm = (d0 + d1) * 0.5
-            cx_b = ca * dm + sx_n * 0.42
-            cz_b = sa * dm + sz_n * 0.42
-            bm = rb._bm("canvas")
-            hw, hl, ht = 0.38, (d1 - d0) * 0.46, 0.036
-            pts = []
-            for s_t in (-ht, ht):
-                for s_l in (-hl, hl):
-                    for s_w in (-hw, hw):
-                        vx = cx_b + ca * s_l + sx_n * s_w
-                        vz = cz_b + sa * s_l + sz_n * s_w
-                        pts.append(bm.verts.new((vx, s_t, vz)))
-            v0, v1, v2, v3, v4, v5, v6, v7 = pts
-            faces = [
-                bm.faces.new((v0, v1, v3, v2)),
-                bm.faces.new((v4, v6, v7, v5)),
-                bm.faces.new((v0, v4, v5, v1)),
-                bm.faces.new((v1, v5, v7, v3)),
-                bm.faces.new((v3, v7, v6, v2)),
-                bm.faces.new((v2, v6, v4, v0)),
+        # Sturdy dark-oak sail spar (radius 1.76m -> 3.52m bold trapezoidal wheel!)
+        rb.rod("darkwood", (0.0, 0.0, 0.0), (ca * 1.76, 0.0, sa * 1.76), 0.072, segs=4)
+        # Wide fan-shaped trapezoidal canvas sail (flares wider toward tip like Image 5!)
+        bm = rb._bm("canvas")
+        stations = ((0.38, 0.26, 0.44), (0.86, 0.32, 0.64), (1.32, 0.36, 0.80), (1.72, 0.40, 0.92))
+        ht = 0.036
+        for idx_s in range(len(stations) - 1):
+            d0, w0_l, w0_r = stations[idx_s]
+            d1, w1_l, w1_r = stations[idx_s + 1]
+            # Build trapezoidal canvas panel with subtle wooden lattice frame bars
+            corners_f = [
+                (ca * d0 - sx_n * w0_l, -ht, sa * d0 - sz_n * w0_l),
+                (ca * d0 + sx_n * w0_r, -ht, sa * d0 + sz_n * w0_r),
+                (ca * d1 + sx_n * w1_r, -ht, sa * d1 + sz_n * w1_r),
+                (ca * d1 - sx_n * w1_l, -ht, sa * d1 - sz_n * w1_l),
             ]
-            rb._paint_faces(bm, faces, tint=(1.00, 0.96, 0.88))
-            rb.rod("darkwood", (ca * d1, -0.025, sa * d1), (ca * d1 + sx_n * 0.78, -0.025, sa * d1 + sz_n * 0.78), 0.04, segs=4)
+            corners_b = [(x, ht, z) for x, _, z in corners_f]
+            vf = [bm.verts.new(p) for p in corners_f]
+            vb = [bm.verts.new(p) for p in corners_b]
+            faces = [
+                bm.faces.new((vf[0], vf[1], vf[2], vf[3])),
+                bm.faces.new((vb[3], vb[2], vb[1], vb[0])),
+                bm.faces.new((vf[0], vb[0], vb[1], vf[1])),
+                bm.faces.new((vf[1], vb[1], vb[2], vf[2])),
+                bm.faces.new((vf[2], vb[2], vb[3], vf[3])),
+                bm.faces.new((vf[3], vb[3], vb[0], vf[0])),
+            ]
+            shade = 0.92 + idx_s * 0.04
+            rb._paint_faces(bm, faces, tint=(shade, shade * 0.94, shade * 0.82))
+            rb.rod("darkwood", (ca * d1 - sx_n * w1_l, -0.02, sa * d1 - sz_n * w1_l),
+                   (ca * d1 + sx_n * w1_r, -0.02, sa * d1 + sz_n * w1_r), 0.042, segs=4)
+        # Outer dark-oak sail edge rails framing the fan paddle
+        rb.rod("darkwood", (ca * 0.38 - sx_n * 0.26, -0.02, sa * 0.38 - sz_n * 0.26),
+               (ca * 1.72 - sx_n * 0.40, -0.02, sa * 1.72 - sz_n * 0.40), 0.042, segs=4)
+        rb.rod("darkwood", (ca * 0.38 + sx_n * 0.44, -0.02, sa * 0.38 + sz_n * 0.44),
+               (ca * 1.72 + sx_n * 0.92, -0.02, sa * 1.72 + sz_n * 0.92), 0.042, segs=4)
     _, r_tris = rb.finalize(col, link_root=False)
     return root, tris + r_tris
 
@@ -1625,68 +1734,70 @@ def build_feudal_mine(civ, mats, col):
 
 
 def build_feudal_dock(civ, mats, col):
-    """Exact AoE II:DE Feudal Dock (Image 1 top-left!):
-    Multi-level cargo-packed timber wharf + long 7.6m braced harbor jetty reaching deep into the sea,
-    crowded barrels, crates, fishing nets, harbor crane, team mooring trim, and regional boathouse!"""
+    """Exact AoE II:DE Feudal Dock (Image 5 top-left!):
+    Compact cargo-packed wooden waterfront wharf + sturdy 3m front jetty (ZERO ship overlap!),
+    crowded stacked barrels, crates, draped fishing nets, harbor crane, fluttering pennant & regional boathouse!"""
     key = f"building:dock:{civ}:1"
     b = PartBuilder(key, mats)
-    # Heavy wooden wharf deck on deep water pilings (minY = -2.20m for shoreline grounding!)
-    for px in (-2.65, -1.32, 0.0, 1.32, 2.65):
-        for py in (-2.35, -0.78, 0.78, 2.35):
-            b.cylinder("darkwood", px, py, -2.20, 0.65, 0.18, 0.16, segs=6)
-    b.box_z("wood", 0.0, 0.0, 0.18, 0.54, 6.00, 5.45, tint=(0.94, 0.86, 0.74))
-    b.box("team", 0.0, -2.74, 0.38, 6.04, 0.14, 0.24)
-    b.box("team", 0.0, 2.74, 0.38, 6.04, 0.14, 0.24)
+    # Compact heavy wooden wharf deck on deep water pilings (5.6 x 5.2m, pilings to -2.20m)
+    for px in (-2.50, -1.25, 0.0, 1.25, 2.50):
+        for py in (-2.25, -0.75, 0.75, 2.25):
+            b.cylinder("darkwood", px, py, -2.20, 0.68, 0.18, 0.16, segs=6)
+    b.box_z("wood", 0.0, 0.0, 0.18, 0.54, 5.65, 5.20, tint=(0.94, 0.86, 0.74))
+    b.box("team", 0.0, -2.62, 0.38, 5.68, 0.13, 0.22)
+    b.box("team", 0.0, 2.62, 0.38, 5.68, 0.13, 0.22)
+    b.box("team", 2.84, 0.0, 0.38, 0.13, 5.24, 0.22)
 
     # Raised thatched/regional harbor boathouse at rear-left of wharf
     if civ == "alder":
-        _feudal_alder_shell(b, -1.05, 0.95, 3.15, 2.40, 2.55, cobble_h=0.68, x_brace=True, moss=True, team_trim=True)
-        _shaggy_thatch_roof(b, -1.05, 0.95, 2.50, 3.90, 3.15, 1.56, along_y=False, team_gable=True)
+        _feudal_alder_shell(b, -1.00, 0.88, 3.05, 2.35, 2.52, cobble_h=0.66, x_brace=True, moss=True, team_trim=True)
+        _shaggy_thatch_roof(b, -1.00, 0.88, 2.48, 3.80, 3.05, 1.54, along_y=False, team_gable=True)
     elif civ == "sun":
-        _feudal_sun_shell(b, -1.05, 0.95, 3.25, 2.50, 2.85, canopy=True)
+        _feudal_sun_shell(b, -1.00, 0.88, 3.15, 2.42, 2.82, canopy=True)
     else:
-        _feudal_raven_shell(b, -1.05, 0.95, 3.15, 2.40, 2.30, 1.75, along_y=False, shields=True)
+        _feudal_raven_shell(b, -1.00, 0.88, 3.05, 2.35, 2.28, 1.72, along_y=False, shields=True)
 
-    # Harbor timber derrick hoist crane on front-right wharf corner (EXACT busy AoE2 Dock!)
-    b.cylinder("darkwood", 1.95, -1.75, 0.50, 3.10, 0.12, 0.10, segs=6)
-    b.rod("wood", (1.95, -1.75, 2.55), (3.45, -1.25, 3.45), 0.08, segs=5)
-    b.rod("canvas", (3.45, -1.25, 3.45), (3.45, -1.25, 1.65), 0.03, segs=4)
-    b.crate(3.45, -1.25, 1.15, s=0.46)
+    # Harbor timber derrick hoist crane on front-right wharf corner
+    b.cylinder("darkwood", 1.88, -1.68, 0.50, 3.05, 0.12, 0.10, segs=6)
+    b.rod("wood", (1.88, -1.68, 2.52), (3.05, -1.15, 3.35), 0.08, segs=5)
+    b.rod("canvas", (3.05, -1.15, 3.35), (3.05, -1.15, 1.65), 0.03, segs=4)
+    b.crate(3.05, -1.15, 1.15, s=0.44)
 
-    # Crowded dockside cargo: clustered barrels, stacked crates, sacks, produce baskets & bollards (EXACT Image 1!)
-    for bx, by in ((1.15, -1.25), (1.68, -1.05), (1.40, -0.55), (-1.85, -1.45), (-1.30, -1.68), (0.65, 1.65)):
-        b.barrel(bx, by, 0.54, r=0.24, h=0.60)
-    b.crate(1.65, 0.65, 0.54, s=0.72)
-    b.crate(1.55, 1.42, 0.54, s=0.62)
-    b.crate(1.62, 0.72, 1.26, s=0.52)
-    b.box("fruit", 0.25, -1.45, 0.76, 0.68, 0.52, 0.44)
-    b.box("grain", -0.55, -1.55, 0.76, 0.62, 0.48, 0.42)
-    b.banner_pole(2.55, -2.25, 0.54, 4.15, flag_w=0.92, flag_h=0.50, dir_x=1.0)
+    # Crowded dockside cargo: clustered barrels, stacked crates, sacks, produce baskets & bollards (EXACT Image 5!)
+    for bx, by in ((1.08, -1.20), (1.60, -1.00), (1.34, -0.52), (-1.78, -1.38), (-1.24, -1.62), (0.62, 1.58), (1.15, 1.65)):
+        b.barrel(bx, by, 0.54, r=0.23, h=0.58)
+    b.crate(1.58, 0.58, 0.54, s=0.70)
+    b.crate(1.48, 1.34, 0.54, s=0.60)
+    b.crate(1.56, 0.65, 1.24, s=0.50)
+    b.box("fruit", 0.22, -1.38, 0.76, 0.66, 0.50, 0.42)
+    b.box("grain", -0.52, -1.48, 0.76, 0.60, 0.46, 0.40)
+    ftris = b.banner_pole(2.42, -2.15, 0.54, 4.15, flag_w=0.92, flag_h=0.50, dir_x=1.0, col=col)
     root, tris = b.finalize(col)
 
-    # BOLD, WIDE, BRACED TIMBER PIER REACHING DEEP INTO THE WATER (x = 2.0 .. 9.6m!)
+    # COMPACT STURDY TIMBER HARBOR PIER (x = 1.65 .. 4.55m -> matches DOCK_PIER_OFFSET=3.1, ZERO ship overlap!)
     pier = bpy.data.objects.new(f"{key}:pier", None)
     pier["dockPier"] = True
     pier.parent = root
     col.objects.link(pier)
     pb = PartBuilder(f"{key}:pier", mats, parent=pier)
-    pb.box_z("wood", 5.80, 0.0, 0.18, 0.48, 7.60, 2.85, tint=(0.94, 0.86, 0.74))
-    for x in (2.60, 4.30, 6.00, 7.70, 9.25):
-        for side in (-1.26, 1.26):
+    pb.box_z("wood", 3.10, 0.0, 0.18, 0.48, 2.95, 2.90, tint=(0.94, 0.86, 0.74))
+    for x in (2.05, 3.25, 4.35):
+        for side in (-1.28, 1.28):
             pb.cylinder("darkwood", x, side, -2.20, 1.05, 0.16, 0.145, segs=6)
-        pb.rod("darkwood", (x, -1.22, -0.65), (x, 1.22, 0.22), 0.075, segs=4)
-    pb.box("team", 5.80, -1.44, 0.36, 7.60, 0.11, 0.20)
-    pb.box("team", 5.80, 1.44, 0.36, 7.60, 0.11, 0.20)
-    # Cargo crates, barrels, fishing net bundle & lantern right out on the jetty!
-    pb.barrel(4.85, 0.78, 0.48, r=0.23, h=0.58)
-    pb.barrel(5.38, 0.88, 0.48, r=0.23, h=0.58)
-    pb.crate(7.10, -0.72, 0.48, s=0.62)
-    pb.crate(7.15, -0.68, 1.10, s=0.44)
-    pb.cylinder("canvas", 8.55, 0.60, 0.48, 0.82, 0.34, 0.30, segs=8, tint=(0.96, 0.90, 0.78))
-    pb.cylinder("darkwood", 9.25, -1.26, 1.02, 2.15, 0.06, 0.05, segs=5)
-    pb.box("glow", 9.25, -1.26, 2.22, 0.22, 0.22, 0.26)
+        pb.rod("darkwood", (x, -1.24, -0.65), (x, 1.24, 0.22), 0.075, segs=4)
+    pb.box("team", 3.10, -1.46, 0.36, 2.95, 0.11, 0.20)
+    pb.box("team", 3.10, 1.46, 0.36, 2.95, 0.11, 0.20)
+    # Draped fishing net off front pilings, barrels, stacked crates, rope coil & glowing pier lantern!
+    pb.box("canvas", 4.60, 0.0, -0.05, 0.08, 2.25, 0.84, tint=(0.92, 0.86, 0.74))
+    pb.barrel(3.05, 0.82, 0.48, r=0.22, h=0.56)
+    pb.barrel(3.55, 0.88, 0.48, r=0.22, h=0.56)
+    pb.crate(3.45, -0.78, 0.48, s=0.58)
+    pb.crate(3.48, -0.74, 1.06, s=0.42)
+    pb.cylinder("canvas", 4.10, 0.56, 0.48, 0.78, 0.30, 0.26, segs=8, tint=(0.96, 0.90, 0.78))
+    pb.cylinder("darkwood", 4.35, -1.28, 1.02, 2.15, 0.06, 0.05, segs=5)
+    pb.box("glow", 4.35, -1.28, 2.22, 0.22, 0.22, 0.26)
     _, p_tris = pb.finalize(col, link_root=False)
-    return root, tris + p_tris
+    return root, tris + p_tris + ftris
 
 
 # ---------------------------------------------------------------------------

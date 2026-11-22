@@ -4,6 +4,7 @@ import {wallConnections,wallSupportConnections,wallTreeConnections,isWallCorner}
 import {markInstancePrefix} from './render-batches.js';
 import {terrainFloor} from './building-grounding.js';
 import {wallTier,wallTierStyle,FORTIFIED_WALL_TECH} from './fortified-walls.js';
+import {buildingDamageStage} from './building-damage-visuals.js';
 
 // Connected walls use shared instanced batches rather than a new mesh and
 // material per connection: pale weathered silver-driftwood palisade stakes in
@@ -60,7 +61,12 @@ export class WallVisuals{
       this.links=hasWall||hasGate?[...wallConnections(buildings),...(hasWall?wallTreeConnections(v.sim.entities):[]),...(hasWall?wallSupportConnections(v.sim.entities):[])].filter(link=>link.gap>.015||Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z)<.12):[];
       this.revision=v.sim.revision;this.entities=v.sim.entities;
     }
-    if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;
+    let damageHash=0;
+    for(let i=0;i<this.links.length;i++){
+      const link=this.links[i],dmg=Math.max(buildingDamageStage(link.a),buildingDamageStage(link.b));
+      if(dmg)damageHash=(Math.imul(damageHash,31)+((i+1)*3+dmg))|0;
+    }
+    if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion&&this.lastDamageHash===damageHash)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;this.lastDamageHash=damageHash;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
     const tierOf=link=>{
       const ta=wallTier(v.sim,link.a),tb=wallTier(v.sim,link.b);
@@ -70,29 +76,47 @@ export class WallVisuals{
       return 'stone';
     };
     const shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
-    const signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}:${tierOf(link)}`).join('|');
+    const signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}:${tierOf(link)}:${Math.max(buildingDamageStage(link.a),buildingDamageStage(link.b))}`).join('|');
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}
     let visible=0;
     for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress??1,link.b.progress??1);if(progress<=0)continue;visible++;
-      const tier=tierOf(link),style=wallTierStyle(tier),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,inA=isWallCorner(v.sim,link.a)?.32:.08,inB=isWallCorner(v.sim,link.b)?.32:.08,start={x:link.start.x-dx*inA,z:link.start.z-dz*inA},end={x:link.end.x+dx*inB,z:link.end.z+dz*inB};
+      const tier=tierOf(link),style=wallTierStyle(tier),dmg=Math.max(buildingDamageStage(link.a),buildingDamageStage(link.b)),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,inA=isWallCorner(v.sim,link.a)?.32:.08,inB=isWallCorner(v.sim,link.b)?.32:.08,start={x:link.start.x-dx*inA,z:link.start.z-dz*inA},end={x:link.end.x+dx*inB,z:link.end.z+dz*inB};
       const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12;
       if(tier==='palisade'&&this.palisade){
         this.ensurePalisadeMaterial();
         const run=Math.hypot(end.x-start.x,end.z-start.z),steps=Math.max(3,Math.min(10,Math.ceil(run/.24)));
         for(let k=0;k<steps;k++){
           const t=(k+.5)/steps,px=start.x+(end.x-start.x)*t,pz=start.z+(end.z-start.z)*t,g=ga+(gb-ga)*t;
-          const vary=.89+((k*41+link.a.id*13)%16)/100,top=g+style.height*progress*vary,bot=Math.min(g-.38,floor);
-          const shade=k%3===0?0xb8b0a4:k%3===1?0xa69e92:0x958d82;
+          const centerFrac=Math.max(0,1-Math.abs(t-.5)*2.35);
+          const breakScale=dmg===2?(1-centerFrac*.68-((k*17)%10)/45):dmg===1?(1-centerFrac*.36-((k*13)%7)/38):1;
+          const vary=(.89+((k*41+link.a.id*13)%16)/100)*Math.max(.22,breakScale),top=g+style.height*progress*vary,bot=Math.min(g-.38,floor);
+          const shade=dmg===2?(k%3===0?0x726655:k%3===1?0x635849:0x544a3d):dmg===1?(k%3===0?0x968772:k%3===1?0x867865:0x766a59):(k%3===0?0xb5a58d:k%3===1?0xa3947d:0x91836e);
           this.stake(this.palisade,link,px,pz,(top+bot)*.5,Math.max(.3,top-bot),.22,.22,dx,dz,shade);
         }
-        this.piece(this.palisade,link,start,end,ga,gb,.95*progress,.14,.38,0x746d63);
-        if(progress>.55)this.piece(this.palisade,link,start,end,ga,gb,2.22*progress,.14,.38,0x746d63);
+        const lashCol=dmg===2?0x4e4438:dmg===1?0x635849:0x706454;
+        this.piece(this.palisade,link,start,end,ga,gb,.95*progress,.14,.38,lashCol);
+        if(progress>.55&&dmg<2){
+          const midEnd=dmg===1?{x:start.x+(end.x-start.x)*.55,z:start.z+(end.z-start.z)*.55}:end;
+          this.piece(this.palisade,link,start,midEnd,ga,dmg===1?(ga+gb)*.5:gb,2.22*progress,.14,.38,lashCol);
+        }
         continue;
       }
-      this.piece(this.stone,link,start,end,ga,gb,style.bodyY*progress,style.height*progress,style.depth,style.color);
+      const stoneTint=dmg===2?(tier==='fortified'?0x6c727c:0x827b71):dmg===1?(tier==='fortified'?0x8c939e:0xc4bbb0):style.color;
       const depth=Math.max(.42,Math.max(ga,gb)+.29-floor);
-      this.piece(this.foundation,link,start,end,ga,gb,.29-depth/2,depth,style.foundationDepth,style.foundationColor);
-      if(progress>.8){this.piece(this.stone,link,start,end,ga,gb,(style.bodyY+style.height/2-.02)*progress,.18,style.depth+.03,style.color);const mid={x:(start.x+end.x)/2,z:(start.z+end.z)/2},half=Math.min(.275,link.gap*.35),capA={x:mid.x-dx*half,z:mid.z-dz*half},capB={x:mid.x+dx*half,z:mid.z+dz*half};this.piece(this.stone,link,capA,capB,ga,gb,style.capY*progress,style.capHeight*progress,style.depth+.03,style.color);}
+      this.piece(this.foundation,link,start,end,ga,gb,.29-depth/2,depth,style.foundationDepth,dmg===2?0x68635c:style.foundationColor);
+      if(dmg===2&&progress>.8){
+        // Critically breached masonry connector: low jagged central breach sill flanked by surviving broken shoulders!
+        const p1={x:start.x+(end.x-start.x)*.28,z:start.z+(end.z-start.z)*.28};
+        const p2={x:start.x+(end.x-start.x)*.72,z:start.z+(end.z-start.z)*.72};
+        const g1=ga+(gb-ga)*.28,g2=ga+(gb-ga)*.72;
+        this.piece(this.stone,link,start,p1,ga,g1,style.bodyY*.74,style.height*.74,style.depth,stoneTint);
+        this.piece(this.stone,link,p2,end,g2,gb,style.bodyY*.78,style.height*.78,style.depth,stoneTint);
+        this.piece(this.stone,link,p1,p2,g1,g2,style.bodyY*.36,style.height*.36,style.depth*.92,0x645e56);
+        continue;
+      }
+      const hScale=dmg===1?.86:1;
+      this.piece(this.stone,link,start,end,ga,gb,style.bodyY*progress*hScale,style.height*progress*hScale,style.depth,stoneTint);
+      if(progress>.8&&dmg===0){this.piece(this.stone,link,start,end,ga,gb,(style.bodyY+style.height/2-.02)*progress,.18,style.depth+.03,stoneTint);const mid={x:(start.x+end.x)/2,z:(start.z+end.z)/2},half=Math.min(.275,link.gap*.35),capA={x:mid.x-dx*half,z:mid.z-dz*half},capB={x:mid.x+dx*half,z:mid.z+dz*half};this.piece(this.stone,link,capA,capB,ga,gb,style.capY*progress,style.capHeight*progress,style.depth+.03,stoneTint);}
     }
     for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;if(mesh.instanceColor&&mesh.count>0){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,mesh.count*3);mesh.instanceColor.needsUpdate=true;}}
     const activeBatches=this.palisade?((this.stone.count>0?2:0)+(this.palisade.count>0?1:0)||2):2;

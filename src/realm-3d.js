@@ -20,6 +20,7 @@ import {architectureAge,architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
+import {updateBuildingDamageVisuals} from './building-damage-visuals.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -156,11 +157,77 @@ function buildForest(view){
   }
   view.treeIndices.clear();view.forestFog(true);
 }
-function scaffold(view,e){
-  const g=new THREE.Group(),m=view.materials,r=Math.max(1.6,e.r),h=Math.min(8,e.r*1.7);
-  for(const x of [-r,r])for(const z of [-r,r])view.cylinder(g,m.wood,x,h/2,z,.055,h);
-  for(const yy of [h*.33,h*.66,h])for(const side of [-1,1]){view.box(g,m.wood,0,yy,side*r,r*2,.10,.08);view.box(g,m.wood,side*r,yy,0,.08,.1,r*2);}
-  for(const side of [-1,1]){const brace=view.box(g,m.wood,0,h*.5,side*r,.085,Math.hypot(r*2,h),.08);brace.rotation.z=Math.atan2(r*2,h);}
+function scaffoldMaterials(view,age){
+  const m=view.materials;
+  const map=m.plaster?.map||null,normal=m.wood?.normalMap||null;
+  if(!view.scaffoldDriftwoodMat)view.scaffoldDriftwoodMat=standardMaterial({color:0xb2a28a,roughness:.92,metalness:0});
+  if(!view.scaffoldOakMat)view.scaffoldOakMat=standardMaterial({color:0x9c7b52,roughness:.90,metalness:0});
+  if(!view.scaffoldPlankMat)view.scaffoldPlankMat=standardMaterial({color:0xc9a976,roughness:.92,metalness:0});
+  for(const mat of [view.scaffoldDriftwoodMat,view.scaffoldOakMat,view.scaffoldPlankMat]){
+    if(mat.map!==map||mat.normalMap!==normal){mat.map=map;mat.normalMap=normal;mat.needsUpdate=true;}
+  }
+  return age===0
+    ?{pole:view.scaffoldDriftwoodMat,plank:view.scaffoldDriftwoodMat}
+    :{pole:view.scaffoldOakMat,plank:view.scaffoldPlankMat};
+}
+function constructionStage(progress){return progress<.35?0:progress<.70?1:2;}
+function scaffold(view,e,stage=0,targetHeight=5){
+  const g=new THREE.Group(),age=architectureAge(view.sim,e);
+  const {pole,plank}=scaffoldMaterials(view,age);
+  const isWall=e.type==='wall',isGate=e.type==='gate';
+  const rx=isWall?1.46:isGate?2.65:Math.max(1.45,Math.min(4.8,(e.r||2.2)*.92));
+  const rz=isWall?.64:isGate?1.15:rx;
+  const fullH=Math.max(2.4,Math.min(11,targetHeight||Math.min(7.5,(e.r||2)*1.6)));
+  const h=stage===0?Math.min(1.35,fullH*.38):stage===1?Math.max(2.1,fullH*.68):Math.max(2.6,fullH*.94);
+  const rPole=stage===0?.085:.10;
+
+  // Ground wooden perimeter sleepers & corner foundation stakes
+  for(const sx of [-rx,rx])for(const sz of [-rz,rz])view.cylinder(g,pole,sx,h*.5,sz,rPole,h);
+  for(const sz of [-rz,rz])view.box(g,pole,0,.09,sz,rx*2.08,.14,.16);
+  for(const sx of [-rx,rx])view.box(g,pole,sx,.09,0,.16,.14,rz*2.08);
+
+  if(stage===0){
+    // Stage 0 (0-35%): Low waist-high framing rails + stacked lumber pile + builder's tool crate!
+    const railY=Math.min(.82,h*.72);
+    for(const sz of [-rz,rz])view.box(g,pole,0,railY,sz,rx*2.04,.10,.10);
+    for(const sx of [-rx,rx])view.box(g,pole,sx,railY,0,.10,.10,rz*2.04);
+    for(let k=0;k<3;k++)view.box(g,plank,-rx*.35,.14+k*.13,rz+.42,Math.min(2.1,rx*1.15),.11,.15);
+    view.box(g,plank,rx*.48,.26,rz+.38,.52,.46,.46);
+    return view.mergeModel(g);
+  }
+
+  // Stage 1 (35-70%) & Stage 2 (70-99%): Mid/upper timber ledgers, worker walkway planks, cross-braces & leaning ladder!
+  const tiers=stage===1?[h*.48,h*.95]:[h*.44,h*.88];
+  for(const yy of tiers){
+    for(const sz of [-rz,rz])view.box(g,pole,0,yy,sz,rx*2.12,.12,.11);
+    for(const sx of [-rx,rx])view.box(g,pole,sx,yy,0,.11,.12,rz*2.12);
+  }
+  // Wide sunlit wooden walkway plank decks perched along front & side scaffold ledgers
+  const deckY=tiers[0]+.10;
+  view.box(g,plank,0,deckY,rz+.18,rx*1.95,.09,.48);
+  if(!isWall)view.box(g,plank,rx+.18,deckY,0,.48,.09,rz*1.85);
+  if(stage===2&&!isWall)view.box(g,plank,0,tiers[1]+.10,-rz-.16,rx*1.90,.09,.46);
+
+  // Diagonal timber X-bracing on front & back faces (visible wooden carpentry, not thin black lines)
+  const braceLen=Math.hypot(rx*2,h*.88),braceAng=Math.atan2(rx*2,h*.88);
+  for(const sz of [-rz,rz]){
+    const b1=view.box(g,pole,0,h*.48,sz,.095,braceLen,.085);b1.rotation.z=braceAng;
+  }
+  // Leaning builder's ladder climbing up to the walkway deck!
+  const lx=rx*.45,lzBot=rz+.95,lzTop=rz+.14,lLen=Math.hypot(deckY+.25,lzBot-lzTop),lPitch=-Math.atan2(lzBot-lzTop,deckY+.25);
+  for(const ox of [-.24,.24]){
+    const rail=view.box(g,pole,lx+ox,(deckY+.25)*.5,(lzBot+lzTop)*.5,.065,lLen,.065);
+    rail.rotation.x=lPitch;
+  }
+  for(let r=1;r<=4;r++){
+    const f=r/5;
+    view.box(g,plank,lx,f*(deckY+.15),lzBot+(lzTop-lzBot)*f,.50,.055,.065);
+  }
+  if(stage===2&&!isWall){
+    // Top corner timber hoist beam for raising roof beams!
+    view.box(g,pole,-rx,h+.52,rz,.11,1.05,.11);
+    view.box(g,pole,-rx+.52,h+.92,rz,1.15,.10,.10);
+  }
   return view.mergeModel(g);
 }
 
@@ -243,7 +310,7 @@ export function installRealm3D(WorldView){
   };
   p.foliageFog=function(menu){this.forestFog(menu);};
   p.releaseNode=function(node){
-    const sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials,...(this.sceneryFogMaterials?.values()||[])]),sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]);
+    const sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials,...(this.sceneryFogMaterials?.values()||[]),...(this.scaffoldDriftwoodMat?[this.scaffoldDriftwoodMat]:[]),...(this.scaffoldOakMat?[this.scaffoldOakMat]:[]),...(this.scaffoldPlankMat?[this.scaffoldPlankMat]:[])]),sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]);
     node.traverse(mesh=>{if(!mesh.isMesh)return;if(!sharedGeometry.has(mesh.geometry))mesh.geometry.dispose();if(!sharedMaterials.has(mesh.material))mesh.material.dispose();});
     this.foundationHeights.delete(node.userData.entity);
   };
@@ -269,32 +336,55 @@ export function installRealm3D(WorldView){
     return node;
   };
   p.updateConstruction=function(e,node){
+    const measureHeight=()=>{
+      node.updateMatrixWorld(true);
+      const box=new THREE.Box3().setFromObject(node);
+      return box.isEmpty()?Math.max(3,(e.r||2)*1.8):Math.max(2.6,Math.min(14,box.max.y-node.position.y+.35));
+    };
+    const disposeFrame=frame=>{
+      if(!frame)return;
+      const shared=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]);
+      frame.traverse(mesh=>{if(mesh.isMesh&&!shared.has(mesh.geometry))mesh.geometry.dispose();});
+      frame.removeFromParent();
+    };
     if(this.renderer.isWebGPURenderer){
       if(e.progress<1){
+        const stage=constructionStage(e.progress);
         if(!node.userData.construction){
+          const targetHeight=measureHeight();
           const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0),group=new (nodeRuntime().ClippingGroup)();
           group.clippingPlanes=[plane];group.clipShadows=true;
           for(const child of [...node.children])if(child!==node.userData.ring)group.add(child);
-          node.add(group);const frame=scaffold(this,e);node.add(frame);
-          node.userData.construction={plane,group,frame};
+          node.add(group);const frame=scaffold(this,e,stage,targetHeight);node.add(frame);
+          node.userData.construction={plane,group,frame,stage,targetHeight};
+        }else if(node.userData.construction.stage!==stage){
+          disposeFrame(node.userData.construction.frame);
+          const frame=scaffold(this,e,stage,node.userData.construction.targetHeight);
+          node.add(frame);node.userData.construction.frame=frame;node.userData.construction.stage=stage;
         }
-        node.userData.construction.plane.constant=node.position.y+Math.max(.18,e.progress*13);
+        node.userData.construction.plane.constant=node.position.y+Math.max(.14,e.progress*node.userData.construction.targetHeight);
       }else if(node.userData.construction){
         const {group,frame}=node.userData.construction;
         for(const child of [...group.children])node.add(child);group.removeFromParent();
-        frame.traverse(mesh=>{if(mesh.isMesh)mesh.geometry.dispose();});frame.removeFromParent();delete node.userData.construction;
+        disposeFrame(frame);delete node.userData.construction;
       }
       return;
     }
     if(e.progress<1){
+      const stage=constructionStage(e.progress);
       if(!node.userData.construction){
+        const targetHeight=measureHeight();
         const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0),materials=[],restore=[];
         node.traverse(mesh=>{if(!mesh.isMesh||mesh===node.userData.ring)return;const original=mesh.material,clipped=original.clone();clipped.defines={...original.defines};clipped.onBeforeCompile=original.onBeforeCompile;clipped.customProgramCacheKey=original.customProgramCacheKey;clipped.clippingPlanes=[plane];clipped.clipShadows=true;mesh.material=clipped;materials.push(clipped);restore.push([mesh,original]);});
-        const frame=scaffold(this,e);node.add(frame);node.userData.construction={plane,materials,restore,frame};this.renderer.localClippingEnabled=true;
+        const frame=scaffold(this,e,stage,targetHeight);node.add(frame);node.userData.construction={plane,materials,restore,frame,stage,targetHeight};this.renderer.localClippingEnabled=true;
+      }else if(node.userData.construction.stage!==stage){
+        disposeFrame(node.userData.construction.frame);
+        const frame=scaffold(this,e,stage,node.userData.construction.targetHeight);
+        node.add(frame);node.userData.construction.frame=frame;node.userData.construction.stage=stage;
       }
-      node.userData.construction.plane.constant=node.position.y+Math.max(.18,e.progress*13);
+      node.userData.construction.plane.constant=node.position.y+Math.max(.14,e.progress*node.userData.construction.targetHeight);
     }else if(node.userData.construction){
-      const data=node.userData.construction;for(const [mesh,material]of data.restore)mesh.material=material;for(const material of data.materials)material.dispose();data.frame.traverse(mesh=>{if(mesh.isMesh)mesh.geometry.dispose();});node.remove(data.frame);delete node.userData.construction;
+      const data=node.userData.construction;for(const [mesh,material]of data.restore)mesh.material=material;for(const material of data.materials)material.dispose();disposeFrame(data.frame);delete node.userData.construction;
     }
   };
   p.showGhost=function(type,x,z,valid,angle=0){
@@ -331,7 +421,7 @@ export function installRealm3D(WorldView){
   p.render=function(dt,menu){
     animateWater(this);
     updateBridgeVisibility(this,menu);
-    if(this.materials.glow)this.materials.glow.emissiveIntensity=1.4+Math.sin(this.clock*8)*.25;
+    if(this.materials.glow)this.materials.glow.emissiveIntensity=1.48+Math.sin(this.clock*7.2)*.28+Math.sin(this.clock*13.7)*.12;
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     let landUnits=null;
     const buildings=typeof this.sim?.candidatesFor==='function'?this.sim.candidatesFor('building'):(this.sim?.entities||[]);
@@ -361,6 +451,7 @@ export function installRealm3D(WorldView){
         }
         const desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);
       }
+      updateBuildingDamageVisuals(this,e,node);
     }
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);

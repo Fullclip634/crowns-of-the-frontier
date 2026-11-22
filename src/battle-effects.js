@@ -195,15 +195,33 @@ export class BuildingDamageEffects {
   add(e,node,time,dt,wind,reducedMotion){
     if(e.hp<=0||e.progress<1)return;
     const data=node.userData,hpRatio=e.hp/e.maxHp,smokeLevel=buildingSmokeLevel(hpRatio);
-    const target=buildingFireLevel(e,hpRatio);
+    const palisadeWall=e.type==='wall'&&data.model3d?.wallTier==='palisade';
+    const target=palisadeWall?clamp(1-hpRatio/.30,0,1):buildingFireLevel(e,hpRatio);
     if(target<=0)data.fireGrowth=0;
     const smoke=this.smoke,flames=this.flames;
-    if(smokeLevel<=0||smoke.count>=smoke.instanceMatrix.count)return;
 
     if(data.fireHeight===undefined){
       this.bounds.setFromObject(node);
       data.fireHeight=this.bounds.isEmpty()?Math.max(1,(e.r||2)*1.5):Math.max(.4,this.bounds.max.y-node.position.y);
     }
+
+    // Living Blacksmith chimney smoke while healthy (zero extra draw calls / VRAM!).
+    if(smokeLevel<=0){
+      if(e.type==='blacksmith'&&smoke.count<smoke.instanceMatrix.count){
+        const dummy=this.dummy,{x,y,z}=node.position,height=data.fireHeight;
+        const sway=reducedMotion?0:Math.sin(time*1.35+e.id*.9);
+        const rise=reducedMotion?.5:((time*.28+e.id*.37)%1);
+        const puffSize=(.32+.28*rise)*(1+sway*.06);
+        const wx=(wind?.x??.4)*(.45+rise*1.1),wz=(wind?.z??.2)*(.45+rise*1.1);
+        dummy.position.set(x-1.25+wx,y+Math.max(3.6,height*.92)+rise*1.45,z+.15+wz);
+        dummy.rotation.set(0,e.id*.7+rise*.6,0);
+        dummy.scale.set(puffSize,puffSize*(1.05+.25*rise),puffSize);
+        dummy.updateMatrix();
+        smoke.setMatrixAt(smoke.count++,dummy.matrix);
+      }
+      return;
+    }
+    if(smoke.count>=smoke.instanceMatrix.count)return;
 
     const grows=Math.min(target,(data.fireGrowth??0)+dt*1.5);
     data.fireGrowth=grows;

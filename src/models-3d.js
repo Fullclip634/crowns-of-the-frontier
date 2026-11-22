@@ -4,6 +4,7 @@ import {UNITS,seededRandom} from './data.js';
 import {authoredUnit,authoredBuilding,authoredResource,authoredTree,fortifyGateModel} from './authored-assets.js';
 import {wallTier} from './fortified-walls.js';
 import {isWallCorner} from './walls.js';
+import {dockWaterAngle} from './naval-spacing.js';
 import {isSnowBiome} from './terrain-biomes.js';
 
 const Y=new THREE.Vector3(0,1,0);
@@ -365,9 +366,9 @@ export function buildingModel(view,e){
     for(const x of [-2.2,0,2.2])b.arch(m.stoneDark,x,1.0,2.81,1.1,3.2,.24);flag(view,g,team,0,12,0,1.2);
   }else if(type==='dock'){
     b.box(m.wood,0,.2,0,5.9,.45,5.6);cottage(view,g,o,0,-1,3.4,2.8,2.5);
-    let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
-    const pier=new THREE.Group(),p=builder(view,pier);p.box(m.wood,4.3,.22,0,9,.25,2);
-    for(let x=1;x<=8;x+=1){p.box(m.darkwood,x,.365,0,.055,.035,2);for(const side of [-1,1])p.rod(m.darkwood,[x,-2,side*.8],[x,.8,side*.8],.11);}
+    const angle=dockWaterAngle(view.sim,e);
+    const pier=new THREE.Group(),p=builder(view,pier);p.box(m.wood,2.6,.22,0,4.6,.25,2);
+    for(let x=1;x<=4.5;x+=1.1){p.box(m.darkwood,x,.365,0,.055,.035,2);for(const side of [-1,1])p.rod(m.darkwood,[x,-2,side*.8],[x,.8,side*.8],.11);}
     pier.userData.dockPier=true;pier.rotation.y=-angle;g.add(pier);barrel(view,g,-2,0,1,.6);crate(view,g,1.8,0,1.6,.75);flag(view,g,team,2.1,5,0,.8);
   }else if(type==='farm'){
     b.box(m.soil,0,.10,0,5.7,.25,5.7);

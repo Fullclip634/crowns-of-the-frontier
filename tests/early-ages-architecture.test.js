@@ -31,6 +31,10 @@ import {battlePreset,normalizeBattle} from '../src/custom-battle.js';
 import {BattleRemains} from '../src/battle-remains.js';
 import {AudioEngine} from '../src/audio.js';
 import {synthesizeWarHorn,ATTACK_ANNOUNCE_COOLDOWN} from '../src/voice-system.js';
+import {dockWaterAngle,dockPierCenter,DOCK_PIER_RADIUS,shipClearance,navalSpawnPoint,resolveNavalSpacing} from '../src/naval-spacing.js';
+import {buildingDamageStage,updateBuildingDamageVisuals} from '../src/building-damage-visuals.js';
+import {BuildingDamageEffects} from '../src/battle-effects.js';
+import {animateSceneDecorations} from '../src/scene-animation.js';
 
 async function loadGLB(relPath){
   const bytes=await fs.readFile(new URL(relPath,import.meta.url));
@@ -680,5 +684,116 @@ test('destroyed siege & ships keep dark timber wreckage instead of turning white
     assert.equal(playedAlarm,1,'watchdog triggers Web Audio human voice alarm when speechSynthesis silently drops');
   }finally{
     globalThis.speechSynthesis=prevSynth;globalThis.SpeechSynthesisUtterance=prevUtt;
+  }
+});
+
+test('docks stay clear of ships, walls/gates/buildings break progressively by HP, Feudal windmills spin safely, and Blacksmith chimneys smoke',async()=>{
+  const [{gltf:baseGltf,bytes:baseBytes},{gltf:earlyGltf}]=await Promise.all([
+    loadGLB('../src/assets3d/frontier-low.glb'),
+    loadGLB('../src/assets3d/frontier-early-ages.glb'),
+  ]);
+  const baseAssets=registerAuthoredAssets(baseGltf,'low',baseBytes.length);
+  registerEarlyAgeArtwork(earlyGltf.scene);
+  try{
+    // 1. Dock water-arc orientation & zero ship-over-dock overlap on Coast (Frontier & Feudal)
+    const coast=new Simulation({mode:'custom',map:'coast',startAge:0,seed:512,slots:battlePreset('1v1')});
+    coast.tickAI=()=>{};
+    const dock=coast.owned(0,'building','dock')[0];
+    assert.ok(dock,'Coast Frontier custom battle spawns a starting dock');
+    const pier=dockPierCenter(coast,dock);
+    const angle=dockWaterAngle(coast,dock);
+    // Western shore dock must point cleanly eastward (cos(angle) > 0.7) into open sea, never diagonally along beach!
+    assert.ok(Math.cos(angle)>.7,`west coast dock pier points cleanly seaward (cos=${Math.cos(angle).toFixed(2)})`);
+    for(const shipType of ['fishingboat','transport','galley','warship']){
+      const spawn=navalSpawnPoint(coast,dock,shipType);
+      assert.ok(spawn,`spawn point found for ${shipType}`);
+      assert.ok(coast.isWater(spawn.x,spawn.z),`${shipType} spawns on open water`);
+      const pierDist=Math.hypot(spawn.x-pier.x,spawn.z-pier.z);
+      assert.ok(pierDist>=DOCK_PIER_RADIUS+shipClearance(shipType)-.25,`${shipType} spawns clear of dock pier (${pierDist.toFixed(2)}m)`);
+    }
+    // Even if a ship is forced directly on top of the dock pier, resolveNavalSpacing pushes it cleanly into open water.
+    const trapped=coast.addUnit('transport',0,pier.x,pier.z);
+    for(let i=0;i<30;i++)resolveNavalSpacing(coast,.1);
+    assert.ok(coast.isWater(trapped.x,trapped.z),'escaped transport stays on water');
+    assert.ok(Math.hypot(trapped.x-pier.x,trapped.z-pier.z)>=DOCK_PIER_RADIUS+shipClearance('transport')*.75,'trapped transport is pushed cleanly off the dock pier');
+
+    // 2. Progressive HP-based broken walls, corner bastions, gatehouses, connectors, and buildings (plus full repair recovery!)
+    const view=makeView(baseAssets,'alder',0);
+    view.sim=coast;
+    const cases=[
+      {id:501,kind:'building',type:'wall',owner:0,x:0,z:0,r:1.5,hp:400,maxHp:400,progress:1},
+      {id:502,kind:'building',type:'gate',owner:0,x:6,z:0,r:2.5,hp:550,maxHp:550,progress:1},
+      {id:503,kind:'building',type:'barracks',owner:0,x:14,z:0,r:3.5,hp:1050,maxHp:1050,progress:1},
+    ];
+    for(const ent of cases){
+      const packed=packBuildingModel(view,buildingModel(view,ent),ent);
+      const mesh=packed.children.find(c=>c.isMesh&&c.userData.structureSurface);
+      assert.ok(mesh,`${ent.type} has packed static structure mesh`);
+      const intactGeo=mesh.geometry,intactVerts=intactGeo.attributes.position.count;
+      assert.equal(buildingDamageStage(ent),0);
+      updateBuildingDamageVisuals(view,ent,packed);
+      assert.equal(mesh.geometry,intactGeo);
+
+      // Stage 1 (50% HP): cracked/notched geometry + base debris vertices
+      ent.hp=ent.maxHp*.50;
+      assert.equal(buildingDamageStage(ent),1);
+      updateBuildingDamageVisuals(view,ent,packed);
+      const stage1Geo=mesh.geometry;
+      assert.notEqual(stage1Geo,intactGeo,`${ent.type} switches to Stage 1 damaged geometry at 50% HP`);
+      assert.ok(stage1Geo.attributes.position.count>intactVerts,`${ent.type} Stage 1 includes rubble/splinter debris`);
+
+      // Stage 2 (20% HP): critically breached geometry + heavier debris (+ bent gate portcullis)
+      ent.hp=ent.maxHp*.20;
+      assert.equal(buildingDamageStage(ent),2);
+      updateBuildingDamageVisuals(view,ent,packed);
+      const stage2Geo=mesh.geometry;
+      assert.notEqual(stage2Geo,stage1Geo,`${ent.type} switches to Stage 2 critically breached geometry at 20% HP`);
+      assert.ok(stage2Geo.attributes.position.count>stage1Geo.attributes.position.count,`${ent.type} Stage 2 adds heavier rubble mound`);
+      if(ent.type==='gate'){
+        assert.ok(packed.userData.portcullis&&Math.abs(packed.userData.portcullis.rotation.z)>.1,'critically damaged gate portcullis tilts visibly');
+      }
+
+      // Repair back to 100% HP: restores exact intact geometry and upright gate leaf!
+      ent.hp=ent.maxHp;
+      updateBuildingDamageVisuals(view,ent,packed);
+      assert.equal(mesh.geometry,intactGeo,`${ent.type} restores intact geometry on repair`);
+      if(ent.type==='gate')assert.equal(packed.userData.portcullis.rotation.z,0);
+    }
+
+    // 3. Feudal Windmill spinning rotors clear building & ground (>2.4m), flags animate, Blacksmith emits ambient chimney smoke!
+    for(const faction of ['alder','sun','raven']){
+      const fView=makeView(baseAssets,faction,1);
+      fView.clock=1.5;
+      const millEnt={id:600+faction.length,kind:'building',type:'mill',owner:0,x:0,z:0,r:2.5,hp:550,maxHp:550,progress:1};
+      const packedMill=packBuildingModel(fView,buildingModel(fView,millEnt),millEnt);
+      let rotor=null;
+      packedMill.traverse(c=>{if(c.userData?.windmill)rotor=c;});
+      assert.ok(rotor,`Feudal ${faction} mill exposes animated windmill rotor`);
+      animateSceneDecorations(fView,packedMill,millEnt);
+      assert.ok(Math.abs(rotor.rotation.z)>.5,`Feudal ${faction} windmill rotor spins when built`);
+      const rotorBox=new THREE.Box3().setFromObject(rotor,true);
+      assert.ok(rotorBox.min.y>2.35,`Feudal ${faction} windmill blades clear ground (${rotorBox.min.y.toFixed(2)}m)`);
+    }
+
+    const fxScene=new THREE.Scene(),dmgFx=new BuildingDamageEffects(fxScene);
+    try{
+      const bsNode=new THREE.Group();bsNode.position.set(0,0,0);
+      bsNode.add(new THREE.Mesh(new THREE.BoxGeometry(3,4.8,3),new THREE.MeshBasicMaterial()));
+      dmgFx.beginFrame();
+      dmgFx.add({id:701,kind:'building',type:'blacksmith',hp:900,maxHp:900,progress:1,r:2.8},bsNode,2.0,.05,null,false);
+      dmgFx.endFrame();
+      assert.equal(dmgFx.smoke.count,1,'healthy completed Blacksmith emits living ambient hearth chimney smoke');
+      assert.equal(dmgFx.flames.count,0,'healthy Blacksmith does not burst into damage flames');
+
+      // Wooden Palisade wall (<30% HP) catches fire while keeping stone walls smoke-only!
+      const palNode=new THREE.Group();palNode.userData.model3d={wallTier:'palisade'};
+      palNode.add(new THREE.Mesh(new THREE.BoxGeometry(2.8,3.2,0.8),new THREE.MeshBasicMaterial()));
+      dmgFx.beginFrame();
+      dmgFx.add({id:702,kind:'building',type:'wall',hp:60,maxHp:400,progress:1,r:1.5},palNode,2.0,.1,null,true);
+      dmgFx.endFrame();
+      assert.equal(dmgFx.flames.count,1,'critically damaged wooden palisade wall catches fire');
+    }finally{dmgFx.dispose();}
+  }finally{
+    clearEarlyAgeArtwork();clearAuthoredAssets();
   }
 });

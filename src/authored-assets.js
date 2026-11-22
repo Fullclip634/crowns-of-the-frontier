@@ -7,6 +7,7 @@ import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
 import {isWallCorner} from './walls.js';
+import {dockWaterAngle} from './naval-spacing.js';
 import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
@@ -203,9 +204,9 @@ function cloneAsset(view,key,owner=0,catalogue=null){
 }
 
 function orientDockPier(view,root,e){
+  const angle=dockWaterAngle(view.sim,e);
   root.traverse(part=>{
     if(!part.userData.dockPier)return;
-    let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
     part.rotation.y=-angle;
   });
 }

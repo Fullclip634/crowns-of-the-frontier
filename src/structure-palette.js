@@ -214,10 +214,11 @@ function paletteMaterial(view){
           float silverStone = smoothstep(-0.2, -0.8, vStructureNightGlow);
           diffuseColor.rgb *= mix(warmBrownStone, coolAshlar, silverStone) * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
-          float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
-          vec3 woodSample = texture2D(frontierStructurewood, vUv * 1.2).rgb;
+          float woodGrain = 0.94 + 0.075 * sin((vStructurePos.x + vStructurePos.y * 2.6 + vStructurePos.z) * 11.5);
+          vec3 woodSample = texture2D(frontierStructurewood, vUv * 1.25).rgb;
           float woodLuma = dot(woodSample, vec3(0.30, 0.59, 0.11));
-          vec3 weatheredWood = vec3(clamp(woodLuma * 2.85 + 0.34, 0.30, 1.08));
+          float woodTone = clamp(woodLuma * 3.30 + 0.20, 0.20, 1.12);
+          vec3 weatheredWood = vec3(woodTone * 1.04, woodTone * 0.99, woodTone * 0.90);
           float weatheredMask = smoothstep(-0.2, -0.8, vStructureNightGlow);
           diffuseColor.rgb *= mix(woodSample, weatheredWood, weatheredMask) * woodGrain;
         }
@@ -269,7 +270,7 @@ function paletteMaterial(view){
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v12';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v13';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms,roofMaps=roofSurfaceMaps();
@@ -293,15 +294,15 @@ function paletteMaterial(view){
 
 const linearHex=hex=>new THREE.Color(hex).toArray();
 const EARLY_SURFACE_COLOR={
-  strawTex:linearHex(0xcfa352),
-  strawFlat:linearHex(0xb08a48),
-  trunkTex:linearHex(0xafa494),
-  trunkFlat:linearHex(0x92897c),
-  canvasTex:linearHex(0xe8c47c),
-  canvasFlat:linearHex(0xd6b270),
+  strawTex:linearHex(0x9b804e),
+  strawFlat:linearHex(0x846c40),
+  trunkTex:linearHex(0xa8977e),
+  trunkFlat:linearHex(0x8c7d68),
+  canvasTex:linearHex(0xe3c284),
+  canvasFlat:linearHex(0xcfae72),
   sunPlasterTex:linearHex(0xebca92),
   sunPlasterFlat:linearHex(0xdcb880),
-  creamPlasterTex:linearHex(0xf2e7cf),
+  creamPlasterTex:linearHex(0xe5dbc6),
   sunBrick:linearHex(0xd49664),
   mossLight:linearHex(0x528836),
   mossDark:linearHex(0x3a6a26),
@@ -359,7 +360,7 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   geometry.clearGroups();return geometry;
 }
 
-const movable=node=>node.userData.gate||node.userData.windmill||node.userData.dockPier;
+const movable=node=>node.userData.gate||node.userData.windmill||node.userData.dockPier||node.userData.flag;
 const FRAMED_BUILDINGS=new Set(['house','mill','market','barracks','range','stable','camp','workshop']);
 
 // One opaque draw per static structure; moving gates, mill rotors and flags keep
@@ -416,7 +417,7 @@ export function installStructurePalette(WorldView){
   p.mergeModel=function(root){return root.userData.structurePacked?root:mergeModel.call(this,root);};
   p.attach=function(sim){
     const previous=this.sharedModelGeometry||new Set();
-    this.structureGeometryCache=new Map();this.sharedModelGeometry=new Set(previous);
+    this.structureGeometryCache=new Map();this.damagedGeometryCache=new Map();this.sharedModelGeometry=new Set(previous);
     // Portraits can still reference a previous scene's shared building geometry.
     this.modelPortrait?.clear();if(this.modelPortrait)this.modelPortrait.key=null;
     attach.call(this,sim);

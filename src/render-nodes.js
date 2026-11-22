@@ -351,10 +351,11 @@ export function structurePalette(material,u){
       }else result.assign(sample(u['stone'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
-        const grain=float(.96).add(sin(worldPos.x.add(worldPos.y.mul(2.4)).add(worldPos.z).mul(10.5)).mul(.055));
-        const woodSample=sample(u.wood,uv().mul(1.2),fallback).rgb;
+        const grain=float(.94).add(sin(worldPos.x.add(worldPos.y.mul(2.6)).add(worldPos.z).mul(11.5)).mul(.075));
+        const woodSample=sample(u.wood,uv().mul(1.25),fallback).rgb;
         const woodLuma=dot(woodSample,vec3(.30,.59,.11));
-        const weatheredWood=vec3(clamp(woodLuma.mul(2.85).add(.34),.30,1.08));
+        const woodTone=clamp(woodLuma.mul(3.30).add(.20),.20,1.12);
+        const weatheredWood=vec3(woodTone.mul(1.04),woodTone.mul(.99),woodTone.mul(.90));
         const weatheredMask=smoothstep(-.2,-.8,nightGlowAttr);
         result.assign(mix(woodSample,weatheredWood,weatheredMask).mul(grain));
       }else result.assign(sample(u['wood'+suffix],uv(),fallback).rgb);

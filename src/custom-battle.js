@@ -160,7 +160,7 @@ function initializeBattle(sim){
     if(player.age>=2){sim.addBuilding('stable',owner,x-15,z-1,true);sim.addBuilding('blacksmith',owner,x+19,z+15,true);}
   });
   if(sim.options.map==='coast')kingdoms.forEach(({player,owner})=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
-    sim.addBuilding('dock',owner,mid+sign*18.2,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);if(player.age>=1)sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
+    sim.addBuilding('dock',owner,mid+sign*17.5,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);if(player.age>=1)sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
   });
   kingdoms.forEach(({player,owner})=>{
     // Each settlement receives the same seeded local deposits, independent of difficulty.
