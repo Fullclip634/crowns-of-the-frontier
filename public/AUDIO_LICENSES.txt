@@ -15,7 +15,7 @@ Verified CC0 1.0 Source Provenance (per cue):
 - order (order.ogg / order.mp3): Kenney - 50 RPG sound effects (beltHandle1.ogg, CC0 1.0)
 - coin (coin.ogg / coin.mp3): Kenney - 50 RPG sound effects (handleCoins.ogg, CC0 1.0)
 - complete (complete.ogg / complete.mp3): Kenney - 85 Short music jingles (jingles_STEEL02.ogg, CC0 1.0)
-- alarm (alarm.ogg / alarm.mp3): OpenGameArt - Their Coming horn (theircoming3.ogg, CC0 1.0)
+- alarm (alarm.ogg / alarm.mp3): Kenney - Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)
 - victory (victory.ogg / victory.mp3): Kenney - 85 Short music jingles (jingles_STEEL00.ogg, CC0 1.0)
 - chop (chop.ogg / chop.mp3): Kenney - 50 RPG sound effects (chop.ogg, CC0 1.0)
 - mine (mine.ogg / mine.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_hit_01.ogg, CC0 1.0)

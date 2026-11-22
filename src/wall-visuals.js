@@ -4,14 +4,15 @@ import {markInstancePrefix} from './render-batches.js';
 import {terrainFloor} from './building-grounding.js';
 import {wallTier,wallTierStyle,FORTIFIED_WALL_TECH} from './fortified-walls.js';
 
-// Small masonry joints use two shared instance batches rather than a new mesh
-// and material for every connection. The original Blender wall bodies remain.
-// A Fortified Wall upgrade changes tier through per-instance colour and scale,
-// so the two-batch budget is preserved with zero new Blender models.
+// Connected walls use shared instanced batches rather than a new mesh and
+// material per connection: wooden palisade stakes in Age 1-2, warm brown stone
+// masonry in Castle Age, and gleaming silver fortified masonry after upgrade.
 export class WallVisuals{
   constructor(view){this.view=view;this.group=new THREE.Group();this.group.name='Connected stone walls';view.objects.add(this.group);this.capacity=0;this.links=[];this.revision=-1;this.matrix=new THREE.Matrix4();this.tint=new THREE.Color();this.allocate(32);}
   allocate(capacity){for(const mesh of this.meshes||[]){mesh.removeFromParent();mesh.dispose();}this.capacity=capacity;
-    this.stone=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stone,capacity*3);this.foundation=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stoneDark,capacity);this.meshes=[this.stone,this.foundation];
+    this.stone=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stone,capacity*3);this.foundation=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stoneDark,capacity);
+    this.palisade=this.view.materials.wood?new THREE.InstancedMesh(this.view.geo.box,this.view.materials.wood,capacity*10):null;
+    this.meshes=this.palisade?[this.stone,this.foundation,this.palisade]:[this.stone,this.foundation];
     for(const mesh of this.meshes){mesh.count=0;mesh.castShadow=mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.wallIds=[];mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);}this.lastSignature=null;
   }
   piece(mesh,link,start,end,groundA,groundB,y,height,depth,color){
@@ -20,12 +21,19 @@ export class WallVisuals{
     // Instanced colour keeps every tier in the same material/batch.
     mesh.setColorAt(index,this.tint.setHex(color));
   }
+  stake(mesh,link,x,z,yCenter,height,width,depth,dx,dz,color){
+    const index=mesh.count++;
+    this.matrix.set(dx*width,0,-dz*depth,x,0,height,0,yCenter,dz*width,0,dx*depth,z,0,0,0,1);
+    mesh.setMatrixAt(index,this.matrix);
+    mesh.userData.wallIds[index]=link.a.type==='wall'?link.a.id:link.b.id;
+    mesh.setColorAt(index,this.tint.setHex(color));
+  }
   update(menu){const v=this.view,fogVersion=v.fogTexture?.version??0;const revisionChanged=this.revision!==v.sim.revision||this.entities!==v.sim.entities;
-    // A researched masonry upgrade changes appearance without necessarily
-    // changing the entity list, so track the tech table in the cheap guard too.
+    // Both age advances (Palisade -> Stone at Castle Age) and Fortified Walls
+    // change connector appearance without necessarily changing entity count.
     let tierVersion=0;
     const players=v.sim.players;
-    if(players)for(let i=0;i<players.length;i++)tierVersion=tierVersion*16+Math.min(15,(players[i]?.tech?.[FORTIFIED_WALL_TECH]||0)+1);
+    if(players)for(let i=0;i<players.length;i++)tierVersion=tierVersion*64+Math.min(3,players[i]?.age||0)*16+Math.min(15,(players[i]?.tech?.[FORTIFIED_WALL_TECH]||0)+1);
     if(revisionChanged){
       const buildings=typeof v.sim.candidatesFor==='function'?v.sim.candidatesFor('building'):v.sim.entities;
       let hasWall=false,hasGate=false;
@@ -35,18 +43,39 @@ export class WallVisuals{
     }
     if(!revisionChanged&&this.lastMenu===menu&&this.lastFogVersion===fogVersion&&this.lastCount===this.links.length&&this.lastTierVersion===tierVersion)return;this.lastMenu=menu;this.lastFogVersion=fogVersion;this.lastCount=this.links.length;this.lastTierVersion=tierVersion;
     let capacity=this.capacity;while(capacity<this.links.length)capacity*=2;if(capacity!==this.capacity)this.allocate(capacity);
-    const tierOf=link=>(wallTier(v.sim,link.a)==='fortified'||wallTier(v.sim,link.b)==='fortified')?'fortified':'stone',shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
+    const tierOf=link=>{
+      const ta=wallTier(v.sim,link.a),tb=wallTier(v.sim,link.b);
+      if(ta==='fortified'||tb==='fortified')return 'fortified';
+      const wa=link.a.type==='wall'||link.a.type==='gate',wb=link.b.type==='wall'||link.b.type==='gate';
+      if((wa&&ta==='palisade')||(wb&&tb==='palisade'))if((!wa||ta==='palisade')&&(!wb||tb==='palisade'))return 'palisade';
+      return 'stone';
+    };
+    const shown=e=>menu||e.owner===0||v.sim.isVisible(e.x,e.z);
     const signature=this.links.map(link=>`${link.a.id}:${link.b.id}:${link.start.x}:${link.start.z}:${link.end.x}:${link.end.z}:${shown(link.a)&&shown(link.b)}:${Math.min(link.a.progress??1,link.b.progress??1).toFixed(3)}:${tierOf(link)}`).join('|');
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}
     let visible=0;
     for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress??1,link.b.progress??1);if(progress<=0)continue;visible++;
-      const style=wallTierStyle(tierOf(link)),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,start={x:link.start.x-dx*.08,z:link.start.z-dz*.08},end={x:link.end.x+dx*.08,z:link.end.z+dz*.08};
+      const tier=tierOf(link),style=wallTierStyle(tier),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,start={x:link.start.x-dx*.08,z:link.start.z-dz*.08},end={x:link.end.x+dx*.08,z:link.end.z+dz*.08};
+      const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12;
+      if(tier==='palisade'&&this.palisade){
+        const run=Math.hypot(end.x-start.x,end.z-start.z),steps=Math.max(2,Math.min(7,Math.ceil(run/.42)));
+        for(let k=0;k<steps;k++){
+          const t=(k+.5)/steps,px=start.x+(end.x-start.x)*t,pz=start.z+(end.z-start.z)*t,g=ga+(gb-ga)*t;
+          const vary=.92+((k*37+link.a.id*11)%14)/100,top=g+style.height*progress*vary,bot=Math.min(g-.34,floor);
+          this.stake(this.palisade,link,px,pz,(top+bot)*.5,Math.max(.3,top-bot),.35,.35,dx,dz,k%2?0xc49a68:0xa98052);
+        }
+        this.piece(this.palisade,link,start,end,ga,gb,.74*progress,.17,.52,0x6e4f34);
+        if(progress>.55)this.piece(this.palisade,link,start,end,ga,gb,1.76*progress,.17,.52,0x6e4f34);
+        continue;
+      }
       this.piece(this.stone,link,start,end,ga,gb,style.bodyY*progress,style.height*progress,style.depth,style.color);
-      const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12,depth=Math.max(.42,Math.max(ga,gb)+.29-floor);
+      const depth=Math.max(.42,Math.max(ga,gb)+.29-floor);
       this.piece(this.foundation,link,start,end,ga,gb,.29-depth/2,depth,style.foundationDepth,style.foundationColor);
       if(progress>.8){this.piece(this.stone,link,start,end,ga,gb,(style.bodyY+style.height/2-.02)*progress,.18,style.depth+.03,style.color);const mid={x:(start.x+end.x)/2,z:(start.z+end.z)/2},half=Math.min(.275,link.gap*.35),capA={x:mid.x-dx*half,z:mid.z-dz*half},capB={x:mid.x+dx*half,z:mid.z+dz*half};this.piece(this.stone,link,capA,capB,ga,gb,style.capY*progress,style.capHeight*progress,style.depth+.03,style.color);}
     }
-    for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;if(mesh.instanceColor&&mesh.count>0){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,mesh.count*3);mesh.instanceColor.needsUpdate=true;}}v.wallDiagnostics={connections:this.links.length,visible,batches:2,stoneInstances:this.stone.count};
+    for(const mesh of this.meshes){markInstancePrefix(mesh);mesh.boundingSphere=null;if(mesh.instanceColor&&mesh.count>0){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,mesh.count*3);mesh.instanceColor.needsUpdate=true;}}
+    const activeBatches=this.palisade?((this.stone.count>0?2:0)+(this.palisade.count>0?1:0)||2):2;
+    v.wallDiagnostics={connections:this.links.length,visible,batches:activeBatches,stoneInstances:this.stone.count,palisadeInstances:this.palisade?.count||0};
   }
   dispose(){for(const mesh of this.meshes){mesh.removeFromParent();mesh.dispose();}this.group.removeFromParent();}
 }

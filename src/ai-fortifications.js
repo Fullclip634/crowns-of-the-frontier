@@ -1,4 +1,5 @@
 import {BUILDINGS,UNITS} from './data.js';
+import {wallBuildCost} from './fortified-walls.js';
 import {WALL_SPACING,connectWall} from './walls.js';
 import {clearSegment,findPath,unitNavigationGrid,navigationRegions} from './navigation.js';
 import {perimeterLayout,adaptivePerimeterLayouts,naturalWallAnchor} from './ai-wall-layout.js';
@@ -8,7 +9,7 @@ const reserve={food:180,wood:240,gold:80,stone:180};
 const available=worker=>!worker.embarked&&!worker.aiFleeing&&!['build','repair','garrison'].includes(worker.order?.type)&&!worker.order?.aiExpansion&&!worker.order?.aiFortification;
 const affordable=(sim,owner,cost)=>Object.entries(cost).every(([resource,amount])=>sim.players[owner].resources[resource]-amount>=(reserve[resource]||0));
 const totalCost=(sim,owner,pieces)=>pieces.reduce((cost,piece)=>{
-  for(const [resource,amount]of Object.entries(sim.cost(BUILDINGS[piece.type].cost,owner,'building')))cost[resource]=(cost[resource]||0)+amount;
+  for(const [resource,amount]of Object.entries(sim.cost(wallBuildCost(sim,owner,piece.type),owner,'building')))cost[resource]=(cost[resource]||0)+amount;
   return cost;
 },{});
 
@@ -180,7 +181,7 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
   const candidates=entranceMissing?plan.pieces.slice(0,1):plan.pieces;
   for(const piece of candidates){
     if(!ready(piece))continue;
-    const cost=sim.cost(BUILDINGS[piece.type].cost,owner,'building');
+    const cost=sim.cost(wallBuildCost(sim,owner,piece.type),owner,'building');
     if(!affordable(sim,owner,cost)||!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)){
       piece.retryAt=sim.time+30;
       continue;
@@ -209,9 +210,10 @@ export function fortifyKingdomWalls(sim,state,owner,workers,buildings,threats){
       const helper=builders.find(other=>other!==worker&&routable(sim,other,piece));
       if(helper)builderIds.push(helper.id);
     }
-    const building=sim.build(piece.type,piece.x,piece.z,builderIds,owner);
+    const wallAngle=piece.angle??plan.angle;
+    const building=sim.build(piece.type,piece.x,piece.z,builderIds,owner,false,{angle:wallAngle});
     if(!building){piece.retryAt=sim.time+3;continue;}
-    building.wallAngle=piece.angle??plan.angle;
+    building.wallAngle=wallAngle;
     piece.id=building.id;
     delete piece.retryAt;
     delete plan.retryAt;

@@ -21,7 +21,7 @@ CUES = [
     ('order', 'ui', 'kenney_rpg/OGG/beltHandle1.ogg', False, False, 0.0, 0.45, 0.80, 'Kenney - 50 RPG sound effects (beltHandle1.ogg, CC0 1.0)'),
     ('coin', 'ui', 'kenney_rpg/OGG/handleCoins.ogg', False, False, 0.0, 0.65, 0.82, 'Kenney - 50 RPG sound effects (handleCoins.ogg, CC0 1.0)'),
     ('complete', 'ui', 'kenney_jingles/OGG/jingles_STEEL/jingles_STEEL02.ogg', False, False, 0.0, 1.8, 0.82, 'Kenney - 85 Short music jingles (jingles_STEEL02.ogg, CC0 1.0)'),
-    ('alarm', 'ui', 'horn_war3.ogg', False, False, 0.0, 1.9, 0.84, 'OpenGameArt - Their Coming horn (theircoming3.ogg, CC0 1.0)'),
+    ('alarm', 'ui', 'voiceover_kenney/Male/war_look_out.ogg', False, False, 0.0, 1.6, 0.72, 'Kenney - Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)'),
     ('victory', 'ui', 'kenney_jingles/OGG/jingles_STEEL/jingles_STEEL00.ogg', False, False, 0.0, 2.4, 0.85, 'Kenney - 85 Short music jingles (jingles_STEEL00.ogg, CC0 1.0)'),
 
     # Living Economy Foley (Real recorded CC0 Foley)
@@ -60,7 +60,7 @@ CUES = [
     ('earth-3', 'combat', 'breaking_falling/bfh1_hit_08.ogg', False, False, 0.0, 0.60, 0.84, 'OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_08.ogg, CC0 1.0)'),
 
     # War Horn & Real Human Unit Voice / Battle Grunt Cues
-    ('horn', 'voice', 'horn_war.ogg', False, False, 0.0, 2.2, 0.86, 'OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)'),
+    ('horn', 'voice', 'horn_war.ogg', False, False, 0.0, 2.0, 0.62, 'OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)'),
     ('voice-select', 'voice', 'voiceover_kenney/Male/ready.ogg', False, False, 0.0, 1.1, 0.82, 'Kenney - Voiceover Pack (Male/ready.ogg, CC0 1.0)'),
     ('voice-order', 'voice', 'voiceover_kenney/Male/go.ogg', False, False, 0.0, 1.0, 0.82, 'Kenney - Voiceover Pack (Male/go.ogg, CC0 1.0)'),
     ('voice-attack', 'voice', 'voiceover_kenney/Male/war_target_engaged.ogg', False, False, 0.0, 1.5, 0.82, 'Kenney - Voiceover Pack (Male/war_target_engaged.ogg, CC0 1.0)'),
@@ -163,10 +163,19 @@ def normalize(pcm: np.ndarray, target_peak: float) -> np.ndarray:
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    only_names = None
+    env_only = os.environ.get('ONLY_CUES', '').strip()
+    if env_only:
+        only_names = set(env_only.split(','))
+    elif '--only' in sys.argv:
+        idx = sys.argv.index('--only')
+        if idx + 1 < len(sys.argv):
+            only_names = set(sys.argv[idx + 1].split(','))
     # Remove legacy synthetic .wav files and stale outputs before writing real CC0 pack
-    for old in OUT_DIR.iterdir():
-        if old.suffix.lower() in {'.wav', '.ogg', '.mp3'}:
-            old.unlink()
+    if not only_names:
+        for old in OUT_DIR.iterdir():
+            if old.suffix.lower() in {'.wav', '.ogg', '.mp3'}:
+                old.unlink()
 
     manifest_cues = {}
     license_lines = [
@@ -185,10 +194,25 @@ def main():
         'Verified CC0 1.0 Source Provenance (per cue):',
     ]
 
+    existing_manifest = {}
+    if only_names and (OUT_DIR / 'manifest.json').is_file():
+        existing_manifest = json.loads((OUT_DIR / 'manifest.json').read_text(encoding='utf-8')).get('cues', {})
+
     total_ogg = 0
     total_mp3 = 0
 
     for name, group, rel_src, loop, stereo, start_sec, max_dur, target_peak, credit in CUES:
+        ogg_name = f'{name}.ogg'
+        mp3_name = f'{name}.mp3'
+        ogg_path = OUT_DIR / ogg_name
+        mp3_path = OUT_DIR / mp3_name
+        if only_names and name not in only_names and name in existing_manifest and ogg_path.is_file() and mp3_path.is_file():
+            cue_entry = existing_manifest[name]
+            manifest_cues[name] = cue_entry
+            total_ogg += cue_entry['bytes']
+            total_mp3 += cue_entry['fallbackBytes']
+            license_lines.append(f'- {name} ({ogg_name} / {mp3_name}): {credit}')
+            continue
         src = SRC_DIR / rel_src
         if not src.is_file():
             raise FileNotFoundError(f'Missing CC0 source for {name}: {src}')
@@ -206,10 +230,6 @@ def main():
             raise RuntimeError(f'Cue {name} has insufficient signal (peak={peak:.3f}, rms={rms:.4f})')
 
         snd = aud.Sound.buffer(pcm, RATE)
-        ogg_name = f'{name}.ogg'
-        mp3_name = f'{name}.mp3'
-        ogg_path = OUT_DIR / ogg_name
-        mp3_path = OUT_DIR / mp3_name
 
         # Compact bitrates: 64 kbps mono SFX/ambience, 72 kbps stereo music stems
         ogg_br = 72000 if stereo else 64000

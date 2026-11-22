@@ -295,7 +295,7 @@ function promotedWallColor(material,rawMode,mode,m){
   return material.color.toArray();
 }
 
-function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,silverStone=false){
+function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,silverStone=false,preserveSurface=false){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -306,7 +306,7 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   const m=view.materials,material=part.material,emissive=material.emissive?.toArray()||[0,0,0];
   const hasRoofMap=Boolean(roofSurfaceMaps().color||material.map);
   const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
-  const mode=material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge);
+  const mode=preserveSurface?rawMode:(material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
   const sourceColor=promotedWallColor(material,rawMode,mode,m);
   // Roofs keep clear team ownership color (72%) with a subtle age-specific finish tint (28%).
@@ -334,15 +334,16 @@ const FRAMED_BUILDINGS=new Set(['house','mill','market','barracks','range','stab
 export function packBuildingModel(view,root,e){
   if(root.userData.structurePacked)return root;
   const palette=paletteMaterial(view),metadata=root.userData.model3d||{};
-  const tier=metadata.wallTier||'stone',fortified=tier==='fortified';
-  const surfaceAge=metadata.architectureAge||0,ageStyled=e.type==='towncenter'||isAgeStyled(e.type);
+  const tier=metadata.wallTier||'stone',fortified=tier==='fortified',palisade=tier==='palisade';
+  const preserveSurface=!!metadata.authoredAgeVariant||palisade;
+  const surfaceAge=metadata.architectureAge||0,ageStyled=e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type);
   // Everyday buildings keep timber frames and limewashed panels as they grow.
-  // Age and size still change, while civic and defensive stonework stays distinct.
+  // Dedicated Age 1 & Age 2 regional Blender models preserve their exact timber/adobe/plaster surfaces.
   const wallAge=FRAMED_BUILDINGS.has(e.type)?Math.min(1,surfaceAge):surfaceAge;
   const style=architectureStyle(ageStyled?surfaceAge:0),masonry=e.type==='wall'||e.type==='gate';
   const silverStone=fortified||(!masonry&&surfaceAge>=3);
-  const tint=masonry?(fortified?[.84,.89,.96]:[.98,.93,.86]):style.tint,roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
-  const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
+  const tint=masonry?(fortified?[.84,.89,.96]:palisade?[1,1,1]:[.98,.93,.86]):(metadata.authoredAgeVariant?[1,1,1]:style.tint),roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
+  const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',metadata.authoredAgeVariant?'early':'std',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier,isSnowBiome(view.sim?.options?.map)?'snow':'dry'].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
   root.updateMatrixWorld(true);
@@ -357,7 +358,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish,silverStone));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish,silverStone,preserveSurface));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();

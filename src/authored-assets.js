@@ -7,7 +7,8 @@ import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
 import {treeBiome} from './terrain-biomes.js';
-import {isAgeStyled,architectureAge,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
+import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
+import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
 import {readAssetResponse} from './load-progress.js';
 import {loadStartupGraphics} from './offline-registration.js';
 
@@ -161,14 +162,12 @@ export function trimAuthoredAssets(view){
     const materials=new Set();for(const [key,root]of catalogue.templates){if(catalogue.trees?.templates.has(key))continue;root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});}for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
   view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,sharedTrees?.bytes||0),sharedTreeBytes:sharedTrees?.bytes||0,evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
 
-function cloneAsset(view,key,owner=0,catalogue=null){
-  const source=catalogue||active;
-  const template=source?.templates.get(key);if(!template)return null;
+function bindAuthoredTemplate(view,template,key,owner=0,detail='high'){
   const root=template.clone(true);
   if(key.startsWith('unit:villager'))bindWorkerToolJoints(root);
   const terrainFeet=key.startsWith('unit:')&&bindFootJoints(root);
@@ -190,9 +189,24 @@ function cloneAsset(view,key,owner=0,catalogue=null){
     part.castShadow=true;part.receiveShadow=true;
     view.authoredGeometry.add(part.geometry);
   });
-  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),...(terrainHorse?{terrainHorse:true}:{}),authored:true,detail:key.startsWith('tree:')&&source.trees?'shared':source.detail};
+  root.userData.model3d={...root.userData.model3d,...(terrainFeet?{terrainFeet:true}:{}),...(terrainHorse?{terrainHorse:true}:{}),authored:true,detail};
+  return root;
+}
+
+function cloneAsset(view,key,owner=0,catalogue=null){
+  const source=catalogue||active;
+  const template=source?.templates.get(key);if(!template)return null;
+  const root=bindAuthoredTemplate(view,template,key,owner,key.startsWith('tree:')&&source.trees?'shared':source.detail);
   view.artDiagnostics=authoredAssetState();
   return root;
+}
+
+function orientDockPier(view,root,e){
+  root.traverse(part=>{
+    if(!part.userData.dockPier)return;
+    let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
+    part.rotation.y=-angle;
+  });
 }
 
 export function workerVisualTask(view,e){
@@ -210,35 +224,57 @@ export function authoredUnit(view,e,catalogue=null){
 }
 export function authoredBuilding(view,e){
   const faction=view.sim?.players[e.owner]?.faction||'alder';
+  const playerAge=architectureAge(view.sim,e);
+  const tier=(e.type==='wall'||e.type==='gate')?wallTier(view.sim,e):'stone';
+  const early=earlyAgeBuildingTemplate(e.type,faction,playerAge,tier);
+  if(early){
+    const root=bindAuthoredTemplate(view,early.template,early.key,e.owner,'early-ages');
+    const style=architectureStyle(playerAge);
+    root.userData.model3d={
+      ...root.userData.model3d,
+      authoredAgeVariant:true,
+      ...(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type)?{architectureAge:playerAge,architectureLabel:style.label}:{}),
+      ...(e.type==='wall'||e.type==='gate'?{wallTier:tier}:{}),
+      ...(early.template.userData.gateHousingHeight?{gateHousingHeight:early.template.userData.gateHousingHeight}:{}),
+      ...(early.template.userData.artRevision?{artRevision:early.template.userData.artRevision}:{}),
+    };
+    if(e.type==='dock')orientDockPier(view,root,e);
+    return root;
+  }
   const age=e.type==='towncenter'?(view.sim?.players[e.owner]?.age||0):0;
   const root=cloneAsset(view,`building:${e.type}:${faction}:${age}`,e.owner);
   // Landmark buildings gain age-specific massing and crenellation from their
-  // single authored base; only the Town Center has four Blender variants.
-  // Both paths tag the visual age so the renderer can detect an age advance.
+  // single authored base; Castle & Imperial Age visuals remain completely unchanged.
   if(root){
-    const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):architectureAge(view.sim,e);
-    if(e.type==='towncenter'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
+    const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):playerAge;
+    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
     if(isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
     if(e.type==='keep')root.scale.set(root.scale.x*1.25,root.scale.y*1.28,root.scale.z*1.25);
     strengthenArchitecture(view,root,e,styledAge);
     foundation(view,root,e,styledAge);
   }
-  if(root&&e.type==='dock')root.traverse(part=>{
-    if(!part.userData.dockPier)return;
-    let angle=0;for(let i=0;i<16;i++)if(view.sim.isWater(e.x+Math.cos(i*Math.PI/8)*9,e.z+Math.sin(i*Math.PI/8)*9)){angle=i*Math.PI/8;break;}
-    part.rotation.y=-angle;
-  });
+  if(root&&e.type==='dock')orientDockPier(view,root,e);
   if(root&&(e.type==='wall'||e.type==='gate')){
-    const tier=wallTier(view.sim,e);
     root.userData.model3d={...root.userData.model3d,wallTier:tier};
     if(e.type==='wall'){
       if(tier==='fortified')root.traverse(part=>{
         if(part.isMesh)part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
       });
-      crenellate(view,root,tier);
+      if(tier!=='palisade')crenellate(view,root,tier);
     }else if(tier==='fortified')fortifyGateModel(view,root);
+    else if(tier==='stone')scaleStoneGateModel(root);
   }
   return root;
+}
+
+// Make Stone Gatehouses stand proudly taller and deeper than the adjoining stone
+// walls while keeping the portcullis leaf width and 3.5m retraction housing intact.
+function scaleStoneGateModel(root){
+  for(const part of root.children){
+    if(!part.isMesh)continue;
+    part.scale.set(part.scale.x*1.08,part.scale.y*1.20,part.scale.z*1.30);
+    part.position.y*=1.20;
+  }
 }
 
 // The parapet and piers merge into the existing static masonry batch.
@@ -247,11 +283,11 @@ export function fortifyGateModel(view,root){
   const {box}=view.geo,{stone,stoneDark}=view.materials;
   if(!gate||!box||!stone||!stoneDark)return;
 
-  const rise=1.19,housing=(root.userData.model3d.gateHousingHeight??3.5)*rise;
+  const rise=1.32,housing=(root.userData.model3d.gateHousingHeight??3.5)*rise;
   root.userData.model3d.gateHousingHeight=housing;
   for(const part of root.children){
     if(!part.isMesh)continue;
-    part.scale.set(part.scale.x*1.06,part.scale.y*rise,part.scale.z*1.14);
+    part.scale.set(part.scale.x*1.12,part.scale.y*rise,part.scale.z*1.36);
     part.position.y*=rise;
   }
   // Keep the moving leaf the same width and fit it to the taller arch.
@@ -266,17 +302,17 @@ export function fortifyGateModel(view,root){
     piece.scale.set(width,height,depth);
     root.add(piece);
   };
-  masonry(stoneDark,0,housing+.22,0,3.86,.44,1.76);
-  masonry(stone,0,housing+.48,0,3.96,.16,1.88);
+  masonry(stoneDark,0,housing+.28,0,4.20,.50,2.08);
+  masonry(stone,0,housing+.58,0,4.34,.18,2.22);
   for(const side of [-1,1]){
-    for(const x of [-1.28,0,1.28])masonry(stoneDark,x,housing+.83,side*.75,.68,.64,.39);
-    for(const x of [-1.77,1.77]){
-      masonry(stoneDark,x,1.79,side*.98,.52,3.26,.48);
-      masonry(stone,x,3.44,side*.98,.64,.24,.56);
+    for(const x of [-1.36,0,1.36])masonry(stoneDark,x,housing+.96,side*.88,.76,.74,.46);
+    for(const x of [-1.92,1.92]){
+      masonry(stoneDark,x,2.02,side*1.14,.58,3.72,.58);
+      masonry(stone,x,3.92,side*1.14,.70,.26,.68);
     }
-    for(const x of [-2.54,2.54]){
-      masonry(stoneDark,x,2.10,side*1.04,.74,3.85,.42);
-      masonry(stone,x,4.08,side*1.06,.86,.22,.50);
+    for(const x of [-2.70,2.70]){
+      masonry(stoneDark,x,2.38,side*1.22,.84,4.38,.54);
+      masonry(stone,x,4.64,side*1.24,.98,.26,.64);
     }
   }
 }

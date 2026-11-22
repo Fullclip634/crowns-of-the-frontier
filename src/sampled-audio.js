@@ -110,8 +110,8 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.play=function(name,...rest){
-    if(UI_SAMPLE_CUES.includes(name)&&this.sampleBank?.has(name)&&playCue(this,name,{gain:name==='alarm'?.36:.55,bus:this.sfxBus||this.master,reverb:name==='complete'||name==='victory'||name==='alarm'})){
-      if(name==='alarm')this.duckMusic?.(1.5,.62);
+    if(UI_SAMPLE_CUES.includes(name)&&this.sampleBank?.has(name)&&playCue(this,name,{gain:name==='alarm'?.34:.55,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
+      if(name==='alarm')this.duckMusic?.(1.4,.64);
       return;
     }
     return play.call(this,name,...rest);
@@ -122,8 +122,8 @@ export function installSampledAudio(AudioEngine,options={}){
       const now=this.context.currentTime;
       if(now-(this.lastHornAt??-Infinity)>=HORN_COOLDOWN){
         this.lastHornAt=now;
-        if(playCue(this,'horn',{gain:.44,rate:fundamental/HORN_FUNDAMENTAL,bus:this.voiceBus||this.master,reverb:true})){
-          this.duckMusic?.(1.9,.58);
+        if(playCue(this,'horn',{gain:.24,rate:fundamental/HORN_FUNDAMENTAL,bus:this.voiceBus||this.master,reverb:true})){
+          this.duckMusic?.(1.6,.64);
           return true;
         }
       }else return false;

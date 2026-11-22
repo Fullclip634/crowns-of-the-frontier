@@ -37,7 +37,7 @@ export function ageSurface(mode,age){
 // rebuilding every frame (which an undefined tag would otherwise cause).
 export function architectureOutdated(sim,entity,node){
   if(entity?.kind!=='building'||!node?.userData?.model3d)return false;
-  if(entity.type!=='towncenter'&&!isAgeStyled(entity.type))return false;
+  if(entity.type!=='towncenter'&&entity.type!=='dock'&&!isAgeStyled(entity.type))return false;
   return (node.userData.model3d.architectureAge??-1)!==architectureAge(sim,entity);
 }
 

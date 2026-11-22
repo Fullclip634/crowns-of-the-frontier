@@ -320,14 +320,28 @@ export function buildingModel(view,e){
     for(const side of [-1,1])b.rod(m.iron,[-.35+side*.94,2.24,2.68],[-.35+side*.80,.36,3.80],.036);
     flag(view,g,team,-2.28,9.05,-1.92,1.35,6.95);
   }else if(type==='wall'){
-    const heavy=wallTier(view.sim,e)==='fortified',s=heavy?1.19:1,w=heavy?1.06:1,d=heavy?1.14:1,body=heavy?m.stoneDark:m.stone;
-    b.box(body,0,1.67*s,0,2.85*w,3.55*s,1.45*d);for(const x of [-1,0,1])b.box(body,x,3.65*s,0,.55*w,.85*s,1.5*d);
-    for(const x of [-1.1,1.1])b.box(m.stoneDark,x,1.4*s,0,.3*w,3*s,1.75*d);b.box(m.stoneDark,0,.3,0,3*w,.8,2.1*d);
+    const tier=wallTier(view.sim,e);
+    if(tier==='palisade'){
+      for(let i=-3;i<=3;i++)b.piece(view.geo.cylinder,m.wood,i*.42,1.15,0,.19,2.55+((i*3)&1)*.18,.19);
+      for(const yy of [.75,1.75])b.box(m.darkwood,0,yy,0,2.95,.18,.56);
+    }else{
+      const heavy=tier==='fortified',s=heavy?1.19:1,w=heavy?1.06:1,d=heavy?1.14:1,body=heavy?m.stoneDark:m.stone;
+      b.box(body,0,1.67*s,0,2.85*w,3.55*s,1.45*d);for(const x of [-1,0,1])b.box(body,x,3.65*s,0,.55*w,.85*s,1.5*d);
+      for(const x of [-1.1,1.1])b.box(m.stoneDark,x,1.4*s,0,.3*w,3*s,1.75*d);b.box(m.stoneDark,0,.3,0,3*w,.8,2.1*d);
+    }
   }else if(type==='gate'){
-    const heavy=wallTier(view.sim,e)==='fortified',body=heavy?m.stoneDark:m.stone;
-    turret(view,g,o,-2,0,4.2,.76);turret(view,g,o,2,0,4.2,.76);b.arch(body,0,0,0,4,3.7,1.2);b.box(m.stoneDark,0,3.65,0,4.3,.45,1.35);
-    const gate=new THREE.Group(),p=builder(view,gate);for(let x=-1.15;x<=1.15;x+=.28)p.rod(m.iron,[x,.15,.05],[x,2.7,.05],.035);for(const yy of [.65,1.45,2.3])p.rod(m.iron,[-1.25,yy,.05],[1.25,yy,.05],.045);
-    view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,0,5.2,0,.75,3.65);
+    const tier=wallTier(view.sim,e);
+    if(tier==='palisade'){
+      for(const side of [-2.1,2.1]){b.box(m.darkwood,side,2.0,0,1.55,4.0,1.5);b.box(m.wood,side,3.45,0,1.72,.22,1.65);}
+      b.box(m.darkwood,0,3.25,0,4.8,.38,1.3);b.roof(m.straw,0,3.55,0,5.8,1.05,1.85);
+      const gate=new THREE.Group(),p=builder(view,gate);for(let x=-1.05;x<=1.05;x+=.35)p.box(m.wood,x,1.46,0,.30,2.88,.20);for(const yy of [.6,1.5,2.4])p.box(m.darkwood,0,yy,0,2.35,.16,.26);
+      view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,2.1,5.6,0,.85,3.45);
+    }else{
+      const heavy=tier==='fortified',body=heavy?m.stoneDark:m.stone;
+      turret(view,g,o,-2.2,0,heavy?5.6:5.0,heavy?1.08:.95);turret(view,g,o,2.2,0,heavy?5.6:5.0,heavy?1.08:.95);b.arch(body,0,0,0,4.3,4.2,1.65);b.box(m.stoneDark,0,4.15,0,4.6,.52,1.82);
+      const gate=new THREE.Group(),p=builder(view,gate);for(let x=-1.15;x<=1.15;x+=.28)p.rod(m.iron,[x,.15,.05],[x,2.7,.05],.035);for(const yy of [.65,1.45,2.3])p.rod(m.iron,[-1.25,yy,.05],[1.25,yy,.05],.045);
+      view.mergeModel(gate);gate.userData.gate=true;g.userData.portcullis=gate;g.add(gate);flag(view,g,team,0,6.1,0,.88,4.15);
+    }
   }else if(type==='monastery'){
     cottage(view,g,o,0,-.4,4.2,5.4,4.1);turret(view,g,o,-2.1,-1.8,7.3,.75,true);turret(view,g,o,2.1,-1.8,7.3,.75,true);
     b.arch(m.stoneDark,0,.1,2.4,2.1,3,.4);for(const x of [-1.55,1.55])b.arch(m.stoneDark,x,2.2,2.4,.75,1.5,.25);

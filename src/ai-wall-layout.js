@@ -28,31 +28,46 @@ export function* adaptivePerimeterLayouts(sim,plan,owner){
   };
   const route=(side,back,backAcross,allowNatural)=>{
     const row=plan.pieces.filter(piece=>piece.type==='wall').map(piece=>({piece,across:((piece.x-front.x)*tangent.x+(piece.z-front.z)*tangent.z)/WALL_SPACING})).filter(p=>Math.sign(p.across)===side).sort((a,b)=>Math.abs(b.across)-Math.abs(a.across))[0];
-    if(!row)return null;const start={x:Math.round(row.across),y:0},end={x:backAcross+side*2,y:back},key=p=>p.x+':'+p.y,goal=key(end),open=[{...start,cost:0,score:0}],cost=new Map([[key(start),0]]),parents=new Map(),closed=new Set();
+    if(!row)return null;const start={x:Math.round(row.across),y:0,dx:0,dy:1},end={x:backAcross+side*2,y:back},key=p=>p.x+':'+p.y,goal=key(end),open=[{...start,cost:0,score:0}],cost=new Map([[key(start),0]]),parents=new Map(),closed=new Set();
+    const touchesPrior=(node,nx,ny)=>{
+      let p=parents.get(key(node));
+      while(p){if(Math.abs(nx-p.x)+Math.abs(ny-p.y)<=1)return true;p=parents.get(key(p));}
+      return false;
+    };
     while(open.length){
       let best=0;for(let i=1;i<open.length;i++)if(open[i].score<open[best].score)best=i;
       const current=open.splice(best,1)[0],id=key(current);if(closed.has(id))continue;closed.add(id);
       if(id===goal){const result=[];let at=current;while(at){result.push(point(at.x,at.y));at=parents.get(key(at));}return result.reverse();}
       for(const [dx,dy]of [[0,1],[side,0],[-side,0],[0,-1]]){
-        const next={x:current.x+dx,y:current.y+dy},nextId=key(next);
+        const next={x:current.x+dx,y:current.y+dy,dx,dy},nextId=key(next);
         const center=backAcross*Math.max(0,Math.min(1,(next.y-coreRow)/(back-coreRow)));
         if((next.x-center)*side<2-.000001||Math.abs(next.x)>18||next.y< -4||next.y>back+4||closed.has(nextId))continue;
         if(Math.abs(next.x-backAcross)<2&&Math.abs(next.y-back)<=4)continue;
+        if((current.x!==start.x||current.y!==start.y)&&next.y===0&&Math.abs(next.x)<=Math.abs(start.x)+1)continue;
+        if(touchesPrior(current,next.x,next.y))continue;
         const site=point(next.x,next.y);if(!site||!allowNatural&&site.anchorIds)continue;
-        const nextCost=current.cost+(naturalWallAnchor(sim,site)?.6:1)+Math.abs(next.x)*.01;if(nextCost>=(cost.get(nextId)??Infinity))continue;
+        // Penalise unnecessary 90-degree turns so AI builds crisp straight curtain walls instead of stair-step zig-zags.
+        const turnPenalty=(current.dx!==dx||current.dy!==dy)?1.25:0;
+        const nextCost=current.cost+(naturalWallAnchor(sim,site)?.6:1)+turnPenalty+Math.abs(next.x)*.01;if(nextCost>=(cost.get(nextId)??Infinity))continue;
         cost.set(nextId,nextCost);parents.set(nextId,current);open.push({...next,cost:nextCost,score:nextCost+(Math.abs(next.x-end.x)+Math.abs(next.y-end.y))*.6});
       }
     }
     return null;
   };
+  const orthogonalAngle=(from,to)=>{
+    const dx=to.x-from.x,dz=to.z-from.z;
+    return Math.abs(dx*normal.x+dz*normal.z)>Math.abs(dx*tangent.x+dz*tangent.z)?angle+Math.PI/2:angle;
+  };
   for(const allowNatural of [false,true])for(const back of [12,14,16,18,20,22])for(const backAcross of [0,-3,3,-6,6]){
     if(depth-back*WALL_SPACING>-9)continue;
     const gate={type:'gate',x:front.x+tangent.x*backAcross*WALL_SPACING-normal.x*back*WALL_SPACING,z:front.z+tangent.z*backAcross*WALL_SPACING-normal.z*back*WALL_SPACING,angle};
-    if(!sim.canSee(owner,gate)||!sim.buildValid('gate',gate.x,gate.z,owner))continue;
+    if(!sim.canSee(owner,gate)||!sim.buildValid('gate',gate.x,gate.z,owner,new Set()))continue;
     const left=route(-1,back,backAcross,allowNatural),right=route(1,back,backAcross,allowNatural);if(!left||!right)continue;
     const pieces=plan.pieces.map(piece=>({...piece}));pieces.push(gate);
     for(const flank of [left,right])for(let i=1;i<flank.length;i++){
-      const p={...flank[i]},next=flank[i+1]||p,previous=flank[i-1];p.angle=-Math.atan2(next.z-previous.z,next.x-previous.x);
+      const p={...flank[i]},previous=flank[i-1];
+      // Strictly align to orthogonal curtain-wall axes so corners never twist to 45-degree overlapping clusters.
+      p.angle=orthogonalAngle(previous,p);
       if(!pieces.some(piece=>Math.hypot(piece.x-p.x,piece.z-p.z)<.01))pieces.push(p);
     }
     yield {...plan,layout:'perimeter',pieces};

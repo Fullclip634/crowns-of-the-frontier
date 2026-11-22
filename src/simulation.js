@@ -11,7 +11,7 @@ import {SpatialBuckets,forEachNearbyUnit} from './spatial-buckets.js';
 import {placementCollision,recordPlacementAppend} from './placement-obstacles.js';
 import {connectWall,restoreWallLinks,blockWallConnections,wallLinePoints,wallEndpointTree} from './walls.js';
 import {wallPlacementPlan} from './wall-placement.js';
-import {gateConversionPlan} from './gate-conversion.js';
+import {gateConversionPlan,gatePlacementPlan} from './gate-conversion.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {installGarrison} from './garrison.js';
@@ -24,7 +24,7 @@ import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading,meleeMi
 import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
-import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH} from './fortified-walls.js';
+import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCost,wallBuildTime,wallTier} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
@@ -226,16 +226,43 @@ export class Simulation {
   canAfford(cost,owner=0){return Object.entries(cost).every(([r,n])=>this.players[owner].resources[r]>=n);}
   spend(cost,owner){if(!this.canAfford(cost,owner))return false;for(const[r,n]of Object.entries(cost))this.players[owner].resources[r]-=n;return true;}
   fail(message,owner=0){this.emit('notice',{message,owner,tone:'warning'});return false;}
-  buildValid(type,x,z,owner=0,ignored){const d=BUILDINGS[type];if(!d||Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
+  buildValid(type,x,z,owner=0,ignored){const d=BUILDINGS[type];if(!d)return false;
+    if(type==='gate'&&ignored===undefined)return gatePlacementPlan(this,x,z,owner).valid;
+    if(Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
     return !placementCollision(this,type,x,z,d.r,ignored);
   }
   build(type,x,z,workerIds,owner=0,append=false,layout){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
     const workers=workerIds.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.type==='villager'&&!e.embarked);if(!workers.length)return this.fail('Select a villager to construct buildings.',owner);
-    if(!this.buildValid(type,x,z,owner))return this.fail('Choose open, visible land for this building.',owner);
-    if(!this.spend(this.cost(d.cost,owner,'building'),owner))return this.fail('Not enough resources.',owner);
-    const e=this.addBuilding(type,owner,x,z,false,layout);this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
+    const gatePlan=type==='gate'&&layout?.angle===undefined?gatePlacementPlan(this,x,z,owner):null;
+    if(gatePlan?!gatePlan.valid:!this.buildValid(type,x,z,owner))return this.fail('Choose open, visible land for this building.',owner);
+    const buildCost=gatePlan?gatePlan.cost:this.cost(wallBuildCost(this,owner,type),owner,'building');
+    if(!this.spend(buildCost,owner))return this.fail('Not enough resources.',owner);
+    if(gatePlan?.sections.length){
+      for(const wall of gatePlan.sections){wall.hp=0;wall.demolished=true;}
+      for(const other of this.entities)if(other.hp>0&&other.wallLinks?.length)other.wallLinks=other.wallLinks.filter(id=>!gatePlan.ids.has(id));
+    }
+    const buildX=gatePlan?gatePlan.x:x,buildZ=gatePlan?gatePlan.z:z;
+    const buildLayout=gatePlan&&gatePlan.angle!==undefined?{...layout,angle:gatePlan.angle}:layout;
+    const e=this.addBuilding(type,owner,buildX,buildZ,false,buildLayout);
+    if(gatePlan?.outer.length){
+      e.wallLinks??=[];
+      for(const wall of gatePlan.outer){
+        if(wall.hp<=0)continue;
+        if(!e.wallLinks.includes(wall.id))e.wallLinks.push(wall.id);
+        wall.wallLinks??=[];
+        if(!wall.wallLinks.includes(e.id))wall.wallLinks.push(e.id);
+      }
+      this.revision++;
+    }
+    if(gatePlan?.ids.size){
+      for(const u of this.owned(owner,'unit','villager')){
+        if(u.order?.type==='build'&&gatePlan.ids.has(u.order.target))u.order.target=e.id;
+        if(u.orders?.length)u.orders=u.orders.filter(o=>!(o.type==='build'&&gatePlan.ids.has(o.target)));
+      }
+    }
+    this.command(workers.map(w=>w.id),{type:'build',target:e.id},append);this.tutorialFlags.build=true;return e;
   }
   buildWallLine(from,to,workerIds,owner=0,requireVisibility=false){
     if(!from||!to||![from.x,from.z,to.x,to.z].every(Number.isFinite)||[from.x,from.z,to.x,to.z].some(n=>Math.abs(n)>this.halfWorld))return[];
@@ -297,7 +324,7 @@ export class Simulation {
   cancelQueue(buildingId,index,owner=0){const b=this.get(buildingId);if(!b||b.owner!==owner)return;const[q]=b.queue.splice(index,1);if(q){for(const[r,n]of Object.entries(q.cost))this.players[owner].resources[r]+=n;if(q.kind==='age')this.players[owner].agePending=false;}}
   demolish(buildingId,owner=0){const b=this.get(buildingId);if(!b||b.owner!==owner||b.kind!=='building')return false;
     if(b.type==='towncenter'&&this.owned(owner,'building','towncenter').length===1)return this.fail('Your last town center must stand.',owner);
-    while(b.queue.length)this.cancelQueue(b.id,0,owner);const rate=b.progress<1?.7:.2;for(const [r,n]of Object.entries(this.cost(BUILDINGS[b.type].cost,owner,'building')))this.players[owner].resources[r]+=Math.floor(n*rate);b.demolished=true;b.hp=0;this.revision++;this.emit('death',{entity:b});return true;
+    while(b.queue.length)this.cancelQueue(b.id,0,owner);const rate=b.progress<1?.7:.2;for(const [r,n]of Object.entries(this.cost(wallBuildCost(this,owner,b.type),owner,'building')))this.players[owner].resources[r]+=Math.floor(n*rate);b.demolished=true;b.hp=0;this.revision++;this.emit('death',{entity:b});return true;
   }
   trade(resource,buy,owner=0){if(!['food','wood','stone'].includes(resource))return false;if(!this.owned(owner,'building','market').some(b=>b.progress>=1))return this.fail('Build a market to trade resources.',owner);const p=this.players[owner];const cost=buy?{gold:130}:{[resource]:100};if(!this.spend(cost,owner))return this.fail('Not enough resources for this trade.',owner);p.resources[buy?resource:'gold']+=(buy?100:70)+(p.tech.caravanLedger?(buy?10:20):0);this.emit('sound',{name:'coin',owner});return true;}
   command(ids,order,append=false){const units=ids.map(id=>this.get(id)).filter(e=>e?.kind==='unit');
@@ -533,9 +560,9 @@ export class Simulation {
       const face=target.kind==='building'?constructionFace(e,target):-1;
       if(target.kind==='building'){if(face<0){approachConstruction(this,e,target,dt);return;}e.heading=constructionHeading(target,face);}
       else{if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}e.heading=Math.atan2(target.x-e.x,target.z-e.z);}
-      if(target.progress<1){const delta=dt/BUILDINGS[target.type].time;target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
+      if(target.progress<1){const delta=dt/wallBuildTime(this,target.owner,target.type);target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
-      else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}}
+      else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','gate'].includes(target.type)?(wallTier(this,target)==='palisade'?'wood':'stone'):['tower','keep','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}}
       else{if(order.type==='build'&&target.type==='wall')this.finishWallOrder(e,target);else this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};
       }return;
     }
@@ -559,15 +586,16 @@ export class Simulation {
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
       if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
       else{if(q.kind==='age'){p.age++;p.agePending=false;}else p.tech[q.type]++;
-        // A masonry upgrade changes wall geometry as well as health. Bump the
-        // revision so instanced connectors and packed building nodes rebuild.
-        const structural=q.type===FORTIFIED_WALL_TECH;
+        // Reaching Castle Age upgrades wooden palisades to stone walls, and
+        // Fortified Walls reinforces stone masonry. Bump revision so instanced
+        // connectors and packed building nodes rebuild immediately.
+        const structural=q.type===FORTIFIED_WALL_TECH||(q.kind==='age'&&p.age===2);
         for(const target of this.owned(e.owner).filter(t=>t.kind==='unit'||t.kind==='building')){const ratio=target.hp/target.maxHp;target.maxHp=this.maxHP(target);target.hp=target.maxHp*ratio;}
         if(structural)this.revision++;
         this.emit('research',{tech:q.type,age:p.age,owner:e.owner});}
     }
   }
-  assignWorker(e){const types=['food','wood','gold','stone'],counts={food:0,wood:0,gold:0,stone:0};for(const worker of this.owned(e.owner,'unit','villager'))if(worker.gatherType in counts)counts[worker.gatherType]++;let type=types.reduce((a,b)=>(counts[a]/(a==='wood'?4:a==='food'?4:a==='gold'?1.5:1))<(counts[b]/(b==='wood'?4:b==='food'?4:b==='gold'?1.5:1))?a:b);
+  assignWorker(e){const types=['food','wood','gold','stone'],counts={food:0,wood:0,gold:0,stone:0},res=this.players[e.owner]?.resources||{};for(const worker of this.owned(e.owner,'unit','villager'))if(worker.gatherType in counts)counts[worker.gatherType]++;const weight=t=>(t==='wood'?4:t==='food'?4:t==='gold'?1.5:1)/(1+Math.max(0,(res[t]||0)-600)/1200);let type=types.reduce((a,b)=>(counts[a]/weight(a))<(counts[b]/weight(b))?a:b);
     let resource=this.nearest(e,t=>t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0);if(!resource)resource=this.nearest(e,t=>t.type==='farm'&&t.owner===e.owner&&t.progress>=1);if(resource){e.gatherType=resource.type==='farm'?'food':resource.type;e.order={type:'gather',target:resource.id};e.path=[];}}
   assignEconomy(owner){for(const e of this.owned(owner,'unit','villager'))if(!e.order)this.assignWorker(e);}
   aiBuild(type,owner=1){const tc=this.owned(owner,'building','towncenter')[0];if(!tc)return false;const worker=this.owned(owner,'unit','villager').find(w=>!['build','repair'].includes(w.order?.type));if(!worker)return false;

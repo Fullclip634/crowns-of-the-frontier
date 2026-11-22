@@ -84,9 +84,11 @@ test('blocked, unseen, water and out of bounds sections cannot be confirmed as a
   assert.ok(point);p=plan(water,u,point,point);assert.equal(p.canBuild,false);assert.equal(p.blocked,1);
 });
 
-test('affordability, age and an available owned villager gate confirmation without spending anything',()=>{
+test('affordability, palisade wood vs stone costs, and an available owned villager gate confirmation without spending anything',()=>{
   const {sim,worker}=fixture();sim.players[0].resources.stone=44;const p=plan(sim,worker);assert.equal(p.canBuild,true);assert.equal(p.count,2);assert.equal(p.segments.filter(s=>s.affordable).length,2);assert.ok(p.unaffordable>0);assert.equal(sim.players[0].resources.stone,44);
-  sim.players[0].resources.stone=10000;sim.players[0].age=0;assert.equal(plan(sim,worker).canBuild,false);sim.players[0].age=3;
+  sim.players[0].resources.stone=10000;sim.players[0].resources.wood=0;sim.players[0].age=0;assert.equal(plan(sim,worker).canBuild,false,'Age 1 palisade walls require wood rather than stone');
+  sim.players[0].resources.wood=16;const palisadePlan=plan(sim,worker);assert.equal(palisadePlan.canBuild,true);assert.equal(palisadePlan.count,2);assert.equal(palisadePlan.cost.wood,16);assert.equal(palisadePlan.cost.stone,undefined);
+  sim.players[0].age=3;sim.players[0].resources.wood=6000;
   for(const change of [{hp:0},{embarked:123},{owner:1}]){const previous={hp:worker.hp,embarked:worker.embarked,owner:worker.owner};Object.assign(worker,change);assert.equal(plan(sim,worker).canBuild,false);Object.assign(worker,previous);}
   const draft=new WallPlacement();draft.point({x:0,z:20});assert.equal(wallPlacementPlan(sim,draft,[]).canBuild,false);assert.equal(wallPlacementPlan(sim,draft,[worker.id]).count,1);draft.togglePan();assert.equal(wallPlacementPlan(sim,draft,[worker.id]).canBuild,false);
 });

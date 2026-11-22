@@ -6,49 +6,88 @@ import {BUILDINGS,TECHS,ICONS} from '../src/data.js';
 import {technologyTreeMarkup} from '../src/technology-tree.js';
 import {ICON_MAP,UI_ICONS} from '../src/ui-icons.js';
 import {WallVisuals} from '../src/wall-visuals.js';
-import {FORTIFIED_WALL_HP,FORTIFIED_GATE_HP,FORTIFIED_WALL_ARMOR,FORTIFIED_WALL_TECH,wallTier,wallBaseHP,wallTierStyle} from '../src/fortified-walls.js';
+import {
+  PALISADE_WALL_HP,PALISADE_GATE_HP,PALISADE_WALL_COST,PALISADE_GATE_COST,
+  FORTIFIED_WALL_HP,FORTIFIED_GATE_HP,FORTIFIED_WALL_ARMOR,FORTIFIED_WALL_TECH,
+  wallTier,wallBaseHP,wallTierStyle,wallBuildCost,wallDisplayName,
+} from '../src/fortified-walls.js';
 
 const fund=sim=>{sim.players[0].resources={food:9000,wood:9000,gold:9000,stone:9000};return sim;};
 const sandbox=()=>fund(new Simulation({mode:'sandbox'}));
 
-test('Stone Wall stays the unchanged base tier and the Fortified Wall is a single Castle-Age upgrade',()=>{
+test('Walls progress from Wooden Palisades (Age 1-2) to Stone (Castle Age) to Fortified (Imperial Age)',()=>{
   assert.equal(BUILDINGS.wall.name,'Stone wall');
   assert.equal(BUILDINGS.wall.hp,1400);
-  assert.equal(BUILDINGS.wall.age,1);
+  assert.equal(BUILDINGS.wall.age,0,'Palisade walls are buildable from the Frontier Age');
+  assert.equal(BUILDINGS.gate.age,0,'Palisade gates are buildable from the Frontier Age');
   assert.equal(BUILDINGS.wall.time,14);
   assert.deepEqual(BUILDINGS.wall.cost,{stone:22});
   assert.equal(BUILDINGS.gate.hp,1600);
   assert.equal(BUILDINGS.wonder.hp,5000);
+  assert.equal(PALISADE_WALL_HP,400);
+  assert.equal(PALISADE_GATE_HP,550);
+  assert.deepEqual(PALISADE_WALL_COST,{wood:8});
+  assert.deepEqual(PALISADE_GATE_COST,{wood:35});
   assert.equal(FORTIFIED_WALL_HP,4000);
   assert.equal(FORTIFIED_GATE_HP,4000);
   assert.ok(FORTIFIED_WALL_HP<BUILDINGS.wonder.hp,'base fortified HP stays below the Wonder');
   const d=TECHS[FORTIFIED_WALL_TECH];
-  assert.equal(d.age,2);
+  assert.equal(d.age,3,'Fortified Walls unlock in the Imperial Age');
   assert.equal(d.max,1);
   assert.deepEqual(d.at,['towncenter','keep']);
   assert.ok(d.time>0);
   assert.ok(Object.values(d.cost).every(n=>n>0));
-  // No third placeable wall tier was introduced.
+  // Still one placeable wall type that progresses cleanly through all 3 tiers.
   assert.equal(Object.keys(BUILDINGS).filter(type=>type.includes('wall')).join(','),'wall');
   assert.ok(ICONS[FORTIFIED_WALL_TECH]);
 });
 
-test('the upgrade is gated behind the Castle Age, optional, and researchable at a town center or keep',()=>{
+test('Wooden Palisades automatically upgrade to Stone in Castle Age, and Fortified Walls require Imperial Age',()=>{
   const s=sandbox(),tc=s.addBuilding('towncenter',0,0,20,true),keep=s.addBuilding('keep',0,16,20,true);
+  s.players[0].age=0;
+  const palisade=s.addBuilding('wall',0,8,20,true);
+  const palisadeGate=s.addBuilding('gate',0,12,26,true);
+  assert.equal(wallTier(s,palisade),'palisade');
+  assert.equal(wallTier(s,palisadeGate),'palisade');
+  assert.equal(wallBaseHP(s,palisade),PALISADE_WALL_HP);
+  assert.equal(wallBaseHP(s,palisadeGate),PALISADE_GATE_HP);
+  assert.equal(wallDisplayName(s,palisade),'Palisade wall');
+  assert.equal(wallDisplayName(s,palisadeGate),'Palisade gate');
+  assert.deepEqual(wallBuildCost(s,0,'wall'),PALISADE_WALL_COST);
+  assert.deepEqual(wallBuildCost(s,0,'gate'),PALISADE_GATE_COST);
+
+  // Feudal Age stays wooden palisades; Castle Age upgrades them automatically to stone.
   s.players[0].age=1;
+  assert.equal(wallTier(s,palisade),'palisade');
+  palisade.hp=palisade.maxHp*.5;
+  const revBeforeAge=s.revision;
+  assert.equal(s.research(tc.id,'age'),true);
+  tc.queue[0].remaining=.01;s.tickBuilding(tc,.1);
+  assert.equal(s.players[0].age,2);
+  assert.ok(s.revision>revBeforeAge,'reaching Castle Age invalidates wall connectors for Palisade -> Stone upgrade');
+  assert.equal(wallTier(s,palisade),'stone');
+  assert.equal(wallBaseHP(s,palisade),1400);
+  assert.equal(palisade.maxHp,1400*1.2);
+  assert.equal(palisadeGate.maxHp,1600*1.2);
+  assert.ok(Math.abs(palisade.hp/palisade.maxHp-.5)<1e-9,'damaged palisades preserve their health ratio on stone upgrade');
+
+  // Castle Age cannot research Imperial Fortified Walls yet.
   const before={...s.players[0].resources};
-  assert.equal(s.research(tc.id,FORTIFIED_WALL_TECH),false,'Feudal Age cannot fortify walls');
+  assert.equal(s.research(tc.id,FORTIFIED_WALL_TECH),false,'Castle Age cannot research Imperial Fortified Walls');
   assert.deepEqual(s.players[0].resources,before,'a rejected upgrade spends nothing');
   assert.equal(s.players[0].tech[FORTIFIED_WALL_TECH],0);
-  s.players[0].age=2;
-  assert.equal(s.research(keep.id,FORTIFIED_WALL_TECH),true,'a Castle is a valid research site');
+
+  // Imperial Age unlocks Fortified Walls at Town Center or Castle.
+  s.players[0].age=3;
+  assert.equal(s.research(keep.id,FORTIFIED_WALL_TECH),true,'a Castle is a valid research site in Imperial Age');
   assert.equal(s.research(tc.id,FORTIFIED_WALL_TECH),false,'a duplicate research is refused');
   assert.equal(keep.queue.length,1);
 });
 
 test('completion upgrades existing and future walls and gatehouses to 4000 base HP while preserving damage ratios',()=>{
   const s=sandbox(),tc=s.addBuilding('towncenter',0,0,20,true);
-  s.players[0].age=2;
+  s.players[0].age=3;
+  s.players[1].age=2;
   const wall=s.addBuilding('wall',0,8,30,true),gate=s.addBuilding('gate',0,12,30,true),house=s.addBuilding('house',0,16,30,true);
   assert.equal(wallBaseHP(s,wall),1400);
   assert.equal(wallTier(s,wall),'stone');
@@ -93,7 +132,7 @@ test('Alder plus level-3 Masonry reaches exactly 9120 HP and damage pacing stays
 
 test('saves keep the upgrade and older saves initialize it without changing existing research',()=>{
   const s=sandbox(),tc=s.addBuilding('towncenter',0,0,20,true);
-  s.players[0].age=2;s.players[0].tech.armor=2;
+  s.players[0].age=3;s.players[0].tech.armor=2;
   assert.equal(s.research(tc.id,FORTIFIED_WALL_TECH),true);
   tc.queue[0].remaining=.01;s.tickBuilding(tc,.1);
   const wall=s.addBuilding('wall',0,8,20,true);
@@ -110,7 +149,7 @@ test('saves keep the upgrade and older saves initialize it without changing exis
 
 test('the technology tree and icon set surface the new upgrade',()=>{
   const s=sandbox();
-  s.players[0].age=2;
+  s.players[0].age=3;
   const markup=technologyTreeMarkup(s,'alder');
   assert.match(markup,/Fortified walls/);
   assert.match(markup,/data-tree-tech="fortifiedWall"/);
@@ -139,6 +178,7 @@ test('fortified connectors stay in two batches, change height and tint, and inva
     const color=new THREE.Color();visual.stone.getColorAt(0,color);
     assert.ok(color.r<1,'fortified stone is visibly darker');
     assert.ok(wallTierStyle('fortified').height>wallTierStyle('stone').height);
+    assert.ok(wallTierStyle('stone').height>wallTierStyle('palisade').height);
 
     // Wall-to-gate connectors upgrade together with walls when fortifiedWall finishes.
     const gate=sim.addBuilding('gate',0,8,20,true);

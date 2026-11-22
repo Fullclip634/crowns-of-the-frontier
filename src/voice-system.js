@@ -27,6 +27,7 @@ const FACTION_CADENCE = {
 
 export const VOICE_COOLDOWN = 0.75;
 export const HORN_COOLDOWN = 12.0;
+export const ATTACK_ANNOUNCE_COOLDOWN = 14.0;
 
 export function synthesizeVocalBark(context, faction = 'alder', kind = 'order', pitchModifier = 1.0) {
   const profile = FACTION_CADENCE[faction] || FACTION_CADENCE.alder;
@@ -97,35 +98,35 @@ export function synthesizeVocalBark(context, faction = 'alder', kind = 'order', 
 }
 
 export function synthesizeWarHorn(context, fundamental = 174.61) {
-  // 174.61 Hz = F3 note, classical medieval bronze battle horn
+  // 174.61 Hz = F3 note, warm mellow medieval bronze horn (zero harsh sawtooth buzz).
   const t0 = context.currentTime;
   const duration = 1.6;
   const master = context.createGain();
 
-  // Multi-harmonic brass overtones (1x, 2x, 3x, 4x, 5x, 6x harmonics)
+  // Warm multi-harmonic horn overtones using smooth triangle & sine waves.
   const harmonics = [
-    { mult: 1, gain: 0.35 },
-    { mult: 2, gain: 0.28 },
-    { mult: 3, gain: 0.22 },
-    { mult: 4, gain: 0.14 },
-    { mult: 5, gain: 0.08 },
-    { mult: 6, gain: 0.04 }
+    { mult: 1, gain: 0.22, wave: 'triangle' },
+    { mult: 2, gain: 0.16, wave: 'triangle' },
+    { mult: 3, gain: 0.10, wave: 'sine' },
+    { mult: 4, gain: 0.055, wave: 'sine' },
+    { mult: 5, gain: 0.028, wave: 'sine' },
+    { mult: 6, gain: 0.014, wave: 'sine' }
   ];
 
   for (const h of harmonics) {
     const osc = context.createOscillator();
-    osc.type = 'sawtooth';
+    osc.type = h.wave;
     const freq = fundamental * h.mult;
-    // Characteristic brass horn pitch lip-swell at onset
+    // Gentle brass horn lip-swell at onset
     osc.frequency.setValueAtTime(freq * 0.97, t0);
-    osc.frequency.exponentialRampToValueAtTime(freq, t0 + 0.18);
-    osc.frequency.setValueAtTime(freq, t0 + duration * 0.7);
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.98, t0 + duration);
+    osc.frequency.exponentialRampToValueAtTime(freq, t0 + 0.22);
+    osc.frequency.setValueAtTime(freq, t0 + duration * 0.68);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.985, t0 + duration);
 
     const hGain = context.createGain();
     hGain.gain.setValueAtTime(0.0001, t0);
-    hGain.gain.exponentialRampToValueAtTime(h.gain, t0 + 0.22);
-    hGain.gain.setValueAtTime(h.gain * 0.85, t0 + duration * 0.65);
+    hGain.gain.exponentialRampToValueAtTime(h.gain, t0 + 0.28);
+    hGain.gain.setValueAtTime(h.gain * 0.80, t0 + duration * 0.65);
     hGain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
 
     osc.connect(hGain);
@@ -134,16 +135,51 @@ export function synthesizeWarHorn(context, fundamental = 174.61) {
     osc.stop(t0 + duration + 0.05);
   }
 
-  // Resonant horn bell filter (warm acoustic low-pass)
+  // Soft warm acoustic bell low-pass filter (tames upper harshness completely)
   const bellFilter = context.createBiquadFilter();
   bellFilter.type = 'lowpass';
-  bellFilter.frequency.setValueAtTime(1400, t0);
-  bellFilter.frequency.exponentialRampToValueAtTime(2200, t0 + 0.25);
-  bellFilter.frequency.exponentialRampToValueAtTime(1200, t0 + duration);
-  bellFilter.Q.value = 2.2;
+  bellFilter.frequency.setValueAtTime(760, t0);
+  bellFilter.frequency.exponentialRampToValueAtTime(1150, t0 + 0.28);
+  bellFilter.frequency.exponentialRampToValueAtTime(640, t0 + duration);
+  bellFilter.Q.value = 1.4;
 
   master.connect(bellFilter);
   return { output: bellFilter, duration };
+}
+
+function selectAnnouncerVoice(synth) {
+  try {
+    const voices = synth.getVoices?.() || [];
+    if (!voices.length) return null;
+    const english = voices.filter(v => /^en\b/i.test(v.lang || ''));
+    const pool = english.length ? english : voices;
+    return pool.find(v => /natural|neural|google us english|david|daniel|george|guy|arthur|ryan/i.test(v.name || '')) || pool[0];
+  } catch {
+    return null;
+  }
+}
+
+export function speakKingdomAlert(text = 'Your kingdom is under attack.', volume = 0.65) {
+  const synth = globalThis.speechSynthesis;
+  const Utterance = globalThis.SpeechSynthesisUtterance;
+  if (!synth || typeof synth.speak !== 'function' || typeof Utterance !== 'function') return false;
+  try {
+    const voices = synth.getVoices?.() || [];
+    // If the browser exposes a voice catalog and it is empty, let the recorded human voice cue handle playback.
+    if (typeof synth.getVoices === 'function' && voices.length === 0) return false;
+    const utterance = new Utterance(text);
+    const chosen = selectAnnouncerVoice(synth);
+    if (chosen) utterance.voice = chosen;
+    utterance.lang = chosen?.lang || 'en-US';
+    utterance.rate = 0.96;
+    utterance.pitch = 0.92;
+    utterance.volume = Math.max(0.15, Math.min(0.85, volume * 0.95));
+    synth.cancel?.();
+    synth.speak(utterance);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function installVoiceSystem(AudioEngine) {
@@ -193,13 +229,31 @@ export function installVoiceSystem(AudioEngine) {
 
     const horn = synthesizeWarHorn(this.context, fundamental);
     const hornGain = this.context.createGain();
-    hornGain.gain.value = (this.settings.volume || 0.65) * 0.42;
+    hornGain.gain.value = (this.settings.volume || 0.65) * 0.24;
     const outBus = this.voiceBus || this.master;
 
     horn.output.connect(hornGain);
     hornGain.connect(outBus);
     if (this.reverbSend) hornGain.connect(this.reverbSend);
-    this.duckMusic?.(1.9, 0.58);
+    this.duckMusic?.(1.6, 0.64);
+    return true;
+  };
+
+  p.announceAttack = function(text = 'Your kingdom is under attack.') {
+    if (this.settings.volume <= 0) return false;
+    const now = this.context ? this.context.currentTime : performance.now() / 1000;
+    if (now - (this.lastAttackAnnounceAt ?? -Infinity) < ATTACK_ANNOUNCE_COOLDOWN) return false;
+    this.lastAttackAnnounceAt = now;
+    this.duckMusic?.(2.0, 0.56);
+    // Gentle soft warm double-chime cue (never harsh or piercing) + spoken human voice.
+    if (this.context && this.context.state === 'running') {
+      this.tone?.(220, 0.28, 'sine', 0.055, 0);
+      this.tone?.(293.66, 0.34, 'sine', 0.045, 0.14);
+    }
+    if (this.settings.unitVoices !== false && speakKingdomAlert(text, this.settings.volume || 0.65)) {
+      return true;
+    }
+    this.play?.('alarm');
     return true;
   };
 }

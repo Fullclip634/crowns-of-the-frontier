@@ -15,7 +15,7 @@ import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 import {wallTier} from './fortified-walls.js';
 import {treePalette,isSnowBiome,isAridBiome} from './terrain-biomes.js';
-import {architectureOutdated} from './architecture-age.js';
+import {architectureAge,architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
@@ -296,18 +296,20 @@ export function installRealm3D(WorldView){
       const data=node.userData.construction;for(const [mesh,material]of data.restore)mesh.material=material;for(const material of data.materials)material.dispose();data.frame.traverse(mesh=>{if(mesh.isMesh)mesh.geometry.dispose();});node.remove(data.frame);delete node.userData.construction;
     }
   };
-  p.showGhost=function(type,x,z,valid){
-    const ghostKey=(type==='wall'||type==='gate')?`${type}:${wallTier(this.sim,{kind:'building',type,owner:0})}`:type;
+  p.showGhost=function(type,x,z,valid,angle=0){
+    const faction=this.sim?.players?.[0]?.faction||'alder',age=architectureAge(this.sim,{owner:0});
+    const ghostKey=(type==='wall'||type==='gate')?`${type}:${faction}:${age}:${wallTier(this.sim,{kind:'building',type,owner:0})}`:`${type}:${faction}:${age}`;
     if(this.ghost.userData.type!==ghostKey){
       this.ghost.userData.farmGroundX=this.ghost.userData.farmGroundZ=undefined;
-      this.ghost.userData.foundationGroundX=this.ghost.userData.foundationGroundZ=undefined;
+      this.ghost.userData.foundationGroundX=this.ghost.userData.foundationGroundZ=this.ghost.userData.foundationGroundAngle=undefined;
       this.ghost.traverse(mesh=>{if(mesh.isMesh){if(!Object.values(this.geo).includes(mesh.geometry)&&!this.authoredGeometry?.has(mesh.geometry)&&!this.sharedModelGeometry?.has(mesh.geometry))mesh.geometry.dispose();if(mesh.userData.previewMaterial)mesh.material.dispose();}});this.clearGroup(this.ghost);
       const model=this.mergeModel(this.makeBuilding({kind:'building',type,owner:0,r:BUILDINGS[type]?.r||2.5,x,z}));
       model.traverse(mesh=>{if(!mesh.isMesh)return;const original=mesh.material;mesh.material=original.clone();mesh.material.defines={...original.defines};mesh.material.onBeforeCompile=original.onBeforeCompile;mesh.material.customProgramCacheKey=original.customProgramCacheKey;mesh.material.transparent=true;mesh.material.opacity=.38;mesh.material.depthWrite=false;mesh.material.clippingPlanes=null;mesh.castShadow=false;mesh.userData.previewMaterial=true;});this.ghost.add(model);this.ghost.userData.type=ghostKey;
     }
-    this.ghost.position.set(x,foundation(this,{type,r:BUILDINGS[type]?.r||2.5,x,z}),z);this.ghost.visible=true;
+    const rotationY=(type==='wall'||type==='gate')?(angle||0):0;
+    this.ghost.position.set(x,foundation(this,{type,r:BUILDINGS[type]?.r||2.5,x,z}),z);this.ghost.rotation.y=rotationY;this.ghost.visible=true;
     if(type==='farm'&&(this.ghost.userData.farmGroundX!==x||this.ghost.userData.farmGroundZ!==z)){fitFarmTerrain(this.ghost,this.landscape,true);this.ghost.userData.farmGroundX=x;this.ghost.userData.farmGroundZ=z;}
-    if(!['farm','dock'].includes(type)&&(this.ghost.userData.foundationGroundX!==x||this.ghost.userData.foundationGroundZ!==z)){groundBuildingFoundation(this.ghost.children[0],this.landscape,true);this.ghost.userData.foundationGroundX=x;this.ghost.userData.foundationGroundZ=z;}
+    if(!['farm','dock'].includes(type)&&(this.ghost.userData.foundationGroundX!==x||this.ghost.userData.foundationGroundZ!==z||this.ghost.userData.foundationGroundAngle!==rotationY)){groundBuildingFoundation(this.ghost.children[0],this.landscape,true);this.ghost.userData.foundationGroundX=x;this.ghost.userData.foundationGroundZ=z;this.ghost.userData.foundationGroundAngle=rotationY;}
     this.ghost.traverse(mesh=>{if(mesh.isMesh)mesh.material.color.setHex(valid?0x8de3c5:0xee816a);});
   };
   p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++)this.fx[i].object.position.y=this.groundHeight(x,z)+.4;};

@@ -38,8 +38,8 @@ export const BUILDINGS = {
   market:{name:'Market',desc:'Exchange resources for gold, or buy supplies. Economic research is available here.',cost:{wood:180},hp:900,r:3.4,time:32,age:1},
   tower:{name:'Watchtower',desc:'Automatically fires on enemies. Provides excellent vision.',cost:{wood:90,stone:130},hp:1400,r:2,time:35,age:1,damage:18,range:20,vision:27,volley:3,reload:1.1},
   keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:80,age:2,damage:35,range:23,cap:20,vision:30,volley:5,reload:1},
-  wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:1},
-  gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:1},
+  wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Starts as a wooden palisade in Frontier and Feudal Ages and upgrades to stone in the Castle Age. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:0},
+  gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement. Starts as a wooden palisade gate and upgrades to a stone gatehouse in the Castle Age.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:0},
   monastery:{name:'Monastery',desc:'Trains healers. Heal wounded troops between engagements.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},
   wonder:{name:'Grand monument',desc:'Imperial achievement. In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:120,age:3},
 };
@@ -49,7 +49,7 @@ export const TECHS = {
   armor:{name:'Tempered armor',desc:'+2 armor and +15% maximum health per level.',at:['blacksmith'],cost:{food:100,gold:130},max:3,age:1,time:32},
   ranged:{name:'Bodkin arrows',desc:'+20% ranged attack and +1 range per level.',at:['blacksmith','range'],cost:{wood:120,gold:110},max:3,age:1,time:32},
   fortification:{name:'Masonry',desc:'+30% building health and +15% tower attack per level.',at:['towncenter','keep'],cost:{wood:100,stone:150},max:3,age:1,time:35},
-  fortifiedWall:{name:'Fortified walls',desc:'Reinforce every stone wall and gatehouse with heavier masonry: 4,000 base health and +4 armor. Existing and future defenses are upgraded.',at:['towncenter','keep'],cost:{wood:150,stone:400,gold:250},max:1,age:2,time:55},
+  fortifiedWall:{name:'Fortified walls',desc:'Reinforce every stone wall and gatehouse with gleaming fortified masonry: 4,000 base health and +4 armor. Existing and future defenses are upgraded.',at:['towncenter','keep'],cost:{wood:150,stone:400,gold:250},max:1,age:3,time:55},
   husbandry:{name:'Husbandry',desc:'+20% cavalry movement speed.',at:['stable'],cost:{food:180,gold:80},max:1,age:1,time:30},
 };
 export const AGE_COSTS = [{food:350,gold:150},{food:650,gold:350},{food:1000,gold:650}];

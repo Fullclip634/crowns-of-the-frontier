@@ -6,8 +6,8 @@
   "fallbackEncoding": "mp3",
   "license": "CC0-1.0",
   "proceduralFallback": true,
-  "totalOggBytes": 1796096,
-  "totalMp3Bytes": 1679522,
+  "totalOggBytes": 1784525,
+  "totalMp3Bytes": 1667401,
   "cues": {
     "select": {
       "file": "select.ogg",
@@ -66,13 +66,13 @@
       "fallbackFile": "alarm.mp3",
       "group": "ui",
       "channels": 1,
-      "duration": 1.9,
-      "bytes": 17896,
-      "fallbackBytes": 15716,
+      "duration": 0.59,
+      "bytes": 7453,
+      "fallbackBytes": 5267,
       "loop": false,
-      "sha256": "621a72f187e28b6049c5310eb18efd2dfa0b9802c9afe688c967822ac12a5cb5",
-      "fallbackSha256": "c4bec690c9f7fbc6115ea90e2963861ec38991e662b37dd312e6b381de4f5d74",
-      "source": "OpenGameArt - Their Coming horn (theircoming3.ogg, CC0 1.0)"
+      "sha256": "1ed6190e0cdd8d641b090e570e79d93b336b2cb31834bf37cb106ac03c2c5150",
+      "fallbackSha256": "f0077670eb152c97d53eccd63ba193b7043411348b00c4fed9d98e628fff9116",
+      "source": "Kenney - Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)"
     },
     "victory": {
       "file": "victory.ogg",
@@ -443,12 +443,12 @@
       "fallbackFile": "horn.mp3",
       "group": "voice",
       "channels": 1,
-      "duration": 2.2,
-      "bytes": 17117,
-      "fallbackBytes": 18224,
+      "duration": 2.0,
+      "bytes": 15989,
+      "fallbackBytes": 16552,
       "loop": false,
-      "sha256": "2c36c067e7b8b5a355dad9866fb37389a09fd243adf35638b667f2e2fe6e29ed",
-      "fallbackSha256": "c8f6f1e938f6f8ae8d985754b7525fc5796ac935ff1233deb7028ec16d78553f",
+      "sha256": "bcd2aadf0c5a3295e537563f403260851ccbe56c08385bba64ad6ccd15674956",
+      "fallbackSha256": "e87d1b0ece7faff178be218cf42aec709ad330f9fd279677aeebf9e7aa4fa089",
       "source": "OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)"
     },
     "voice-select": {

@@ -241,6 +241,77 @@ export function manageRepairs(sim,owner,workers,buildings,visible,tc){
   }
 }
 
+export function dynamicEconomyWeights(player){
+  const res=player?.resources||{food:0,wood:0,gold:0,stone:0};
+  const age=player?.age||0;
+  const base={food:age<3?.43:.36,wood:.32,gold:age<1?.15:.24,stone:.08};
+  const food=res.food||0,wood=res.wood||0,gold=res.gold||0,stone=res.stone||0;
+  const coreMin=Math.min(food,wood,age>=1?gold:wood);
+  const mult={food:1,wood:1,gold:1,stone:1};
+  // Boost critically low resources so the AI never starves on timber or gold.
+  if(wood<250)mult.wood=2.4;else if(wood<550)mult.wood=1.55;
+  if(food<220)mult.food=2.0;else if(food<450)mult.food=1.35;
+  if(age>=1&&gold<220)mult.gold=1.8;else if(age>=1&&gold<450)mult.gold=1.3;
+  if(age>=2&&stone<260)mult.stone=1.75;else if(age>=2&&stone<550)mult.stone=1.25;
+  // Throttle heavily stockpiled resources when another core resource is scarce.
+  for(const r of ['food','wood','gold','stone']){
+    const amt=res[r]||0;
+    const compare=r==='stone'?Math.min(food,wood):coreMin;
+    if(amt>6000&&amt>Math.max(400,compare*4))mult[r]*=.06;
+    else if(amt>2500&&amt>Math.max(300,compare*2.8))mult[r]*=.18;
+    else if(amt>1400&&amt>Math.max(250,compare*2.0))mult[r]*=.42;
+  }
+  const raw={food:base.food*mult.food,wood:base.wood*mult.wood,gold:base.gold*mult.gold,stone:base.stone*mult.stone};
+  const sum=raw.food+raw.wood+raw.gold+raw.stone||1;
+  return {food:raw.food/sum,wood:raw.wood/sum,gold:raw.gold/sum,stone:raw.stone/sum};
+}
+
+function assignGatherTypes(sim,e,owner,state,memory,types){
+  for(const type of types){
+    const sources=closestCandidates(sim.entities,5,
+      t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1)&&!economicDanger(state,t,0,memory),
+      source=>distance(e,source));
+    for(const source of sources){
+      const range=gatheringPathRange(e,source),route=sim.pathTo(e,source,range);
+      if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>gatheringRange(e,source))continue;
+      e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=sim.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=range;
+      return true;
+    }
+  }
+  return false;
+}
+
+export function rebalanceEconomy(sim,state,owner,workers){
+  const player=sim.players[owner];
+  if(!player)return 0;
+  const gatherers=workers.filter(w=>!w.embarked&&!w.aiFleeing&&w.order?.type==='gather'&&!w.order.aiExpansion&&!w.order.aiFortification);
+  if(gatherers.length<3)return 0;
+  const weights=dynamicEconomyWeights(player),types=['food','wood','gold','stone'];
+  const counts=Object.fromEntries(types.map(t=>[t,0]));
+  for(const w of gatherers)if(w.gatherType in counts)counts[w.gatherType]++;
+  const desired=Object.fromEntries(types.map(t=>[t,gatherers.length*weights[t]]));
+  const deficits=types.filter(t=>counts[t]<Math.floor(desired[t])||(t!=='stone'&&(player.resources[t]||0)<300&&counts[t]<Math.ceil(desired[t]))).sort((a,b)=>(desired[b]-counts[b])-(desired[a]-counts[a]));
+  if(!deficits.length)return 0;
+  const surpluses=types.filter(t=>counts[t]>Math.ceil(desired[t])||(counts[t]>1&&(player.resources[t]||0)>2500&&desired[t]<counts[t]-.5)).sort((a,b)=>(player.resources[b]||0)-(player.resources[a]||0)||(counts[b]-desired[b])-(counts[a]-desired[a]));
+  if(!surpluses.length)return 0;
+  const memory=Object.values(state.known||{});
+  let moved=0;
+  for(const from of surpluses){
+    const excess=Math.max(1,Math.floor(counts[from]-desired[from]));
+    const pool=gatherers.filter(w=>w.gatherType===from&&(w.carry||0)<14).sort((a,b)=>(a.carry||0)-(b.carry||0));
+    for(const worker of pool.slice(0,Math.min(excess,4-moved))){
+      if(moved>=4)break;
+      const targetOrder=deficits.filter(t=>counts[t]<Math.ceil(desired[t])).sort((a,b)=>(desired[b]-counts[b])-(desired[a]-counts[a]));
+      if(!targetOrder.length)break;
+      if(assignGatherTypes(sim,worker,owner,state,memory,targetOrder)){
+        counts[from]--;counts[worker.gatherType]++;moved++;
+      }
+    }
+    if(moved>=4)break;
+  }
+  return moved;
+}
+
 export function manageFarming(sim,owner,workers,buildings,towns){
   const player=sim.players[owner],farmDef=BUILDINGS.farm;
   if(!player||!farmDef||player.age<farmDef.age)return false;
@@ -248,14 +319,16 @@ export function manageFarming(sim,owner,workers,buildings,towns){
   if(!dropSites.length)return false;
   const naturalFood=sim.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='food'&&!e.water&&e.amount>0&&dropSites.some(base=>distance(e,base)<52)).reduce((n,e)=>n+e.amount,0);
   const farms=buildings.filter(b=>b.type==='farm'),completedFarms=farms.filter(b=>b.progress>=1),buildingFarms=farms.length-completedFarms.length;
-  // When no fruits remain, keep food workers actively harvesting completed farms immediately.
-  if(naturalFood<=0&&completedFarms.length){
+  // When no fruits remain, keep food workers actively harvesting completed farms —
+  // unless food is already heavily stockpiled while timber is needed elsewhere.
+  if(naturalFood<=0&&completedFarms.length&&(player.resources.food||0)<1200){
     const targetFarmers=Math.min(completedFarms.length,Math.max(2,Math.ceil(workers.length*.35)));
     let farmers=workers.filter(w=>w.order?.type==='gather'&&w.gatherType==='food').length;
     if(farmers<targetFarmers){
       const busyFarmIds=new Set(workers.filter(w=>w.order?.type==='gather').map(w=>w.order.target));
       const openFarms=completedFarms.filter(f=>!busyFarmIds.has(f.id));
-      const candidates=workers.filter(w=>!w.embarked&&!w.aiFleeing&&!w.carry&&(!w.order||(w.order.type==='gather'&&w.gatherType!=='food'&&!w.order.aiExpansion&&!w.order.aiFortification)));
+      const protectWood=(player.resources.wood||0)<400&&(player.resources.food||0)>=350;
+      const candidates=workers.filter(w=>!w.embarked&&!w.aiFleeing&&!w.carry&&(!w.order||(w.order.type==='gather'&&w.gatherType!=='food'&&(!protectWood||w.gatherType!=='wood')&&!w.order.aiExpansion&&!w.order.aiFortification)));
       for(const farm of openFarms){
         if(farmers>=targetFarmers)break;
         const worker=closestCandidates(candidates,1,w=>w.order?.target!==farm.id,w=>distance(w,farm))[0];
@@ -267,6 +340,7 @@ export function manageFarming(sim,owner,workers,buildings,towns){
       }
     }
   }
+  if((player.resources.food||0)>=2000&&(player.resources.wood||0)<550)return false;
   const farmGoal=naturalFood<=0?Math.max(5,Math.ceil(workers.length*.42)):(naturalFood<1200||(player.resources.food<120&&sim.time>75))?Math.max(4,Math.ceil(workers.length*.34)):0;
   if(!farmGoal||farms.length>=farmGoal)return false;
   const maxConcurrent=naturalFood<=0&&completedFarms.length<2?2:1;
@@ -274,6 +348,7 @@ export function manageFarming(sim,owner,workers,buildings,towns){
   if(!sim.canAfford(sim.cost(farmDef.cost,owner,'building'),owner))return false;
   const orderedDrops=[...dropSites].sort((a,b)=>farms.filter(f=>distance(f,a)<26).length-farms.filter(f=>distance(f,b)<26).length||Number(a.type!=='mill')-Number(b.type!=='mill')||a.id-b.id);
   const limit=sim.halfWorld-6;
+  const fortifications=buildings.filter(b=>b.type==='wall'||b.type==='gate');
   for(const site of orderedDrops){
     const worker=closestCandidates(workers,1,w=>!w.embarked&&!['build','repair','garrison'].includes(w.order?.type)&&!w.aiFleeing&&!w.order?.aiExpansion&&!w.order?.aiFortification,w=>distance(w,site))[0];
     if(!worker)return false;
@@ -281,6 +356,7 @@ export function manageFarming(sim,owner,workers,buildings,towns){
       const angle=i*2.39996323,r=8.5+Math.floor(i/8)*3;
       const point={x:Math.max(-limit,Math.min(limit,site.x+Math.cos(angle)*r)),z:Math.max(-limit,Math.min(limit,site.z+Math.sin(angle)*r))};
       if(!sim.buildValid('farm',point.x,point.z,owner)||fortificationReserved(sim,'farm',point.x,point.z,owner))continue;
+      if(fortifications.some(w=>distance(w,point)<w.r+farmDef.r+1.25))continue;
       sim.pathTo(worker,point);
       if(worker.pathStatus==='blocked')continue;
       if(sim.build('farm',point.x,point.z,[worker.id],owner))return true;
@@ -294,16 +370,10 @@ export function installCommanderAI(Simulation){
   p.assignWorker=function(e){
     if(this.players[e.owner].controller==='human'||e.owner===0&&this.players[0].controller!=='ai'||e.type!=='villager')return assignWorker.call(this,e);const owner=e.owner;
     if(e.aiFleeing>this.time){e.order=null;e.path=[];return;}delete e.aiFleeing;
-    const player=this.players[owner],workers=this.owned(owner,'unit','villager'),weights={food:player.age<3?.43:.36,wood:.32,gold:player.age<1?.15:.24,stone:.08};
+    const player=this.players[owner],workers=this.owned(owner,'unit','villager'),weights=dynamicEconomyWeights(player);
     const counts=Object.fromEntries(Object.keys(weights).map(type=>[type,workers.filter(v=>v!==e&&v.order?.type==='gather'&&v.gatherType===type).length]));
     const state=stateFor(this,owner),memory=Object.values(state.known||{}),types=Object.keys(weights).sort((a,b)=>counts[a]/weights[a]-counts[b]/weights[b]);
-    for(const type of types){const sources=closestCandidates(this.entities,5,
-      t=>t.hp>0&&(t.kind==='resource'&&!t.water&&t.type===type&&t.amount>0||type==='food'&&t.type==='farm'&&t.owner===owner&&t.progress>=1)&&!economicDanger(state,t,0,memory),
-      source=>distance(e,source));
-      for(const source of sources){const range=gatheringPathRange(e,source),route=this.pathTo(e,source,range);if(e.pathStatus==='blocked'||source.kind==='resource'&&route.length&&distance(route.at(-1),source)>gatheringRange(e,source))continue;
-        e.gatherType=type;e.order={type:'gather',target:source.id};e.orders=[];e.path=route;e.repath=1.5;e.pathRevision=this.revision;e.pathTargetX=source.x;e.pathTargetZ=source.z;e.pathTargetId=source.id;e.pathRange=range;return;
-      }
-    }e.order=null;e.path=[];
+    if(!assignGatherTypes(this,e,owner,state,memory,types)){e.order=null;e.path=[];}
   };
   p.commanderBuild=function(type,near=null,owner=1,requireVisibility=false){
     const player=this.players[owner],definition=BUILDINGS[type],towns=this.owned(owner,'building','towncenter'),tc=towns[0];
@@ -332,8 +402,8 @@ export function installCommanderAI(Simulation){
     state.home??={x:capital.x,z:capital.z};
     const tc=capital,visible=rememberVisibleEnemies(this,state,owner);state.decision++;const nextAttack=this.options.mode==='custom'?state.nextAttack:this.nextAttack;
     if(this.owned(owner,'building','market').some(site=>site.progress>=1)){
-      if(player.resources.wood<180&&player.resources.gold>=130)this.trade('wood',true,owner);
-      else if(player.resources.wood<180&&player.resources.gold<130&&player.resources.food>=900)this.trade('food',false,owner);
+      if(player.resources.wood<320&&player.resources.gold>=130)this.trade('wood',true,owner);
+      else if(player.resources.wood<320&&player.resources.gold<130&&player.resources.food>=900)this.trade('food',false,owner);
       else if(player.resources.food<120&&player.resources.gold>=130)this.trade('food',true,owner);
       else if(player.resources.gold<150&&player.resources.food>=900)this.trade('food',false,owner);
     }
@@ -371,7 +441,7 @@ export function installCommanderAI(Simulation){
     // expansion, which is a worse opponent than a slow one.
     const surplus=!state.budget.savingAge&&workers.length>=16&&player.resources.wood>=260;
     for(const type of priorities){const limit=surplus?productionCap(type):1;if(buildings.filter(b=>b.type===type).length<limit){if(this.commanderBuild(type,null,owner))break;}}
-    if(this.time-state.lastRebalance>15){state.lastRebalance=this.time;for(const worker of workers.filter(w=>w.order?.type==='gather'&&!w.carry&&!w.aiFleeing).slice(0,2))this.assignWorker(worker);}
+    if(this.time-state.lastRebalance>10){state.lastRebalance=this.time;rebalanceEconomy(this,state,owner,workers);}
     const plan=armyPlan(this,state,owner);
     for(const b of buildings.filter(b=>b.progress>=1&&b.queue.length<2)){
       const type=chooseArmyUnit(this,b,state,owner,plan);if(!type)continue;

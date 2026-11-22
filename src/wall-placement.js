@@ -1,4 +1,5 @@
 import {AGES,BUILDINGS} from './data.js';
+import {wallBuildCost} from './fortified-walls.js';
 import {wallLinePoints,wallSupport} from './walls.js';
 
 const finite=point=>point&&Number.isFinite(point.x)&&Number.isFinite(point.z);
@@ -61,7 +62,7 @@ export function wallPlacementPlan(sim,draft,workerIds,owner=0,requireVisibility=
   // footprint check. Use regular spacing when the anchored run is that tight.
   const exactFits=exactPoints.length>0&&exactPoints.every((point,i)=>i===0||distance(point,exactPoints[i-1])>=clearance+1e-9);
   const points=(usableDirection?(exactFits?exactPoints:wallLinePoints(from,end)):[]).slice(existingStart?1:0);
-  const costEach=sim.cost(BUILDINGS.wall.cost,owner,'building'),budget={...sim.players[owner].resources},cost={},segments=[];
+  const costEach=sim.cost(wallBuildCost(sim,owner,'wall'),owner,'building'),budget={...sim.players[owner].resources},cost={},segments=[];
   let blocked=0,unaffordable=0,reused=0,count=0,buildTo=null;
   for(let index=0;index<points.length;index++){
     const point=points[index],shown=visible(point),valid=shown&&sim.buildValid('wall',point.x,point.z,owner);
