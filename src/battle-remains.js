@@ -5,16 +5,43 @@ import {UNITS,seededRandom} from './data.js';
 import {workerVisualTask} from './authored-assets.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 
+// Materials whose .color is lifted to near-white once PBR albedo textures load
+// (see surface-assets.js). BattleRemains renders untextured vertex-colored
+// wrecks, so restore their true timber/masonry albedo instead of bleached white.
+const TEXTURED_WRECK_ALBEDO={
+  wood:[.40,.29,.19],
+  darkwood:[.24,.18,.13],
+  timberEdge:[.27,.21,.15],
+  stone:[.60,.56,.50],
+  stoneDark:[.45,.46,.43],
+  brick:[.48,.34,.25],
+  plaster:[.76,.70,.58],
+  rock:[.54,.57,.53],
+};
+
+function resolvedPartColor(view,part){
+  if(part.material?.map){
+    let role=part.userData?.surfaceRole;
+    if(!role&&view?.materials){
+      for(const [name,mat]of Object.entries(view.materials))if(mat===part.material){role=name;break;}
+    }
+    if(role&&TEXTURED_WRECK_ALBEDO[role])return TEXTURED_WRECK_ALBEDO[role];
+  }
+  return part.material.color.toArray();
+}
+
 function fallenGeometry(view,e){
   const model=view.mergeModel(view.makeUnit({...e,moving:false,cooldown:0,order:null})),parts=[];
+  const unitDef=UNITS[e.type];
+  const scorch=unitDef&&(unitDef.naval||unitDef.role==='siege')?.76:1;
   model.updateMatrixWorld(true);
   model.traverse(part=>{
     if(!part.isMesh||part.material.transparent)return;
     let geometry=part.geometry.clone().applyMatrix4(part.matrixWorld);
     if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat;}
     for(const name of Object.keys(geometry.attributes))if(!['position','normal','uv','color'].includes(name))geometry.deleteAttribute(name);
-    const position=geometry.attributes.position,existing=geometry.attributes.color,colors=new Float32Array(position.count*3),color=part.material.color.toArray();
-    for(let i=0;i<position.count;i++)for(let k=0;k<3;k++)colors[i*3+k]=(existing?existing.getComponent(i,k):1)*color[k];
+    const position=geometry.attributes.position,existing=geometry.attributes.color,colors=new Float32Array(position.count*3),color=resolvedPartColor(view,part);
+    for(let i=0;i<position.count;i++)for(let k=0;k<3;k++)colors[i*3+k]=(existing?existing.getComponent(i,k):1)*color[k]*scorch;
     geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);
   });
   const result=mergeGeometries(parts);for(const part of parts)part.dispose();view.releaseNode(model);

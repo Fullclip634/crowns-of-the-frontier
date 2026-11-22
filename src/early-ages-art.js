@@ -56,7 +56,8 @@ export function earlyAgeGeometries(){
  * Wooden Palisade model key. Castle Age (age 2) and Imperial Age (age 3)
  * always return null so late-game stone architecture stays 100% unchanged.
  */
-export function earlyAgeBuildingKey(type,faction='alder',age=0,tier='stone'){
+export function earlyAgeBuildingKey(type,faction='alder',age=0,tier='stone',corner=false){
+  if(type==='wall'&&corner)return `building:wallcorner:${tier}`;
   if((type==='wall'||type==='gate')&&tier==='palisade')return `building:${type}:palisade`;
   if(type==='wall'||type==='gate'||type==='farm')return null;
   if(age===0)return `building:${type}:frontier`;
@@ -64,9 +65,9 @@ export function earlyAgeBuildingKey(type,faction='alder',age=0,tier='stone'){
   return null;
 }
 
-export function earlyAgeBuildingTemplate(type,faction='alder',age=0,tier='stone'){
+export function earlyAgeBuildingTemplate(type,faction='alder',age=0,tier='stone',corner=false){
   if(!loaded?.templates?.size)return null;
-  const key=earlyAgeBuildingKey(type,faction,age,tier);
+  const key=earlyAgeBuildingKey(type,faction,age,tier,corner);
   if(!key)return null;
   const template=loaded.templates.get(key);
   return template?{key,template}:null;

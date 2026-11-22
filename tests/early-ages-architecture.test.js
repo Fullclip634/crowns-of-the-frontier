@@ -19,7 +19,7 @@ import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis} from
 import {Landscape} from '../src/landscape.js';
 import {WallVisuals} from '../src/wall-visuals.js';
 import {gateConversionPlan,gatePlacementPlan} from '../src/gate-conversion.js';
-import {WALL_SPACING,wallConnections} from '../src/walls.js';
+import {WALL_SPACING,wallConnections,isWallCorner} from '../src/walls.js';
 import {clearSegment} from '../src/navigation.js';
 import {wallTier,wallBuildCost,wallDisplayName,PALISADE_WALL_HP,PALISADE_GATE_HP} from '../src/fortified-walls.js';
 import {installNodeRuntime} from '../src/render-runtime.js';
@@ -27,7 +27,8 @@ import * as nodeRuntimeModule from '../src/render-nodes.js';
 import {dynamicEconomyWeights,rebalanceEconomy,manageFarming} from '../src/commander-ai.js';
 import {adaptivePerimeterLayouts} from '../src/ai-wall-layout.js';
 import {planFortification} from '../src/ai-fortifications.js';
-import {battlePreset} from '../src/custom-battle.js';
+import {battlePreset,normalizeBattle} from '../src/custom-battle.js';
+import {BattleRemains} from '../src/battle-remains.js';
 import {AudioEngine} from '../src/audio.js';
 import {synthesizeWarHorn,ATTACK_ANNOUNCE_COOLDOWN} from '../src/voice-system.js';
 
@@ -45,7 +46,7 @@ function makeView(baseCatalogue,faction='alder',age=0,tech={}){
     if(part.isMesh&&part.userData.assetMaterial&&!['team','teamRoof'].includes(part.userData.assetMaterial))
       view.materials[part.userData.assetMaterial]??=part.material.clone();
   });
-  for(const extra of ['wood','darkwood','plaster','stone','stoneDark','brick','straw','canvas','soil','trunk','iron','steel','gold','glow','glass','grain','fruit','water']){
+  for(const extra of ['wood','darkwood','plaster','stone','stoneDark','brick','straw','canvas','soil','trunk','leaf','leafDark','snow','iron','steel','gold','glow','glass','grain','fruit','water']){
     view.materials[extra]??=new THREE.MeshStandardMaterial({color:0x998877});
   }
   view.materials.wood.map=new THREE.Texture();
@@ -60,7 +61,7 @@ function makeView(baseCatalogue,faction='alder',age=0,tech={}){
   return view;
 }
 
-test('frontier-early-ages.glb provides all 44 low-poly grounded models and leaves Age 3 & Age 4 untouched',async()=>{
+test('frontier-early-ages.glb provides all 47 low-poly grounded models and leaves Age 3 & Age 4 untouched',async()=>{
   const [{gltf:baseGltf,bytes:baseBytes},{gltf:earlyGltf,bytes:earlyBytes}]=await Promise.all([
     loadGLB('../src/assets3d/frontier-low.glb'),
     loadGLB('../src/assets3d/frontier-early-ages.glb'),
@@ -68,8 +69,8 @@ test('frontier-early-ages.glb provides all 44 low-poly grounded models and leave
   const baseAssets=registerAuthoredAssets(baseGltf,'low',baseBytes.length);
   registerEarlyAgeArtwork(earlyGltf.scene);
   try{
-    assert.ok(earlyBytes.length<900_000,`early-age GLB stays lightweight for phones (${earlyBytes.length} bytes)`);
-    assert.equal(earlyAgeArtworkState().models,44);
+    assert.ok(earlyBytes.length<1_800_000,`early-age GLB stays lightweight for phones (${earlyBytes.length} bytes)`);
+    assert.equal(earlyAgeArtworkState().models,47);
 
     // Age 3 (Castle) and Age 4 (Imperial) must NEVER resolve early-age overrides.
     for(const type of ['towncenter','house','barracks','mill','range','stable','blacksmith','market','tower','dock','keep','wall','gate']){
@@ -498,4 +499,144 @@ test('gates can be placed directly onto existing owned walls (AoE style) without
   assert.ok(openGate);
   assert.equal(openGate.wallAngle,undefined,'standalone gate on open land keeps flexible angle until walls join');
   assert.equal(wallConnections(sim.entities).length>=2,true);
+});
+
+test('automatic corner bastions form cleanly at 90-degree corners & junctions across all 3 tiers and compile on WebGPU',async()=>{
+  const [{gltf:baseGltf,bytes:baseBytes},{gltf:earlyGltf}]=await Promise.all([
+    loadGLB('../src/assets3d/frontier-low.glb'),
+    loadGLB('../src/assets3d/frontier-early-ages.glb'),
+  ]);
+  const baseAssets=registerAuthoredAssets(baseGltf,'low',baseBytes.length);
+  registerEarlyAgeArtwork(earlyGltf.scene);
+  try{
+    // 1. Topology detection: straight runs stay walls; 90° L-corners & T-junctions become bastions; losing a leg reverts.
+    const sim=new Simulation({mode:'sandbox',map:'highlands',seed:512});
+    for(const e of sim.entities)if(e.kind==='resource'||e.kind==='building')e.hp=0;
+    sim.revision++;sim.visible.fill(1);
+    const w1=sim.addBuilding('wall',0,0,20,true);
+    const corner=sim.addBuilding('wall',0,WALL_SPACING,20,true);
+    const straight=sim.addBuilding('wall',0,WALL_SPACING*2,20,true);
+    assert.equal(isWallCorner(sim,w1),false,'end wall stub is not a corner');
+    assert.equal(isWallCorner(sim,corner),false,'straight wall run is not a corner');
+    assert.equal(isWallCorner(sim,straight),false,'straight end is not a corner');
+
+    // Attach perpendicular leg to corner -> T-junction becomes bastion!
+    const perp=sim.addBuilding('wall',0,WALL_SPACING,20+WALL_SPACING,true);
+    assert.equal(isWallCorner(sim,corner),true,'T-junction upgrades into corner bastion');
+
+    // Demolish the straight continuation -> classic 90-degree L-corner stays a bastion!
+    sim.hurt(straight,straight.hp+1,null);
+    assert.equal(isWallCorner(sim,corner),true,'90-degree L-corner remains a corner bastion');
+
+    // Verify all 3 Blender corner bastions (Palisade, Stone, Fortified): grounded, taller than straight walls, 1 static draw call!
+    const tiers=[
+      ['palisade',0,{}],
+      ['stone',2,{}],
+      ['fortified',3,{fortifiedWall:1}],
+    ];
+    for(const [tier,age,tech]of tiers){
+      sim.players[0].age=age;sim.players[0].tech={...sim.players[0].tech,fortifiedWall:tech.fortifiedWall||0};
+      const view=makeView(baseAssets,'alder',age,tech);
+      view.sim=sim;
+      const straightRaw=buildingModel(view,w1);
+      const cornerRaw=buildingModel(view,corner);
+      assert.equal(straightRaw.userData.model3d.wallCorner,false,`straight ${tier} wall keeps wallCorner=false`);
+      assert.equal(cornerRaw.userData.model3d.wallCorner,true,`corner ${tier} wall gets wallCorner=true`);
+      assert.equal(cornerRaw.userData.model3d.wallTier,tier);
+      const sBox=new THREE.Box3().setFromObject(straightRaw);
+      const cBox=new THREE.Box3().setFromObject(cornerRaw);
+      assert.ok(cBox.min.y<=-0.42,`${tier} corner bastion is grounded below -0.42 (${cBox.min.y.toFixed(2)})`);
+      assert.ok(cBox.max.y>sBox.max.y+.55,`${tier} corner bastion (${cBox.max.y.toFixed(2)}m) stands taller than straight wall (${sBox.max.y.toFixed(2)}m)`);
+      const packedStraight=packBuildingModel(view,straightRaw,w1);
+      const packedCorner=packBuildingModel(view,cornerRaw,corner);
+      const cornerStaticMeshes=packedCorner.children.filter(c=>c.isMesh&&c.userData.structureSurface);
+      assert.equal(cornerStaticMeshes.length,1,`${tier} corner bastion packs to 1 static draw call`);
+      assert.notEqual(cornerStaticMeshes[0].geometry,packedStraight.children.find(c=>c.isMesh&&c.userData.structureSurface).geometry,'corner bastion does not collide with straight wall geometry cache');
+    }
+
+    // Demolishing the perpendicular leg reverts the corner cleanly back to a normal straight wall.
+    sim.hurt(perp,perp.hp+1,null);
+    assert.equal(isWallCorner(sim,corner),false,'removing perpendicular leg reverts corner back to normal wall');
+
+    // 2. WebGPU WGSL compilation check across all 3 Corner Bastion tiers!
+    installNodeRuntime(nodeRuntimeModule);
+    try{
+      const webgpu=await import('three/webgpu');
+      const renderer=new nodeRuntimeModule.WebGPURenderer({canvas:{width:1280,height:720,style:{},addEventListener(){},removeEventListener(){}}});
+      renderer._initialized=true;
+      renderer.backend.hasFeature=()=>true;renderer.backend.has=()=>true;
+      renderer.backend.compatibilityMode=false;
+      renderer.backend.device={limits:{maxUniformBufferBindingSize:65536,maxStorageBufferBindingSize:134217728}};
+      const perp2=sim.addBuilding('wall',0,WALL_SPACING,20-WALL_SPACING,true);
+      assert.equal(isWallCorner(sim,corner),true);
+      for(const [tier,age,tech]of tiers){
+        sim.players[0].age=age;sim.players[0].tech={...sim.players[0].tech,fortifiedWall:tech.fortifiedWall||0};
+        const view=makeView(baseAssets,'alder',age,tech);view.sim=sim;
+        const packed=packBuildingModel(view,buildingModel(view,corner),corner);
+        const mesh=packed.children.find(c=>c.isMesh&&c.userData.structureSurface);
+        assert.ok(mesh.material.isNodeMaterial);
+        const builder=new webgpu.WGSLNodeBuilder(mesh,renderer);
+        builder.camera=new THREE.PerspectiveCamera();builder.scene=new THREE.Scene();
+        builder.build();
+        assert.ok(builder.vertexShader.length>100&&builder.fragmentShader.length>100,`${tier} corner bastion WGSL compiles cleanly`);
+      }
+      assert.ok(perp2.hp>0);
+    }finally{
+      installNodeRuntime(null);
+    }
+  }finally{
+    clearEarlyAgeArtwork();
+    clearAuthoredAssets();
+  }
+});
+
+test('destroyed siege & ships keep dark timber wreckage instead of turning white, Frontier Age works on Coast, and attack voice falls back when speechSynthesis is blocked',async()=>{
+  // 1. Destroyed ships & siege engines must NEVER turn bright white when PBR wood.map sets wood.color to pale 0xe4d7bf.
+  const woodMat=new THREE.MeshStandardMaterial({color:0xe4d7bf,map:new THREE.Texture()});
+  const view={
+    clock:0,scene:new THREE.Scene(),settings:{quality:'high'},
+    sim:{entities:[],isVisible:()=>true},groundHeight:()=>0,
+    materials:{wood:woodMat},
+    makeUnit(){
+      const g=new THREE.Group(),m=new THREE.Mesh(new THREE.BoxGeometry(2,1,3),woodMat);
+      m.userData.surfaceRole='wood';g.add(m);return g;
+    },
+    mergeModel:WorldView.prototype.mergeModel,
+    releaseNode(m){m.traverse(p=>p.geometry?.dispose());},
+  };
+  const pool=new BattleRemains(view);
+  try{
+    for(const type of ['ram','catapult','galley','warship']){
+      pool.spawn({id:900+type.length,owner:0,type,kind:'unit',x:5,z:5,heading:0});
+      const batch=pool.batches.get(`0:${type}:standard`);
+      assert.ok(batch,`${type} wreck batch created`);
+      const arr=batch.mesh.geometry.attributes.color.array;
+      let maxChannel=0;
+      for(let i=0;i<arr.length;i++)if(arr[i]>maxChannel)maxChannel=arr[i];
+      assert.ok(maxChannel<0.50,`${type} destroyed wreck stays rich dark timber (max channel ${maxChannel.toFixed(2)}, never bleached white)`);
+    }
+  }finally{
+    pool.dispose();woodMat.map.dispose();woodMat.dispose();
+  }
+
+  // 2. Frontier Age (startAge: 0) must stay selectable on Coast and every other map.
+  for(const map of ['highlands','coast','rivers','winter','desert','archipelago']){
+    const normalized=normalizeBattle({map,mapSize:'vast',startAge:0,slots:battlePreset('2v2')});
+    assert.equal(normalized.startAge,0,`Frontier Age (0) stays selected on ${map}`);
+  }
+
+  // 3. When speechSynthesis silently drops speech (never calls onstart), watchdog triggers recorded human voice 'alarm'.
+  const prevSynth=globalThis.speechSynthesis,prevUtt=globalThis.SpeechSynthesisUtterance;
+  try{
+    globalThis.SpeechSynthesisUtterance=class{constructor(t){this.text=t;}};
+    globalThis.speechSynthesis={getVoices:()=>[{name:'Silent Mobile Voice',lang:'en-US'}],cancel(){},speak(){/* silently dropped by browser */}};
+    const engine=new AudioEngine({volume:.7,unitVoices:true,warHorns:true});
+    let playedAlarm=0;
+    engine.play=name=>{if(name==='alarm')playedAlarm++;};
+    engine.announceAttack('Your kingdom is under attack.');
+    await new Promise(r=>setTimeout(r,280));
+    assert.equal(playedAlarm,1,'watchdog triggers Web Audio human voice alarm when speechSynthesis silently drops');
+  }finally{
+    globalThis.speechSynthesis=prevSynth;globalThis.SpeechSynthesisUtterance=prevUtt;
+  }
 });

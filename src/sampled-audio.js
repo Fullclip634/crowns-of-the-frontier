@@ -110,8 +110,8 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.play=function(name,...rest){
-    if(UI_SAMPLE_CUES.includes(name)&&this.sampleBank?.has(name)&&playCue(this,name,{gain:name==='alarm'?.34:.55,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
-      if(name==='alarm')this.duckMusic?.(1.4,.64);
+    if(UI_SAMPLE_CUES.includes(name)&&this.sampleBank?.has(name)&&playCue(this,name,{gain:name==='alarm'?.68:.55,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
+      if(name==='alarm')this.duckMusic?.(1.6,.58);
       return;
     }
     return play.call(this,name,...rest);

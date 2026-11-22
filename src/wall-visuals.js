@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {wallConnections,wallSupportConnections,wallTreeConnections} from './walls.js';
+import {wallConnections,wallSupportConnections,wallTreeConnections,isWallCorner} from './walls.js';
 import {markInstancePrefix} from './render-batches.js';
 import {terrainFloor} from './building-grounding.js';
 import {wallTier,wallTierStyle,FORTIFIED_WALL_TECH} from './fortified-walls.js';
@@ -11,7 +11,7 @@ export class WallVisuals{
   constructor(view){this.view=view;this.group=new THREE.Group();this.group.name='Connected stone walls';view.objects.add(this.group);this.capacity=0;this.links=[];this.revision=-1;this.matrix=new THREE.Matrix4();this.tint=new THREE.Color();this.allocate(32);}
   allocate(capacity){for(const mesh of this.meshes||[]){mesh.removeFromParent();mesh.dispose();}this.capacity=capacity;
     this.stone=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stone,capacity*3);this.foundation=new THREE.InstancedMesh(this.view.geo.box,this.view.materials.stoneDark,capacity);
-    this.palisade=this.view.materials.wood?new THREE.InstancedMesh(this.view.geo.box,this.view.materials.wood,capacity*10):null;
+    this.palisade=this.view.materials.wood?new THREE.InstancedMesh(this.view.geo.box,this.view.materials.wood,capacity*12):null;
     this.meshes=this.palisade?[this.stone,this.foundation,this.palisade]:[this.stone,this.foundation];
     for(const mesh of this.meshes){mesh.count=0;mesh.castShadow=mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.wallIds=[];mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);}this.lastSignature=null;
   }
@@ -55,17 +55,18 @@ export class WallVisuals{
     if(signature===this.lastSignature)return;this.lastSignature=signature;for(const mesh of this.meshes){mesh.count=0;mesh.userData.wallIds.length=0;}
     let visible=0;
     for(const link of this.links){if(!shown(link.a)||!shown(link.b))continue;const progress=Math.min(link.a.progress??1,link.b.progress??1);if(progress<=0)continue;visible++;
-      const tier=tierOf(link),style=wallTierStyle(tier),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,start={x:link.start.x-dx*.08,z:link.start.z-dz*.08},end={x:link.end.x+dx*.08,z:link.end.z+dz*.08};
+      const tier=tierOf(link),style=wallTierStyle(tier),ga=v.entityHeight(link.a),gb=v.entityHeight(link.b),span=Math.hypot(link.end.x-link.start.x,link.end.z-link.start.z),d=Math.hypot(link.b.x-link.a.x,link.b.z-link.a.z),dx=span>.001?(link.end.x-link.start.x)/span:(link.b.x-link.a.x)/d,dz=span>.001?(link.end.z-link.start.z)/span:(link.b.z-link.a.z)/d,inA=isWallCorner(v.sim,link.a)?.32:.08,inB=isWallCorner(v.sim,link.b)?.32:.08,start={x:link.start.x-dx*inA,z:link.start.z-dz*inA},end={x:link.end.x+dx*inB,z:link.end.z+dz*inB};
       const land=v.landscape||{surfaceHeightAt:(x,z)=>v.groundHeight?.(x,z)??Math.min(ga,gb)},floor=terrainFloor(land,Math.min(start.x,end.x)-1.06,Math.max(start.x,end.x)+1.06,Math.min(start.z,end.z)-1.06,Math.max(start.z,end.z)+1.06)-.12;
       if(tier==='palisade'&&this.palisade){
-        const run=Math.hypot(end.x-start.x,end.z-start.z),steps=Math.max(2,Math.min(7,Math.ceil(run/.42)));
+        const run=Math.hypot(end.x-start.x,end.z-start.z),steps=Math.max(3,Math.min(10,Math.ceil(run/.24)));
         for(let k=0;k<steps;k++){
           const t=(k+.5)/steps,px=start.x+(end.x-start.x)*t,pz=start.z+(end.z-start.z)*t,g=ga+(gb-ga)*t;
-          const vary=.92+((k*37+link.a.id*11)%14)/100,top=g+style.height*progress*vary,bot=Math.min(g-.34,floor);
-          this.stake(this.palisade,link,px,pz,(top+bot)*.5,Math.max(.3,top-bot),.35,.35,dx,dz,k%2?0xc49a68:0xa98052);
+          const vary=.88+((k*41+link.a.id*13)%18)/100,top=g+style.height*progress*vary,bot=Math.min(g-.34,floor);
+          const shade=k%3===0?0x9e978b:k%3===1?0x8a8378:0x787167;
+          this.stake(this.palisade,link,px,pz,(top+bot)*.5,Math.max(.3,top-bot),.22,.22,dx,dz,shade);
         }
-        this.piece(this.palisade,link,start,end,ga,gb,.74*progress,.17,.52,0x6e4f34);
-        if(progress>.55)this.piece(this.palisade,link,start,end,ga,gb,1.76*progress,.17,.52,0x6e4f34);
+        this.piece(this.palisade,link,start,end,ga,gb,.65*progress,.13,.38,0x585046);
+        if(progress>.55)this.piece(this.palisade,link,start,end,ga,gb,1.62*progress,.13,.38,0x585046);
         continue;
       }
       this.piece(this.stone,link,start,end,ga,gb,style.bodyY*progress,style.height*progress,style.depth,style.color);

@@ -159,7 +159,7 @@ function selectAnnouncerVoice(synth) {
   }
 }
 
-export function speakKingdomAlert(text = 'Your kingdom is under attack.', volume = 0.65) {
+export function speakKingdomAlert(text = 'Your kingdom is under attack.', volume = 0.65, onFallback = null) {
   const synth = globalThis.speechSynthesis;
   const Utterance = globalThis.SpeechSynthesisUtterance;
   if (!synth || typeof synth.speak !== 'function' || typeof Utterance !== 'function') return false;
@@ -173,7 +173,28 @@ export function speakKingdomAlert(text = 'Your kingdom is under attack.', volume
     utterance.lang = chosen?.lang || 'en-US';
     utterance.rate = 0.96;
     utterance.pitch = 0.92;
-    utterance.volume = Math.max(0.15, Math.min(0.85, volume * 0.95));
+    utterance.volume = Math.max(0.25, Math.min(0.90, volume * 0.98));
+    let settled = false;
+    let watchdog = null;
+    const triggerFallback = () => {
+      if (settled) return;
+      settled = true;
+      if (watchdog !== null) { clearTimeout(watchdog); watchdog = null; }
+      try { synth.cancel?.(); } catch {}
+      onFallback?.();
+    };
+    if (typeof onFallback === 'function' && typeof setTimeout === 'function') {
+      utterance.onstart = () => {
+        settled = true;
+        if (watchdog !== null) { clearTimeout(watchdog); watchdog = null; }
+      };
+      utterance.onerror = triggerFallback;
+      // Mobile/desktop Chrome silently drops speechSynthesis calls triggered from raid ticks
+      // without a direct click gesture. If speech has not actually started within 220ms,
+      // play the unlocked Web Audio human voice sample instead so the alert is never silent.
+      watchdog = setTimeout(triggerFallback, 220);
+      watchdog?.unref?.();
+    }
     synth.cancel?.();
     synth.speak(utterance);
     return true;
@@ -250,7 +271,11 @@ export function installVoiceSystem(AudioEngine) {
       this.tone?.(220, 0.28, 'sine', 0.055, 0);
       this.tone?.(293.66, 0.34, 'sine', 0.045, 0.14);
     }
-    if (this.settings.unitVoices !== false && speakKingdomAlert(text, this.settings.volume || 0.65)) {
+    if (this.settings.unitVoices !== false) {
+      if (speakKingdomAlert(text, this.settings.volume || 0.65, () => this.play?.('alarm'))) {
+        return true;
+      }
+      this.play?.('alarm');
       return true;
     }
     this.play?.('alarm');

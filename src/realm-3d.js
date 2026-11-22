@@ -14,6 +14,7 @@ import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
 import {wallTier} from './fortified-walls.js';
+import {isWallCorner} from './walls.js';
 import {treePalette,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureAge,architectureOutdated} from './architecture-age.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
@@ -337,7 +338,7 @@ export function installRealm3D(WorldView){
     for(const e of buildings){
       if(e.kind!=='building')continue;
       let node=this.nodes.get(e.id);if(!node)continue;
-      if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e)))){
+      if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e))||(e.type==='wall'&&(node.userData.model3d?.wallCorner??false)!==isWallCorner(this.sim,e)))){
         const previousGate=node.userData.portcullis;
         const prevOpenLift=previousGate?.userData.terrainGate?.openLift;
         this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);

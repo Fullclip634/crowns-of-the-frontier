@@ -61,6 +61,26 @@ export function restoreWallLinks(entities){
   const legacy=entities.filter(e=>fortification(e)&&!Array.isArray(e.wallLinks));for(const e of legacy)e.wallLinks=[];for(const e of legacy)connectWall(e,entities);
 }
 
+// Detect walls where two or more connected wall runs meet at an angle (90° L-corners,
+// bends <= ~145°, T-junctions, and 4-way crossroads) so they upgrade visually into
+// square castle-like corner bastions (like AoE2 / AoE4).
+export function isWallCorner(sim,entity){
+  if(!entity||entity.kind!=='building'||entity.type!=='wall'||entity.hp<=0)return false;
+  const links=entity.wallLinks;
+  if(!links||links.length<2)return false;
+  const dirs=[];
+  for(const id of links){
+    const other=typeof sim?.get==='function'?sim.get(id):sim?.entities?.find(item=>item.id===id);
+    if(!other||other.hp<=0||!fortification(other))continue;
+    const dx=other.x-entity.x,dz=other.z-entity.z,d=Math.hypot(dx,dz);
+    if(d<1e-6)continue;
+    dirs.push({x:dx/d,z:dz/d});
+  }
+  if(dirs.length<2)return false;
+  if(dirs.length>=3)return true;
+  return dirs[0].x*dirs[1].x+dirs[0].z*dirs[1].z>-.82;
+}
+
 function gatePoint(gate,other){const a=axis(gate),sign=Math.sign((other.x-gate.x)*a.x+(other.z-gate.z)*a.z)||1;return {x:gate.x+a.x*sign*2.76,z:gate.z+a.z*sign*2.76};}
 function wallEdge(wall,other){const d=length(wall,other),dx=(other.x-wall.x)/d,dz=(other.z-wall.z)/d,a=axis(wall),along=Math.abs(dx*a.x+dz*a.z),across=Math.abs(-dx*a.z+dz*a.x),extent=Math.min(along>1e-8?1.425/along:Infinity,across>1e-8?.725/across:Infinity);return {x:wall.x+dx*extent,z:wall.z+dz*extent};}
 

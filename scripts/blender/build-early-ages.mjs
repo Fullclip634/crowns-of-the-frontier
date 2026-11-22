@@ -46,7 +46,7 @@ await run(blender,[
 ]);
 
 const report=JSON.parse(await fs.readFile(path.join(stage,'report.json'),'utf8'));
-assert.equal(report.count,44,'expected 2 palisade + 6 frontier + 36 feudal models');
+assert.equal(report.count,47,'expected 2 palisade + 3 corner bastions + 6 frontier + 36 feudal models');
 
 const rawPath=path.join(stage,'frontier-early-ages-raw.glb');
 const packedPath=path.join(stage,'frontier-early-ages.glb');

@@ -40,7 +40,7 @@ export function normalizeBattle(options){
   if(slots.length<2)throw new Error('Enable at least one opposing kingdom.');
   if(slots.every(slot=>slot.team===slots[0].team))throw new Error('Place at least one kingdom on a different team.');
   const mapSize=BATTLE_SIZES[options.mapSize]?options.mapSize:'vast';
-  return {...options,mode:'custom',slots,playerSlot:spectator||hostSpectator?0:slots[0].slotNumber,spectator,hostSpectator,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(options.map==='coast'?1:0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:POPULATION_LIMITS.includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
+  return {...options,mode:'custom',slots,playerSlot:spectator||hostSpectator?0:slots[0].slotNumber,spectator,hostSpectator,mapSize,worldSize:BATTLE_SIZES[mapSize].size,faction:slots[0].faction,difficulty:'normal',victory:VICTORY_RULES[options.victory]?options.victory:'annihilation',aiPace:Object.hasOwn(AI_PACES,options.aiPace)?options.aiPace:'balanced',startAge:Math.max(0,Math.min(3,Math.floor(Number(options.startAge)||0))),resourceLevel:options.resourceLevel==='rich'?'rich':'standard',populationLimit:POPULATION_LIMITS.includes(Number(options.populationLimit))?Number(options.populationLimit):80,shareVision:options.shareVision!==false,revealRemnants:options.revealRemnants!==false,multiplayer:!!options.multiplayer};
 }
 export function battleSpawns(slots,worldSize){
   const ordered=slots.map((slot,i)=>({team:slot.team,slotNumber:slot.slotNumber||i+1,i})).sort((a,b)=>a.team-b.team||a.slotNumber-b.slotNumber),anchor=ordered.reduce((best,slot,index)=>slot.slotNumber<ordered[best].slotNumber?index:best,0),r=worldSize*.34,result=[];
@@ -159,7 +159,7 @@ function initializeBattle(sim){
     if(player.age>=2){sim.addBuilding('stable',owner,x-15,z-1,true);sim.addBuilding('blacksmith',owner,x+19,z+15,true);}
   });
   if(sim.options.map==='coast')kingdoms.forEach(({player,owner})=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
-    sim.addBuilding('dock',owner,mid+sign*20,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
+    sim.addBuilding('dock',owner,mid+sign*20,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);if(player.age>=1)sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
   });
   kingdoms.forEach(({player,owner})=>{
     // Each settlement receives the same seeded local deposits, independent of difficulty.

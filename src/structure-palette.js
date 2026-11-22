@@ -305,10 +305,10 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,emissive=material.emissive?.toArray()||[0,0,0];
   const hasRoofMap=Boolean(roofSurfaceMaps().color||material.map);
-  const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:material===m.plaster&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
+  const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:preserveSurface&&(material===m.straw||material===m.trunk)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:(material===m.plaster||(preserveSurface&&material===m.canvas))&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
   const mode=preserveSurface?rawMode:(material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
-  const sourceColor=promotedWallColor(material,rawMode,mode,m);
+  const sourceColor=preserveSurface&&material===m.straw?[0.78,0.65,0.41]:preserveSurface&&material===m.trunk?[0.68,0.66,0.62]:preserveSurface&&material===m.canvas?[0.92,0.80,0.56]:promotedWallColor(material,rawMode,mode,m);
   // Roofs keep clear team ownership color (72%) with a subtle age-specific finish tint (28%).
   const styledRoof=mode===4&&roofFinish;
   const color=styledRoof?sourceColor.map((channel,i)=>THREE.MathUtils.lerp(channel,roofFinish[i],.28)):sourceColor;
@@ -343,7 +343,7 @@ export function packBuildingModel(view,root,e){
   const style=architectureStyle(ageStyled?surfaceAge:0),masonry=e.type==='wall'||e.type==='gate';
   const silverStone=fortified||(!masonry&&surfaceAge>=3);
   const tint=masonry?(fortified?[.84,.89,.96]:palisade?[1,1,1]:[.98,.93,.86]):(metadata.authoredAgeVariant?[1,1,1]:style.tint),roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
-  const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',metadata.authoredAgeVariant?'early':'std',e.owner,metadata.detail||'procedural',view.settings?.quality,
+  const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',metadata.authoredAgeVariant?'early':'std',metadata.wallCorner?'corner':'run',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier,isSnowBiome(view.sim?.options?.map)?'snow':'dry'].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
   root.updateMatrixWorld(true);

@@ -6,6 +6,7 @@ import {bindWorkerToolJoints} from './worker-tool-rig.js';
 import {bindFootJoints} from './foot-placement.js';
 import {bindMountedFootRig} from './mounted-footing.js';
 import {wallTier} from './fortified-walls.js';
+import {isWallCorner} from './walls.js';
 import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
@@ -226,7 +227,8 @@ export function authoredBuilding(view,e){
   const faction=view.sim?.players[e.owner]?.faction||'alder';
   const playerAge=architectureAge(view.sim,e);
   const tier=(e.type==='wall'||e.type==='gate')?wallTier(view.sim,e):'stone';
-  const early=earlyAgeBuildingTemplate(e.type,faction,playerAge,tier);
+  const corner=e.type==='wall'&&isWallCorner(view.sim,e);
+  const early=earlyAgeBuildingTemplate(e.type,faction,playerAge,tier,corner);
   if(early){
     const root=bindAuthoredTemplate(view,early.template,early.key,e.owner,'early-ages');
     const style=architectureStyle(playerAge);
@@ -235,6 +237,7 @@ export function authoredBuilding(view,e){
       authoredAgeVariant:true,
       ...(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type)?{architectureAge:playerAge,architectureLabel:style.label}:{}),
       ...(e.type==='wall'||e.type==='gate'?{wallTier:tier}:{}),
+      ...(e.type==='wall'?{wallCorner:corner}:{}),
       ...(early.template.userData.gateHousingHeight?{gateHousingHeight:early.template.userData.gateHousingHeight}:{}),
       ...(early.template.userData.artRevision?{artRevision:early.template.userData.artRevision}:{}),
     };
@@ -255,7 +258,7 @@ export function authoredBuilding(view,e){
   }
   if(root&&e.type==='dock')orientDockPier(view,root,e);
   if(root&&(e.type==='wall'||e.type==='gate')){
-    root.userData.model3d={...root.userData.model3d,wallTier:tier};
+    root.userData.model3d={...root.userData.model3d,wallTier:tier,...(e.type==='wall'?{wallCorner:corner}:{})};
     if(e.type==='wall'){
       if(tier==='fortified')root.traverse(part=>{
         if(part.isMesh)part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
