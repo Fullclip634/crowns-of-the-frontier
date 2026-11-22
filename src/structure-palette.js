@@ -308,7 +308,7 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:preserveSurface&&(material===m.straw||material===m.trunk)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:(material===m.plaster||(preserveSurface&&material===m.canvas))&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
   const mode=preserveSurface?rawMode:(material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
-  const sourceColor=preserveSurface&&material===m.straw?[0.78,0.65,0.41]:preserveSurface&&material===m.trunk?[0.68,0.66,0.62]:preserveSurface&&material===m.canvas?[0.92,0.80,0.56]:promotedWallColor(material,rawMode,mode,m);
+  const sourceColor=preserveSurface&&mode===1&&material===m.straw?[0.78,0.65,0.41]:preserveSurface&&mode===1&&material===m.trunk?[0.68,0.66,0.62]:preserveSurface&&mode===3&&material===m.canvas?[0.92,0.80,0.56]:promotedWallColor(material,rawMode,mode,m);
   // Roofs keep clear team ownership color (72%) with a subtle age-specific finish tint (28%).
   const styledRoof=mode===4&&roofFinish;
   const color=styledRoof?sourceColor.map((channel,i)=>THREE.MathUtils.lerp(channel,roofFinish[i],.28)):sourceColor;

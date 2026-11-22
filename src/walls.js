@@ -61,24 +61,47 @@ export function restoreWallLinks(entities){
   const legacy=entities.filter(e=>fortification(e)&&!Array.isArray(e.wallLinks));for(const e of legacy)e.wallLinks=[];for(const e of legacy)connectWall(e,entities);
 }
 
+const wallCornerCache=new WeakMap();
+
+function fortificationIndex(sim){
+  const entities=sim?.entities;
+  if(!Array.isArray(entities))return null;
+  const revision=sim.revision,lengthCount=entities.length;
+  const cached=wallCornerCache.get(sim);
+  if(cached&&cached.entities===entities&&cached.revision===revision&&cached.length===lengthCount)return cached.map;
+  const map=new Map();
+  const source=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):entities;
+  for(let i=0;i<source.length;i++){
+    const item=source[i];
+    if(item&&item.hp>0&&fortification(item))map.set(item.id,item);
+  }
+  wallCornerCache.set(sim,{entities,revision,length:lengthCount,map});
+  return map;
+}
+
 // Detect walls where two or more connected wall runs meet at an angle (90° L-corners,
 // bends <= ~145°, T-junctions, and 4-way crossroads) so they upgrade visually into
 // square castle-like corner bastions (like AoE2 / AoE4).
+// Uses an O(1) revision-cached fortification map and zero per-call allocations so
+// per-frame render checks stay lag-free even in massive 4v4 walled battles.
 export function isWallCorner(sim,entity){
   if(!entity||entity.kind!=='building'||entity.type!=='wall'||entity.hp<=0)return false;
   const links=entity.wallLinks;
   if(!links||links.length<2)return false;
-  const dirs=[];
-  for(const id of links){
-    const other=typeof sim?.get==='function'?sim.get(id):sim?.entities?.find(item=>item.id===id);
+  const index=fortificationIndex(sim);
+  let count=0,d0x=0,d0z=0,d1x=0,d1z=0;
+  for(let i=0;i<links.length;i++){
+    const id=links[i];
+    const other=index?index.get(id):(typeof sim?.get==='function'?sim.get(id):null);
     if(!other||other.hp<=0||!fortification(other))continue;
     const dx=other.x-entity.x,dz=other.z-entity.z,d=Math.hypot(dx,dz);
     if(d<1e-6)continue;
-    dirs.push({x:dx/d,z:dz/d});
+    if(count===0){d0x=dx/d;d0z=dz/d;count=1;}
+    else if(count===1){d1x=dx/d;d1z=dz/d;count=2;}
+    else return true;
   }
-  if(dirs.length<2)return false;
-  if(dirs.length>=3)return true;
-  return dirs[0].x*dirs[1].x+dirs[0].z*dirs[1].z>-.82;
+  if(count<2)return false;
+  return d0x*d1x+d0z*d1z>-.82;
 }
 
 function gatePoint(gate,other){const a=axis(gate),sign=Math.sign((other.x-gate.x)*a.x+(other.z-gate.z)*a.z)||1;return {x:gate.x+a.x*sign*2.76,z:gate.z+a.z*sign*2.76};}

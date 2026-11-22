@@ -7,16 +7,18 @@ import {nearViewport,markInstancePrefix} from './render-batches.js';
 
 // Materials whose .color is lifted to near-white once PBR albedo textures load
 // (see surface-assets.js). BattleRemains renders untextured vertex-colored
-// wrecks, so restore their true timber/masonry albedo instead of bleached white.
+// wrecks in Three.js linear color space, so convert true base timber/masonry
+// hex albedos to linear RGB instead of baking bleached near-white values.
+const linearHex=hex=>new THREE.Color(hex).toArray();
 const TEXTURED_WRECK_ALBEDO={
-  wood:[.40,.29,.19],
-  darkwood:[.24,.18,.13],
-  timberEdge:[.27,.21,.15],
-  stone:[.60,.56,.50],
-  stoneDark:[.45,.46,.43],
-  brick:[.48,.34,.25],
-  plaster:[.76,.70,.58],
-  rock:[.54,.57,.53],
+  wood:linearHex(0x6b5239),
+  darkwood:linearHex(0x413326),
+  timberEdge:linearHex(0x4a3a2b),
+  stone:linearHex(0x9a9284),
+  stoneDark:linearHex(0x6e6c66),
+  brick:linearHex(0x7e5a44),
+  plaster:linearHex(0xb8aa8e),
+  rock:linearHex(0x888d86),
 };
 
 function resolvedPartColor(view,part){
@@ -33,7 +35,7 @@ function resolvedPartColor(view,part){
 function fallenGeometry(view,e){
   const model=view.mergeModel(view.makeUnit({...e,moving:false,cooldown:0,order:null})),parts=[];
   const unitDef=UNITS[e.type];
-  const scorch=unitDef&&(unitDef.naval||unitDef.role==='siege')?.76:1;
+  const scorch=unitDef&&(unitDef.naval||unitDef.role==='siege')?.68:1;
   model.updateMatrixWorld(true);
   model.traverse(part=>{
     if(!part.isMesh||part.material.transparent)return;

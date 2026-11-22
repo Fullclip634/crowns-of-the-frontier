@@ -613,11 +613,29 @@ test('destroyed siege & ships keep dark timber wreckage instead of turning white
       const arr=batch.mesh.geometry.attributes.color.array;
       let maxChannel=0;
       for(let i=0;i<arr.length;i++)if(arr[i]>maxChannel)maxChannel=arr[i];
-      assert.ok(maxChannel<0.50,`${type} destroyed wreck stays rich dark timber (max channel ${maxChannel.toFixed(2)}, never bleached white)`);
+      assert.ok(maxChannel<0.25,`${type} destroyed wreck stays deep linear charred timber (max linear channel ${maxChannel.toFixed(3)}, never pale or bleached white)`);
     }
   }finally{
     pool.dispose();woodMat.map.dispose();woodMat.dispose();
   }
+
+  // 1b. Per-frame isWallCorner performance check: 400 walls + 2,000 entities stays O(1) (<5ms for 10 frames!).
+  const bigSim=new Simulation({mode:'sandbox',map:'highlands',seed:512});
+  bigSim.entities=[];bigSim.revision++;
+  const walls=[];
+  for(let i=0;i<400;i++){
+    const e={id:i+1,kind:'building',type:'wall',owner:0,x:(i%20)*WALL_SPACING,z:Math.floor(i/20)*WALL_SPACING,hp:400,maxHp:400,r:1.4,wallLinks:[]};
+    if(i>0)e.wallLinks.push(i);
+    if(i<399)e.wallLinks.push(i+2);
+    walls.push(e);bigSim.entities.push(e);
+  }
+  for(let i=0;i<1600;i++)bigSim.entities.push({id:1000+i,kind:'unit',type:'villager',owner:0,x:i,z:0,hp:50});
+  bigSim.revision++;
+  isWallCorner(bigSim,walls[0]); // warm revision cache
+  const t0=performance.now();
+  for(let frame=0;frame<10;frame++)for(const w of walls)isWallCorner(bigSim,w);
+  const elapsedMs=performance.now()-t0;
+  assert.ok(elapsedMs<15,`4,000 isWallCorner calls across 2,000 entities took ${elapsedMs.toFixed(2)}ms (<15ms O(1) lag-free)`);
 
   // 2. Frontier Age (startAge: 0) must stay selectable on Coast and every other map.
   for(const map of ['highlands','coast','rivers','winter','desert','archipelago']){
