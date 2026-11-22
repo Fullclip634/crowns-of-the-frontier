@@ -250,17 +250,12 @@ export class GroundCover{
     this.entries=scatterCover(land,capacity);this.cells=indexCover(this.entries);
     this.visibleEntries=[];this.buildingSites=new Map();this.dummy=new THREE.Object3D();this.color=new THREE.Color();
 
-    // Biome wildflower & low-shrub scatter shares the exact same fog/viewport/foundation culling.
-    const accentCap=quality==='high'?Math.min(780,Math.floor(land.worldSize**2*.014)):quality==='medium'?Math.min(340,Math.floor(land.worldSize**2*.007)):0;
-    this.accentEntries=scatterAccents(land,accentCap);
-    this.accentCells=indexCover(this.accentEntries);
+    // Multi-colored geometric flower/shrub rosettes are intentionally disabled so
+    // meadows stay clean and cohesive with curved grass tufts only.
+    this.accentEntries=[];
+    this.accentCells=[];
     this.visibleAccents=[];
-    if(accentCap>0){
-      this.accents=new THREE.InstancedMesh(biomeAccentGeometry(),material,accentCap);
-      this.accents.count=0;this.accents.frustumCulled=false;this.accents.receiveShadow=true;
-      this.accents.name='Biome wildflowers and shrubs';this.accents.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      view.terrain.add(this.accents);
-    }else this.accents=null;
+    this.accents=null;
     this.update(true,true);
   }
   update(menu=false,force=false){

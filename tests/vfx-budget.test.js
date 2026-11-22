@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {WorldView} from '../src/world.js';
+import {wakeFoamTexture} from '../src/battle-effects.js';
 import {VFX_QUALITY_BUDGETS,vfxBudget,particleCount,effectsAllowed,createFrameTimer,vfxFrameReport} from '../src/vfx-budget.js';
 
 test('quality budgets are explicit, frozen and ordered',()=>{
@@ -175,5 +176,44 @@ test('fog suppresses existing particles and decals while their lifetimes advance
   view.battleFog.enabled.value=0;
   view.updateBattleEffects(0,0);
   assert.ok(view.fx.every(f=>f.object.visible));
+  view.impactEffects.dispose();
+});
+
+test('ship wakes use feathered seafoam textures, obey water boundaries and dissolve smoothly',()=>{
+  const tex=wakeFoamTexture(64),data=tex.image.data;
+  assert.equal(tex.flipY,false,'DataTexture stays flipY=false so WebGL 2 and WebGPU orient stern-to-tail identically');
+  for(let i=0;i<64;i++){
+    assert.equal(data[i*4+3],0,'stern border stays fully feathered');
+    assert.equal(data[((63*64)+i)*4+3],0,'aft trailing border stays fully feathered');
+    assert.equal(data[(i*64)*4+3],0,'port border stays fully feathered');
+    assert.equal(data[(i*64+63)*4+3],0,'starboard border stays fully feathered');
+  }
+  let maxInside=0;
+  for(let y=8;y<48;y++)for(let x=8;x<56;x++)maxInside=Math.max(maxInside,data[(y*64+x)*4+3]);
+  assert.ok(maxInside>100,'interior carries visible seafoam wake texture');
+  tex.dispose();
+
+  const view=effectView('high');
+  view.battleFog={enabled:{value:0}};
+  view.sim={isVisible:()=>true,isWater:(x,z)=>z>0};
+  // Stern on dry beach (z <= 0) or trailing aft onto dry beach must not spawn a wake.
+  view.wake(0,-1,0,1);
+  view.wake(0,2,0,1); // heading=0 -> aft tail reaches z = 2 - 2.9 = -0.9 (dry land)
+  assert.equal(view.fx.length,0,'shoreline and dry-sand wakes are suppressed');
+
+  // Open water wake spawns cleanly with feathered map and polygon offset.
+  view.wake(0,8,0,1);
+  assert.equal(view.fx.length,1);
+  const [wake]=view.fx;
+  assert.ok(wake.object.material.map,'wake uses procedural feathered seafoam texture');
+  assert.equal(wake.object.material.polygonOffset,true);
+  assert.equal(wake.object.material.depthWrite,false);
+  const startOpacity=wake.object.material.opacity;
+  view.updateBattleEffects(.23,.23);
+  const peakOpacity=wake.object.material.opacity;
+  view.updateBattleEffects(.65,.65);
+  const lateOpacity=wake.object.material.opacity;
+  assert.ok(peakOpacity>startOpacity&&peakOpacity<.38,'wake fades in softly without popping');
+  assert.ok(lateOpacity<peakOpacity,'wake dissolves smoothly over its lifetime');
   view.impactEffects.dispose();
 });

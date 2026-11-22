@@ -58,7 +58,7 @@ test('Shared Blender trees retain biome silhouettes within their distant triangl
   }finally{clearAuthoredAssets();}
 });
 
-test('Phase 3 curved ribbon grass uses skyward bent normals, synchronized wind and biome accent scatter',()=>{
+test('Phase 3 curved ribbon grass uses skyward bent normals, synchronized wind and omits colored ground rosettes',()=>{
   const landscape=new Landscape(512,'riverland',180,[{x:-30,z:30}],[]);
   const atmo=createAtmosphereUniforms();
   atmo.wind.value.set(1.2,0,-1.2);
@@ -84,10 +84,11 @@ test('Phase 3 curved ribbon grass uses skyward bent normals, synchronized wind a
   avgNy/=nrm.count;
   assert.ok(avgNy>=0.70,`Bent skyward normals keep average normal.y >= 0.70 (got ${avgNy.toFixed(3)})`);
   assert.ok(Math.abs(cover.wind.dir.value.x-.707)<.01&&Math.abs(cover.wind.dir.value.y+.707)<.01,'Grass wind direction syncs with shared atmosphere wind');
-  assert.ok(cover.accents&&cover.accents.count>0,'High quality scatters biome wildflowers/shrubs');
+  assert.equal(cover.accents,null,'High quality keeps meadows clean without multi-colored geometric rosettes');
+  assert.equal(cover.visibleAccents.length,0);
   view.settings.quality='low';
   cover.update(false);
-  assert.equal(cover.accents.count,0,'Low quality hides optional biome accent scatter');
+  assert.equal(cover.accents,null,'Low quality also omits multi-colored geometric rosettes');
   cover.dispose();
 });
 

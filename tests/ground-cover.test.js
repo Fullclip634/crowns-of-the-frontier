@@ -60,14 +60,17 @@ test('high-quality grass animates via GPU wind uniforms with zero stationary CPU
   assert.equal(cover.mesh.instanceMatrix.version,matrixVersion,'stationary High grass never re-uploads instance matrices');
   assert.equal(cover.mesh.instanceColor.version,colorVersion,'stationary High grass never re-uploads instance colors');
 
-  const fullGrass=[...cover.visibleEntries],fullAccents=[...cover.visibleAccents];
+  const fullGrass=[...cover.visibleEntries];
+  assert.equal(cover.accents,null,'multi-colored ground accent rosettes are disabled');
+  assert.equal(cover.visibleAccents.length,0);
+  assert.equal(view.groundCoverDiagnostics.accentVisible,0);
   const fullTriangles=view.groundCoverDiagnostics.triangles;
   view.settings.reduceFoliage=true;
   cover.update(false);
   assert.equal(cover.wind.strength.value,0);
   assert.equal(cover.wind.time.value,0);
   assert.ok(cover.mesh.count>0&&cover.mesh.count<fullGrass.length*.65);
-  assert.ok(cover.accents.count>0&&cover.accents.count<fullAccents.length);
+  assert.equal(cover.accents,null);
   assert.ok(view.groundCoverDiagnostics.triangles<fullTriangles*.65);
   assert.ok(cover.visibleEntries.every(entry=>fullGrass.includes(entry)));
 
@@ -75,7 +78,7 @@ test('high-quality grass animates via GPU wind uniforms with zero stationary CPU
   cover.update(false);
   assert.ok(cover.wind.strength.value>0);
   assert.deepEqual(cover.visibleEntries,fullGrass);
-  assert.deepEqual(cover.visibleAccents,fullAccents);
+  assert.equal(cover.visibleAccents.length,0);
 
   view.settings.reducedMotion=true;view.clock=5;
   cover.update(false,false);

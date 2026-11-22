@@ -274,9 +274,36 @@ export function dustPuffTexture(size=32){
   tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
   return tex;
 }
+export function wakeFoamTexture(size=64){
+  const data=new Uint8Array(size*size*4);
+  const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+  for(let y=0;y<size;y++){
+    const v=y/(size-1); // 0 = stern apex, 1 = aft trailing dissolve
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1,au=Math.abs(u);
+      const armX=.08+.64*Math.pow(v,.85);
+      const armWidth=.14+.24*v;
+      const arm=Math.pow(clamp(1-Math.abs(au-armX)/armWidth,0,1),1.85);
+      const inner=clamp(1-au/Math.max(.12,armX*.92),0,1);
+      const ripple=.55+.45*Math.sin(v*18-au*6.5);
+      const wash=inner*inner*.42*ripple*(1-v*.55);
+      const froth=.72+.28*Math.sin(u*13+v*9.5)*Math.cos(v*15-u*8);
+      const frontFade=smooth(0,.16,v),tailFade=smooth(1,.28,v),sideFade=smooth(1,.72,au);
+      const alpha=clamp((arm*.92+wash)*froth*frontFade*tailFade*sideFade,0,1);
+      const i=(y*size+x)*4;
+      data[i]=232;data[i+1]=246;data[i+2]=248;data[i+3]=Math.round(alpha*225);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.flipY=false;tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
 function wakeGeometry(){
-  const positions=[-0.38,0,0,-1.45,0,-2.10,-0.82,0,-2.25,-0.38,0,0,-0.82,0,-2.25,-0.08,0,-0.45,0.38,0,0,0.82,0,-2.25,1.45,0,-2.10,0.38,0,0,0.08,0,-0.45,0.82,0,-2.25];
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
+  // Horizontal plane extending aft (-Z) from the stern with feathered seafoam UVs.
+  const g=new THREE.PlaneGeometry(2.8,3.2);
+  g.rotateX(-Math.PI/2);
+  g.translate(0,0,-1.45);
+  return g;
 }
 
 // Opaque projectiles share one instanced draw per shape. Melee slashes
@@ -372,7 +399,8 @@ export class ImpactEffects{
         mesh=new THREE.Mesh(this.geometry.dust,material);
       }else if(kind==='wake'){
         this.geometry.wake??=wakeGeometry();
-        const material=new THREE.MeshBasicMaterial({color:0xdcebe8,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide});
+        this.textures.wake??=wakeFoamTexture();
+        const material=new THREE.MeshBasicMaterial({map:this.textures.wake,color:0xe4f3f2,transparent:true,opacity:.06,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
         mesh=new THREE.Mesh(this.geometry.wake,material);
       }else{
         const material=kind==='burst'?standardMaterial({color,roughness:.9,transparent:true,opacity:.8}):new THREE.MeshBasicMaterial({color,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide});
@@ -384,7 +412,7 @@ export class ImpactEffects{
     if(kind==='sparks'){mesh.material.color.setHex(color);mesh.material.opacity=.9;}
     else if(kind==='crater'){mesh.material.opacity=.7;}
     else if(kind==='dust'){mesh.material.color.setHex(color);mesh.material.opacity=.34;}
-    else if(kind==='wake'){mesh.material.opacity=.38;}
+    else if(kind==='wake'){mesh.material.opacity=.06;}
     else{mesh.material.color.setHex(color);mesh.material.opacity=kind==='burst'?.8:.7;}
     mesh.visible=true;mesh.position.set(0,0,0);mesh.scale.setScalar(1);mesh.quaternion.identity();return mesh;
   }
