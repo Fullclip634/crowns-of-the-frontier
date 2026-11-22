@@ -75,9 +75,11 @@ test('ships in narrow river channels separate along the waterway without clippin
   }
 });
 
-test('WebGPU structurePalette and coolAshlarStone match WebGL2 silver-grey stonework and compile cleanly to WGSL',async()=>{
+test('WebGPU structurePalette and coolAshlarStone match WebGL2 brown-to-silver stone progression and vivid team roofs',async()=>{
   const src=await fs.readFile(new URL('../src/render-nodes.js',import.meta.url),'utf8');
-  assert.match(src,/coolAshlar\s*=\s*mix\(stoneSample,vec3\(stoneLuma\.mul\(1\.22\),stoneLuma\.mul\(1\.23\),stoneLuma\.mul\(1\.26\)\)/,'WebGPU structurePalette applies WebGL2 coolAshlar silver stonework');
+  assert.match(src,/coolAshlar\s*=\s*mix\(stoneSample,vec3\(stoneLuma\.mul\(1\.28\),stoneLuma\.mul\(1\.30\),stoneLuma\.mul\(1\.34\)\)/,'WebGPU structurePalette matches WebGL2 silver ashlar stonework for Imperial & Fortified stone');
+  assert.match(src,/warmBrownStone\s*=\s*stoneSample\.mul\(vec3\(1\.14,1,\.84\)\)/,'WebGPU structurePalette matches WebGL2 warm brown stonework for Castle Age & earlier stone');
+  assert.match(src,/roofDetail\s*=\s*mix\(vec3\(roofLuma\.mul\(1\.95\)\.add\(\.28\)\),roofSample\.mul\(1\.46\),\.25\)/,'WebGPU structurePalette preserves vivid team roof color');
 
   const webgpu=await import('three/webgpu');
   const renderer=new renderNodes.WebGPURenderer({canvas:{width:1280,height:720,style:{},addEventListener(){},removeEventListener(){}}});
@@ -85,7 +87,9 @@ test('WebGPU structurePalette and coolAshlarStone match WebGL2 silver-grey stone
   renderer.backend.hasFeature=()=>true;
   renderer.backend.has=()=>true;
   renderer.backend.compatibilityMode=false;
+  renderer.backend.device={limits:{maxUniformBufferBindingSize:65536,maxStorageBufferBindingSize:134217728}};
 
+  // Compile coolAshlarStone on BOTH a plain Mesh (bridge) and an InstancedMesh with instanceColor (WallVisuals).
   const stoneMat=new webgpu.MeshStandardNodeMaterial({color:0xe5e0d4});
   stoneMat.map=new THREE.DataTexture(new Uint8Array([148,128,102,255]),1,1);
   renderNodes.coolAshlarStone(stoneMat);
@@ -93,8 +97,15 @@ test('WebGPU structurePalette and coolAshlarStone match WebGL2 silver-grey stone
   const builder=new webgpu.WGSLNodeBuilder(mesh,renderer);
   builder.camera=new THREE.PerspectiveCamera();builder.scene=new THREE.Scene();
   builder.build();
-  assert.match(builder.fragmentShader,/1\.22|1\.26/,'coolAshlarStone compiles cool silver ashlar transform into WGSL');
-  stoneMat.map.dispose();stoneMat.dispose();mesh.geometry.dispose();
+  assert.match(builder.fragmentShader,/1\.06|0\.84/,'plain stone mesh compiles warm brown stone into WGSL');
+  const instMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),stoneMat,2);
+  instMesh.setColorAt(0,new THREE.Color(0xffffff));
+  instMesh.setColorAt(1,new THREE.Color(0xa9b0bd));
+  const instBuilder=new webgpu.WGSLNodeBuilder(instMesh,renderer);
+  instBuilder.camera=new THREE.PerspectiveCamera();instBuilder.scene=new THREE.Scene();
+  instBuilder.build();
+  assert.match(instBuilder.fragmentShader,/1\.28|1\.34/,'instanced wall connectors compile brown-to-silver stone transition into WGSL');
+  stoneMat.map.dispose();stoneMat.dispose();mesh.geometry.dispose();instMesh.geometry.dispose();instMesh.dispose();
 
   // Also compile structurePalette itself through WGSLNodeBuilder to prove Castle/Wall/Gate WGSL builds cleanly.
   const structMat=new webgpu.MeshStandardNodeMaterial({vertexColors:true,roughness:.9});
@@ -105,15 +116,15 @@ test('WebGPU structurePalette and coolAshlarStone match WebGL2 silver-grey stone
   sGeo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(nVerts*3).fill(1),3));
   sGeo.setAttribute('structureSurface',new THREE.BufferAttribute(new Float32Array(nVerts*3).fill(2),3));
   sGeo.setAttribute('structureEmission',new THREE.BufferAttribute(new Float32Array(nVerts*3),3));
-  sGeo.setAttribute('structureNightGlow',new THREE.BufferAttribute(new Float32Array(nVerts),1));
+  sGeo.setAttribute('structureNightGlow',new THREE.BufferAttribute(new Float32Array(nVerts).fill(-1),1));
   const structMesh=new THREE.Mesh(sGeo,structMat);
   const sBuilder=new webgpu.WGSLNodeBuilder(structMesh,renderer);
   sBuilder.camera=new THREE.PerspectiveCamera();sBuilder.scene=new THREE.Scene();
   sBuilder.build();
-  assert.match(sBuilder.fragmentShader,/1\.22|1\.26/,'WebGPU structurePalette compiles silver-grey coolAshlar into WGSL');
+  assert.match(sBuilder.fragmentShader,/1\.28|1\.34/,'WebGPU structurePalette compiles brown-to-silver stonework into WGSL');
   tex.dispose();structMat.dispose();sGeo.dispose();
 
-  // Verify WebGL2 applyCoolAshlarStone preserves m.stone.color and injects coolAshlar into map_fragment.
+  // Verify WebGL2 applyCoolAshlarStone preserves m.stone.color and injects brown-to-silver logic into map_fragment.
   installNodeRuntime(renderNodes);
   try{
     const glStone=new THREE.MeshStandardMaterial({color:0xe5e0d4});
@@ -129,7 +140,67 @@ test('WebGPU structurePalette and coolAshlarStone match WebGL2 silver-grey stone
     assert.equal(glStone.color.getHex(),0xe5e0d4,'m.stone base color stays intact for structurePalette baking');
     const shader={fragmentShader:THREE.ShaderLib.standard.fragmentShader,vertexShader:THREE.ShaderLib.standard.vertexShader,uniforms:{}};
     glStone.onBeforeCompile(shader);
-    assert.match(shader.fragmentShader,/frontierStoneLuma/,'WebGL2 standalone stone material applies silver-grey coolAshlar');
+    assert.match(shader.fragmentShader,/frontierWarmStone[\s\S]*frontierSilverStone/,'WebGL2 standalone stone material applies brown-to-silver stone transition');
     for(const m of Object.values(fakeView.materials))m.dispose();
   }finally{installNodeRuntime(null);}
+});
+
+test('Castle Age stone stays warm brown, Imperial & Fortified stone upgrades to silver, and team roofs stay vivid',async()=>{
+  const {packBuildingModel}=await import('../src/structure-palette.js');
+  const makeView=(age,roofHex)=>{
+    const stone=new THREE.MeshStandardMaterial({color:0xe5e0d4});stone.map=new THREE.Texture();
+    const stoneDark=new THREE.MeshStandardMaterial({color:0x8c9288});
+    const wood=new THREE.MeshStandardMaterial({color:0x756046});wood.map=new THREE.Texture();
+    const plaster=new THREE.MeshStandardMaterial({color:0xe6d5b4});plaster.map=new THREE.Texture();
+    const glass=new THREE.MeshStandardMaterial({color:0x99aabb});
+    const roof=new THREE.MeshStandardMaterial({color:roofHex});roof.map=new THREE.Texture();
+    return {
+      sim:{players:[{faction:'alder',age}],options:{map:'highlands'}},
+      settings:{quality:'low'},
+      geo:{box:new THREE.BoxGeometry(1,1,1)},
+      materials:{stone,stoneDark,wood,darkwood:wood,timberEdge:wood,plaster,brick:stone,glass},
+      teamMaterials:[new THREE.MeshStandardMaterial({color:roofHex})],
+      roofMaterials:[roof],
+    };
+  };
+  const buildPacked=(age,type,tier,roofHex)=>{
+    const view=makeView(age,roofHex),root=new THREE.Group();
+    root.userData.model3d={kind:'building',type,architectureAge:age,wallTier:tier};
+    root.add(new THREE.Mesh(new THREE.BoxGeometry(2,2,2),view.materials.stone));
+    root.add(new THREE.Mesh(new THREE.BoxGeometry(2,1,2),view.roofMaterials[0]));
+    root.add(new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),view.materials.glass));
+    const packed=packBuildingModel(view,root,{id:1,kind:'building',type,owner:0});
+    const surf=packed.children.find(c=>c.userData.structureSurface);
+    return {view,geo:surf.geometry};
+  };
+  const avgAttr=(geo,mode,attrName)=>{
+    const s=geo.attributes.structureSurface,a=geo.attributes[attrName];
+    let n=0,sum=a.itemSize===1?0:[0,0,0];
+    for(let i=0;i<s.count;i++){
+      if(s.getZ(i)!==mode)continue;
+      n++;
+      if(a.itemSize===1)sum+=a.getX(i);
+      else{sum[0]+=a.getX(i);sum[1]+=a.getY(i);sum[2]+=a.getZ(i);}
+    }
+    return a.itemSize===1?sum/n:sum.map(v=>v/n);
+  };
+
+  // Castle Age (2) stone stays brown (nightGlow = 0); Imperial Age (3) & Fortified Walls become silver (nightGlow = -1).
+  const keepCastle=buildPacked(2,'keep','stone',0xe6c064);
+  const keepImperial=buildPacked(3,'keep','stone',0xe6c064);
+  const wallStone=buildPacked(2,'wall','stone',0xe6c064);
+  const wallFortified=buildPacked(2,'wall','fortified',0xe6c064);
+  assert.equal(avgAttr(keepCastle.geo,2,'structureNightGlow'),0,'Castle Age keep uses warm brown stone');
+  assert.equal(avgAttr(keepImperial.geo,2,'structureNightGlow'),-1,'Imperial Age keep upgrades to silver ashlar stone');
+  assert.equal(avgAttr(wallStone.geo,2,'structureNightGlow'),0,'Unfortified stone wall uses warm brown stone');
+  assert.equal(avgAttr(wallFortified.geo,2,'structureNightGlow'),-1,'Fortified wall upgrades to silver ashlar stone');
+  assert.equal(avgAttr(keepImperial.geo,0,'structureNightGlow'),1,'Glass windows keep positive night glow');
+
+  // Yellow (0xe6c064) and Orange (0xe69b58) Castle Age roofs remain vividly team-colored and clearly distinct.
+  const yellowRoof=avgAttr(keepCastle.geo,4,'color');
+  const orangePacked=buildPacked(2,'keep','stone',0xe69b58);
+  const orangeRoof=avgAttr(orangePacked.geo,4,'color');
+  assert.ok(yellowRoof[0]>yellowRoof[2]*1.8&&yellowRoof[1]>yellowRoof[2]*1.5,'Yellow team roof stays unmistakably yellow in Castle Age');
+  assert.ok(orangeRoof[0]>orangeRoof[1]*1.5&&orangeRoof[0]>orangeRoof[2]*2.2,'Orange team roof stays unmistakably orange in Castle Age');
+  assert.ok(yellowRoof[1]-orangeRoof[1]>.10,'Yellow and Orange roofs are cleanly distinguishable in Castle Age');
 });

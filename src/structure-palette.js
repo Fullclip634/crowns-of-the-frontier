@@ -188,7 +188,9 @@ function paletteMaterial(view){
           float shingleCourse = 0.96 + 0.055 * sin(vStructurePos.y * 19.5 + (vStructurePos.x + vStructurePos.z) * 2.8);
           vec2 roofUv = frontierStructureroofPbr.x > 0.5 ? vUv * 1.65 : vUv;
           vec3 roofSample = texture2D(frontierStructureroof, roofUv).rgb;
-          vec3 roof = frontierStructureroofPbr.x > 0.5 ? mix(vec3(1.0), roofSample * 1.46, 0.80) : roofSample;
+          float roofLuma = dot(roofSample, vec3(0.30, 0.59, 0.11));
+          vec3 roofDetail = mix(vec3(roofLuma * 1.95 + 0.28), roofSample * 1.46, 0.25);
+          vec3 roof = frontierStructureroofPbr.x > 0.5 ? mix(vec3(1.0), roofDetail, 0.78) : roofSample;
           float eaveWeather = mix(0.88, 1.04, smoothstep(1.8, 6.2, vStructurePos.y));
           diffuseColor.rgb *= roof * shingleCourse * eaveWeather;
           if (frontierStructuresnow > 0.5) {
@@ -206,8 +208,10 @@ function paletteMaterial(view){
           float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
           vec3 stoneSample = texture2D(frontierStructurestone, vUv * 1.25).rgb;
           float stoneLuma = dot(stoneSample, vec3(0.30, 0.59, 0.11));
-          vec3 coolAshlar = mix(stoneSample, vec3(stoneLuma * 1.22, stoneLuma * 1.23, stoneLuma * 1.26), 0.72);
-          diffuseColor.rgb *= coolAshlar * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
+          vec3 warmBrownStone = stoneSample * vec3(1.14, 1.00, 0.84);
+          vec3 coolAshlar = mix(stoneSample, vec3(stoneLuma * 1.28, stoneLuma * 1.30, stoneLuma * 1.34), 0.76);
+          float silverStone = smoothstep(-0.2, -0.8, vStructureNightGlow);
+          diffuseColor.rgb *= mix(warmBrownStone, coolAshlar, silverStone) * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
           float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
           diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
@@ -233,7 +237,7 @@ function paletteMaterial(view){
       shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= structureOcclusion;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor = clamp(vStructureSurface.y, 0.0, 1.0);');
       shader.fragmentShader='varying float vStructureNightGlow;\n'+shader.fragmentShader;
-      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.65) + vec3(1.18, 0.56, 0.16) * vStructureNightGlow * frontierStructurenight;');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += vStructureEmission * (1.0 + frontierStructurenight * 1.65) + vec3(1.18, 0.56, 0.16) * max(0.0, vStructureNightGlow) * frontierStructurenight;');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
         #ifdef USE_NORMALMAP_TANGENTSPACE
         bool normalReady = vStructureSurface.z > 3.5 ? frontierStructureroofPbr.y > 0.5 : vStructureSurface.z > 2.5 ? frontierStructurenormalAvailable.z > 0.5 : vStructureSurface.z > 1.5 ? frontierStructurenormalAvailable.y > 0.5 : frontierStructurenormalAvailable.x > 0.5;
@@ -260,7 +264,7 @@ function paletteMaterial(view){
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v10';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v11';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms,roofMaps=roofSurfaceMaps();
@@ -291,7 +295,7 @@ function promotedWallColor(material,rawMode,mode,m){
   return material.color.toArray();
 }
 
-function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish){
+function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,silverStone=false){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -305,9 +309,9 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish){
   const mode=material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge);
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
   const sourceColor=promotedWallColor(material,rawMode,mode,m);
-  // Roofs use an age-specific finish with some of the faction colour mixed in.
+  // Roofs keep clear team ownership color (72%) with a subtle age-specific finish tint (28%).
   const styledRoof=mode===4&&roofFinish;
-  const color=styledRoof?sourceColor.map((channel,i)=>THREE.MathUtils.lerp(channel,roofFinish[i],.65)):sourceColor;
+  const color=styledRoof?sourceColor.map((channel,i)=>THREE.MathUtils.lerp(channel,roofFinish[i],.28)):sourceColor;
   for(let i=0;i<count;i++)for(let k=0;k<3;k++){
     colors[i*3+k]=color[k]*(old?old.getComponent(i,k):1)*(styledRoof?1:tint[k]);
     surface[i*3+k]=k===0?Math.min(1,(material.roughness??.9)*roughnessScale):k===1?material.metalness??0:mode;
@@ -317,6 +321,7 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish){
   geometry.setAttribute('structureSurface',new THREE.BufferAttribute(surface,3));
   geometry.setAttribute('structureEmission',new THREE.BufferAttribute(emission,3));
   if(material===m.glass)nightGlow.fill(1);
+  else if(mode===2&&silverStone)nightGlow.fill(-1);
   geometry.setAttribute('structureNightGlow',new THREE.BufferAttribute(nightGlow,1));
   geometry.clearGroups();return geometry;
 }
@@ -335,7 +340,8 @@ export function packBuildingModel(view,root,e){
   // Age and size still change, while civic and defensive stonework stays distinct.
   const wallAge=FRAMED_BUILDINGS.has(e.type)?Math.min(1,surfaceAge):surfaceAge;
   const style=architectureStyle(ageStyled?surfaceAge:0),masonry=e.type==='wall'||e.type==='gate';
-  const tint=masonry?(fortified?[.70,.81,.93]:[.88,.95,1.03]):style.tint,roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
+  const silverStone=fortified||(!masonry&&surfaceAge>=3);
+  const tint=masonry?(fortified?[.84,.89,.96]:[.98,.93,.86]):style.tint,roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
   const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier,isSnowBiome(view.sim?.options?.map)?'snow':'dry'].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
@@ -351,7 +357,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish,silverStone));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();

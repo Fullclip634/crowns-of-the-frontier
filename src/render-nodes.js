@@ -3,7 +3,7 @@ import {MeshStandardNodeMaterial as ThreeStandardNodeMaterial,MeshBasicNodeMater
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {configureCompatibilityShadow} from './compatibility-depth.js';
 export {WebGPURenderer,PMREMGenerator,ClippingGroup,RenderPipeline} from 'three/webgpu';
-import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,diffuseColor,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup,pass} from 'three/tsl';
+import {Fn,If,attribute,varying,texture,textureLoad,reference,uniformArray,uv,vec2,vec3,vec4,mat3,mat4,int,ivec2,float,instanceIndex,instanceColor,positionGeometry,positionLocal,positionView,positionWorld,normalLocal,normalViewGeometry,normalView,positionViewDirection,cameraViewMatrix,cameraWorldMatrix,diffuseColor,materialColor,materialRoughness,materialOpacity,output,normalMap,mix,clamp,min,max,abs,dot,smoothstep,exp,pow,sin,cos,fract,floor,reflect,normalize,step,interleavedGradientNoise,vogelDiskSample,screenCoordinate,renderGroup,pass} from 'three/tsl';
 
 const compatibilityPCF=Fn(({depthTexture,shadowCoord,shadow,depthLayer},builder)=>{
   const mapSize=reference('mapSize','vec2',shadow).setGroup(renderGroup),radius=reference('radius','float',shadow).setGroup(renderGroup),spread=radius.div(mapSize.x);
@@ -313,6 +313,7 @@ export function unitPalette(material,u){
 
 export function structurePalette(material,u){
   const surface=varying(attribute('structureSurface','vec3')),mode=surface.z,worldPos=varying(positionGeometry);
+  const nightGlowAttr=varying(attribute('structureNightGlow','float'));
   const plinthMask=float(1).sub(smoothstep(0,.85,max(0,worldPos.y)));
   const roofPbr=u.roofPbr?value(u.roofPbr,'vec3'):vec3(0,0,0);
   const roofUv=roofPbr.x.greaterThan(.5).select(uv().mul(1.65),uv());
@@ -322,7 +323,9 @@ export function structurePalette(material,u){
       if(!suffix){
         const shingle=float(.96).add(sin(worldPos.y.mul(19.5).add(worldPos.x.add(worldPos.z).mul(2.8))).mul(.055));
         const roofSample=sample(u.roof,roofUv).rgb;
-        const roofCol=roofPbr.x.greaterThan(.5).select(mix(vec3(1),roofSample.mul(1.46),.80),roofSample);
+        const roofLuma=dot(roofSample,vec3(.30,.59,.11));
+        const roofDetail=mix(vec3(roofLuma.mul(1.95).add(.28)),roofSample.mul(1.46),.25);
+        const roofCol=roofPbr.x.greaterThan(.5).select(mix(vec3(1),roofDetail,.78),roofSample);
         const eaveWeather=mix(.88,1.04,smoothstep(1.8,6.2,worldPos.y));
         result.assign(roofCol.mul(shingle).mul(eaveWeather));
       }else if(u['roof'+suffix]){
@@ -340,8 +343,10 @@ export function structurePalette(material,u){
         const ashlar=float(.96).add(sin(worldPos.y.mul(12)).mul(cos(worldPos.x.sub(worldPos.z).mul(4.8))).mul(.07));
         const stoneSample=sample(u.stone,uv().mul(1.25),fallback).rgb;
         const stoneLuma=dot(stoneSample,vec3(.30,.59,.11));
-        const coolAshlar=mix(stoneSample,vec3(stoneLuma.mul(1.22),stoneLuma.mul(1.23),stoneLuma.mul(1.26)),.72);
-        result.assign(coolAshlar.mul(ashlar).mul(mix(1,.85,plinthMask.mul(.48))));
+        const warmBrownStone=stoneSample.mul(vec3(1.14,1,.84));
+        const coolAshlar=mix(stoneSample,vec3(stoneLuma.mul(1.28),stoneLuma.mul(1.30),stoneLuma.mul(1.34)),.76);
+        const silverStone=smoothstep(-.2,-.8,nightGlowAttr);
+        result.assign(mix(warmBrownStone,coolAshlar,silverStone).mul(ashlar).mul(mix(1,.85,plinthMask.mul(.48))));
       }else result.assign(sample(u['stone'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
@@ -384,7 +389,7 @@ export function structurePalette(material,u){
   const normalScale=mode.greaterThan(3.5).select(.62,mode.greaterThan(2.5).select(.30,mode.greaterThan(1.5).select(.54,.38)));
   material.normalNode=active.select(normalMap(normSample,vec2(normalScale)),normalViewGeometry);
   const night=value(u.night);
-  material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.65).add(1)).add(vec3(1.18,.56,.16).mul(varying(attribute('structureNightGlow','float'))).mul(night));
+  material.emissiveNode=varying(attribute('structureEmission','vec3')).mul(night.mul(1.65).add(1)).add(vec3(1.18,.56,.16).mul(max(nightGlowAttr,0)).mul(night));
   material.outputNode=analyticIblOutput(material.metalnessNode,material.roughnessNode,atm,night);
   material.needsUpdate=true;
 }
@@ -520,6 +525,9 @@ export function coolAshlarStone(material){
   if(!material?.isNodeMaterial)return;
   const base=materialColor.rgb;
   const luma=dot(base,vec3(.30,.59,.11));
-  material.colorNode=mix(base,vec3(luma.mul(1.22),luma.mul(1.23),luma.mul(1.26)),.72).mul(vec3(.92,.96,1.02));
+  const warmStone=base.mul(vec3(1.06,.96,.84));
+  const silverStone=mix(base,vec3(luma.mul(1.28),luma.mul(1.30),luma.mul(1.34)),.76).mul(vec3(.96,.98,1.02));
+  const silverMask=Fn(builder=>builder.object?.instanceColor?smoothstep(.02,.07,instanceColor.b.sub(instanceColor.r)):float(0))();
+  material.colorNode=mix(warmStone,silverStone,silverMask);
   material.needsUpdate=true;
 }

@@ -96,12 +96,19 @@ function applyCoolAshlarStone(material){
     if(previousCompile)previousCompile(shader,renderer);
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       {
+        #ifdef USE_INSTANCING_COLOR
+          float frontierSilver = smoothstep(0.02, 0.07, vColor.b - vColor.r);
+        #else
+          float frontierSilver = 0.0;
+        #endif
         float frontierStoneLuma = dot(diffuseColor.rgb, vec3(0.30, 0.59, 0.11));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(frontierStoneLuma * 1.22, frontierStoneLuma * 1.23, frontierStoneLuma * 1.26), 0.72) * vec3(0.92, 0.96, 1.02);
+        vec3 frontierWarmStone = diffuseColor.rgb * vec3(1.06, 0.96, 0.84);
+        vec3 frontierSilverStone = mix(diffuseColor.rgb, vec3(frontierStoneLuma * 1.28, frontierStoneLuma * 1.30, frontierStoneLuma * 1.34), 0.76) * vec3(0.96, 0.98, 1.02);
+        diffuseColor.rgb = mix(frontierWarmStone, frontierSilverStone, frontierSilver);
       }`);
   };
   const previousKey=material.customProgramCacheKey;
-  material.customProgramCacheKey=()=>`${previousKey?previousKey.call(material):'standard'}-cool-ashlar-v1`;
+  material.customProgramCacheKey=()=>`${previousKey?previousKey.call(material):'standard'}-cool-ashlar-v2`;
   material.needsUpdate=true;
 }
 
