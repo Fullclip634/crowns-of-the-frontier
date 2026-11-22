@@ -426,19 +426,24 @@ def _palisade_row(b, x0, y0, x1, y1, count, z0, z_base_h, radius=0.135, seed=1, 
 
 
 def _draped_canvas_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_border=True, guy_ropes=True):
-    """Authentic AoE2 Dark Age 2D sculpted rippled catenary-draped parchment canvas tent cloth with slim tucked team valance!"""
+    """Authentic AoE2 Dark Age soft rounded draped animal-hide / burlap tent cloth with sculpted pleated team cloth valance!"""
     hx, hy = sx * 0.5, sy * 0.5
-    us = (-1.0, -0.74, -0.40, 0.0, 0.40, 0.74, 1.0)
-    vs = tuple(-1.0 + 2.0 * j / 8.0 for j in range(9))
-    thick = 0.068
+    us = (-1.04, -0.82, -0.56, -0.26, 0.0, 0.26, 0.56, 0.82, 1.04)
+    vs = tuple(-1.0 + 2.0 * j / 10.0 for j in range(11))
+    thick = 0.085
 
     def cloth_z(u, v):
-        au = abs(u)
-        base = z_eave + ridge_h * ((1.0 - au) ** 1.42)
-        # Organic woven cloth folds & stitched ripples running ridge-to-eave + gentle draped eave scallops!
-        ripple = math.sin(v * math.pi * 3.5 + au * 1.4) * 0.048 * (0.25 + 0.75 * au)
-        sag_along = -0.042 * (1.0 - v * v) * (0.35 + 0.65 * au)
-        return base + ripple + sag_along
+        au = min(1.04, abs(u))
+        # Soft rounded cloth drape over ridge pole (no sharp folded-paper crease!) + catenary tent sag + drooping cloth eave
+        norm_u = au / 1.04
+        ridge_round = 1.0 - (norm_u ** 1.28)
+        catenary_sag = -0.14 * ridge_h * math.sin(norm_u * math.pi)
+        base = z_eave + ridge_h * max(0.0, ridge_round) + catenary_sag
+        # Natural organic draped cloth folds & scalloped eave waves (matches Image 5 Dark Age tents!)
+        fold = math.sin(v * math.pi * 4.0 + norm_u * 2.1) * 0.072 * (0.20 + 0.80 * norm_u)
+        fold += math.cos(v * math.pi * 2.5 - norm_u * 1.4) * 0.042 * norm_u
+        end_droop = -0.055 * (1.0 - v * v) * norm_u
+        return base + fold + end_droop
 
     bm = b._bm("canvas")
     nu, nv = len(us), len(vs)
@@ -447,104 +452,8 @@ def _draped_canvas_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_b
     for i, u in enumerate(us):
         for j, v in enumerate(vs):
             zp = cloth_z(u, v)
-            if along_y:
-                x, y = cx + u * hx, cy + v * hy
-            else:
-                x, y = cx + v * hx, cy + u * hy
-            top[i][j] = bm.verts.new((x, y, zp))
-            bot[i][j] = bm.verts.new((x, y, zp - thick))
-
-    for i in range(nu - 1):
-        for j in range(nv - 1):
-            u_mid = 0.5 * (us[i] + us[i + 1])
-            v_mid = 0.5 * (vs[j] + vs[j + 1])
-            fold = math.sin(v_mid * math.pi * 3.5 + abs(u_mid) * 1.4)
-            # Rich parchment-cream sunlit cloth crests + warm ochre shadowed fold troughs!
-            lum = 0.90 + 0.14 * fold + 0.10 * (1.0 - abs(u_mid))
-            tint = (min(1.06, lum * 1.03), min(1.02, lum * 0.97), min(0.95, lum * 0.85))
-            f_top = bm.faces.new((top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1]))
-            f_bot = bm.faces.new((bot[i][j + 1], bot[i + 1][j + 1], bot[i + 1][j], bot[i][j]))
-            b._paint_faces(bm, (f_top, f_bot), tint=tint, z_grad=0.06)
-
-    # Close perimeter gable & eave strips cleanly (watertight manifold)
-    edge_faces = []
-    for i in range(nu - 1):
-        edge_faces.append(bm.faces.new((bot[i][0], bot[i + 1][0], top[i + 1][0], top[i][0])))
-        edge_faces.append(bm.faces.new((top[i][-1], top[i + 1][-1], bot[i + 1][-1], bot[i][-1])))
-    for j in range(nv - 1):
-        edge_faces.append(bm.faces.new((top[0][j], top[0][j + 1], bot[0][j + 1], bot[0][j])))
-        edge_faces.append(bm.faces.new((bot[-1][j], bot[-1][j + 1], top[-1][j + 1], top[-1][j])))
-    b._paint_faces(bm, edge_faces, tint=(0.86, 0.80, 0.68), z_grad=0.08)
-
-    # Weathered warm driftwood ridge pole poking slightly past both ends (ZERO brown wood!)
-    if along_y:
-        b.box("trunk", cx, cy, z_eave + ridge_h + 0.01, 0.10, sy + 0.28, 0.10, tint=(0.82, 0.79, 0.74))
-    else:
-        b.box("trunk", cx, cy, z_eave + ridge_h + 0.01, sx + 0.28, 0.10, 0.10, tint=(0.82, 0.79, 0.74))
-
-    if team_border:
-        # Slim, organic draped team-colored cloth hem flush against the canvas rim (ZERO gap at any zoom!)
-        for j in range(nv - 1):
-            v0, v1 = vs[j], vs[j + 1]
-            for s_eave in (-1.0, 1.0):
-                if along_y:
-                    p0 = (cx + s_eave * hx * 0.99, cy + v0 * hy, cloth_z(s_eave, v0) - 0.035)
-                    p1 = (cx + s_eave * hx * 0.99, cy + v1 * hy, cloth_z(s_eave, v1) - 0.035)
-                else:
-                    p0 = (cx + v0 * hx, cy + s_eave * hy * 0.99, cloth_z(s_eave, v0) - 0.035)
-                    p1 = (cx + v1 * hx, cy + s_eave * hy * 0.99, cloth_z(s_eave, v1) - 0.035)
-                b.rod("team", p0, p1, 0.056, segs=4)
-        for i in range(nu - 1):
-            u0, u1 = us[i], us[i + 1]
-            for s_end in (-1.0, 1.0):
-                if along_y:
-                    p0 = (cx + u0 * hx, cy + s_end * hy * 0.99, cloth_z(u0, s_end) - 0.018)
-                    p1 = (cx + u1 * hx, cy + s_end * hy * 0.99, cloth_z(u1, s_end) - 0.018)
-                else:
-                    p0 = (cx + s_end * hx * 0.99, cy + u0 * hy, cloth_z(u0, s_end) - 0.018)
-                    p1 = (cx + s_end * hx * 0.99, cy + u1 * hy, cloth_z(u1, s_end) - 0.018)
-                b.rod("team", p0, p1, 0.048, segs=4)
-
-    if guy_ropes:
-        for sx_s in (-1.0, 1.0):
-            for sy_s in (-1.0, 1.0):
-                p_top = (cx + sx_s * hx * 0.96, cy + sy_s * hy * 0.96, z_eave - 0.04)
-                p_peg = (cx + sx_s * (hx + 0.44), cy + sy_s * (hy + 0.38), -0.06)
-                b.rod("trunk", p_top, p_peg, 0.025, segs=4, tint=(0.74, 0.71, 0.66))
-
-
-def _shaggy_thatch_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_gable=True, hay_eaves=False):
-    """Authentic AoE2 Feudal deeply ribbed, ragged overhanging golden-brown reed thatch roof (matches Image 5!)."""
-    hx, hy = sx * 0.5, sy * 0.5
-    # Sculpted corrugated reed-straw thatch bmesh: vertical straw bundle grooves + ragged scalloped eaves!
-    us = (-1.04, -0.78, -0.48, -0.18, 0.0, 0.18, 0.48, 0.78, 1.04)
-    n_ribs = max(10, int((sy if along_y else sx) / 0.34))
-    if n_ribs % 2 == 1:
-        n_ribs += 1
-    vs = tuple(-1.0 + 2.0 * j / n_ribs for j in range(n_ribs + 1))
-    thick = 0.16
-
-    def thatch_z(u, v, j):
-        au = min(1.04, abs(u))
-        # Slightly curved chunky thatched pitch with heavy overhanging eave lip
-        slope = max(0.0, 1.0 - au / 1.04)
-        base = z_eave + ridge_h * (slope ** 0.92)
-        if au >= 0.98:
-            base -= 0.08 + (j % 3) * 0.045  # ragged uneven overhanging straw eave fringe!
-        # Deep physical reed-bundle corrugation running ridge-to-eave
-        rib = (1.0 if j % 2 == 0 else -1.0) * 0.062 * (0.28 + 0.72 * au)
-        tier_step = 0.045 * math.sin(au * math.pi * 3.0)
-        return base + rib + tier_step
-
-    bm = b._bm("straw")
-    nu, nv = len(us), len(vs)
-    top = [[None] * nv for _ in range(nu)]
-    bot = [[None] * nv for _ in range(nu)]
-    for i, u in enumerate(us):
-        for j, v in enumerate(vs):
-            au = abs(u)
-            zp = thatch_z(u, v, j)
-            flare = 1.0 + (0.045 if (au >= 0.98 and j % 2 == 0) else 0.0)
+            # Soft slightly flared scalloped cloth eave skirt
+            flare = 1.0 + (0.04 * math.sin(v * math.pi * 4.0) if abs(u) > 0.9 else 0.0)
             if along_y:
                 x, y = cx + u * hx * flare, cy + v * hy
             else:
@@ -555,12 +464,160 @@ def _shaggy_thatch_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_g
     for i in range(nu - 1):
         for j in range(nv - 1):
             u_mid = abs(0.5 * (us[i] + us[i + 1]))
-            # Deep dark-umber straw valleys alternating with sunlit golden-brown reed crests!
-            rib_bright = 1.08 if j % 2 == 0 else 0.68
-            eave_shade = 0.80 + 0.24 * (1.0 - min(1.0, u_mid))
-            var = 0.92 + ((i * 11 + j * 17) % 5) * 0.035
-            v_l = rib_bright * eave_shade * var
-            tint = (min(1.12, v_l * 1.02), min(1.04, v_l * 0.94), min(0.92, v_l * 0.80))
+            v_mid = 0.5 * (vs[j] + vs[j + 1])
+            fold = math.sin(v_mid * math.pi * 4.0 + u_mid * 2.1) * 0.65 + math.cos(v_mid * math.pi * 2.5 - u_mid * 1.4) * 0.35
+            # Deep sunlit parchment crests + warm weathered-umber hide fold shadows (zero flat paper!)
+            lum = 0.88 + 0.16 * fold + 0.10 * (1.0 - min(1.0, u_mid))
+            tint = (min(1.08, lum * 1.04), min(1.03, lum * 0.97), min(0.92, lum * 0.84))
+            f_top = bm.faces.new((top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1]))
+            f_bot = bm.faces.new((bot[i][j + 1], bot[i + 1][j + 1], bot[i + 1][j], bot[i][j]))
+            b._paint_faces(bm, (f_top, f_bot), tint=tint, z_grad=0.05)
+
+    edge_faces = []
+    for i in range(nu - 1):
+        edge_faces.append(bm.faces.new((bot[i][0], bot[i + 1][0], top[i + 1][0], top[i][0])))
+        edge_faces.append(bm.faces.new((top[i][-1], top[i + 1][-1], bot[i + 1][-1], bot[i][-1])))
+    for j in range(nv - 1):
+        edge_faces.append(bm.faces.new((top[0][j], top[0][j + 1], bot[0][j + 1], bot[0][j])))
+        edge_faces.append(bm.faces.new((bot[-1][j], bot[-1][j + 1], top[-1][j + 1], top[-1][j])))
+    b._paint_faces(bm, edge_faces, tint=(0.80, 0.72, 0.58), z_grad=0.06)
+
+    # Weathered warm driftwood ridge pole tucked under the soft cloth crest
+    if along_y:
+        b.box("trunk", cx, cy, z_eave + ridge_h - 0.04, 0.11, sy + 0.34, 0.11, tint=(0.94, 0.91, 0.86))
+    else:
+        b.box("trunk", cx, cy, z_eave + ridge_h - 0.04, sx + 0.34, 0.11, 0.11, tint=(0.94, 0.91, 0.86))
+
+    if team_border:
+        # Soft sculpted pleated team-colored woven cloth valance curtain (watertight thin double-sided cloth!)
+        tbm = b._bm("team")
+        val_drop = 0.22
+        val_th = 0.042
+        for s_eave in (-1.0, 1.0):
+            u_e = s_eave * 1.02
+            vto, vbo, vti, vbi = [], [], [], []
+            for j, v in enumerate(vs):
+                zp = cloth_z(u_e, v) - 0.03
+                pleat = math.sin(v * math.pi * 5.0) * 0.042
+                drop = val_drop * (0.82 + 0.26 * (0.5 + 0.5 * math.cos(v * math.pi * 4.0)))
+                if along_y:
+                    xo = cx + u_e * hx + s_eave * (0.025 + pleat)
+                    xi = xo - s_eave * val_th
+                    y0 = cy + v * hy
+                    vto.append(tbm.verts.new((xo, y0, zp)))
+                    vbo.append(tbm.verts.new((xo + s_eave * 0.02, y0, zp - drop)))
+                    vti.append(tbm.verts.new((xi, y0, zp)))
+                    vbi.append(tbm.verts.new((xi + s_eave * 0.02, y0, zp - drop)))
+                else:
+                    x0 = cx + v * hx
+                    yo = cy + u_e * hy + s_eave * (0.025 + pleat)
+                    yi = yo - s_eave * val_th
+                    vto.append(tbm.verts.new((x0, yo, zp)))
+                    vbo.append(tbm.verts.new((x0, yo + s_eave * 0.02, zp - drop)))
+                    vti.append(tbm.verts.new((x0, yi, zp)))
+                    vbi.append(tbm.verts.new((x0, yi + s_eave * 0.02, zp - drop)))
+            vfaces = []
+            for j in range(nv - 1):
+                if (s_eave > 0) == along_y:
+                    vfaces.append(tbm.faces.new((vto[j], vto[j + 1], vbo[j + 1], vbo[j])))
+                    vfaces.append(tbm.faces.new((vti[j + 1], vti[j], vbi[j], vbi[j + 1])))
+                    vfaces.append(tbm.faces.new((vbo[j], vbo[j + 1], vbi[j + 1], vbi[j])))
+                else:
+                    vfaces.append(tbm.faces.new((vto[j + 1], vto[j], vbo[j], vbo[j + 1])))
+                    vfaces.append(tbm.faces.new((vti[j], vti[j + 1], vbi[j + 1], vbi[j])))
+                    vfaces.append(tbm.faces.new((vbo[j + 1], vbo[j], vbi[j], vbi[j + 1])))
+            b._paint_faces(tbm, vfaces, tint=(0.86, 0.86, 0.88), z_grad=0.14)
+        # Subtle gable cloth trim tucked closely beneath both gable edges
+        for s_end in (-1.0, 1.0):
+            vto, vbo, vti, vbi = [], [], [], []
+            for i, u in enumerate(us):
+                zp = cloth_z(u, s_end) - 0.025
+                drop = 0.14 * (0.85 + 0.25 * abs(u))
+                if along_y:
+                    x0 = cx + u * hx
+                    yo = cy + s_end * (hy + 0.025)
+                    yi = yo - s_end * val_th
+                    vto.append(tbm.verts.new((x0, yo, zp)))
+                    vbo.append(tbm.verts.new((x0, yo, zp - drop)))
+                    vti.append(tbm.verts.new((x0, yi, zp)))
+                    vbi.append(tbm.verts.new((x0, yi, zp - drop)))
+                else:
+                    xo = cx + s_end * (hx + 0.025)
+                    xi = xo - s_end * val_th
+                    y0 = cy + u * hy
+                    vto.append(tbm.verts.new((xo, y0, zp)))
+                    vbo.append(tbm.verts.new((xo, y0, zp - drop)))
+                    vti.append(tbm.verts.new((xi, y0, zp)))
+                    vbi.append(tbm.verts.new((xi, y0, zp - drop)))
+            gfaces = []
+            for i in range(nu - 1):
+                if (s_end > 0) != along_y:
+                    gfaces.append(tbm.faces.new((vto[i], vto[i + 1], vbo[i + 1], vbo[i])))
+                    gfaces.append(tbm.faces.new((vti[i + 1], vti[i], vbi[i], vbi[i + 1])))
+                    gfaces.append(tbm.faces.new((vbo[i], vbo[i + 1], vbi[i + 1], vbi[i])))
+                else:
+                    gfaces.append(tbm.faces.new((vto[i + 1], vto[i], vbo[i], vbo[i + 1])))
+                    gfaces.append(tbm.faces.new((vti[i], vti[i + 1], vbi[i + 1], vbi[i])))
+                    gfaces.append(tbm.faces.new((vbo[i + 1], vbo[i], vbi[i], vbi[i + 1])))
+            b._paint_faces(tbm, gfaces, tint=(0.82, 0.82, 0.85), z_grad=0.12)
+
+    if guy_ropes:
+        for sx_s in (-1.0, 1.0):
+            for sy_s in (-1.0, 1.0):
+                p_top = (cx + sx_s * hx * 0.98, cy + sy_s * hy * 0.98, z_eave - 0.06)
+                p_peg = (cx + sx_s * (hx + 0.48), cy + sy_s * (hy + 0.42), -0.06)
+                b.rod("trunk", p_top, p_peg, 0.026, segs=4, tint=(0.86, 0.83, 0.78))
+
+
+def _shaggy_thatch_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_gable=True, hay_eaves=False):
+    """Authentic AoE2 Feudal plump, organic, layered shaggy reed thatch roof (ZERO cartoon zebra stripes!)."""
+    hx, hy = sx * 0.5, sy * 0.5
+    # Plump gently-convex thatched roof silhouette with thick overlapping eave layers + irregular shaggy eave fringe!
+    us = (-1.08, -0.92, -0.68, -0.40, -0.15, 0.0, 0.15, 0.40, 0.68, 0.92, 1.08)
+    n_seg = max(12, int((sy if along_y else sx) / 0.30))
+    vs = tuple(-1.0 + 2.0 * j / n_seg for j in range(n_seg + 1))
+    thick = 0.22
+
+    def thatch_z(u, v, j):
+        au = min(1.08, abs(u))
+        t = max(0.0, 1.0 - au / 1.08)
+        # Plump authentic medieval thatched profile: full rounded upper shoulders, heavy sagging thatched eave skirt!
+        base = z_eave + ridge_h * (t ** 0.84)
+        # Organic soft undulating reed-bundle pillows (non-repeating pseudo-random noise, ZERO regular stripes!)
+        n1 = math.sin(v * 7.3 + au * 4.1) * 0.036
+        n2 = math.cos(v * 13.7 - au * 8.3) * 0.022
+        # Overlapping horizontal stepped thatch course ledges!
+        course_ledge = 0.038 * math.sin(au * math.pi * 4.0)
+        eave_fringe = -0.11 - (((j * 37 + 11) % 7) * 0.022) if au >= 1.02 else 0.0
+        return base + (n1 + n2) * (0.30 + 0.70 * au) + course_ledge + eave_fringe
+
+    bm = b._bm("straw")
+    nu, nv = len(us), len(vs)
+    top = [[None] * nv for _ in range(nu)]
+    bot = [[None] * nv for _ in range(nu)]
+    for i, u in enumerate(us):
+        for j, v in enumerate(vs):
+            au = abs(u)
+            zp = thatch_z(u, v, j)
+            # Ragged uneven shaggy overhanging straw fringe around eaves!
+            fringe_out = 1.0 + ((((j * 29 + 5) % 5) * 0.018) if au >= 1.00 else 0.0)
+            end_overhang = 1.0 + (0.035 if abs(v) > 0.95 else 0.0)
+            if along_y:
+                x, y = cx + u * hx * fringe_out, cy + v * hy * end_overhang
+            else:
+                x, y = cx + v * hx * end_overhang, cy + u * hy * fringe_out
+            top[i][j] = bm.verts.new((x, y, zp))
+            bot[i][j] = bm.verts.new((x, y, zp - thick))
+
+    for i in range(nu - 1):
+        for j in range(nv - 1):
+            u_mid = abs(0.5 * (us[i] + us[i + 1]))
+            v_mid = 0.5 * (vs[j] + vs[j + 1])
+            # Smooth natural height + soft mottled thatch clump shading (ZERO zebra stripes! Fine fibers come from shader!)
+            height_shade = 0.82 + 0.24 * (1.0 - min(1.0, u_mid / 1.08))
+            mottle = 0.94 + 0.08 * math.sin(v_mid * 5.7 + u_mid * 3.9) * math.cos(v_mid * 9.1 - u_mid * 6.3)
+            v_l = height_shade * mottle
+            tint = (min(1.08, v_l * 1.02), min(1.02, v_l * 0.96), min(0.92, v_l * 0.84))
             f_top = bm.faces.new((top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1]))
             f_bot = bm.faces.new((bot[i][j + 1], bot[i + 1][j + 1], bot[i + 1][j], bot[i][j]))
             b._paint_faces(bm, (f_top, f_bot), tint=tint, z_grad=0.04)
@@ -572,36 +629,37 @@ def _shaggy_thatch_roof(b, cx, cy, z_eave, sx, sy, ridge_h, along_y=True, team_g
     for j in range(nv - 1):
         edge_faces.append(bm.faces.new((top[0][j], top[0][j + 1], bot[0][j + 1], bot[0][j])))
         edge_faces.append(bm.faces.new((bot[-1][j], bot[-1][j + 1], top[-1][j + 1], top[-1][j])))
-    b._paint_faces(bm, edge_faces, tint=(0.66, 0.59, 0.46), z_grad=0.06)
+    b._paint_faces(bm, edge_faces, tint=(0.62, 0.55, 0.42), z_grad=0.06)
 
-    # Thick braided straw ridge bundle + dark weathered oak gable bargeboards + cream-plaster & tasteful team gable!
+    # Thick rounded braided straw ridge bolster + dark weathered oak bargeboards + warm plaster & tasteful small team gable!
     if along_y:
-        b.box("straw", cx, cy, z_eave + ridge_h + 0.06, 0.34, sy * 1.03, 0.24, tint=(0.86, 0.78, 0.64))
-        b.gable_prism("plaster", cx, cy, z_eave - 0.02, sx * 0.88, sy * 0.92, ridge_h * 0.86, along_y=True, tint=(0.96, 0.93, 0.86))
-        for gy in (cy - hy * 0.97, cy + hy * 0.97):
-            b.rod("darkwood", (cx - hx * 1.02, gy, z_eave - 0.06), (cx, gy, z_eave + ridge_h + 0.10), 0.095, segs=4)
-            b.rod("darkwood", (cx + hx * 1.02, gy, z_eave - 0.06), (cx, gy, z_eave + ridge_h + 0.10), 0.095, segs=4)
-            b.box("darkwood", cx, gy, z_eave + 0.02, sx * 0.92, 0.12, 0.14)
+        b.cylinder("straw", cx, cy - hy * 1.04, z_eave + ridge_h + 0.02, z_eave + ridge_h + 0.02, 0.16, 0.16, segs=6) if False else None
+        b.box("straw", cx, cy, z_eave + ridge_h + 0.05, 0.36, sy * 1.06, 0.24, tint=(0.84, 0.76, 0.62))
+        b.gable_prism("plaster", cx, cy, z_eave - 0.04, sx * 0.90, sy * 0.94, ridge_h * 0.88, along_y=True, tint=(0.95, 0.92, 0.85))
+        for gy in (cy - hy * 0.99, cy + hy * 0.99):
+            b.rod("darkwood", (cx - hx * 1.05, gy, z_eave - 0.10), (cx, gy, z_eave + ridge_h + 0.10), 0.10, segs=4)
+            b.rod("darkwood", (cx + hx * 1.05, gy, z_eave - 0.10), (cx, gy, z_eave + ridge_h + 0.10), 0.10, segs=4)
+            b.box("darkwood", cx, gy, z_eave + 0.02, sx * 0.94, 0.12, 0.14)
         if team_gable:
-            # Tasteful recessed team-colored heraldic gable inset framed inside dark oak beams (matches Image 5!)
-            b.gable_prism("team", cx, cy, z_eave + 0.12, sx * 0.46, sy * 0.95, ridge_h * 0.48, along_y=True)
+            b.gable_prism("team", cx, cy, z_eave + 0.14, sx * 0.42, sy * 0.97, ridge_h * 0.42, along_y=True)
     else:
-        b.box("straw", cx, cy, z_eave + ridge_h + 0.06, sx * 1.03, 0.34, 0.24, tint=(0.86, 0.78, 0.64))
-        b.gable_prism("plaster", cx, cy, z_eave - 0.02, sx * 0.92, sy * 0.88, ridge_h * 0.86, along_y=False, tint=(0.96, 0.93, 0.86))
-        for gx in (cx - hx * 0.97, cx + hx * 0.97):
-            b.rod("darkwood", (gx, cy - hy * 1.02, z_eave - 0.06), (gx, cy, z_eave + ridge_h + 0.10), 0.095, segs=4)
-            b.rod("darkwood", (gx, cy + hy * 1.02, z_eave - 0.06), (gx, cy, z_eave + ridge_h + 0.10), 0.095, segs=4)
-            b.box("darkwood", gx, cy, z_eave + 0.02, 0.12, sy * 0.92, 0.14)
+        b.box("straw", cx, cy, z_eave + ridge_h + 0.05, sx * 1.06, 0.36, 0.24, tint=(0.84, 0.76, 0.62))
+        b.gable_prism("plaster", cx, cy, z_eave - 0.04, sx * 0.94, sy * 0.90, ridge_h * 0.88, along_y=False, tint=(0.95, 0.92, 0.85))
+        for gx in (cx - hx * 0.99, cx + hx * 0.99):
+            b.rod("darkwood", (gx, cy - hy * 1.05, z_eave - 0.10), (gx, cy, z_eave + ridge_h + 0.10), 0.10, segs=4)
+            b.rod("darkwood", (gx, cy + hy * 1.05, z_eave - 0.10), (gx, cy, z_eave + ridge_h + 0.10), 0.10, segs=4)
+            b.box("darkwood", gx, cy, z_eave + 0.02, 0.12, sy * 0.94, 0.14)
         if team_gable:
-            b.gable_prism("team", cx, cy, z_eave + 0.12, sx * 0.95, sy * 0.46, ridge_h * 0.48, along_y=False)
+            b.gable_prism("team", cx, cy, z_eave + 0.14, sx * 0.97, sy * 0.42, ridge_h * 0.42, along_y=False)
 
     if hay_eaves:
-        # Loose bright golden hay sheaves resting cleanly ON TOP of the Feudal Stable thatch slope (EXACT Image 5!)
-        for off in (-1.15, -0.05, 1.05):
+        # Organic scattered loose golden hay wisps hugging the Feudal Stable lower eave (zero blocky cubes!)
+        for k, off in enumerate((-1.35, -0.78, -0.22, 0.34, 0.92, 1.40)):
+            jitter = ((k * 17) % 5 - 2) * 0.05
             if along_y:
-                b.box("grain", cx + hx * 0.68, cy + off, z_eave + ridge_h * 0.34 + 0.14, 0.56, 0.72, 0.26, rot_z=0.18)
+                b.tapered_box("grain", cx + hx * 0.80 + jitter, cy + off, z_eave + ridge_h * 0.14, z_eave + ridge_h * 0.26, 0.38, 0.42, 0.16, 0.20, tint=(0.98, 0.90, 0.62))
             else:
-                b.box("grain", cx + off, cy - hy * 0.68, z_eave + ridge_h * 0.34 + 0.14, 0.72, 0.56, 0.26, rot_z=0.18)
+                b.tapered_box("grain", cx + off, cy - hy * 0.80 + jitter, z_eave + ridge_h * 0.14, z_eave + ridge_h * 0.26, 0.42, 0.38, 0.20, 0.16, tint=(0.98, 0.90, 0.62))
 
 
 def _feudal_alder_shell(b, cx, cy, sx, sy, wall_h, cobble_h=0.62, x_brace=True, moss=True, team_trim=True):
@@ -1227,15 +1285,14 @@ def build_frontier_mill(mats, col):
 
 
 def build_frontier_mine(mats, col):
-    """Age 1 Dark Age Mining Camp: open weathered driftwood lean-to canvas shed, ore trough, boulders & gold (NO flat soil slab, ZERO brown wood!)."""
+    """Age 1 Dark Age Mining Camp: open weathered driftwood draped-hide pavilion, ore trough, boulders & gold (ZERO brown wood!)."""
     key = "building:mine:frontier"
     b = PartBuilder(key, mats)
-    # Open weathered driftwood post lean-to canopy
+    # Open weathered driftwood posts + organic sculpted rippled hide canopy (no flat paper slab!)
     for px in (-1.35, 0.85):
-        b.cylinder("trunk", px, 0.95, -0.46, 2.28, 0.12, 0.10, segs=5, tint=(0.94, 0.92, 0.88))
-        b.cylinder("trunk", px, -0.65, -0.46, 1.58, 0.11, 0.095, segs=5, tint=(0.94, 0.92, 0.88))
-    b.lean_roof("canvas", -0.25, 0.15, 1.54, 2.32, 2.80, 2.18, high_side="+y", thick=0.11)
-    b.box("team", -0.25, -0.94, 1.48, 2.82, 0.09, 0.18)
+        for py in (-0.75, 0.95):
+            b.cylinder("trunk", px, py, -0.46, 1.88, 0.115, 0.095, segs=5, tint=(0.94, 0.91, 0.85))
+    _draped_canvas_roof(b, -0.25, 0.10, 1.82, 2.75, 2.25, 0.86, along_y=False, team_border=True, guy_ropes=True)
     # Stone & gold ore heaps + weathered driftwood mine trough
     for ox, oy, r, h, role in [
         (1.15, 0.45, 0.60, 0.74, "stoneDark"),
@@ -1410,13 +1467,18 @@ def build_feudal_tower(civ, mats, col):
             a = i * math.pi / 4.0
             b.box_z("darkwood", math.cos(a) * 1.48, math.sin(a) * 1.48, 4.46, 5.46, 0.16, 0.16, rot_z=a)
         b.cylinder("darkwood", 0.0, 0.0, 5.26, 5.48, 1.58, 1.58, segs=8)
-        # Iconic conical ribbed golden-oak wooden plank roof (EXACT Image 5 Watch Towers!)
-        b.cone("straw", 0.0, 0.0, 5.44, 6.96, 1.74, segs=8, tint=(1.04, 0.88, 0.62), z_grad=0.24)
+        # Iconic 3-tier overlapping ribbed golden-oak timber plank octagonal Watch Tower roof (EXACT Image 5!)
+        b.cylinder("straw", 0.0, 0.0, 5.42, 5.92, 1.78, 1.32, segs=8, tint=(0.94, 0.80, 0.54), z_grad=0.14)
+        b.cylinder("straw", 0.0, 0.0, 5.88, 6.42, 1.38, 0.84, segs=8, tint=(1.02, 0.88, 0.60), z_grad=0.14)
+        b.cone("straw", 0.0, 0.0, 6.38, 7.04, 0.88, segs=8, tint=(1.06, 0.92, 0.66), z_grad=0.16)
+        # Overlapping dark oak ring battens & 8 crisp hip rafters defining wooden plank courses
+        b.cylinder("darkwood", 0.0, 0.0, 5.86, 5.94, 1.39, 1.35, segs=8)
+        b.cylinder("darkwood", 0.0, 0.0, 6.36, 6.43, 0.89, 0.86, segs=8)
         for i in range(8):
             a = i * math.pi / 4.0
-            b.rod("darkwood", (math.cos(a) * 1.72, math.sin(a) * 1.72, 5.44), (0.0, 0.0, 7.00), 0.068, segs=4)
-        b.box("darkwood", 0.0, 0.0, 7.04, 0.22, 0.22, 0.26)
-        b.box("iron", 0.0, 0.0, 7.22, 0.10, 0.10, 0.22)
+            b.rod("darkwood", (math.cos(a) * 1.78, math.sin(a) * 1.78, 5.42), (0.0, 0.0, 7.06), 0.072, segs=4)
+        b.box("darkwood", 0.0, 0.0, 7.08, 0.22, 0.22, 0.26)
+        b.box("iron", 0.0, 0.0, 7.26, 0.10, 0.10, 0.22)
     elif civ == "sun":
         # Tapered warm golden-ochre desert mud-brick watchtower + terracotta base + cedar vigas + woven shade canopy (NO dome!)
         b.tapered_box("brick", 0.0, 0.0, -0.46, 0.62, 2.75, 2.75, 2.38, 2.38, tint=(0.98, 0.90, 0.78))
@@ -1617,10 +1679,11 @@ def build_feudal_mill(civ, mats, col):
             b.box_z("darkwood", math.cos(a) * 1.30, 0.25 + math.sin(a) * 1.30, 1.12, 4.08, 0.15, 0.15, rot_z=a)
         b.cylinder("darkwood", 0.0, 0.25, 2.52, 2.68, 1.40, 1.40, segs=8)
         b.cylinder("team", 0.0, 0.25, 3.82, 4.04, 1.30, 1.30, segs=8)
-        # Rounded shaggy dark-golden reed thatch turret dome cap (matches AoE2 Feudal Windmill!)
-        b.cylinder("straw", 0.0, 0.25, 3.98, 4.52, 1.54, 1.36, segs=8, tint=(0.76, 0.68, 0.54))
-        b.cylinder("straw", 0.0, 0.25, 4.46, 4.92, 1.38, 0.96, segs=8, tint=(0.92, 0.84, 0.68))
-        b.cone("straw", 0.0, 0.25, 4.86, 5.42, 1.00, segs=8, tint=(1.00, 0.92, 0.76))
+        # Multi-tiered shaggy overlapping reed-thatch dome cap (rich layered silhouette, zero bald cone!)
+        b.cylinder("straw", 0.0, 0.25, 3.96, 4.38, 1.60, 1.42, segs=10, tint=(0.74, 0.68, 0.56))
+        b.cylinder("straw", 0.0, 0.25, 4.34, 4.74, 1.46, 1.16, segs=10, tint=(0.86, 0.80, 0.66))
+        b.cylinder("straw", 0.0, 0.25, 4.70, 5.06, 1.18, 0.78, segs=10, tint=(0.94, 0.88, 0.74))
+        b.cone("straw", 0.0, 0.25, 5.02, 5.48, 0.82, segs=10, tint=(1.00, 0.94, 0.80))
         # Cozy side thatch porch awning over grain sacks
         _shaggy_thatch_roof(b, 1.32, 0.35, 1.65, 1.45, 1.85, 0.76, along_y=True, team_gable=False)
         b.moss(-1.32, -0.78, -0.02, sx=0.70, sy=0.68, sz=1.45)

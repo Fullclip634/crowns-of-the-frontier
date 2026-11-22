@@ -337,7 +337,20 @@ export function structurePalette(material,u){
         const plasterTex=sample(u.plaster,uv().mul(1.15),fallback).rgb;
         const plinthStone=sample(u.stone,uv().mul(1.6),fallback).rgb.mul(.84);
         const skipPlinth=smoothstep(-.2,-.8,nightGlowAttr);
-        result.assign(mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.65).mul(float(1).sub(skipPlinth))));
+        const canvasMask=smoothstep(-1.2,-1.8,nightGlowAttr);
+        const basePlaster=mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.65).mul(float(1).sub(skipPlinth)));
+        const cU=worldPos.x.mul(2.4).add(worldPos.z.mul(.7));
+        const cV=worldPos.z.mul(2.4).sub(worldPos.x.mul(.7));
+        const weaveA=sin(worldPos.x.mul(58).add(worldPos.z.mul(14))).mul(sin(worldPos.z.mul(58).sub(worldPos.x.mul(14))));
+        const weaveB=sin(worldPos.x.mul(29).add(worldPos.y.mul(26))).mul(cos(worldPos.z.mul(31).sub(worldPos.y.mul(19))));
+        const foldWave=sin(cU.mul(2.9).add(sin(cV.mul(1.7)).mul(.9))).mul(.55).add(cos(cV.mul(3.4).sub(cU.mul(1.1))).mul(.45));
+        const mottle=sin(worldPos.x.mul(3.1).add(worldPos.z.mul(2.7))).mul(cos(worldPos.z.mul(2.3).sub(worldPos.x.mul(1.9))));
+        const seam=float(1).sub(smoothstep(.92,.99,abs(sin(worldPos.x.mul(2.6).add(worldPos.z.mul(2.6))))).mul(.16));
+        const eaveWeather=mix(.84,1.05,smoothstep(1.4,3.6,worldPos.y));
+        const clothLuma=clamp(float(.90).add(foldWave.mul(.17)).add(mottle.mul(.09)).add(weaveA.mul(.055)).add(weaveB.mul(.045)),.56,1.16).mul(seam).mul(eaveWeather);
+        const clothTint=mix(vec3(.88,.76,.58),vec3(1.06,1.00,.88),smoothstep(-.65,.75,foldWave.add(mottle.mul(.4))));
+        const hideCanvas=mix(plasterTex.mul(.5).add(vec3(.5)),vec3(1),.55).mul(clothTint).mul(clothLuma);
+        result.assign(mix(basePlaster,hideCanvas,canvasMask));
       }else if(suffix==='Normal')result.assign(sample(u.plasterNormal,uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(1.5),()=>{
       if(!suffix){
@@ -354,11 +367,34 @@ export function structurePalette(material,u){
         const grain=float(.94).add(sin(worldPos.x.add(worldPos.y.mul(2.6)).add(worldPos.z).mul(11.5)).mul(.075));
         const woodSample=sample(u.wood,uv().mul(1.25),fallback).rgb;
         const woodLuma=dot(woodSample,vec3(.30,.59,.11));
-        const woodTone=clamp(woodLuma.mul(3.30).add(.20),.20,1.12);
-        const weatheredWood=vec3(woodTone.mul(1.04),woodTone.mul(.99),woodTone.mul(.90));
         const weatheredMask=smoothstep(-.2,-.8,nightGlowAttr);
-        result.assign(mix(woodSample,weatheredWood,weatheredMask).mul(grain));
+        const thatchMask=smoothstep(-1.2,-1.8,nightGlowAttr);
+        const barkGroove=sin(worldPos.x.mul(26).add(worldPos.z.mul(26)).add(sin(worldPos.y.mul(6.5)).mul(1.4)));
+        const driftTone=clamp(woodLuma.mul(2.55).add(.48).add(barkGroove.mul(.10)),.44,1.18);
+        const weatheredDrift=vec3(driftTone.mul(1.04),driftTone.mul(.99),driftTone.mul(.90));
+        const chosenWood=mix(woodSample,weatheredDrift,weatheredMask).mul(grain);
+        const tierCoord=worldPos.y.mul(6.2).add(sin(worldPos.x.mul(3.7).add(worldPos.z.mul(3.3))).mul(.22));
+        const tierIdx=floor(tierCoord),tierFrac=fract(tierCoord);
+        const stalkPos=worldPos.x.mul(36).add(worldPos.z.mul(36)).add(tierIdx.mul(19.7));
+        const fiberA=sin(stalkPos.add(sin(worldPos.y.mul(14).add(stalkPos.mul(.22))).mul(1.4)));
+        const fiberB=sin(stalkPos.mul(2.17).sub(worldPos.y.mul(23)).add(tierIdx.mul(8.3)));
+        const fiberC=cos(worldPos.x.mul(62).sub(worldPos.z.mul(57)).add(worldPos.y.mul(18)));
+        const bundle=sin(worldPos.x.add(worldPos.z).mul(11.4).add(tierIdx.mul(5.3))).mul(.5).add(.5);
+        const tierShadow=mix(.66,1.06,smoothstep(0,.28,tierFrac));
+        const fiberShade=clamp(float(.78).add(fiberA.mul(.19)).add(fiberB.mul(.13)).add(fiberC.mul(.09)).add(bundle.sub(.5).mul(.16)),.44,1.18);
+        const patchNoise=sin(worldPos.x.mul(2.6).sub(worldPos.z.mul(2.3))).mul(cos(worldPos.z.mul(3.5).add(worldPos.y.mul(2.1))));
+        const reedColor=mix(vec3(.72,.63,.46),vec3(1.12,1.02,.80),clamp(fiberA.mul(.48).add(.5).add(patchNoise.mul(.22)),0,1));
+        const dampMoss=mix(reedColor,vec3(.68,.74,.52),smoothstep(2.8,1.5,worldPos.y).mul(max(patchNoise,0)).mul(.28));
+        const shaggyThatch=dampMoss.mul(tierShadow).mul(fiberShade).mul(mix(.86,1.08,clamp(woodLuma.mul(2.2).add(.42),0,1)));
+        result.assign(mix(chosenWood,shaggyThatch,thatchMask));
       }else result.assign(sample(u['wood'+suffix],uv(),fallback).rgb);
+    }).Else(()=>{
+      if(!suffix){
+        const clothMask=smoothstep(-1.2,-1.8,nightGlowAttr);
+        const linen=sin(worldPos.x.mul(46).add(worldPos.y.mul(22))).mul(cos(worldPos.z.mul(46).sub(worldPos.y.mul(22))));
+        const fold=sin(worldPos.x.mul(6.2).add(worldPos.z.mul(5.8)).add(worldPos.y.mul(3.1)));
+        result.assign(mix(vec3(1),vec3(clamp(float(.84).add(fold.mul(.09)).add(linen.mul(.055)),.68,1.02)),clothMask));
+      }
     });
     return result;
   })();

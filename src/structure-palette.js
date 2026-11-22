@@ -204,7 +204,24 @@ function paletteMaterial(view){
           vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
           vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
           float skipPlinth = smoothstep(-0.2, -0.8, vStructureNightGlow);
-          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65 * (1.0 - skipPlinth));
+          float canvasMask = smoothstep(-1.2, -1.8, vStructureNightGlow);
+          vec3 basePlaster = mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65 * (1.0 - skipPlinth));
+          if (canvasMask > 0.01) {
+            // Photorealistic draped woven burlap / stitched animal-hide canvas (ZERO flat cartoon paper!)
+            float cU = vStructurePos.x * 2.4 + vStructurePos.z * 0.7;
+            float cV = vStructurePos.z * 2.4 - vStructurePos.x * 0.7;
+            float weaveA = sin(vStructurePos.x * 58.0 + vStructurePos.z * 14.0) * sin(vStructurePos.z * 58.0 - vStructurePos.x * 14.0);
+            float weaveB = sin(vStructurePos.x * 29.0 + vStructurePos.y * 26.0) * cos(vStructurePos.z * 31.0 - vStructurePos.y * 19.0);
+            float foldWave = sin(cU * 2.9 + sin(cV * 1.7) * 0.9) * 0.55 + cos(cV * 3.4 - cU * 1.1) * 0.45;
+            float mottle = sin(vStructurePos.x * 3.1 + vStructurePos.z * 2.7) * cos(vStructurePos.z * 2.3 - vStructurePos.x * 1.9);
+            float seam = 1.0 - 0.16 * smoothstep(0.92, 0.99, abs(sin(vStructurePos.x * 2.6 + vStructurePos.z * 2.6)));
+            float eaveWeather = mix(0.84, 1.05, smoothstep(1.4, 3.6, vStructurePos.y));
+            float clothLuma = clamp(0.90 + foldWave * 0.17 + mottle * 0.09 + weaveA * 0.055 + weaveB * 0.045, 0.56, 1.16) * seam * eaveWeather;
+            vec3 clothTint = mix(vec3(0.88, 0.76, 0.58), vec3(1.06, 1.00, 0.88), smoothstep(-0.65, 0.75, foldWave + mottle * 0.4));
+            vec3 hideCanvas = mix(plasterTex * 0.5 + vec3(0.5), vec3(1.0), 0.55) * clothTint * clothLuma;
+            basePlaster = mix(basePlaster, hideCanvas, canvasMask);
+          }
+          diffuseColor.rgb *= basePlaster;
         } else if(vStructureSurface.z > 1.5) {
           float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
           vec3 stoneSample = texture2D(frontierStructurestone, vUv * 1.25).rgb;
@@ -217,10 +234,39 @@ function paletteMaterial(view){
           float woodGrain = 0.94 + 0.075 * sin((vStructurePos.x + vStructurePos.y * 2.6 + vStructurePos.z) * 11.5);
           vec3 woodSample = texture2D(frontierStructurewood, vUv * 1.25).rgb;
           float woodLuma = dot(woodSample, vec3(0.30, 0.59, 0.11));
-          float woodTone = clamp(woodLuma * 3.30 + 0.20, 0.20, 1.12);
-          vec3 weatheredWood = vec3(woodTone * 1.04, woodTone * 0.99, woodTone * 0.90);
           float weatheredMask = smoothstep(-0.2, -0.8, vStructureNightGlow);
-          diffuseColor.rgb *= mix(woodSample, weatheredWood, weatheredMask) * woodGrain;
+          float thatchMask = smoothstep(-1.2, -1.8, vStructureNightGlow);
+          // Bright weathered sun-bleached split-log ash-driftwood (stays bright & crisp at dusk, never charcoal!)
+          float barkGroove = sin(vStructurePos.x * 26.0 + vStructurePos.z * 26.0 + sin(vStructurePos.y * 6.5) * 1.4);
+          float driftTone = clamp(woodLuma * 2.55 + 0.48 + barkGroove * 0.10, 0.44, 1.18);
+          vec3 weatheredDrift = vec3(driftTone * 1.04, driftTone * 0.99, driftTone * 0.90);
+          vec3 chosenWood = mix(woodSample, weatheredDrift, weatheredMask) * woodGrain;
+          if (thatchMask > 0.01) {
+            // Photorealistic fine-grained shaggy multi-tier reed thatch (ZERO zebra stripes, ZERO cartoon paper!)
+            float tierCoord = vStructurePos.y * 6.2 + sin(vStructurePos.x * 3.7 + vStructurePos.z * 3.3) * 0.22;
+            float tierIdx = floor(tierCoord);
+            float tierFrac = fract(tierCoord);
+            float stalkPos = vStructurePos.x * 36.0 + vStructurePos.z * 36.0 + tierIdx * 19.7;
+            float fiberA = sin(stalkPos + sin(vStructurePos.y * 14.0 + stalkPos * 0.22) * 1.4);
+            float fiberB = sin(stalkPos * 2.17 - vStructurePos.y * 23.0 + tierIdx * 8.3);
+            float fiberC = cos(vStructurePos.x * 62.0 - vStructurePos.z * 57.0 + vStructurePos.y * 18.0);
+            float bundle = sin((vStructurePos.x + vStructurePos.z) * 11.4 + tierIdx * 5.3) * 0.5 + 0.5;
+            // Crisp dark undercut shadow beneath each overlapping reed tier + fine individual straw wisps!
+            float tierShadow = mix(0.66, 1.06, smoothstep(0.0, 0.28, tierFrac));
+            float fiberShade = clamp(0.78 + fiberA * 0.19 + fiberB * 0.13 + fiberC * 0.09 + (bundle - 0.5) * 0.16, 0.44, 1.18);
+            float patchNoise = sin(vStructurePos.x * 2.6 - vStructurePos.z * 2.3) * cos(vStructurePos.z * 3.5 + vStructurePos.y * 2.1);
+            vec3 reedColor = mix(vec3(0.72, 0.63, 0.46), vec3(1.12, 1.02, 0.80), clamp(fiberA * 0.48 + 0.5 + patchNoise * 0.22, 0.0, 1.0));
+            // Subtle mossy weathered patina right near low damp eaves
+            vec3 dampMoss = mix(reedColor, vec3(0.68, 0.74, 0.52), smoothstep(2.8, 1.5, vStructurePos.y) * max(0.0, patchNoise) * 0.28);
+            vec3 shaggyThatch = dampMoss * tierShadow * fiberShade * mix(0.86, 1.08, clamp(woodLuma * 2.2 + 0.42, 0.0, 1.0));
+            chosenWood = mix(chosenWood, shaggyThatch, thatchMask);
+          }
+          diffuseColor.rgb *= chosenWood;
+        } else if(vStructureNightGlow < -1.2) {
+          // Woven medieval dyed-linen cloth grain for Age 1-2 team valances, banners & gable cloth (ZERO neon plastic!)
+          float linen = sin(vStructurePos.x * 46.0 + vStructurePos.y * 22.0) * cos(vStructurePos.z * 46.0 - vStructurePos.y * 22.0);
+          float fold = sin(vStructurePos.x * 6.2 + vStructurePos.z * 5.8 + vStructurePos.y * 3.1);
+          diffuseColor.rgb *= clamp(0.84 + fold * 0.09 + linen * 0.055, 0.68, 1.02);
         }
         float structWetFace = frontierAtmwetness * mix(0.45, 1.0, smoothstep(0.15, 0.85, vStructureRoofUp));
         diffuseColor.rgb *= mix(vec3(1.0), vec3(0.86, 0.82, 0.73), earthSkirt * 0.48) * groundAo * mix(1.0, 0.84, structWetFace);
@@ -270,7 +316,7 @@ function paletteMaterial(view){
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v13';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v14';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms,roofMaps=roofSurfaceMaps();
@@ -294,15 +340,15 @@ function paletteMaterial(view){
 
 const linearHex=hex=>new THREE.Color(hex).toArray();
 const EARLY_SURFACE_COLOR={
-  strawTex:linearHex(0x9b804e),
-  strawFlat:linearHex(0x846c40),
-  trunkTex:linearHex(0xa8977e),
-  trunkFlat:linearHex(0x8c7d68),
-  canvasTex:linearHex(0xe3c284),
-  canvasFlat:linearHex(0xcfae72),
+  strawTex:linearHex(0x9a865c),
+  strawFlat:linearHex(0x88754e),
+  trunkTex:linearHex(0xb6a790),
+  trunkFlat:linearHex(0x9c8e79),
+  canvasTex:linearHex(0xe8cd92),
+  canvasFlat:linearHex(0xd4b67b),
   sunPlasterTex:linearHex(0xebca92),
   sunPlasterFlat:linearHex(0xdcb880),
-  creamPlasterTex:linearHex(0xe5dbc6),
+  creamPlasterTex:linearHex(0xe4dac6),
   sunBrick:linearHex(0xd49664),
   mossLight:linearHex(0x528836),
   mossDark:linearHex(0x3a6a26),
@@ -354,8 +400,11 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   geometry.setAttribute('structureEmission',new THREE.BufferAttribute(emission,3));
   if(material===m.glass)nightGlow.fill(1);
   else if(mode===2&&silverStone)nightGlow.fill(-1);
-  else if(preserveSurface&&mode===1&&(material===m.straw||material===m.trunk))nightGlow.fill(-1);
-  else if(preserveSurface&&mode===3&&(material===m.canvas||(material===m.plaster&&faction==='sun')))nightGlow.fill(-1);
+  else if(preserveSurface&&mode===1&&material===m.straw)nightGlow.fill(-2);
+  else if(preserveSurface&&mode===1&&material===m.trunk)nightGlow.fill(-1);
+  else if(preserveSurface&&mode===3&&material===m.canvas)nightGlow.fill(-2);
+  else if(preserveSurface&&mode===3&&material===m.plaster&&faction==='sun')nightGlow.fill(-1);
+  else if(preserveSurface&&mode===0&&view.teamMaterials?.includes(material))nightGlow.fill(-2);
   geometry.setAttribute('structureNightGlow',new THREE.BufferAttribute(nightGlow,1));
   geometry.clearGroups();return geometry;
 }

@@ -136,10 +136,14 @@ export class NightAtmosphere {
 
       if(wantsGlow&&glowCount<256){
         const flicker=reduced?1:.90+.07*Math.sin(time*4.7+e.id*1.3)+.04*Math.sin(time*9.1+e.id*2.7);
-        const hearthGlow=GLOW_BUILDINGS.has(e.type)?night*(forge?.74:e.type==='tower'?.44:.54):0;
+        const ownerAge=sim.players?.[e.owner]?.age??1;
+        // Frontier Age open-air palisade compounds & tents use subtle lantern light at dusk
+        // so undamaged courtyards (like the Frontier Barracks) never look like they are on fire.
+        const openFrontier=ownerAge===0&&e.type!=='towncenter'&&e.type!=='blacksmith';
+        const hearthGlow=GLOW_BUILDINGS.has(e.type)?night*(forge?.72:openFrontier?.16:e.type==='tower'?.38:.44):0;
         const fireGlow=fire*(.45+.36*night);
         const strength=Math.max(fireGlow,hearthGlow)*flicker;
-        const span=radius*(forge?3.85:3.2+.65*fire);
+        const span=radius*(fireGlow>hearthGlow?3.4+.65*fire:forge?3.4:openFrontier?1.45:2.55);
         this.dummy.position.set(e.x,ground+.065,e.z);
         this.dummy.rotation.set(0,0,0);
         this.dummy.scale.set(span,1,span);
@@ -147,7 +151,7 @@ export class NightAtmosphere {
         this.groundGlows.setMatrixAt(glowCount,this.dummy.matrix);
         if(fireGlow>hearthGlow)this.color.setRGB(Math.min(1,1.0*strength),.44*strength,.12*strength);
         else if(forge)this.color.setRGB(Math.min(1,1.0*strength),.56*strength,.18*strength);
-        else this.color.setRGB(Math.min(1,.98*strength),.60*strength,.22*strength);
+        else this.color.setRGB(Math.min(1,.96*strength),.68*strength,.30*strength);
         this.groundGlows.setColorAt(glowCount,this.color);
         glowCount++;
       }
