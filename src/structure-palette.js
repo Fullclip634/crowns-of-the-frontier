@@ -203,7 +203,8 @@ function paletteMaterial(view){
         } else if(vStructureSurface.z > 2.5) {
           vec3 plasterTex = texture2D(frontierStructureplaster, vUv * 1.15).rgb;
           vec3 plinthStone = texture2D(frontierStructurestone, vUv * 1.6).rgb * 0.84;
-          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65);
+          float skipPlinth = smoothstep(-0.2, -0.8, vStructureNightGlow);
+          diffuseColor.rgb *= mix(plasterTex * 1.04, plinthStone, plinthMask * 0.65 * (1.0 - skipPlinth));
         } else if(vStructureSurface.z > 1.5) {
           float ashlarCourse = 0.96 + 0.07 * sin(vStructurePos.y * 12.0) * cos((vStructurePos.x - vStructurePos.z) * 4.8);
           vec3 stoneSample = texture2D(frontierStructurestone, vUv * 1.25).rgb;
@@ -214,7 +215,11 @@ function paletteMaterial(view){
           diffuseColor.rgb *= mix(warmBrownStone, coolAshlar, silverStone) * ashlarCourse * mix(1.0, 0.85, plinthMask * 0.48);
         } else if(vStructureSurface.z > 0.5) {
           float woodGrain = 0.96 + 0.055 * sin((vStructurePos.x + vStructurePos.y * 2.4 + vStructurePos.z) * 10.5);
-          diffuseColor.rgb *= texture2D(frontierStructurewood, vUv * 1.2).rgb * woodGrain;
+          vec3 woodSample = texture2D(frontierStructurewood, vUv * 1.2).rgb;
+          float woodLuma = dot(woodSample, vec3(0.30, 0.59, 0.11));
+          vec3 weatheredWood = vec3(clamp(woodLuma * 2.85 + 0.34, 0.30, 1.08));
+          float weatheredMask = smoothstep(-0.2, -0.8, vStructureNightGlow);
+          diffuseColor.rgb *= mix(woodSample, weatheredWood, weatheredMask) * woodGrain;
         }
         float structWetFace = frontierAtmwetness * mix(0.45, 1.0, smoothstep(0.15, 0.85, vStructureRoofUp));
         diffuseColor.rgb *= mix(vec3(1.0), vec3(0.86, 0.82, 0.73), earthSkirt * 0.48) * groundAo * mix(1.0, 0.84, structWetFace);
@@ -264,7 +269,7 @@ function paletteMaterial(view){
         }
         #include <opaque_fragment>`);
     };
-    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v11';
+    if(!material.isNodeMaterial)material.customProgramCacheKey=()=> 'frontier-structure-palette-v12';
     m.structurePalette=material;
   }
   const material=m.structurePalette,u=material.frontierUniforms,roofMaps=roofSurfaceMaps();
@@ -286,6 +291,22 @@ function paletteMaterial(view){
   return material;
 }
 
+const linearHex=hex=>new THREE.Color(hex).toArray();
+const EARLY_SURFACE_COLOR={
+  strawTex:linearHex(0xcfa352),
+  strawFlat:linearHex(0xb08a48),
+  trunkTex:linearHex(0xafa494),
+  trunkFlat:linearHex(0x92897c),
+  canvasTex:linearHex(0xe8c47c),
+  canvasFlat:linearHex(0xd6b270),
+  sunPlasterTex:linearHex(0xebca92),
+  sunPlasterFlat:linearHex(0xdcb880),
+  creamPlasterTex:linearHex(0xf2e7cf),
+  sunBrick:linearHex(0xd49664),
+  mossLight:linearHex(0x528836),
+  mossDark:linearHex(0x3a6a26),
+};
+
 function promotedWallColor(material,rawMode,mode,m){
   if(mode===rawMode)return material.color.toArray();
   // Replace wood's brown multiplier or plaster's warm tint when age promotes a surface to another architectural class.
@@ -295,7 +316,7 @@ function promotedWallColor(material,rawMode,mode,m){
   return material.color.toArray();
 }
 
-function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,silverStone=false,preserveSurface=false){
+function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,silverStone=false,preserveSurface=false,faction='alder'){
   const geometry=part.geometry.clone().applyMatrix4(matrix),count=geometry.attributes.position.count;
   // Indexed geometry retains the compressed catalogue's shared vertices in RAM.
   if(!geometry.index)geometry.setIndex(Array.from({length:count},(_,i)=>i));
@@ -308,7 +329,17 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:preserveSurface&&(material===m.straw||material===m.trunk)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:(material===m.plaster||(preserveSurface&&material===m.canvas))&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
   const mode=preserveSurface?rawMode:(material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
-  const sourceColor=preserveSurface&&mode===1&&material===m.straw?[0.78,0.65,0.41]:preserveSurface&&mode===1&&material===m.trunk?[0.68,0.66,0.62]:preserveSurface&&mode===3&&material===m.canvas?[0.92,0.80,0.56]:promotedWallColor(material,rawMode,mode,m);
+  let sourceColor=promotedWallColor(material,rawMode,mode,m);
+  if(preserveSurface){
+    if(material===m.straw)sourceColor=mode===1?EARLY_SURFACE_COLOR.strawTex:EARLY_SURFACE_COLOR.strawFlat;
+    else if(material===m.trunk)sourceColor=mode===1?EARLY_SURFACE_COLOR.trunkTex:EARLY_SURFACE_COLOR.trunkFlat;
+    else if(material===m.canvas)sourceColor=mode===3?EARLY_SURFACE_COLOR.canvasTex:EARLY_SURFACE_COLOR.canvasFlat;
+    else if(material===m.plaster&&faction==='sun')sourceColor=mode===3?EARLY_SURFACE_COLOR.sunPlasterTex:EARLY_SURFACE_COLOR.sunPlasterFlat;
+    else if(material===m.plaster&&mode===3)sourceColor=EARLY_SURFACE_COLOR.creamPlasterTex;
+    else if(material===m.brick&&faction==='sun')sourceColor=EARLY_SURFACE_COLOR.sunBrick;
+    else if(material===m.leaf)sourceColor=EARLY_SURFACE_COLOR.mossLight;
+    else if(material===m.leafDark)sourceColor=EARLY_SURFACE_COLOR.mossDark;
+  }
   // Roofs keep clear team ownership color (72%) with a subtle age-specific finish tint (28%).
   const styledRoof=mode===4&&roofFinish;
   const color=styledRoof?sourceColor.map((channel,i)=>THREE.MathUtils.lerp(channel,roofFinish[i],.28)):sourceColor;
@@ -322,6 +353,8 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   geometry.setAttribute('structureEmission',new THREE.BufferAttribute(emission,3));
   if(material===m.glass)nightGlow.fill(1);
   else if(mode===2&&silverStone)nightGlow.fill(-1);
+  else if(preserveSurface&&mode===1&&(material===m.straw||material===m.trunk))nightGlow.fill(-1);
+  else if(preserveSurface&&mode===3&&(material===m.canvas||(material===m.plaster&&faction==='sun')))nightGlow.fill(-1);
   geometry.setAttribute('structureNightGlow',new THREE.BufferAttribute(nightGlow,1));
   geometry.clearGroups();return geometry;
 }
@@ -343,7 +376,8 @@ export function packBuildingModel(view,root,e){
   const style=architectureStyle(ageStyled?surfaceAge:0),masonry=e.type==='wall'||e.type==='gate';
   const silverStone=fortified||(!masonry&&surfaceAge>=3);
   const tint=masonry?(fortified?[.84,.89,.96]:palisade?[1,1,1]:[.98,.93,.86]):(metadata.authoredAgeVariant?[1,1,1]:style.tint),roofFinish=ageStyled?style.roof:null,roughnessScale=fortified?1.08:1+surfaceAge*.01;
-  const key=[e.type,view.sim.players[e.owner]?.faction,metadata.architectureAge||0,metadata.artRevision||'base',metadata.authoredAgeVariant?'early':'std',metadata.wallCorner?'corner':'run',e.owner,metadata.detail||'procedural',view.settings?.quality,
+  const faction=view.sim.players[e.owner]?.faction||'alder';
+  const key=[e.type,faction,metadata.architectureAge||0,metadata.artRevision||'base',metadata.authoredAgeVariant?'early':'std',metadata.wallCorner?'corner':'run',e.owner,metadata.detail||'procedural',view.settings?.quality,
     view.teamMaterials[e.owner]?.color.getHex(),view.roofMaterials?.[e.owner]?.color.getHex(),tier,isSnowBiome(view.sim?.options?.map)?'snow':'dry'].join(':');
   view.structureGeometryCache??=new Map();view.sharedModelGeometry??=new Set();
   root.updateMatrixWorld(true);
@@ -358,7 +392,7 @@ export function packBuildingModel(view,root,e){
     if(!parts.length)return;
     const cacheKey=key+':'+path;let geometry=view.structureGeometryCache.get(cacheKey);
     if(!geometry){
-      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish,silverStone,preserveSurface));
+      const inverse=group.matrixWorld.clone().invert(),sources=parts.map(part=>bakeSurface(view,part,inverse.clone().multiply(part.matrixWorld),tint,roughnessScale,wallAge,roofFinish,silverStone,preserveSurface,faction));
       geometry=mergeGeometries(sources);for(const source of sources)source.dispose();
       if(!geometry)throw new Error('Building surfaces could not be merged.');
       geometry.computeBoundingBox();geometry.computeBoundingSphere();

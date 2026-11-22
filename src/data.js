@@ -104,12 +104,12 @@ FACTIONS.raven.desc+=' Unique outriders raid workers; Raiding parties reward cav
 
 MAPS.coast={name:'The divided coast',desc:'Two kingdoms separated by a wide sea channel. Fish, fight, and land troops across the water.'};
 Object.assign(ICONS,{dock:'⚓',fishingboat:'⚓',galley:'⛵',warship:'⛵',transport:'⚓',king:'♛'});
-BUILDINGS.dock={name:'Harbor',desc:'Build near the shore. Trains fishing boats, warships, and transports; receives fish.',cost:{wood:180},hp:1400,r:3.6,time:35,age:1,drop:['food'],shore:true};
+BUILDINGS.dock={name:'Harbor',desc:'Build near the shore. Trains fishing boats, warships, and transports; receives fish.',cost:{wood:180},hp:1400,r:3.6,time:35,age:0,drop:['food'],shore:true};
 Object.assign(UNITS,{
-  fishingboat:{name:'Fishing boat',desc:'Harvests fish shoals and returns its catch to a harbor. A vulnerable but efficient food economy.',cost:{wood:90},hp:110,damage:0,range:0,speed:4.5,time:20,age:1,at:['dock'],role:'fisher',naval:true,vision:16},
+  fishingboat:{name:'Fishing boat',desc:'Harvests fish shoals and returns its catch to a harbor. A vulnerable but efficient food economy.',cost:{wood:90},hp:110,damage:0,range:0,speed:4.5,time:20,age:0,at:['dock'],role:'fisher',naval:true,vision:16},
   galley:{name:'Galley',desc:'Swift arrow ship. Protects fishing boats and counters transports.',cost:{wood:180,gold:70},hp:240,damage:18,range:19,speed:5.7,time:30,age:1,at:['dock'],role:'ranged',naval:true,vision:24},
   warship:{name:'Siege galleon',desc:'Heavy, long-range artillery ship. Bombards shoreline fortifications.',cost:{wood:320,gold:220},hp:450,damage:50,armor:4,range:29,speed:3.8,time:45,age:3,at:['dock'],role:'siege',naval:true,vision:30,cooldown:3},
-  transport:{name:'Transport ship',desc:'Carries up to 8 land troops. Command troops onto it, sail across, then select a shore to unload.',cost:{wood:140,gold:50},hp:340,damage:0,range:0,speed:5.3,time:25,age:1,at:['dock'],role:'transport',naval:true,vision:20,capacity:8},
+  transport:{name:'Transport ship',desc:'Carries up to 8 land troops. Command troops onto it, sail across, then select a shore to unload.',cost:{wood:140,gold:50},hp:340,damage:0,range:0,speed:5.3,time:25,age:0,at:['dock'],role:'transport',naval:true,vision:20,capacity:8},
 });
 TECHS.seamanship={name:'Seamanship',desc:'+15% ship speed and +20% ship attack per level.',at:['dock'],cost:{wood:160,gold:120},max:2,age:1,time:35};
 ICONS.seamanship='⚓';

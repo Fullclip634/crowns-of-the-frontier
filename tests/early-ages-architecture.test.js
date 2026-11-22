@@ -6,7 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Simulation} from '../src/simulation.js';
 import {WorldView} from '../src/world.js';
-import {BUILDINGS} from '../src/data.js';
+import {BUILDINGS,UNITS} from '../src/data.js';
 import {buildingModel} from '../src/models-3d.js';
 import {registerAuthoredAssets,clearAuthoredAssets} from '../src/authored-assets.js';
 import {
@@ -61,7 +61,7 @@ function makeView(baseCatalogue,faction='alder',age=0,tech={}){
   return view;
 }
 
-test('frontier-early-ages.glb provides all 47 low-poly grounded models and leaves Age 3 & Age 4 untouched',async()=>{
+test('frontier-early-ages.glb provides all 48 low-poly grounded models, zero brown wood in Frontier/Palisades, taller walls, and leaves Age 3 & Age 4 untouched',async()=>{
   const [{gltf:baseGltf,bytes:baseBytes},{gltf:earlyGltf,bytes:earlyBytes}]=await Promise.all([
     loadGLB('../src/assets3d/frontier-low.glb'),
     loadGLB('../src/assets3d/frontier-early-ages.glb'),
@@ -70,7 +70,13 @@ test('frontier-early-ages.glb provides all 47 low-poly grounded models and leave
   registerEarlyAgeArtwork(earlyGltf.scene);
   try{
     assert.ok(earlyBytes.length<1_800_000,`early-age GLB stays lightweight for phones (${earlyBytes.length} bytes)`);
-    assert.equal(earlyAgeArtworkState().models,47);
+    assert.equal(earlyAgeArtworkState().models,48);
+
+    // Harbor, Fishing Boat, and Transport unlock in Frontier Age (Age 0) while Galley unlocks in Feudal Age.
+    assert.equal(BUILDINGS.dock.age,0,'Harbor (dock) is buildable in Frontier Age');
+    assert.equal(UNITS.fishingboat.age,0,'Fishing boat is trainable in Frontier Age');
+    assert.equal(UNITS.transport.age,0,'Transport ship is trainable in Frontier Age');
+    assert.equal(UNITS.galley.age,1,'Galley unlocks in Feudal Age');
 
     // Age 3 (Castle) and Age 4 (Imperial) must NEVER resolve early-age overrides.
     for(const type of ['towncenter','house','barracks','mill','range','stable','blacksmith','market','tower','dock','keep','wall','gate']){
@@ -81,8 +87,26 @@ test('frontier-early-ages.glb provides all 47 low-poly grounded models and leave
       }
     }
 
+    // Verify ZERO brown wood ('wood' or 'darkwood') exists on ANY Frontier Age or Palisade model!
+    for(const key of ['building:wall:palisade','building:gate:palisade','building:wallcorner:palisade','building:towncenter:frontier','building:house:frontier','building:barracks:frontier','building:mill:frontier','building:camp:frontier','building:mine:frontier','building:dock:frontier']){
+      let root=null;
+      earlyGltf.scene.traverse(n=>{if(n.userData?.assetKey===key)root=n;});
+      assert.ok(root,`early-age GLB contains ${key}`);
+      root.traverse(part=>{
+        if(part.isMesh)assert.ok(!['wood','darkwood'].includes(part.userData.assetMaterial),`${key} uses weathered silver-driftwood instead of brown wood (${part.userData.assetMaterial})`);
+      });
+    }
+
+    // Verify taller Palisade Wall (>= 3.10m) and Palisade Corner Bastion (>= 4.00m)!
+    {
+      const palView=makeView(baseAssets,'alder',0);
+      const palWall=buildingModel(palView,{id:9901,kind:'building',type:'wall',owner:0,x:0,z:0,r:BUILDINGS.wall.r,progress:1});
+      const palBox=new THREE.Box3().setFromObject(palWall);
+      assert.ok(palBox.max.y>=3.10,`Palisade wall stands tall (${palBox.max.y.toFixed(2)}m >= 3.10m)`);
+    }
+
     // Verify every single early-age building loads, has finite grounded geometry, and packs to 1 static draw call.
-    const frontierTypes=['towncenter','house','barracks','mill','camp','mine'];
+    const frontierTypes=['towncenter','house','barracks','mill','camp','mine','dock'];
     const feudalTypes=['towncenter','house','barracks','mill','camp','mine','range','stable','blacksmith','market','tower','dock'];
 
     for(const type of frontierTypes){
@@ -130,7 +154,7 @@ test('frontier-early-ages.glb provides all 47 low-poly grounded models and leave
     // - Sunward: flat-roof desert adobe (shorter than pitched roofs, NO Castle domes!)
     // - Raven: horizontal log cabin (wood walls, NO plaster!) + steepest Nordic roof!
     assert.ok(houseProfiles.alder.roles.has('plaster')&&houseProfiles.alder.roles.has('darkwood'),'Alder Feudal uses half-timbered plaster');
-    assert.ok(houseProfiles.sun.roles.has('plaster')&&houseProfiles.sun.roles.has('soil'),'Sunward Feudal uses desert adobe');
+    assert.ok(houseProfiles.sun.roles.has('plaster')&&houseProfiles.sun.roles.has('brick'),'Sunward Feudal uses warm golden sandstone and terracotta mudbrick');
     assert.ok(!houseProfiles.raven.roles.has('plaster')&&houseProfiles.raven.roles.has('wood'),'Raven Feudal uses log timber walls, not plaster');
     assert.ok(houseProfiles.raven.maxY>houseProfiles.alder.maxY,'Raven steep Nordic roof rises higher than Alder');
     assert.ok(houseProfiles.alder.maxY>houseProfiles.sun.maxY,'Sunward flat adobe roof stays flatter than pitched roofs');

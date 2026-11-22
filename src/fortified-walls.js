@@ -91,7 +91,7 @@ export function wallArmorBonus(sim,target){
 
 // Connector silhouette and tint per wall tier.
 export const WALL_TIER_STYLE=Object.freeze({
-  palisade:Object.freeze({height:2.40,depth:.66,capHeight:.32,capY:2.42,bodyY:1.18,foundationDepth:.90,color:0x8f877b,foundationColor:0x665e52,roughness:.95}),
+  palisade:Object.freeze({height:3.18,depth:.66,capHeight:.34,capY:3.20,bodyY:1.59,foundationDepth:.90,color:0xb2aaa0,foundationColor:0x8e867c,roughness:.95}),
   stone:Object.freeze({height:3.55,depth:1.47,capHeight:.85,capY:3.65,bodyY:1.67,foundationDepth:2.12,color:0xffffff,foundationColor:0xffffff,roughness:1}),
   fortified:Object.freeze({height:4.45,depth:1.86,capHeight:1.18,capY:4.48,bodyY:2.08,foundationDepth:2.42,color:0xa9b0bd,foundationColor:0xc6cede,roughness:.94}),
 });

@@ -336,7 +336,8 @@ export function structurePalette(material,u){
       if(!suffix){
         const plasterTex=sample(u.plaster,uv().mul(1.15),fallback).rgb;
         const plinthStone=sample(u.stone,uv().mul(1.6),fallback).rgb.mul(.84);
-        result.assign(mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.65)));
+        const skipPlinth=smoothstep(-.2,-.8,nightGlowAttr);
+        result.assign(mix(plasterTex.mul(1.04),plinthStone,plinthMask.mul(.65).mul(float(1).sub(skipPlinth))));
       }else if(suffix==='Normal')result.assign(sample(u.plasterNormal,uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(1.5),()=>{
       if(!suffix){
@@ -351,7 +352,11 @@ export function structurePalette(material,u){
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
         const grain=float(.96).add(sin(worldPos.x.add(worldPos.y.mul(2.4)).add(worldPos.z).mul(10.5)).mul(.055));
-        result.assign(sample(u.wood,uv().mul(1.2),fallback).rgb.mul(grain));
+        const woodSample=sample(u.wood,uv().mul(1.2),fallback).rgb;
+        const woodLuma=dot(woodSample,vec3(.30,.59,.11));
+        const weatheredWood=vec3(clamp(woodLuma.mul(2.85).add(.34),.30,1.08));
+        const weatheredMask=smoothstep(-.2,-.8,nightGlowAttr);
+        result.assign(mix(woodSample,weatheredWood,weatheredMask).mul(grain));
       }else result.assign(sample(u['wood'+suffix],uv(),fallback).rgb);
     });
     return result;
