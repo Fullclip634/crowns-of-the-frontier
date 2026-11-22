@@ -107,6 +107,9 @@ test('AoE2 castle models preserve rich fortress materials, grounded plinth, anim
         packed.traverse(part => { if (part.isMesh) meshes.push(part); });
         assert.equal(meshes.filter(p => p.userData.structureSurface).length, 1, `${detail} ${faction} merges into 1 opaque static draw`);
         assert.equal(meshes.length, 2, `${detail} ${faction} renders in exactly 2 draw calls (static fortress + animated flag)`);
+        const scaledBounds = new THREE.Box3().setFromObject(packed);
+        const scaledSize = scaledBounds.getSize(new THREE.Vector3());
+        assert.ok(scaledSize.x >= 10.2 && scaledBounds.max.y >= 13.5, `${detail} ${faction} Castle Age fortress has monumental scale (${scaledSize.x.toFixed(2)}m wide, ${scaledBounds.max.y.toFixed(2)}m high)`);
       }
     }
 

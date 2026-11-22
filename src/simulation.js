@@ -29,6 +29,7 @@ import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,sl
 import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
 import {closestCandidates} from './closest-candidates.js';
+import {navalPairClearance,separationUnitVector,resolveNavalSpacing,navalDestinationOccupied} from './naval-spacing.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
@@ -366,10 +367,16 @@ export class Simulation {
     const terrainSpeed=this.tacticalEnabled()&&!d.naval?slopeSpeedFactor(slopeAt(this.options.map,this.options.seed,e.x,e.z,phase))*biomeSpeedFactor(this.options.map,tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase)):1;
     const step=Math.min(len,speed*terrainSpeed*(d.naval?1+(p.tech.seamanship||0)*.15:1)*dt);
     let nx=e.x+dx/len*step,nz=e.z+dz/len*step;
-    const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4);
-    for(let ox=-1;ox<=1;ox++){const column=this.unitBuckets?.get(bx+ox);if(!column)continue;for(let oz=-1;oz<=1;oz++){
+    const bx=Math.floor(e.x/4),bz=Math.floor(e.z/4),span=d.naval?2:1;
+    for(let ox=-span;ox<=span;ox++){const column=this.unitBuckets?.get(bx+ox);if(!column)continue;for(let oz=-span;oz<=span;oz++){
       const neighbors=column.get(bz+oz);if(!neighbors)continue;
-      for(const other of neighbors){if(other===e||other.embarked||!!UNITS[other.type].naval!==!!d.naval)continue;const sx=nx-other.x,sz=nz-other.z,min=(e.r+other.r)*.8;if(sx*sx+sz*sz>=min*min)continue;const sep=Math.hypot(sx,sz);if(sep<min&&sep>.01){nx+=sx/sep*(min-sep)*.2;nz+=sz/sep*(min-sep)*.2;}}
+      for(const other of neighbors){
+        if(other===e||other.embarked||!!UNITS[other.type].naval!==!!d.naval)continue;
+        const sx=nx-other.x,sz=nz-other.z,min=d.naval?navalPairClearance(e,other):(e.r+other.r)*.8;
+        if(sx*sx+sz*sz>=min*min)continue;
+        if(d.naval){const vec=separationUnitVector({x:nx,z:nz,id:e.id},other);const push=(min-vec.dist)*.42;nx+=vec.x*push;nz+=vec.z*push;}
+        else{const sep=Math.hypot(sx,sz);if(sep<min&&sep>.01){nx+=sx/sep*(min-sep)*.2;nz+=sz/sep*(min-sep)*.2;}}
+      }
     }}
     if(!d.naval&&e.order?.type==='attack'){const cleared=buildingClearanceStep(this,e,e.x,e.z,nx,nz);nx=cleared.x;nz=cleared.z;}
     const c=this.cell(nx,nz),current=this.cell(e.x,e.z),oldX=e.x,oldZ=e.z,radius=bridgeUnitClearance(e),map=this.options.map;
@@ -488,7 +495,7 @@ export class Simulation {
     if(order.type==='move'||order.type==='attackmove'){
       const exact=order.type==='move'&&order.aiFortification===true,formation=order.formation===true;
       const arrival=exact?0:formation ? .55 : 1.4;
-      if(this.move(e,order,dt,arrival,exact||formation))this.finishOrder(e);return;
+      if((d.naval&&!exact&&!formation&&navalDestinationOccupied(this,e,order))||this.move(e,order,dt,arrival,exact||formation))this.finishOrder(e);return;
     }
     if(order.type==='patrol'){if(this.move(e,order,dt,1.4)){if(e.orders.length)this.finishOrder(e);else{[order.x,order.originX]=[order.originX,order.x];[order.z,order.originZ]=[order.originZ,order.z];e.path=[];e.repath=0;}}return;}
     if(order.type==='guard'){const ally=this.get(order.target);if(!ally||!this.allied(ally.owner,e.owner)){this.finishOrder(e);return;}const point=formationSlot(this,e,{x:ally.x+(order.offsetX||0),z:ally.z+(order.offsetZ||0)});if(distance(e,point)>3)this.move(e,point,dt,2);return;}
@@ -640,6 +647,7 @@ export class Simulation {
     // Keep the start-of-tick snapshot semantics without allocating a full copy.
     const tickEntityCount=this.entities.length;
     for(let i=0;i<tickEntityCount;i++){const e=this.entities[i];if(e.hp>0){if(e.kind==='unit')this.tickUnit(e,dt);else if(e.kind==='building')this.tickBuilding(e,dt);}}
+    resolveNavalSpacing(this,dt);
     this.tickProjectiles();
     this.aiClock+=dt;if(this.options.mode==='custom')this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival&&this.time>=this.nextWave&&this.wave<(this.mission?.waves||10))this.spawnWave();

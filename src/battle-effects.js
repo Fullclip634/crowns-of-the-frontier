@@ -8,7 +8,7 @@ import {visualBodyOffset} from './foot-placement.js';
 import {markInstancePrefix} from './render-batches.js';
 
 const clamp=(value,lo,hi)=>Math.max(lo,Math.min(hi,value));
-const buildingHeight=type=>({tower:6.2,keep:7.5,towncenter:5.8,wall:2.4,gate:3.8}[type]||2.6);
+const buildingHeight=type=>({tower:6.2,keep:9.5,towncenter:5.8,wall:2.4,gate:3.8}[type]||2.6);
 
 export function witnessedEffect(view,entity){
   const sim=view.sim;

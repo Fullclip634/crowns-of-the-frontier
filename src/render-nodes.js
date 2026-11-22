@@ -338,7 +338,10 @@ export function structurePalette(material,u){
     }).ElseIf(mode.greaterThan(1.5),()=>{
       if(!suffix){
         const ashlar=float(.96).add(sin(worldPos.y.mul(12)).mul(cos(worldPos.x.sub(worldPos.z).mul(4.8))).mul(.07));
-        result.assign(sample(u.stone,uv().mul(1.25),fallback).rgb.mul(ashlar).mul(mix(1,.83,plinthMask.mul(.52))));
+        const stoneSample=sample(u.stone,uv().mul(1.25),fallback).rgb;
+        const stoneLuma=dot(stoneSample,vec3(.30,.59,.11));
+        const coolAshlar=mix(stoneSample,vec3(stoneLuma.mul(1.22),stoneLuma.mul(1.23),stoneLuma.mul(1.26)),.72);
+        result.assign(coolAshlar.mul(ashlar).mul(mix(1,.85,plinthMask.mul(.48))));
       }else result.assign(sample(u['stone'+suffix],uv(),fallback).rgb);
     }).ElseIf(mode.greaterThan(.5),()=>{
       if(!suffix){
@@ -510,5 +513,13 @@ export function skyDome(material,u){
   const warmScatter=exp(abs(dir.y).mul(-5.2)).mul(pow(sunDot,2.5)).mul(.16).mul(solarClear);
   const moonGlow=vec3(.78,.86,1).mul(pow(sunDot,52).mul(.24)).mul(night).mul(float(1).sub(clouds.mul(.84)));
   material.colorNode=clamp(base.add(horizon.mul(haze)).add(sunColor.mul(warmScatter)).add(sunGlow).add(moonGlow),0,2);
+  material.needsUpdate=true;
+}
+
+export function coolAshlarStone(material){
+  if(!material?.isNodeMaterial)return;
+  const base=materialColor.rgb;
+  const luma=dot(base,vec3(.30,.59,.11));
+  material.colorNode=mix(base,vec3(luma.mul(1.22),luma.mul(1.23),luma.mul(1.26)),.72).mul(vec3(.92,.96,1.02));
   material.needsUpdate=true;
 }

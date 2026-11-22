@@ -1,6 +1,7 @@
 import {UNITS} from './data.js';
 import {bridgeNavigationGrid,bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 import {bridgeAt,bridgeRoadHalfWidth} from './bridge-layout.js';
+import {shipClearance,navalPairClearance} from './naval-spacing.js';
 const clamp=(sim,n)=>Math.max(-sim.halfWorld+3,Math.min(sim.halfWorld-3,n));
 
 // Resolve formation slots on the unit's own movement surface. This keeps edge
@@ -10,15 +11,19 @@ export function formationSlot(sim,unit,desired,reserved=[]){
   const source=sim.grid(unit.owner,naval),grid=naval?source:bridgeNavigationGrid(sim,unit,source),cell=sim.cell(point.x,point.z);
   const map=sim.options?.map,radius=bridgeUnitClearance(unit);
   const available=(x,z)=>Math.abs(x)<=limit&&Math.abs(z)<=limit&&sim.isWater(x,z)===naval&&(naval||bridgePointClear(map,x,z,radius))&&!reserved.some(other=>{
-    const dx=x-other.x,dz=z-other.z,gap=Math.max(1.4,(unit.r+(other.r||.65))*1.05);
+    const dx=x-other.x,dz=z-other.z,gap=naval?Math.max(1.4,navalPairClearance(unit,other)*1.02):Math.max(1.4,(unit.r+(other.r||.65))*1.05);
     return dx*dx+dz*dz<gap*gap;
   });
   if(!grid[cell.z*size+cell.x]&&available(point.x,point.z))return point;
   let best=null,score=Infinity;
-  for(let r=1;r<=4;r++)for(let z=Math.max(0,cell.z-r);z<=Math.min(size-1,cell.z+r);z++)for(let x=Math.max(0,cell.x-r);x<=Math.min(size-1,cell.x+r);x++){
-    if((r>1&&Math.abs(x-cell.x)<r&&Math.abs(z-cell.z)<r)||grid[z*size+x])continue;
-    const wx=x*2-half+1,wz=z*2-half+1;if(!available(wx,wz))continue;const s=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-unit.x,wz-unit.z)*.03;
-    if(s<score){score=s;best={x:wx,z:wz};}
+  const maxRing=naval?10:4;
+  for(let r=1;r<=maxRing;r++){
+    for(let z=Math.max(0,cell.z-r);z<=Math.min(size-1,cell.z+r);z++)for(let x=Math.max(0,cell.x-r);x<=Math.min(size-1,cell.x+r);x++){
+      if((r>1&&Math.abs(x-cell.x)<r&&Math.abs(z-cell.z)<r)||grid[z*size+x])continue;
+      const wx=x*2-half+1,wz=z*2-half+1;if(!available(wx,wz))continue;const s=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-unit.x,wz-unit.z)*.03;
+      if(s<score){score=s;best={x:wx,z:wz};}
+    }
+    if(best&&r>=4)break;
   }return best||point;
 }
 
@@ -36,17 +41,18 @@ function formationOrigin(unit,append){
 function formationSlots(sim,units,order,append){
   const formation=sim.players[units[0].owner].formation;
   let width=formation==='line'?Math.min(12,units.length):formation==='column'?2:Math.ceil(Math.sqrt(units.length));
-  const bridge=!UNITS[units[0].type].naval&&bridgeAt(sim.options.map,order.x,order.z);
+  const navalGroup=!!UNITS[units[0].type].naval;
+  const bridge=!navalGroup&&bridgeAt(sim.options.map,order.x,order.z);
   let centerX=0,centerZ=0,largestRadius=0,clearance=0;
   const origins=units.map(unit=>{
     const origin=formationOrigin(unit,append);
-    centerX+=origin.x;centerZ+=origin.z;largestRadius=Math.max(largestRadius,unit.r);
+    centerX+=origin.x;centerZ+=origin.z;largestRadius=Math.max(largestRadius,navalGroup?shipClearance(unit):unit.r);
     if(bridge)clearance=Math.max(clearance,bridgeUnitClearance(unit));
     return origin;
   });
   const dx=order.x-centerX/units.length,dz=order.z-centerZ/units.length,length=Math.hypot(dx,dz);
   const forwardX=bridge?(dx<0?-1:1):length>.001?dx/length:0,forwardZ=bridge?0:length>.001?dz/length:1;
-  const spacing=Math.max(2.2,largestRadius*2+.55),front=[],rear=[];
+  const spacing=navalGroup?Math.max(2.2,largestRadius*2+.35):Math.max(2.2,largestRadius*2+.55),front=[],rear=[];
   const bridgeWidth=bridge?bridgeRoadHalfWidth-clearance-.3:0;
   if(bridge)width=Math.min(width,Math.floor(bridgeWidth*2/spacing)+1);
   units.forEach((unit,i)=>{
@@ -91,7 +97,7 @@ export function formationDestinations(sim,units,order,append){
     const reserved=[],seats=group.length>1?formationSlots(sim,group,order,append):[{unit:group[0],x:order.x,z:order.z}];
     for(const {unit,x,z} of seats){
       const slot=formationSlot(sim,unit,{x,z},reserved);
-      reserved.push({...slot,r:unit.r});
+      reserved.push({...slot,type:unit.type,r:unit.r});
       destinations.set(unit,group.length>1?{...slot,formation:true}:slot);
     }
   }

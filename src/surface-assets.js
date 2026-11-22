@@ -6,6 +6,7 @@ import {loadCompressedSurface,surfaceCodecState} from './surface-codecs.js';
 import {characterSurfaceKinds} from './character-surfaces.js';
 import {ensureAtmosphereUniforms,applyAnalyticIblToMaterial} from './atmosphere-uniforms.js';
 import {isSnowBiome} from './terrain-biomes.js';
+import {nodeRuntime} from './render-runtime.js';
 
 const files={
   grass:{color:new URL('./assets3d/textures/leafy_grass_color.jpg',import.meta.url).href,normal:new URL('./assets3d/textures/leafy_grass_normal.jpg',import.meta.url).href,arm:new URL('./assets3d/textures/leafy_grass_arm.jpg',import.meta.url).href},
@@ -83,6 +84,27 @@ export function surfaceAssetState(){const maps=[...cache.textures()];return {sou
 export function characterSurfaceMaps(){return surfaces.character||{};}
 export function roofSurfaceMaps(){return surfaces.roof||{};}
 
+function applyCoolAshlarStone(material){
+  if(!material||material.userData?.coolAshlarStone)return;
+  material.userData={...material.userData,coolAshlarStone:true};
+  if(material.isNodeMaterial){
+    nodeRuntime()?.coolAshlarStone?.(material);
+    return;
+  }
+  const previousCompile=material.onBeforeCompile;
+  material.onBeforeCompile=(shader,renderer)=>{
+    if(previousCompile)previousCompile(shader,renderer);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+      {
+        float frontierStoneLuma = dot(diffuseColor.rgb, vec3(0.30, 0.59, 0.11));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(frontierStoneLuma * 1.22, frontierStoneLuma * 1.23, frontierStoneLuma * 1.26), 0.72) * vec3(0.92, 0.96, 1.02);
+      }`);
+  };
+  const previousKey=material.customProgramCacheKey;
+  material.customProgramCacheKey=()=>`${previousKey?previousKey.call(material):'standard'}-cool-ashlar-v1`;
+  material.needsUpdate=true;
+}
+
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
   const requested=quality==='high'?16:quality==='medium'?8:4,anisotropy=Math.min(requested,view.renderer?.getMaxAnisotropy?.()||view.renderer?.capabilities?.getMaxAnisotropy?.()||4);
@@ -98,6 +120,7 @@ export function applySurfaceMaterials(view){
     if(structureChanged)material.needsUpdate=true;
   };
   bind(m.stone,'stone',0xe5e0d4);bind(m.brick,'stone',0xb8947b);
+  applyCoolAshlarStone(m.stone);applyCoolAshlarStone(m.stoneDark);
   bind(m.plaster,'plaster',0xe8dec3);
   bind(m.wood,'wood',0xe4d7bf);bind(m.darkwood,'wood',0xb09c84);bind(m.timberEdge,'wood',0x9c8770);
   bind(m.rock,'boulder',0xd8ded8);
