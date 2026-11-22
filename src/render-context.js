@@ -41,7 +41,23 @@ function holdRenderer(view,failure){
 
 export function watchRendererDevice(view){
   view.releaseRendererWatch?.();
-  const renderer=view.renderer;if(!renderer?.isWebGPURenderer||view.renderingReleased)return;
+  const renderer=view.renderer;if(!renderer||view.renderingReleased)return;
+  if(!renderer.isWebGPURenderer){
+    const canvas=renderer.domElement;
+    if(!canvas?.addEventListener)return;
+    let active=true;
+    const onLost=event=>{
+      event?.preventDefault?.();
+      holdRenderer(view,{deviceLost:true,message:String(event?.statusMessage||'The WebGL graphics context was lost.').slice(0,1000)});
+    };
+    canvas.addEventListener('webglcontextlost',onLost,false);
+    const release=()=>{
+      if(!active)return;active=false;
+      canvas.removeEventListener('webglcontextlost',onLost,false);
+      if(view.releaseRendererWatch===release)view.releaseRendererWatch=null;
+    };
+    view.releaseRendererWatch=release;return release;
+  }
   const previous=renderer.onDeviceLost,previousError=renderer.onError;
   const loss=info=>{
     holdRenderer(view,{deviceLost:true,message:String(info?.message||'The graphics device was disconnected.').slice(0,1000)});

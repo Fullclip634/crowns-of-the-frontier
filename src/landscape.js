@@ -3,7 +3,7 @@ import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
 import {GroundCover} from './ground-cover.js';
-import {applyGroundSurface} from './surface-assets.js';
+import {applyGroundSurface,retainedSurfaceTextures} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
 import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
@@ -205,13 +205,32 @@ function groundRelief(seed){
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(90,90);t.anisotropy=4;return t;
 }
 
-export function buildLandscape(view){
-  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
-  const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
-  geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
+function buildGroundMaterial(view){
+  const land=view.landscape,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
   applyGroundSurface(material,land,view.settings.quality,view.atmosphereUniforms);
   view.battleFog.scale.value=1/land.worldSize;
   shadeBattlefieldFog(material,view);
+  return material;
+}
+
+export function refreshGroundSurface(view){
+  const ground=view.groundSurface;
+  if(!ground||!view.landscape)return false;
+  const previous=ground.material;
+  const retained=new Set([view.fogTexture,...retainedSurfaceTextures()]);
+  ground.material=buildGroundMaterial(view);
+  if(previous&&previous!==ground.material){
+    for(const key of ['map','bumpMap','normalMap','roughnessMap'])if(previous[key]&&!retained.has(previous[key]))previous[key].dispose();
+    for(const texture of previous.frontierOwnedTextures||[])texture.dispose();
+    previous.dispose();
+  }
+  return true;
+}
+
+export function buildLandscape(view){
+  const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=buildGroundMaterial(view);
+  const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
+  geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
   const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;
   view.waterMeshes=[];
   if(!view.materials.water.frontierWaveTime){configureWaterSurface(view.materials.water);shadeBattlefieldFog(view.materials.water,view);}

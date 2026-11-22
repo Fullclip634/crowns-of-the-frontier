@@ -16,7 +16,8 @@ import {unitScreenHeight,lodDecision} from './distance-lod.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix,prepareViewport} from './render-batches.js';
 import {sceneNodeFor,releaseSceneNode} from './scene-nodes.js';
 import {installBattleRemains} from './battle-remains.js';
-import {loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './surface-assets.js';
+import {applySurfaceMaterials,hasSurfaceAssetsForMap,loadSurfaceAssets,retainedSurfaceTextures,trimSurfaceAssets} from './surface-assets.js';
+import {refreshGroundSurface} from './landscape.js';
 import {mergeUnitModel} from './unit-palette.js';
 import {installStructurePalette} from './structure-palette.js';
 import {targetFrameRate} from './frame-pacing.js';
@@ -149,8 +150,8 @@ export class WorldView {
     this.unitActions??=new UnitActions();this.unitActions.clear();
     for(const batch of this.unitBatches.values())for(const part of [...batch.parts,...(batch.farParts||[])]){disposeRigidPart(part);part.geometry.dispose();part.dispose();part.removeFromParent();}this.unitBatches.clear();this.unitLodState?.clear();
     const sharedGeometry=new Set([...Object.values(this.geo),...(this.authoredGeometry||[]),...(this.sharedModelGeometry||[])]),sharedMaterials=new Set([...Object.values(this.materials),...this.teamMaterials,...(this.sceneryFogMaterials?.values()||[])]),sharedTextures=new Set([this.fogTexture,...retainedSurfaceTextures()]);
-    for(const material of sharedMaterials)for(const key of ['map','bumpMap'])if(material[key])sharedTextures.add(material[key]);
-    for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
+    for(const material of sharedMaterials)for(const key of ['map','bumpMap','normalMap','roughnessMap'])if(material[key])sharedTextures.add(material[key]);
+    for(const root of [this.objects,this.terrain])root.traverse(child=>{if(!child.isMesh)return;if(child.geometry&&!sharedGeometry.has(child.geometry))child.geometry.dispose();if(child.isInstancedMesh)child.dispose();if(child.material&&!sharedMaterials.has(child.material)){for(const key of ['map','bumpMap','normalMap','roughnessMap'])if(child.material[key]&&!sharedTextures.has(child.material[key]))child.material[key].dispose();for(const texture of child.material.frontierOwnedTextures||[])texture.dispose();child.material.dispose();}});
     for(const material of this.sceneryFogMaterials?.values()||[])material.dispose();
     this.sceneryFogMaterials?.clear();
     this.clearGroup(this.objects);this.clearGroup(this.terrain);this.nodes.clear();this.treeIndices.clear();for(const f of this.fx)releaseEffect(f);this.fx=[];this.flightEffects?.clearBatches();
@@ -159,6 +160,20 @@ export class WorldView {
     for(const entity of sim.entities){const e=sim.resourceMemory?.get(entity.id)??entity;if(e.hp>0&&!(e.kind==='resource'&&e.type==='wood'))sceneNodeFor(this,e,e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z));}
     this.updateFog();
     trimAuthoredAssets(this);
+    const activeMap=sim?.options?.map,activeQuality=this.renderQuality||this.settings.quality;
+    const surfaceToken=(this.surfaceMapToken||0)+1;this.surfaceMapToken=surfaceToken;
+    const canStreamSurfaces=retainedSurfaceTextures().size>0||(typeof window!=='undefined'&&typeof Image!=='undefined');
+    if(activeMap&&canStreamSurfaces&&!hasSurfaceAssetsForMap(activeQuality,activeMap)){
+      this.surfaceMapReady=loadSurfaceAssets(activeQuality,this.renderer,{map:activeMap})
+        .then(()=>true,error=>{console.warn('Biome surfaces could not load:',error.message);return false;})
+        .then(complete=>{
+          if(this.sim!==sim||this.renderingReleased||this.graphicsFatal||this.graphicsLoading||this.graphicsRebuilding||this.surfaceMapToken!==surfaceToken)return false;
+          applySurfaceMaterials(this);refreshGroundSurface(this);trimSurfaceAssets(this);return complete;
+        });
+    }else{
+      this.surfaceMapReady=Promise.resolve(true);
+      trimSurfaceAssets(this);
+    }
   }
   // Team colour lives on shared materials, so a palette change is a handful of
   // hex writes rather than a scene rebuild. Both the rebuild path and the
@@ -268,7 +283,8 @@ export class WorldView {
     const detail=['high','medium'].includes(value)?value:'low';
     if(!this.graphicsLoading&&!this.graphicsFatal&&this.graphicsSceneValid!==false&&authoredAssetState()?.detail===detail&&this.surfaceQuality===value){this.graphicsRequest=(this.graphicsRequest||0)+1;applyRendererQuality(this,value);return this.graphicsReady=Promise.resolve(true);}
     return this.graphicsReady=transitionRendererQuality(this,value,async()=>{
-      const [models]=await Promise.allSettled([prepareAuthoredAssets(value),loadSurfaceAssets(value,this.renderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]);
+      const map=this.sim?.options?.map||'highlands';
+      const [models]=await Promise.allSettled([prepareAuthoredAssets(value),loadSurfaceAssets(value,this.renderer,{map}).catch(error=>console.warn('Detailed surfaces could not load:',error.message))]);
       if(models.status==='rejected')throw models.reason;artwork=models.value;
     },()=>{
       const target=this.target.clone(),zoom=this.zoom,angle=this.angle,tilt=this.tilt,forestLodState=this.forestLodState;

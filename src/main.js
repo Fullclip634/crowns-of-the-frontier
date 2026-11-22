@@ -155,12 +155,12 @@ for(;!startupFailure;){
         // the game from starting. It only enables the extra LOD tier.
         settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
       ]).then(([quality])=>{modelsReady=true;status();return quality;}),
-      loadSurfaceAssets(requestedQuality,startupRenderer).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
+      loadSurfaceAssets(requestedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;status();}),
     ]);
     if(loadedQuality!==requestedQuality){
       offlineGraphicsPreference=requestedQuality;
       settings.quality=loadedQuality;
-      await loadSurfaceAssets(loadedQuality,startupRenderer).catch(error=>console.warn('Cached battlefield surfaces could not load:',error.message));
+      await loadSurfaceAssets(loadedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Cached battlefield surfaces could not load:',error.message));
     }
     break;
   }

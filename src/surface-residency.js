@@ -10,7 +10,7 @@ export class SurfaceResidency {
   textures(){return new Set([...this.entries.values()].map(entry=>entry.texture).filter(Boolean));}
   trim(needed,pinned=new Set()){
     let evicted=0;for(const [key,entry]of this.entries){if(!entry.texture||needed.has(key)||pinned.has(entry.texture))continue;
-      this.entries.delete(key);this.removed(key,entry.texture);entry.texture.dispose();entry.texture.image?.close?.();evicted++;
+      this.entries.delete(key);this.removed(key,entry.texture);entry.texture.dispose();entry.texture.image?.close?.();if(entry.texture.isCompressedTexture&&Array.isArray(entry.texture.mipmaps))entry.texture.mipmaps=[];evicted++;
     }return {loaded:this.textures().size,pending:[...this.entries.values()].filter(entry=>!entry.texture).length,evicted};
   }
 }

@@ -42,13 +42,42 @@ async function texture(role,kind,renderer){
     return map;
   });
 }
-export async function loadSurfaceAssets(quality,renderer){
-  const keys=surfaceKeys(quality,Object.keys(files));
+const SHARED_SURFACE_ROLES=Object.freeze(['stone','wood','plaster','boulder','roof']);
+const ALL_SURFACE_ROLES=Object.freeze(Object.keys(files));
+function mapSurfaceSelection(map){
+  const name=map||'highlands',snow=isSnowBiome(name),arid=name==='arid',volcanic=name==='volcanic',shore=name==='coast'||name==='archipelago',crag=name==='highland'||name==='canyon'||snow||arid||volcanic;
+  return {
+    primaryRole:snow?'snow':arid?'sand':volcanic?'volcanic':'grass',
+    soilRole:shore?'sand':'soil',
+    rockRole:crag?'volcanic':'rock',
+  };
+}
+export function surfaceRolesForMap(map){
+  if(!map)return [...ALL_SURFACE_ROLES];
+  const {primaryRole,soilRole,rockRole}=mapSurfaceSelection(map);
+  return [...new Set([...SHARED_SURFACE_ROLES,primaryRole,soilRole,rockRole])];
+}
+export function hasSurfaceAssetsForMap(quality,map){
+  const roles=surfaceRolesForMap(map),keys=surfaceKeys(quality,roles);
   for(const kind of characterSurfaceKinds(quality))keys.add('character:'+kind);
-  await Promise.all(Array.from(keys,key=>{
+  for(const key of keys){
+    const [role,kind]=key.split(':');
+    if(!surfaces[role]?.[kind])return false;
+  }
+  return true;
+}
+export async function loadSurfaceAssets(quality,renderer,options={}){
+  const roles=options?.map?surfaceRolesForMap(options.map):ALL_SURFACE_ROLES;
+  const keys=surfaceKeys(quality,roles);
+  for(const kind of characterSurfaceKinds(quality))keys.add('character:'+kind);
+  // Wait for every map to settle so cached color textures still register if an
+  // optional detail map fails offline on Medium/High.
+  const results=await Promise.allSettled(Array.from(keys,key=>{
     const [role,kind]=key.split(':');
     return texture(role,kind,renderer);
   }));
+  const failed=results.find(result=>result.status==='rejected');
+  if(failed)throw failed.reason;
 }
 export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',characters:{source:'Original Blender artwork',atlases:Object.keys(surfaces.character||{})},loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
 export function characterSurfaceMaps(){return surfaces.character||{};}
@@ -82,10 +111,10 @@ export function applySurfaceMaterials(view){
 
 export function applyGroundSurface(material,land,quality,atmosphere=null){
   const dimension=id=>Math.max(.25,(surfaceManifest.find(asset=>asset.id===id)?.dimensionsMM?.[0]||2000)/1000);
-  const map=land?.map||'highlands',snow=isSnowBiome(map),arid=map==='arid',volcanic=map==='volcanic',shore=map==='coast'||map==='archipelago',crag=map==='highland'||map==='canyon'||snow||arid||volcanic;
-  const primaryRole=snow&&surfaces.snow?.color?'snow':arid&&surfaces.sand?.color?'sand':volcanic&&surfaces.volcanic?.color?'volcanic':'grass';
-  const soilRole=shore&&surfaces.sand?.color?'sand':'soil';
-  const rockRole=crag&&surfaces.volcanic?.color?'volcanic':'rock';
+  const selected=mapSurfaceSelection(land?.map);
+  const primaryRole=surfaces[selected.primaryRole]?.color?selected.primaryRole:'grass';
+  const soilRole=surfaces[selected.soilRole]?.color?selected.soilRole:'soil';
+  const rockRole=surfaces[selected.rockRole]?.color?selected.rockRole:'rock';
   const idFor={grass:'leafy_grass',soil:'brown_mud',rock:'rocky_terrain_02',snow:'snow_02',sand:'sand_01',volcanic:'rock_face_03',stone:'medieval_blocks_05'};
   const biomeSurfaces={
     grass:surfaces[primaryRole]||surfaces.grass,
@@ -104,8 +133,11 @@ export function applyGroundSurface(material,land,quality,atmosphere=null){
 
 export function retainedSurfaceTextures(){return cache.textures();}
 export function trimSurfaceAssets(view){
-  const needed=surfaceKeys(view.renderQuality||view.settings.quality,Object.keys(files));
-  for(const quality of [view.renderQuality||view.settings.quality,view.graphicsLoading].filter(Boolean))for(const kind of characterSurfaceKinds(quality))needed.add('character:'+kind);
-  if(view.graphicsLoading)for(const key of surfaceKeys(view.graphicsLoading,Object.keys(files)))needed.add(key);
+  const map=view?.sim?.options?.map||null;
+  const roles=map?surfaceRolesForMap(map):ALL_SURFACE_ROLES;
+  const activeQuality=view.renderQuality||view.settings.quality;
+  const needed=surfaceKeys(activeQuality,roles);
+  for(const quality of [activeQuality,view.graphicsLoading].filter(Boolean))for(const kind of characterSurfaceKinds(quality))needed.add('character:'+kind);
+  if(view.graphicsLoading)for(const key of surfaceKeys(view.graphicsLoading,roles))needed.add(key);
   const result=cache.trim(needed,surfacePins(view));view.surfaceDiagnostics={...view.surfaceDiagnostics,...surfaceAssetState(),evicted:result.evicted,pending:result.pending};return result;
 }
