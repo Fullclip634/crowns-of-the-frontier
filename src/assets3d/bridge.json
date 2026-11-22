@@ -4,11 +4,11 @@
   "roadHalfWidth": 9.6,
   "baseHeight": 0.72,
   "crownHeight": 1.5,
-  "triangles": 9728,
+  "triangles": 7224,
   "materialRoles": [
     "stone",
     "stoneDark",
     "leafDark"
   ],
-  "sourceSHA256": "420a700bd4db69d097a055161c39c138a5eaf1357dbc1c55b5bacd0ceb03cfb0"
+  "sourceSHA256": "0d522ff2ef6e1313dc78356f5a8a685a6a6ba2032feac0ca96dccca83dc43001"
 }

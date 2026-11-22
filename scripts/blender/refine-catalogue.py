@@ -167,14 +167,14 @@ def author_resource(root):
             base = direction*.32
             bend = base*.6+Vector((0,0,.84+rng.uniform(-.1,.1)))
             tip = direction*(.84+rng.uniform(-.07,.07))+Vector((0,0,1.14+rng.uniform(-.13,.13)))
-            rod_data(wood,wood_faces,base,bend,.047,.75,7)
-            rod_data(wood,wood_faces,bend,tip,.034,.35,7)
+            rod_data(wood,wood_faces,base,bend,.047,.75,5)
+            rod_data(wood,wood_faces,bend,tip,.034,.35,5)
             for level in range(4):
                 stem = bend.lerp(tip,.12+level*.23)
                 turn = angle+level*2.399
                 twig = Vector((math.cos(turn),math.sin(turn),.22)).normalized()
                 end = stem+twig*(.20+rng.random()*.08)
-                rod_data(wood,wood_faces,stem,end,.014,.3,5)
+                rod_data(wood,wood_faces,stem,end,.014,.3,4)
                 for leaflet in range(3):
                     leaf_angle = turn+(leaflet-1)*.85
                     axis = Vector((math.cos(leaf_angle),math.sin(leaf_angle),rng.uniform(-.24,.22)))
@@ -186,14 +186,16 @@ def author_resource(root):
                     for berry in range(3):
                         center = end+Vector(((berry-1)*.08,.03*math.sin(turn+berry),-.08))
                         organic_crown(fruit,fruit_faces,center,(.062,.062,.078),rng,1)
-        make_mesh(root,"trunk",wood,wood_faces,root.name+"_FruitCanes")
+        canes = make_mesh(root,"trunk",wood,wood_faces,root.name+"_FruitCanes")
+        canes["skipCraftedBevel"] = True
         for role, (vertices,faces) in leaves.items():
             obj = make_mesh(root,role,vertices,faces,root.name+"_FruitLeaves_"+role)
             obj["foliageDetail"] = "closed shrub leaflets"
         extra = make_mesh(root,"leaf",detail,detail_faces,root.name+"_FruitLeafTips")
         extra["nearOnly"] = True
         extra["foliageDetail"] = "closed shrub leaflets"
-        make_mesh(root,"fruit",fruit,fruit_faces,root.name+"_FruitClusters")
+        clusters = make_mesh(root,"fruit",fruit,fruit_faces,root.name+"_FruitClusters")
+        clusters["skipCraftedBevel"] = True
         return
     vertices, faces, centers = [], [], []
     for i in range(7):
@@ -208,6 +210,7 @@ def author_resource(root):
         weathered_rock(vertices,faces,(math.cos(angle)*1.6,math.sin(angle)*1.6,.07),(.12,.10,.09),angle,rng,1)
     rock = make_mesh(root,"stoneDark" if kind == "gold" else "stone",vertices,faces,root.name+"_WeatheredDeposit")
     rock["naturalRock"] = True
+    rock["skipCraftedBevel"] = True
     if kind == "gold":
         tree = BVHTree.FromPolygons([Vector(p) for p in vertices],faces,all_triangles=False)
         gold, gold_faces, nuggets, nugget_faces = [], [], [], []
@@ -227,7 +230,9 @@ def author_resource(root):
                     organic_crown(nuggets,nugget_faces,points[len(points)//2],(.13,.10,.12),rng,1)
         seams = make_mesh(root,"gold",gold,gold_faces,root.name+"_GoldSeams")
         seams["nearOnly"] = True
-        make_mesh(root,"gold",nuggets,nugget_faces,root.name+"_GoldInclusions")
+        seams["skipCraftedBevel"] = True
+        inclusions = make_mesh(root,"gold",nuggets,nugget_faces,root.name+"_GoldInclusions")
+        inclusions["skipCraftedBevel"] = True
 
 def crown_leaves(root, crowns, scale, rng):
     for parity, role in [(0, "leaf"), (1, "leafDark")]:
@@ -379,9 +384,10 @@ def meadow_boughs(root, height, spread, variant, far):
         progress = tier / (tiers - 1)
         radius = spread * (2.0 * (1 - progress) ** .83 + .18)
         level = height * (.32 + .65 * progress)
-        for branch in range(8):
+        branch_count = 8 if far else (8 if tier < 2 else 7 if tier < 4 else 6 if tier < 6 else 5)
+        for branch in range(branch_count):
             twig = random.Random(3161 + variant * 571 + tier * 101 + branch * 11)
-            angle = branch * math.tau / 8 + tier * .62 + twig.uniform(-.27, .27)
+            angle = branch * math.tau / branch_count + tier * .62 + twig.uniform(-.27, .27)
             direction = Vector((math.cos(angle), math.sin(angle), 0))
             across = Vector((-direction.y, direction.x, 0))
             origin = Vector((.23 * progress, -.12 * progress, level + twig.uniform(-.12, .12)))
@@ -400,19 +406,24 @@ def meadow_boughs(root, height, spread, variant, far):
                                 direction + Vector((0, 0, -.09)),
                                 radius * .57, radius * .22, radius * .12)
                 continue
-            rod_data(bark, bark_faces, origin, elbow, .060 * (1 - .65 * progress), .62, 4)
-            rod_data(bark, bark_faces, elbow, tip, .035 * (1 - .65 * progress), .25, 4)
+            if tier < 2:
+                rod_data(bark, bark_faces, origin, elbow, .060 * (1 - .65 * progress), .62, 3)
+                rod_data(bark, bark_faces, elbow, tip, .035 * (1 - .65 * progress), .25, 3)
+            elif tier < 4:
+                rod_data(bark, bark_faces, origin, tip.lerp(origin, .18), .055 * (1 - .65 * progress), .22, 3)
+            width_boost = 1.0 if tier < 4 else (1.18 if tier < 7 else 1.25)
             leaf_volume(dark, dark_faces, origin.lerp(tip, .48), direction + Vector((0, 0, -.10)),
-                        radius * 1.05, radius * .21, radius * .145)
+                        radius * 1.05, radius * .21 * width_boost, radius * .145)
             leaf_volume(green, green_faces, tip.lerp(elbow, .26), direction + Vector((0, 0, .10)),
-                        radius * .50, radius * .17, radius * .10)
-            for side in (-1, 1):
+                        radius * .50, radius * .17 * width_boost, radius * .10)
+            sides = (-1, 1) if tier < 4 else ((1 if (branch + tier) % 2 else -1),) if tier < 7 else ()
+            for side in sides:
                 spray = direction * .64 + across * side * .78 + Vector((0, 0, -.26))
                 center = origin.lerp(tip, .51 + side * .085) + spray * radius * .13
-                leaf_volume(dark, dark_faces, center, spray, radius * .64, radius * .125, radius * .08)
+                leaf_volume(dark, dark_faces, center, spray, radius * .64, radius * .125 * width_boost, radius * .08)
                 needle = direction * .70 + across * side * .58 + Vector((0, 0, -.14))
                 leaf_volume(green, green_faces, center + direction * radius * .23,
-                            needle, radius * .42, radius * .082, radius * .065)
+                            needle, radius * .42, radius * .082 * width_boost, radius * .065)
     if bark:
         limbs = make_mesh(root, "trunk", bark, bark_faces, root.name + "_Limbs")
         limbs["skipCraftedBevel"] = True
@@ -459,7 +470,7 @@ def author_tree(root):
         return
     if biome == "highlands":
         trunk_mesh = make_mesh(root, "trunk", vertices, faces, root.name + "_Bark")
-        trunk_mesh["skipCraftedBevel"] = far
+        trunk_mesh["skipCraftedBevel"] = True
         meadow_boughs(root, height, spread, variant, far)
         return
     crowns = []
@@ -499,7 +510,7 @@ def weld(obj):
     bm.to_mesh(obj.data)
     bm.free()
     obj.data.update()
-    if obj.get("naturalRock") or obj.get("assetMaterial") in {"skin", "hair", "pants", "team", "canvas", "leather", "straw", "horse", "mane", "leaf", "leafDark", "trunk", "steel"}:
+    if obj.get("naturalRock") or obj.get("assetMaterial") in {"skin", "hair", "pants", "team", "canvas", "leather", "straw", "horse", "mane", "leaf", "leafDark", "trunk", "steel", "fruit", "gold"}:
         for polygon in obj.data.polygons:
             polygon.use_smooth = True
         # Blender 4.5 splits sharp joins while preserving curved skin and cloth.
@@ -545,6 +556,7 @@ def roof_tiles(root):
         if tile_vertices:
             obj = make_mesh(root, "teamRoof", tile_vertices, tile_faces, root.name + "_SlateTiles")
             obj["nearOnly"] = True
+            obj["skipCraftedBevel"] = True
 
 def bake_shading(root):
     meshes = [obj for obj in descendants(root) if obj.type == "MESH"]

@@ -68,18 +68,36 @@ def rod(data, role, start, end, radius, sides=6, near=False, shade=1):
 def seed_head(data, center, height, width, near=False, shade=1):
     x, y, z = center
     sides = 3 if near else 4
-    vertices = []
-    for at, radius in [(0, .24),(.28, 1.0),(.76,.58),(1,.03)]:
+    # Closed tapered spindle with pointed base/tip apices and two full belly rings.
+    # Preserves the lush golden ear silhouette with crisper tips and zero micro-cap waste.
+    vertices = [(x, y, z)]
+    for at, radius in [(.28, 1.0), (.76, .58)]:
         for i in range(sides):
             angle = math.tau * i / sides
             vertices.append((x+math.cos(angle)*width*radius,
                              y+math.sin(angle)*width*radius, z+height*at))
-    faces = [tuple(reversed(range(sides))),tuple(range(3*sides,4*sides))]
-    for row in range(3):
-        for i in range(sides):
-            faces.append((row*sides+i,row*sides+(i+1)%sides,
-                          (row+1)*sides+(i+1)%sides,(row+1)*sides+i))
+    vertices.append((x, y, z+height))
+    tip = 1 + sides * 2
+    faces = []
+    for i in range(sides):
+        j = (i + 1) % sides
+        faces.append((0, 1 + j, 1 + i))
+        faces.append((1 + i, 1 + j, 1 + sides + j, 1 + sides + i))
+        faces.append((1 + sides + i, 1 + sides + j, tip))
     primitive(data, "grain", vertices, faces, near, shade)
+
+def awn(data, start, end, radius, near=True, shade=1):
+    """Closed 3-sided tapered barley beard with a sharp apex tip."""
+    a, b = Vector(start), Vector(end)
+    direction = (b - a).normalized()
+    u = direction.cross(Vector((0, 0, 1)))
+    if u.length < .001:
+        u = direction.cross(Vector((0, 1, 0)))
+    u.normalize()
+    v = direction.cross(u).normalized()
+    vertices = [tuple(a + radius * (u * math.cos(i * math.tau / 3) + v * math.sin(i * math.tau / 3))) for i in range(3)]
+    vertices.append(tuple(b))
+    primitive(data, "grain", vertices, [(2, 1, 0), (0, 1, 3), (1, 2, 3), (2, 0, 3)], near, shade)
 
 def leaf(data, start, end, width, near=False, shade=1):
     a, b = Vector(start), Vector(end)
@@ -131,7 +149,7 @@ for index, faction in enumerate(["alder","sun","raven"]):
             bend = (.035+rng.random()*.07)*(1 if row%2 else -1)
             base = (x,y,.19)
             tip = (x+bend,y+.03,height)
-            rod(data,"grain",base,tip,.019,4,shade=.76+rng.random()*.18)
+            rod(data,"grain",base,tip,.019,3,shade=.76+rng.random()*.18)
             seed_head(data,(tip[0],tip[1],height-.02),.30,.088,shade=.88+rng.random()*.12)
             leaf(data,(x,y,.40),(x+.22,y-.10,.66),.056,shade=.84)
             if faction == "sun":
@@ -140,7 +158,7 @@ for index, faction in enumerate(["alder","sun","raven"]):
                 leaf(data,(x,y,.31),(x-.12,y+.10,.52),.034,shade=.90)
             offset = -1 if (row+column)%2 else 1
             extra=(x+offset*.11,y+offset*.08,height-.04+rng.random()*.09)
-            rod(data,"grain",(x+offset*.035,y,.19),extra,.016,4,True,.84)
+            rod(data,"grain",(x+offset*.035,y,.19),extra,.016,3,True,.84)
             seed_head(data,(extra[0],extra[1],extra[2]-.02),.26,.064,True,.95)
             leaf(data,(x+offset*.035,y,.4),(x+offset*.20,y+.08,.66),.044,True,.88)
             # Fine kernels and barley awns are added only to the near mesh.
@@ -149,8 +167,8 @@ for index, faction in enumerate(["alder","sun","raven"]):
                     seed_head(data,(tip[0]+side*.035,tip[1],height+k*.08),.075,.030,True,.92)
             if faction == "raven":
                 for side in [-1,1]:
-                    rod(data,"grain",(tip[0],tip[1],height+.16),
-                        (tip[0]+side*.10,tip[1]+.035,height+.32),.006,3,True,.94)
+                    awn(data,(tip[0],tip[1],height+.16),
+                        (tip[0]+side*.10,tip[1]+.035,height+.32),.006,True,.94)
     for side in [-1,1]:
         for i in range(5):
             x = -2.9+i*1.45

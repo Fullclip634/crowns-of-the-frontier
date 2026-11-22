@@ -50,20 +50,55 @@ def bevel_top(role, x0, x1, z0, z1, bottom, top, bevel=.035, color=(.79, .78, .7
         faces.extend([(i, j, j + 4, i + 4), (i + 4, j + 4, j + 8, i + 8)])
     solid(role, vertices, faces, color)
 
+def bevel_paver(role, x0, x1, z0, z1, bottom, top, bevel=.025, color=(.79, .78, .71)):
+    """Closed dressed cobblestone frustum seated cleanly in the dark mortar deck."""
+    corners = [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]
+    inset = [(x0 + bevel, z0 + bevel), (x1 - bevel, z0 + bevel), (x1 - bevel, z1 - bevel), (x0 + bevel, z1 - bevel)]
+    vertices = [(x, bottom(x), z) for x, z in corners] + [(x, top(x), z) for x, z in inset]
+    faces = [(3, 2, 1, 0), (4, 5, 6, 7)]
+    for i in range(4):
+        j = (i + 1) % 4
+        faces.append((i, j, j + 4, i + 4))
+    solid(role, vertices, faces, color)
+
+def strip_solid(role, lower, upper, z0, z1, color=(.74, .73, .66)):
+    """Continuous closed 2-manifold extruded strip with zero internal bulkhead walls."""
+    n = len(lower)
+    vertices = (
+        [(x, y, z0) for x, y in lower]
+        + [(x, y, z0) for x, y in upper]
+        + [(x, y, z1) for x, y in lower]
+        + [(x, y, z1) for x, y in upper]
+    )
+    faces = [
+        (0, n, 3 * n, 2 * n),
+        (n - 1, 3 * n - 1, 4 * n - 1, 2 * n - 1),
+    ]
+    for i in range(n - 1):
+        faces.extend([
+            (i, i + 1, n + i + 1, n + i),
+            (2 * n + i + 1, 2 * n + i, 3 * n + i, 3 * n + i + 1),
+            (i, 2 * n + i, 2 * n + i + 1, i + 1),
+            (n + i, n + i + 1, 3 * n + i + 1, 3 * n + i),
+        ])
+    solid(role, vertices, faces, color)
+
 # Complete barrel vaults, with individually closed wedge-shaped voussoirs.
 arches = [(0, 3.6, 1.66, -.25, 18), (-8, 2.75, .91, -.35, 14), (8, 2.75, .91, -.35, 14)]
 for center, radius, rise, spring, count in arches:
+    ring = .34 if center else .39
+    outer = lambda t: (center + (radius + ring) * math.cos(t), spring + (rise + ring) * math.sin(t))
+    inner = lambda t: (center + radius * math.cos(t), spring + rise * math.sin(t))
     for i in range(count):
         a, b = i * math.pi / count + .002, (i + 1) * math.pi / count - .002
-        ring = .34 if center else .39
-        outer = lambda t: (center + (radius + ring) * math.cos(t), spring + (rise + ring) * math.sin(t))
-        inner = lambda t: (center + radius * math.cos(t), spring + rise * math.sin(t))
         extrude('stone', [outer(a), outer(b), inner(b), inner(a)], -9.92, 9.92, (.72, .71, .63))
-        # The spandrel above each arch is a solid mass beneath the paving.
-        aa, bb = i * math.pi / count, (i + 1) * math.pi / count
-        x0, y0 = outer(aa)
-        x1, y1 = outer(bb)
-        extrude('stone', [(x0, y0 - .012), (x1, y1 - .012), (x1, height(x1) - .20), (x0, height(x0) - .20)], -9.9, 9.9, (.65, .66, .60))
+    # Continuous closed spandrel mass above each arch beneath the paving.
+    spandrel_lower, spandrel_upper = [], []
+    for i in range(count, -1, -1):
+        x, y = outer(i * math.pi / count)
+        spandrel_lower.append((x, y - .012))
+        spandrel_upper.append((x, max(y + .012, height(x) - .20)))
+    strip_solid('stone', spandrel_lower, spandrel_upper, -9.9, 9.9, (.65, .66, .60))
 
 # Piers and bank abutments reach below the riverbed. Pointed cutwaters break
 # the rectangular silhouette at both river faces without narrowing the road.
@@ -80,9 +115,15 @@ for center in [-4.425, 4.425]:
         solid('stoneDark', points, [(0, 2, 1), (3, 4, 5), (0, 1, 4, 3), (1, 2, 5, 4), (2, 0, 3, 5)], (.70, .73, .66))
 
 # A continuous cambered deck under tightly fitted, staggered paving stones.
-for i in range(52):
-    x0, x1 = -13 + i * .5, -13 + (i + 1) * .5
-    block('stoneDark', x0, x1, -9.9, 9.9, lambda x: height(x) - .25, lambda x: height(x) - .045, (.57, .60, .54))
+deck_xs = [-13 + i * (26 / 32) for i in range(33)]
+strip_solid(
+    'stoneDark',
+    [(x, height(x) - .25) for x in deck_xs],
+    [(x, height(x) - .045) for x in deck_xs],
+    -9.9,
+    9.9,
+    (.57, .60, .54),
+)
 for row in range(12):
     z0, z1 = -road_half + row * 1.6 + .018, -road_half + (row + 1) * 1.6 - .018
     start = -13 - (.65 if row % 2 else 0)
@@ -91,7 +132,7 @@ for row in range(12):
         if x1 - x0 < .1:
             continue
         variation = rng.uniform(-.004, .004)
-        bevel_top('stone', x0, x1, z0, z1, lambda x: height(x) - .06, lambda x: height(x) + .006 + variation, .025, (.70, .70, .64))
+        bevel_paver('stone', x0, x1, z0, z1, lambda x: height(x) - .05, lambda x: height(x) + .006 + variation, .026, (.70, .70, .64))
 
 # Three bonded courses and continuous beveled coping stones on each side.
 for side in [-1, 1]:
