@@ -243,6 +243,12 @@ export function authoredBuilding(view,e){
       ...(early.template.userData.artRevision?{artRevision:early.template.userData.artRevision}:{}),
     };
     if(e.type==='dock')orientDockPier(view,root,e);
+    // Pinpoint chimney smoke outlets (Blender (x,y,z) -> Three.js (x,z,-y)) for smooth multi-puff hearth smoke!
+    if(playerAge===1){
+      if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.48,4.82,.15);
+      else if(faction==='alder'&&e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.42,3.88,-.62);
+      else if(faction==='alder'&&e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(1.55,5.62,-1.60);
+    }
     return root;
   }
   const age=e.type==='towncenter'?(view.sim?.players[e.owner]?.age||0):0;

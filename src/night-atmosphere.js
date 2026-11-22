@@ -113,7 +113,7 @@ export class NightAtmosphere {
     if(!sim){this.groundGlows.count=0;this.chimneySmoke.count=0;this.hearthSparks.count=0;return;}
     const quality=v.settings?.quality||'medium',reduced=!!v.settings?.reducedMotion;
     const allowParticles=quality!=='low'&&!reduced;
-    const smokePerHearth=quality==='high'?4:2;
+    const smokePerHearth=quality==='high'?5:quality==='medium'?4:3;
     const sparksPerForge=quality==='high'?4:2;
     const fogActive=!menu&&v.settings?.fog!==false&&!sim.options?.spectator;
     const camQuat=v.camera?.quaternion;
@@ -127,7 +127,7 @@ export class NightAtmosphere {
       const forge=FORGE_BUILDINGS.has(e.type);
       const wantsGlow=fire>0||(night>.035&&GLOW_BUILDINGS.has(e.type));
       const node=v.nodes?.get(e.id),outlet=node?.userData.chimneyOutlet;
-      const hearth=allowParticles&&outlet&&buildingSmokeLevel(hpRatio)===0;
+      const hearth=(!reduced&&(allowParticles||e.type==='blacksmith'))&&outlet&&buildingSmokeLevel(hpRatio)===0;
       if(!hearth&&!wantsGlow)continue;
 
       const ground=node?.position.y??v.groundHeight?.(e.x,e.z)??0;
@@ -159,18 +159,19 @@ export class NightAtmosphere {
       if(hearth&&smokeCount+smokePerHearth<=192){
         const x=node.position.x+outlet.x,y=ground+outlet.y,z=node.position.z+outlet.z;
         for(let p=0;p<smokePerHearth;p++){
-          const cycle=(time*.16+e.id*.29+p/smokePerHearth)%1;
-          const rise=cycle*(forge?3.7:2.8);
-          const drift=cycle*cycle*.85;
-          const sway=Math.sin(time*1.3+e.id+p*2.1)*.14*cycle;
+          const cycle=(time*.18+e.id*.29+p/smokePerHearth)%1;
+          const rise=cycle*(forge?3.4:2.5);
+          const drift=cycle*cycle*.72;
+          const sway=Math.sin(time*1.4+e.id+p*2.1)*.11*cycle;
           this.dummy.position.set(x+windX*drift+sway,y+rise,z+windZ*drift);
           if(camQuat)this.dummy.quaternion.copy(camQuat);else this.dummy.rotation.set(0,0,0);
-          const fade=Math.sin(cycle*Math.PI),size=fade*(.32+cycle*.96);
+          const fade=Math.sin(cycle*Math.PI);
+          const size=Math.pow(fade,.50)*(.36+cycle*.98);
           this.dummy.scale.set(size,size,1);
           this.dummy.updateMatrix();
           this.chimneySmoke.setMatrixAt(smokeCount,this.dummy.matrix);
-          const shade=(.47-night*.14)*fade;
-          this.color.setRGB(shade*1.04,shade,shade*1.03);
+          const shade=(.78-night*.22)*Math.pow(fade,.65);
+          this.color.setRGB(shade*1.02,shade*1.00,shade*1.02);
           this.chimneySmoke.setColorAt(smokeCount++,this.color);
         }
       }
@@ -215,7 +216,7 @@ export class NightAtmosphere {
 
     this.chimneySmoke.count=smokeCount;
     this.chimneySmoke.visible=smokeCount>0;
-    this.chimneySmoke.material.opacity=.17+.04*night;
+    this.chimneySmoke.material.opacity=.34+.06*night;
     if(smokeCount>0){
       markInstancePrefix(this.chimneySmoke,smokeCount);
       if(this.chimneySmoke.instanceColor){

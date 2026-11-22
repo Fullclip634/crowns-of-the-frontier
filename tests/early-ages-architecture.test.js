@@ -775,14 +775,23 @@ test('docks stay clear of ships, walls/gates/buildings break progressively by HP
       assert.ok(rotorBox.min.y>2.35,`Feudal ${faction} windmill blades clear ground (${rotorBox.min.y.toFixed(2)}m)`);
     }
 
+    // Verify Feudal Blacksmith registers exact stone chimney flue outlet for smooth NightAtmosphere smoke wisps!
+    {
+      const bsView=makeView(baseAssets,'alder',1);
+      const bsRaw=buildingModel(bsView,{id:701,kind:'building',type:'blacksmith',owner:0,x:0,z:0,r:2.8,hp:900,maxHp:900,progress:1});
+      assert.ok(bsRaw.userData.chimneyOutlet,'Feudal Blacksmith defines exact chimney flue outlet');
+      assert.ok(Math.abs(bsRaw.userData.chimneyOutlet.x-(-1.48))<.05&&bsRaw.userData.chimneyOutlet.y>4.6,'chimney smoke starts centered at top of stone flue');
+    }
+
     const fxScene=new THREE.Scene(),dmgFx=new BuildingDamageEffects(fxScene);
     try{
+      // Healthy Blacksmith does NOT use rigid crossed-plane damage smoke (uses soft multi-puff NightAtmosphere wisps instead).
       const bsNode=new THREE.Group();bsNode.position.set(0,0,0);
       bsNode.add(new THREE.Mesh(new THREE.BoxGeometry(3,4.8,3),new THREE.MeshBasicMaterial()));
       dmgFx.beginFrame();
       dmgFx.add({id:701,kind:'building',type:'blacksmith',hp:900,maxHp:900,progress:1,r:2.8},bsNode,2.0,.05,null,false);
       dmgFx.endFrame();
-      assert.equal(dmgFx.smoke.count,1,'healthy completed Blacksmith emits living ambient hearth chimney smoke');
+      assert.equal(dmgFx.smoke.count,0,'healthy Blacksmith stays clear of damage-smoke batch');
       assert.equal(dmgFx.flames.count,0,'healthy Blacksmith does not burst into damage flames');
 
       // Wooden Palisade wall (<30% HP) catches fire while keeping stone walls smoke-only!
