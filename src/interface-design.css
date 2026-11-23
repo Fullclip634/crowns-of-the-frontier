@@ -428,3 +428,307 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
   outline:0;
   box-shadow:none;
 }
+
+/* Phase 2: World-Class AoE2:DE / AoE4 Macro HUD, Categorized Build, Scoreboard & 4-Tier Responsive Polish */
+#hud .game-header{
+  padding:0 calc(14px + var(--safe-right,0px)) 0 calc(14px + var(--safe-left,0px));
+  gap:10px;
+}
+.age-crest-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  min-height:36px;
+  padding:4px 11px 4px 6px;
+  border:1px solid var(--ui-border-strong,rgba(226,198,132,.48));
+  border-radius:4px;
+  background:linear-gradient(180deg,rgba(32,48,38,.94),rgba(15,24,19,.98));
+  box-shadow:inset 0 1px 0 rgba(255,236,188,.14),0 2px 10px rgba(0,0,0,.38);
+  color:#f5ebd2;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.age-crest-btn:hover{border-color:#f0d28b;background:linear-gradient(180deg,rgba(44,64,50,.96),rgba(20,32,25,.98))}
+.age-roman{
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:26px;
+  border-radius:3px;
+  border:1px solid rgba(235,204,132,.6);
+  background:radial-gradient(circle at 50% 30%,rgba(235,204,132,.28),rgba(28,36,24,.95));
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:15px;
+  font-weight:700;
+  line-height:1;
+  color:#f6db96;
+}
+.age-meta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.age-meta #age-label{font-size:11px;font-weight:600;letter-spacing:.06em;color:#f3e7c8;line-height:1.1;white-space:nowrap}
+.age-progress-track{display:block;width:96px;height:3px;border-radius:2px;overflow:hidden;background:rgba(8,14,11,.92);border:1px solid rgba(235,204,132,.28)}
+.age-progress-track.hidden{display:none}
+.age-progress-track>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d8a846,#f8df96)}
+
+.header-economy{display:flex;align-items:center;gap:10px;min-width:0;flex:1;justify-content:center}
+#hud .resource{position:relative}
+.worker-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:16px;
+  height:16px;
+  padding:0 4px;
+  margin-left:4px;
+  border-radius:3px;
+  font-style:normal;
+  font-size:9px;
+  font-weight:700;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:#d9f0df;
+  background:rgba(38,68,52,.85);
+  border:1px solid rgba(146,210,174,.34);
+}
+.worker-count.is-zero{display:none}
+
+.idle-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:32px;
+  padding:4px 9px;
+  border-radius:4px;
+  border:1px solid rgba(244,197,91,.68);
+  background:linear-gradient(180deg,rgba(78,56,18,.94),rgba(42,29,9,.98));
+  box-shadow:0 0 0 1px rgba(244,197,91,.2),0 3px 10px rgba(0,0,0,.45);
+  color:#ffe49b;
+  font-size:11px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.idle-pill.hidden{display:none!important}
+.idle-pill:hover{border-color:#ffe08a;background:linear-gradient(180deg,rgba(98,70,22,.96),rgba(54,37,11,.98))}
+.idle-pill .ui-icon{width:15px;height:15px;color:#ffd56b}
+.idle-pill-label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#f3d893}
+
+/* Show dedicated Tech header icon only on compact screens where the left Age Crest button hides */
+#tech-tree-toggle{display:none}
+
+/* Global Active Production & Research Strip (AoE2:DE style) */
+.global-queue-strip{
+  position:fixed;
+  top:64px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:5px;
+  max-width:min(440px,calc(100vw - 380px));
+  padding:4px 6px;
+  border-radius:5px;
+  border:1px solid var(--ui-border,rgba(224,185,110,.34));
+  background:linear-gradient(180deg,rgba(19,30,24,.94),rgba(10,17,14,.96));
+  box-shadow:0 8px 22px rgba(0,0,0,.48);
+  z-index:11;
+  pointer-events:auto;
+}
+.global-queue-strip.hidden{display:none!important}
+.gq-item{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  padding:2px;
+  border-radius:4px;
+  border:1px solid rgba(224,185,110,.30);
+  background:linear-gradient(180deg,rgba(29,45,36,.95),rgba(15,24,19,.98));
+  color:#f0e6d2;
+  cursor:pointer;
+  overflow:hidden;
+  flex:none;
+}
+.gq-item:hover{border-color:#e9c97e}
+.gq-item.gq-age{border-color:rgba(244,202,102,.78);background:linear-gradient(180deg,rgba(76,58,20,.95),rgba(38,29,10,.98))}
+.gq-item.gq-tech{border-color:rgba(126,204,232,.58)}
+.gq-icon .ui-icon{width:18px;height:18px;color:#ead7a6}
+.gq-time{font-size:8px;font-weight:700;line-height:1.1;color:#f4d88c;font-variant-numeric:tabular-nums}
+.gq-badge{position:absolute;top:1px;right:2px;font-size:8px;line-height:1;padding:1px 3px;border-radius:3px;background:rgba(8,14,11,.92);color:#f8e6b4;border:1px solid rgba(224,185,110,.35)}
+.gq-fill{position:absolute;left:0;right:0;bottom:0;height:2.5px;background:linear-gradient(90deg,#c9983a,#f8df96);transform-origin:left}
+
+/* Collapsible Live Kingdom Scoreboard */
+.scoreboard-panel{
+  position:fixed;
+  top:calc(126px + var(--safe-top,0px));
+  right:calc(20px + var(--safe-right,0px));
+  width:236px;
+  max-width:calc(100vw - 24px);
+  padding:8px 10px;
+  border-radius:5px;
+  border:1px solid var(--ui-border-strong,rgba(226,198,132,.46));
+  background:var(--ui-panel-bg,linear-gradient(180deg,rgba(20,32,26,.96),rgba(11,18,14,.98)));
+  box-shadow:0 12px 30px rgba(0,0,0,.58),inset 0 1px 0 rgba(255,236,188,.12);
+  z-index:26;
+}
+.scoreboard-panel.hidden{display:none!important}
+.score-heading{display:flex;align-items:center;justify-content:space-between;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--ui-accent,#e3be72);padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid rgba(224,185,110,.2)}
+.score-heading button{display:grid;place-items:center;width:24px;height:24px;border-radius:3px;color:var(--ui-secondary);cursor:pointer}
+.score-heading button:hover{background:rgba(224,185,110,.14);color:#fff}
+.score-rows{display:flex;flex-direction:column;gap:4px}
+.score-row{display:grid;grid-template-columns:10px minmax(0,1fr) 22px auto;align-items:center;gap:6px;padding:4px 6px;border-radius:3px;background:rgba(8,14,11,.56);border:1px solid rgba(224,185,110,.12);font-size:11px;font-variant-numeric:tabular-nums}
+.score-row.you{border-color:rgba(124,240,188,.45);background:rgba(20,44,34,.78)}
+.score-row.ally{border-color:rgba(94,198,255,.35)}
+.score-row.defeated{opacity:.48;text-decoration:line-through}
+.score-dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.score-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f1ece0;font-weight:500}
+.score-age{text-align:center;font-family:'Cormorant Garamond',Georgia,serif;font-weight:700;font-size:12px;color:#e8c97a}
+.score-val{color:#fff0c4;font-weight:700}
+
+/* Docked Deselect Button on Selection Panel */
+#hud .selection-panel{position:relative;padding:12px 16px;max-height:266px}
+.selection-deselect{
+  position:absolute;
+  top:10px;
+  right:10px;
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  padding:0;
+  border-radius:4px;
+  border:1px solid rgba(224,185,110,.30);
+  background:rgba(12,20,16,.88);
+  color:#d9ceb4;
+  cursor:pointer;
+  z-index:3;
+}
+.selection-deselect:hover{border-color:#e9c779;color:#fff;background:rgba(46,62,48,.94)}
+.selection-deselect .ui-icon{width:15px;height:15px}
+#hud .selection-panel>.selection-title{padding-right:34px}
+
+/* Multi-Select Portrait Cards with Individual Mini HP Bars */
+.selection-cards{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin:7px 0 4px;
+}
+.sel-card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:36px;
+  padding:3px 2px 5px;
+  border-radius:4px;
+  border:1px solid rgba(224,185,110,.28);
+  background:linear-gradient(180deg,rgba(26,40,33,.94),rgba(13,21,17,.98));
+  color:#e8dfc8;
+  cursor:pointer;
+}
+.sel-card:hover{border-color:#f0d28b;transform:translateY(-1px)}
+.sel-card-icon .ui-icon{width:17px;height:17px;color:#dbe8cf}
+.sel-card-hp{position:absolute;left:3px;right:3px;bottom:3px;height:3px;border-radius:1px;background:rgba(6,10,8,.92);overflow:hidden}
+.sel-card-hp>b{display:block;height:100%;background:#67d68c}
+.sel-card.mid .sel-card-hp>b{background:#e8b94a}
+.sel-card.low .sel-card-hp>b{background:#eb6b5c}
+.sel-card-more{display:inline-flex;align-items:center;padding:0 6px;height:36px;border-radius:4px;border:1px dashed rgba(224,185,110,.34);font-size:10px;font-weight:700;color:#e5ca84}
+
+/* Categorized Construction Panel & Tabs (Economy / Military / Defense) */
+#build-panel.floating-panel{
+  top:calc(126px + var(--safe-top,0px));
+  bottom:auto;
+  right:calc(20px + var(--safe-right,0px));
+  width:min(560px,calc(100vw - 320px));
+  max-height:calc(100dvh - 394px);
+  padding:12px 14px;
+}
+#build-panel .floating-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+#build-panel .floating-heading>button{width:28px;height:28px;min-width:28px;min-height:28px;border-radius:4px;border:1px solid rgba(224,185,110,.26);background:rgba(12,20,16,.84);color:#d9ceb4;font-size:15px}
+#build-panel .floating-heading>button:hover{border-color:#e9c779;color:#fff}
+#build-panel .build-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 10px}
+#build-panel .build-tab{
+  display:inline-flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:32px;
+  padding:5px 10px;
+  border-radius:4px;
+  border:1px solid rgba(224,185,110,.24);
+  background:rgba(13,22,18,.84);
+  color:#c8d3be;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+#build-panel .build-tab .ui-icon{width:14px;height:14px;color:#d8c186}
+#build-panel .build-tab:hover{border-color:rgba(226,198,132,.52);color:#fff}
+#build-panel .build-tab.active{
+  border-color:#e9c779;
+  background:linear-gradient(180deg,rgba(78,64,26,.94),rgba(42,34,14,.98));
+  color:#fff2cc;
+}
+#build-panel .build-tab.active .ui-icon{color:#ffe296}
+
+/* Contextual Command Banner — Top-center below global queues, never covering bottom HUD! */
+#hud .game-bottomline{
+  display:none;
+  position:fixed;
+  left:50%;
+  right:auto;
+  top:calc(120px + var(--safe-top,0px));
+  bottom:auto;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100vw - 32px);
+  min-height:34px;
+  padding:5px 10px 5px 14px;
+  gap:10px;
+  align-items:center;
+  border-radius:5px;
+  border:1px solid var(--ui-border-strong,rgba(226,198,132,.52));
+  background:linear-gradient(180deg,rgba(22,36,29,.96),rgba(12,20,16,.98));
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+  pointer-events:auto;
+  z-index:25;
+}
+#hud .game-bottomline.context-command{display:flex}
+.context-cancel{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  min-height:26px;
+  padding:3px 8px;
+  border-radius:3px;
+  border:1px solid rgba(224,185,110,.38);
+  background:rgba(50,32,24,.88);
+  color:#ffd5c4;
+  font-size:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.context-cancel .ui-icon{width:13px;height:13px}
+.context-cancel:hover{border-color:#f0a189;color:#fff}
+
+/* Raise bottom-hud cleanly to sit flush near bottom edge now that bottomline is contextual */
+#hud .bottom-hud{bottom:calc(12px + var(--safe-bottom,var(--safe,0px)));left:calc(14px + var(--safe-left,0px));right:calc(14px + var(--safe-right,0px))}
+
+/* Tier 2: Tablets & Unfolded Foldables (coarse touch devices taller than compact phones) */
+@media(pointer:coarse) and (min-height:521px) and (min-width:601px){
+  #hud .game-header button,#hud .camera-controls button,#hud .command-buttons button,.build-tab,.selection-deselect,.sel-card{min-width:44px;min-height:44px}
+  .idle-pill{min-height:40px;padding:4px 11px}
+}
+
+/* Tier 4: Ultrawide & 4K Displays — keep HUD within natural peripheral vision */
+@media(min-width:2100px){
+  #hud .bottom-hud{max-width:1960px;margin-inline:auto}
+}

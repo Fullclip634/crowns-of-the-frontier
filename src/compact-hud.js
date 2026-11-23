@@ -54,6 +54,7 @@ export function resetCompactHud(root){
   closeCompactCommands(root);root.querySelector('#selection-panel').classList.remove('selection-expanded');root.querySelector('.map-panel').classList.remove('map-expanded');
   for(const button of root.querySelectorAll('[data-action=map-expand]')){button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Expand minimap');}
   root.querySelector('.camera-controls').classList.remove('options-open');root.querySelector('[data-action=camera-options]').setAttribute('aria-expanded','false');
+  root.querySelector('#scoreboard-panel')?.classList.add('hidden');root.querySelector('[data-action=scoreboard]')?.setAttribute('aria-expanded','false');
 }
 
 // Size the scrollable panel from the actual HUD, including taller selections

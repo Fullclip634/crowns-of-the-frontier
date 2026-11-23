@@ -1,6 +1,7 @@
 export const CONTROL_ACTIONS = [
   ['panUp','Pan forward','w'],['panDown','Pan backward','s'],['panLeft','Pan left','a'],['panRight','Pan right','d'],
   ['rotateLeft','Rotate left','q'],['rotateRight','Rotate right','e'],['production','Production overview','p'],
+  ['tech-tree','Technology tree','t'],
   ['inspect','Inspect model','i'],['camera-view','Camera angle','v'],['home','Center town','h'],['army','Select army','m'],
   ['build','Construction','b'],['attackmove','Attack move','f'],['patrol','Patrol','r'],['guard','Guard an ally','g'],
   ['stop','Stop / hold','x'],['idle','Idle villagers','.'],['focus','Focus selection','space'],['help','Help','?'],
