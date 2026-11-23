@@ -94,8 +94,9 @@ export function installSoundscape(AudioEngine){
   p.duckMusic=function(duration=1.1,level=.66){
     if(!this.context||!this.musicBus)return;
     const now=this.context.currentTime||0;
+    const mv=this.settings.musicVolume??1;
     this.musicDuckUntil=Math.max(this.musicDuckUntil||0,now+duration);
-    setParamSmooth(this.musicBus.gain,clamp(level,.35,1),now,.045);
+    setParamSmooth(this.musicBus.gain,clamp(level,.35,1)*mv,now,.045);
   };
 
   p.setCameraZoom=function(zoom=48){
@@ -239,7 +240,8 @@ export function installSoundscape(AudioEngine){
     // Restore music bus smoothly once ducking window ends.
     const now=this.context.currentTime||0;
     if(this.musicBus&&now>=(this.musicDuckUntil||0)){
-      setParamSmooth(this.musicBus.gain,this.settings.music?1:0,now,.35);
+      const mv=this.settings.musicVolume??1;
+      setParamSmooth(this.musicBus.gain,this.settings.music?mv:0,now,.35);
     }
     if(this.windGain&&!this.sampleLoops?.size)this.windGain.gain.value=this.settings.music?.024:0;
     if(!this.settings.music||this.settings.volume<=0)return;

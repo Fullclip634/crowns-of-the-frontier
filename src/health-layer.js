@@ -53,14 +53,17 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
     rect=view.renderer?.domElement?.getBoundingClientRect?.();
     if(view.canvasRect===null&&rect&&rect.width>0&&rect.height>0)view.canvasRect=rect;
   }
+  const barMode=view.settings?.healthBarMode||'smart';
+  const forceAll=barMode==='always'||!!view.altPeek;
   visitHealthEntities(sim, view, e=>{
     const isResource=e.kind==='resource',isShrine=e.kind==='shrine',isSelected=!!view.selection?.has(e.id);
     if(isResource||isShrine){
       if(!isSelected||e.hp<=0)return;
       if(isResource&&!sim.isVisible?.(e.x,e.z)&&!sim.isExplored?.(e.x,e.z))return;
     }else{
-      if(e.hp<=0||e.embarked||(!isSelected&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))return;
-      if(!isSelected&&e.kind==='unit'&&e.hp>=e.maxHp)return;
+      if(e.hp<=0||e.embarked||e.owner!==0&&!sim.isVisible(e.x,e.z))return;
+      if(!forceAll&&!isSelected&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)return;
+      if(!forceAll&&!isSelected&&e.kind==='unit'&&e.hp>=e.maxHp)return;
     }
     const p=rect?view.project(e,rect):view.project(e);
     if(!p.visible||p.x<=18||p.x>=viewport.width-18||p.y<=50||p.y>=viewport.height-100)return;
