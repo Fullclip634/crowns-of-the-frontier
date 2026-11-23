@@ -30,15 +30,20 @@ function reachableFiringPosition(sim,engine,site){
 export function orderSiegeAssault(sim,owner,fighters,visible,objective){
   const sites=visible.filter(e=>e.hp>0&&e.kind==='building'&&sim.hostile(owner,e.owner));
   const siege=fighters.filter(e=>UNITS[e.type].role==='siege'),assigned=new Set();let escorted=null;
+  const isWall=site=>site.type==='wall'||site.type==='gate';
   for(const engine of siege){
-    const candidates=sites.filter(site=>distance(engine,site)<48||distance(site,objective)<24).sort((a,b)=>{
+    const nearby=sites.filter(site=>distance(engine,site)<48||distance(site,objective)<24);
+    const sortByValue=list=>list.sort((a,b)=>{
       const value=site=>distance(engine,site)-(site.progress>=1&&BUILDINGS[site.type].damage?18:0)
-        -(site.type==='wall'||site.type==='gate'?8:0)-(site.id===engine.order?.target&&engine.order.type==='attack'?6:0)
+        -(site.type==='towncenter'?14:0)-(site.id===engine.order?.target&&engine.order.type==='attack'?6:0)
         +(site.type==='farm'?12:0)+site.hp/site.maxHp*3;
       return value(a)-value(b)||a.id-b.id;
     });
+    const realBuildings=sortByValue(nearby.filter(site=>!isWall(site)));
+    const barriers=sortByValue(nearby.filter(isWall));
     const canReach=UNITS[engine.type].range<=5?reachableContact:reachableFiringPosition;
-    const target=candidates.find(site=>canReach(sim,engine,site));
+    // Charge through open breaches straight to real buildings FIRST; only smash walls/gates if sealed off!
+    const target=realBuildings.find(site=>canReach(sim,engine,site))||barriers.find(site=>canReach(sim,engine,site));
     if(!target)continue;
     if(engine.order?.type!=='attack'||engine.order.target!==target.id)sim.command([engine.id],{type:'attack',target:target.id});
     assigned.add(engine.id);

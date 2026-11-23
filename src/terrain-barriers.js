@@ -378,13 +378,22 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
     const rOuter={x:Math.max(-h+4,Math.min(h-4,rJaw.x+Math.cos(rightFlank)*24)),z:Math.max(-h+4,Math.min(h-4,rJaw.z+Math.sin(rightFlank)*24))};
     const backPeak={x:Math.max(-h+5,Math.min(h-5,cx+Math.cos(backDir)*(radius+12))),z:Math.max(-h+5,Math.min(h-5,cz+Math.sin(backDir)*(radius+12)))};
 
-    // Sweeping back mountain massif & outer flanking ridges blending seamlessly into the continent
-    placed.barriers.push(...addCurvedCliffChain(sim,[lOuter,lJaw,lBack,backPeak,rBack,rJaw,rOuter],{
-      step:3.4,width:1,radius:3.2,height:4.6,wobble:2.2,keepClear:rimKeep,seedOffset:seedOffset+3,foothillTrees:true,
+    // Lush natural forest-and-mountain cove: massive mossy cliff headlands framing the shoulders +
+    // thick sweeping ancient woodland tracts wrapping the rear & flanks (never a bare grey rock bowl!)
+    placed.barriers.push(...addCurvedCliffChain(sim,[lOuter,lJaw,lBack],{
+      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+3,foothillTrees:true,
     }));
-    // Ancient forest tracts flanking the mountain ridges outward into the wilderness
-    addDenseForestBelt(sim,lBack,lOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+17});
-    addDenseForestBelt(sim,rBack,rOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+29});
+    placed.barriers.push(...addCurvedCliffChain(sim,[rBack,rJaw,rOuter],{
+      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+9,foothillTrees:true,
+    }));
+    placed.barriers.push(...addMountainMassif(sim,backPeak.x,backPeak.z,{
+      radius:10,peaks:3,keepClear:rimKeep,seedOffset:seedOffset+13,withTrees:true,
+    }));
+    // Dense sprawling ancient forests weaving naturally behind the cove & out into the wilderness
+    addDenseForestBelt(sim,lBack,backPeak,{step:2.4,thickness:3,keepClear:rimKeep,seedOffset:seedOffset+17});
+    addDenseForestBelt(sim,backPeak,rBack,{step:2.4,thickness:3,keepClear:rimKeep,seedOffset:seedOffset+23});
+    addDenseForestBelt(sim,lBack,lOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+29});
+    addDenseForestBelt(sim,rBack,rOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+31});
 
     // Anchor twin mountain promontories at the valley mouth shoulders
     const mL=addNaturalBarrier(sim,lJaw.x,lJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+41,keepClear:rimKeep});
@@ -535,9 +544,73 @@ export function scatterBiomeCliffs(sim,{count=4,ridgeLen=26,withMassifs=true,kee
 }
 
 /**
+ * Authentic Age of Empires IV Woodland Glade Architect (inspired by lush forested valleys):
+ *
+ *  - Leaves a WIDE, OPEN, SUNLIT MEADOW GLADE (gladeRadius 28–36m!) around the base so
+ *    players have generous open ground to build a grand city with zero crowding.
+ *  - Surrounds ~65% of the glade with THICK, SWEEPING ANCIENT WOODLAND LOBES (4–6 trees deep)
+ *    blending organically into the wider wilderness, plus ONE dramatic mossy granite bluff
+ *    massif anchoring one flank!
+ *  - Leaves ONLY 2–3 narrow open meadow passes (14–18m wide) so players can lock down a
+ *    HUGE territory with just a handful of short forest-to-cliff or forest-to-forest walls!
+ */
+export function buildWoodlandGladePocket(sim,center,{
+  gladeRadius=30,
+  passes=3,
+  bluffSide=null,
+  keepClear=[],
+  seedOffset=0,
+  includeResources=true,
+}={}){
+  const rng=seededRandom((sim.options?.seed||2026)+8849+seedOffset);
+  const cx=center.x,cz=center.z;
+  const towardCenter=Math.atan2(-cz,-cx);
+  // 2–3 natural narrow meadow corridors opening cleanly toward the wider battlefield
+  const openAngles=passes===2
+    ?[towardCenter-.48,towardCenter+.48]
+    :[towardCenter,towardCenter-1.08,towardCenter+1.08];
+  const passHalf=Math.max(.24,Math.min(.34,7.8/Math.max(18,gladeRadius)));
+  const angleDiff=(a,b)=>Math.abs(((a-b+Math.PI*3)%(Math.PI*2))-Math.PI);
+
+  // Place ONE dramatic mossy granite bluff massif organically on one shoulder of the glade
+  const bluffAngle=bluffSide??(towardCenter-Math.PI*.62);
+  const bluffDist=gladeRadius+6.5;
+  const bx=cx+Math.cos(bluffAngle)*bluffDist,bz=cz+Math.sin(bluffAngle)*bluffDist;
+  const bluffKeep=[{x:cx,z:cz,r:gladeRadius-2.5},...keepClear];
+  const barriers=addMountainMassif(sim,bx,bz,{
+    radius:11,peaks:4,keepClear:bluffKeep,seedOffset:seedOffset+11,withTrees:true,
+  });
+
+  // Plant thick, organic multi-row ancient woodland tracts around all non-pass, non-bluff arcs
+  const ringSteps=Math.max(36,Math.round((2*Math.PI*gladeRadius)/2.6));
+  let trees=0;
+  for(let i=0;i<ringSteps;i++){
+    const a=(i/ringSteps)*Math.PI*2-Math.PI;
+    if(openAngles.some(oa=>angleDiff(a,oa)<passHalf))continue;
+    if(angleDiff(a,bluffAngle)<.36)continue;
+    const edgeWobble=Math.sin(a*3+seedOffset)*3.0+Math.cos(a*5-seedOffset)*1.8;
+    const depthLayers=3+Math.floor((Math.sin(a*2.3+seedOffset)*.5+.5)*3); // 3 to 5 trees deep!
+    for(let layer=0;layer<depthLayers;layer++){
+      const rad=gladeRadius+edgeWobble+layer*2.7+(rng()-.5)*1.4;
+      const tx=cx+Math.cos(a)*rad+(rng()-.5)*1.2;
+      const tz=cz+Math.sin(a)*rad+(rng()-.5)*1.2;
+      if(Math.abs(tx)>sim.halfWorld-4||Math.abs(tz)>sim.halfWorld-4||sim.isWater(tx,tz))continue;
+      if(bridgeFootprint(sim.options?.map,tx,tz,4.5))continue;
+      if(keepClear.some(p=>Math.hypot(tx-p.x,tz-p.z)<(p.r||20)))continue;
+      if(sim.barriers?.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+1.5))continue;
+      if(sim.entities.some(e=>e.hp>0&&(e.kind==='building'&&Math.hypot(e.x-tx,e.z-tz)<e.r+2.4||e.kind==='unit'&&Math.hypot(e.x-tx,e.z-tz)<e.r+1.5||e.kind==='resource'&&Math.hypot(e.x-tx,e.z-tz)<1.85)))continue;
+      sim.addNaturalResource('wood',tx,tz,280);
+      trees++;
+    }
+  }
+  if(includeResources)seedValleyResources(sim,center,{radius:gladeRadius-1,keepOutAngles:openAngles,seedOffset:seedOffset+53});
+  return {barriers,trees,openAngles};
+}
+
+/**
  * Generates authentic continent-wide natural geography across ALL Skirmish & Custom Battle maps:
- *  - Sweeping alpine mountain ranges, branching cliff spurs, dense ancient Blackwood tracts,
- *    natural regional valley coves (Bastion), and geological cliff bluffs on every biome!
+ *  - Sweeping alpine mountain ranges, lush AoE4 Timbervale forest glades with mossy bluffs,
+ *    dense ancient Blackwood tracts, regional valley coves (Bastion), and geological cliff bluffs!
  */
 export function applyMapGeography(sim){
   const map=sim.options?.map;
@@ -545,12 +618,36 @@ export function applyMapGeography(sim){
   const bases=(sim.players||[]).map((p,owner)=>p?.start?{x:p.start.x,z:p.start.z,owner}:null).filter(Boolean);
   // Generous clearance around every starting TC, tutorial build pad, shrines & center bridges
   const keepClear=[
-    ...bases.map(b=>({x:b.x,z:b.z,r:23})),
+    ...bases.map(b=>({x:b.x,z:b.z,r:24})),
     {x:-36,z:49,r:9},
   ];
   const h=sim.halfWorld;
 
-  if(map==='ironpass'){
+  if(map==='timbervale'){
+    // Authentic AoE4 Sunlit Woodland Glades:
+    // Vast open sunny building meadows framed by thick sprawling ancient forests + mossy granite bluffs,
+    // leaving only 2–3 narrow grassy passes per glade so players save massive wall cost naturally!
+    const gladeR=sim.worldSize>=240?34:27;
+    for(const base of bases){
+      const otherKeep=bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:gladeR+4}));
+      buildWoodlandGladePocket(sim,base,{
+        gladeRadius:gladeR,
+        passes:3,
+        keepClear:[...otherKeep,{x:-36,z:49,r:10}],
+        seedOffset:base.owner*41+13,
+        includeResources:true,
+      });
+    }
+    // Sweeping wilderness forest tracts & mossy cliff headlands across the open center & borders!
+    const midKeep=[...bases.map(b=>({x:b.x,z:b.z,r:gladeR+2})),{x:0,z:0,r:16}];
+    const midPasses=[{x:0,z:0,r:15},{x:-h*.35,z:-h*.35,r:12},{x:h*.35,z:h*.35,r:12}];
+    addDenseForestBelt(sim,{x:-h*.86,z:-h*.76},{x:-h*.18,z:-h*.24},{step:2.55,thickness:3,passes:midPasses,keepClear:midKeep,seedOffset:211});
+    addDenseForestBelt(sim,{x:h*.18,z:h*.24},{x:h*.86,z:h*.76},{step:2.55,thickness:3,passes:midPasses,keepClear:midKeep,seedOffset:217});
+    addMountainMassif(sim,-h*.72,h*.10,{radius:12,peaks:4,passes:midPasses,keepClear:midKeep,seedOffset:223});
+    addMountainMassif(sim,h*.72,-h*.10,{radius:12,peaks:4,passes:midPasses,keepClear:midKeep,seedOffset:229});
+    addMountainMassif(sim,-h*.14,-h*.72,{radius:11,peaks:3,passes:midPasses,keepClear:midKeep,seedOffset:233});
+    addMountainMassif(sim,h*.14,h*.72,{radius:11,peaks:3,passes:midPasses,keepClear:midKeep,seedOffset:239});
+  }else if(map==='ironpass'){
     // Classic AoE2/AoE4 Mountain Pass: Sweeping multi-branch alpine mountain chains spanning the entire continent!
     const passes=[
       {x:0,z:0,r:10.5},
@@ -609,8 +706,18 @@ export function applyMapGeography(sim){
     addCurvedCliffChain(sim,[{x:-h*.74,z:-h*.18},{x:-h*.45,z:-h*.22},{x:-h*.20,z:-h*.14}],{step:3.6,width:1,radius:3.0,height:4.6,wobble:2.4,passes,keepClear,seedOffset:81,foothillTrees:map!=='arid'&&map!=='volcanic'});
     addCurvedCliffChain(sim,[{x:h*.20,z:h*.14},{x:h*.45,z:h*.22},{x:h*.74,z:h*.18}],{step:3.6,width:1,radius:3.0,height:4.6,wobble:2.4,passes,keepClear,seedOffset:83,foothillTrees:map!=='arid'&&map!=='volcanic'});
     scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear,passes,seedOffset:89});
-  }else if(['highlands','woodland','winter','desert'].includes(map)){
-    // Classic Open & Woodland Biomes (Arabia / Emerald Highlands / Deepwood / Winterwood):
+  }else if(map==='woodland'){
+    // The Deepwood: Sunlit woodland glades surrounded by thick old-growth forests & mossy bluffs!
+    const gladeR=sim.worldSize>=240?32:26;
+    for(const base of bases){
+      buildWoodlandGladePocket(sim,base,{
+        gladeRadius:gladeR,passes:3,keepClear:[...bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:gladeR+4})),{x:-36,z:49,r:10}],
+        seedOffset:base.owner*31+91,includeResources:false,
+      });
+    }
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear:[...bases.map(b=>({x:b.x,z:b.z,r:gladeR+2})),{x:0,z:0,r:14}],passes:[{x:0,z:0,r:15}],seedOffset:97});
+  }else if(['highlands','winter','desert'].includes(map)){
+    // Classic Open Biomes (Emerald Highlands / Winterwood / Sunlit Meadows):
     // Realistic natural cliff bluffs & border mountain headlands so players can scout & wall between cliffs & forests!
     const passes=[{x:0,z:0,r:15}];
     scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear,passes,seedOffset:101});

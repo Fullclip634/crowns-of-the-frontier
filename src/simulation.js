@@ -129,9 +129,14 @@ export class Simulation {
   }
   initialize(){
     const m=this.options.mode,mission=this.mission, peaceful=m==='sandbox'||m==='tutorial', survival=m==='survival'||mission?.survival;
-    const scale=mission?1:this.worldSize/WORLD,shift=!mission&&scale>1;
+    const mapScale=this.worldSize/WORLD,scale=mission?1:mapScale,shift=!mission&&scale>1;
+    // Expanded 240x240 classic campaigns keep Player 0's town plaza well-anchored while
+    // opening +40m of fresh buildable territory behind the base AND pushing Enemy 1 far northeast (~147m away!).
+    const expandedMission=Boolean(mission&&!mission.actFour&&this.worldSize>WORLD);
+    const coastalMission=expandedMission&&(mission.map==='coast'||mission.map==='valley');
     let dx0=shift?Math.round(-44*scale)-(-39):0,dz0=shift?Math.round(35*scale)-30:0;
-    let dx1=mission?0:Math.round(46*scale)-40,dz1=mission?0:Math.round(-39*scale)-(-34);
+    let dx1=expandedMission?(coastalMission?28:34):(mission?0:Math.round(46*scale)-40);
+    let dz1=expandedMission?(coastalMission?-24:-30):(mission?0:Math.round(-39*scale)-(-34));
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
     this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='regicide'?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
@@ -147,7 +152,7 @@ export class Simulation {
     if(m==='regicide')this.addUnit('king',0,-39+dx0,21+dz0);
     if(survival||mission?.age){for(let i=0;i<8;i++)this.addUnit(i%3?'spearman':'archer',0,-23+dx0+i%4*2,34+dz0+Math.floor(i/4)*2);this.addBuilding('range',0,-47+dx0,10+dz0,true);}
     if(!peaceful&&!survival){
-      this.addBuilding('towncenter',1,40+dx1,-34+dz1,true);this.addBuilding('house',1,51+dx1,-26+dz1,true);this.addBuilding('house',1,29+dx1,-43+dz1,true);this.addBuilding('barracks',1,(shift?28+dx1:33),(shift?-24+dz1:-28),true);this.addBuilding('mill',1,49+dx1,-44+dz1,true);
+      this.addBuilding('towncenter',1,40+dx1,-34+dz1,true);this.addBuilding('house',1,51+dx1,-26+dz1,true);this.addBuilding('house',1,29+dx1,-43+dz1,true);this.addBuilding('barracks',1,(shift||expandedMission?28+dx1:33),(shift||expandedMission?-24+dz1:-28),true);this.addBuilding('mill',1,49+dx1,-44+dz1,true);
       for(let i=0;i<(mission?.age?12:8);i++)this.addUnit('villager',1,33+dx1+i%4*2,-43+dz1-Math.floor(i/4)*2);
       const count=mission?.enemies??5;
       if(m==='regicide')this.addUnit('king',1,40+dx1,-43+dz1);
@@ -176,16 +181,16 @@ export class Simulation {
     const clusters=[[-57,15,'wood',20,true],[-13,49,'wood',22,true],[-53,51,'food',7,true],[-24,15,'gold',5,true],[-57,30,'stone',5,true],[-58,-32,'wood',25,false],[-25,-40,'gold',7,false],[-16,-16,'stone',6,false],[-14,13,'food',7,false],[-65,64,'wood',18,false]];
     const edgeLimit=this.halfWorld-5;
     for(const [x,z,type,count,local]of clusters)for(const sign of [1,-1])for(let i=0;i<count;i++){
-      const bx=local?x*sign+(sign===1?dx0:dx1):x*sign*scale,bz=local?z*sign+(sign===1?dz0:dz1):z*sign*scale;
+      const bx=local?x*sign+(sign===1?dx0:dx1):x*sign*mapScale,bz=local?z*sign+(sign===1?dz0:dz1):z*sign*mapScale;
       const nx=clamp(bx+(this.rng()-.5)*(type==='wood'?18:7),-edgeLimit,edgeLimit),nz=clamp(bz+(this.rng()-.5)*(type==='wood'?18:7),-edgeLimit,edgeLimit);
       if(type==='wood'&&reservedStartingLand(this,nx,nz))continue;
       if(this.entities.some(e=>e.kind==='building'&&distance(e,{x:nx,z:nz})<e.r+3)||this.isWater(nx,nz)||this.startClearing(nx,nz))continue;
       this.addNaturalResource(type,nx,nz,type==='wood'?220:type==='food'?350:1800);
     }
-    const span=145*scale;
+    const span=145*mapScale;
     for(let i=0;i<28;i++){const x=(this.rng()-.5)*span,z=(this.rng()-.5)*span;if(!this.isWater(x,z)&&!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+5))this.addNaturalResource('wood',x,z,240);}
     if(this.options.map==='winter')for(let i=0;i<85;i++){const x=(this.rng()-.5)*span,z=(this.rng()-.5)*span;if(!reservedStartingLand(this,x,z)&&!this.startClearing(x,z)&&!this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))this.addNaturalResource('wood',x,z,260);}
-    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28*scale,z=(this.rng()-.5)*65*scale;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
+    if(this.options.map==='canyon')for(let i=0;i<18;i++){const x=(this.rng()-.5)*28*mapScale,z=(this.rng()-.5)*65*mapScale;this.addNaturalResource(i%2?'stone':'gold',x,z,2200);}
     // New biomes carry their own economy: arid/volcanic/highland worlds are
     // mineral rich and timber poor, woodlands and valleys reverse that. The
     // amounts use the same seeded RNG, so replays and saves stay deterministic.
@@ -194,14 +199,14 @@ export class Simulation {
       for(const [type,factor]of [['wood',profile.wood],['food',profile.food],['gold',profile.gold],['stone',profile.stone]]){
         const extra=Math.round(Math.max(0,factor-1)*26)-Math.round(Math.max(0,1-factor)*10);
         for(let i=0;i<extra;i++){
-          const x=(this.rng()-.5)*140*scale,z=(this.rng()-.5)*140*scale;
+          const x=(this.rng()-.5)*140*mapScale,z=(this.rng()-.5)*140*mapScale;
           if(this.isWater(x,z)||reservedStartingLand(this,x,z)||this.startClearing(x,z)||this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+4))continue;
           this.addNaturalResource(type,x,z,type==='wood'?220:type==='food'?350:1800);
         }
       }
     }
-    if(scale>1){
-      const extraScattered=Math.round(140*(scale-1));
+    if(mapScale>1){
+      const extraScattered=Math.round(140*(mapScale-1));
       for(let i=0;i<extraScattered;i++){
         const x=(this.rng()-.5)*(this.worldSize-16),z=(this.rng()-.5)*(this.worldSize-16);
         if(this.isWater(x,z)||reservedStartingLand(this,x,z)||this.startClearing(x,z)||this.entities.some(e=>e.kind==='building'&&distance(e,{x,z})<e.r+6))continue;
@@ -508,19 +513,55 @@ export class Simulation {
       if(healableUnit(target)&&this.allied(e.owner,target.owner)&&target.hp<target.maxHp){if(distance(e,target)>d.range+target.r)this.move(e,target,dt,d.range);else if(e.cooldown<=0){target.hp=Math.min(target.maxHp,target.hp+12);e.cooldown=1;this.emit('heal',{entity:e,target});}return;}
     }
     let combat=null;
+    const isWall=t=>t.kind==='building'&&(t.type==='wall'||t.type==='gate');
+    const canEngage=(t,guard)=>this.hostile(e.owner,t.owner)&&!t.embarked&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!guard||distance(t,guard)<18);
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
     else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type))){
       const guard=order?.type==='guard'?(this.get(order.target)||e):null;
       const range=e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0),d.role==='siege'?27:13);
-      combat=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!guard||distance(t,guard)<18),range,true,this.combatTargetOwners?.[e.owner]);
+      const ownerMask=this.combatTargetOwners?.[e.owner];
+      // Priority 1: Active threats — enemy units & defensive towers/keeps/town centers.
+      combat=this.nearest(e,t=>canEngage(t,guard)&&(t.kind==='unit'||(t.kind==='building'&&BUILDINGS[t.type]?.damage>0)),range,true,ownerMask);
+      // Priority 2: Real interior buildings (houses, barracks, workshops, mills) — NEVER walls/gates!
+      if(!combat)combat=this.nearest(e,t=>canEngage(t,guard)&&!isWall(t),range,true,ownerMask);
+      // Priority 3: Walls/gates ONLY when genuinely sealed off (blocked route) or literally nothing else exists!
+      if(!combat){
+        const routeBlocked=order?.type==='attackmove'&&e.pathStatus==='blocked';
+        const onlyWallsRemain=!order&&!this.candidatesFor('unit').some(u=>u.hp>0&&!u.embarked&&this.hostile(e.owner,u.owner))&&!this.candidatesFor('building').some(b=>b.hp>0&&!isWall(b)&&this.hostile(e.owner,b.owner));
+        if(routeBlocked||onlyWallsRemain)combat=this.nearest(e,t=>canEngage(t,guard)&&isWall(t),range,true,ownerMask);
+      }
     }
     if(combat&&meleeBuildingAttack(e,combat)){
       const gap=meleeSurfaceDistance(e,combat);
-      if(gap>meleeReach(e)||gap<meleeMinClearance(e)*.65){if(e.stance!=='hold'||order?.type==='attack')approachMelee(this,e,combat,dt);}
+      if(gap>meleeReach(e)||gap<meleeMinClearance(e)*.65){
+        if(e.stance!=='hold'||order?.type==='attack'){
+          approachMelee(this,e,combat,dt);
+          // If an interior building is truly sealed behind walls, switch to breaking the nearest wall/gate!
+          if(order?.type!=='attack'&&!isWall(combat)&&e.pathStatus==='blocked'){
+            const blocker=this.nearest(e,t=>canEngage(t,null)&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
+            if(blocker){
+              if(meleeSurfaceDistance(e,blocker)<=meleeReach(e)){e.heading=meleeHeading(e,blocker);this.hit(e,blocker);}
+              else approachMelee(this,e,blocker,dt);
+            }
+          }
+        }
+      }
       else{e.heading=meleeHeading(e,combat);this.hit(e,combat);}return;
     }
     if(combat){const range=Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0)+combat.r,combat.kind==='building'?combat.r+3:0);
-      if(distance(e,combat)>range){if(e.stance!=='hold'||order?.type==='attack')this.move(e,combat,dt,range);}else{e.heading=Math.atan2(combat.x-e.x,combat.z-e.z);this.hit(e,combat);}return;
+      if(distance(e,combat)>range){
+        if(e.stance!=='hold'||order?.type==='attack'){
+          this.move(e,combat,dt,range);
+          // If a melee unit is sealed out from reaching an interior enemy unit, attack the nearest blocking wall/gate.
+          if(order?.type!=='attack'&&d.range<=4&&!isWall(combat)&&e.pathStatus==='blocked'){
+            const blocker=this.nearest(e,t=>canEngage(t,null)&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
+            if(blocker){
+              if(meleeSurfaceDistance(e,blocker)<=meleeReach(e)){e.heading=meleeHeading(e,blocker);this.hit(e,blocker);}
+              else approachMelee(this,e,blocker,dt);
+            }
+          }
+        }
+      }else{e.heading=Math.atan2(combat.x-e.x,combat.z-e.z);this.hit(e,combat);}return;
     }
     if(!order)return;
     if(order.type==='attack'||order.type==='heal'){this.finishOrder(e);return;}
@@ -586,7 +627,13 @@ export class Simulation {
     }
   }
   tickBuilding(e,dt){if(e.progress<1)return;e.cooldown=Math.max(0,e.cooldown-dt);const d=BUILDINGS[e.type];
-    if(d.damage&&e.cooldown<=0){const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&(t.kind==='unit'||t.kind==='building'),d.range,true,this.combatTargetOwners?.[e.owner]);if(enemy)this.hit(e,enemy);}
+    if(d.damage&&e.cooldown<=0){
+      const mask=this.combatTargetOwners?.[e.owner];
+      const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='unit',d.range,true,mask)
+        ||this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='building'&&t.type!=='wall'&&t.type!=='gate',d.range,true,mask)
+        ||this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='building',d.range,true,mask);
+      if(enemy)this.hit(e,enemy);
+    }
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;q.remaining-=dt;
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
       if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}

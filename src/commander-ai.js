@@ -505,7 +505,9 @@ export function installCommanderAI(Simulation){
     if(threats.length){phase='defend';target=threats.sort((a,b)=>distance(a,tc)-distance(b,tc))[0];}
     else if(enemyPower>0&&ownPower<enemyPower*profile.retreat&&ready.some(e=>distance(e,tc)>30)){phase='regroup';}
     else if(state.phase==='attack'&&ready.filter(e=>UNITS[e.type].damage>0).length>=Math.max(3,Math.floor(profile.raid/2))||offensiveReady&&this.time>=nextAttack&&ready.filter(e=>UNITS[e.type].damage>0).length>=(opening?.army??Math.min(profile.raid,6+player.age*3))){
-      phase='attack';target=multiKingdom?customAttackTarget(this,owner,state,tc,knownBuildings):knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
+      const realKnown=knownBuildings.filter(b=>b.type!=='wall'&&b.type!=='gate');
+      const raidSites=realKnown.length?realKnown:knownBuildings;
+      phase='attack';target=multiKingdom?customAttackTarget(this,owner,state,tc,knownBuildings):raidSites.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
     }
     if(this.options.map==='coast')this.commanderNavy(state,visible,knownBuildings,landArmy.filter(e=>!support.has(e.id)),tc,owner);
     else if(this.options.map==='archipelago')manageArchipelagoNavy(this,owner,state,tc,visible,knownBuildings);

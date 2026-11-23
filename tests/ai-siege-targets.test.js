@@ -27,7 +27,7 @@ test('opening a real breach lets a ram select the defended building without tele
 });
 
 test('a ram breaches masonry through normal movement and damage before advancing on the tower',()=>{
-  const {sim,walls,tower,ram}=fixture();sim.tickAI=()=>{};tower.cooldown=10000;let next=0,crossed=false;
+  const {sim,walls,tower,ram,trebuchet}=fixture();trebuchet.hp=0;sim.tickAI=()=>{};tower.cooldown=10000;let next=0,crossed=false;
   for(let i=0;i<1000&&tower.hp===tower.maxHp;i++){
     if(sim.time>=next){next=sim.time+2;const observed=[...walls.filter(wall=>wall.hp>0&&Math.hypot(wall.x-ram.x,wall.z-ram.z)<24),tower];orderSiegeAssault(sim,0,[ram],observed,tower);}
     const previous={x:ram.x,z:ram.z};sim.tick(.1);assert.ok(Math.hypot(ram.x-previous.x,ram.z-previous.z)<1,'the ram never teleports through the defenses');if(ram.x>1)crossed=true;

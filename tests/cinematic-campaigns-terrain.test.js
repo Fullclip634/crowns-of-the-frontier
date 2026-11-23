@@ -5,6 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {MISSIONS,MAPS} from '../src/data.js';
 import {Simulation} from '../src/simulation.js';
+import {orderSiegeAssault} from '../src/ai-siege.js';
 import {MISSION_CHRONICLES,missionLoadingMarkup} from '../src/mission-loading.js';
 import {shouldRunMenuDiorama,createMenuDioramaSim} from '../src/menu-diorama.js';
 import {landingMarkup} from '../src/menus-ui.js';
@@ -113,6 +114,13 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     for(const rType of ['wood','gold','stone','food']){
       assert.ok(arena.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x-tc.x,e.z-tc.z)<25),`Bastion protects inner ${rType} inside the valley perimeter`);
     }
+    // New Timbervale Glades map (AoE4 lush forest-glade style): huge sunlit meadow clearing + dense forests + mossy bluffs!
+    assert.ok(MAPS.timbervale,'Timbervale Glades registered in MAPS');
+    const timber=new Simulation({mode:'skirmish',map:'timbervale',seed:2026});
+    const timberTrees=timber.entities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='wood').length;
+    assert.ok(timberTrees>=160,`Timbervale Glades plants dense natural woodland belts (${timberTrees} trees)`);
+    assert.ok(timber.barriers.length>=16,'Timbervale Glades anchors glades with mossy granite bluffs');
+
     // Open & rugged biomes (Emerald Highlands, Amber Wastes, Frostmarch, Volcanic) ALSO get natural continent-wide cliffs!
     for(const openMap of ['highlands','arid','tundra','volcanic']){
       const openSim=new Simulation({mode:'skirmish',map:openMap,seed:2026});
@@ -121,7 +129,37 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     }
   });
 
-  it('gives classic chapters (I-X) cliff-anchored fortifications and chokepoints',()=>{
+  it('AI & soldiers bypass intact walls and charge straight through open breaches into the base',()=>{
+    const sim=new Simulation({mode:'sandbox',map:'highlands',seed:777});
+    for(const e of sim.entities)e.hp=0;
+    sim.revision++;
+    // Build a stone wall line at x = 0 with a WIDE OPEN BREACH around z = 0 (z = -6..+6 open!)
+    const walls=[];
+    for(let z=-28;z<=28;z+=3){
+      if(Math.abs(z)<7)continue;
+      const w=sim.addBuilding('wall',0,0,z,true);
+      w.wallAngle=Math.PI/2;
+      walls.push(w);
+    }
+    const house=sim.addBuilding('house',0,20,0,true);
+    const villager=sim.addUnit('villager',0,18,0);
+    // Attacking enemy soldiers stand right beside the intact wall at (-5, 10) and attack-move toward the interior house!
+    const attackers=[sim.addUnit('swordsman',1,-5,10),sim.addUnit('swordsman',1,-5,8),sim.addUnit('knight',1,-6,11)];
+    const ram=sim.addUnit('ram',1,-6,12);
+    sim.revision++;
+    sim.command(attackers.map(u=>u.id),{type:'attackmove',x:house.x,z:house.z});
+    orderSiegeAssault(sim,1,[ram],[...walls,house],house);
+    assert.equal(ram.order?.target,house.id,'Battering ram routes through the open breach to the interior house instead of attacking intact wall');
+    advance(sim,16);
+    assert.ok(walls.every(w=>w.hp===w.maxHp),'Soldiers ignored intact perimeter walls when a breach existed (0 wall damage)');
+    assert.ok(villager.hp<villager.maxHp||house.hp<house.maxHp,'Soldiers poured straight through the open breach to strike interior villagers/buildings');
+  });
+
+  it('gives classic chapters (I-X) spacious 240x240 scale, distant enemies & cliff-anchored fortifications',()=>{
+    const ch1=new Simulation({mode:'campaign1',difficulty:'story'});
+    assert.equal(ch1.worldSize,240,'Classic chapters expand to spacious 240x240 standard maps');
+    const p0=ch1.owned(0,'building','towncenter')[0],p1=ch1.owned(1,'building','towncenter')[0];
+    assert.ok(Math.hypot(p1.x-p0.x,p1.z-p0.z)>=130,`Enemy capital starts far across the frontier (${Math.round(Math.hypot(p1.x-p0.x,p1.z-p0.z))}m)`);
     const ch3=new Simulation({mode:'campaign3',difficulty:'story'});
     assert.ok(ch3.barriers.length>=8&&ch3.owned(0,'building','gate').length>=2,'Ch.3 ties short stone walls & gates into Iron Ridge cliffs');
     const ch7=new Simulation({mode:'campaign7',difficulty:'story'});
@@ -132,17 +170,18 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(ch10.owned(1,'building','keep').length>=1&&ch10.barriers.length>=20,'Ch.10 uses mountain-ringed staging & summit fortresses');
   });
 
-  it('runs Act IV Chapter XI (Ring of Iron) with spacious cliff-and-wall basin, safe inner resources & arriving Western Relief',()=>{
+  it('runs Act IV Chapter XI (Ring of Iron) on grand 320x320 scale with 46m citadel basin, safe inner resources & arriving Western Relief',()=>{
     const sim=new Simulation({mode:'campaign11',difficulty:'story'});
     sim.tickCustomAI=()=>{};
-    assert.equal(sim.worldSize,240);
+    assert.equal(sim.worldSize,320);
     assert.equal(sim.players.length,4);
     assert.ok(sim.owned(0,'building','keep').length>=1,'starts with Castle Keep');
     assert.ok(sim.owned(0,'building','gate').length>=4,'4 short cliff-anchored Gatehouse passes');
     assert.ok(sim.barriers.filter(b=>b.kind==='mountain').length>=8,'mountain crags anchor every citadel gate pass');
-    // Verify ALL 4 resource types sit safely INSIDE the 40m fortified highland basin!
+    assert.ok(Math.hypot(sim.players[1].start.x,sim.players[1].start.z)>=115,'Rival warlords start far outside the central citadel');
+    // Verify ALL 4 resource types sit safely INSIDE the 46m fortified highland basin!
     for(const rType of ['wood','gold','stone','food']){
-      assert.ok(sim.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x,e.z)<38),`Ch.11 protects ${rType} safely INSIDE the fortified valley walls`);
+      assert.ok(sim.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x,e.z)<44),`Ch.11 protects ${rType} safely INSIDE the fortified valley walls`);
     }
     assert.equal(sim.players[3].dormant,true);
     advance(sim,107);
@@ -176,10 +215,10 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(sim.owned(0,'building').length>=oakBefore);
   });
 
-  it('runs Act IV Chapter XIV (Crown of Three Kingdoms): grand 2v2 coalition war with spacious cliff-fortified citadels',()=>{
+  it('runs Act IV Chapter XIV (Crown of Three Kingdoms): grand 320x320 2v2 coalition war with spacious cliff-fortified citadels',()=>{
     const sim=new Simulation({mode:'campaign14',difficulty:'story'});
     sim.tickCustomAI=()=>{};
-    assert.equal(sim.worldSize,240);
+    assert.equal(sim.worldSize,320);
     assert.ok(sim.owned(0,'building','keep').length===1&&sim.owned(0,'building','gate').length>=2);
     assert.ok(sim.owned(3,'building','keep').length===1&&sim.allied(0,3));
     const beforeCats=sim.owned(0,'unit','catapult').length;

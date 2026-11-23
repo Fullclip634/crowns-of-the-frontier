@@ -8,7 +8,9 @@ const fieldFighter=unit=>unit?.hp>0&&!unit.embarked&&unit.hp>unit.maxHp*.28&&UNI
 // front instead of treating the first opponent in the slot list as a target.
 export function customAttackTarget(sim,owner,state,tc,knownBuildings){
   const unseen=sim.spawnPositions.map((point,i)=>({...point,owner:i,unscouted:true})).filter(point=>sim.hostile(owner,point.owner)&&!sim.players[point.owner].defeated&&!state.scoutedSpawns?.[point.owner]);
-  const targets=[...knownBuildings,...unseen];
+  const realBuildings=knownBuildings.filter(b=>b.type!=='wall'&&b.type!=='gate');
+  const preferredBuildings=realBuildings.length?realBuildings:knownBuildings;
+  const targets=[...preferredBuildings,...unseen];
   targets.sort((a,b)=>(distance(tc,a)+(a.unscouted?10:a.type==='towncenter'?-20:0))-(distance(tc,b)+(b.unscouted?10:b.type==='towncenter'?-20:0)));
   return targets[0]||sim.spawnPositions.map((point,i)=>({...point,owner:i})).filter(point=>sim.hostile(owner,point.owner)&&!sim.players[point.owner].defeated).sort((a,b)=>distance(tc,a)-distance(tc,b))[0]||tc;
 }

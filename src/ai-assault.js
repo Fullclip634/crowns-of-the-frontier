@@ -27,8 +27,9 @@ export function adaptAssault(sim,state,target,fighters,visible,known,town){
   if(avoided&&distance(avoided,target)<22){
     const army=fighters.filter(unit=>UNITS[unit.type]?.damage>0&&!unit.embarked);
     const lead=army.reduce((best,unit)=>!best||distance(unit,target)<distance(best,target)?unit:best,null)||town;
-    target=known.filter(site=>site.kind==='building'&&distance(avoided,site)>=22&&distance(lead,site)<100)
-      .sort((a,b)=>distance(lead,a)-distance(lead,b)||a.id-b.id)[0]||town;
+    const nonWalls=known.filter(site=>site.kind==='building'&&site.type!=='wall'&&site.type!=='gate'&&distance(avoided,site)>=22&&distance(lead,site)<100);
+    const pool=nonWalls.length?nonWalls:known.filter(site=>site.kind==='building'&&distance(avoided,site)>=22&&distance(lead,site)<100);
+    target=pool.sort((a,b)=>distance(lead,a)-distance(lead,b)||a.id-b.id)[0]||town;
   }
   if(target===town)return town;
   if(!state.assault||distance(state.assault,target)>=3){

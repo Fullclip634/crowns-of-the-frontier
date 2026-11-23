@@ -35,7 +35,7 @@ export const CAMPAIGN_SCRIPTS={
     stages:[
       {title:'A settlement supplied',text:'Gather 250 resources and complete a third house.',done:s=>s.stats.gathered>=250&&completed(s,'house').length>=3,dialogue:'The storehouses are filling. A settlement survives through many hands; keep your workers safe.'},
       {title:'A company assembled',text:'Field six land military units. Scouts and caravans do not count.',done:s=>army(s).length>=6,dialogue:'Your company is ready. Spears stop riders; a mixed army will survive longer than a single line of troops.'},
-      {title:'Clear the raider settlement',text:'Destroy the rival town center while protecting your own.',marker:{x:40,z:-34},done:conquered,dialogue:'The first frontier settlement stands. This land now has a future.'},
+      {title:'Clear the raider settlement',text:'Destroy the rival town center while protecting your own.',marker:{x:74,z:-64},done:conquered,dialogue:'The first frontier settlement stands. This land now has a future.'},
     ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.count(0,'unit','villager')>=8},
     events:[
       {at:45,id:'c1-foragers',text:'Foragers from the eastern woods ask to join the settlement.',reinforce:{type:'villager',count:2}},
@@ -46,7 +46,7 @@ export const CAMPAIGN_SCRIPTS={
     stages:[
       {title:'Escort the supplies',text:'Escort the caravan to the marked eastern bridgehead. Keep it alive.',marker:{x:20,z:-8},done:(s,q)=>{const cart=s.get(q.cartId);return cart&&!cart.embarked&&Math.hypot(cart.x-20,cart.z+8)<7;},dialogue:'The supplies have reached the far bank. Establish a position before pushing toward the garrison.'},
       {title:'Secure the bridgehead',text:'Complete a watchtower east of the river, or move five land military units onto the eastern bank.',marker:{x:20,z:-8},done:s=>completed(s,'tower').some(e=>e.x>10)||army(s).filter(e=>e.x>10).length>=5,dialogue:'The bridgehead is secure. The garrison can no longer isolate our settlement.'},
-      {title:'Break the garrison',text:'Reach the Castle Age and destroy the rival town center. Protect the caravan throughout.',marker:{x:40,z:-34},done:s=>s.players[0].age>=2&&conquered(s),dialogue:'The supply road is open. The caravan will carry word of your victory.'},
+      {title:'Break the garrison',text:'Reach the Castle Age and destroy the rival town center. Protect the caravan throughout.',marker:{x:68,z:-58},done:s=>s.players[0].age>=2&&conquered(s),dialogue:'The supply road is open. The caravan will carry word of your victory.'},
     ],optional:{text:'Complete the escort with the caravan above half health.',done:(s,q)=>(s.get(q.cartId)?.hp||0)>s.get(q.cartId)?.maxHp*.5},
     events:[
       {at:70,id:'c2-bridgehead',text:'Villagers from the far bank volunteer to hold the bridgehead.',reinforce:{type:'spearman',count:2}},
@@ -76,8 +76,8 @@ export const CAMPAIGN_SCRIPTS={
   campaign5:{speaker:'Marshal Elian',intro:'The enemy capital stands behind gates and stone. Bring siege engines, protect their crews, and open a route for the army.',
     stages:[
       {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
-      {title:'Breach the defenses',text:'Destroy the enemy gatehouse or a section of its starting wall.',marker:{x:36,z:-5},done:(s,q)=>q.defenses.some(id=>!s.get(id)),dialogue:'There is a breach in the line. Reinforce it before sending the siege engines toward the capital.'},
-      {title:'End the frontier war',text:'Destroy the rival town center and defend your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The capital has fallen. The frontier war is over, but the work of rebuilding begins.'},
+      {title:'Breach the defenses',text:'Destroy the enemy gatehouse or a section of its starting wall.',marker:{x:70,z:-35},done:(s,q)=>q.defenses.some(id=>!s.get(id)),dialogue:'There is a breach in the line. Reinforce it before sending the siege engines toward the capital.'},
+      {title:'End the frontier war',text:'Destroy the rival town center and defend your own settlement.',marker:{x:74,z:-64},done:conquered,dialogue:'The capital has fallen. The frontier war is over, but the work of rebuilding begins.'},
     ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult'].includes(e.type))},
     events:[
       {at:70,id:'c5-crews',text:'Siege crews and their escorts arrive from the capital workshops.',reinforce:{type:'spearman',count:3}},
@@ -90,7 +90,7 @@ export const CAMPAIGN_SCRIPTS={
     stages:[
       {title:'Secure the fishing grounds',text:'Bring home 150 food with fishing boats.',done:(s,q)=>q.fish>=150,dialogue:'The fishing crews are supplying the fleet. Protect them; ships cannot replace a working economy.'},
       {title:'Choose the invasion',text:'Land four military units on the eastern coast, or field an Imperial siege galleon.',marker:{x:23,z:-24},done:s=>army(s).filter(e=>e.x>17).length>=4||s.count(0,'unit','warship')>0,dialogue:'The invasion is underway. Establish a harbor on the far shore or use the fleet to support your land troops.'},
-      {title:'Beyond the horizon',text:'Destroy the rival coastal town center. Land troops and naval artillery can both achieve victory.',marker:{x:40,z:-34},done:conquered,dialogue:'The coast is secure. From a frontier village, your kingdom has reached the horizon.'},
+      {title:'Beyond the horizon',text:'Destroy the rival coastal town center. Land troops and naval artillery can both achieve victory.',marker:{x:68,z:-58},done:conquered,dialogue:'The coast is secure. From a frontier village, your kingdom has reached the horizon.'},
     ],optional:{text:'Complete a harbor on the eastern shore.',done:s=>completed(s,'dock').some(e=>e.x>17)},
     events:[
       {at:60,id:'c6-crews',text:'Fishing crews from the outer banks join the harbour.',reinforce:{type:'villager',count:2}},
@@ -99,8 +99,8 @@ export const CAMPAIGN_SCRIPTS={
   campaign7:{speaker:'Warden Ilya',intro:'The ember road is the only crossing through the cinder reach. Hold the ash pass, break the camp that feeds the raiders, and take the keep above the fields.',
     stages:[
       {title:'Hold the ash pass',text:'Complete a watchtower near the marked pass, or move five land military units onto it.',marker:{x:0,z:0},done:s=>completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<24)||army(s).filter(e=>Math.hypot(e.x,e.z)<16).length>=5,dialogue:'The pass is held. The cinder camp can no longer supply the raiders by night.'},
-      {title:'Break the cinder camp',text:'Destroy the rival barracks in the ash fields.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is broken. The ember keep stands alone above the road.'},
-      {title:'Take the ember keep',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The ember road is open, and the mountain frontier is yours.'},
+      {title:'Break the cinder camp',text:'Destroy the rival barracks in the ash fields.',marker:{x:62,z:-54},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is broken. The ember keep stands alone above the road.'},
+      {title:'Take the ember keep',text:'Destroy the rival town center and keep your own settlement.',marker:{x:74,z:-64},done:conquered,dialogue:'The ember road is open, and the mountain frontier is yours.'},
     ],optional:{text:'Finish with at least eight villagers alive.',done:s=>s.count(0,'unit','villager')>=8},
     events:[
       {at:50,id:'c7-guides',text:'Ash-field guides join you; they know which ground is safe.',reinforce:{type:'villager',count:2}},
@@ -110,8 +110,8 @@ export const CAMPAIGN_SCRIPTS={
   campaign8:{speaker:'Forester Brann',intro:'The deepwood has swallowed the border road. Raise a timber camp, break the ambush waiting under the canopy, and swear the woodfort to your banner.',
     stages:[
       {title:'Raise a timber camp',text:'Complete a lumber camp and field four land military units.',marker:{x:-20,z:45},done:s=>completed(s,'camp').length>0&&army(s).length>=4,dialogue:'The camp is cutting and your escort is ready. The deepwood will not give up its road without a fight.'},
-      {title:'Break the ambush',text:'Destroy the rival barracks hidden in the deepwood.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The ambush is broken. The woodfort stands exposed beyond the tree line.'},
-      {title:'Swear the oath',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'The woodfort swears to your banner. The border road is open again.'},
+      {title:'Break the ambush',text:'Destroy the rival barracks hidden in the deepwood.',marker:{x:62,z:-54},done:s=>!s.count(1,'building','barracks'),dialogue:'The ambush is broken. The woodfort stands exposed beyond the tree line.'},
+      {title:'Swear the oath',text:'Destroy the rival town center and keep your own settlement.',marker:{x:74,z:-64},done:conquered,dialogue:'The woodfort swears to your banner. The border road is open again.'},
     ],optional:{text:'Finish with at least ten villagers alive.',done:s=>s.count(0,'unit','villager')>=10},
     events:[
       {at:60,id:'c8-woodcutters',text:'Woodcutters from the old camps join your timber crews.',reinforce:{type:'villager',count:2}},
@@ -121,8 +121,8 @@ export const CAMPAIGN_SCRIPTS={
   campaign9:{speaker:'Captain Sela',intro:'Frostmarch is cut off and the siege has settled in for the night. Hold the palisade until the relief column can march, then take the war to the camp that feeds their engines.',
     stages:[
       {title:'Hold the line',text:'Keep your town center standing for two and a half minutes while the siege waves break against it.',seconds:150,done:(s,q)=>q.elapsed>=150,dialogue:'Dawn is breaking and the palisade still stands. The siege camp is exposed and short of men.'},
-      {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:28,z:-24},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is burning. Their engines have no crews left to replace.'},
-      {title:'End the siege',text:'Destroy the rival town center and keep your own settlement.',marker:{x:40,z:-34},done:conquered,dialogue:'Frostmarch holds, and the road south is open again.'},
+      {title:'Break the siege camp',text:'Destroy the rival barracks that supplies the siege waves.',marker:{x:62,z:-54},done:s=>!s.count(1,'building','barracks'),dialogue:'The camp is burning. Their engines have no crews left to replace.'},
+      {title:'End the siege',text:'Destroy the rival town center and keep your own settlement.',marker:{x:74,z:-64},done:conquered,dialogue:'Frostmarch holds, and the road south is open again.'},
     ],optional:{text:'Hold with a completed watchtower and eight villagers alive.',done:s=>completed(s,'tower').length>0&&s.count(0,'unit','villager')>=8},
     events:[
       {at:30,id:'c9-militia',text:'The town militia falls in along the palisade.',reinforce:{type:'spearman',count:2}},
@@ -136,7 +136,7 @@ export const CAMPAIGN_SCRIPTS={
     stages:[
       {title:'Claim the high ground',text:'Complete a castle or watchtower on the marked ridge, or hold the summit with eight land units.',marker:{x:0,z:0},done:s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8,dialogue:'The ridge is yours. From here the whole valley is in sight, and so is their keep.'},
       {title:'Raise the Imperial banner',text:'Reach the Imperial Age.',done:s=>s.players[0].age>=3,dialogue:'The Imperial banner flies. Your rivals have lost the last advantage they held.'},
-      {title:'Break the last claim',text:'Destroy the rival keep, then their town center.',marker:{x:40,z:-34},done:conquered,dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
+      {title:'Break the last claim',text:'Destroy the rival keep, then their town center.',marker:{x:74,z:-64},done:conquered,dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
     ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(completed(s,'keep').length>0||completed(s,'tower').length>0)&&s.count(0,'unit','villager')>=12},
     events:[
       {at:70,id:'c10-veterans',text:'Veterans of the border war answer the summons.',reinforce:{type:'swordsman',count:3}},
@@ -147,8 +147,8 @@ export const CAMPAIGN_SCRIPTS={
   campaign11:{speaker:'Lord Commander Aldric',intro:'Three warlord armies have closed the Iron Ring around our stone citadel. Hold all three gates until the Western Allied Relief Kingdom smashes through the pass and establishes a forward camp!',
     stages:[
       {title:'Hold the Iron Ring',text:'Defend your central walled citadel until Western Allied Relief breaks through the western cliffs.',seconds:105,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=105,onDone:s=>{triggerWesternReliefArrival(s);},dialogue:'Horns from the western cliffs! Our Allied Relief Kingdom has broken through and raised a forward war-camp—strike out together!'},
-      {title:'Break the Northern Siege Camp',text:'Coordinate with your Western Ally to destroy Lord Korr’s northern town center.',marker:{x:-8,z:-84},done:s=>!s.count(1,'building','towncenter'),dialogue:'Lord Korr’s siege camp is in ashes! Turn east and shatter General Syra’s raiders.'},
-      {title:'Shatter the Encirclement',text:'Destroy every remaining hostile town center across the valley.',marker:{x:86,z:4},done:allHostileCapitalsFallen,dialogue:'The Iron Ring is broken forever! The central citadel stands unbroken and the valley belongs to our alliance.'},
+      {title:'Break the Northern Siege Camp',text:'Coordinate with your Western Ally to destroy Lord Korr’s northern town center.',marker:{x:-10,z:-126},done:s=>!s.count(1,'building','towncenter'),dialogue:'Lord Korr’s siege camp is in ashes! Turn east and shatter General Syra’s raiders.'},
+      {title:'Shatter the Encirclement',text:'Destroy every remaining hostile town center across the valley.',marker:{x:126,z:6},done:allHostileCapitalsFallen,dialogue:'The Iron Ring is broken forever! The central citadel stands unbroken and the valley belongs to our alliance.'},
     ],optional:{text:'Keep your central Castle Keep standing throughout the entire siege.',done:s=>completed(s,'keep').length>0},
     events:[
       {at:32,id:'c11-north-probe',text:'Lord Korr’s northern siege vanguard probes the North Gate!',reinforce:{owner:1,type:'swordsman',count:3}},
@@ -158,9 +158,9 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign12:{speaker:'Marshal Vayne',intro:'Towering stone cliffs divide the Sundered Pass into three narrow valleys. Save your stone—wall only the cliff gaps, hold alongside our Allied Northern Garrison, and break the central pass fortress!',
     stages:[
-      {title:'Lock Down the Cliff Passes',text:'Complete a Watchtower or four wall/gate sections near the passes, or muster twelve military troops.',marker:{x:-6,z:64},done:s=>completed(s,'tower').length>=2||completed(s,'wall').length+completed(s,'gate').length>=4||army(s).length>=12,dialogue:'The mountain chokepoints are sealed! Now prepare your siege engines and storm the central fortress gate.'},
-      {title:'Shatter the Central Fortress',text:'Destroy Iron-Marshal Garen’s central mountain fortress town center to collapse the pass defense.',marker:{x:20,z:-4},done:s=>!s.count(1,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=300;s.players[0].resources.stone+=200;spawnReinforcements(s,{owner:3,type:'knight',count:4});},dialogue:'The central fortress has fallen! War chests seized (+300 Gold, +200 Stone) and our Northern Ally sends Knights through the breach!'},
-      {title:'Conquer the Eastern Empire',text:'March through the Sundered Pass and destroy the Eastern Imperial capital.',marker:{x:82,z:-34},done:allHostileCapitalsFallen,dialogue:'The Sundered Pass is open from summit to valley. The Eastern Empire bows before your banners.'},
+      {title:'Lock Down the Cliff Passes',text:'Complete a Watchtower or four wall/gate sections near the passes, or muster twelve military troops.',marker:{x:-12,z:84},done:s=>completed(s,'tower').length>=2||completed(s,'wall').length+completed(s,'gate').length>=4||army(s).length>=12,dialogue:'The mountain chokepoints are sealed! Now prepare your siege engines and storm the central fortress gate.'},
+      {title:'Shatter the Central Fortress',text:'Destroy Iron-Marshal Garen’s central mountain fortress town center to collapse the pass defense.',marker:{x:28,z:-6},done:s=>!s.count(1,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=300;s.players[0].resources.stone+=200;spawnReinforcements(s,{owner:3,type:'knight',count:4});},dialogue:'The central fortress has fallen! War chests seized (+300 Gold, +200 Stone) and our Northern Ally sends Knights through the breach!'},
+      {title:'Conquer the Eastern Empire',text:'March through the Sundered Pass and destroy the Eastern Imperial capital.',marker:{x:118,z:-56},done:allHostileCapitalsFallen,dialogue:'The Sundered Pass is open from summit to valley. The Eastern Empire bows before your banners.'},
     ],optional:{text:'Win while your Northern Allied Garrison still controls its fortress.',done:s=>s.count(3,'building','towncenter')>0},
     events:[
       {at:50,id:'c12-ally-rally',text:'Our Northern Allied Garrison sends archers to reinforce the upper cliff pass.',reinforce:{owner:3,type:'archer',count:3}},
@@ -169,9 +169,9 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign13:{speaker:'Lady Isolde',intro:'We have no town, no walls, and no supplies—only our Sovereign and this elite Royal Vanguard. Cut through the Blackwood ambush, crush the raiders outside Oakhold, and liberate the walled town to our banner!',
     stages:[
-      {title:'Liberate the Village of Oakhold',text:'Fight through the forest trail and destroy the Raider Barracks and Watchtower besieging Oakhold.',marker:{x:12,z:34},done:s=>!s.count(1,'building','barracks')&&!s.count(1,'building','tower'),onDone:s=>{triggerOakholdLiberation(s);},dialogue:'Oakhold’s gates swing wide! The entire walled town and its ten villagers swear fealty to your crown—expand your kingdom and march north!'},
-      {title:'Rebuild & Muster in Oakhold',text:'Grow Oakhold to 14 villagers and complete a Blacksmith, Stable, or Archery Range to challenge Warlord Malrik.',marker:{x:-22,z:16},done:s=>s.count(0,'unit','villager')>=14&&(completed(s,'blacksmith').length>0||completed(s,'stable').length>0||completed(s,'range').length>0),dialogue:'Oakhold’s forges burn bright again! Push through the dense northern Blackwood trails toward Warlord Malrik’s citadel.'},
-      {title:'Topple Warlord Malrik',text:'Breach the northern Blackwood citadel and destroy Warlord Malrik’s town center.',marker:{x:72,z:-66},done:s=>!s.count(2,'building','towncenter'),dialogue:'Warlord Malrik is cast down! From a lone banner in the woods, you have reclaimed the entire Deepwood realm.'},
+      {title:'Liberate the Village of Oakhold',text:'Fight through the forest trail and destroy the Raider Barracks and Watchtower besieging Oakhold.',marker:{x:24,z:48},done:s=>!s.count(1,'building','barracks')&&!s.count(1,'building','tower'),onDone:s=>{triggerOakholdLiberation(s);},dialogue:'Oakhold’s gates swing wide! The entire walled town and its ten villagers swear fealty to your crown—expand your kingdom and march north!'},
+      {title:'Rebuild & Muster in Oakhold',text:'Grow Oakhold to 14 villagers and complete a Blacksmith, Stable, or Archery Range to challenge Warlord Malrik.',marker:{x:-34,z:24},done:s=>s.count(0,'unit','villager')>=14&&(completed(s,'blacksmith').length>0||completed(s,'stable').length>0||completed(s,'range').length>0),dialogue:'Oakhold’s forges burn bright again! Push through the dense northern Blackwood trails toward Warlord Malrik’s citadel.'},
+      {title:'Topple Warlord Malrik',text:'Breach the northern Blackwood citadel and destroy Warlord Malrik’s town center.',marker:{x:108,z:-98},done:s=>!s.count(2,'building','towncenter'),dialogue:'Warlord Malrik is cast down! From a lone banner in the woods, you have reclaimed the entire Deepwood realm.'},
     ],optional:{text:'Keep your Sovereign alive through the entire campaign.',done:s=>s.count(0,'unit','king')>0},
     events:[
       {at:65,id:'c13-wood-scouts',when:s=>s.campaignState?.stage>=1,text:'Oakhold rangers emerge from the deepwood trails to join your army.',reinforce:{owner:0,type:'archer',count:3}},
@@ -179,9 +179,9 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign14:{speaker:'Queen Maren',intro:'Here ends the War of Three Crowns. My Imperial fortress holds the northern crossing beside your citadel. Coordinate across the Twin Rivers, break the rival coalition, and claim the realm forever!',
     stages:[
-      {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:76,z:52},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'catapult',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
-      {title:'Imperial Supremacy',text:'Advance to the Imperial Age (or tear down the remaining rival Castle Keep).',marker:{x:76,z:-56},done:s=>s.players[0].age>=3||(!s.count(1,'building','keep')&&!s.count(2,'building','keep')),dialogue:'The Imperial standard rises over Twin Rivers! Press the final assault on the last enemy capital.'},
-      {title:'Unite the Three Crowns',text:'Destroy both rival Imperial town centers to end the coalition war.',marker:{x:76,z:-56},done:allHostileCapitalsFallen,dialogue:'Both rival capitals have fallen! From Iron Ridge to Twin Rivers, the entire Frontier unites beneath one Crown!'},
+      {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:110,z:80},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'catapult',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
+      {title:'Imperial Supremacy',text:'Advance to the Imperial Age (or tear down the remaining rival Castle Keep).',marker:{x:110,z:-82},done:s=>s.players[0].age>=3||(!s.count(1,'building','keep')&&!s.count(2,'building','keep')),dialogue:'The Imperial standard rises over Twin Rivers! Press the final assault on the last enemy capital.'},
+      {title:'Unite the Three Crowns',text:'Destroy both rival Imperial town centers to end the coalition war.',marker:{x:110,z:-82},done:allHostileCapitalsFallen,dialogue:'Both rival capitals have fallen! From Iron Ridge to Twin Rivers, the entire Frontier unites beneath one Crown!'},
     ],optional:{text:'Finish with Queen Maren’s allied capital still standing.',done:s=>s.count(3,'building','towncenter')>0},
     events:[
       {at:75,id:'c14-maren-support',text:'Queen Maren dispatches royal men-at-arms across the southern flank.',reinforce:{owner:3,type:'swordsman',count:4}},
