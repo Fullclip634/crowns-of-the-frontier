@@ -11,6 +11,7 @@ import {
   resolveCursorState,
 } from '../src/tactical-ux.js';
 import {SelectionOverlays} from '../src/selection-overlays.js';
+import {drawMinimap} from '../src/minimap.js';
 import {DEFAULT_BINDINGS, controlForKey, readBindings} from '../src/controls.js';
 
 test('resolveCursorState and resolveCommandDecalKind map battlefield context cleanly',()=>{
@@ -112,4 +113,21 @@ test('controls module exposes Backspace jump-to-alert hotkey by default',()=>{
   assert.equal(DEFAULT_BINDINGS['last-alert'],'backspace');
   const bindings=readBindings();
   assert.equal(controlForKey('backspace',bindings),'last-alert');
+});
+
+test('drawMinimap renders a clean rectangular camera locator rather than a skewed horizon wedge',()=>{
+  const sim=new Simulation({mode:'skirmish',map:'highlands',seed:303});
+  const camera=new THREE.PerspectiveCamera(46,16/9,.5,400);
+  camera.position.set(28,36,28);camera.lookAt(0,0,0);camera.updateMatrixWorld();camera.updateProjectionMatrix();
+  const rectStrokes=[];
+  const ctx={
+    clearRect(){},fillRect(){},drawImage(){},beginPath(){},moveTo(){},lineTo(){},arc(){},closePath(){},stroke(){},fill(){},
+    strokeRect(x,y,w,h){rectStrokes.push({x,y,w,h});},
+  };
+  const canvas={width:200,height:200,getContext:()=>ctx};
+  const view={camera,target:{x:0,z:0},zoom:40,groundHeight:()=>0};
+  drawMinimap(canvas,sim,view,{fog:false});
+  assert.ok(rectStrokes.length>=1,'camera viewport drawn via crisp strokeRect');
+  const camRect=rectStrokes.at(-1);
+  assert.ok(camRect.w>10&&camRect.w<110&&camRect.h>10&&camRect.h<110,`compact square/rectangular radar frame (${camRect.w.toFixed(1)}x${camRect.h.toFixed(1)})`);
 });

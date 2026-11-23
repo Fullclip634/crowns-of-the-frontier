@@ -1,5 +1,5 @@
 import {WORLD} from './data.js';
-import {MAP_HALF,cameraMapBox,cameraMapFootprint} from './map-geometry.js';
+import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
 import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
 import {terrainBiome,isSnowBiome,treePalette} from './terrain-biomes.js';
@@ -219,22 +219,18 @@ export function drawMinimap(canvas,sim,view,settings,options={}){
     }
   }
 
-  // True perspective camera frustum trapezoid (shows exact camera angle), with box kept for QA diagnostics
+  // Crisp rectangular/square radar camera viewport box centered on the camera target
   const groundY=view.groundHeight(view.target.x,view.target.z);
   const box=cameraMapBox(view.camera,groundY,worldSize);
-  const poly=cameraMapFootprint(view.camera,groundY,worldSize);
-  if(poly&&poly.length>=3){
-    ctx.beginPath();
-    for(let i=0;i<poly.length;i++){
-      const px=coord(poly[i].x),pz=coord(poly[i].z);
-      if(i===0)ctx.moveTo(px,pz);else ctx.lineTo(px,pz);
-    }
-    ctx.closePath();
-    ctx.fillStyle='#f5e8bd16';ctx.fill();
-    ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.stroke();
-  }else if(box){
-    const x=coord(box.minX),z=coord(box.minZ),width=(box.maxX-box.minX)*scale,height=(box.maxZ-box.minZ)*scale;
-    ctx.fillStyle='#f5e8bd14';ctx.fillRect(x,z,width,height);ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.strokeRect(x,z,width,height);
+  if(box){
+    const rawW=box.maxX-box.minX,rawH=box.maxZ-box.minZ;
+    const zoomSpan=Number.isFinite(view.zoom)?Math.max(18,view.zoom*1.45):Math.max(rawW,rawH);
+    const drawW=Math.min(rawW,zoomSpan),drawH=Math.min(rawH,zoomSpan);
+    const cx=Math.max(-half+drawW/2,Math.min(half-drawW/2,view.target.x));
+    const cz=Math.max(-half+drawH/2,Math.min(half-drawH/2,view.target.z));
+    const x=coord(cx-drawW/2),z=coord(cz-drawH/2),width=drawW*scale,height=drawH*scale;
+    ctx.fillStyle='#f5e8bd16';ctx.fillRect(x,z,width,height);
+    ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.strokeRect(x+.5,z+.5,Math.max(2,width-1),Math.max(2,height-1));
   }
   view.minimapCameraBox=box;
   ctx.beginPath();ctx.arc(coord(view.target.x),coord(view.target.z),2.2,0,Math.PI*2);ctx.fillStyle='#f5e8bd';ctx.fill();
