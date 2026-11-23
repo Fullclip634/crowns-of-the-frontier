@@ -756,6 +756,35 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
 #hud .map-heading #map-flare-btn:hover,#hud .map-heading #map-flare-btn.active{border-color:#ffe07a;background:linear-gradient(180deg,rgba(98,74,22,.94),rgba(54,39,10,.98));color:#fff4c2}
 #hud .map-heading [data-action=home]{display:grid;place-items:center;width:24px;height:22px;border-radius:3px;border:1px solid rgba(224,185,110,.24);background:rgba(14,22,18,.86);font-size:12px}
 #hud .map-heading [data-action=home] .ui-icon{width:13px;height:13px}
+@media(max-width:899px),(max-height:520px){
+  #hud .map-tools{flex-wrap:wrap;gap:3px}
+  #hud .map-filters{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  #hud .map-heading .map-filter-btn{padding:2px 2px;min-height:20px;font-size:8px;text-align:center}
+  #hud .map-heading #map-flare-btn{margin-left:0;flex:1}
+  #hud .map-heading [data-action=home]{flex:1}
+}
+@media(max-width:600px) and (orientation:portrait){
+  #hud{position:fixed;inset:0;overflow:hidden}
+  #hud .game-header{height:auto;min-height:76px;max-height:none;flex-wrap:wrap;align-items:center;row-gap:4px;column-gap:6px;padding:calc(4px + var(--safe-top,0px)) calc(8px + var(--safe-right,0px)) 5px calc(8px + var(--safe-left,0px))}
+  #hud .header-economy{display:contents}
+  #hud #resource-bar{order:1;flex:0 0 100%;height:28px;gap:4px;justify-content:space-between}
+  #hud .resource{display:flex;align-items:center;min-width:0;gap:3px}
+  #hud .resource small{display:none}
+  #hud .resource-icon{font-size:14px;width:auto}
+  #hud .resource strong{font-size:12px;white-space:nowrap}
+  #hud .resource i{font-size:9px}
+  #hud .worker-count{min-width:13px;height:13px;padding:0 2px;margin-left:1px;font-size:8px}
+  #hud .age-crest-btn{order:2;padding:3px 8px 3px 4px;gap:5px;min-height:34px}
+  #hud .age-crest-btn #age-label{display:inline;font-size:10px}
+  #hud .age-progress-track{width:56px}
+  #hud .idle-pill{order:3;min-height:34px;padding:0 7px}
+  #hud .idle-pill-label{display:none}
+  #hud .time-controls{order:4;margin-left:auto;width:auto;height:34px;gap:3px}
+  #hud #game-time,#hud #tech-tree-toggle{display:none}
+  #hud .objective-panel{top:calc(88px + var(--safe-top,0px));left:8px;max-width:calc(100vw - 16px)}
+  #hud .camera-controls{top:calc(88px + var(--safe-top,0px));right:8px;padding:3px;gap:2px;flex-wrap:nowrap}
+  #hud .camera-controls button[data-action=camera-view]{min-width:52px;padding:0 6px;font-size:9px}
+}
 
 /* Click-to-Jump Under Attack Alert Banner */
 #hud #alert-line{position:fixed;top:calc(74px + var(--safe-top,0px));left:50%;transform:translateX(-50%);background:none;padding:0;line-height:normal;overflow:visible;pointer-events:none;z-index:22}

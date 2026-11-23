@@ -175,11 +175,11 @@ test('resourceBarMarkup embeds live worker counts and population warning without
   assert.match(html,/class="resource population full-pop"/);
 });
 
-test('controls module exposes tech-tree hotkey bound to T by default',()=>{
-  assert.equal(DEFAULT_BINDINGS['tech-tree'],'t');
+test('controls module exposes tech-tree hotkey bound to U by default',()=>{
+  assert.equal(DEFAULT_BINDINGS['tech-tree'],'u');
   const bindings=readBindings();
-  assert.equal(bindings['tech-tree'],'t');
-  assert.equal(controlForKey('t',bindings),'tech-tree');
+  assert.equal(bindings['tech-tree'],'u');
+  assert.equal(controlForKey('u',bindings),'tech-tree');
 });
 
 test('Phase 2 HUD removes misleading weather/duplicate-menu chrome and avoids laggy backdrop-filter blurs',()=>{
