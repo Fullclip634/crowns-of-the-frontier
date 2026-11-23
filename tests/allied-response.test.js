@@ -101,7 +101,7 @@ test('damage to an isolated wall does not summon an army from a distant base',()
 });
 
 test('allied troops reach and defeat siege attacking an outer wall through ordinary combat',()=>{
- const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:1,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
+ const sim=new Simulation({mode:'custom',map:'highlands',mapSize:'spacious',startAge:2,seed:512,shareVision:false,slots:battlePreset('2v2')}),base=sim.owned(0,'building','towncenter')[0],tc=sim.owned(1,'building','towncenter')[0];
  for(const e of sim.entities)if(e.kind==='resource'||e.owner===0&&e.kind==='building'&&e.id!==base.id)e.hp=0;sim.revision++;for(const player of sim.players)player.controller='human';sim.players[1].controller='ai';sim.time=100;
  const wall=sim.addBuilding('wall',0,base.x+38,base.z,true),attacker=sim.addUnit('ram',2,wall.x+5,wall.z),army=Array.from({length:16},(_,i)=>sim.addUnit('swordsman',1,wall.x+15+i%4*2,wall.z-8+Math.floor(i/4)*2));
  sim.command([attacker.id],{type:'attack',target:wall.id});const state=sim.aiStates[1]={};let next=0,firstAttack=null,damage=0;

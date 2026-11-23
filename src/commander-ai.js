@@ -91,7 +91,7 @@ function customNavy(sim,owner,visible,known,army,tc){
     const assignment=i<aidCount?aid.base:null;
     if(!fleetOrders.has(assignment))fleetOrders.set(assignment,{ships:[],refresh:false,order:{type:i<aidCount||launch||defense?'attackmove':'move',x:i<aidCount?mid(aid.z):defense?.x??(launch?target?.x??mid(enemy.start.z):mid(home.z)),z:i<aidCount?aid.z:defense?.z??(launch?target?.z??enemy.start.z:home.z)}});
     const group=fleetOrders.get(assignment);group.ships.push(ship);
-    group.refresh||=!ship.order||sim.time-(ship.navyOrderAt||0)>18||(ship.navyAid??null)!==assignment||!!defense&&distance(ship.order,defense)>8;
+    group.refresh||=!ship.order||sim.time-(ship.navyOrderAt||0)>18||(ship.navyAid??null)!==assignment||!!defense&&distance(ship.order,defense)>10;
   }
   for(const [assignment,group] of fleetOrders)if(group.refresh){for(const ship of group.ships){ship.navyOrderAt=sim.time;ship.navyAid=assignment;}sim.command(group.ships.map(ship=>ship.id),group.order);}
   if(aidCount&&sim.time-(state.lastNavySupport||-40)>30){state.lastNavySupport=sim.time;sim.emit('ally-support',{owner,ally:aid.owner,count:aidCount,x:aid.x,z:aid.z});}

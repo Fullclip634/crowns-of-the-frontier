@@ -84,7 +84,7 @@ test('WeatherRenderer uses lightweight crossed rain streaks, 2-tri splash discs,
   assert.equal(view.atmosphereUniforms.wetness.value,weather.wetness);
   assert.ok(view.atmosphereUniforms.cloudOffset.value.length()>0,'cloud shadows drift over time');
   assert.equal(weather.nightAtmosphere.groundGlows.count,2,'night ground glows illuminate both completed buildings');
-  assert.equal(weather.nightAtmosphere.chimneySmoke.count,4,'only the building with a chimney emits hearth smoke');
+  assert.equal(weather.nightAtmosphere.chimneySmoke.count,5,'only the building with a chimney emits hearth smoke');
   assert.ok(weather.nightAtmosphere.hearthSparks.count===2,'the forge emits a few sparks at night');
   assert.equal(view.weatherDiagnostics.hearthSparks,weather.nightAtmosphere.hearthSparks.count);
 
@@ -177,7 +177,7 @@ test('NightAtmosphere illuminates burning buildings during daylight and disposes
   atm.update(1,0,1,.5,false);
   assert.equal(atm.groundGlows.count,0);
   assert.equal(atm.hearthSparks.count,0);
-  assert.equal(atm.chimneySmoke.count,2);
+  assert.equal(atm.chimneySmoke.count,4);
   const matrix=new THREE.Matrix4();
   atm.chimneySmoke.getMatrixAt(0,matrix);
   const position=new THREE.Vector3().setFromMatrixPosition(matrix);

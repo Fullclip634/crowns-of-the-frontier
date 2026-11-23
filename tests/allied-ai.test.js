@@ -71,7 +71,7 @@ test('naval allies lend part of their fleet and recall it immediately when their
   const ships=sim.owned(owner,'unit','galley'),lent=ships.filter(ship=>ship.navyAid===ally.id);
   assert.ok(lent.length>=1&&lent.length<ships.length);for(const ship of lent)assert.equal(ship.order.type,'attackmove');
   enemy.x=dock.x-Math.sign(dock.x)*8;enemy.z=dock.z;sim.commanderNavy({},[enemy],[],[],tc,owner);
-  assert.ok(ships.every(ship=>ship.navyAid===null));for(const ship of lent)assert.ok(Math.hypot(ship.order.x-enemy.x,ship.order.z-enemy.z)<8);
+  assert.ok(ships.every(ship=>ship.navyAid===null));for(const ship of lent)assert.ok(Math.hypot(ship.order.x-enemy.x,ship.order.z-enemy.z)<10);
 });
 
 test('a coastal fleet receives distinct water formation slots and refreshes as one group',()=>{

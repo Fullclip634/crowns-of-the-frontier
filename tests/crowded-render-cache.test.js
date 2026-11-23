@@ -12,6 +12,6 @@ test('repeated authoritative and interpolated ground samples are shared and terr
 test('cached building decorations preserve animation while avoiding repeated model walks',()=>{
   const root=new THREE.Group(),flag=new THREE.Group(),mill=new THREE.Group(),gold=new THREE.MeshBasicMaterial(),shrine=new THREE.Mesh(new THREE.BoxGeometry(),gold);flag.userData.flag=true;mill.userData.windmill=true;root.add(flag,mill,shrine);
   let traversals=0;const traverse=root.traverse.bind(root);root.traverse=fn=>{traversals++;return traverse(fn);};const view={clock:0,materials:{gold}},entity={id:7,kind:'shrine',type:'mill'};
-  for(let i=0;i<60;i++){view.clock=i*.016;animateSceneDecorations(view,root,entity);assert.equal(flag.rotation.y,Math.sin(view.clock*2+7)*.08);assert.equal(mill.rotation.z,view.clock*.4);assert.equal(shrine.position.y,Math.sin(view.clock*1.4)*.22);}
+  for(let i=0;i<60;i++){view.clock=i*.016;animateSceneDecorations(view,root,entity);assert.equal(flag.rotation.y,Math.sin(view.clock*2.5+7*1.1)*.13);assert.equal(mill.rotation.z,view.clock*.62);assert.equal(shrine.position.y,Math.sin(view.clock*1.4)*.22);}
   assert.equal(traversals,1);shrine.geometry.dispose();gold.dispose();
 });

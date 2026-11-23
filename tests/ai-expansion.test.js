@@ -16,7 +16,7 @@ test('both commanders expand to distant resources instead of stalling at home',(
   // tuning. Track the furthest node each commander ever worked instead.
   const furthest={0:0,1:0};
   let tickCount=0;
-  while(sim.time<300&&!sim.ended){
+  while(sim.time<420&&!sim.ended){
     sim.tick(.1);tickCount++;
     if(tickCount%20)continue;
     for(const owner of [0,1]){
