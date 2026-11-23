@@ -1,6 +1,7 @@
 import {revealVisionCircle} from './vision-circle.js';
 import {WORLD,FACTIONS,DIFFICULTIES,UNITS,BUILDINGS,seededRandom} from './data.js';
 import {AI_PACES,recordBaseAlarm} from './allied-ai.js';
+import {normalizePersonality} from './ai-personalities.js';
 import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
@@ -36,6 +37,7 @@ export function normalizeBattle(options){
     name:String(slot.name||(i===0?'Your kingdom':`Kingdom ${i+1}`)).trim().slice(0,24)||`Kingdom ${i+1}`,
     faction:FACTIONS[slot.faction]?slot.faction:'alder',team:Math.max(1,Math.min(8,Math.floor(Number(slot.team)||i+1))),difficulty:DIFFICULTIES[slot.difficulty]?slot.difficulty:'normal',enabled:true,slotNumber:slot.slotNumber,color:PLAYER_COLORS[slot.slotNumber-1]??PLAYER_COLORS[i],controller:spectator?'ai':!hostSpectator&&i===0||options.multiplayer&&slot.controller==='human'?'human':'ai',
     aiHealth:AI_HEALTH_LEVELS.includes(Number(slot.aiHealth))?Number(slot.aiHealth):100,
+    aiPersonality:normalizePersonality(slot.aiPersonality),
   }));
   if(slots.length<2)throw new Error('Enable at least one opposing kingdom.');
   if(slots.every(slot=>slot.team===slots[0].team))throw new Error('Place at least one kingdom on a different team.');

@@ -106,7 +106,7 @@ export function timelineSvgMarkup(samples,players,metric='scores'){
 }
 
 /** Unified Post-Game Match Summary for ALL game modes with Overview / Timeline / Economy tabs & Explore Battlefield. */
-export function matchSummaryMarkup(sim,result,{samples=[],tab='overview',metric='scores',nextChapterId=null}={}){
+export function matchSummaryMarkup(sim,result,{samples=[],tab='overview',metric='scores',nextChapterId=null,hasReplay=false}={}){
   const isCampaign=!!sim.mission;
   const spectator=!!result.spectator;
   const players=sim.players||[];
@@ -189,6 +189,7 @@ export function matchSummaryMarkup(sim,result,{samples=[],tab='overview',metric=
       ${isCampaign&&!nextChapterId?`<button class="primary" data-atlas-open="${sim.options.mode}">Campaign world map</button>`:''}
       ${sim.campaignCheckpoint&&!result.won?`<button class="primary" data-action="checkpoint">Restore checkpoint</button>`:''}
       <button class="${isCampaign&&result.won?'secondary':'primary'}" data-action="restart">${spectator?'Watch another battle':'Play again'}</button>
+      ${hasReplay?`<button class="secondary" data-action="watch-last-replay">${uiIcon('play')} Watch replay</button>`:''}
       <button class="secondary" data-action="explore-battlefield">${uiIcon('map')} Explore battlefield</button>
       <button class="secondary" data-action="menu">Main menu</button>
     </div>`;

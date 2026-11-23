@@ -10,6 +10,7 @@ import {gatheringRange,gatheringPathRange} from './work-ranges.js';
 import {buildingPlacementGrid,findPath} from './navigation.js';
 import {fortifyKingdomWalls,fortificationReserved} from './ai-fortifications.js';
 import {healableUnit,mechanicalUnit} from './maintenance.js';
+import {applyPersonalityProfile} from './ai-personalities.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const WOUNDED_HP=.28,SIEGE_WOUNDED_HP=.5,RECOVERY_RELEASE_SECONDS=60,RECOVERY_RELEASE_HP=.4;
 const isWounded=unit=>unit.hp<unit.maxHp*(mechanicalUnit(unit)?SIEGE_WOUNDED_HP:WOUNDED_HP);
@@ -391,7 +392,7 @@ export function installCommanderAI(Simulation){
   };
   p.tickAI=function(owner=1){
     if(this.options.multiplayer&&this.options.mode!=='custom'||['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival)return;
-    const state=stateFor(this,owner),profile=AI_PROFILES[this.difficulty(owner)],player=this.players[owner];
+    const state=stateFor(this,owner),player=this.players[owner],profile=applyPersonalityProfile(AI_PROFILES[this.difficulty(owner)],player?.aiPersonality||this.options.aiPersonality);
     const capital=this.owned(owner,'building','towncenter')[0];
     if(!capital){
       // Recover a razed capital instead of idling. The remembered home keeps the

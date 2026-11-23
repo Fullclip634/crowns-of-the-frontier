@@ -7,6 +7,7 @@ import {CAMERA_PRESETS} from './world.js';
 import {difficultyLabel} from './ui-format.js';
 import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
 import {terrainBiome} from './terrain-biomes.js';
+import {AI_PERSONALITIES} from './ai-personalities.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -92,7 +93,7 @@ export function landingMarkup(latestSave=null){
 }
 
 /** Visual Skirmish Hub with visual Mode cards, Civilization Crest cards, and Visual Biome Map picker. */
-export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='normal',map='highlands',mapSize='large',seed=2026}={}){
+export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='normal',aiPersonality='balanced',map='highlands',mapSize='large',seed=2026}={}){
   const activeMode=MODES.find(m=>m.id===mode)||MODES[0];
   const modes=MODES.filter(m=>m.id!=='custom');
   const activeMap=activeMode.map||map;
@@ -149,6 +150,8 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
         <label class="field-label" for="difficulty">DIFFICULTY</label>
         <select id="difficulty">${Object.entries(DIFFICULTIES).map(([id,d])=>`<option value="${id}" ${id===difficulty?'selected':''}>${difficultyLabel(id,d.name)}</option>`).join('')}</select>
         <div id="difficulty-description" class="faction-description">${esc(DIFFICULTIES[difficulty]?.desc||'')}</div>
+        <label class="field-label" for="ai-personality" style="margin-top:8px">RIVAL AI PERSONALITY</label>
+        <select id="ai-personality">${Object.values(AI_PERSONALITIES).map(p=>`<option value="${p.id}" ${p.id===aiPersonality?'selected':''}>${esc(p.name)} · ${esc(p.desc)}</option>`).join('')}</select>
       </div>
       <div>
         <label class="field-label" for="map-size">BATTLEFIELD SIZE</label>
@@ -255,8 +258,8 @@ export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,gr
     </div>`;
 }
 
-/** Multi-Slot Save Manager Modal (Auto-Save + 3 Manual Slots). */
-export function saveManagerMarkup(slots,{canSave=false,networkActive=false}={}){
+/** Multi-Slot Save & Replay Manager Modal (Auto-Save + 3 Manual Slots + Recent Match Replays). */
+export function saveManagerMarkup(slots,{canSave=false,networkActive=false,replays=[]}={}){
   const fmtDate=ts=>ts?new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   const rows=slots.map(s=>`<article class="save-slot-card ${s.exists?'occupied':'empty'}">
     <div class="save-slot-info">
@@ -276,8 +279,27 @@ export function saveManagerMarkup(slots,{canSave=false,networkActive=false}={}){
     </div>
   </article>`).join('');
 
+  const replayRows=replays.length?`<div class="replay-section">
+    <label class="field-label">RECENT BATTLE REPLAYS (${replays.length})</label>
+    <div class="save-slots-list">${replays.map(r=>`<article class="save-slot-card occupied replay-card">
+      <div class="save-slot-info">
+        <div class="save-slot-head">
+          <strong>${esc(r.modeName)} · ${r.won===true?'Victory':r.won===false?'Defeat':'Recorded'}</strong>
+          ${r.recordedAt?`<small>${esc(fmtDate(r.recordedAt))}</small>`:''}
+        </div>
+        <p>${esc(r.factionName)} · ${esc(r.mapName)}</p>
+        <small>${esc(r.ageName)} · ${formatTime(r.duration||0)} · ${(r.commands?.length||0)} commands</small>
+      </div>
+      <div class="save-slot-actions">
+        <button type="button" class="primary" data-play-replay="${esc(r.id)}">${uiIcon('play')}<span>Watch</span></button>
+        <button type="button" class="save-delete" data-delete-replay="${esc(r.id)}" aria-label="Delete replay" title="Delete replay">${uiIcon('x')}</button>
+      </div>
+    </article>`).join('')}</div>
+  </div>`:'';
+
   return `<div class="eyebrow">CHRONICLES STORED ON THIS DEVICE</div>
-    <h2>Saved kingdoms</h2>
-    <p class="modal-intro">${networkActive?'Multiplayer rooms reconnect through the room session. Local save slots are available for solo battles and campaigns.':'Auto-save updates every minute during solo play. Use the three manual slots to keep separate campaigns or skirmishes.'}</p>
-    <div class="save-slots-list">${rows}</div>`;
+    <h2>Saved kingdoms & replays</h2>
+    <p class="modal-intro">${networkActive?'Multiplayer rooms reconnect through the room session. Local save slots and replays are available for solo battles and campaigns.':'Auto-save updates every minute during solo play. Use the three manual slots for separate realms, or replay recent solo battles.'}</p>
+    <div class="save-slots-list">${rows}</div>
+    ${replayRows}`;
 }

@@ -225,6 +225,34 @@
 .explore-banner span{font-size:11px;font-weight:600;color:#f3e5be;letter-spacing:.04em}
 .explore-banner button{min-height:30px;padding:4px 10px;font-size:11px}
 
+/* Track 3: Replay Controls Bar & Recent Replays List */
+.replay-banner{gap:8px;max-width:calc(100vw - 24px)}
+.replay-track{width:110px;height:6px;border-radius:3px;background:rgba(8,14,11,.85);border:1px solid rgba(224,185,110,.32);overflow:hidden}
+.replay-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c59a3e,#f7de90)}
+.replay-section{margin-top:18px;padding-top:14px;border-top:1px solid rgba(224,185,110,.22)}
+.replay-card{border-left:3px solid #6ec8d6}
+
+/* Track 3: Obsidian & Brass Custom Battle & Multiplayer War Room Lobby Overhaul */
+.custom-dialog .battle-presets{gap:6px}
+.custom-dialog .battle-presets button{border-radius:4px;background:rgba(12,22,18,.84);border-color:rgba(224,185,110,.3);font-weight:600}
+.custom-dialog .battle-presets button:hover{border-color:#f0cf7b;background:rgba(66,54,22,.82);color:#fff5d6}
+.custom-dialog .battle-slot{border-radius:5px;border-color:rgba(224,185,110,.26);background:linear-gradient(180deg,rgba(20,34,28,.9),rgba(12,21,17,.94))}
+.custom-dialog .battle-slot.player-slot{border-color:#f0cf7b;box-shadow:0 0 0 1px rgba(240,207,123,.3)}
+.custom-dialog .battle-preview canvas{border-radius:5px;border-color:rgba(224,185,110,.42);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.custom-dialog .custom-launch{background:linear-gradient(180deg,rgba(18,30,25,.96),rgba(12,21,17,.99));border-top:1px solid rgba(224,185,110,.24);padding-top:12px}
+.net-shell .net-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.net-shell .net-tab{border-radius:5px;border:1px solid rgba(224,185,110,.26);background:rgba(12,22,18,.84);padding:10px 12px;text-align:left}
+.net-shell .net-tab[aria-selected=true]{border-color:#f0cf7b;background:linear-gradient(180deg,rgba(78,64,26,.92),rgba(40,32,12,.96));color:#fff5d4}
+.room-code{border-radius:6px;background:linear-gradient(180deg,rgba(18,32,26,.94),rgba(10,18,14,.98));border-color:rgba(235,204,132,.52);box-shadow:inset 0 1px 0 rgba(255,244,200,.14)}
+.room-grid article,.room-players article{border-radius:5px;background:linear-gradient(180deg,rgba(22,36,30,.92),rgba(12,21,17,.96));border-color:rgba(224,185,110,.26)}
+.lobby-card.is-ready{border-color:rgba(116,226,158,.55)}
+.lobby-card.is-ai{border-color:rgba(224,185,110,.36)}
+.ready-pill{display:inline-block;padding:3px 7px;border-radius:3px;font-size:10px;font-weight:600;width:fit-content}
+.ready-pill.is-ready{background:rgba(36,88,58,.7);color:#a7f5c3;border:1px solid rgba(116,226,158,.45)}
+.ready-pill.is-ai{background:rgba(66,54,22,.65);color:#f3dca0;border:1px solid rgba(232,198,122,.38)}
+.ready-pill.is-waiting{background:rgba(76,54,26,.65);color:#ffd59a;border:1px solid rgba(235,176,102,.4)}
+.ready-pill.is-open{background:rgba(28,42,36,.75);color:#a8bca0;border:1px solid rgba(168,188,160,.28)}
+
 /* Desktop Minimap Corner Swap & HUD Scale Preferences */
 @media(min-width:601px){
   #hud[data-minimap-side="right"] .bottom-hud .map-panel{order:3}
