@@ -1,14 +1,25 @@
-// Pools world-space health bar DOM nodes by entity ID so large skirmishes never
+import {entityBarRatio} from './entity-inspector.js';
+import {GARRISONS,garrisonCount} from './garrison.js';
+
+// Pools world-space health & stock bar DOM nodes by entity ID so large skirmishes never
 // rebuild `#health-layer` markup or trigger full layout thrashing on HUD ticks.
 const pools = new WeakMap();
 
-function visitHealthEntities(sim, visitor){
+function visitHealthEntities(sim, view, visitor){
+  const seen=new Set();
+  const emit=e=>{if(!e||seen.has(e.id))return;seen.add(e.id);visitor(e);};
   if(typeof sim.candidatesFor==='function'){
-    for(const e of sim.candidatesFor('unit'))visitor(e);
-    for(const e of sim.candidatesFor('building'))visitor(e);
-    return;
+    for(const e of sim.candidatesFor('unit'))emit(e);
+    for(const e of sim.candidatesFor('building'))emit(e);
+  }else{
+    for(const e of sim.entities)if(e.kind==='unit'||e.kind==='building')emit(e);
   }
-  for(const e of sim.entities)visitor(e);
+  if(view.selection?.size){
+    for(const id of view.selection){
+      const e=sim.resourceMemory?.get(id)??(typeof sim.get==='function'?sim.get(id):sim.entities?.find(item=>item.id===id));
+      if(e&&(e.kind==='resource'||e.kind==='shrine'))emit(e);
+    }
+  }
 }
 
 const FORTIFIED_BUILDINGS=new Set(['keep','tower','wall','gate','towncenter']);
@@ -42,9 +53,15 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
     rect=view.renderer?.domElement?.getBoundingClientRect?.();
     if(view.canvasRect===null&&rect&&rect.width>0&&rect.height>0)view.canvasRect=rect;
   }
-  visitHealthEntities(sim, e=>{
-    if(e.hp<=0||e.kind==='resource'||e.kind==='shrine'||(!view.selection.has(e.id)&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))return;
-    if(!view.selection.has(e.id)&&e.kind==='unit'&&e.hp>=e.maxHp)return;
+  visitHealthEntities(sim, view, e=>{
+    const isResource=e.kind==='resource',isShrine=e.kind==='shrine',isSelected=!!view.selection?.has(e.id);
+    if(isResource||isShrine){
+      if(!isSelected||e.hp<=0)return;
+      if(isResource&&!sim.isVisible?.(e.x,e.z)&&!sim.isExplored?.(e.x,e.z))return;
+    }else{
+      if(e.hp<=0||e.embarked||(!isSelected&&e.hp>=e.maxHp&&e.progress!==undefined&&e.progress>=1)||e.owner!==0&&!sim.isVisible(e.x,e.z))return;
+      if(!isSelected&&e.kind==='unit'&&e.hp>=e.maxHp)return;
+    }
     const p=rect?view.project(e,rect):view.project(e);
     if(!p.visible||p.x<=18||p.x>=viewport.width-18||p.y<=50||p.y>=viewport.height-100)return;
     let entry=active.get(e.id);
@@ -63,18 +80,33 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
       active.set(e.id,entry);
     }
     entry.stamp=stamp;
-    const rival=sim.hostile(0,e.owner),ratio=Math.max(0,Math.min(1,e.hp/e.maxHp)),isBuilding=e.kind==='building',isSelected=view.selection.has(e.id);
-    const tier=entityArmorTier(sim,e);
-    const cls=`world-health${rival?' rival':''}${isBuilding?' building':''}${isSelected?' selected':''}${ratio<=.35?' low':ratio<=.65?' mid':''}${tier?` armored tier-${tier}`:''}`;
+    const rival=!isResource&&e.owner>=0&&sim.hostile(0,e.owner);
+    const ally=!isResource&&!rival&&e.owner>0&&sim.allied?.(0,e.owner);
+    const isBuilding=e.kind==='building';
+    const ratio=isResource||isShrine?entityBarRatio(e):Math.max(0,Math.min(1,e.hp/e.maxHp));
+    const tier=isResource||isShrine?0:entityArmorTier(sim,e);
+    const cls=`world-health${rival?' rival':ally?' ally':''}${isResource?' resource':isShrine?' shrine':''}${isBuilding?' building':''}${isSelected?' selected':''}${!isResource&&!isShrine?(ratio<=.35?' low':ratio<=.65?' mid':''):''}${tier?` armored tier-${tier}`:''}`;
     if(entry.cls!==cls){entry.cls=cls;entry.root.className=cls;}
     const x=`${p.x.toFixed(1)}px`,y=`${p.y.toFixed(1)}px`;
     if(entry.x!==x||entry.y!==y){
       entry.x=x;entry.y=y;
       entry.root.style.transform=`translate3d(${x},${y},0) translate(-50%,-50%)`;
     }
-    const width=`${Math.max(0,Math.min(100,e.hp/e.maxHp*100)).toFixed(1)}%`;
+    const width=`${(ratio*100).toFixed(1)}%`;
     if(entry.width!==width){entry.width=width;entry.bar.style.width=width;}
-    const progress=e.kind==='building'&&e.progress<1?`${Math.floor(e.progress*100)}%`:'';
+    let progress='';
+    if(isBuilding&&e.progress<1){
+      progress=`${Math.floor(e.progress*100)}%`;
+    }else if(isResource){
+      progress=`${Math.max(0,Math.round(e.amount||0))}`;
+    }else if(isShrine){
+      progress=e.owner>=0?(e.owner===0?'Held':rival?'Enemy':'Ally'):(e.progress>0?`${Math.round(ratio*100)}%`:'Neutral');
+    }else if(isSelected&&!rival&&isBuilding&&GARRISONS[e.type]){
+      const inside=garrisonCount(sim,e);
+      if(inside>0)progress=`${inside}/${GARRISONS[e.type].capacity}`;
+    }else if(isSelected&&!rival&&e.type==='transport'&&e.passengers?.length){
+      progress=`${e.passengers.length}/8`;
+    }
     if(entry.progress!==progress){
       entry.progress=progress;
       entry.label.textContent=progress;

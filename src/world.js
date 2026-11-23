@@ -40,6 +40,7 @@ import {graphicsCheckpoint} from './graphics-checkpoint.js';
 import {installCombatPresentation,combatTime} from './combat-presentation.js';
 import {projectileTargetHeight} from './combat-timing.js';
 import {createAtmosphereUniforms} from './atmosphere-uniforms.js';
+import {SelectionOverlays,selectionColorHex} from './selection-overlays.js';
 
 const CANONICAL_MERGE_ATTRS=new Set(['position','normal','uv','color']);
 function normalizeMergeGeometries(geometries){
@@ -95,6 +96,8 @@ export class WorldView {
     this.canvasRect=null;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.canvasRect=null;this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
     this.buildingDamage=new BuildingDamageEffects(this.scene);
+    this.selectionOverlays=new SelectionOverlays(this);
+    this.hoverEntityId=null;
   }
   piece(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1,ry=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   box(g,m,x,y,z,w,h,d,ry=0){return this.piece(g,this.geo.box,m,x,y,z,w,h,d,ry);}
@@ -143,6 +146,8 @@ export class WorldView {
   }
   attach(sim){const camera=this.sim===sim?{target:this.target.clone(),zoom:this.zoom,angle:this.angle,tilt:this.tilt}:null;this.sim=sim;this.canvasRect=null;
     this.wallVisuals?.dispose();this.wallVisuals=null;
+    if(this.selectionOverlays){this.selectionOverlays.treeForestRef=null;this.selectionOverlays.treeCoords=null;this.selectionOverlays.rangeKey='';}
+    this.hoverEntityId=null;
     this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;
     this.locomotion??=new UnitLocomotion();this.locomotion.clear();this.locomotionPrunedAt=0;
@@ -232,12 +237,12 @@ export class WorldView {
     if(e.kind==='building')g=this.mergeModel(this.makeBuilding(e));else if(e.kind==='unit')g=this.unitNode(e);else{g=new THREE.Group();if(e.kind==='shrine'){this.cylinder(g,this.materials.stoneDark,0,.25,0,3,.5);for(const x of [-1.5,1.5])for(const z of [-1.5,1.5])this.cylinder(g,this.materials.stone,x,2,z,.35,4);this.roof(g,this.materials.stone,0,4.2,0,3,1.4,3);this.piece(g,this.geo.sphere,this.materials.gold,0,2,0,.8,.8,.8);}else if(e.type==='food'){for(let i=0;i<4;i++){this.piece(g,this.geo.sphere,this.materials.leaf,-.7+i*.45,.75,(i%2)*.6,1,1,1);for(let j=0;j<3;j++)this.piece(g,this.geo.sphere,this.materials.berry,-.8+i*.5,1.2,j*.35-.2,.16,.16,.16);}}else{for(let i=0;i<4;i++)this.piece(g,this.geo.sphere,e.type==='gold'?this.materials.gold:this.materials.stoneDark,(i%2)*1.25-.6,.7,Math.floor(i/2)*1.2-.6,.85,1.1+i*.13,1);}}
     if(e.kind==='resource'||e.kind==='shrine')g=this.mergeModel(g);
     g.position.set(e.x,0,e.z);g.userData.entity=e.id;g.traverse(child=>child.userData.entity=e.id);this.objects.add(g);this.nodes.set(e.id,g);
-    if(e.owner===0){const r=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=.13;r.scale.setScalar(e.r+(.6));r.visible=false;r.userData.selection=true;g.add(r);g.userData.ring=r;}
+    if(e.kind==='building'){const r=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:selectionColorHex(this.sim,e,true),transparent:true,opacity:.92,side:THREE.DoubleSide,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=.13;r.scale.setScalar(e.r+(.6));r.visible=false;r.userData.selection=true;g.add(r);g.userData.ring=r;}
     return g;
   }
   updateFog(){this.fogRevision=this.sim.fogRevision;return updateFogTexture(this);}
   groundPoint(clientX,clientY){const rect=this.renderer.domElement.getBoundingClientRect();this.mouse.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.mouse,this.camera);const point=this.landscape?this.landscape.rayPoint(this.raycaster.ray):this.raycaster.ray.intersectPlane(this.plane,new THREE.Vector3());return point&&insideMap(point.x,point.z,this.sim?.worldSize||WORLD)?point:null;}
-  pick(clientX,clientY){this.groundPoint(clientX,clientY);const hits=this.raycaster.intersectObjects(this.objects.children,true);for(const hit of hits){let id=hit.object.userData.entity;if(hit.object.userData.treeIds)id=hit.object.userData.treeIds[hit.instanceId];if(hit.object.userData.unitIds)id=hit.object.userData.unitIds[hit.instanceId];if(hit.object.userData.wallIds)id=hit.object.userData.wallIds[hit.instanceId];const e=this.sim.get(id);if(e&&(e.owner===0||this.sim.isVisible(e.x,e.z)))return e;}return pickFruitVolume(this);}
+  pick(clientX,clientY){this.groundPoint(clientX,clientY);const hits=this.raycaster.intersectObjects(this.objects.children,true);for(const hit of hits){let id=hit.object.userData.entity;if(hit.object.userData.treeIds)id=hit.object.userData.treeIds[hit.instanceId];if(hit.object.userData.unitIds)id=hit.object.userData.unitIds[hit.instanceId];if(hit.object.userData.wallIds)id=hit.object.userData.wallIds[hit.instanceId];const e=this.sim.resourceMemory?.get(id)??this.sim.get(id);if(e&&e.hp>0&&(e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z))))return e;}return pickFruitVolume(this);}
   project(e,rect=this.renderer.domElement.getBoundingClientRect()){const x=e.renderX??e.x,z=e.renderZ??e.z,v=(this.projectVec??=new THREE.Vector3()).set(x,this.entityHeight(e,x,z)+(e.kind==='building'?7:UNITS[e.type]?.naval?5:3),z).project(this.camera);return {x:rect.left+(v.x+1)*rect.width/2,y:rect.top+(1-v.y)*rect.height/2,visible:v.z>-1&&v.z<1};}
   focus(x,z){if(!Number.isFinite(x)||!Number.isFinite(z))return;const limit=(this.sim?.worldSize||WORLD)/2-8,xx=Math.max(-limit,Math.min(limit,x)),zz=Math.max(-limit,Math.min(limit,z));this.target.set(xx,this.groundHeight?.(xx,zz)||0,zz);this.updateCamera();}
   pan(dx,dz){const c=Math.cos(this.angle),s=Math.sin(this.angle);this.focus(this.target.x+dx*c+dz*s,this.target.z-dx*s+dz*c);}
@@ -428,11 +433,12 @@ export class WorldView {
       if(e.kind==='building'){
         if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;this.updateConstruction(e,node);
         this.buildingDamage?.add(e,node,this.clock,dt,wind,this.settings.reducedMotion);
-      }if(node.userData.ring)node.userData.ring.visible=this.selection.has(e.id);
+      }if(node.userData.ring){const show=this.selection.has(e.id)||this.hoverEntityId===e.id;node.userData.ring.visible=show;if(show&&node.userData.ring.material?.color)node.userData.ring.material.color.setHex(selectionColorHex(this.sim,e,e.kind==='building'));}
       animateSceneDecorations(this,node,e);
     }
     this.updateBattleEffects(dt,stepWall);
     this.buildingDamage?.endFrame();
+    this.selectionOverlays?.update(menu);
     if(this.markerTime>0){this.markerTime-=dt;this.marker.rotation.y+=dt;this.marker.visible=this.markerTime>0;}
     this.interactions?.alignCargoFeet();
     endUnitFrame(this);

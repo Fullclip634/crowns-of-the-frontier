@@ -21,6 +21,7 @@ import {shadeBattlefieldFog} from './fog-surface.js';
 import {updateBridgeVisibility} from './bridge-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
 import {updateBuildingDamageVisuals} from './building-damage-visuals.js';
+import {selectionColorHex} from './selection-overlays.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -330,7 +331,7 @@ export function installRealm3D(WorldView){
     if(e.kind==='building'&&!['farm','dock'].includes(e.type)){if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;groundBuildingFoundation(node,this.landscape);}
     if(e.type==='gate')groundGatePortcullis(node,this.landscape);
     node.traverse(child=>child.userData.entity=e.id);this.objects.add(node);this.nodes.set(e.id,node);
-    if(e.owner===0){const field=e.type==='farm',building=e.kind==='building',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):building?(this.geo.buildingRing??=new THREE.RingGeometry(.975,1,64)):this.geo.ring,ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:building?0x88d5b5:0xc5eee2,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.45));ring.visible=false;node.add(ring);node.userData.ring=ring;}
+    if(e.kind==='building'){const field=e.type==='farm',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):(this.geo.buildingRing??=new THREE.RingGeometry(.955,1,64)),ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:selectionColorHex(this.sim,e,true),transparent:true,opacity:.94,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.48));ring.visible=false;node.add(ring);node.userData.ring=ring;}
     if(e.type==='farm'){fitFarmTerrain(node,this.landscape);node.traverse(child=>{if(child.isMesh)child.castShadow=false;});}
     else if(e.kind==='building'&&e.type!=='dock')fitBuildingSelectionRing(node,this.landscape);
     return node;

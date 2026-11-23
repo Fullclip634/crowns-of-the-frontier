@@ -7,7 +7,7 @@
    only when requested; the visible command targets remain at least 44px. */
 @media(pointer:coarse) and (max-height:520px) and (orientation:landscape),
        (pointer:coarse) and (max-width:600px) and (orientation:portrait){
-  #hud .game-header{height:44px;min-height:44px;max-height:44px;padding:0 8px;gap:8px;border-bottom:0;flex-wrap:nowrap}
+  #hud .game-header{height:44px;min-height:44px;max-height:44px;padding:0 calc(8px + var(--safe-right,0px)) 0 calc(8px + var(--safe-left,0px));gap:8px;border-bottom:0;flex-wrap:nowrap}
   #hud .game-brand,#hud #age-label,#hud #game-time,#hud #speed-button{display:none}
   #hud #resource-bar{display:flex;flex:1;min-width:0;width:auto;gap:6px;justify-content:space-between}
   #hud .resource{display:flex;align-items:center;min-width:0;gap:4px}
@@ -18,7 +18,7 @@
   #hud .time-controls{gap:2px;height:44px;width:auto;flex:0 0 auto}
   #hud .game-header button{width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0}
 
-  #hud .bottom-hud{left:8px;right:8px;bottom:calc(8px + var(--safe));gap:6px;align-items:flex-end;justify-content:space-between;pointer-events:none}
+  #hud .bottom-hud{left:calc(8px + var(--safe-left,0px));right:calc(8px + var(--safe-right,0px));bottom:calc(8px + var(--safe));gap:6px;align-items:flex-end;justify-content:space-between;pointer-events:none}
   #hud .bottom-hud>*{pointer-events:auto}
   #hud .map-panel{position:relative;width:84px;min-width:84px;height:auto;min-height:0;max-height:none;padding:0;flex-shrink:0;overflow:hidden}
   #hud .map-heading,#hud .map-footer{display:none}
@@ -50,7 +50,10 @@
   #hud .health-track{width:100%;max-width:110px;height:3px;margin:0 0 3px}
   #hud .selection-panel:not(.selection-expanded) .selection-portrait,
   #hud .selection-panel:not(.selection-expanded) .selection-title .eyebrow{display:none}
-  #hud .selection-panel:not(.selection-expanded)>:not(.selection-title):not(.worker-actions):not(.production-actions):not(.selection-details){display:none}
+  #hud .selection-panel:not(.selection-expanded)>:not(.selection-title):not(.worker-actions):not(.production-actions):not(.selection-details):not(.unit-attributes){display:none}
+  #hud .selection-panel:not(.selection-expanded):has(.production-actions,.worker-actions)>.unit-attributes{display:none}
+  #hud .selection-panel:not(.selection-expanded)>.unit-attributes{grid-column:2;grid-row:1;display:flex;flex-wrap:nowrap;align-items:center;gap:4px;margin:0;padding-right:4px;max-height:46px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior:contain}
+  #hud .selection-panel:not(.selection-expanded)>.unit-attributes span{flex:0 0 auto;white-space:nowrap;font-size:9px;padding:3px 6px}
   #hud .selection-panel>.worker-actions,#hud .selection-panel>.production-actions{grid-column:2;grid-row:1;display:flex;flex-wrap:nowrap;gap:4px;margin:0;padding-right:4px;max-height:52px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior:contain}
   #hud .selection-panel:not(.selection-expanded) .worker-actions [data-action=build]{display:none}
   #hud .worker-actions button{flex:0 0 auto;min-width:72px;min-height:44px;padding:5px;font-size:9px}

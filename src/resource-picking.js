@@ -5,8 +5,9 @@ import * as THREE from 'three';
 export function pickFruitVolume(view){
   const sphere=view.fruitPickSphere??=new THREE.Sphere(),point=view.fruitPickPoint??=new THREE.Vector3(),ray=view.raycaster.ray;
   let nearest=null,distance=Infinity;
-  for(const e of view.sim.entities){
-    if(e.hp<=0||e.kind!=='resource'||e.type!=='food'||e.water||!view.sim.isVisible(e.x,e.z))continue;
+  for(const entity of view.sim.entities){
+    const e=view.sim.resourceMemory?.get(entity.id)??entity;
+    if(e.hp<=0||e.kind!=='resource'||e.type!=='food'||e.water||!view.sim.isExplored(e.x,e.z))continue;
     const node=view.nodes.get(e.id);if(!node||!node.visible)continue;
     sphere.center.copy(node.position);sphere.center.y+=.7*node.scale.y;sphere.radius=Math.max(.7,(e.r||1.7)*.72)*node.scale.x;
     if(!ray.intersectSphere(sphere,point))continue;const depth=point.distanceTo(ray.origin);
