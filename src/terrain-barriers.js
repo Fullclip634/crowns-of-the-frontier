@@ -425,6 +425,12 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
         placed.towers.push(...seg.towers);
       }
     }
+    // Clear stray random field trees from the inner building courtyard so players have a HUGE open
+    // uncompressed buildable town plaza while sheltered outer groves & mines sit cleanly along the rim!
+    const clearInnerR=Math.max(18,radius-10);
+    for(const e of sim.entities){
+      if(e.hp>0&&e.kind==='resource'&&e.type==='wood'&&Math.hypot(e.x-cx,e.z-cz)<clearInnerR)e.hp=0;
+    }
     if(includeResources)seedValleyResources(sim,center,{radius,keepOutAngles:[towardCenter-.3,towardCenter+.3],seedOffset:seedOffset+71});
     return placed;
   }
@@ -572,6 +578,13 @@ export function buildWoodlandGladePocket(sim,center,{
   const passHalf=Math.max(.24,Math.min(.34,7.8/Math.max(18,gladeRadius)));
   const angleDiff=(a,b)=>Math.abs(((a-b+Math.PI*3)%(Math.PI*2))-Math.PI);
 
+  // Clear stray random field trees inside the sunny central building meadow so players get a HUGE
+  // clean sunlit glade (just like AoE4!) surrounded by thick ancient woodlands on the outer rim!
+  const clearInnerR=Math.max(20,gladeRadius-6.5);
+  for(const e of sim.entities){
+    if(e.hp>0&&e.kind==='resource'&&e.type==='wood'&&Math.hypot(e.x-cx,e.z-cz)<clearInnerR)e.hp=0;
+  }
+
   // Place ONE dramatic mossy granite bluff massif organically on one shoulder of the glade
   const bluffAngle=bluffSide??(towardCenter-Math.PI*.62);
   const bluffDist=gladeRadius+6.5;
@@ -625,9 +638,9 @@ export function applyMapGeography(sim){
 
   if(map==='timbervale'){
     // Authentic AoE4 Sunlit Woodland Glades:
-    // Vast open sunny building meadows framed by thick sprawling ancient forests + mossy granite bluffs,
+    // Vast open sunny building meadows (38m radius = 76m wide!) framed by thick sprawling ancient forests + mossy granite bluffs,
     // leaving only 2–3 narrow grassy passes per glade so players save massive wall cost naturally!
-    const gladeR=sim.worldSize>=240?34:27;
+    const gladeR=sim.worldSize>=240?38:30;
     for(const base of bases){
       const otherKeep=bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:gladeR+4}));
       buildWoodlandGladePocket(sim,base,{
@@ -678,9 +691,9 @@ export function applyMapGeography(sim){
     scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear,passes,seedOffset:59});
   }else if(map==='bastion'){
     // Authentic AoE4 Altai / French Pass Fortified Valleys:
-    // Continent-wide mountain ranges, forested coves, and central contested ridges —
+    // Continent-wide mountain ranges, forested coves (36m radius = 72m wide!), and central contested ridges —
     // each kingdom sits backed naturally against a real mountain massif with straight curtain walls sealing ONLY its valley mouth!
-    const bastionR=sim.worldSize>=240?30:25;
+    const bastionR=sim.worldSize>=240?36:29;
     for(const base of bases){
       buildNaturalFortifiedBase(sim,base.owner,base,{
         radius:bastionR,

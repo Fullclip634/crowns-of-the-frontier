@@ -79,7 +79,7 @@ function applyClassicChapterArchitecture(sim){
 
   if(mode==='campaign1'){
     // Frontier Foothold (240x240): Lush AoE4 sunlit woodland glades + mossy granite bluffs + distant raider settlement!
-    buildWoodlandGladePocket(sim,p0,{gladeRadius:32,passes:3,keepClear:[{x:-36,z:49,r:11},{x:p1.x,z:p1.z,r:34}],seedOffset:101,includeResources:false});
+    buildWoodlandGladePocket(sim,p0,{gladeRadius:36,passes:3,keepClear:[{x:-36,z:49,r:11},{x:p1.x,z:p1.z,r:34}],seedOffset:101,includeResources:false});
     buildWoodlandGladePocket(sim,p1,{gladeRadius:30,passes:3,keepClear:[{x:p0.x,z:p0.z,r:36}],seedOffset:103,includeResources:false});
     scatterBiomeCliffs(sim,{count:4,ridgeLen:22,withMassifs:true,keepClear:[{x:p0.x,z:p0.z,r:36},{x:p1.x,z:p1.z,r:34},{x:-36,z:49,r:11}],passes:[{x:0,z:0,r:18}],seedOffset:105});
     for(const [bx,bz] of [[-56,42],[-58,40],[-54,44]])if(!sim.isWater(bx,bz))sim.addNaturalResource('food',bx,bz,320);

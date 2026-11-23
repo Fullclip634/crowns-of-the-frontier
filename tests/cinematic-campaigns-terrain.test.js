@@ -112,7 +112,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     const quadrants=new Set(arena.barriers.map(p=>`${p.x>=0?'E':'W'}${p.z>=0?'S':'N'}`));
     assert.equal(quadrants.size,4,'Bastion cliffs & mountains span all 4 quadrants of the continent');
     for(const rType of ['wood','gold','stone','food']){
-      assert.ok(arena.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x-tc.x,e.z-tc.z)<25),`Bastion protects inner ${rType} inside the valley perimeter`);
+      assert.ok(arena.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x-tc.x,e.z-tc.z)<36),`Bastion protects inner ${rType} inside the valley perimeter`);
     }
     // New Timbervale Glades map (AoE4 lush forest-glade style): huge sunlit meadow clearing + dense forests + mossy bluffs!
     assert.ok(MAPS.timbervale,'Timbervale Glades registered in MAPS');

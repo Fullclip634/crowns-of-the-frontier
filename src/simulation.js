@@ -78,7 +78,8 @@ export class Simulation {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
-    const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||WORLD);
+    const defaultMapSize=['timbervale','bastion','ironpass','blackwood'].includes(this.options.map)?240:WORLD;
+    const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||defaultMapSize);
     this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
     this.rng=seededRandom(this.options.seed);this.entities=[];this.barriers=[];this.nextId=1;this.time=0;this.revision=0;
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
