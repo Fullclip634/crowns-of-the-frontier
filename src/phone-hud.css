@@ -29,10 +29,13 @@
   #hud .map-heading,#hud .map-footer{display:none}
   #hud #minimap{display:block;width:100%;height:auto;aspect-ratio:1}
   #hud .map-panel.map-expanded{position:fixed;left:8px;bottom:calc(8px + var(--safe));width:min(220px,48vw);z-index:30;padding:5px}
-  #hud .map-expanded .map-heading{display:flex;align-items:center;gap:4px;height:44px;margin:0 0 4px}
-  #hud .map-expanded .map-heading>span{display:block;flex:1;font-size:8px}
-  #hud .map-expanded .map-heading button{position:static;width:44px;height:44px;min-width:44px;min-height:44px;padding:0}
-  #hud .map-expanded .map-size-toggle{display:block;font-size:22px}
+  #hud .map-expanded .map-heading{display:flex;align-items:center;gap:4px;height:auto;min-height:44px;flex-wrap:wrap;margin:0 0 4px}
+  #hud .map-expanded .map-heading>span{display:none}
+  #hud .map-expanded .map-tools{width:100%;justify-content:space-between;gap:4px}
+  #hud .map-expanded .map-filters{flex:1}
+  #hud .map-expanded .map-filter-btn{flex:1;min-height:38px;font-size:10px}
+  #hud .map-expanded .map-heading button:not(.map-filter-btn){position:static;width:44px;height:44px;min-width:44px;min-height:44px;padding:0}
+  #hud .map-expanded .map-size-toggle{display:grid;place-items:center;font-size:22px}
 
   #hud .command-panel{width:192px;min-width:192px;padding:4px;flex-shrink:0}
   #hud .command-heading,#hud .control-hint{display:none}

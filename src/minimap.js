@@ -1,8 +1,9 @@
 import {WORLD} from './data.js';
-import {MAP_HALF,cameraMapBox} from './map-geometry.js';
+import {MAP_HALF,cameraMapBox,cameraMapFootprint} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
 import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
 import {terrainBiome,isSnowBiome,treePalette} from './terrain-biomes.js';
+import {minimapFilterStyle} from './tactical-ux.js';
 
 const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
 function parseHex(hex){
@@ -96,8 +97,17 @@ export function renderReliefBase(bctx,size,sim,view){
   return false;
 }
 
-export function drawMinimap(canvas,sim,view,settings){
+function drawDiamond(ctx,x,z,r,fill,stroke=null){
+  ctx.beginPath();
+  ctx.moveTo(x,z-r);ctx.lineTo(x+r,z);ctx.lineTo(x,z+r);ctx.lineTo(x-r,z);
+  ctx.closePath();
+  ctx.fillStyle=fill;ctx.fill();
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
+}
+
+export function drawMinimap(canvas,sim,view,settings,options={}){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
+  const filter=options.filter||view?.minimapFilter||'all';
   const map=sim.options.map,land=view?.landscape,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}`;
   let base=canvas.cachedBaseKey===baseKey&&canvas.cachedLandscape===land?canvas.cachedBase:null;
   if(!base&&typeof document!=='undefined'){
@@ -115,41 +125,62 @@ export function drawMinimap(canvas,sim,view,settings){
   const resourceColors={wood:woodColor,gold:'#ecc55e',stone:'#c4cac0',food:'#b57960'};
   const playerColors=sim.players?sim.players.map((player,i)=>'#'+(player?.color??(i===0?0xb5e7dc:0xed8b7b)).toString(16).padStart(6,'0')):[];
   const canCacheResources=typeof HTMLCanvasElement!=='undefined'&&base instanceof HTMLCanvasElement&&typeof sim.candidatesFor==='function'&&view?.exploredRevision!==undefined;
+  const drawEntityMarker=(e,fill,styleMode)=>{
+    const ex=coord(e.x),ez=coord(e.z);
+    if(styleMode==='hidden')return;
+    const prevAlpha=ctx.globalAlpha;
+    if(styleMode==='muted')ctx.globalAlpha=.34;
+    if(e.kind==='shrine'){
+      drawDiamond(ctx,ex,ez,3.4,fill,'#f6de7e');
+    }else if(e.kind==='building'&&e.type==='towncenter'){
+      const r=Math.max(3.2,e.r*scale);
+      ctx.fillStyle=fill;ctx.fillRect(ex-r,ez-r,r*2,r*2);
+      ctx.strokeStyle='#f5dd95';ctx.lineWidth=1;ctx.strokeRect(ex-r+.5,ez-r+.5,Math.max(1,r*2-1),Math.max(1,r*2-1));
+    }else if(e.kind==='building'&&(e.type==='keep'||e.type==='wonder')){
+      drawDiamond(ctx,ex,ez,Math.max(3.5,e.r*scale*1.05),fill,'#f5dd95');
+    }else{
+      const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?(styleMode==='highlight'?2.15:1.7):1.5;
+      ctx.fillStyle=fill;ctx.fillRect(ex-r,ez-r,r*2,r*2);
+    }
+    if(styleMode==='muted')ctx.globalAlpha=prevAlpha;
+  };
   if(canCacheResources){
-    const resKey=`${baseKey}:${sim.entities.length}:${sim.resourceRevision||0}:${sim.resourceMemory?.size||0}:${view.exploredRevision}:${!!sim.options?.spectator}`;
-    let resCanvas=canvas.cachedResources;
-    if(!resCanvas||resCanvas.width!==size||resCanvas.height!==size){
-      resCanvas=canvas.cachedResources=document.createElement('canvas');
-      resCanvas.width=size;resCanvas.height=size;canvas.cachedResourceKey='';
-    }
-    if(canvas.cachedResourceKey!==resKey||canvas.cachedResourceLandscape!==land||canvas.cachedResourceSim!==sim||canvas.cachedResourceEntities!==sim.entities){
-      const rctx=resCanvas.getContext('2d');
-      if(rctx){
-        rctx.clearRect(0,0,size,size);
-        rctx.drawImage(base,0,0);
-        let lastFill='';
-        for(const entity of sim.entities){
-          if(entity.kind!=='resource')continue;
-          const e=sim.resourceMemory?.get(entity.id)??entity;
-          if(e.hp<=0||e.embarked||!(sim.isVisible(e.x,e.z)||sim.isExplored(e.x,e.z)))continue;
-          const fill=e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type];
-          if(fill!==lastFill){rctx.fillStyle=fill;lastFill=fill;}
-          const ex=coord(e.x),ez=coord(e.z);
-          rctx.fillRect(ex-1.5,ez-1.5,3,3);
-        }
-        canvas.cachedResourceKey=resKey;canvas.cachedResourceLandscape=land;canvas.cachedResourceSim=sim;canvas.cachedResourceEntities=sim.entities;
+    if(filter==='combat'){
+      ctx.drawImage(base,0,0);
+    }else{
+      const resKey=`${baseKey}:${filter}:${sim.entities.length}:${sim.resourceRevision||0}:${sim.resourceMemory?.size||0}:${view.exploredRevision}:${!!sim.options?.spectator}`;
+      let resCanvas=canvas.cachedResources;
+      if(!resCanvas||resCanvas.width!==size||resCanvas.height!==size){
+        resCanvas=canvas.cachedResources=document.createElement('canvas');
+        resCanvas.width=size;resCanvas.height=size;canvas.cachedResourceKey='';
       }
+      if(canvas.cachedResourceKey!==resKey||canvas.cachedResourceLandscape!==land||canvas.cachedResourceSim!==sim||canvas.cachedResourceEntities!==sim.entities){
+        const rctx=resCanvas.getContext('2d');
+        if(rctx){
+          rctx.clearRect(0,0,size,size);
+          rctx.drawImage(base,0,0);
+          let lastFill='';
+          const dotSize=filter==='economy'?3.8:3;
+          const halfDot=dotSize/2;
+          for(const entity of sim.entities){
+            if(entity.kind!=='resource')continue;
+            const e=sim.resourceMemory?.get(entity.id)??entity;
+            if(e.hp<=0||e.embarked||!(sim.isVisible(e.x,e.z)||sim.isExplored(e.x,e.z)))continue;
+            const fill=e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type];
+            if(fill!==lastFill){rctx.fillStyle=fill;lastFill=fill;}
+            const ex=coord(e.x),ez=coord(e.z);
+            rctx.fillRect(ex-halfDot,ez-halfDot,dotSize,dotSize);
+          }
+          canvas.cachedResourceKey=resKey;canvas.cachedResourceLandscape=land;canvas.cachedResourceSim=sim;canvas.cachedResourceEntities=sim.entities;
+        }
+      }
+      ctx.drawImage(resCanvas,0,0);
     }
-    ctx.drawImage(resCanvas,0,0);
-    let lastFill='';
     const drawDynamic=list=>{
       for(const e of list){
         if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)))continue;
         const fill=e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?(playerColors[e.owner]||'#e3d3a2'):'#e3d3a2';
-        if(fill!==lastFill){ctx.fillStyle=fill;lastFill=fill;}
-        const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
-        const ex=coord(e.x),ez=coord(e.z);
-        ctx.fillRect(ex-r,ez-r,r*2,r*2);
+        drawEntityMarker(e,fill,minimapFilterStyle(filter,e));
       }
     };
     drawDynamic(sim.candidatesFor('shrine'));
@@ -158,29 +189,55 @@ export function drawMinimap(canvas,sim,view,settings){
   }else{
     if(base)ctx.drawImage(base,0,0);
     else renderReliefBase(ctx,size,sim,view);
-    let lastFill='';
     for(const entity of sim.entities){
       const e=sim.resourceMemory?.get(entity.id)??entity;
       if(e.hp<=0||e.embarked||!(e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||e.kind==='resource'&&sim.isExplored(e.x,e.z)))continue;
       const fill=e.kind==='resource'?(e.type==='food'&&e.water?'#c5dee2':resourceColors[e.type]):e.kind==='shrine'?(e.owner===0?'#91dbc9':e.owner===1?'#df8582':'#e8d69c'):e.owner>=0?(playerColors[e.owner]||'#e3d3a2'):'#e3d3a2';
-      if(fill!==lastFill){ctx.fillStyle=fill;lastFill=fill;}
-      const r=e.kind==='building'?Math.max(2.2,e.r*scale):e.kind==='unit'?1.7:1.5;
-      const ex=coord(e.x),ez=coord(e.z);
-      ctx.fillRect(ex-r,ez-r,r*2,r*2);
+      drawEntityMarker(e,fill,minimapFilterStyle(filter,e));
     }
   }
   if(settings.fog)ctx.drawImage(view.fogCanvas,0,0,size,size);
-  const goal=campaignObjective(sim)?.marker;if(goal){const x=coord(goal.x),z=coord(goal.z);ctx.beginPath();ctx.moveTo(x,z-5);ctx.lineTo(x+5,z);ctx.lineTo(x,z+5);ctx.lineTo(x-5,z);ctx.closePath();ctx.fillStyle='#f2ce77';ctx.fill();ctx.strokeStyle='#8f7440';ctx.lineWidth=1.2;ctx.stroke();}
-  const box=cameraMapBox(view.camera,view.groundHeight(view.target.x,view.target.z),worldSize);
-  if(box){
+  const goal=campaignObjective(sim)?.marker;if(goal){const x=coord(goal.x),z=coord(goal.z);drawDiamond(ctx,x,z,5,'#f2ce77','#8f7440');}
+
+  // Pulsing combat alert & tactical flare ripples on minimap
+  const ripples=options.ripples??view?.tacticalAlerts?.activeRipples?.()??[];
+  if(ripples.length){
+    const nowMs=options.now??performance.now();
+    const reduced=!!settings?.reducedMotion;
+    for(const r of ripples){
+      const age=Math.max(0,Math.min(1,(nowMs-r.startedAt)/Math.max(1,r.duration)));
+      const rx=coord(r.x),rz=coord(r.z);
+      const isFlare=r.kind==='flare';
+      const baseColor=isFlare?'255,224,102':'255,82,74';
+      const wave=reduced?.45:((age*3)%1);
+      const radius=4+wave*14;
+      const alpha=Math.max(0,(1-age*.65)*(1-wave*.72));
+      ctx.beginPath();ctx.arc(rx,rz,radius,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(${baseColor},${alpha.toFixed(2)})`;ctx.lineWidth=isFlare?2:2.2;ctx.stroke();
+      ctx.beginPath();ctx.arc(rx,rz,2.4,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${baseColor},${Math.min(1,alpha+.3).toFixed(2)})`;ctx.fill();
+    }
+  }
+
+  // True perspective camera frustum trapezoid (shows exact camera angle), with box kept for QA diagnostics
+  const groundY=view.groundHeight(view.target.x,view.target.z);
+  const box=cameraMapBox(view.camera,groundY,worldSize);
+  const poly=cameraMapFootprint(view.camera,groundY,worldSize);
+  if(poly&&poly.length>=3){
+    ctx.beginPath();
+    for(let i=0;i<poly.length;i++){
+      const px=coord(poly[i].x),pz=coord(poly[i].z);
+      if(i===0)ctx.moveTo(px,pz);else ctx.lineTo(px,pz);
+    }
+    ctx.closePath();
+    ctx.fillStyle='#f5e8bd16';ctx.fill();
+    ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.stroke();
+  }else if(box){
     const x=coord(box.minX),z=coord(box.minZ),width=(box.maxX-box.minX)*scale,height=(box.maxZ-box.minZ)*scale;
     ctx.fillStyle='#f5e8bd14';ctx.fillRect(x,z,width,height);ctx.strokeStyle='#f5e5b3';ctx.lineWidth=1.5;ctx.strokeRect(x,z,width,height);
   }
-  // Keep the current rectangle available for input diagnostics and browser QA.
   view.minimapCameraBox=box;
-  // A center marker stays readable even when an overview covers almost the whole map.
   ctx.beginPath();ctx.arc(coord(view.target.x),coord(view.target.z),2.2,0,Math.PI*2);ctx.fillStyle='#f5e8bd';ctx.fill();
-  // Subtle cardinal compass ticks without a dark outline frame.
   ctx.strokeStyle='#d9bc7a';ctx.lineWidth=1;ctx.beginPath();
   const mid=size/2;
   ctx.moveTo(mid,1);ctx.lineTo(mid,5);ctx.moveTo(mid,size-1);ctx.lineTo(mid,size-5);

@@ -4,7 +4,7 @@ export const CONTROL_ACTIONS = [
   ['tech-tree','Technology tree','t'],
   ['inspect','Inspect model','i'],['camera-view','Camera angle','v'],['home','Center town','h'],['army','Select army','m'],
   ['build','Construction','b'],['attackmove','Attack move','f'],['patrol','Patrol','r'],['guard','Guard an ally','g'],
-  ['stop','Stop / hold','x'],['idle','Idle villagers','.'],['focus','Focus selection','space'],['help','Help','?'],
+  ['stop','Stop / hold','x'],['idle','Idle villagers','.'],['last-alert','Jump to alert','backspace'],['focus','Focus selection','space'],['help','Help','?'],
 ].map(([id,label,key])=>({id,label,key}));
 export const DEFAULT_BINDINGS=Object.fromEntries(CONTROL_ACTIONS.map(a=>[a.id,a.key]));
 const RESERVED=new Set(['escape','tab','shift','control','alt','meta','capslock','unidentified','dead']);

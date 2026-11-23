@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {BUILDINGS,UNITS} from './data.js';
 import {renderPosition} from './motion-smoothing.js';
 import {markInstancePrefix} from './render-batches.js';
+import {DECAL_COLORS} from './tactical-ux.js';
 
 const UP=new THREE.Vector3(0,1,0);
 const MAX_RINGS=256;
@@ -136,6 +137,7 @@ export class SelectionOverlays {
     this.treeCoords=null;
     this.treeForestRef=null;
     this.rangeKey='';
+    this.decals=[];
 
     this.ringTex=createSelectionRingTexture(128);
     this.dotTex=createDotTexture(32);
@@ -235,6 +237,19 @@ export class SelectionOverlays {
       }
     }
     return this.treeCoords?.get(e.id)||null;
+  }
+
+  addCommandDecal(x,z,kind='move',water=false){
+    if(!Number.isFinite(x)||!Number.isFinite(z))return;
+    const now=this.view?.clock||0;
+    this.decals.push({
+      x,z,kind,
+      color:DECAL_COLORS[kind]??DECAL_COLORS.move,
+      water:!!water,
+      startedAt:now,
+      duration:kind==='flare'?2.8:kind==='attack'?.95:.82,
+    });
+    if(this.decals.length>10)this.decals.shift();
   }
 
   placeRing(slot,x,z,radius,colorHex,water=false,pulse=1,explicitY=null){
@@ -421,6 +436,84 @@ export class SelectionOverlays {
       }
     }
 
+    // Shift-queued waypoints & connecting dotted path for selected friendly units (0 extra draw calls!)
+    let waypointCount=0;
+    if(v.selection?.size){
+      let tracedUnits=0;
+      for(const id of v.selection){
+        if(tracedUnits>=4||waypointCount>=12)break;
+        const u=sim.get(id);
+        if(!u||u.hp<=0||u.owner!==0||u.kind!=='unit'||!u.orders?.length)continue;
+        tracedUnits++;
+        const startPos=renderPosition(v,u);
+        let prevX=startPos.x,prevZ=startPos.z;
+        const chain=[];
+        if(u.order)chain.push(u.order);
+        for(const queued of u.orders)chain.push(queued);
+        for(const ord of chain){
+          if(waypointCount>=12)break;
+          const tEnt=ord.target?(sim.resourceMemory?.get(ord.target)??sim.get(ord.target)):null;
+          const wx=tEnt?tEnt.x:ord.x,wz=tEnt?tEnt.z:ord.z;
+          if(!Number.isFinite(wx)||!Number.isFinite(wz))continue;
+          const wColor=ord.type==='attack'||ord.type==='attackmove'?DECAL_COLORS.attack:ord.type==='gather'?DECAL_COLORS.gather:ord.type==='patrol'?DECAL_COLORS.patrol:DECAL_COLORS.move;
+          const wWater=!!(tEnt?.water||sim.isWater?.(wx,wz));
+          ringCount=this.placeRing(ringCount,wx,wz,.68,wColor,wWater,1);
+          waypointCount++;
+          const dx=wx-prevX,dz=wz-prevZ,dist=Math.hypot(dx,dz);
+          if(dist>2.2){
+            const steps=Math.min(10,Math.max(2,Math.floor(dist/2.6)));
+            for(let s=1;s<steps&&dotCount<MAX_PATH_DOTS;s++){
+              const t=s/steps;
+              const px=prevX+dx*t,pz=prevZ+dz*t;
+              const dw=!!sim.isWater?.(px,pz);
+              const py=this.sampleGround(px,pz,dw)+(dw?.06:.14);
+              this.dummy.position.set(px,py,pz);
+              this.dummy.rotation.set(0,0,0);
+              this.dummy.scale.set(.34,1,.34);
+              this.dummy.updateMatrix();
+              this.rallyDots.setMatrixAt(dotCount,this.dummy.matrix);
+              this.rallyDots.setColorAt(dotCount,this.color.setHex(wColor));
+              dotCount++;
+            }
+          }
+          prevX=wx;prevZ=wz;
+        }
+      }
+    }
+
+    // Animated color-coded command confirmation decals (Move / Attack / Gather / Patrol / Flare)
+    let activeDecals=0;
+    if(this.decals.length){
+      let write=0;
+      for(let i=0;i<this.decals.length;i++){
+        const d=this.decals[i],age=clock-d.startedAt;
+        if(age<0||age>=d.duration)continue;
+        this.decals[write++]=d;
+        activeDecals++;
+        const t=age/d.duration;
+        const r=d.kind==='attack'?(1.85-t*1.05):d.kind==='flare'?(1.1+t*3.2):(.65+t*1.55);
+        ringCount=this.placeRing(ringCount,d.x,d.z,r,d.color,d.water,1);
+        if((d.kind==='attack'||d.kind==='flare')&&t<.72){
+          ringCount=this.placeRing(ringCount,d.x,d.z,Math.max(.45,r*.55),d.color,d.water,1);
+        }
+      }
+      this.decals.length=write;
+    }
+
+    // Active 3D tactical flare beacons from TacticalAlerts (reuses the same ring batch!)
+    const ripples=v.tacticalAlerts?.activeRipples?.();
+    if(ripples?.length){
+      const nowMs=performance.now();
+      for(const r of ripples){
+        if(r.kind!=='flare')continue;
+        const t=Math.max(0,Math.min(1,(nowMs-r.startedAt)/r.duration));
+        const wave=(t*3)%1;
+        const rw=!!sim.isWater?.(r.x,r.z);
+        ringCount=this.placeRing(ringCount,r.x,r.z,.9+wave*2.6,DECAL_COLORS.flare,rw,1);
+        ringCount=this.placeRing(ringCount,r.x,r.z,.55,DECAL_COLORS.flare,rw,1);
+      }
+    }
+
     this.rings.count=ringCount;
     this.rings.visible=ringCount>0;
     if(ringCount>0){
@@ -464,7 +557,7 @@ export class SelectionOverlays {
       this.rangeMesh.visible=false;
     }
 
-    v.selectionOverlayDiagnostics={rings:ringCount,rallyFlags:flagCount,rallyDots:dotCount,rangeVisible:this.rangeMesh.visible};
+    v.selectionOverlayDiagnostics={rings:ringCount,rallyFlags:flagCount,rallyDots:dotCount,rangeVisible:this.rangeMesh.visible,decals:activeDecals,waypoints:waypointCount};
   }
 
   dispose(){
