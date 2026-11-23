@@ -242,7 +242,7 @@ export function buildLandscape(view){
   view.groundCover=new GroundCover(view);
   shadeBattlefieldFog(view.groundCover.mesh.material,view);
   view.terrainDetails=new TerrainDetails(view);
-  shadeBattlefieldFog(view.terrainDetails.mesh.material,view);
+  for(const mat of view.terrainDetails.fogMaterials||[view.terrainDetails.mesh.material])shadeBattlefieldFog(mat,view);
 }
 
 export function animateWater(view){

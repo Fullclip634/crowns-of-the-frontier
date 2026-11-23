@@ -25,11 +25,11 @@ function paintBarriers(ctx,sim,coord,scale){
   const barriers=sim?.barriers;
   if(!barriers?.length)return;
   for(const b of barriers){
-    const x=coord(b.x),y=coord(b.z),r=Math.max(2,b.r*scale);
-    ctx.fillStyle='#4a4b46';
+    const x=coord(b.x),y=coord(b.z),r=Math.max(2.1,b.r*scale*(b.kind==='mountain'?1.18:1.0));
+    ctx.fillStyle=b.kind==='mountain'?'#3b3d39':'#4d4f49';
     ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#787970';
-    ctx.beginPath();ctx.arc(x-r*.22,y-r*.22,r*.58,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=b.kind==='mountain'?'#90938a':'#787a71';
+    ctx.beginPath();ctx.arc(x-r*.22,y-r*.22,r*.56,0,Math.PI*2);ctx.fill();
   }
 }
 

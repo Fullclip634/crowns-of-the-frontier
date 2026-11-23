@@ -96,7 +96,7 @@ test('all declared buildings and troops instantiate in sandbox',()=>{
   const s=new Simulation({mode:'sandbox'});for(const type of Object.keys(BUILDINGS)){const e=s.addBuilding(type,0,0,0,true);assert.ok(e.hp>0&&e.maxHp>0);}for(const type of Object.keys(UNITS)){const e=s.addUnit(type,0,0,0);assert.ok(e.hp>0);}assert.ok(TECHS.seamanship);
 });
 test('every game mode and campaign initializes and runs without errors',()=>{
-  for(const mode of [...MODES,...MISSIONS]){const s=new Simulation({mode:mode.id});advance(s,8);assert.ok(s.time>0);assert.ok(s.owned(0,'building','towncenter').length);}
+  for(const mode of [...MODES,...MISSIONS]){const s=new Simulation({mode:mode.id});advance(s,8);assert.ok(s.time>0);assert.ok(mode.id==='campaign13'?s.owned(0,'unit','king').length:s.owned(0,'building','towncenter').length);}
 });
 test('all six maps run and twin rivers require both bridges',()=>{
   for(const map of Object.keys(MAPS)){const s=new Simulation({map,mode:'sandbox'});advance(s,5);assert.ok(s.stats.gathered>=0);}

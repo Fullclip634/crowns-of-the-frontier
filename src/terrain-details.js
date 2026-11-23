@@ -6,7 +6,7 @@ import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
-import {biomeCliffGeometry} from './biome-art.js';
+import {biomeCliffGeometry,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from './biome-art.js';
 
 export function pebbleGeometry(detail=1){
   const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
@@ -18,7 +18,6 @@ export function pebbleGeometry(detail=1){
     let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
     const n1=Math.sin(x*127.1+y*74.7+z*311.7)*43758.5453,f1=n1-Math.floor(n1);
     const n2=Math.sin(x*269.5-y*183.3+z*113.5)*31415.9265,f2=n2-Math.floor(n2);
-    // Five asymmetric geological cleavage planes sculpt sharp stratified crags.
     [x,y,z]=slice(x,y,z,.74,.42,-.52,.26,.92);
     [x,y,z]=slice(x,y,z,-.68,.52,.51,.28,.90);
     [x,y,z]=slice(x,y,z,.24,.48,.84,.30,.88);
@@ -33,20 +32,25 @@ export function pebbleGeometry(detail=1){
   geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
 }
 
-// Non-resource 3D cliff rock outcrops, stepped hillside ledges, and weathered
-// field boulders share one instanced draw call. Exploration and live building
-// foundations control visibility.
+/**
+ * Renders ambient pebbles/outcrops PLUS Blender 4.5 LTS sheer stepped cliff walls,
+ * towering alpine mountain peaks, and sculpted medieval woodland bushes — each
+ * batched into a single GPU InstancedMesh draw call and smoothly fog-shaded.
+ */
 export class TerrainDetails{
   constructor(view){
-    this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
-    const barriers=view.sim?.barriers||[];
-    const barrierSlots=barriers.length*3;
+    this.view=view;
+    const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
     const baseCapacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
-    const capacity=baseCapacity+barrierSlots;
     const cliffGeo=low?null:biomeCliffGeometry(land.map);
-    const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=Boolean(cliffGeo?.attributes?.color);
-    this.mesh=new THREE.InstancedMesh(cliffGeo||pebbleGeometry(high?2:1),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
-    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
+    const material=view.materials?.rock?.clone()||standardMaterial();
+    material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=Boolean(cliffGeo?.attributes?.color);
+    this.mesh=new THREE.InstancedMesh(cliffGeo||pebbleGeometry(high?2:1),material,baseCapacity);
+    this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);view.terrain.add(this.mesh);
+    this.entries=[];this.dummy=new THREE.Object3D();this.color=new THREE.Color();
+    this.fogMaterials=[material];
+
     const coastal=land.map==='coast'||land.map==='archipelago';
     const rocky=isRockyBiome(land.map);
     const palette=land.map==='volcanic'?[0x655d59,0x79716d,0x514e47]:isSnowBiome(land.map)?[0x929da7,0xbac4c6,0x747d87]:coastal?[0x9d9b88,0xb5af98,0x797b72]:isAridBiome(land.map)||['desert','canyon'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:rocky?[0x9ca097,0xb3b7ad,0x7d8178]:[0xa7a99b,0xb9b9a7,0x808778];
@@ -59,9 +63,8 @@ export class TerrainDetails{
       this.entries.push({type,x,y,z,angle,scale,color,stretch,heightScale,shade,sink});
     };
 
-    // Small pockets of mixed gravel follow the exposed bank between crossings.
     if(coastal){
-      const limit=Math.floor(capacity*.32),channels=land.channels();
+      const limit=Math.floor(baseCapacity*.32),channels=land.channels();
       const pockets=Math.ceil(limit/(channels.length*2*6));
       for(const channel of channels)for(const side of [-1,1])for(let i=0;i<pockets&&this.entries.length<limit;i++){
         const centerZ=((i+.15+rng()*.7)/pockets-.5)*(land.worldSize-16);
@@ -78,10 +81,9 @@ export class TerrainDetails{
     }
 
     if(!low){
-      const chains=Math.min(rocky?30:22,Math.max(8,Math.floor(capacity/(rocky?28:38))));
-      const limit=Math.min(capacity*(rocky?.64:.54),this.entries.length+chains*11);
+      const chains=Math.min(rocky?30:22,Math.max(8,Math.floor(baseCapacity/(rocky?28:38))));
+      const limit=Math.min(baseCapacity*(rocky?.64:.54),this.entries.length+chains*11);
       let placed=0;
-      // Ledges follow the uphill contours, and loose fragments collect lower down.
       for(let i=0;i<chains*14&&placed<chains&&this.entries.length<limit;i++){
         const x=(rng()-.5)*(land.worldSize-14),z=(rng()-.5)*(land.worldSize-14);
         if(!validSite(x,z,3.2)||townDistance(x,z)<campRadius*1.22||land.surfaceHeightAt(x,z)<.45)continue;
@@ -117,24 +119,130 @@ export class TerrainDetails{
       const scale=.33+rng()*.65;
       add('field',x,y,z,rng()*Math.PI*2,scale,.84+rng()*.53,.65+rng()*.38,-scale*.07);
     }
-    // Impassable natural stone cliff crags & granite chokepoint boulders share this single instanced draw call.
+
+    // Separate Blender 4.5 LTS Sheer Stepped Cliff Walls & Towering Alpine Mountains
+    const barriers=view.sim?.barriers||[];
+    this.cliffEntries=[];
+    this.mountainEntries=[];
     for(const b of barriers){
       const brng=seededRandom((b.seed||1)*7919+land.seed);
-      const by=land.surfaceHeightAt(b.x,b.z);
-      const baseScale=Math.max(1.8,(b.r||2.8)*1.12);
-      const hScale=Math.max(1.35,(b.height||3.8)/Math.max(1.2,baseScale)*1.45);
-      add('barrier',b.x,by,b.z,brng()*Math.PI*2,baseScale,1.1+brng()*.32,hScale,-baseScale*.18);
-      for(let k=0;k<2;k++){
-        const a=brng()*Math.PI*2,dist=(b.r||2.8)*(.48+brng()*.36);
-        const sx=b.x+Math.cos(a)*dist,sz=b.z+Math.sin(a)*dist,sy=land.surfaceHeightAt(sx,sz);
-        const sScale=baseScale*(.55+brng()*.28);
-        add('barrier',sx,sy,sz,brng()*Math.PI*2,sScale,1.18+brng()*.35,hScale*(.58+brng()*.24),-sScale*.15);
+      const y=land.surfaceHeightAt(b.x,b.z);
+      if(b.kind==='mountain'){
+        const sx=Math.max(1.1,(b.r||4.0)/1.75);
+        const sy=Math.max(1.0,(b.height||6.4)/5.2);
+        this.mountainEntries.push({x:b.x,y,z:b.z,angle:Number.isFinite(b.angle)?b.angle:brng()*Math.PI*2,sx,sy,sz:sx*(.92+brng()*.18),shade:.92+brng()*.14});
+      }else{
+        const sx=Math.max(.95,(b.r||3.1)/1.45);
+        const sy=Math.max(.95,(b.height||4.2)/3.15);
+        const sz=Math.max(.95,(b.r||3.1)/1.12);
+        this.cliffEntries.push({x:b.x,y,z:b.z,angle:Number.isFinite(b.angle)?b.angle:brng()*Math.PI*2,sx,sy,sz,shade:.90+brng()*.16});
       }
     }
+
+    if(this.cliffEntries.length){
+      const geo=biomeCliffWallGeometry(land.map)||pebbleGeometry(1);
+      const mat=view.materials?.rock?.clone()||standardMaterial({roughness:.9});
+      mat.color.setHex(0xffffff);mat.roughness=.9;mat.vertexColors=Boolean(geo.attributes?.color);
+      this.cliffWallMesh=new THREE.InstancedMesh(geo,mat,this.cliffEntries.length);
+      this.cliffWallMesh.name='Blender sheer cliff walls';this.cliffWallMesh.count=0;this.cliffWallMesh.frustumCulled=false;
+      this.cliffWallMesh.castShadow=!low;this.cliffWallMesh.receiveShadow=true;
+      this.cliffWallMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      view.terrain.add(this.cliffWallMesh);
+      this.fogMaterials.push(mat);
+    }else this.cliffWallMesh=null;
+
+    if(this.mountainEntries.length){
+      const geo=biomeMountainGeometry(land.map)||biomeCliffWallGeometry(land.map)||pebbleGeometry(1);
+      const mat=view.materials?.rock?.clone()||standardMaterial({roughness:.91});
+      mat.color.setHex(0xffffff);mat.roughness=.91;mat.vertexColors=Boolean(geo.attributes?.color);
+      this.mountainMesh=new THREE.InstancedMesh(geo,mat,this.mountainEntries.length);
+      this.mountainMesh.name='Blender mountain crags';this.mountainMesh.count=0;this.mountainMesh.frustumCulled=false;
+      this.mountainMesh.castShadow=!low;this.mountainMesh.receiveShadow=true;
+      this.mountainMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      view.terrain.add(this.mountainMesh);
+      this.fogMaterials.push(mat);
+    }else this.mountainMesh=null;
+
+    // Blender 4.5 LTS Sculpted Medieval Woodland Bushes (around cliff feet, forest edges & hills)
+    const bushGeo=biomeBushGeometry(land.map);
+    this.bushEntries=[];
+    if(bushGeo&&!view.settings.reduceFoliage){
+      const bushCap=low?70:high?420:220;
+      const brng=seededRandom(land.seed+6781);
+      const plantBush=(x,z,scale=1)=>{
+        if(this.bushEntries.length>=bushCap)return;
+        if(Math.abs(x)>mapEdge||Math.abs(z)>mapEdge||roadDistance(x,z,land,2.2)<2.2||bridgeFootprint(land.map,x,z,3))return;
+        if(view.sim?.isWater?.(x,z))return;
+        const y=land.surfaceHeightAt(x,z);
+        if(y<.24)return;
+        this.bushEntries.push({x,y,z,angle:brng()*Math.PI*2,sx:scale*(.85+brng()*.45),sy:scale*(.75+brng()*.42),sz:scale*(.85+brng()*.45),shade:.86+brng()*.24});
+      };
+      // 1. Natural undergrowth hugging cliff bases & mountain feet (hiding rock seams like AoE4!)
+      for(const b of barriers){
+        const count=b.kind==='mountain'?3:2;
+        for(let k=0;k<count&&this.bushEntries.length<bushCap*.55;k++){
+          const a=brng()*Math.PI*2,d=(b.r||3.0)+.65+brng()*1.4;
+          plantBush(b.x+Math.cos(a)*d,b.z+Math.sin(a)*d,.85+brng()*.55);
+        }
+      }
+      // 2. Woodland bushes tucked along natural timber lines
+      const trees=(view.sim?.entities||[]).filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='wood');
+      const stride=Math.max(1,Math.floor(trees.length/Math.max(1,Math.floor(bushCap*.35))));
+      for(let i=0;i<trees.length&&this.bushEntries.length<bushCap*.88;i+=stride){
+        const tr=trees[i],a=brng()*Math.PI*2,d=1.35+brng()*1.6;
+        plantBush(tr.x+Math.cos(a)*d,tr.z+Math.sin(a)*d,.75+brng()*.45);
+      }
+      // 3. Organic hedgerow clusters across meadows & hillsides
+      for(let i=0;i<bushCap*2&&this.bushEntries.length<bushCap;i++){
+        const x=(brng()-.5)*(land.worldSize-12),z=(brng()-.5)*(land.worldSize-12);
+        if(townDistance(x,z)<14)continue;
+        plantBush(x,z,.7+brng()*.5);
+      }
+      if(this.bushEntries.length){
+        const bmat=standardMaterial({color:0xffffff,roughness:.92,vertexColors:Boolean(bushGeo.attributes?.color)});
+        this.bushMesh=new THREE.InstancedMesh(bushGeo,bmat,this.bushEntries.length);
+        this.bushMesh.name='Blender woodland bushes';this.bushMesh.count=0;this.bushMesh.frustumCulled=false;
+        this.bushMesh.castShadow=false;this.bushMesh.receiveShadow=true;
+        this.bushMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        view.terrain.add(this.bushMesh);
+        this.fogMaterials.push(bmat);
+      }else{bushGeo.dispose();this.bushMesh=null;}
+    }else{if(bushGeo)bushGeo.dispose();this.bushMesh=null;}
+
     this.visibleEntries=[];
     this.nextEntries=[];
+    this.visibleCliffs=[];
+    this.visibleMountains=[];
+    this.visibleBushes=[];
     this.update(true,true);
   }
+
+  _updateBarrierMesh(mesh,entries,prevVisible,menu,pad){
+    if(!mesh)return 0;
+    const v=this.view;
+    let count=0,changed=false;
+    for(const e of entries){
+      if(!nearViewport(v,e.x,e.y,e.z,pad)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
+      if(prevVisible[count]!==e){
+        this.dummy.position.set(e.x,e.y-.2,e.z);
+        this.dummy.rotation.set(0,e.angle,0);
+        this.dummy.scale.set(e.sx,e.sy,e.sz);
+        this.dummy.updateMatrix();
+        mesh.setMatrixAt(count,this.dummy.matrix);
+        mesh.setColorAt(count,this.color.setHex(0xffffff).multiplyScalar(e.shade));
+        changed=true;
+      }
+      prevVisible[count++]=e;
+    }
+    if(count!==prevVisible.length){prevVisible.length=count;changed=true;}
+    mesh.count=count;
+    if(changed){
+      markInstancePrefix(mesh);
+      if(mesh.instanceColor&&count){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,count*3);mesh.instanceColor.needsUpdate=true;}
+    }
+    return count;
+  }
+
   update(menu=false,force=false){
     const v=this.view,aspect=v.camera?.aspect,fog=v.settings.fog;
     const stationary=this.lastX===v.target.x&&this.lastZ===v.target.z&&this.lastZoom===v.zoom;
@@ -147,26 +255,65 @@ export class TerrainDetails{
     visible.length=0;
     let changed=force;
     for(const e of this.entries){
-      if(!nearViewport(v,e.x,e.y,e.z,e.type==='barrier'?12:6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
-      if(e.type!=='barrier'&&sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+      if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
+      if(sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
       if(e!==this.visibleEntries[visible.length])changed=true;
       visible.push(e);
     }
-    if(!changed&&visible.length===this.visibleEntries.length)return;
-    this.nextEntries=this.visibleEntries;
-    this.visibleEntries=visible;
-    for(let i=0;i<visible.length;i++){
-      const e=visible[i];
-      this.dummy.position.set(e.x,e.y+e.sink,e.z);
-      this.dummy.rotation.set(.09*Math.sin(e.angle),e.angle,.07*Math.cos(e.angle));
-      this.dummy.scale.set(e.scale*e.stretch,e.scale*e.heightScale,e.scale);
-      this.dummy.updateMatrix();
-      this.mesh.setMatrixAt(i,this.dummy.matrix);
-      this.mesh.setColorAt(i,this.color.setHex(e.color).multiplyScalar(e.shade));
+    if(changed||visible.length!==this.visibleEntries.length){
+      this.nextEntries=this.visibleEntries;
+      this.visibleEntries=visible;
+      for(let i=0;i<visible.length;i++){
+        const e=visible[i];
+        this.dummy.position.set(e.x,e.y+e.sink,e.z);
+        this.dummy.rotation.set(.09*Math.sin(e.angle),e.angle,.07*Math.cos(e.angle));
+        this.dummy.scale.set(e.scale*e.stretch,e.scale*e.heightScale,e.scale);
+        this.dummy.updateMatrix();
+        this.mesh.setMatrixAt(i,this.dummy.matrix);
+        this.mesh.setColorAt(i,this.color.setHex(e.color).multiplyScalar(e.shade));
+      }
+      const count=visible.length;
+      this.mesh.count=count;markInstancePrefix(this.mesh);
+      if(this.mesh.instanceColor&&count){this.mesh.instanceColor.clearUpdateRanges();this.mesh.instanceColor.addUpdateRange(0,count*3);this.mesh.instanceColor.needsUpdate=true;}
     }
-    const count=visible.length;
-    this.mesh.count=count;markInstancePrefix(this.mesh);
-    if(this.mesh.instanceColor&&count){this.mesh.instanceColor.clearUpdateRanges();this.mesh.instanceColor.addUpdateRange(0,count*3);this.mesh.instanceColor.needsUpdate=true;}
-    v.terrainDetailDiagnostics={visible:count,seeded:this.entries.length,capacity:this.mesh.instanceMatrix.count,triangles:count*this.mesh.geometry.attributes.position.count/3,drawCalls:count?1:0};
+
+    const cliffCount=this._updateBarrierMesh(this.cliffWallMesh,this.cliffEntries,this.visibleCliffs,menu,14);
+    const mountainCount=this._updateBarrierMesh(this.mountainMesh,this.mountainEntries,this.visibleMountains,menu,18);
+    let bushCount=0;
+    if(this.bushMesh){
+      let bChanged=force;
+      for(const e of this.bushEntries){
+        if(!nearViewport(v,e.x,e.y,e.z,7)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
+        if(sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+        if(this.visibleBushes[bushCount]!==e){
+          this.dummy.position.set(e.x,e.y-.04,e.z);
+          this.dummy.rotation.set(0,e.angle,0);
+          this.dummy.scale.set(e.sx,e.sy,e.sz);
+          this.dummy.updateMatrix();
+          this.bushMesh.setMatrixAt(bushCount,this.dummy.matrix);
+          this.bushMesh.setColorAt(bushCount,this.color.setHex(0xffffff).multiplyScalar(e.shade));
+          bChanged=true;
+        }
+        this.visibleBushes[bushCount++]=e;
+      }
+      if(bushCount!==this.visibleBushes.length){this.visibleBushes.length=bushCount;bChanged=true;}
+      this.bushMesh.count=bushCount;
+      if(bChanged){
+        markInstancePrefix(this.bushMesh);
+        if(this.bushMesh.instanceColor&&bushCount){this.bushMesh.instanceColor.clearUpdateRanges();this.bushMesh.instanceColor.addUpdateRange(0,bushCount*3);this.bushMesh.instanceColor.needsUpdate=true;}
+      }
+    }
+
+    const count=this.mesh.count;
+    v.terrainDetailDiagnostics={
+      visible:count,
+      cliffsVisible:cliffCount,
+      mountainsVisible:mountainCount,
+      bushesVisible:bushCount,
+      seeded:this.entries.length,
+      capacity:this.mesh.instanceMatrix.count,
+      triangles:count*this.mesh.geometry.attributes.position.count/3,
+      drawCalls:(count?1:0)+(cliffCount?1:0)+(mountainCount?1:0)+(bushCount?1:0),
+    };
   }
 }

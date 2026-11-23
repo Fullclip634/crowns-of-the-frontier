@@ -1,22 +1,22 @@
-import {UNITS,BUILDINGS,DIFFICULTIES,seededRandom} from './data.js';
+import {BUILDINGS,seededRandom} from './data.js';
 import {PLAYER_COLORS} from './custom-battle.js';
-import {addNaturalBarrier,addCliffRidge,addDenseForestBelt,buildWalledCitadel} from './terrain-barriers.js';
+import {addNaturalBarrier,addCliffRidge,addDenseForestBelt,buildNaturalFortifiedBase,connectCliffPassWall} from './terrain-barriers.js';
 import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
-/** Safely places a handcrafted scenario building, clearing stray overlapping natural resources. */
+/** Safely places a handcrafted scenario building with clean spacing, clearing stray overlapping resources. */
 function placeBuilding(sim,type,owner,x,z,complete=true,layout){
   const def=BUILDINGS[type];
   if(!def)return null;
   const limit=sim.halfWorld-(def.r||2)-2.5;
   if(Math.abs(x)>limit||Math.abs(z)>limit||sim.isWater(x,z))return null;
-  if(sim.barriers?.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+(def.r||2)+.4))return null;
+  if(sim.barriers?.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+(def.r||2)+.5))return null;
   for(const e of sim.entities){
-    if(e.hp>0&&e.kind==='resource'&&!e.water&&Math.hypot(e.x-x,e.z-z)<(def.r||2)+e.r+1.2)e.hp=0;
+    if(e.hp>0&&e.kind==='resource'&&!e.water&&Math.hypot(e.x-x,e.z-z)<(def.r||2)+e.r+1.4)e.hp=0;
   }
-  if(sim.entities.some(e=>e.hp>0&&e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<Math.max(1.8,(def.r||2)+e.r-.6)))return null;
+  if(sim.entities.some(e=>e.hp>0&&e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<Math.max(2.0,(def.r||2)+e.r-.3)))return null;
   return sim.addBuilding(type,owner,x,z,complete,layout);
 }
 
@@ -28,10 +28,10 @@ function placeUnit(sim,type,owner,x,z){
   return sim.addUnit(type,owner,cx,cz);
 }
 
-/** Plants lush local resource clusters (food berries, timber groves, gold & stone veins) around a base. */
+/** Plants local outer resource clusters for open/unwalled bases. */
 function seedBaseDeposits(sim,center,seedSalt=0){
   const rng=seededRandom((sim.options.seed||2026)+seedSalt);
-  const clusters=[[-18,16,'food',5],[16,-18,'gold',4],[-20,-8,'stone',4],[20,16,'wood',8]];
+  const clusters=[[-20,18,'food',5],[18,-20,'gold',4],[-22,-10,'stone',4],[22,18,'wood',8]];
   for(const [dx,dz,type,count] of clusters){
     for(let i=0;i<count;i++){
       const x=center.x+dx+(rng()-.5)*6,z=center.z+dz+(rng()-.5)*6;
@@ -43,7 +43,6 @@ function seedBaseDeposits(sim,center,seedSalt=0){
   }
 }
 
-/** Configures an extra campaign player slot (Allied Kingdom or additional Enemy Warlord). */
 function makeScenarioPlayer(sim,{name,faction='alder',team=2,age=2,difficulty,aiPersonality='balanced',colorIndex=1,start={x:0,z:0},resources,dormant=false}){
   const base=sim.makePlayer(faction);
   return {
@@ -67,143 +66,113 @@ function makeScenarioPlayer(sim,{name,faction='alder',team=2,age=2,difficulty,ai
 }
 
 /**
- * Enhances all 10 classic Chapters (I–X) with distinct handcrafted bases,
- * pre-built fortifications, natural cliff chokepoints, and lush berry/forest pockets,
- * while strictly keeping critical build/escort test coordinates clear.
+ * Enhances all 10 classic Chapters (I–X) with Blender-sculpted sheer cliffs,
+ * alpine mountain shoulders, forest chokepoints, and short human-crafted walls
+ * tied directly into natural rock barriers (leaving test pads & caravan lanes clear).
  */
 function applyClassicChapterArchitecture(sim){
   const mode=sim.options.mode;
   const p0=sim.owned(0,'building','towncenter')[0]||{x:-39,z:30};
   const p1=sim.owned(1,'building','towncenter')[0]||{x:40,z:-34};
-  // Protect classic test pad (-36, 49) and caravan lane (-34,43 -> 20,-8)
-  const testKeep=[{x:-36,z:49,r:10},{x:p0.x,z:p0.z,r:18},{x:p1.x,z:p1.z,r:18}];
+  const testKeep=[{x:-36,z:49,r:10},{x:p0.x,z:p0.z,r:19},{x:p1.x,z:p1.z,r:19}];
 
   if(mode==='campaign1'){
-    // Frontier Foothold: Natural boulder crags framing the northern woods + scout outpost + lush berries
-    addCliffRidge(sim,{x:-66,z:-12},{x:-28,z:-24},{step:4.2,width:1,radius:2.7,height:3.6,wobble:1.8,keepClear:testKeep,seedOffset:101});
-    addCliffRidge(sim,{x:14,z:24},{x:58,z:16},{step:4.2,width:1,radius:2.7,height:3.6,wobble:1.8,keepClear:testKeep,seedOffset:102});
-    placeBuilding(sim,'wall',0,-20,17,true,{angle:-Math.PI/4});
-    placeBuilding(sim,'wall',0,-18,19,true,{angle:-Math.PI/4});
-    placeBuilding(sim,'wall',1,24,-18,true,{angle:-Math.PI/4});
-    placeBuilding(sim,'wall',1,26,-16,true,{angle:-Math.PI/4});
+    // Frontier Foothold: Natural cliff shoulders framing northern woods + lush berry groves
+    addCliffRidge(sim,{x:-66,z:-12},{x:-26,z:-24},{step:4.0,width:1,radius:3.0,height:4.2,wobble:1.8,keepClear:testKeep,seedOffset:101});
+    addCliffRidge(sim,{x:14,z:24},{x:60,z:16},{step:4.0,width:1,radius:3.0,height:4.2,wobble:1.8,keepClear:testKeep,seedOffset:102});
     for(const [bx,bz] of [[-52,40],[-54,38],[-50,42]])if(!sim.isWater(bx,bz))sim.addNaturalResource('food',bx,bz,320);
   }else if(mode==='campaign2'){
-    // The Broken Crossing: Fortified western bridgehead watchtower + enemy eastern toll-fort
+    // The Broken Crossing: Cliff-anchored bridgehead tower + enemy eastern toll-fort beyond safe bridgehead
     const bridgeKeep=[...testKeep,{x:0,z:0,r:14},{x:-16,z:0,r:10},{x:20,z:-8,r:11}];
     placeBuilding(sim,'tower',0,-16,12,true);
-    placeBuilding(sim,'wall',0,-15,18,true,{angle:Math.PI/2});
-    placeBuilding(sim,'wall',0,-15,21,true,{angle:Math.PI/2});
-    // Enemy toll-post overlooking the garrison road beyond the safe bridgehead
     placeBuilding(sim,'tower',1,31,-26,true);
-    placeBuilding(sim,'wall',1,26,-20,true,{angle:-Math.PI/4});
-    placeBuilding(sim,'wall',1,28,-22,true,{angle:-Math.PI/4});
-    addCliffRidge(sim,{x:-58,z:-44},{x:-22,z:-36},{step:4.2,width:1,radius:2.8,height:3.9,wobble:1.6,keepClear:bridgeKeep,seedOffset:201});
-    addCliffRidge(sim,{x:24,z:34},{x:62,z:42},{step:4.2,width:1,radius:2.8,height:3.9,wobble:1.6,keepClear:bridgeKeep,seedOffset:202});
+    addCliffRidge(sim,{x:-58,z:-44},{x:-20,z:-36},{step:4.0,width:1,radius:3.1,height:4.4,wobble:1.6,keepClear:bridgeKeep,seedOffset:201});
+    addCliffRidge(sim,{x:24,z:34},{x:62,z:42},{step:4.0,width:1,radius:3.1,height:4.4,wobble:1.6,keepClear:bridgeKeep,seedOffset:202});
   }else if(mode==='campaign3'){
-    // A Crown of Stone: Pre-walled Iron Ridge stronghold (walls + gatehouse + 2 flanking towers; pad -36,49 open for Keep!)
+    // A Crown of Stone: Natural Iron Ridge granite cliffs cradling the western & northern flanks,
+    // with short stone walls & gates sealing ONLY the two mountain passes (leaving -36,49 wide open for Keep!)
     const ridgeKeep=[...testKeep,{x:-36,z:49,r:11}];
-    // Outer stone/palisade defensive wall facing the northern & eastern wave lanes
-    for(let x=-54;x<=-16;x+=3){
-      if(Math.abs(x+32)<=4)continue;
-      placeBuilding(sim,'wall',0,x,12,true,{angle:0});
-    }
-    placeBuilding(sim,'gate',0,-32,12,true,{angle:0});
-    for(let z=15;z<=46;z+=3){
-      if(Math.abs(z-30)<=4)continue;
-      placeBuilding(sim,'wall',0,-16,z,true,{angle:Math.PI/2});
-    }
-    placeBuilding(sim,'gate',0,-16,30,true,{angle:Math.PI/2});
+    addCliffRidge(sim,{x:-68,z:8},{x:-46,z:11},{step:3.5,width:1,radius:3.1,height:4.6,wobble:1.2,keepClear:ridgeKeep,seedOffset:301});
+    addCliffRidge(sim,{x:-22,z:11},{x:-14,z:20},{step:3.5,width:1,radius:3.1,height:4.6,wobble:1.0,keepClear:ridgeKeep,seedOffset:303});
+    addCliffRidge(sim,{x:-14,z:42},{x:12,z:54},{step:3.6,width:1,radius:3.1,height:4.6,wobble:1.4,keepClear:ridgeKeep,seedOffset:302});
+    // Short cliff-to-cliff stone walls & gates across the North Pass & East Pass!
+    connectCliffPassWall(sim,0,{x:-45,z:11},{x:-23,z:11},p0,{complete:true,withGate:true,withTower:true});
+    connectCliffPassWall(sim,0,{x:-15,z:21},{x:-15,z:41},p0,{complete:true,withGate:true,withTower:true});
+    placeBuilding(sim,'blacksmith',0,-53,28,true);
+  }else if(mode==='campaign4'){
+    // Keepers of the Valley: Sheer cliff ridges dividing the basin into distinct shrine lanes
+    const shrineKeep=[...testKeep,{x:-26,z:-23,r:13},{x:3,z:1,r:13},{x:28,z:25,r:13}];
+    addCliffRidge(sim,{x:-52,z:-8},{x:-12,z:-8},{step:3.8,width:1,radius:3.0,height:4.4,wobble:1.6,keepClear:shrineKeep,seedOffset:401});
+    addCliffRidge(sim,{x:16,z:10},{x:54,z:10},{step:3.8,width:1,radius:3.0,height:4.4,wobble:1.6,keepClear:shrineKeep,seedOffset:402});
+    placeBuilding(sim,'tower',0,-22,16,true);
+    placeBuilding(sim,'tower',1,22,-16,true);
+    placeBuilding(sim,'stable',0,-54,20,true);
+  }else if(mode==='campaign5'){
+    // The Final Siege: Spacious southern war-camp vs cliff-anchored Walled Capital
+    const siegeKeep=[...testKeep,{x:36,z:-5,r:11}];
     placeBuilding(sim,'tower',0,-20,16,true);
     placeBuilding(sim,'tower',0,-48,16,true);
-    placeBuilding(sim,'blacksmith',0,-52,29,true);
-    // Natural stone cliff shoulders framing Iron Ridge
-    addCliffRidge(sim,{x:-68,z:8},{x:-56,z:12},{step:3.6,width:1,radius:2.9,height:4.2,wobble:1.2,keepClear:ridgeKeep,seedOffset:301});
-    addCliffRidge(sim,{x:-12,z:50},{x:12,z:54},{step:3.8,width:1,radius:2.9,height:4.2,wobble:1.6,keepClear:ridgeKeep,seedOffset:302});
-  }else if(mode==='campaign4'){
-    // Keepers of the Valley: Dramatic rocky crags funneling approaches toward the 3 sacred shrines
-    const shrineKeep=[...testKeep,{x:-26,z:-23,r:13},{x:3,z:1,r:13},{x:28,z:25,r:13}];
-    addCliffRidge(sim,{x:-48,z:-8},{x:-12,z:-8},{step:4.0,width:1,radius:2.6,height:3.7,wobble:1.6,keepClear:shrineKeep,seedOffset:401});
-    addCliffRidge(sim,{x:16,z:10},{x:50,z:10},{step:4.0,width:1,radius:2.6,height:3.7,wobble:1.6,keepClear:shrineKeep,seedOffset:402});
-    placeBuilding(sim,'tower',0,-24,18,true);
-    placeBuilding(sim,'tower',1,24,-18,true);
-    placeBuilding(sim,'stable',0,-52,22,true);
-  }else if(mode==='campaign5'){
-    // The Final Siege: Fortified Southern Siege Camp vs Massive Double-Walled Twin-Gate Enemy Citadel!
-    const siegeKeep=[...testKeep,{x:36,z:-5,r:11}];
-    // Upgrade player's staging war-camp (leaving -36,49 clear for Siege Workshop!)
-    placeBuilding(sim,'tower',0,-22,16,true);
-    placeBuilding(sim,'tower',0,-46,16,true);
-    placeBuilding(sim,'stable',0,-54,28,true);
-    placeBuilding(sim,'blacksmith',0,-52,18,true);
-    placeBuilding(sim,'monastery',0,-22,38,true);
-    // Fortify Lord Draven's Walled Capital with flanking stone cliffs & inner citadel curtain
-    addCliffRidge(sim,{x:-4,z:-8},{x:12,z:-6},{step:3.6,width:1,radius:2.9,height:4.3,wobble:1.2,keepClear:siegeKeep,seedOffset:501});
-    placeBuilding(sim,'tower',1,27,-8,true);
-    placeBuilding(sim,'tower',1,45,-8,true);
-    placeBuilding(sim,'workshop',1,56,-22,true);
+    placeBuilding(sim,'stable',0,-55,26,true);
+    placeBuilding(sim,'blacksmith',0,-52,16,true);
+    placeBuilding(sim,'monastery',0,-20,40,true);
+    // Natural granite cliff shoulder anchoring Lord Draven's western curtain wall
+    addCliffRidge(sim,{x:-6,z:-8},{x:12,z:-6},{step:3.5,width:1,radius:3.1,height:4.8,wobble:1.2,keepClear:siegeKeep,seedOffset:501});
+    placeBuilding(sim,'tower',1,27,-9,true);
+    placeBuilding(sim,'tower',1,45,-9,true);
+    placeBuilding(sim,'workshop',1,58,-22,true);
     for(let z=-36;z<=-9;z+=3)placeBuilding(sim,'wall',1,15,z,true,{angle:Math.PI/2});
   }else if(mode==='campaign6'){
-    // Beyond the Horizon: Walled western coastal harbor town vs Corsair Admiral Rask's fortified eastern coast
+    // Beyond the Horizon: Coastal cliff headlands framing fortified west & east harbors
     placeBuilding(sim,'tower',0,-24,18,true);
     placeBuilding(sim,'tower',0,-24,38,true);
     placeBuilding(sim,'tower',1,24,-22,true);
     placeBuilding(sim,'tower',1,24,-42,true);
-    placeBuilding(sim,'keep',1,48,-46,true);
-    addNaturalBarrier(sim,-58,-12,{r:3.2,height:4.2,keepClear:testKeep});
-    addNaturalBarrier(sim,58,14,{r:3.2,height:4.2,keepClear:testKeep});
+    placeBuilding(sim,'keep',1,49,-46,true);
+    addNaturalBarrier(sim,-58,-12,{r:3.8,height:5.8,kind:'mountain',keepClear:testKeep});
+    addNaturalBarrier(sim,58,14,{r:3.8,height:5.8,kind:'mountain',keepClear:testKeep});
   }else if(mode==='campaign7'){
-    // The Ember Road: Narrow Volcanic Basalt Cliff Chokepoints framing the central Ash Pass (0,0)
+    // The Ember Road: Towering volcanic basalt cliff ranges pinching the valley into the Ash Pass (0,0)
     const passKeep=[...testKeep,{x:0,z:0,r:12},{x:28,z:-24,r:12}];
-    addCliffRidge(sim,{x:-66,z:-58},{x:-12,z:-12},{step:3.6,width:2,radius:3.0,height:4.6,wobble:2.0,passes:[{x:0,z:0,r:12}],keepClear:passKeep,seedOffset:701});
-    addCliffRidge(sim,{x:12,z:12},{x:66,z:58},{step:3.6,width:2,radius:3.0,height:4.6,wobble:2.0,passes:[{x:0,z:0,r:12}],keepClear:passKeep,seedOffset:702});
-    // Ash-Lord Kaelen's fortified mountain warcamp & player's forward stone barricade
+    addCliffRidge(sim,{x:-66,z:-58},{x:-12,z:-12},{step:3.5,width:2,radius:3.1,height:4.9,wobble:2.0,passes:[{x:0,z:0,r:12}],keepClear:passKeep,seedOffset:701});
+    addCliffRidge(sim,{x:12,z:12},{x:66,z:58},{step:3.5,width:2,radius:3.1,height:4.9,wobble:2.0,passes:[{x:0,z:0,r:12}],keepClear:passKeep,seedOffset:702});
     placeBuilding(sim,'tower',0,-20,16,true);
     placeBuilding(sim,'tower',1,22,-18,true);
     placeBuilding(sim,'keep',1,48,-46,true);
-    for(let x=20;x<=46;x+=3){if(Math.abs(x-32)<=4)continue;placeBuilding(sim,'wall',1,x,-14,true,{angle:0});}
-    placeBuilding(sim,'gate',1,32,-14,true,{angle:0});
+    connectCliffPassWall(sim,1,{x:20,z:-14},{x:46,z:-14},p1,{complete:true,withGate:true,withTower:false});
   }else if(mode==='campaign8'){
-    // The Deepwood Oath: Impenetrable Black Forest corridors & hidden ambush lanes
+    // The Deepwood Oath: Dense Black Forest corridor barriers anchored by mossy crags
     const woodKeep=[...testKeep,{x:-20,z:45,r:10},{x:0,z:0,r:11},{x:28,z:-24,r:11}];
     const passes=[{x:0,z:0,r:10.5},{x:-30,z:-22,r:10},{x:30,z:22,r:10}];
-    addDenseForestBelt(sim,{x:-64,z:-56},{x:64,z:56},{step:2.5,thickness:3,passes,keepClear:woodKeep,seedOffset:801});
-    placeBuilding(sim,'wall',0,-22,18,true,{angle:-Math.PI/4});
-    placeBuilding(sim,'wall',0,-20,20,true,{angle:-Math.PI/4});
+    addDenseForestBelt(sim,{x:-64,z:-56},{x:64,z:56},{step:2.45,thickness:3,passes,keepClear:woodKeep,seedOffset:801});
+    addNaturalBarrier(sim,-10,10,{r:3.4,height:5.2,kind:'mountain',passes,keepClear:woodKeep});
+    addNaturalBarrier(sim,10,-10,{r:3.4,height:5.2,kind:'mountain',passes,keepClear:woodKeep});
     placeBuilding(sim,'tower',1,22,-18,true);
-    for(let x=26;x<=52;x+=3){if(Math.abs(x-38)<=4)continue;placeBuilding(sim,'wall',1,x,-16,true,{angle:0});}
-    placeBuilding(sim,'gate',1,38,-16,true,{angle:0});
+    connectCliffPassWall(sim,1,{x:26,z:-15},{x:50,z:-15},p1,{complete:true,withGate:true,withTower:false});
   }else if(mode==='campaign9'){
-    // The Long Night: Complete Pre-Walled Winter Palisade Town actively under siege!
-    buildWalledCitadel(sim,0,{x:p0.x,z:p0.z},{radius:17,gates:['north','east'],towers:false,complete:true});
-    placeBuilding(sim,'tower',0,p0.x-10,p0.z-12,true);
-    placeBuilding(sim,'tower',0,p0.x+12,p0.z-10,true);
-    placeBuilding(sim,'blacksmith',0,p0.x-11,p0.z+8,true);
-    // Siege-Master Torv's fortified northern siege camp behind icy cliffs
-    addCliffRidge(sim,{x:-58,z:-12},{x:-16,z:-18},{step:3.8,width:1,radius:2.9,height:4.2,wobble:1.6,keepClear:testKeep,seedOffset:901});
+    // The Long Night: Spacious natural snow-cliff fortified winter valley with short cliff-linked gates & ALL resources inside!
+    buildNaturalFortifiedBase(sim,0,{x:p0.x,z:p0.z},{radius:24,gates:['north','east'],towers:true,complete:true,includeResources:true,seedOffset:901});
+    placeBuilding(sim,'blacksmith',0,p0.x-13,p0.z+8,true);
+    addCliffRidge(sim,{x:-58,z:-18},{x:-16,z:-22},{step:3.8,width:1,radius:3.1,height:4.6,wobble:1.6,keepClear:testKeep,seedOffset:902});
     placeBuilding(sim,'workshop',1,26,-18,true);
     placeBuilding(sim,'tower',1,22,-22,true);
   }else if(mode==='campaign10'){
-    // The Last Claim: Fortified Royal Staging Citadel vs Valkor's Imperial Summit Keep
+    // The Last Claim: Spacious cliff-walled southern staging citadel vs Valkor's mountain-ringed Imperial Summit Fortress
     const summitKeep=[...testKeep,{x:0,z:0,r:16}];
-    buildWalledCitadel(sim,0,{x:p0.x,z:p0.z},{radius:17,gates:['north','east'],towers:false,complete:true});
-    placeBuilding(sim,'tower',0,p0.x+12,p0.z-12,true);
-    placeBuilding(sim,'stable',0,p0.x-12,p0.z+4,true);
-    placeBuilding(sim,'blacksmith',0,p0.x+6,p0.z+11,true);
-    // Natural highland cliff shoulders framing the central summit ridge (0,0)
-    addCliffRidge(sim,{x:-56,z:-14},{x:-20,z:-8},{step:3.8,width:1,radius:3.1,height:4.7,wobble:1.8,keepClear:summitKeep,seedOffset:1001});
-    addCliffRidge(sim,{x:20,z:8},{x:56,z:14},{step:3.8,width:1,radius:3.1,height:4.7,wobble:1.8,keepClear:summitKeep,seedOffset:1002});
-    // Valkor's Imperial Fortress (place Keep first so walls cleanly frame around it)
+    buildNaturalFortifiedBase(sim,0,{x:p0.x,z:p0.z},{radius:24,gates:['north','east'],towers:true,complete:true,includeResources:true,seedOffset:1001});
+    placeBuilding(sim,'stable',0,p0.x-14,p0.z+4,true);
+    placeBuilding(sim,'blacksmith',0,p0.x+8,p0.z+13,true);
+    addCliffRidge(sim,{x:-58,z:-14},{x:-20,z:-8},{step:3.6,width:1,radius:3.2,height:5.0,wobble:1.8,keepClear:summitKeep,seedOffset:1002});
+    addCliffRidge(sim,{x:20,z:8},{x:58,z:14},{step:3.6,width:1,radius:3.2,height:5.0,wobble:1.8,keepClear:summitKeep,seedOffset:1003});
+    // Valkor's Imperial Summit Fortress (Keep first, spacious cliff-linked perimeter around it!)
     placeBuilding(sim,'keep',1,35,-49,true);
-    buildWalledCitadel(sim,1,{x:p1.x,z:p1.z},{radius:21,gates:['south','west'],towers:true,complete:true});
+    buildNaturalFortifiedBase(sim,1,{x:p1.x,z:p1.z},{radius:24,gates:['south','west'],towers:true,complete:true,includeResources:true,seedOffset:1004});
   }
 }
 
 /**
- * Builds Act IV ("Legends of the Realm") sprawling 240x240 multi-kingdom handcrafted scenarios:
- *  - campaign11: The Ring of Iron (Huge Walled Central Citadel surrounded by 3 Enemy Bases + Western Allied Relief arriving mid-battle!)
- *  - campaign12: The Sundered Pass (Impassable Mountain Cliff Ranges + 3 Narrow Passes + Active Allied Border Garrison!)
- *  - campaign13: The Fallen Banner (NO starting base — Rescue the besieged walled town of Oakhold to take command of it & expand!)
- *  - campaign14: Crown of Three Kingdoms (Epic 2v2 Imperial Coalition War across rivers, bridges & cliffs!)
+ * Builds Act IV ("Legends of the Realm") sprawling 240x240 multi-kingdom scenarios using
+ * spacious human-crafted natural cliff-and-forest fortified valleys where short walls
+ * connect cliff-to-cliff and ALL starting resources sit safely INSIDE the perimeter.
  */
 export function buildActFourScenario(sim){
   const mode=sim.options.mode;
@@ -211,7 +180,6 @@ export function buildActFourScenario(sim){
   const diff=sim.options.difficulty||'normal';
   const half=sim.halfWorld;
 
-  // Wipe default 2-player spawns and build bespoke multi-kingdom world from scratch
   sim.entities=[];
   sim.barriers=[];
   sim.nextId=1;
@@ -220,8 +188,9 @@ export function buildActFourScenario(sim){
   sim.revealedOwners=[];
 
   if(mode==='campaign11'){
-    // THE RING OF IRON — Central Walled Citadel surrounded by 3 Enemy Bases + Arriving Western Allied Relief
-    const c0={x:0,z:0},c1={x:-8,z:-84},c2={x:86,z:4},c3={x:-84,z:10};
+    // THE RING OF IRON — Spacious Natural Highland Citadel Basin (radius 33!)
+    // 4 towering natural cliff-and-mountain bastions + 4 short cliff-linked Gatehouse walls + ALL resources inside!
+    const c0={x:0,z:0},c1={x:-8,z:-88},c2={x:88,z:4},c3={x:-88,z:10};
     sim.players=[
       {...sim.makePlayer(playerFaction),name:'Your Citadel',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:900,wood:950,gold:550,stone:550},defeated:false},
       makeScenarioPlayer(sim,{name:'Lord Korr (North)',faction:'raven',team:2,age:2,difficulty:diff,aiPersonality:'rusher',colorIndex:1,start:c1,resources:{food:750,wood:750,gold:450,stone:300}}),
@@ -230,71 +199,82 @@ export function buildActFourScenario(sim){
     ];
     sim.spawnPositions=[c0,c1,c2,c3];
 
-    // Natural granite cliffs framing the 4 valley corridors around the central citadel
-    const keep=[{x:0,z:0,r:28},{x:c1.x,z:c1.z,r:22},{x:c2.x,z:c2.z,r:22},{x:c3.x,z:c3.z,r:22},{x:4,z:82,r:20}];
-    const passes=[{x:0,z:-44,r:13},{x:46,z:0,r:13},{x:0,z:44,r:13},{x:-46,z:0,r:13}];
-    addCliffRidge(sim,{x:-54,z:-54},{x:-26,z:-26},{step:3.8,width:2,radius:3.1,height:4.6,wobble:2.0,passes,keepClear:keep,seedOffset:1101});
-    addCliffRidge(sim,{x:54,z:-54},{x:26,z:-26},{step:3.8,width:2,radius:3.1,height:4.6,wobble:2.0,passes,keepClear:keep,seedOffset:1102});
-    addCliffRidge(sim,{x:54,z:54},{x:26,z:26},{step:3.8,width:2,radius:3.1,height:4.6,wobble:2.0,passes,keepClear:keep,seedOffset:1103});
-    addCliffRidge(sim,{x:-54,z:54},{x:-26,z:26},{step:3.8,width:2,radius:3.1,height:4.6,wobble:2.0,passes,keepClear:keep,seedOffset:1104});
-
-    // Player's GRAND PRE-BUILT WALLED CENTRAL CITADEL!
+    // Grand, Spacious, Uncompressed Medieval Highland Citadel Districts inside a monumental 40m natural valley rim!
+    // Generous royal courtyard avenues between quarters + all 4 sheltered diagonal cliff alcoves wide open for inner Wood, Gold, Stone & Berries!
     placeBuilding(sim,'towncenter',0,0,0,true);
-    placeBuilding(sim,'keep',0,-8,-8,true);
-    placeBuilding(sim,'barracks',0,10,-8,true);
-    placeBuilding(sim,'range',0,10,8,true);
-    placeBuilding(sim,'stable',0,-10,8,true);
-    placeBuilding(sim,'blacksmith',0,0,-12,true);
-    placeBuilding(sim,'market',0,-12,0,true);
-    placeBuilding(sim,'monastery',0,12,0,true);
-    placeBuilding(sim,'house',0,-14,-14,true);
-    placeBuilding(sim,'house',0,14,-14,true);
-    placeBuilding(sim,'house',0,-14,14,true);
-    placeBuilding(sim,'house',0,14,14,true);
-    placeBuilding(sim,'mill',0,0,12,true);
-    for(const [fx,fz] of [[-5,14],[5,14],[-14,-6],[14,6]])placeBuilding(sim,'farm',0,fx,fz,true);
-    buildWalledCitadel(sim,0,c0,{radius:22,gates:['north','east','south','west'],towers:true,complete:true});
-    for(let i=0;i<14;i++)placeUnit(sim,'villager',0,-6+(i%5)*3,4+Math.floor(i/5)*2.5);
-    for(let i=0;i<4;i++)placeUnit(sim,'knight',0,-6+i*4,-16);
-    for(let i=0;i<4;i++)placeUnit(sim,'swordsman',0,16,-6+i*4);
-    for(let i=0;i<4;i++)placeUnit(sim,'archer',0,-6+i*4,17);
-    placeUnit(sim,'monk',0,-3,-4);placeUnit(sim,'monk',0,3,-4);
+    placeBuilding(sim,'keep',0,-15,-14,true);
+    placeBuilding(sim,'barracks',0,15,-13,true);
+    placeBuilding(sim,'range',0,17,9,true);
+    placeBuilding(sim,'stable',0,-17,9,true);
+    placeBuilding(sim,'blacksmith',0,0,-19,true);
+    placeBuilding(sim,'market',0,-20,-2,true);
+    placeBuilding(sim,'monastery',0,19,-2,true);
+    placeBuilding(sim,'mill',0,0,15,true);
+    placeBuilding(sim,'house',0,-12,-27,true);
+    placeBuilding(sim,'house',0,12,-27,true);
+    placeBuilding(sim,'house',0,-26,8,true);
+    placeBuilding(sim,'house',0,26,-8,true);
+    for(const [fx,fz] of [[-9,21],[9,21],[-9,27],[9,27]])placeBuilding(sim,'farm',0,fx,fz,true);
+
+    // Organic Natural Cliff-and-Mountain Amphitheater + 4 dead-straight mountain-to-mountain Gatehouse passes + ALL resources safely INSIDE!
+    buildNaturalFortifiedBase(sim,0,c0,{
+      radius:40,
+      gates:['north','east','south','west'],
+      towers:true,
+      complete:true,
+      wallGaps:true,
+      includeResources:true,
+      seedOffset:1100,
+    });
+    for(let i=0;i<14;i++)placeUnit(sim,'villager',0,-8+(i%5)*4.0,6+Math.floor(i/5)*3.0);
+    for(let i=0;i<4;i++)placeUnit(sim,'knight',0,-6+i*4,-31);
+    for(let i=0;i<4;i++)placeUnit(sim,'swordsman',0,31,-6+i*4);
+    for(let i=0;i<4;i++)placeUnit(sim,'archer',0,-6+i*4,31);
+    placeUnit(sim,'monk',0,-5,-8);placeUnit(sim,'monk',0,5,-8);
+
+    // Outer Mountain Spurs guiding the 3 enemy approaches from outside the 45m basin
+    const keep=[{x:0,z:0,r:45},{x:c1.x,z:c1.z,r:24},{x:c2.x,z:c2.z,r:24},{x:c3.x,z:c3.z,r:24},{x:4,z:84,r:20}];
+    const passes=[{x:0,z:-54,r:13},{x:54,z:0,r:13},{x:0,z:54,r:13},{x:-54,z:0,r:13}];
+    addCliffRidge(sim,{x:-72,z:-72},{x:-40,z:-40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1101});
+    addCliffRidge(sim,{x:72,z:-72},{x:40,z:-40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1102});
+    addCliffRidge(sim,{x:72,z:72},{x:40,z:40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1103});
+    addCliffRidge(sim,{x:-72,z:72},{x:-40,z:40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1104});
 
     // Enemy 1: Lord Korr's Northern Siege Camp
     placeBuilding(sim,'towncenter',1,c1.x,c1.z,true);
-    placeBuilding(sim,'barracks',1,c1.x-12,c1.z+8,true);
-    placeBuilding(sim,'workshop',1,c1.x+12,c1.z+10,true);
-    placeBuilding(sim,'tower',1,c1.x-10,c1.z+18,true);
-    placeBuilding(sim,'tower',1,c1.x+10,c1.z+18,true);
-    placeBuilding(sim,'house',1,c1.x-14,c1.z-8,true);
-    placeBuilding(sim,'house',1,c1.x+14,c1.z-8,true);
-    placeBuilding(sim,'mill',1,c1.x,c1.z-12,true);
+    placeBuilding(sim,'barracks',1,c1.x-13,c1.z+9,true);
+    placeBuilding(sim,'workshop',1,c1.x+13,c1.z+10,true);
+    placeBuilding(sim,'tower',1,c1.x-11,c1.z+20,true);
+    placeBuilding(sim,'tower',1,c1.x+11,c1.z+20,true);
+    placeBuilding(sim,'house',1,c1.x-15,c1.z-9,true);
+    placeBuilding(sim,'house',1,c1.x+15,c1.z-9,true);
+    placeBuilding(sim,'mill',1,c1.x,c1.z-13,true);
     for(let i=0;i<10;i++)placeUnit(sim,'villager',1,c1.x-8+(i%5)*3,c1.z-6+Math.floor(i/5)*3);
-    for(let i=0;i<6;i++)placeUnit(sim,i%2?'swordsman':'spearman',1,c1.x-8+i*3,c1.z+22);
-    placeUnit(sim,'ram',1,c1.x,c1.z+24);
+    for(let i=0;i<6;i++)placeUnit(sim,i%2?'swordsman':'spearman',1,c1.x-8+i*3,c1.z+24);
+    placeUnit(sim,'ram',1,c1.x,c1.z+26);
 
     // Enemy 2: General Syra's Eastern Raider Hold
     placeBuilding(sim,'towncenter',2,c2.x,c2.z,true);
-    placeBuilding(sim,'stable',2,c2.x-12,c2.z-8,true);
-    placeBuilding(sim,'range',2,c2.x-12,c2.z+10,true);
-    placeBuilding(sim,'tower',2,c2.x-18,c2.z-10,true);
-    placeBuilding(sim,'tower',2,c2.x-18,c2.z+10,true);
-    placeBuilding(sim,'house',2,c2.x+12,c2.z-10,true);
-    placeBuilding(sim,'house',2,c2.x+12,c2.z+10,true);
-    placeBuilding(sim,'mill',2,c2.x+12,c2.z,true);
+    placeBuilding(sim,'stable',2,c2.x-13,c2.z-9,true);
+    placeBuilding(sim,'range',2,c2.x-13,c2.z+10,true);
+    placeBuilding(sim,'tower',2,c2.x-20,c2.z-10,true);
+    placeBuilding(sim,'tower',2,c2.x-20,c2.z+10,true);
+    placeBuilding(sim,'house',2,c2.x+13,c2.z-10,true);
+    placeBuilding(sim,'house',2,c2.x+13,c2.z+10,true);
+    placeBuilding(sim,'mill',2,c2.x+13,c2.z,true);
     for(let i=0;i<10;i++)placeUnit(sim,'villager',2,c2.x+6+(i%5)*2.5,c2.z-6+Math.floor(i/5)*3);
-    for(let i=0;i<6;i++)placeUnit(sim,i%2?'knight':'archer',2,c2.x-22,c2.z-10+i*4);
+    for(let i=0;i<6;i++)placeUnit(sim,i%2?'knight':'archer',2,c2.x-24,c2.z-10+i*4);
 
-    // Southern Forward Encirclement Outpost (owned by Enemy 1 so all 3 approaches feel genuinely besieged!)
-    placeBuilding(sim,'barracks',1,4,76,true);
-    placeBuilding(sim,'tower',1,-4,68,true);
-    placeBuilding(sim,'tower',1,12,68,true);
-    for(let i=0;i<5;i++)placeUnit(sim,i%2?'spearman':'archer',1,-6+i*3.5,62);
+    // Southern Forward Encirclement Outpost
+    placeBuilding(sim,'barracks',1,4,80,true);
+    placeBuilding(sim,'tower',1,-5,70,true);
+    placeBuilding(sim,'tower',1,13,70,true);
+    for(let i=0;i<5;i++)placeUnit(sim,i%2?'spearman':'archer',1,-6+i*3.5,64);
 
-    seedBaseDeposits(sim,c0,111);seedBaseDeposits(sim,c1,112);seedBaseDeposits(sim,c2,113);seedBaseDeposits(sim,c3,114);
+    seedBaseDeposits(sim,c1,112);seedBaseDeposits(sim,c2,113);seedBaseDeposits(sim,c3,114);
   }else if(mode==='campaign12'){
-    // THE SUNDERED PASS — Impassable Mountain Cliffs + 3 Narrow Chokepoints + Active Allied Garrison!
-    const c0={x:-74,z:50},c1={x:20,z:-4},c2={x:82,z:-34},c3={x:-68,z:-54};
+    // THE SUNDERED PASS — Towering North-to-South Stone Mountain Range + 3 Narrow Passes + Cliff-Anchored Allied Garrison!
+    const c0={x:-74,z:50},c1={x:24,z:-4},c2={x:84,z:-36},c3={x:-68,z:-56};
     sim.players=[
       {...sim.makePlayer(playerFaction),name:'Your Stronghold',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:850,wood:900,gold:500,stone:650},defeated:false},
       makeScenarioPlayer(sim,{name:'Pass Fortress',faction:'alder',team:2,age:2,difficulty:diff,aiPersonality:'turtle',colorIndex:1,start:c1,resources:{food:650,wood:650,gold:400,stone:450}}),
@@ -303,66 +283,64 @@ export function buildActFourScenario(sim){
     ];
     sim.spawnPositions=[c0,c1,c2,c3];
 
-    // Towering North-to-South Stone Mountain Range creating 3 narrow chokepoints!
-    const passes=[{x:-6,z:-64,r:10},{x:-6,z:0,r:11},{x:-6,z:64,r:10}];
-    const keep=[{x:c0.x,z:c0.z,r:22},{x:c1.x,z:c1.z,r:22},{x:c2.x,z:c2.z,r:22},{x:c3.x,z:c3.z,r:22}];
-    addCliffRidge(sim,{x:-8,z:-half+6},{x:-6,z:half-6},{step:3.4,width:2,radius:3.2,height:5.0,wobble:3.0,passes,keepClear:keep,seedOffset:1201});
-    // Secondary eastern spur framing the eastern capital
-    addCliffRidge(sim,{x:48,z:22},{x:56,z:half-8},{step:3.8,width:1,radius:3.0,height:4.4,wobble:2.0,passes:[{x:50,z:54,r:11}],keepClear:keep,seedOffset:1202});
+    const passes=[{x:-8,z:-64,r:10},{x:-8,z:0,r:10.5},{x:-8,z:64,r:10}];
+    const keep=[{x:c0.x,z:c0.z,r:24},{x:c1.x,z:c1.z,r:24},{x:c2.x,z:c2.z,r:24},{x:c3.x,z:c3.z,r:24}];
+    addCliffRidge(sim,{x:-10,z:-half+6},{x:-8,z:half-6},{step:3.4,width:2,radius:3.3,height:5.2,wobble:2.8,passes,keepClear:keep,seedOffset:1201});
+    addCliffRidge(sim,{x:52,z:24},{x:58,z:half-8},{step:3.8,width:1,radius:3.1,height:4.6,wobble:2.0,passes:[{x:54,z:56,r:11}],keepClear:keep,seedOffset:1202});
 
-    // Player Western Stronghold
+    // Player Western Stronghold (open valley so player can seal ONLY the 2 narrow western passes with short walls!)
     placeBuilding(sim,'towncenter',0,c0.x,c0.z,true);
-    placeBuilding(sim,'barracks',0,c0.x+14,c0.z-6,true);
-    placeBuilding(sim,'range',0,c0.x+12,c0.z+10,true);
-    placeBuilding(sim,'blacksmith',0,c0.x-12,c0.z-8,true);
-    placeBuilding(sim,'mill',0,c0.x-12,c0.z+8,true);
-    placeBuilding(sim,'house',0,c0.x-14,c0.z,true);
-    placeBuilding(sim,'house',0,c0.x,c0.z+14,true);
-    placeBuilding(sim,'house',0,c0.x,c0.z-14,true);
-    placeBuilding(sim,'tower',0,-22,60,true);
-    for(let i=0;i<12;i++)placeUnit(sim,'villager',0,c0.x-6+(i%4)*3,c0.z+18+Math.floor(i/4)*2.5);
-    for(let i=0;i<8;i++)placeUnit(sim,i%3===0?'archer':'spearman',0,-26+(i%4)*3,54+Math.floor(i/4)*3);
-    placeUnit(sim,'scout',0,-24,10);
+    placeBuilding(sim,'barracks',0,c0.x+15,c0.z-7,true);
+    placeBuilding(sim,'range',0,c0.x+14,c0.z+11,true);
+    placeBuilding(sim,'blacksmith',0,c0.x-13,c0.z-9,true);
+    placeBuilding(sim,'mill',0,c0.x-13,c0.z+9,true);
+    placeBuilding(sim,'house',0,c0.x-16,c0.z,true);
+    placeBuilding(sim,'house',0,c0.x,c0.z+16,true);
+    placeBuilding(sim,'house',0,c0.x,c0.z-15,true);
+    placeBuilding(sim,'tower',0,-24,60,true);
+    for(let i=0;i<12;i++)placeUnit(sim,'villager',0,c0.x-6+(i%4)*3.2,c0.z+19+Math.floor(i/4)*2.6);
+    for(let i=0;i<8;i++)placeUnit(sim,i%3===0?'archer':'spearman',0,-28+(i%4)*3,54+Math.floor(i/4)*3);
+    placeUnit(sim,'scout',0,-26,10);
 
-    // Active Allied Northern Border Garrison (Pre-walled fort holding the north pass!)
+    // Active Allied Northern Border Garrison inside a spacious cliff-cradled mountain fort!
     placeBuilding(sim,'towncenter',3,c3.x,c3.z,true);
-    placeBuilding(sim,'barracks',3,c3.x+10,c3.z+8,true);
-    placeBuilding(sim,'stable',3,c3.x-10,c3.z+8,true);
-    placeBuilding(sim,'house',3,c3.x-10,c3.z-10,true);
-    placeBuilding(sim,'house',3,c3.x+10,c3.z-10,true);
-    placeBuilding(sim,'mill',3,c3.x,c3.z-11,true);
-    buildWalledCitadel(sim,3,c3,{radius:17,gates:['east','south'],towers:true,complete:true});
-    for(let i=0;i<10;i++)placeUnit(sim,'villager',3,c3.x-4+(i%4)*2.5,c3.z+6+Math.floor(i/4)*2.5);
-    for(let i=0;i<6;i++)placeUnit(sim,i%2?'swordsman':'archer',3,-24,-62+i*2.5);
+    placeBuilding(sim,'barracks',3,c3.x+11,c3.z+9,true);
+    placeBuilding(sim,'stable',3,c3.x-11,c3.z+9,true);
+    placeBuilding(sim,'house',3,c3.x-12,c3.z-11,true);
+    placeBuilding(sim,'house',3,c3.x+12,c3.z-11,true);
+    placeBuilding(sim,'mill',3,c3.x,c3.z-12,true);
+    buildNaturalFortifiedBase(sim,3,c3,{radius:25,gates:['east','south'],towers:true,complete:true,includeResources:true,seedOffset:1203});
+    for(let i=0;i<10;i++)placeUnit(sim,'villager',3,c3.x-4+(i%4)*2.8,c3.z+6+Math.floor(i/4)*2.8);
+    for(let i=0;i<6;i++)placeUnit(sim,i%2?'swordsman':'archer',3,-26,-62+i*2.6);
 
-    // Enemy 1: Central Mountain Gatehouse Fortress blocking the middle pass
+    // Enemy 1: Central Mountain Gatehouse Fortress guarding the middle pass
     placeBuilding(sim,'towncenter',1,c1.x,c1.z,true);
-    placeBuilding(sim,'keep',1,c1.x-11,c1.z,true);
-    placeBuilding(sim,'barracks',1,c1.x+10,c1.z-10,true);
-    placeBuilding(sim,'range',1,c1.x+10,c1.z+10,true);
-    placeBuilding(sim,'house',1,c1.x+14,c1.z,true);
-    buildWalledCitadel(sim,1,c1,{radius:19,gates:['west','east'],towers:true,complete:true});
-    for(let i=0;i<8;i++)placeUnit(sim,'villager',1,c1.x+6+(i%4)*2.5,c1.z-4+Math.floor(i/4)*3);
-    for(let i=0;i<8;i++)placeUnit(sim,i%2?'swordsman':'archer',1,c1.x-20,c1.z-10+i*3);
+    placeBuilding(sim,'keep',1,c1.x-12,c1.z,true);
+    placeBuilding(sim,'barracks',1,c1.x+11,c1.z-11,true);
+    placeBuilding(sim,'range',1,c1.x+11,c1.z+11,true);
+    placeBuilding(sim,'house',1,c1.x+16,c1.z,true);
+    buildNaturalFortifiedBase(sim,1,c1,{radius:25,gates:['west','east'],towers:true,complete:true,includeResources:true,seedOffset:1204});
+    for(let i=0;i<8;i++)placeUnit(sim,'villager',1,c1.x+6+(i%4)*2.6,c1.z-4+Math.floor(i/4)*3);
+    for(let i=0;i<8;i++)placeUnit(sim,i%2?'swordsman':'archer',1,c1.x-26,c1.z-10+i*3);
 
-    // Enemy 2: Eastern Imperial Capital
+    // Enemy 2: Eastern Imperial Capital behind spacious cliff ramparts
     placeBuilding(sim,'towncenter',2,c2.x,c2.z,true);
-    placeBuilding(sim,'barracks',2,c2.x-12,c2.z+10,true);
-    placeBuilding(sim,'stable',2,c2.x-12,c2.z-10,true);
-    placeBuilding(sim,'workshop',2,c2.x,c2.z+14,true);
-    placeBuilding(sim,'blacksmith',2,c2.x+12,c2.z-8,true);
-    placeBuilding(sim,'house',2,c2.x+12,c2.z+8,true);
-    placeBuilding(sim,'house',2,c2.x,c2.z-14,true);
-    placeBuilding(sim,'mill',2,c2.x+14,c2.z,true);
-    buildWalledCitadel(sim,2,c2,{radius:18,gates:['west','south'],towers:true,complete:true});
+    placeBuilding(sim,'barracks',2,c2.x-13,c2.z+11,true);
+    placeBuilding(sim,'stable',2,c2.x-13,c2.z-11,true);
+    placeBuilding(sim,'workshop',2,c2.x,c2.z+15,true);
+    placeBuilding(sim,'blacksmith',2,c2.x+13,c2.z-9,true);
+    placeBuilding(sim,'house',2,c2.x+13,c2.z+9,true);
+    placeBuilding(sim,'house',2,c2.x,c2.z-15,true);
+    placeBuilding(sim,'mill',2,c2.x+15,c2.z,true);
+    buildNaturalFortifiedBase(sim,2,c2,{radius:26,gates:['west','south'],towers:true,complete:true,includeResources:true,seedOffset:1205});
     for(let i=0;i<12;i++)placeUnit(sim,'villager',2,c2.x-4+(i%4)*3,c2.z-6+Math.floor(i/4)*3);
-    for(let i=0;i<6;i++)placeUnit(sim,i%2?'knight':'marksman',2,c2.x-22,c2.z-8+i*3);
+    for(let i=0;i<6;i++)placeUnit(sim,i%2?'knight':'marksman',2,c2.x-27,c2.z-8+i*3);
 
-    seedBaseDeposits(sim,c0,121);seedBaseDeposits(sim,c1,122);seedBaseDeposits(sim,c2,123);seedBaseDeposits(sim,c3,124);
+    seedBaseDeposits(sim,c0,121);
   }else if(mode==='campaign13'){
-    // THE FALLEN BANNER — Warcraft III / Joan of Arc Rescue-and-Expand Mission!
-    // Player starts with ZERO buildings & ZERO villagers — just Sovereign + Elite Vanguard!
-    const c0={x:-86,z:74},c1={x:12,z:34},c2={x:72,z:-66},c3={x:-22,z:16};
+    // THE FALLEN BANNER — Hero Rescue-and-Expand!
+    // Oakhold sits inside a spacious cliff-and-forest valley with ALL resources safely inside its gates!
+    const c0={x:-88,z:78},c1={x:18,z:38},c2={x:74,z:-68},c3={x:-24,z:16};
     sim.players=[
       {...sim.makePlayer(playerFaction),name:'Royal Vanguard',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:550,wood:600,gold:400,stone:300},defeated:false},
       makeScenarioPlayer(sim,{name:'Oakhold Raiders',faction:'raven',team:2,age:1,difficulty:diff,aiPersonality:'rusher',colorIndex:1,start:c1,resources:{food:450,wood:450,gold:250,stone:150}}),
@@ -371,12 +349,11 @@ export function buildActFourScenario(sim){
     ];
     sim.spawnPositions=[c0,c1,c2,c3];
 
-    // Dense Blackwood Forest Corridors & natural cliff crags channeling the rescue trail!
-    const passes=[{x:-54,z:46,r:11},{x:-2,z:24,r:12},{x:24,z:-24,r:11},{x:-24,z:-44,r:11}];
-    const keep=[{x:c0.x,z:c0.z,r:18},{x:c1.x,z:c1.z,r:18},{x:c2.x,z:c2.z,r:24},{x:c3.x,z:c3.z,r:22}];
-    addDenseForestBelt(sim,{x:-half+10,z:10},{x:half-10,z:-48},{step:2.6,thickness:3,passes,keepClear:keep,seedOffset:1301});
-    addCliffRidge(sim,{x:-66,z:18},{x:-42,z:4},{step:3.8,width:1,radius:2.9,height:4.1,wobble:1.8,passes,keepClear:keep,seedOffset:1302});
-    addCliffRidge(sim,{x:36,z:16},{x:74,z:6},{step:3.8,width:1,radius:3.0,height:4.3,wobble:1.8,passes,keepClear:keep,seedOffset:1303});
+    const passes=[{x:-56,z:48,r:11},{x:-2,z:26,r:12},{x:24,z:-24,r:11},{x:-24,z:-44,r:11}];
+    const keep=[{x:c0.x,z:c0.z,r:18},{x:c1.x,z:c1.z,r:18},{x:c2.x,z:c2.z,r:28},{x:c3.x,z:c3.z,r:28}];
+    addDenseForestBelt(sim,{x:-half+10,z:10},{x:half-10,z:-48},{step:2.5,thickness:3,passes,keepClear:keep,seedOffset:1301});
+    addCliffRidge(sim,{x:-72,z:22},{x:-52,z:8},{step:3.6,width:1,radius:3.1,height:4.6,wobble:1.8,passes,keepClear:keep,seedOffset:1302});
+    addCliffRidge(sim,{x:38,z:16},{x:78,z:6},{step:3.6,width:1,radius:3.1,height:4.6,wobble:1.8,passes,keepClear:keep,seedOffset:1303});
 
     // Player's Heroic Rescue Vanguard (NO Town Center yet!)
     const king=placeUnit(sim,'king',0,c0.x,c0.z);
@@ -386,46 +363,43 @@ export function buildActFourScenario(sim){
     for(let i=0;i<5;i++)placeUnit(sim,'archer',0,c0.x-5+i*2.5,c0.z+5);
     placeUnit(sim,'monk',0,c0.x-3,c0.z+2);placeUnit(sim,'monk',0,c0.x+3,c0.z+2);
 
-    // Forest Trail Ambush Patrol (between c0 and Oakhold)
-    for(let i=0;i<4;i++)placeUnit(sim,i%2?'spearman':'archer',1,-54+i*2.8,44-i*1.8);
+    // Forest Trail Ambush Patrol
+    for(let i=0;i<4;i++)placeUnit(sim,i%2?'spearman':'archer',1,-56+i*2.8,46-i*1.8);
 
-    // Besieged Walled Village of Oakhold (Owner 3 initially -> Transfers to Owner 0 when Raiders fall!)
+    // Besieged Walled Village of Oakhold (spacious cliff-cradled valley town with safe interior resources!)
     placeBuilding(sim,'towncenter',3,c3.x,c3.z,true);
-    placeBuilding(sim,'barracks',3,c3.x-10,c3.z+8,true);
-    placeBuilding(sim,'mill',3,c3.x-10,c3.z-8,true);
-    placeBuilding(sim,'house',3,c3.x+10,c3.z-10,true);
-    placeBuilding(sim,'house',3,c3.x+10,c3.z+10,true);
-    placeBuilding(sim,'farm',3,c3.x-12,c3.z,true);
-    placeBuilding(sim,'farm',3,c3.x,c3.z-12,true);
-    placeBuilding(sim,'farm',3,c3.x,c3.z+12,true);
-    buildWalledCitadel(sim,3,c3,{radius:17,gates:['south','east','north'],towers:false,complete:true});
-    placeBuilding(sim,'tower',3,c3.x+11,c3.z+2,true);
-    for(let i=0;i<10;i++)placeUnit(sim,'villager',3,c3.x-4+(i%5)*2.5,c3.z+4+Math.floor(i/5)*2.5);
+    placeBuilding(sim,'barracks',3,c3.x-12,c3.z+9,true);
+    placeBuilding(sim,'mill',3,c3.x-12,c3.z-9,true);
+    placeBuilding(sim,'house',3,c3.x+12,c3.z-11,true);
+    placeBuilding(sim,'house',3,c3.x+12,c3.z+11,true);
+    placeBuilding(sim,'farm',3,c3.x-14,c3.z,true);
+    placeBuilding(sim,'farm',3,c3.x,c3.z-14,true);
+    placeBuilding(sim,'farm',3,c3.x,c3.z+14,true);
+    buildNaturalFortifiedBase(sim,3,c3,{radius:26,gates:['south','east','north'],towers:true,complete:true,includeResources:true,seedOffset:1304});
+    for(let i=0;i<10;i++)placeUnit(sim,'villager',3,c3.x-4+(i%5)*2.6,c3.z+5+Math.floor(i/5)*2.6);
 
-    // Enemy 1: Oakhold Raider Camp besieging the town
+    // Enemy 1: Oakhold Raider Camp besieging the eastern gate
     placeBuilding(sim,'barracks',1,c1.x,c1.z,true);
     placeBuilding(sim,'tower',1,c1.x-8,c1.z-6,true);
-    placeBuilding(sim,'house',1,c1.x+8,c1.z+6,true);
+    placeBuilding(sim,'house',1,c1.x+9,c1.z+6,true);
     for(let i=0;i<6;i++)placeUnit(sim,i%3===0?'archer':'spearman',1,c1.x-10+(i%3)*3,c1.z-10+Math.floor(i/3)*3);
 
-    // Enemy 2: High Warlord Malrik's Fortified Northern Blackwood Citadel
+    // Enemy 2: High Warlord Malrik's Spacious Cliff-Walled Blackwood Citadel
     placeBuilding(sim,'towncenter',2,c2.x,c2.z,true);
-    placeBuilding(sim,'keep',2,c2.x-8,c2.z+6,true);
-    placeBuilding(sim,'barracks',2,c2.x+10,c2.z+10,true);
-    placeBuilding(sim,'stable',2,c2.x-12,c2.z-8,true);
-    placeBuilding(sim,'range',2,c2.x+12,c2.z-8,true);
-    placeBuilding(sim,'blacksmith',2,c2.x,c2.z-12,true);
-    placeBuilding(sim,'house',2,c2.x+13,c2.z+2,true);
-    placeBuilding(sim,'house',2,c2.x-13,c2.z+2,true);
-    placeBuilding(sim,'mill',2,c2.x,c2.z+13,true);
-    buildWalledCitadel(sim,2,c2,{radius:19,gates:['south','west'],towers:true,complete:true});
+    placeBuilding(sim,'keep',2,c2.x-12,c2.z+8,true);
+    placeBuilding(sim,'barracks',2,c2.x+12,c2.z+11,true);
+    placeBuilding(sim,'stable',2,c2.x-13,c2.z-10,true);
+    placeBuilding(sim,'range',2,c2.x+13,c2.z-10,true);
+    placeBuilding(sim,'blacksmith',2,c2.x,c2.z-14,true);
+    placeBuilding(sim,'house',2,c2.x+15,c2.z+2,true);
+    placeBuilding(sim,'house',2,c2.x-15,c2.z+1,true);
+    placeBuilding(sim,'mill',2,c2.x,c2.z+15,true);
+    buildNaturalFortifiedBase(sim,2,c2,{radius:27,gates:['south','west'],towers:true,complete:true,includeResources:true,seedOffset:1305});
     for(let i=0;i<12;i++)placeUnit(sim,'villager',2,c2.x-5+(i%4)*3,c2.z-4+Math.floor(i/4)*3);
-    for(let i=0;i<8;i++)placeUnit(sim,i%2?'knight':'swordsman',2,c2.x-8+(i%4)*4,c2.z+23+Math.floor(i/4)*3);
-
-    seedBaseDeposits(sim,c3,131);seedBaseDeposits(sim,c2,132);
+    for(let i=0;i<8;i++)placeUnit(sim,i%2?'knight':'swordsman',2,c2.x-8+(i%4)*4,c2.z+29+Math.floor(i/4)*3);
   }else if(mode==='campaign14'){
-    // CROWN OF THREE KINGDOMS — Grand 2v2 Imperial Coalition Finale across Rivers, Bridges & Cliffs!
-    const c0={x:-76,z:54},c1={x:76,z:52},c2={x:76,z:-56},c3={x:-74,z:-56};
+    // CROWN OF THREE KINGDOMS — Grand 2v2 Imperial Coalition War across Twin Rivers & Natural Cliff Fortresses!
+    const c0={x:-78,z:58},c1={x:78,z:56},c2={x:78,z:-58},c3={x:-76,z:-58};
     sim.players=[
       {...sim.makePlayer(playerFaction),name:'Your Royal Army',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:1100,wood:1100,gold:750,stone:700},defeated:false},
       makeScenarioPlayer(sim,{name:'Sunward Usurper',faction:'sun',team:2,age:2,difficulty:diff,aiPersonality:'boomer',colorIndex:1,start:c1,resources:{food:1000,wood:1000,gold:700,stone:550}}),
@@ -434,26 +408,23 @@ export function buildActFourScenario(sim){
     ];
     sim.spawnPositions=[c0,c1,c2,c3];
 
-    // Natural flanking rock ridges guiding coalition fights over the Twin Rivers bridges
-    const keep=[{x:c0.x,z:c0.z,r:24},{x:c1.x,z:c1.z,r:24},{x:c2.x,z:c2.z,r:24},{x:c3.x,z:c3.z,r:24},{x:-22,z:0,r:16},{x:22,z:0,r:16}];
-    addCliffRidge(sim,{x:-12,z:-92},{x:12,z:-64},{step:4.0,width:1,radius:3.0,height:4.5,wobble:2.0,keepClear:keep,seedOffset:1401});
-    addCliffRidge(sim,{x:-12,z:64},{x:12,z:92},{step:4.0,width:1,radius:3.0,height:4.5,wobble:2.0,keepClear:keep,seedOffset:1402});
+    const keep=[{x:c0.x,z:c0.z,r:29},{x:c1.x,z:c1.z,r:29},{x:c2.x,z:c2.z,r:29},{x:c3.x,z:c3.z,r:29},{x:-22,z:0,r:16},{x:22,z:0,r:16}];
+    addCliffRidge(sim,{x:-12,z:-94},{x:12,z:-64},{step:3.8,width:1,radius:3.1,height:4.8,wobble:2.0,keepClear:keep,seedOffset:1401});
+    addCliffRidge(sim,{x:-12,z:64},{x:12,z:94},{step:3.8,width:1,radius:3.1,height:4.8,wobble:2.0,keepClear:keep,seedOffset:1402});
 
-    // Helper to stamp a full walled Castle-Age Coalition Citadel for each of the 4 Kingdoms
     const buildCitadel=(owner,center,gates,armyTypes)=>{
       placeBuilding(sim,'towncenter',owner,center.x,center.z,true);
-      placeBuilding(sim,'keep',owner,center.x+(center.x<0?7:-7),center.z+(center.z<0?7:-7),true);
-      placeBuilding(sim,'barracks',owner,center.x-10,center.z+9,true);
-      placeBuilding(sim,'range',owner,center.x+10,center.z-9,true);
-      placeBuilding(sim,'stable',owner,center.x-10,center.z-9,true);
-      placeBuilding(sim,'blacksmith',owner,center.x+10,center.z+9,true);
-      placeBuilding(sim,'house',owner,center.x,center.z-13,true);
-      placeBuilding(sim,'house',owner,center.x,center.z+13,true);
-      placeBuilding(sim,'mill',owner,center.x+(center.x<0?-13:13),center.z,true);
-      buildWalledCitadel(sim,owner,center,{radius:19,gates,towers:true,complete:true});
-      for(let i=0;i<12;i++)placeUnit(sim,'villager',owner,center.x-5+(i%4)*3,center.z-4+Math.floor(i/4)*2.8);
-      armyTypes.forEach((t,i)=>placeUnit(sim,t,owner,center.x+(center.x<0?23:-23),center.z-8+i*3));
-      seedBaseDeposits(sim,center,1410+owner);
+      placeBuilding(sim,'keep',owner,center.x+(center.x<0?11:-11),center.z+(center.z<0?10:-10),true);
+      placeBuilding(sim,'barracks',owner,center.x-12,center.z+11,true);
+      placeBuilding(sim,'range',owner,center.x+12,center.z-11,true);
+      placeBuilding(sim,'stable',owner,center.x-12,center.z-11,true);
+      placeBuilding(sim,'blacksmith',owner,center.x+13,center.z+10,true);
+      placeBuilding(sim,'house',owner,center.x,center.z-15,true);
+      placeBuilding(sim,'house',owner,center.x,center.z+15,true);
+      placeBuilding(sim,'mill',owner,center.x+(center.x<0?-15:15),center.z,true);
+      buildNaturalFortifiedBase(sim,owner,center,{radius:27,gates,towers:true,complete:true,includeResources:true,seedOffset:1410+owner});
+      for(let i=0;i<12;i++)placeUnit(sim,'villager',owner,center.x-5+(i%4)*3.2,center.z-4+Math.floor(i/4)*2.8);
+      armyTypes.forEach((t,i)=>placeUnit(sim,t,owner,center.x+(center.x<0?28:-28),center.z-8+i*3));
     };
 
     buildCitadel(0,c0,['east','north'],['knight','knight','swordsman','swordsman','archer','archer','monk','scout']);
@@ -462,7 +433,6 @@ export function buildActFourScenario(sim){
     buildCitadel(2,c2,['west','south'],['outrider','outrider','knight','knight','spearman','spearman','ram']);
   }
 
-  // Natural starting forests & wilderness deposits across the sprawling 240x240 realm
   plantStartingForests(sim);
   groupFieldForests(sim);
   const rng=seededRandom((sim.options.seed||2026)+9911);
@@ -480,16 +450,11 @@ export function buildActFourScenario(sim){
   sim.updateFog();
 }
 
-/**
- * Dynamic mid-mission map-expanding script trigger for Chapter XI:
- * Western Allied Relief breaks through the cliff pass, builds an Allied Forward Base,
- * activates Player 3's AI, and charges the encircling enemy camps!
- */
 export function triggerWesternReliefArrival(sim){
   const ally=sim.players[3];
   if(!ally||!ally.dormant)return false;
   ally.dormant=false;
-  const base=ally.start||{x:-84,z:10};
+  const base=ally.start||{x:-88,z:10};
   placeBuilding(sim,'towncenter',3,base.x,base.z,true);
   placeBuilding(sim,'barracks',3,base.x+12,base.z-8,true);
   placeBuilding(sim,'stable',3,base.x+12,base.z+8,true);
@@ -500,18 +465,13 @@ export function triggerWesternReliefArrival(sim){
   const vanguard=[];
   for(let i=0;i<6;i++){const u=placeUnit(sim,'knight',3,base.x+20+(i%3)*3,base.z-6+Math.floor(i/3)*3);if(u)vanguard.push(u.id);}
   for(let i=0;i<4;i++){const u=placeUnit(sim,'archer',3,base.x+20+i*2.5,base.z+6);if(u)vanguard.push(u.id);}
-  if(vanguard.length)sim.command(vanguard,{type:'attackmove',x:-26,z:0});
+  if(vanguard.length)sim.command(vanguard,{type:'attackmove',x:-36,z:0});
   sim.assignEconomy(3);
   sim.revision++;
   sim.updateFog();
   return true;
 }
 
-/**
- * Dynamic mid-mission rescue trigger for Chapter XIII (Warcraft III / Joan of Arc style):
- * Transfers the entire besieged walled town of Oakhold (buildings + villagers) from Player 3
- * directly to Player 0's command, expanding the player's kingdom across the map!
- */
 export function triggerOakholdLiberation(sim){
   const village=sim.players[3];
   if(!village||village.liberated)return false;
@@ -524,7 +484,6 @@ export function triggerOakholdLiberation(sim){
       if(e.kind==='unit'&&e.type==='villager')sim.assignWorker(e);
     }
   }
-  // Reward loyal garrison militia & supplies inside Oakhold
   const tc=sim.owned(0,'building','towncenter')[0];
   if(tc){
     for(let i=0;i<4;i++)placeUnit(sim,'spearman',0,tc.x+8+i*2.2,tc.z-8);
@@ -537,7 +496,6 @@ export function triggerOakholdLiberation(sim){
   return true;
 }
 
-/** Main entry point called during Simulation initialization for every campaign mission. */
 export function applyCampaignScenario(sim){
   if(!sim.mission)return;
   if(sim.mission.actFour)buildActFourScenario(sim);

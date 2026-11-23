@@ -136,6 +136,16 @@ export function applySurfaceMaterials(view){
   bind(m.oreRock,'boulder',0x969188,{metalness:.08,roughness:.84});
   const atm=ensureAtmosphereUniforms(view);
   for(const key of ['rock','oreRock','gold','iron'])applyAnalyticIblToMaterial(m[key],atm);
+  // Propagate loaded Poly Haven rock PBR maps to cloned TerrainDetails cliff/mountain meshes
+  if(view.terrainDetails&&m.rock){
+    for(const mesh of [view.terrainDetails.mesh,view.terrainDetails.cliffWallMesh,view.terrainDetails.mountainMesh]){
+      const dm=mesh?.material;if(!dm)continue;
+      const changed=dm.map!==m.rock.map||dm.normalMap!==m.rock.normalMap||dm.roughnessMap!==m.rock.roughnessMap;
+      dm.map=m.rock.map;dm.normalMap=m.rock.normalMap;dm.roughnessMap=m.rock.roughnessMap;
+      if(dm.normalScale&&m.rock.normalScale)dm.normalScale.copy(m.rock.normalScale);
+      if(changed)dm.needsUpdate=true;
+    }
+  }
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
 }
 
