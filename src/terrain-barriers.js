@@ -66,7 +66,7 @@ function isSiteBlockedForBarrier(sim,x,z,r,passes=[],keepClear=[]){
   }
   for(const e of sim.entities){
     if(e.hp<=0)continue;
-    const pad=e.kind==='building'?e.r+r+1.6:e.kind==='unit'?e.r+r+1.4:e.kind==='shrine'?e.r+r+4.5:0;
+    const pad=e.kind==='building'?e.r+r+1.6:e.kind==='unit'?e.r+r+1.4:e.kind==='shrine'?e.r+r+4.5:(e.kind==='resource'&&(e.startDeposit!==undefined||e.startForest!==undefined))?e.r+r+.45:0;
     if(pad>0&&Math.hypot(e.x-x,e.z-z)<pad)return true;
   }
   return false;
@@ -635,12 +635,17 @@ export function applyMapGeography(sim){
     {x:-36,z:49,r:9},
   ];
   const h=sim.halfWorld;
+  let minBaseDist=Infinity;
+  for(let i=0;i<bases.length;i++)for(let j=i+1;j<bases.length;j++){
+    minBaseDist=Math.min(minBaseDist,Math.hypot(bases[i].x-bases[j].x,bases[i].z-bases[j].z));
+  }
+  const adaptiveGladeR=Math.round(Math.min(38,Math.max(26,Number.isFinite(minBaseDist)?minBaseDist*.38:38)));
 
   if(map==='timbervale'){
     // Authentic AoE4 Sunlit Woodland Glades:
     // Vast open sunny building meadows (38m radius = 76m wide!) framed by thick sprawling ancient forests + mossy granite bluffs,
     // leaving only 2–3 narrow grassy passes per glade so players save massive wall cost naturally!
-    const gladeR=sim.worldSize>=240?38:30;
+    const gladeR=sim.worldSize>=240?Math.min(38,adaptiveGladeR):Math.min(30,adaptiveGladeR);
     for(const base of bases){
       const otherKeep=bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:gladeR+4}));
       buildWoodlandGladePocket(sim,base,{
@@ -693,7 +698,7 @@ export function applyMapGeography(sim){
     // Authentic AoE4 Altai / French Pass Fortified Valleys:
     // Continent-wide mountain ranges, forested coves (36m radius = 72m wide!), and central contested ridges —
     // each kingdom sits backed naturally against a real mountain massif with straight curtain walls sealing ONLY its valley mouth!
-    const bastionR=sim.worldSize>=240?36:29;
+    const bastionR=sim.worldSize>=240?Math.min(36,adaptiveGladeR):Math.min(29,adaptiveGladeR);
     for(const base of bases){
       buildNaturalFortifiedBase(sim,base.owner,base,{
         radius:bastionR,
@@ -713,6 +718,105 @@ export function applyMapGeography(sim){
     addCurvedCliffChain(sim,[{x:h*.18,z:h*.34},{x:h*.46,z:h*.52},{x:h*.84,z:h*.80}],{step:3.5,width:1,radius:3.1,height:4.8,wobble:2.4,passes:centerPasses,keepClear:centerKeep,seedOffset:67,foothillTrees:true});
     addMountainMassif(sim,-h*.76,h*.14,{radius:12,peaks:3,passes:centerPasses,keepClear:centerKeep,seedOffset:71});
     addMountainMassif(sim,h*.76,-h*.14,{radius:12,peaks:3,passes:centerPasses,keepClear:centerKeep,seedOffset:73});
+  }else if(map==='ironring'){
+    // Campaign Ch. XI inspired — Ring of Iron:
+    // Four sweeping alpine mountain chains radiate from a rich central highland arena
+    // with 4 wide gateable passes (N/E/S/W), leaving vast buildable outer coves for 2–8 kingdoms!
+    const ringR=Math.min(52,Math.max(30,h*.28));
+    const ringKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(38,adaptiveGladeR)})),{x:0,z:0,r:ringR-8},{x:0,z:-ringR,r:13},{x:ringR,z:0,r:13},{x:0,z:ringR,r:13},{x:-ringR,z:0,r:13}];
+    const ringPasses=[{x:0,z:-ringR,r:12},{x:ringR,z:0,r:12},{x:0,z:ringR,r:12},{x:-ringR,z:0,r:12}];
+    const diagAngles=[-Math.PI*.75,-Math.PI*.25,Math.PI*.25,Math.PI*.75];
+    diagAngles.forEach((a,idx)=>{
+      const inner={x:Math.cos(a)*ringR,z:Math.sin(a)*ringR};
+      const mid={x:Math.cos(a)*(ringR+h*.22),z:Math.sin(a)*(ringR+h*.22)};
+      const far={x:Math.cos(a)*(h*.72),z:Math.sin(a)*(h*.72)};
+      addCurvedCliffChain(sim,[inner,mid,far],{step:3.5,width:2,radius:3.2,height:5.1,wobble:2.6,passes:ringPasses,keepClear:ringKeep,seedOffset:311+idx*29,foothillTrees:true});
+      const arcL={x:Math.cos(a-.26)*ringR,z:Math.sin(a-.26)*ringR};
+      const arcR={x:Math.cos(a+.26)*ringR,z:Math.sin(a+.26)*ringR};
+      addCliffRidge(sim,arcL,arcR,{step:3.4,width:1,radius:3.1,height:4.9,wobble:1.3,passes:ringPasses,keepClear:ringKeep,seedOffset:323+idx*17,foothillTrees:true});
+    });
+    // Rich contested gold & stone seams inside the central Iron Ring basin
+    for(const [mx,mz,t] of [[-16,-16,'gold'],[16,16,'gold'],[-16,16,'stone'],[16,-16,'stone'],[0,-22,'gold'],[0,22,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz)&&!bases.some(b=>Math.hypot(b.x-mx,b.z-mz)<22))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:24,withMassifs:true,keepClear:ringKeep,passes:ringPasses,seedOffset:341});
+  }else if(map==='sunderedpass'){
+    // Campaign Ch. XII inspired — Sundered Pass:
+    // Colossal North-to-South continental mountain spine pierced by ONLY 3 narrow alpine passes
+    // + lush sunlit woodland glades framing each kingdom's spacious starting valley!
+    const passes=[{x:0,z:-h*.52,r:12.5},{x:0,z:0,r:13},{x:0,z:h*.52,r:12.5}];
+    const spineKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(36,adaptiveGladeR)})),...passes];
+    addCurvedCliffChain(sim,[
+      {x:-2,z:-h+7},{x:3,z:-h*.34},{x:-3,z:h*.34},{x:2,z:h-7},
+    ],{step:3.4,width:2,radius:3.3,height:5.3,wobble:2.8,passes,keepClear:spineKeep,seedOffset:411,foothillTrees:true});
+    // Lush sunlit woodland glade framing every kingdom with natural cheap-to-wall flanks
+    for(const base of bases){
+      const otherKeep=[...bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:adaptiveGladeR+4})),...passes,{x:0,z:0,r:18}];
+      buildWoodlandGladePocket(sim,base,{
+        gladeRadius:Math.min(36,adaptiveGladeR),passes:3,keepClear:otherKeep,seedOffset:base.owner*37+421,includeResources:false,
+      });
+    }
+    for(const [mx,mz,t] of [[-18,-h*.52,'gold'],[18,h*.52,'gold'],[-18,0,'stone'],[18,0,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz)&&!bases.some(b=>Math.hypot(b.x-mx,b.z-mz)<22))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:22,withMassifs:true,keepClear:spineKeep,passes,seedOffset:439});
+  }else if(map==='oakhold'){
+    // Campaign Ch. XIII & AoE4 inspired — Oakhold Glades:
+    // Vast sunlit woodland clearings + mossy granite bluffs + crisscrossing ancient forest trails!
+    for(const base of bases){
+      const otherKeep=[...bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:adaptiveGladeR+4})),{x:0,z:0,r:20},{x:-36,z:49,r:10}];
+      buildWoodlandGladePocket(sim,base,{
+        gladeRadius:adaptiveGladeR,passes:3,keepClear:otherKeep,seedOffset:base.owner*43+509,includeResources:false,
+      });
+    }
+    const midKeep=[...bases.map(b=>({x:b.x,z:b.z,r:adaptiveGladeR+2})),{x:0,z:0,r:22}];
+    const midPasses=[{x:0,z:0,r:18},{x:-h*.42,z:-h*.34,r:12},{x:h*.42,z:h*.34,r:12},{x:-h*.34,z:h*.42,r:12},{x:h*.34,z:-h*.42,r:12}];
+    addDenseForestBelt(sim,{x:-h*.86,z:-h*.74},{x:h*.86,z:h*.74},{step:2.5,thickness:4,passes:midPasses,keepClear:midKeep,seedOffset:521});
+    addDenseForestBelt(sim,{x:-h*.74,z:h*.82},{x:h*.74,z:-h*.82},{step:2.55,thickness:3,passes:midPasses,keepClear:midKeep,seedOffset:527});
+    for(const [mx,mz,t] of [[-12,-10,'gold'],[12,10,'gold'],[-10,12,'stone'],[10,-12,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz)&&!bases.some(b=>Math.hypot(b.x-mx,b.z-mz)<22))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear:midKeep,passes:midPasses,seedOffset:541});
+  }else if(map==='threecrowns'){
+    // Campaign Ch. XIV inspired — Three Crowns Crossing:
+    // Twin sapphire rivers + stone bridges + towering northern & southern granite cliff escarpments!
+    const bridgeKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(36,adaptiveGladeR)})),{x:-26,z:0,r:20},{x:26,z:0,r:20},{x:0,z:0,r:18}];
+    addCliffRidge(sim,{x:-14,z:-h*.88},{x:14,z:-h*.46},{step:3.6,width:1,radius:3.2,height:5.0,wobble:2.2,keepClear:bridgeKeep,seedOffset:611,foothillTrees:true});
+    addCliffRidge(sim,{x:-14,z:h*.46},{x:14,z:h*.88},{step:3.6,width:1,radius:3.2,height:5.0,wobble:2.2,keepClear:bridgeKeep,seedOffset:613,foothillTrees:true});
+    for(const [mx,mz,t] of [[0,-26,'gold'],[0,26,'gold'],[-8,-16,'stone'],[8,16,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear:bridgeKeep,passes:[{x:-26,z:0,r:20},{x:26,z:0,r:20}],seedOffset:619});
+  }else if(map==='emberroad'){
+    // Campaign Ch. VII inspired — The Ember Road:
+    // Dramatic volcanic basalt cliff ranges carving a commanding central Ash Pass & twin scorched gorges!
+    const passes=[{x:0,z:0,r:14},{x:-h*.46,z:-h*.42,r:12},{x:h*.46,z:h*.42,r:12}];
+    const ashKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(36,adaptiveGladeR)})),...passes];
+    addCurvedCliffChain(sim,[{x:-h+7,z:-h+9},{x:-h*.48,z:-h*.44},{x:-16,z:-15}],{step:3.4,width:2,radius:3.3,height:5.2,wobble:2.5,passes,keepClear:ashKeep,seedOffset:711,foothillTrees:false});
+    addCurvedCliffChain(sim,[{x:16,z:15},{x:h*.48,z:h*.44},{x:h-7,z:h-9}],{step:3.4,width:2,radius:3.3,height:5.2,wobble:2.5,passes,keepClear:ashKeep,seedOffset:713,foothillTrees:false});
+    for(const [mx,mz,t] of [[-16,14,'gold'],[16,-14,'gold'],[-22,4,'stone'],[22,-4,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:6,ridgeLen:26,withMassifs:true,keepClear:ashKeep,passes,seedOffset:719});
+  }else if(map==='frostvale'){
+    // Campaign Ch. IX inspired — Frostmarch Vale:
+    // Sheltered snowy alpine valley coves backed by snow-capped mountain spurs & blue-spruce belts
+    // (unwalled natural coves so players build minimal walls across the cove mouth!).
+    const coveR=Math.min(36,adaptiveGladeR);
+    for(const base of bases){
+      buildNaturalFortifiedBase(sim,base.owner,base,{
+        radius:coveR,
+        towers:false,
+        complete:true,
+        wallGaps:false,
+        includeResources:false,
+        keepClear:bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:coveR+6})),
+        seedOffset:base.owner*29+811,
+        backToBorder:true,
+      });
+    }
+    const snowKeep=[...bases.map(b=>({x:b.x,z:b.z,r:coveR+6})),{x:0,z:0,r:16}];
+    scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear:snowKeep,passes:[{x:0,z:0,r:16}],seedOffset:823});
   }else if(['highland','volcanic','canyon','arid','tundra'].includes(map)){
     // Rugged Rocky / Mesa / Volcanic / Alpine Biomes: Rich dramatic continent-wide cliff formations & mountain ridges!
     const passes=[{x:0,z:0,r:14},{x:-26,z:0,r:12},{x:26,z:0,r:12}];

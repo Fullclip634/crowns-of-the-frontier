@@ -6,10 +6,10 @@ const advance=(s,seconds)=>{for(let i=0;i<seconds*10;i++)s.tick(.1);};
 const quiet=mode=>{const s=new Simulation({mode,difficulty:'story'});s.tickAI=()=>{};return s;};
 
 test('campaign settlement progresses through paid construction and training, freezes checkpoints, and completes conquest',()=>{
-  const s=quiet('campaign1'),worker=s.owned(0,'unit','villager')[0],barracks=s.owned(0,'building','barracks')[0];
-  assert.ok(s.build('house',-36,49,[worker.id]));for(let i=0;i<6;i++)assert.ok(s.train(barracks.id,'spearman'));advance(s,125);
+  const s=quiet('campaign1'),tc0=s.owned(0,'building','towncenter')[0],worker=s.owned(0,'unit','villager')[0],barracks=s.owned(0,'building','barracks')[0];
+  assert.ok(s.build('house',tc0.x+3,tc0.z+19,[worker.id]));for(let i=0;i<6;i++)assert.ok(s.train(barracks.id,'spearman'));advance(s,125);
   assert.equal(s.campaignState.stage,2);assert.equal(s.ended,null);assert.ok(s.stats.gathered>=250);assert.ok(s.campaignCheckpoint);
-  const snapshot=JSON.stringify(s.campaignCheckpoint);s.command([worker.id],{type:'move',x:-20,z:50});advance(s,3);assert.equal(JSON.stringify(s.campaignCheckpoint),snapshot);
+  const snapshot=JSON.stringify(s.campaignCheckpoint);s.command([worker.id],{type:'move',x:tc0.x+19,z:tc0.z+20});advance(s,3);assert.equal(JSON.stringify(s.campaignCheckpoint),snapshot);
   const restored=Simulation.restore(JSON.parse(snapshot));assert.equal(restored.campaignState.stage,2);assert.ok(restored.campaignCheckpoint);assert.equal(restored.ended,null);
   const tc=s.owned(1,'building','towncenter')[0];s.hurt(tc,tc.hp,barracks);advance(s,1);assert.equal(s.ended.won,true);assert.ok(s.campaignState.finished);assert.ok(s.campaignState.optional);
 });
@@ -25,8 +25,8 @@ test('caravan escort uses a reachable bridge route, remains distinct from the ca
   const restored=Simulation.restore(checkpoint);assert.ok(restored.get(restored.campaignState.cartId));assert.equal(restored.ended,null);assert.equal(restored.campaignState.stage,checkpoint.campaignState.stage);
 });
 test('fortress defense requires a completed stronghold and all waves before victory',()=>{
-  const s=quiet('campaign3');for(let i=0;i<8;i++)s.spawnWave();for(const unit of s.owned(1,'unit'))s.hurt(unit,unit.hp,s.owned(0,'unit')[0]);advance(s,1);assert.equal(s.ended,null);
-  const workers=s.owned(0,'unit','villager').slice(0,3);assert.ok(s.build('keep',-36,49,workers.map(e=>e.id)));advance(s,110);
+  const s=quiet('campaign3'),tc0=s.owned(0,'building','towncenter')[0];for(let i=0;i<8;i++)s.spawnWave();for(const unit of s.owned(1,'unit'))s.hurt(unit,unit.hp,s.owned(0,'unit')[0]);advance(s,1);assert.equal(s.ended,null);
+  const workers=s.owned(0,'unit','villager').slice(0,3);assert.ok(s.build('keep',tc0.x+3,tc0.z+19,workers.map(e=>e.id)));advance(s,110);
   assert.ok(s.campaignState.finished);assert.equal(s.ended.won,true);assert.equal(s.campaignState.stage,3);
 });
 test('sacred valley supports both continuous shrine control and a recorded conquest alternative',()=>{
@@ -43,9 +43,9 @@ test('coastal campaign counts deposited fishing catch and permits a paid naval a
   assert.equal(s.campaignState.stage,2);const enemy= s.owned(1,'building','towncenter')[0];s.hurt(enemy,enemy.hp,s.owned(0,'unit','warship')[0]);advance(s,1);assert.equal(s.ended.won,true);
 });
 test('final siege progresses through paid siege production and an actual gate attack before conquest',()=>{
-  const s=quiet('campaign5'),workers=s.owned(0,'unit','villager').slice(0,2);assert.ok(s.build('workshop',-36,49,workers.map(e=>e.id)));advance(s,65);
+  const s=quiet('campaign5'),tc0=s.owned(0,'building','towncenter')[0],workers=s.owned(0,'unit','villager').slice(0,2);assert.ok(s.build('workshop',tc0.x+3,tc0.z+19,workers.map(e=>e.id)));advance(s,65);
   const workshop=s.owned(0,'building','workshop')[0];assert.equal(workshop.progress,1);assert.ok(s.train(workshop.id,'ram'));assert.ok(s.train(workshop.id,'ram'));advance(s,80);assert.equal(s.campaignState.stage,1);
-  const gate=s.owned(1,'building','gate')[0],rams=s.owned(0,'unit','ram');s.command(rams.map(e=>e.id),{type:'attack',target:gate.id});advance(s,100);
+  const gate=s.owned(1,'building','gate')[0],rams=s.owned(0,'unit','ram');s.command(rams.map(e=>e.id),{type:'attack',target:gate.id});advance(s,180);
   assert.ok(!s.get(gate.id));assert.equal(s.campaignState.stage,2);const tc=s.owned(1,'building','towncenter')[0];s.hurt(tc,tc.hp,s.owned(0,'unit')[0]);advance(s,1);assert.equal(s.ended.won,true);
 });
 test('existing campaign saves retain their legacy rules and do not gain a missing escort requirement',()=>{
@@ -81,7 +81,7 @@ test('enemy pressure is gated by difficulty and never fires on story',()=>{
   assert.equal(seen.find(event=>event.id==='c1-foragers')?.enemy,false,'friendly events are flagged as friendly');
 });
 test('branching events follow the optional objective, not just the final medal',()=>{
-  const armed=quiet('campaign5');armed.addUnit('ram',0,-30,50);advance(armed,161);
+  const armed=quiet('campaign5'),tc0=armed.owned(0,'building','towncenter')[0];armed.addUnit('ram',0,tc0.x+9,tc0.z+20);advance(armed,161);
   assert.ok(armed.campaignState.fired.includes('c5-engine-intact'),'a surviving engine opens the friendly branch');
   assert.ok(!armed.campaignState.fired.includes('c5-engine-lost'),'the failure branch does not fire');
   const unarmed=quiet('campaign5');advance(unarmed,161);

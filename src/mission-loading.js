@@ -177,7 +177,7 @@ export const MISSION_CHRONICLES=Object.freeze({
     ],
     startingBase:'Fortified Imperial Staging Citadel + Full Allied Coalition Fortress (2v2 Grand War)',
     enemyIntel:'2 Full Imperial Rival Citadels · Coordinated Multi-Front Siege & Cavalry Armies',
-    terrainIntel:'Sprawling 240×240 Grand Realm · River Bridges, Cliff Chokepoints & Forest Lanes',
+    terrainIntel:'Sprawling 360×360 Grand Realm · River Bridges, Cliff Chokepoints & Forest Lanes',
     tip:'Use the Alliance menu to share surplus resources with your AI ally and drop minimap flares to coordinate pushes.',
   },
 });

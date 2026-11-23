@@ -10,7 +10,7 @@ import {standardMaterial,nodeRuntime} from './render-runtime.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD, FACTIONS, UNITS, BUILDINGS, seededRandom} from './data.js';
 import {insideMap} from './map-geometry.js';
-import {terrainBiome,isSnowBiome} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {authoredAssetState,authoredCatalogue,prepareAuthoredAssets,workerVisualTask,trimAuthoredAssets} from './authored-assets.js';
 import {unitScreenHeight,lodDecision} from './distance-lod.js';
 import {beginUnitFrame,writeUnitPose,endUnitFrame,nearViewport,installRenderFrame,markInstancePrefix,prepareViewport} from './render-batches.js';
@@ -427,7 +427,7 @@ export class WorldView {
         node.position.set(rx,ground,rz);node.rotation.y=heading;
         const {batch}=node.userData,dummy=(this.poseDummy??=new THREE.Object3D());dummy.position.set(rx,ground+(UNITS[e.type].naval?Math.sin(this.clock*2+e.id)*.055:gait.bob),rz);dummy.rotation.set(0,heading,UNITS[e.type].naval?Math.sin(this.clock*1.8+e.id)*.025:0);dummy.scale.setScalar(1);dummy.updateMatrix();node.visible=writeUnitPose(this,batch,e,dummy.matrix,true,this.unitDetail(e,rx,ground,rz));
       if(UNITS[e.type].naval&&e.moving&&!this.settings?.reducedMotion){this.wakeTimes??=new Map();const lastWake=this.wakeTimes.get(e.id)??-1;if(this.clock-lastWake>.34){this.wakeTimes.set(e.id,this.clock);const stern=e.type==='warship'?2.6:e.type==='fishingboat'?1.5:2.0;this.wake(rx-Math.sin(heading)*stern,rz-Math.cos(heading)*stern,heading,e.type==='warship'?1.25:e.type==='fishingboat'?.85:1.0);}}
-      else if(['knight','scout','outrider'].includes(e.type)&&e.moving&&this.settings.quality!=='low'&&!this.settings?.reducedMotion&&(this.vfxTimer?.pressure??0)<.45){this.dustTimes??=new Map();const lastDust=this.dustTimes.get(e.id)??-1;if(this.clock-lastDust>.42){this.dustTimes.set(e.id,this.clock);const map=this.sim?.options?.map,dustCol=isSnowBiome(map)?0xdbe6f0:map==='volcanic'?0x6c5e54:0xd5c4a2;this.dust(rx-Math.sin(heading)*.95,rz-Math.cos(heading)*.95,.72,dustCol);}}
+      else if(['knight','scout','outrider'].includes(e.type)&&e.moving&&this.settings.quality!=='low'&&!this.settings?.reducedMotion&&(this.vfxTimer?.pressure??0)<.45){this.dustTimes??=new Map();const lastDust=this.dustTimes.get(e.id)??-1;if(this.clock-lastDust>.42){this.dustTimes.set(e.id,this.clock);const map=this.sim?.options?.map,dustCol=isSnowBiome(map)?0xdbe6f0:isVolcanicBiome(map)?0x6c5e54:0xd5c4a2;this.dust(rx-Math.sin(heading)*.95,rz-Math.cos(heading)*.95,.72,dustCol);}}
       continue;
       }
       if(!visible||e.embarked)continue;

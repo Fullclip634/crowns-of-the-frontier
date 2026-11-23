@@ -4,7 +4,7 @@ import {seededRandom} from './data.js';
 import {roadDistance} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
-import {isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
+import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
 import {biomeCliffGeometry,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from './biome-art.js';
 
@@ -53,7 +53,7 @@ export class TerrainDetails{
 
     const coastal=land.map==='coast'||land.map==='archipelago';
     const rocky=isRockyBiome(land.map);
-    const palette=land.map==='volcanic'?[0x655d59,0x79716d,0x514e47]:isSnowBiome(land.map)?[0x929da7,0xbac4c6,0x747d87]:coastal?[0x9d9b88,0xb5af98,0x797b72]:isAridBiome(land.map)||['desert','canyon'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:rocky?[0x9ca097,0xb3b7ad,0x7d8178]:[0xa7a99b,0xb9b9a7,0x808778];
+    const palette=isVolcanicBiome(land.map)?[0x655d59,0x79716d,0x514e47]:isSnowBiome(land.map)?[0x929da7,0xbac4c6,0x747d87]:coastal?[0x9d9b88,0xb5af98,0x797b72]:isAridBiome(land.map)||['desert','canyon'].includes(land.map)?[0xc9ad7e,0xdcc59b,0x9e835c]:rocky?[0x9ca097,0xb3b7ad,0x7d8178]:[0xa7a99b,0xb9b9a7,0x808778];
     const settlements=land.settlements||[],campRadius=Math.min(28,land.worldSize*.145),mapEdge=land.half-4;
     const townDistance=(x,z)=>settlements.reduce((d,site)=>Math.min(d,Math.hypot(x-site.x,z-site.z)),Infinity);
     const validSite=(x,z,clearance)=>Math.abs(x)<=mapEdge&&Math.abs(z)<=mapEdge&&

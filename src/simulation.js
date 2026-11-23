@@ -78,7 +78,7 @@ export class Simulation {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
-    const defaultMapSize=['timbervale','bastion','ironpass','blackwood'].includes(this.options.map)?240:WORLD;
+    const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale'].includes(this.options.map)?240:WORLD;
     const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||defaultMapSize);
     this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
     this.rng=seededRandom(this.options.seed);this.entities=[];this.barriers=[];this.nextId=1;this.time=0;this.revision=0;
@@ -131,13 +131,15 @@ export class Simulation {
   initialize(){
     const m=this.options.mode,mission=this.mission, peaceful=m==='sandbox'||m==='tutorial', survival=m==='survival'||mission?.survival;
     const mapScale=this.worldSize/WORLD,scale=mission?1:mapScale,shift=!mission&&scale>1;
-    // Expanded 240x240 classic campaigns keep Player 0's town plaza well-anchored while
-    // opening +40m of fresh buildable territory behind the base AND pushing Enemy 1 far northeast (~147m away!).
+    // Grand 320x320 classic campaigns anchor Player 0 deep in the southwest frontier
+    // (-104, 86) and Enemy 1 far across the northeast realm (106, -90) — ~274m apart
+    // (standard AoE2/AoE4 campaign scale with wide contested midfield & spacious valleys).
     const expandedMission=Boolean(mission&&!mission.actFour&&this.worldSize>WORLD);
     const coastalMission=expandedMission&&(mission.map==='coast'||mission.map==='valley');
-    let dx0=shift?Math.round(-44*scale)-(-39):0,dz0=shift?Math.round(35*scale)-30:0;
-    let dx1=expandedMission?(coastalMission?28:34):(mission?0:Math.round(46*scale)-40);
-    let dz1=expandedMission?(coastalMission?-24:-30):(mission?0:Math.round(-39*scale)-(-34));
+    let dx0=expandedMission?(coastalMission?-61:-65):(shift?Math.round(-44*scale)-(-39):0);
+    let dz0=expandedMission?(coastalMission?52:56):(shift?Math.round(35*scale)-30:0);
+    let dx1=expandedMission?(coastalMission?62:66):(mission?0:Math.round(46*scale)-40);
+    let dz1=expandedMission?(coastalMission?-50:-56):(mission?0:Math.round(-39*scale)-(-34));
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
     this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='regicide'?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
@@ -214,7 +216,7 @@ export class Simulation {
         this.addNaturalResource(i%19===0?'gold':i%23===0?'stone':'wood',x,z,i%19===0||i%23===0?2200:260);
       }
     }
-    if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26*scale,-23*scale],[3,1],[28*scale,25*scale]])this.addShrine(x,z);}
+    if(m==='dominion'||mission?.dominion){const shrineScale=expandedMission?1.75:scale;for(const [x,z]of [[-26*shrineScale,-23*shrineScale],[3,1],[28*shrineScale,25*shrineScale]])this.addShrine(x,z);}
     plantStartingForests(this);
     groupFieldForests(this);
     if(!mission)applyMapGeography(this);

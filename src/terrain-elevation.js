@@ -1,6 +1,6 @@
 import {terrainNoise} from './terrain-fields.js';
 import {seededRandom} from './data.js';
-import {biomeProfile,NEW_BIOME_MAPS,CLASSIC_TACTICAL_MAPS} from './terrain-biomes.js';
+import {biomeProfile,NEW_BIOME_MAPS,CLASSIC_TACTICAL_MAPS,CAMPAIGN_BATTLEFIELD_MAPS} from './terrain-biomes.js';
 
 // One height field drives the rendered mesh, picking, foundations, roads and
 // tactical combat. Keeping it free of THREE lets the headless simulation use
@@ -22,7 +22,7 @@ export function broadRelief(map,x,z,phase){
   if(map==='arid'){
     const duneCoord=xx*.038+zz*.016+terrainNoise(xx*.018+5,zz*.018-7,seed^0x3c91)*1.45;
     h+=(Math.sin(duneCoord*Math.PI*2)+.32*Math.sin(duneCoord*Math.PI*4-.75))*.62;
-  }else if(map==='tundra'){
+  }else if(map==='tundra'||map==='frostvale'){
     const driftCoord=xx*.042-zz*.019+terrainNoise(xx*.021-9,zz*.021+4,seed^0x6a19)*1.3;
     h+=(Math.sin(driftCoord*Math.PI*2)+.25*Math.cos(driftCoord*Math.PI*4))*.36;
   }
@@ -42,7 +42,7 @@ export function tacticalHeight(map,seed,x,z,phase=terrainPhase(seed)){return bro
 // Elevation gameplay belongs to the new cliff/mesa biomes. The seven legacy
 // maps keep their published, regression-tested combat, fog and speed numbers.
 export const HIGH_GROUND_THRESHOLD=1.1;
-export function tacticalTerrainEnabled(map){return NEW_BIOME_MAPS.includes(map)||CLASSIC_TACTICAL_MAPS.includes(map);}
+export function tacticalTerrainEnabled(map){return NEW_BIOME_MAPS.includes(map)||CLASSIC_TACTICAL_MAPS.includes(map)||CAMPAIGN_BATTLEFIELD_MAPS.includes(map);}
 
 // Age of Empires style high-ground advantage, bounded so it can never become
 // an exploit: attacking downhill adds up to +25%, attacking uphill loses up to

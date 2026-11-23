@@ -13,7 +13,7 @@ import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
 import {terrainMeadow} from './terrain-fields.js';
 import {terrainClarityPixels} from './terrain-clarity.js';
 import {waterChannels} from './map-water.js';
-import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
+import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome,terrainBiome} from './terrain-biomes.js';
 import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
@@ -183,7 +183,7 @@ function groundMap(landscape){
     }
   }
   // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
-  const volcanic=landscape.map==='volcanic';
+  const volcanic=isVolcanicBiome(landscape.map);
   const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[94,82,58];
   const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[172,166,148]:[176,158,122];
   for(const road of terrainRoadPaths(landscape)){

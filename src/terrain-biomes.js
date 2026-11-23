@@ -26,6 +26,12 @@ const styles={
   blackwood:{ground:['#335938','#4f7546','#203f27'],grassTint:0x6ea862,grass:[0x3e6939,0x5a8148,0x2b4d2c],map:'#325632',plaza:0x868576,cliff:0x63695f,dense:true},
   timbervale:{ground:['#5c8745','#84aa5e','#3b6735'],grassTint:0x97ca80,grass:[0x5d8c42,0x81ab5a,0x457337],map:'#507a40',plaza:0x9a9787,cliff:0x777c72,dense:true},
   bastion:{ground:['#60834f','#82a069','#46693d'],grassTint:0x95c184,grass:[0x628b48,0x81a360,0x4c733c],map:'#597b4c',plaza:0xa29d8f,cliff:0x7e8078,rocky:true},
+  ironring:{ground:['#687c5d','#8e9f7d','#485b45'],grassTint:0x99b386,grass:[0x678154,0x8aa172,0x4d6443],map:'#627757',plaza:0x99988d,cliff:0x70736b,rocky:true},
+  sunderedpass:{ground:['#628056','#87a174','#436140'],grassTint:0x95b884,grass:[0x608450,0x83a16c,0x47683e],map:'#5b7950',plaza:0x98968b,cliff:0x73766e,rocky:true},
+  oakhold:{ground:['#45723c','#6d9652','#2c532e'],grassTint:0x86bc73,grass:[0x4f7e3d,0x739c54,0x396132],map:'#3f6a37',plaza:0x929081,cliff:0x6d7369,dense:true},
+  threecrowns:{ground:['#558650','#7ba569','#3c6b41'],grassTint:0x92c48c,grass:[0x5a8c4b,0x7da761,0x467640],map:'#4d7d4d',plaza:0x99988d,cliff:0x7c8078,lush:true},
+  emberroad:{ground:['#493f3c','#6b584e','#2a2625'],grassTint:0x887b6e,grass:[0x68594f,0x826f63,0x463d36],map:'#4a403c',plaza:0x5b534f,cliff:0x473f3b,ash:true},
+  frostvale:{ground:['#c1d2da','#e4edf1','#8da9b5'],grassTint:0xd6e6ec,grass:[0xafc5cc,0xd0dfe3,0x8ba6ae],map:'#b1c6d0',plaza:0xb3c3ca,cliff:0x7e939e,snow:true},
 };
 for(const style of Object.values(styles)){Object.freeze(style.ground);Object.freeze(style.grass);Object.freeze(style);}
 Object.freeze(styles);
@@ -33,6 +39,7 @@ Object.freeze(styles);
 export const LEGACY_MEADOW_MAPS=Object.freeze(['highlands','valley','rivers','desert','canyon','coast']);
 export const NEW_BIOME_MAPS=Object.freeze(['arid','tundra','volcanic','highland','woodland','riverland','archipelago']);
 export const CLASSIC_TACTICAL_MAPS=Object.freeze(['ironpass','blackwood','timbervale','bastion']);
+export const CAMPAIGN_BATTLEFIELD_MAPS=Object.freeze(['ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale']);
 
 // Distinct elevation profiles. `cliffs` drives smooth mesas/terraces in the
 // shared relief function; `strength` scales the rolling shoulders.
@@ -55,6 +62,12 @@ export const BIOME_PROFILES=Object.freeze({
   blackwood:Object.freeze({strength:2.35,cliffs:.3,wood:1.95,gold:1.05,stone:1.0,food:1.15}),
   timbervale:Object.freeze({strength:2.25,cliffs:.42,wood:2.15,gold:1.2,stone:1.15,food:1.25}),
   bastion:Object.freeze({strength:2.2,cliffs:.6,wood:1.05,gold:1.25,stone:1.35,food:1.05}),
+  ironring:Object.freeze({strength:3.45,cliffs:1.45,wood:1.05,gold:1.4,stone:1.55,food:1.05}),
+  sunderedpass:Object.freeze({strength:3.65,cliffs:1.55,wood:1.35,gold:1.3,stone:1.5,food:1.1}),
+  oakhold:Object.freeze({strength:2.3,cliffs:.38,wood:2.1,gold:1.15,stone:1.1,food:1.2}),
+  threecrowns:Object.freeze({strength:2.2,cliffs:.55,wood:1.15,gold:1.25,stone:1.2,food:1.3}),
+  emberroad:Object.freeze({strength:3.5,cliffs:1.7,wood:.4,gold:1.55,stone:1.8,food:.65}),
+  frostvale:Object.freeze({strength:2.55,cliffs:.85,wood:1.45,gold:1.15,stone:1.3,food:.85}),
 });
 
 export const TREE_PALETTES=Object.freeze({
@@ -76,6 +89,12 @@ export const TREE_PALETTES=Object.freeze({
   blackwood:Object.freeze({leaf:0x31542c,leafDark:0x1b361e,trunk:0x4c3d2d,snow:0xe3e9e5,minimap:'#193a1f'}),
   timbervale:Object.freeze({leaf:0x446b33,leafDark:0x234224,trunk:0x5d4c37,snow:0xe3e9e5,minimap:'#1f4424'}),
   bastion:Object.freeze({leaf:0x4c6b3d,leafDark:0x2d492d,trunk:0x604f3a,snow:0xe3e9e5,minimap:'#264930'}),
+  ironring:Object.freeze({leaf:0x486444,leafDark:0x29412e,trunk:0x5a4f42,snow:0xe3e9e5,minimap:'#2b4733'}),
+  sunderedpass:Object.freeze({leaf:0x47683e,leafDark:0x28452c,trunk:0x5c4d3c,snow:0xe3e9e5,minimap:'#28472e'}),
+  oakhold:Object.freeze({leaf:0x3b632f,leafDark:0x1f3d21,trunk:0x544430,snow:0xe3e9e5,minimap:'#1c4021'}),
+  threecrowns:Object.freeze({leaf:0x496d3f,leafDark:0x2a4b30,trunk:0x60503b,snow:0xe3e9e5,minimap:'#244b32'}),
+  emberroad:Object.freeze({leaf:0x4c473b,leafDark:0x292724,trunk:0x332b27,snow:0xd8dde0,minimap:'#2f2a25'}),
+  frostvale:Object.freeze({leaf:0x587276,leafDark:0x2b444b,trunk:0x4d4948,snow:0xdfecf2,minimap:'#42636b'}),
 });
 
 export function terrainBiome(map){return styles[map]||styles.highlands;}
@@ -83,6 +102,7 @@ export function terrainBiome(map){return styles[map]||styles.highlands;}
 const FALLBACK_PROFILE=Object.freeze({strength:1,cliffs:0,wood:1,gold:1,stone:1,food:1});
 export function biomeProfile(map){return BIOME_PROFILES[map]||FALLBACK_PROFILE;}
 export function isSnowBiome(map){return map==='winter'||!!styles[map]?.snow;}
+export function isVolcanicBiome(map){return !!styles[map]?.ash;}
 export function isAridBiome(map){return !!styles[map]?.sand||!!styles[map]?.ash;}
 export function isRockyBiome(map){return !!styles[map]?.rocky||!!styles[map]?.ash;}
 export function treeBiome(map){return isSnowBiome(map)?'winter':'highlands';}

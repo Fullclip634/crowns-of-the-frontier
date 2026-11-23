@@ -155,11 +155,14 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(villager.hp<villager.maxHp||house.hp<house.maxHp,'Soldiers poured straight through the open breach to strike interior villagers/buildings');
   });
 
-  it('gives classic chapters (I-X) spacious 240x240 scale, distant enemies & cliff-anchored fortifications',()=>{
+  it('gives classic chapters (I-X) grand 320x320 scale, distant enemies (>=250m) & cliff-anchored fortifications',()=>{
     const ch1=new Simulation({mode:'campaign1',difficulty:'story'});
-    assert.equal(ch1.worldSize,240,'Classic chapters expand to spacious 240x240 standard maps');
+    assert.equal(ch1.worldSize,320,'Classic chapters expand to grand 320x320 AoE standard maps');
     const p0=ch1.owned(0,'building','towncenter')[0],p1=ch1.owned(1,'building','towncenter')[0];
-    assert.ok(Math.hypot(p1.x-p0.x,p1.z-p0.z)>=130,`Enemy capital starts far across the frontier (${Math.round(Math.hypot(p1.x-p0.x,p1.z-p0.z))}m)`);
+    assert.ok(Math.hypot(p1.x-p0.x,p1.z-p0.z)>=250,`Enemy capital starts far across the frontier (${Math.round(Math.hypot(p1.x-p0.x,p1.z-p0.z))}m)`);
+    const ch2=new Simulation({mode:'campaign2',difficulty:'story'});
+    const c2p0=ch2.owned(0,'building','towncenter')[0],c2p1=ch2.owned(1,'building','towncenter')[0];
+    assert.ok(Math.hypot(c2p1.x-c2p0.x,c2p1.z-c2p0.z)>=250,`Ch.2 enemy garrison stands far across the river valley (${Math.round(Math.hypot(c2p1.x-c2p0.x,c2p1.z-c2p0.z))}m)`);
     const ch3=new Simulation({mode:'campaign3',difficulty:'story'});
     assert.ok(ch3.barriers.length>=8&&ch3.owned(0,'building','gate').length>=2,'Ch.3 ties short stone walls & gates into Iron Ridge cliffs');
     const ch7=new Simulation({mode:'campaign7',difficulty:'story'});
@@ -170,15 +173,33 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(ch10.owned(1,'building','keep').length>=1&&ch10.barriers.length>=20,'Ch.10 uses mountain-ringed staging & summit fortresses');
   });
 
-  it('runs Act IV Chapter XI (Ring of Iron) on grand 320x320 scale with 46m citadel basin, safe inner resources & arriving Western Relief',()=>{
+  it('delivers all 6 campaign-inspired Custom Battle & Skirmish maps with dry spawns, signature geography & save parity',()=>{
+    const newMaps=['ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale'];
+    for(const map of newMaps){
+      assert.ok(MAPS[map]?.name&&MAPS[map]?.desc,`${map} registered in MAPS`);
+      const sk=new Simulation({mode:'skirmish',map,seed:2026});
+      assert.equal(sk.worldSize,240,`${map} defaults to spacious 240x240 in Skirmish`);
+      assert.ok(sk.barriers.length>=12,`${map} generates rich natural cliffs/mountains (${sk.barriers.length})`);
+      const custom=new Simulation({mode:'custom',map,mapSize:'large',seed:2026});
+      assert.equal(custom.players.length,4);
+      for(let owner=0;owner<custom.players.length;owner++){
+        const tc=custom.owned(owner,'building','towncenter')[0];
+        assert.ok(tc&&!custom.isWater(tc.x,tc.z),`${map} Custom Battle kingdom ${owner} starts on dry land`);
+      }
+      const restored=Simulation.restore(JSON.parse(JSON.stringify(custom.serialize())));
+      assert.equal(restored.barriers.length,custom.barriers.length,`${map} barriers survive save/restore`);
+    }
+  });
+
+  it('runs Act IV Chapter XI (Ring of Iron) on grand 360x360 scale with 46m citadel basin, safe inner resources & arriving Western Relief',()=>{
     const sim=new Simulation({mode:'campaign11',difficulty:'story'});
     sim.tickCustomAI=()=>{};
-    assert.equal(sim.worldSize,320);
+    assert.equal(sim.worldSize,360);
     assert.equal(sim.players.length,4);
     assert.ok(sim.owned(0,'building','keep').length>=1,'starts with Castle Keep');
     assert.ok(sim.owned(0,'building','gate').length>=4,'4 short cliff-anchored Gatehouse passes');
     assert.ok(sim.barriers.filter(b=>b.kind==='mountain').length>=8,'mountain crags anchor every citadel gate pass');
-    assert.ok(Math.hypot(sim.players[1].start.x,sim.players[1].start.z)>=115,'Rival warlords start far outside the central citadel');
+    assert.ok(Math.hypot(sim.players[1].start.x,sim.players[1].start.z)>=140,'Rival warlords start far outside the central citadel');
     // Verify ALL 4 resource types sit safely INSIDE the 46m fortified highland basin!
     for(const rType of ['wood','gold','stone','food']){
       assert.ok(sim.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x,e.z)<44),`Ch.11 protects ${rType} safely INSIDE the fortified valley walls`);
@@ -194,6 +215,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
   it('runs Act IV Chapter XII (Sundered Pass): towering mountain range + cliff-cradled Northern Ally + central pass fortress',()=>{
     const sim=new Simulation({mode:'campaign12',difficulty:'story'});
     sim.tickCustomAI=()=>{};
+    assert.equal(sim.worldSize,360);
     assert.ok(sim.barriers.length>=40,'towering mountain range + valley forts');
     assert.equal(sim.allied(0,3),true);
     assert.ok(sim.owned(3,'building','towncenter').length===1&&sim.owned(3,'building','gate').length>=1);
@@ -215,10 +237,10 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(sim.owned(0,'building').length>=oakBefore);
   });
 
-  it('runs Act IV Chapter XIV (Crown of Three Kingdoms): grand 320x320 2v2 coalition war with spacious cliff-fortified citadels',()=>{
+  it('runs Act IV Chapter XIV (Crown of Three Kingdoms): grand 360x360 2v2 coalition war with spacious cliff-fortified citadels',()=>{
     const sim=new Simulation({mode:'campaign14',difficulty:'story'});
     sim.tickCustomAI=()=>{};
-    assert.equal(sim.worldSize,320);
+    assert.equal(sim.worldSize,360);
     assert.ok(sim.owned(0,'building','keep').length===1&&sim.owned(0,'building','gate').length>=2);
     assert.ok(sim.owned(3,'building','keep').length===1&&sim.allied(0,3));
     const beforeCats=sim.owned(0,'unit','catapult').length;

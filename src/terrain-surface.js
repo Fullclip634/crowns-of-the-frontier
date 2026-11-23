@@ -56,7 +56,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
   const soil=surfaces.soil||grass,rock=surfaces.rock||grass,paving=surfaces.paving||surfaces.stone||rock,normal=quality!=='low'&&grass.normal;
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
-  const snow=isSnowBiome(land.map),arid=isAridBiome(land.map),volcanic=land.map==='volcanic',rocky=isRockyBiome(land.map),shore=land.map==='coast'||land.map==='archipelago',biome=terrainBiome(land.map);
+  const biome=terrainBiome(land.map),snow=isSnowBiome(land.map),arid=isAridBiome(land.map),volcanic=Boolean(biome.ash),rocky=isRockyBiome(land.map),shore=land.map==='coast'||land.map==='archipelago';
   const amount=snow?.74:arid?.88:rocky?.92:.86;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];

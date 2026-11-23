@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {canonicalGeometry} from './authored-assets.js';
 import {readAssetResponse} from './load-progress.js';
-import {isAridBiome,isSnowBiome} from './terrain-biomes.js';
+import {isAridBiome,isSnowBiome,isVolcanicBiome} from './terrain-biomes.js';
 
 const source=new URL('./assets3d/frontier-biome-art.glb',import.meta.url).href;
 let pending=null,loaded=null;
@@ -55,21 +55,21 @@ export function clearBiomeArtwork(){
 
 export function biomeCliffGeometry(map){
   if(!loaded?.cliffs?.size)return null;
-  const style=map==='volcanic'?'volcanic':(isAridBiome(map)||['desert','canyon'].includes(map))?'arid':'meadow';
+  const style=isVolcanicBiome(map)?'volcanic':(isAridBiome(map)||['desert','canyon'].includes(map))?'arid':'meadow';
   const geo=loaded.cliffs.get(style)||loaded.cliffs.get('meadow');
   return geo?geo.clone():null;
 }
 
 export function biomeCliffWallGeometry(map){
   if(!loaded?.cliffWalls?.size)return null;
-  const style=map==='volcanic'?'volcanic':isSnowBiome(map)?'snow':(isAridBiome(map)||map==='desert')?'arid':'meadow';
+  const style=isVolcanicBiome(map)?'volcanic':isSnowBiome(map)?'snow':(isAridBiome(map)||map==='desert')?'arid':'meadow';
   const geo=loaded.cliffWalls.get(style)||loaded.cliffWalls.get('meadow');
   return geo?geo.clone():null;
 }
 
 export function biomeMountainGeometry(map){
   if(!loaded?.mountains?.size)return null;
-  const style=map==='volcanic'?'volcanic':isSnowBiome(map)?'snow':'meadow';
+  const style=isVolcanicBiome(map)?'volcanic':isSnowBiome(map)?'snow':'meadow';
   const geo=loaded.mountains.get(style)||loaded.mountains.get('meadow');
   return geo?geo.clone():null;
 }

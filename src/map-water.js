@@ -7,6 +7,7 @@ const CHANNELS=Object.freeze({
   valley:Object.freeze([{center:0,width:5,frequency:.045,bend:4}]),
   rivers:Object.freeze([{center:-19,width:4,frequency:.045,bend:3},{center:19,width:4,frequency:.045,bend:3}]),
   riverland:Object.freeze([{center:-25,width:5,frequency:.038,bend:6},{center:25,width:5,frequency:.038,bend:6}]),
+  threecrowns:Object.freeze([{center:-26,width:4.5,frequency:.038,bend:4},{center:26,width:4.5,frequency:.038,bend:4}]),
   archipelago:Object.freeze([{center:-40,width:8,frequency:.026,bend:8},{center:40,width:8,frequency:.026,bend:8}]),
 });
 const EMPTY=Object.freeze([]);

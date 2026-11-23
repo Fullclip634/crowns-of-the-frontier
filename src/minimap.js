@@ -2,7 +2,7 @@ import {WORLD} from './data.js';
 import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
 import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
-import {terrainBiome,isSnowBiome,treePalette} from './terrain-biomes.js';
+import {terrainBiome,isSnowBiome,isVolcanicBiome,treePalette} from './terrain-biomes.js';
 import {minimapFilterStyle} from './tactical-ux.js';
 
 const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
@@ -40,7 +40,7 @@ export function renderReliefBase(bctx,size,sim,view){
   if(typeof sampleHeight==='function'&&typeof bctx.createImageData==='function'&&typeof bctx.putImageData==='function'){
     const img=bctx.createImageData(size,size),data=img.data;
     const [br,bg,bb]=parseHex(biome.map);
-    const snow=isSnowBiome(map),volcanic=map==='volcanic',arid=map==='arid';
+    const snow=isSnowBiome(map),volcanic=isVolcanicBiome(map),arid=map==='arid';
     const step=worldSize/size,eps=Math.max(1.2,step*1.1);
     const waterGrid=new Uint8Array(size*size);
     const heightGrid=new Float32Array(size*size);

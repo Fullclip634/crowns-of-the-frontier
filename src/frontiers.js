@@ -43,8 +43,8 @@ export function installFrontiers(Simulation){
       this.players.forEach(player=>{player.age=Math.max(1,player.age);player.resources.wood+=350;player.resources.gold+=180;});
       for(const owner of [0,1]){
         if(owner===1&&(['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival))continue;
-        const sign=owner===0?-1:1,tc=this.owned(owner,'building','towncenter')[0],dockZ=this.mission?(owner===0?25:-25):(tc?tc.z+(owner===0?-5:9):(owner===0?25:-25));
-        const mid=this.mission?0:Math.sin(dockZ*.03)*2;
+        const sign=owner===0?-1:1,tc=this.owned(owner,'building','towncenter')[0],dockZ=this.mission?(this.worldSize>=300?(owner===0?58:-58):(owner===0?25:-25)):(tc?tc.z+(owner===0?-5:9):(owner===0?25:-25));
+        const mid=Math.sin(dockZ*.03)*2;
         this.addBuilding('dock',owner,mid+sign*17.5,dockZ,true);
         const boat=this.addUnit('fishingboat',owner,mid+sign*10,dockZ+(owner===0?-1:1));
         this.addUnit('galley',owner,mid+sign*9,dockZ+(owner===0?-11:11));this.addUnit('transport',owner,mid+sign*10,dockZ+(owner===0?9:-9));
@@ -155,7 +155,7 @@ export function installFrontiers(Simulation){
     const site=e.order?.type==='build'?this.get(e.order.target):null,progress=site?.progress;
     original.tickUnit.call(this,e,dt);
     if(e.owner>0&&site&&progress<1&&site.progress>=1)this.emit('stat-complete',{entity:site});
-    if(this.options.map==='coast'&&!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:-24};}
+    if(this.options.map==='coast'&&!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:this.worldSize>=300?58:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:this.worldSize>=300?-56:-24};}
   };
   p.hurt=function(e,amount,attacker){const hp=e.hp;if(attacker?.owner>=0)e.lastAttacker=attacker.owner;original.hurt.call(this,e,amount,attacker);if(hp>0&&e.hp<=0&&e.kind==='unit'){this.revision--;for(const id of e.passengers||[]){const passenger=this.get(id);if(passenger)this.hurt(passenger,passenger.hp,attacker);}}};
   p.canSee=function(owner,entity){
