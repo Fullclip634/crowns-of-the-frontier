@@ -1,4 +1,5 @@
 import {UNITS} from './data.js';
+import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaign-relics.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
@@ -145,11 +146,18 @@ export const CAMPAIGN_SCRIPTS={
 
 function initializeStory(sim){
   const script=CAMPAIGN_SCRIPTS[sim.options.mode];if(!script)return;
-  const q=sim.campaignState={stage:0,stageAt:0,elapsed:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[]};
+  const q=sim.campaignState={stage:0,stageAt:0,elapsed:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[],sideQuestDone:false,relic:sim.options.relic||null};
   if(script.cart){const cart=sim.addUnit('cart',0,script.cart.x,script.cart.z);cart.displayName=script.cart.name;q.cartId=cart.id;}
+  if(sim.options.relic)applyCampaignRelic(sim,sim.options.relic);
   sim.campaignCheckpoint=null;
 }
-export function campaignObjective(sim){const q=sim.campaignState,script=CAMPAIGN_SCRIPTS[sim.options.mode];return !q||q.legacy||q.finished||!script?null:{...script.stages[Math.min(q.stage,script.stages.length-1)],index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0};}
+export function campaignObjective(sim){
+  const q=sim.campaignState,script=CAMPAIGN_SCRIPTS[sim.options.mode];
+  if(!q||q.legacy||q.finished||!script)return null;
+  const sq=CAMPAIGN_SIDE_QUESTS[sim.options.mode]||null;
+  const boss=CAMPAIGN_BOSSES[sim.options.mode]||null;
+  return {...script.stages[Math.min(q.stage,script.stages.length-1)],index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0,sideQuest:sq?{id:sq.id,title:sq.title,text:sq.text,rewardText:sq.rewardText,done:!!q.sideQuestDone}:null,boss};
+}
 
 export function installCampaigns(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tick=p.tick,end=p.end,emit=p.emit,serialize=p.serialize,restore=Simulation.restore;
@@ -168,6 +176,13 @@ export function installCampaigns(Simulation){
     // Track the optional objective continuously so later events can branch on
     // how the mission is actually going, not only on the final medal.
     q.optionalMet=!!script.optional?.done(this,q);
+    const sideQuest=CAMPAIGN_SIDE_QUESTS[this.options.mode];
+    if(sideQuest&&!q.sideQuestDone&&sideQuest.done(this,q)){
+      q.sideQuestDone=true;
+      sideQuest.reward(this,spawnReinforcements);
+      q.history.push({time:this.time,speaker:script.speaker,text:`Side objective completed (${sideQuest.title}): ${sideQuest.rewardText}.`});
+      this.emit('campaign-sidequest',{id:sideQuest.id,title:sideQuest.title,rewardText:sideQuest.rewardText});
+    }
     for(const event of script.events||[]){
       if(q.resolved.includes(event.id)||this.time<event.at)continue;
       if(event.minDifficulty&&!meetsDifficulty(this,event.minDifficulty))continue;

@@ -2,6 +2,8 @@ import {DIFFICULTIES,FACTIONS,formatTime} from './data.js';
 import {difficultyLabel} from './ui-format.js';
 import {uiIcon} from './ui-icons.js';
 import {ATLAS_LANDMARKS,CAMPAIGN_ACTS,campaignAtlasState} from './campaign-map-data.js';
+import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,unlockedCampaignRelics} from './campaign-relics.js';
+import {commanderPortraitSvg,commanderProfile} from './commander-portraits.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -149,6 +151,14 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
 
   const stagesHtml=selected.stages.map((st,i)=>`<li><span class="brief-step">${i+1}</span><div><strong>${esc(st.title)}</strong><p>${esc(st.text)}</p></div></li>`).join('');
   const medalHtml=selected.medal?`<div class="brief-medal tier-${selected.medal.tier}">${uiIcon(selected.optional?'trophy':'shield-check')}<span><strong>${esc(selected.medal.label)}</strong>${selected.seconds?` · Best ${formatTime(selected.seconds)}`:''}${selected.optional?' · Bonus Crown':''}</span></div>`:'';
+  const boss=CAMPAIGN_BOSSES[selected.id]||null;
+  const sideQuest=CAMPAIGN_SIDE_QUESTS[selected.id]||null;
+  const relics=unlockedCampaignRelics(progress,freeSelect);
+  const selectedRelic=relics.some(r=>r.id===setupOptions.relic&&r.unlocked)?setupOptions.relic:'frontier-charter';
+  const activeRelicObj=relics.find(r=>r.id===selectedRelic)||relics[0];
+  const bossHtml=boss?`<div class="brief-boss">${uiIcon('swords')}<div><span>RIVAL COMMANDER · ${esc(boss.fortress)}</span><strong>${esc(boss.name)}</strong><small>${esc(boss.title)}</small></div></div>`:'';
+  const sideQuestHtml=sideQuest?`<div class="brief-sidequest">${uiIcon('flag-triangle-right')}<div><strong>Side Quest · ${esc(sideQuest.title)}</strong><p>${esc(sideQuest.text)}</p><small>Reward: ${esc(sideQuest.rewardText)}</small></div></div>`:'';
+  const speakerProfile=commanderProfile(selected.speaker);
 
   return `<div class="atlas-shell" role="dialog" aria-modal="true" aria-labelledby="atlas-heading">
     <header class="atlas-topbar">
@@ -195,16 +205,27 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
         </div>
 
         ${medalHtml}
+        ${bossHtml}
 
         <blockquote class="brief-quote">
-          <span class="brief-speaker">${esc(selected.speaker)}</span>
-          <p>“${esc(selected.intro)}”</p>
+          <div class="brief-portrait">${commanderPortraitSvg(selected.speaker,44)}</div>
+          <div>
+            <span class="brief-speaker">${esc(selected.speaker)} <small>· ${esc(speakerProfile.title)}</small></span>
+            <p>“${esc(selected.intro)}”</p>
+          </div>
         </blockquote>
 
         <div class="brief-section">
           <h4>MISSION OBJECTIVES</h4>
           <ol class="brief-objectives">${stagesHtml||`<li><span class="brief-step">1</span><div><strong>Victory</strong><p>${esc(selected.objective)}</p></div></li>`}</ol>
+          ${sideQuestHtml}
           ${selected.optionalText?`<div class="brief-bonus">${uiIcon('trophy')}<div><strong>Bonus Crown Objective</strong><p>${esc(selected.optionalText)}</p></div></div>`:''}
+        </div>
+
+        <div class="brief-relic-box">
+          <label class="field-label" for="atlas-relic">WARBAND CROWN RELIC <small>(${relics.filter(r=>r.unlocked).length}/${relics.length} UNLOCKED)</small></label>
+          <select id="atlas-relic">${relics.map(r=>`<option value="${r.id}" ${r.id===selectedRelic?'selected':''} ${r.unlocked?'':'disabled'}>${esc(r.name)} · ${esc(r.badge)}${r.unlocked?'':` (Unlock: ${r.unlockWins} wins or ${r.unlockCrowns} crowns)`}</option>`).join('')}</select>
+          <small class="brief-relic-desc">${esc(activeRelicObj?.desc||'')}</small>
         </div>
 
         <div class="brief-setup">
@@ -228,11 +249,11 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
   </div>`;
 }
 
-/** Upgraded in-mission AoE2/AoE4-style dismissible Commander Dialogue Banner markup. */
+/** Upgraded in-mission AoE2/AoE4-style dismissible Commander Dialogue Banner markup with heraldic SVG portrait. */
 export function commanderBannerMarkup({speaker='Frontier Marshal',title='',text=''}={}){
   if(!text)return '';
   return `<div class="commander-banner" role="status" aria-live="polite">
-    <span class="commander-crest">${uiIcon('crown')}</span>
+    <span class="commander-crest portrait-host">${commanderPortraitSvg(speaker,38)}</span>
     <div class="commander-copy">
       <div class="commander-meta"><strong>${esc(speaker)}</strong>${title?`<span>${esc(title)}</span>`:''}</div>
       <p>${esc(text)}</p>

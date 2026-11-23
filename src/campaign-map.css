@@ -229,11 +229,43 @@
 .brief-medal .ui-icon{width:17px;height:17px;color:#ffd873}
 
 .brief-quote{
+  display:flex;align-items:flex-start;gap:10px;
   margin:0;padding:10px 12px;border-left:2px solid #dfb962;border-radius:0 4px 4px 0;
   background:rgba(10,18,15,.72);
 }
+.brief-portrait{flex:none;line-height:0}
+.commander-portrait-svg{display:block;border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,.45)}
 .brief-speaker{display:block;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#e4c579;margin-bottom:4px}
-.brief-quote p{margin:0;font-size:12px;line-height:1.55;color:#d6dfc9;font-style:italic}
+.brief-speaker small{font-weight:500;color:#9eb397;text-transform:none;letter-spacing:.03em}
+.brief-quote p{margin:0;font-size:11.5px;line-height:1.5;color:#d6dfc9;font-style:italic}
+
+.brief-boss{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:4px;
+  border:1px solid rgba(224,116,102,.46);background:linear-gradient(180deg,rgba(68,24,20,.65),rgba(34,12,11,.78));
+}
+.brief-boss .ui-icon{width:17px;height:17px;color:#ff9c8e;flex:none}
+.brief-boss span{display:block;font-size:8px;letter-spacing:1.3px;color:#f2a89c;font-weight:700;text-transform:uppercase}
+.brief-boss strong{display:block;font-family:var(--serif);font-size:17px;line-height:1.1;color:#fff0e8}
+.brief-boss small{display:block;font-size:10px;color:#d4b3ab}
+
+.brief-sidequest{
+  display:flex;align-items:flex-start;gap:8px;margin-top:8px;padding:8px 10px;border-radius:4px;
+  border:1px solid rgba(122,208,182,.36);background:rgba(18,46,38,.48);
+}
+.brief-sidequest .ui-icon{width:15px;height:15px;color:#8be4c7;margin-top:1px;flex:none}
+.brief-sidequest strong{display:block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#9decd1}
+.brief-sidequest p{margin:2px 0 3px;font-size:11px;line-height:1.4;color:#d6e3d8}
+.brief-sidequest small{display:inline-block;padding:2px 6px;border-radius:3px;background:rgba(10,20,16,.75);border:1px solid rgba(139,228,199,.32);color:#b8f5df;font-size:9px;font-weight:600}
+
+.brief-relic-box{padding-top:6px;border-top:1px solid rgba(224,185,110,.16)}
+.brief-relic-box .field-label{margin:0 0 4px}
+.brief-relic-box select{min-height:36px;padding:5px 8px;font-size:11px}
+.brief-relic-desc{display:block;margin-top:4px;font-size:10px;line-height:1.4;color:#b8c8ab}
+
+.campaign-sidequest-row{margin-top:8px;padding:6px 8px;border-radius:4px;border:1px solid rgba(130,210,185,.32);background:rgba(14,34,28,.68);font-size:9px;line-height:1.4;color:#d3e6dd}
+.campaign-sidequest-row.done{border-color:rgba(116,226,158,.5);color:#9bf0ba;opacity:.85}
+.campaign-sidequest-row strong{display:block;color:#9ef0d6;font-size:9px;letter-spacing:.04em}
+.commander-crest.portrait-host{width:38px;height:38px;padding:0;border:0;background:none;overflow:visible}
 
 .brief-section h4{margin:0 0 8px;font-size:9px;letter-spacing:1.6px;color:#d8bd7c}
 .brief-objectives{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
