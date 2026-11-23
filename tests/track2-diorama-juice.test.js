@@ -9,7 +9,8 @@ describe('Track 2: Live 3D Menu Diorama & Zero-Bloat Battlefield VFX Juice',()=>
     assert.equal(shouldRunMenuDiorama({settings:{quality:'medium',reducedMotion:false},modestDevice:false,hasView:true}),true);
     assert.equal(shouldRunMenuDiorama({settings:{quality:'low',reducedMotion:false},modestDevice:false,hasView:true}),false,'Performance preset keeps instant static poster');
     assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:true},modestDevice:false,hasView:true}),false,'Reduced motion keeps static poster');
-    assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:false},modestDevice:true,hasView:true}),false,'Modest low-RAM devices keep static poster');
+    assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:false},modestDevice:true,hasView:true}),false,'Modest low-RAM devices keep static poster by default');
+    assert.equal(shouldRunMenuDiorama({settings:{quality:'low',reducedMotion:true,menuBackdrop:'diorama'},modestDevice:true,hasView:true}),true,'Explicit user toggle to Live 3D Citadel runs on any capable WebGL/WebGPU view');
     assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:false},modestDevice:false,hasView:false}),false);
   });
 

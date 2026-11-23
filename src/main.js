@@ -505,7 +505,7 @@ function action(name,shiftKey=false){
   if(name==='install'){installGame();return;}
   if(name==='credits'){showCredits();return;}
   if(name==='chronicle-begin'){beginFromChronicle();return;}
-  if(name==='toggle-menu-backdrop'){settings.menuBackdrop=settings.menuBackdrop==='diorama'?'artwork':'diorama';saveSettings();if(!playing&&view){if(settings.menuBackdrop==='diorama'){if(!menuDiorama.start(view,worldEl,settings,modestDevice))toast('Live 3D Citadel requires Medium or High graphics without Reduced Motion.','warning');}else menuDiorama.stop(worldEl);}const pill=$('[data-action="toggle-menu-backdrop"]');if(pill){const is3d=settings.menuBackdrop==='diorama';pill.classList.toggle('is-3d',is3d);pill.setAttribute('aria-pressed',String(is3d));const lbl=pill.querySelector('span');if(lbl)lbl.textContent=is3d?'Live 3D Citadel':'Key Art · Switch to 3D';}else refreshLanding();return;}
+  if(name==='toggle-menu-backdrop'){const want3d=settings.menuBackdrop!=='diorama';settings.menuBackdrop=want3d?'diorama':'artwork';if(!playing&&view){if(want3d){if(!menuDiorama.start(view,worldEl,settings,modestDevice)){settings.menuBackdrop='artwork';toast('Live 3D Citadel could not start on this renderer.','warning');}}else menuDiorama.stop(worldEl);}saveSettings();const pill=$('[data-action="toggle-menu-backdrop"]');if(pill){const is3d=settings.menuBackdrop==='diorama';pill.classList.toggle('is-3d',is3d);pill.setAttribute('aria-pressed',String(is3d));pill.innerHTML=`${uiIcon(is3d?'castle':'map')}<span>${is3d?'Live 3D Citadel':'Key Art · Switch to 3D'}</span>`;}else refreshLanding();return;}
   if(isAISpectator()&&!spectatorActionAllowed(name))return;
   if(name==='alliance'){showAlliance();return;}
   if(name==='send-donation'){sendAllianceGift();return;}

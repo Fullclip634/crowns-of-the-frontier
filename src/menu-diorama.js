@@ -6,9 +6,10 @@ import {Simulation} from './simulation.js';
  * Performance (low) preset, Reduced Motion, or when the player chooses Painted Key Art.
  */
 export function shouldRunMenuDiorama({settings,modestDevice=false,hasView=true}={}){
-  if(!hasView||modestDevice)return false;
-  if(!settings)return false;
+  if(!hasView||!settings)return false;
   if(settings.menuBackdrop==='artwork')return false;
+  if(settings.menuBackdrop==='diorama')return true;
+  if(modestDevice)return false;
   if(settings.quality==='low')return false;
   if(settings.reducedMotion)return false;
   return true;
