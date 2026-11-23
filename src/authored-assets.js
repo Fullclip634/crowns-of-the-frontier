@@ -232,6 +232,15 @@ export function authoredBuilding(view,e){
   const early=earlyAgeBuildingTemplate(e.type,faction,playerAge,tier,corner);
   if(early){
     const root=bindAuthoredTemplate(view,early.template,early.key,e.owner,'early-ages');
+    const earlyScale=early.scale||1;
+    if(earlyScale!==1){
+      // Scale children uniformly so root.scale stays (1,1,1): keeps selection rings,
+      // construction rising animation, windmill blades, and vertex AO exact.
+      for(const child of root.children){
+        child.position.multiplyScalar(earlyScale);
+        child.scale.multiplyScalar(earlyScale);
+      }
+    }
     const style=architectureStyle(playerAge);
     root.userData.model3d={
       ...root.userData.model3d,
@@ -243,11 +252,11 @@ export function authoredBuilding(view,e){
       ...(early.template.userData.artRevision?{artRevision:early.template.userData.artRevision}:{}),
     };
     if(e.type==='dock')orientDockPier(view,root,e);
-    // Pinpoint chimney smoke outlets (Blender (x,y,z) -> Three.js (x,z,-y)) for smooth multi-puff hearth smoke!
+    // Pinpoint chimney smoke outlets (Blender (x,y,z) -> Three.js (x,z,-y)), scaled in lockstep with earlyScale!
     if(playerAge===1){
-      if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.48,4.82,.15);
-      else if(e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.42,3.88,-.62);
-      else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(1.55,5.62,-1.60);
+      if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.48,4.82,.15).multiplyScalar(earlyScale);
+      else if(e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.42,3.88,-.62).multiplyScalar(earlyScale);
+      else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(1.55,5.62,-1.60).multiplyScalar(earlyScale);
     }
     return root;
   }

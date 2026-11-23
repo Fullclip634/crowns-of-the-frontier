@@ -16,6 +16,7 @@ import {
 } from '../src/hud-macro.js';
 import {resourceBarMarkup} from '../src/resource-bar.js';
 import {DEFAULT_BINDINGS, controlForKey, readBindings} from '../src/controls.js';
+import {earlyAgeBuildingScale} from '../src/early-ages-art.js';
 
 test('resourceWorkerCounts tallies active gatherers by resource, farms, fishing boats, builders, and idle villagers',()=>{
   const sim=new Simulation({mode:'skirmish',map:'highlands',seed:2026});
@@ -194,4 +195,16 @@ test('Phase 2 HUD removes misleading weather/duplicate-menu chrome and avoids la
   assert.match(mainSrc,/id="scoreboard-panel"/,'live kingdom scoreboard panel present in HUD');
   assert.doesNotMatch(cssSrc,/backdrop-filter:\s*blur/i,'no laggy backdrop-filter blur in main stylesheet');
   assert.doesNotMatch(phoneCssSrc,/backdrop-filter:\s*blur/i,'no laggy backdrop-filter blur in phone stylesheet');
+  assert.match(phoneCssSrc,/\[data-action=camera-closer\][\s\S]*?\[data-action=camera-farther\]\{display:none/,'phone HUD hides redundant zoom buttons since touch supports pinch-to-zoom');
+  assert.match(phoneCssSrc,/\.selection-title small\{[^}]*white-space:nowrap/,'phone selection status text never wraps and pushes Options/Deselect downward');
+});
+
+test('earlyAgeBuildingScale calibrates Age 1 & Age 2 structures proportionally while leaving walls and gates exact',()=>{
+  assert.ok(earlyAgeBuildingScale('towncenter',0)>=1.30&&earlyAgeBuildingScale('towncenter',1)>=1.35);
+  assert.ok(earlyAgeBuildingScale('house',0)>=1.20&&earlyAgeBuildingScale('house',1)>=1.25);
+  assert.ok(earlyAgeBuildingScale('barracks',1)>=1.25&&earlyAgeBuildingScale('mill',1)>=1.25);
+  assert.equal(earlyAgeBuildingScale('wall',0),1);
+  assert.equal(earlyAgeBuildingScale('gate',0),1);
+  assert.equal(earlyAgeBuildingScale('farm',0),1);
+  assert.equal(earlyAgeBuildingScale('towncenter',2),1);
 });

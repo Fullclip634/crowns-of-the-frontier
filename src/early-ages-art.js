@@ -65,10 +65,31 @@ export function earlyAgeBuildingKey(type,faction='alder',age=0,tier='stone',corn
   return null;
 }
 
+/**
+ * Uniform world-scale calibration for dedicated Age 1 (Frontier) and Age 2
+ * (Feudal) GLB models so they fill their gameplay footprints (2*r) and stand
+ * properly taller than soldiers & cavalry while preserving Age 1 < Age 2 < Age 3
+ * progression and 100% undistorted roof pitches, beams, and mill blades.
+ */
+const EARLY_AGE_SCALES=Object.freeze({
+  0:Object.freeze({
+    towncenter:1.36,house:1.24,barracks:1.18,mill:1.28,camp:1.24,mine:1.24,dock:1.20,
+  }),
+  1:Object.freeze({
+    towncenter:1.40,house:1.32,barracks:1.30,mill:1.32,camp:1.24,mine:1.26,
+    range:1.34,stable:1.32,blacksmith:1.28,market:1.28,tower:1.18,dock:1.20,
+  }),
+});
+
+export function earlyAgeBuildingScale(type,age=0){
+  if(type==='wall'||type==='gate'||type==='farm')return 1;
+  return EARLY_AGE_SCALES[age]?.[type]??1;
+}
+
 export function earlyAgeBuildingTemplate(type,faction='alder',age=0,tier='stone',corner=false){
   if(!loaded?.templates?.size)return null;
   const key=earlyAgeBuildingKey(type,faction,age,tier,corner);
   if(!key)return null;
   const template=loaded.templates.get(key);
-  return template?{key,template}:null;
+  return template?{key,template,scale:earlyAgeBuildingScale(type,age)}:null;
 }

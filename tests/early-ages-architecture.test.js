@@ -11,7 +11,7 @@ import {buildingModel} from '../src/models-3d.js';
 import {registerAuthoredAssets,clearAuthoredAssets} from '../src/authored-assets.js';
 import {
   registerEarlyAgeArtwork,clearEarlyAgeArtwork,earlyAgeArtworkState,
-  earlyAgeBuildingKey,earlyAgeBuildingTemplate,
+  earlyAgeBuildingKey,earlyAgeBuildingScale,earlyAgeBuildingTemplate,
 } from '../src/early-ages-art.js';
 import {packBuildingModel} from '../src/structure-palette.js';
 import {architectureOutdated} from '../src/architecture-age.js';
@@ -779,8 +779,9 @@ test('docks stay clear of ships, walls/gates/buildings break progressively by HP
     {
       const bsView=makeView(baseAssets,'alder',1);
       const bsRaw=buildingModel(bsView,{id:701,kind:'building',type:'blacksmith',owner:0,x:0,z:0,r:2.8,hp:900,maxHp:900,progress:1});
+      const bsScale=earlyAgeBuildingScale('blacksmith',1);
       assert.ok(bsRaw.userData.chimneyOutlet,'Feudal Blacksmith defines exact chimney flue outlet');
-      assert.ok(Math.abs(bsRaw.userData.chimneyOutlet.x-(-1.48))<.05&&bsRaw.userData.chimneyOutlet.y>4.6,'chimney smoke starts centered at top of stone flue');
+      assert.ok(Math.abs(bsRaw.userData.chimneyOutlet.x-(-1.48*bsScale))<.05&&Math.abs(bsRaw.userData.chimneyOutlet.y-4.82*bsScale)<.05,'chimney smoke starts centered at top of stone flue');
     }
 
     const fxScene=new THREE.Scene(),dmgFx=new BuildingDamageEffects(fxScene);
