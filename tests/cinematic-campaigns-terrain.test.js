@@ -100,14 +100,24 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     const restored=Simulation.restore(JSON.parse(JSON.stringify(iron.serialize())));
     assert.equal(restored.barriers.length,iron.barriers.length);
 
-    // Bastion uses natural cliffs + short connecting walls + keeps wood, gold, stone & berries safely INSIDE!
+    // Bastion uses continent-wide mountain ranges + regional valley coves (NOT circular rock donuts!)
+    // + short connecting walls + keeps wood, gold, stone & berries safely INSIDE!
     const arena=new Simulation({mode:'skirmish',map:'bastion',seed:2026});
     const tc=arena.owned(0,'building','towncenter')[0];
-    assert.ok(arena.barriers.length>=25,'Bastion cradles bases in natural cliffs & mountains');
-    assert.ok(arena.owned(0,'building','gate').length>=1,'Bastion seals valley mouths with gates');
-    assert.ok(arena.owned(0,'building','wall').length>=4,'Bastion ties short stone walls into cliffs');
+    assert.ok(arena.barriers.length>=35,'Bastion builds continent-wide mountain ranges & valley coves');
+    assert.ok(arena.owned(0,'building','gate').length>=2,'Bastion seals valley mouths with gates');
+    assert.ok(arena.owned(0,'building','wall').length>=6,'Bastion ties short stone curtain walls into mountain spurs');
+    // Confirm cliffs exist across ALL 4 quadrants of the map (real landscape, not just around player 0!)
+    const quadrants=new Set(arena.barriers.map(p=>`${p.x>=0?'E':'W'}${p.z>=0?'S':'N'}`));
+    assert.equal(quadrants.size,4,'Bastion cliffs & mountains span all 4 quadrants of the continent');
     for(const rType of ['wood','gold','stone','food']){
-      assert.ok(arena.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x-tc.x,e.z-tc.z)<24),`Bastion protects inner ${rType} inside the cliff-and-wall perimeter`);
+      assert.ok(arena.entities.some(e=>e.hp>0&&e.kind==='resource'&&e.type===rType&&Math.hypot(e.x-tc.x,e.z-tc.z)<25),`Bastion protects inner ${rType} inside the valley perimeter`);
+    }
+    // Open & rugged biomes (Emerald Highlands, Amber Wastes, Frostmarch, Volcanic) ALSO get natural continent-wide cliffs!
+    for(const openMap of ['highlands','arid','tundra','volcanic']){
+      const openSim=new Simulation({mode:'skirmish',map:openMap,seed:2026});
+      const qs=new Set(openSim.barriers.map(p=>`${p.x>=0?'E':'W'}${p.z>=0?'S':'N'}`));
+      assert.ok(openSim.barriers.length>=15&&qs.size>=3,`${openMap} generates organic map-wide cliff bluffs & border headlands (${openSim.barriers.length} barriers across ${qs.size} quadrants)`);
     }
   });
 

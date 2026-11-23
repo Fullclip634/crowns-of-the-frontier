@@ -163,11 +163,12 @@ export class TerrainDetails{
       this.fogMaterials.push(mat);
     }else this.mountainMesh=null;
 
-    // Blender 4.5 LTS Sculpted Medieval Woodland Bushes (around cliff feet, forest edges & hills)
+    // Blender 4.5 LTS Sculpted Medieval Woodland Bushes (around cliff feet, forest edges & hills across the whole continent)
     const bushGeo=biomeBushGeometry(land.map);
     this.bushEntries=[];
     if(bushGeo&&!view.settings.reduceFoliage){
-      const bushCap=low?70:high?420:220;
+      const sizeScale=Math.max(1,land.worldSize/160);
+      const bushCap=Math.round((low?110:high?480:260)*Math.min(1.6,sizeScale));
       const brng=seededRandom(land.seed+6781);
       const plantBush=(x,z,scale=1)=>{
         if(this.bushEntries.length>=bushCap)return;
@@ -177,11 +178,13 @@ export class TerrainDetails{
         if(y<.24)return;
         this.bushEntries.push({x,y,z,angle:brng()*Math.PI*2,sx:scale*(.85+brng()*.45),sy:scale*(.75+brng()*.42),sz:scale*(.85+brng()*.45),shade:.86+brng()*.24});
       };
-      // 1. Natural undergrowth hugging cliff bases & mountain feet (hiding rock seams like AoE4!)
-      for(const b of barriers){
-        const count=b.kind==='mountain'?3:2;
-        for(let k=0;k<count&&this.bushEntries.length<bushCap*.55;k++){
-          const a=brng()*Math.PI*2,d=(b.r||3.0)+.65+brng()*1.4;
+      // 1. Natural undergrowth hugging cliff bases & mountain feet evenly across the ENTIRE map!
+      const cliffBudget=Math.floor(bushCap*.52);
+      const bStride=Math.max(1,Math.floor(barriers.length/Math.max(1,Math.floor(cliffBudget/2))));
+      for(let i=0;i<barriers.length&&this.bushEntries.length<cliffBudget;i+=bStride){
+        const b=barriers[i],count=b.kind==='mountain'?3:2;
+        for(let k=0;k<count&&this.bushEntries.length<cliffBudget;k++){
+          const a=brng()*Math.PI*2,d=(b.r||3.0)+.65+brng()*1.45;
           plantBush(b.x+Math.cos(a)*d,b.z+Math.sin(a)*d,.85+brng()*.55);
         }
       }

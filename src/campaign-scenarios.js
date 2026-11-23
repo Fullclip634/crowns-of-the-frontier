@@ -1,6 +1,6 @@
 import {BUILDINGS,seededRandom} from './data.js';
 import {PLAYER_COLORS} from './custom-battle.js';
-import {addNaturalBarrier,addCliffRidge,addDenseForestBelt,buildNaturalFortifiedBase,connectCliffPassWall} from './terrain-barriers.js';
+import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,addDenseForestBelt,buildNaturalFortifiedBase,connectCliffPassWall,scatterBiomeCliffs} from './terrain-barriers.js';
 import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 
@@ -216,7 +216,10 @@ export function buildActFourScenario(sim){
     placeBuilding(sim,'house',0,26,-8,true);
     for(const [fx,fz] of [[-9,21],[9,21],[-9,27],[9,27]])placeBuilding(sim,'farm',0,fx,fz,true);
 
-    // Organic Natural Cliff-and-Mountain Amphitheater + 4 dead-straight mountain-to-mountain Gatehouse passes + ALL resources safely INSIDE!
+    // Organic Continent-Wide Highland Mountain Crossroads:
+    // FOUR massive branching mountain ranges sweep across all 4 quadrants of the 240x240 realm
+    // (NEVER a fake rock circle!) and converge at 4 natural canyon passes sealed by straight castle curtain walls!
+    const outerKeep=[{x:c1.x,z:c1.z,r:26},{x:c2.x,z:c2.z,r:26},{x:c3.x,z:c3.z,r:26},{x:4,z:80,r:22}];
     buildNaturalFortifiedBase(sim,0,c0,{
       radius:40,
       gates:['north','east','south','west'],
@@ -224,7 +227,9 @@ export function buildActFourScenario(sim){
       complete:true,
       wallGaps:true,
       includeResources:true,
+      keepClear:outerKeep,
       seedOffset:1100,
+      backToBorder:false,
     });
     for(let i=0;i<14;i++)placeUnit(sim,'villager',0,-8+(i%5)*4.0,6+Math.floor(i/5)*3.0);
     for(let i=0;i<4;i++)placeUnit(sim,'knight',0,-6+i*4,-31);
@@ -232,13 +237,16 @@ export function buildActFourScenario(sim){
     for(let i=0;i<4;i++)placeUnit(sim,'archer',0,-6+i*4,31);
     placeUnit(sim,'monk',0,-5,-8);placeUnit(sim,'monk',0,5,-8);
 
-    // Outer Mountain Spurs guiding the 3 enemy approaches from outside the 45m basin
-    const keep=[{x:0,z:0,r:45},{x:c1.x,z:c1.z,r:24},{x:c2.x,z:c2.z,r:24},{x:c3.x,z:c3.z,r:24},{x:4,z:84,r:20}];
-    const passes=[{x:0,z:-54,r:13},{x:54,z:0,r:13},{x:0,z:54,r:13},{x:-54,z:0,r:13}];
-    addCliffRidge(sim,{x:-72,z:-72},{x:-40,z:-40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1101});
-    addCliffRidge(sim,{x:72,z:-72},{x:40,z:-40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1102});
-    addCliffRidge(sim,{x:72,z:72},{x:40,z:40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1103});
-    addCliffRidge(sim,{x:-72,z:72},{x:-40,z:40},{step:3.8,width:2,radius:3.2,height:5.0,wobble:2.0,passes,keepClear:keep,seedOffset:1104});
+    // Outer Alpine Border Headlands & Forested Valleys framing the wider 240x240 province
+    const borderKeep=[{x:0,z:0,r:46},...outerKeep];
+    addMountainMassif(sim,-104,-100,{radius:16,peaks:5,keepClear:borderKeep,seedOffset:1101});
+    addMountainMassif(sim,104,-100,{radius:16,peaks:5,keepClear:borderKeep,seedOffset:1102});
+    addMountainMassif(sim,104,100,{radius:16,peaks:5,keepClear:borderKeep,seedOffset:1103});
+    addMountainMassif(sim,-104,100,{radius:16,peaks:5,keepClear:borderKeep,seedOffset:1104});
+    addDenseForestBelt(sim,{x:-108,z:-58},{x:-66,z:-44},{step:2.6,thickness:2,keepClear:borderKeep,seedOffset:1105});
+    addDenseForestBelt(sim,{x:66,z:-46},{x:108,z:-58},{step:2.6,thickness:2,keepClear:borderKeep,seedOffset:1106});
+    addDenseForestBelt(sim,{x:66,z:48},{x:108,z:62},{step:2.6,thickness:2,keepClear:borderKeep,seedOffset:1107});
+    addDenseForestBelt(sim,{x:-108,z:62},{x:-66,z:48},{step:2.6,thickness:2,keepClear:borderKeep,seedOffset:1108});
 
     // Enemy 1: Lord Korr's Northern Siege Camp
     placeBuilding(sim,'towncenter',1,c1.x,c1.z,true);
@@ -319,7 +327,7 @@ export function buildActFourScenario(sim){
     placeBuilding(sim,'barracks',1,c1.x+11,c1.z-11,true);
     placeBuilding(sim,'range',1,c1.x+11,c1.z+11,true);
     placeBuilding(sim,'house',1,c1.x+16,c1.z,true);
-    buildNaturalFortifiedBase(sim,1,c1,{radius:25,gates:['west','east'],towers:true,complete:true,includeResources:true,seedOffset:1204});
+    buildNaturalFortifiedBase(sim,1,c1,{radius:25,gates:['west','east'],towers:true,complete:true,includeResources:true,keepClear:[{x:c0.x,z:c0.z,r:26},{x:c2.x,z:c2.z,r:28},{x:c3.x,z:c3.z,r:28}],seedOffset:1204,backToBorder:false});
     for(let i=0;i<8;i++)placeUnit(sim,'villager',1,c1.x+6+(i%4)*2.6,c1.z-4+Math.floor(i/4)*3);
     for(let i=0;i<8;i++)placeUnit(sim,i%2?'swordsman':'archer',1,c1.x-26,c1.z-10+i*3);
 
@@ -375,7 +383,7 @@ export function buildActFourScenario(sim){
     placeBuilding(sim,'farm',3,c3.x-14,c3.z,true);
     placeBuilding(sim,'farm',3,c3.x,c3.z-14,true);
     placeBuilding(sim,'farm',3,c3.x,c3.z+14,true);
-    buildNaturalFortifiedBase(sim,3,c3,{radius:26,gates:['south','east','north'],towers:true,complete:true,includeResources:true,seedOffset:1304});
+    buildNaturalFortifiedBase(sim,3,c3,{radius:26,gates:['south','east','north'],towers:true,complete:true,includeResources:true,keepClear:[{x:c0.x,z:c0.z,r:22},{x:c1.x,z:c1.z,r:18},{x:c2.x,z:c2.z,r:30}],seedOffset:1304,backToBorder:false});
     for(let i=0;i<10;i++)placeUnit(sim,'villager',3,c3.x-4+(i%5)*2.6,c3.z+5+Math.floor(i/5)*2.6);
 
     // Enemy 1: Oakhold Raider Camp besieging the eastern gate
@@ -431,6 +439,8 @@ export function buildActFourScenario(sim){
     buildCitadel(3,c3,['east','south'],['knight','knight','swordsman','swordsman','archer','archer','monk']);
     buildCitadel(1,c1,['west','north'],['marksman','marksman','swordsman','swordsman','knight','knight','ram']);
     buildCitadel(2,c2,['west','south'],['outrider','outrider','knight','knight','spearman','spearman','ram']);
+    // Natural continent-wide alpine outcrops flanking the river approaches & map borders
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:24,withMassifs:true,keepClear:keep,passes:[{x:-22,z:0,r:16},{x:22,z:0,r:16}],seedOffset:1405});
   }
 
   plantStartingForests(sim);
