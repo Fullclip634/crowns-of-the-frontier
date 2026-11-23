@@ -340,18 +340,18 @@ function paletteMaterial(view){
 
 const linearHex=hex=>new THREE.Color(hex).toArray();
 const EARLY_SURFACE_COLOR={
-  strawTex:linearHex(0x9a865c),
-  strawFlat:linearHex(0x88754e),
-  trunkTex:linearHex(0xb6a790),
-  trunkFlat:linearHex(0x9c8e79),
-  canvasTex:linearHex(0xe8cd92),
-  canvasFlat:linearHex(0xd4b67b),
-  sunPlasterTex:linearHex(0xebca92),
-  sunPlasterFlat:linearHex(0xdcb880),
-  creamPlasterTex:linearHex(0xe4dac6),
-  sunBrick:linearHex(0xd49664),
-  mossLight:linearHex(0x528836),
-  mossDark:linearHex(0x3a6a26),
+  strawTex:linearHex(0x8c7248),
+  strawFlat:linearHex(0x7a623c),
+  trunkTex:linearHex(0x7c7163),
+  trunkFlat:linearHex(0x685e52),
+  canvasTex:linearHex(0xe2c488),
+  canvasFlat:linearHex(0xcda86c),
+  sunPlasterTex:linearHex(0xe8c388),
+  sunPlasterFlat:linearHex(0xd8b074),
+  creamPlasterTex:linearHex(0xe8dfd0),
+  sunBrick:linearHex(0xc87d4b),
+  mossLight:linearHex(0x4c8531),
+  mossDark:linearHex(0x2f5c1e),
 };
 
 function promotedWallColor(material,rawMode,mode,m){
