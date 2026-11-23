@@ -1,4 +1,4 @@
-import {DIFFICULTIES,FACTIONS,MAPS,MODES,RELEASE,TECHS,UNITS,formatTime} from './data.js';
+import {DIFFICULTIES,FACTIONS,MAPS,MISSIONS,MODES,RELEASE,TECHS,UNITS,formatTime} from './data.js';
 import {BATTLE_SIZES} from './custom-battle.js';
 import {WEATHER_NAMES} from './weather.js';
 import {LIGHTING_MODES} from './day-night.js';
@@ -26,7 +26,9 @@ export const SETTINGS_TABS=Object.freeze([
 ]);
 
 /** Hero AoE4/AoE2:DE vertical banner Main Menu replacing the 12-button sprawl. */
-export function landingMarkup(latestSave=null){
+export function landingMarkup(latestSave=null,{menuBackdrop='artwork'}={}){
+  const chapterCount=MISSIONS.length;
+  const is3d=menuBackdrop==='diorama';
   const resumeCard=latestSave
     ? `<button id="resume" class="hero-continue" data-load-slot="${esc(latestSave.slotId)}">
         <span class="hero-continue-icon">${uiIcon('rotate-ccw')}</span>
@@ -58,7 +60,7 @@ export function landingMarkup(latestSave=null){
         <nav class="hero-nav" aria-label="Main menu">
           <button class="hero-btn primary" data-action="campaign">
             <span class="hero-btn-icon">${uiIcon('crown')}</span>
-            <span class="hero-btn-copy"><strong>Campaign</strong><small>Interactive Frontier World Map · 10 chapters</small></span>
+            <span class="hero-btn-copy"><strong>Campaign</strong><small>Interactive Frontier World Map · ${chapterCount} handcrafted chapters</small></span>
             ${uiIcon('chevron-right')}
           </button>
           <button class="hero-btn" data-action="skirmish-hub">
@@ -87,7 +89,10 @@ export function landingMarkup(latestSave=null){
     </main>
     <footer class="landing-footer">
       <span><span class="status-dot"></span> SOLO & MULTIPLAYER · WEBGPU & WEBGL 2</span>
-      <span>Made for mouse & touch <span class="menu-divider" aria-hidden="true"></span> Best played in landscape</span>
+      <span class="landing-footer-right">
+        <button type="button" class="backdrop-toggle-pill ${is3d?'is-3d':''}" data-action="toggle-menu-backdrop" aria-pressed="${is3d}" title="Switch home screen between Painted Medieval Key Art and Live 3D Citadel Diorama">${uiIcon(is3d?'castle':'map')}<span>${is3d?'Live 3D Citadel':'Key Art · Switch to 3D'}</span></button>
+        <span class="landing-footer-hint">Made for mouse & touch <span class="menu-divider" aria-hidden="true"></span> Best played in landscape</span>
+      </span>
     </footer>
   `;
 }

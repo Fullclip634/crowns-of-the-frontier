@@ -6,6 +6,7 @@ import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
+import {applyMapGeography} from './terrain-barriers.js';
 
 export const AI_HEALTH_LEVELS=Object.freeze([100,90,80,70,60,50]);
 
@@ -176,6 +177,7 @@ function initializeBattle(sim){
   }
   plantStartingForests(sim);
   groupFieldForests(sim);
+  applyMapGeography(sim);
   if(sim.options.map==='coast'){
     for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addNaturalResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
@@ -188,7 +190,7 @@ function initializeBattle(sim){
 export function installCustomBattle(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tickAI=p.tickAI,checkVictory=p.checkVictory,updateFog=p.updateFog,serialize=p.serialize,restore=Simulation.restore,hurt=p.hurt,emit=p.emit;
   p.donateResources=function(from,to,type,amount){
-    if(this.options.mode!=='custom'||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
+    if((this.options.mode!=='custom'&&!this.mission?.actFour)||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
     const sender=this.players[from],recipient=this.players[to];
     if(!sender||!recipient||sender.defeated||recipient.defeated||!this.allied(from,to)||!Number.isFinite(sender.resources[type])||sender.resources[type]<amount||!Number.isFinite(recipient.resources[type]))return false;
     sender.resources[type]-=amount;recipient.resources[type]+=amount;
@@ -197,7 +199,7 @@ export function installCustomBattle(Simulation){
   p.initialize=function(){if(this.options.mode==='custom')initializeBattle(this);else initialize.call(this);};
   p.tickAI=function(){if(this.options.mode!=='custom')return tickAI.call(this);for(let owner=1;owner<this.players.length;owner++)if(!this.players[owner].defeated)tickAI.call(this,owner);};
   p.tickCustomAI=function(dt){for(let owner=0;owner<this.players.length;owner++){
-    const player=this.players[owner];if(player.defeated||player.controller==='human')continue;player.aiClock+=dt;const interval=3*DIFFICULTIES[player.difficulty].ai;if(player.aiClock<interval)continue;player.aiClock-=interval;
+    const player=this.players[owner];if(player.defeated||player.dormant||player.controller==='human')continue;player.aiClock=(player.aiClock||0)+dt;const interval=3*DIFFICULTIES[player.difficulty||this.options.difficulty||'normal'].ai;if(player.aiClock<interval)continue;player.aiClock-=interval;
     const tc=this.owned(owner,'building','towncenter')[0];
     if(!tc){const worker=this.owned(owner,'unit','villager').find(e=>e.order?.type!=='build');if(worker&&!this.owned(owner,'building','towncenter').length)for(let i=0;i<16;i++){const angle=i*2.4,r=12+Math.floor(i/4)*6,x=player.start.x+Math.cos(angle)*r,z=player.start.z+Math.sin(angle)*r;if(this.buildValid('towncenter',x,z,owner)){this.build('towncenter',x,z,[worker.id],owner);break;}}this.assignEconomy(owner);continue;}
     tickAI.call(this,owner);

@@ -60,6 +60,24 @@ export const COMMANDER_PROFILES=Object.freeze({
     silhouette:'M16 11.8a3.9 3.9 0 1 0 0 7.8a3.9 3.9 0 1 0 0-7.8z M7.2 28c1.4-5 4.6-7.2 8.8-7.2s7.4 2.2 8.8 7.2z',
     crest:'M9.5 10l2.5-4.5L16 8.5l4-3L22.5 10v2h-13z',
   },
+  'Lord Commander Aldric':{
+    title:'Warden of the Iron Ring',bg1:'#273b47',bg2:'#101a21',rim:'#f0cf7b',accent:'#8acde0',
+    emblem:'M9 8h14v12l-7 5-7-5z',
+    silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.3 4.8-7.5 9-7.5s7.4 2.2 9 7.5z',
+    crest:'M10 9h3v-3h6v3h3v3H10z',
+  },
+  'Marshal Vayne':{
+    title:'Pass Garrison Strategist',bg1:'#3b372c',bg2:'#191712',rim:'#e6c678',accent:'#d6b984',
+    emblem:'M7 22l9-15 9 15z',
+    silhouette:'M16 11.5a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M7.2 28c1.5-5 4.7-7.2 8.8-7.2s7.3 2.2 8.8 7.2z',
+    crest:'M11 10l5-5 5 5v2H11z',
+  },
+  'Lady Isolde':{
+    title:'Bannerlord of Oakhold',bg1:'#223f32',bg2:'#0e1d16',rim:'#ebd083',accent:'#92d99b',
+    emblem:'M16 6c4 4 6 8 6 12H10c0-4 2-8 6-12z',
+    silhouette:'M16 11.6a3.9 3.9 0 1 0 0 7.8a3.9 3.9 0 1 0 0-7.8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
+    crest:'M10 11l3-5 3 3 3-3 3 5z',
+  },
 });
 
 const DEFAULT_PROFILE=Object.freeze({

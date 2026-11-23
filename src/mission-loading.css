@@ -1,0 +1,203 @@
+/* Warcraft III / Age of Empires II-style Pre-Mission Chronicle & Loading Screen */
+
+.chronicle-overlay{
+  position:fixed;inset:0;z-index:55;
+  display:flex;align-items:center;justify-content:center;
+  padding:clamp(10px,2.2vw,28px);
+  background:#09110e;
+  overflow:auto;
+}
+.chronicle-backdrop-art{
+  position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 70% 35%,rgba(14,24,20,.42),rgba(7,13,11,.94) 76%),
+    url('./ui-art/frontier-citadel-hero.jpg') center center / cover no-repeat;
+  opacity:.72;
+}
+.chronicle-frame{
+  position:relative;z-index:1;
+  width:min(1120px,100%);max-height:calc(100dvh - 24px);
+  display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(15,24,20,.96),rgba(10,17,14,.98));
+  border:2px solid rgba(214,179,102,.52);
+  box-shadow:0 28px 90px rgba(0,0,0,.82),inset 0 0 0 1px rgba(255,236,184,.12),inset 0 1px 0 rgba(255,238,192,.22);
+  border-radius:6px;
+  overflow:hidden;
+}
+
+.chronicle-header{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:16px 22px 13px;
+  background:linear-gradient(180deg,rgba(32,46,38,.78),rgba(16,25,20,.92));
+  border-bottom:1px solid rgba(214,179,102,.32);
+}
+.chronicle-eyebrow{
+  display:block;font-size:9px;font-weight:700;letter-spacing:2.2px;color:#e9c779;margin-bottom:3px;
+}
+.chronicle-title-wrap h2{
+  margin:0;font-family:var(--serif);font-size:clamp(26px,3.2vw,40px);line-height:1.02;
+  color:#fbf2d8;font-weight:600;letter-spacing:-.4px;
+}
+.chronicle-subtitle{display:block;font-size:11px;color:#aebfa4;margin-top:3px}
+.chronicle-badges{display:flex;gap:7px;flex-wrap:wrap}
+.chronicle-badges span{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:3px;
+  border:1px solid rgba(214,179,102,.28);background:rgba(10,18,15,.72);
+  font-size:10px;font-weight:600;color:#e7d39b;
+}
+.chronicle-badges .ui-icon{width:13px;height:13px;color:#e9c779}
+
+.chronicle-body{
+  display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:16px;
+  padding:16px 22px;overflow:auto;min-height:0;flex:1;
+}
+
+/* Left Warcraft-style Cartographer Map & Commander Plaque */
+.chronicle-map-card{display:flex;flex-direction:column;gap:10px}
+.chronicle-map-frame{
+  position:relative;aspect-ratio:16/10;border-radius:4px;overflow:hidden;
+  border:1px solid rgba(214,179,102,.46);background:#0f1d22;
+  box-shadow:0 10px 26px rgba(0,0,0,.45),inset 0 0 24px rgba(0,0,0,.45);
+}
+.chronicle-minimap{display:block;width:100%;height:100%}
+
+.chronicle-commander-card{
+  display:flex;align-items:flex-start;gap:11px;padding:10px 12px;border-radius:4px;
+  border:1px solid rgba(214,179,102,.28);background:rgba(18,30,24,.9);
+}
+.chronicle-portrait{
+  width:52px;height:52px;flex:none;border-radius:4px;overflow:hidden;
+  border:1px solid rgba(232,196,112,.55);background:#12201b;
+}
+.chronicle-portrait svg{display:block;width:100%;height:100%}
+.chronicle-commander-card small{display:block;font-size:8px;letter-spacing:1.3px;text-transform:uppercase;color:#dfb96a;font-weight:700}
+.chronicle-commander-card strong{display:block;font-family:var(--serif);font-size:18px;color:#faf0d4;line-height:1.15;margin:1px 0 4px}
+.chronicle-commander-card p{margin:0;font-size:11px;line-height:1.45;color:#c9d6be;font-style:italic}
+
+.chronicle-boss-strip{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:4px;
+  border:1px solid rgba(214,104,88,.42);background:linear-gradient(135deg,rgba(62,24,22,.82),rgba(28,16,16,.92));
+}
+.chronicle-boss-strip .ui-icon{width:18px;height:18px;color:#f09684;flex:none}
+.chronicle-boss-strip small{display:block;font-size:8px;letter-spacing:1.2px;color:#ef9e8d;font-weight:700}
+.chronicle-boss-strip strong{display:block;font-size:13px;color:#ffe6dc}
+.chronicle-boss-strip span{display:block;font-size:10px;color:#d6b1a7}
+
+.chronicle-emblem-stage{
+  padding:22px 16px;text-align:center;border-radius:4px;
+  border:1px solid rgba(214,179,102,.32);
+  background:radial-gradient(circle at 50% 28%,rgba(74,60,28,.45),rgba(14,24,19,.92));
+}
+.chronicle-crest-seal{
+  display:inline-grid;place-items:center;width:58px;height:58px;border-radius:50%;margin-bottom:10px;
+  border:2px solid rgba(240,206,120,.7);background:rgba(20,30,24,.9);color:#f3d280;
+}
+.chronicle-crest-seal .ui-icon{width:28px;height:28px}
+.chronicle-emblem-stage small{display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#e3c173}
+.chronicle-emblem-stage strong{display:block;font-family:var(--serif);font-size:26px;color:#fbf1d6;margin:4px 0}
+.chronicle-emblem-stage p{margin:0;font-size:11px;color:#b8c8ae}
+
+.chronicle-tip-box{
+  padding:11px 12px;border-radius:4px;border:1px solid rgba(214,179,102,.24);
+  background:rgba(18,30,24,.84);
+}
+.chronicle-tip-box span{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:1.4px;color:#e6c474;margin-bottom:5px}
+.chronicle-tip-box .ui-icon{width:13px;height:13px}
+.chronicle-tip-box p{margin:0;font-size:11px;line-height:1.5;color:#cad6bf}
+
+/* Right Illuminated Parchment Chronicle Scroll */
+.chronicle-scroll{
+  display:flex;flex-direction:column;gap:12px;padding:15px 18px;border-radius:4px;
+  border:1px solid rgba(218,184,110,.38);
+  background:linear-gradient(180deg,rgba(44,37,24,.86),rgba(24,22,16,.94));
+  box-shadow:inset 0 0 36px rgba(0,0,0,.35);
+}
+.chronicle-scroll-heading{display:flex;align-items:center;gap:10px}
+.chronicle-scroll-heading span{font-size:9px;font-weight:700;letter-spacing:2.1px;color:#e9c779;white-space:nowrap}
+.chronicle-scroll-heading i{flex:1;height:1px;background:linear-gradient(90deg,rgba(233,199,121,.55),transparent)}
+
+.chronicle-prose p{
+  margin:0 0 9px;font-family:var(--serif);font-size:clamp(15px,1.45vw,17.5px);line-height:1.52;
+  color:#f2e7cb;
+}
+.chronicle-prose p:last-child{margin-bottom:0}
+.chronicle-prose p.dropcap::first-letter{
+  float:left;font-family:var(--serif);font-size:44px;line-height:.82;padding:3px 7px 0 0;
+  color:#f0ce79;font-weight:600;
+}
+
+.chronicle-intel-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chronicle-intel-grid article{
+  padding:8px 10px;border-radius:4px;
+  border:1px solid rgba(214,179,102,.24);background:rgba(13,21,17,.82);
+}
+.chronicle-intel-grid span{
+  display:inline-flex;align-items:center;gap:5px;font-size:8px;font-weight:700;letter-spacing:1.3px;color:#dfbe72;margin-bottom:4px;
+}
+.chronicle-intel-grid .ui-icon{width:12px;height:12px}
+.chronicle-intel-grid strong{display:block;font-size:10.5px;line-height:1.38;color:#e8edd9;font-weight:600}
+
+.chronicle-orders{
+  display:flex;flex-direction:column;gap:7px;padding:10px 12px;border-radius:4px;
+  border-left:3px solid #ebc772;background:rgba(14,24,19,.86);
+}
+.chronicle-orders small{display:block;font-size:8px;font-weight:700;letter-spacing:1.5px;color:#ebc772;margin-bottom:2px}
+.chronicle-orders p{margin:0;font-size:12px;line-height:1.45;color:#f5eed7;font-weight:500}
+.chronicle-side-pill{padding-top:6px;border-top:1px solid rgba(214,179,102,.18)}
+.chronicle-side-pill small{color:#9fd8b5}
+.chronicle-side-pill p{font-size:11px;color:#cce0d2;font-weight:400}
+
+.chronicle-field-tip{
+  display:flex;align-items:flex-start;gap:7px;margin:0;font-size:11px;line-height:1.45;color:#cfc7aa;
+}
+.chronicle-field-tip .ui-icon{width:14px;height:14px;color:#e6c474;flex:none;margin-top:2px}
+.chronicle-field-tip strong{color:#f2d896;white-space:nowrap}
+
+/* Footer Progress Bar -> Ready War-Horn Button */
+.chronicle-footer{
+  padding:13px 22px 15px;
+  background:rgba(10,17,14,.96);
+  border-top:1px solid rgba(214,179,102,.32);
+  display:flex;align-items:center;justify-content:center;
+}
+.chronicle-progress-wrap{width:100%;display:flex;flex-direction:column;gap:6px}
+.chronicle-progress-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#c9d6be}
+.chronicle-progress-meta strong{color:#f0cf7b;font-variant-numeric:tabular-nums}
+.chronicle-progress-track{
+  width:100%;height:10px;border-radius:999px;overflow:hidden;
+  background:rgba(28,42,34,.92);border:1px solid rgba(214,179,102,.42);
+}
+.chronicle-progress-track i{
+  display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#a68436,#f0cf7b,#ffe7a8);
+  transition:width .24s ease-out;
+}
+.chronicle-begin-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  min-height:48px;padding:11px 30px;border-radius:5px;
+  border:1px solid #f7df9d;
+  background:linear-gradient(180deg,#eed490,#c9a24b);
+  color:#14221b;font-size:14px;font-weight:700;letter-spacing:.4px;
+  box-shadow:0 8px 28px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,252,235,.65);
+  cursor:pointer;
+}
+.chronicle-begin-btn .ui-icon{width:17px;height:17px}
+.chronicle-begin-btn:hover{background:linear-gradient(180deg,#f7e2a8,#d8b158);color:#0e1b15}
+
+@media(max-width:860px){
+  .chronicle-body{grid-template-columns:1fr;padding:12px 14px;gap:11px}
+  .chronicle-header{padding:11px 14px}
+  .chronicle-intel-grid{grid-template-columns:1fr}
+  .chronicle-footer{padding:10px 14px}
+  .chronicle-map-frame{max-height:140px}
+}
+@media(max-height:520px) and (orientation:landscape){
+  .chronicle-overlay{padding:6px}
+  .chronicle-header{padding:8px 14px}
+  .chronicle-title-wrap h2{font-size:22px}
+  .chronicle-body{grid-template-columns:230px minmax(0,1fr);padding:8px 14px;gap:10px}
+  .chronicle-prose p{font-size:13.5px;line-height:1.4}
+  .chronicle-prose p.dropcap::first-letter{font-size:32px}
+  .chronicle-footer{padding:8px 14px}
+  .chronicle-begin-btn{min-height:38px;padding:7px 20px;font-size:12px}
+}

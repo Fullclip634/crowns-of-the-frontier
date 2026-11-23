@@ -26,6 +26,7 @@ import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeO
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCost,wallBuildTime,wallTier} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
+import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography} from './terrain-barriers.js';
 import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
 import {closestCandidates} from './closest-candidates.js';
@@ -77,9 +78,9 @@ export class Simulation {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
-    const requestedSize=this.mission?WORLD:(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||WORLD);
+    const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||WORLD);
     this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
-    this.rng=seededRandom(this.options.seed);this.entities=[];this.nextId=1;this.time=0;this.revision=0;
+    this.rng=seededRandom(this.options.seed);this.entities=[];this.barriers=[];this.nextId=1;this.time=0;this.revision=0;
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
@@ -210,6 +211,7 @@ export class Simulation {
     if(m==='dominion'||mission?.dominion){for(const [x,z]of [[-26*scale,-23*scale],[3,1],[28*scale,25*scale]])this.addShrine(x,z);}
     plantStartingForests(this);
     groupFieldForests(this);
+    if(!mission)applyMapGeography(this);
     for(const owner of movedStarts)replaceMissingShoreResources(this,owner);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
@@ -231,6 +233,7 @@ export class Simulation {
     if(Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
+    if(barrierCollision(this,type,x,z,d.r))return false;
     return !placementCollision(this,type,x,z,d.r,ignored);
   }
   build(type,x,z,workerIds,owner=0,append=false,layout){const d=BUILDINGS[type];if(!d||this.players[owner].age<d.age)return this.fail('Advance to the required age first.',owner);
@@ -362,8 +365,10 @@ export class Simulation {
           resCount++;
         }
       }
+      resHash=(Math.imul(resHash,31)+barrierHash(this.barriers))|0;
       if(this.grids.landBase?.resHash!==resHash||this.grids.landBase?.resCount!==resCount||this.grids.landBase?.size!==size){const base=baseWaterGrid(this).slice();
         for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&['wood','gold','stone'].includes(e.type)){const a=this.cell(e.x-e.r-.2,e.z-e.r-.2),b=this.cell(e.x+e.r+.2,e.z+e.r+.2),center=this.cell(e.x,e.z);base[center.z*size+center.x]=1;for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++)if(Math.hypot(x*CELL-this.halfWorld+1-e.x,z*CELL-this.halfWorld+1-e.z)<e.r+.1)base[z*size+x]=1;}
+        stampBarriersOnGrid(this,base);
         this.grids.landBase={revision:this.revision,resHash,resCount,size,data:base};
       }else this.grids.landBase.revision=this.revision;
       const parent=Object.getPrototypeOf(this),parentGrids=parent?.grids;
@@ -640,7 +645,7 @@ export class Simulation {
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
   updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
-    const shared=this.options.mode==='custom'&&this.options.shareVision,tactical=this.tacticalEnabled(),phase=tactical?this.tacticalPhase():0,originHeight=tactical?tacticalHeight(this.options.map,this.options.seed,0,0,phase):0,biomeBonus=tactical?biomeVisionModifier(this.options.map):0;
+    const shared=(this.options.mode==='custom'&&this.options.shareVision)||(this.mission&&this.players.length>2),tactical=this.tacticalEnabled(),phase=tactical?this.tacticalPhase():0,originHeight=tactical?tacticalHeight(this.options.map,this.options.seed,0,0,phase):0,biomeBonus=tactical?biomeVisionModifier(this.options.map):0;
     for(const e of this.candidatesFor('unit')){if(e.hp<=0||e.embarked||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;let r=UNITS[e.type].vision;if(tactical)r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),originHeight)+biomeBonus);const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil(r/2));}
     for(const e of this.candidatesFor('building')){if(e.hp<=0||e.embarked||e.progress<=0||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil((BUILDINGS[e.type].vision||18)/2));}
     for(const s of this.candidatesFor('shrine')){if(s.owner!==0)continue;const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
@@ -657,7 +662,12 @@ export class Simulation {
   end(won,reason){if(this.ended)return;this.ended={won,reason};this.emit('end',this.ended);}
   checkVictory(){if(this.options.mode==='sandbox')return;
     if(this.options.mode==='regicide'){if(!this.owned(0,'unit','king').length)this.end(false,'Your sovereign has fallen.');else if(!this.owned(1,'unit','king').length)this.end(true,'The rival sovereign is defeated. Your crown endures.');return;}
+    if(this.options.mode==='campaign13'&&this.campaignState&&this.campaignState.stage===0){
+      if(!this.owned(0,'unit','king').length&&!this.owned(0,'unit').length)return this.end(false,'Your royal vanguard fell before Oakhold could be rescued.');
+      return;
+    }
     if(!this.owned(0,'building','towncenter').length)return this.end(false,'Your last town center has fallen.');
+    if(this.mission?.actFour)return;
     if(this.options.mode==='tutorial'){if(this.tutorialObjectives().every(o=>o.done))this.end(true,'Your first settlement is thriving. You are ready to rule.');return;}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival){const max=this.mission?.waves||10;if(this.wave>=max&&!this.owned(1,'unit').length&&(!this.mission||this.owned(0,'building','keep').some(b=>b.progress>=1)))this.end(true,'Your kingdom endured every assault.');return;}
     if(!this.owned(1,'building','towncenter').length){if(this.options.mode==='campaign1'&&(!this.owned(0,'building','barracks').length||this.owned(0,'unit').filter(e=>e.type!=='villager'&&e.type!=='scout').length<6))return;if(this.options.mode==='campaign2'&&this.players[0].age<2)return;this.end(true,'The rival capital has fallen. The frontier is yours.');}
@@ -677,7 +687,7 @@ export class Simulation {
     for(let i=0;i<tickEntityCount;i++){const e=this.entities[i];if(e.hp>0){if(e.kind==='unit')this.tickUnit(e,dt);else if(e.kind==='building')this.tickBuilding(e,dt);}}
     resolveNavalSpacing(this,dt);
     this.tickProjectiles();
-    this.aiClock+=dt;if(this.options.mode==='custom')this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
+    this.aiClock+=dt;if(this.options.mode==='custom'||this.players.length>2)this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival&&this.time>=this.nextWave&&this.wave<(this.mission?.waves||10))this.spawnWave();
     this.tickShrines(dt);
     if(this.options.mode==='wonder'){for(let owner=0;owner<2;owner++){if(this.owned(owner,'building','wonder').some(e=>e.progress>=1))this.wonderTime[owner]+=dt;else this.wonderTime[owner]=0;if(this.wonderTime[owner]>=240)this.end(owner===0,owner===0?'Your monument will stand for a thousand years.':'The rival monument secured their legacy.');}}
@@ -686,7 +696,7 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,barriers:this.barriers||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options);
@@ -701,6 +711,7 @@ export class Simulation {
     s.spawnPositions=starts;
     for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
     s.commanderAI=data.commanderAI||null;
+    s.barriers=Array.isArray(data.barriers)?data.barriers.map(b=>({...b})):[];
     restoreWallLinks(s.entities);
     if(data.rngState!==undefined)s.rng.state=data.rngState;
     s.explored=Uint8Array.from(data.explored);

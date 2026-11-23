@@ -119,6 +119,10 @@ export const CAMPAIGN_BOSSES=Object.freeze({
   campaign7:{name:'Ash-Lord Kaelen',title:'Cinder Reach Commander',fortress:'Ember Keep'},
   campaign9:{name:'Siege-Master Torv',title:'Frostmarch Besieger',fortress:'Northern Siege Camp'},
   campaign10:{name:'Valkor the Usurper',title:'Claimant to the Shattered Crown',fortress:'Summit Imperial Keep'},
+  campaign11:{name:'Lord Korr & General Syra',title:'Encircling Warlord Coalition',fortress:'Northern Siege Camp & Eastern Hold'},
+  campaign12:{name:'Iron-Marshal Garen',title:'Warden of the Sundered Pass',fortress:'Central Mountain Fortress'},
+  campaign13:{name:'High Warlord Malrik',title:'Scourge of the Deepwood',fortress:'Northwood Timber Citadel'},
+  campaign14:{name:'The Usurper Coalition',title:'Sunward & Raven High Lords',fortress:'Twin Imperial Citadels'},
 });
 
 /** Mid-mission optional Side Quests with instant battlefield rewards. */
@@ -180,10 +184,10 @@ export const CAMPAIGN_SIDE_QUESTS=Object.freeze({
     reward(s,spawn){spawn(s,{owner:0,type:'archer',count:3});},
   },
   campaign9:{
-    id:'sq-c9-walls',title:'Reinforced Palisade',
-    text:'Complete four wall sections to blunt the night siege.',
+    id:'sq-c9-walls',title:'Reinforced Frost Watch',
+    text:'Complete a third Watchtower along the frozen perimeter.',
     rewardText:'+250 Food · +200 Stone',
-    done:s=>completed(s,'wall').length>=4,
+    done:s=>completed(s,'tower').length>=3,
     reward(s){s.players[0].resources.food+=250;s.players[0].resources.stone+=200;},
   },
   campaign10:{
@@ -192,5 +196,33 @@ export const CAMPAIGN_SIDE_QUESTS=Object.freeze({
     rewardText:'+1 Trebuchet arrives',
     done:s=>completed(s,'workshop').length>0,
     reward(s,spawn){spawn(s,{owner:0,type:'catapult',count:1});},
+  },
+  campaign11:{
+    id:'sq-c11-bastion',title:'Citadel Siegeworks',
+    text:'Construct a Siege Workshop inside the Iron Ring to break out.',
+    rewardText:'+2 Battering Rams · +200 Gold',
+    done:s=>completed(s,'workshop').length>0,
+    reward(s,spawn){s.players[0].resources.gold+=200;spawn(s,{owner:0,type:'ram',count:2});},
+  },
+  campaign12:{
+    id:'sq-c12-castle',title:'Bastion of the Pass',
+    text:'Raise a Castle Keep guarding one of the narrow mountain passes.',
+    rewardText:'+300 Gold · +3 Knights reinforce',
+    done:s=>completed(s,'keep').length>0,
+    reward(s,spawn){s.players[0].resources.gold+=300;spawn(s,{owner:0,type:'knight',count:3});},
+  },
+  campaign13:{
+    id:'sq-c13-imperial',title:'Crown of Oakhold',
+    text:'Build a Blacksmith and a Stable to arm liberated Oakhold.',
+    rewardText:'+3 Knights · +250 Food',
+    done:s=>completed(s,'blacksmith').length>0&&completed(s,'stable').length>0,
+    reward(s,spawn){s.players[0].resources.food+=250;spawn(s,{owner:0,type:'knight',count:3});},
+  },
+  campaign14:{
+    id:'sq-c14-trebuchet',title:'Coalition Artillery',
+    text:'Field two Trebuchets to shatter the rival Imperial citadels.',
+    rewardText:'+400 Gold · +300 Stone',
+    done:s=>s.owned(0,'unit','catapult').length>=2,
+    reward(s){s.players[0].resources.gold+=400;s.players[0].resources.stone+=300;},
   },
 });

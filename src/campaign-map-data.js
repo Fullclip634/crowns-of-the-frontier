@@ -7,10 +7,11 @@ import {CAMPAIGN_SCRIPTS} from './campaigns.js';
  * only adding or editing node coordinates and lore metadata here — zero UI rewrites.
  */
 export const CAMPAIGN_ACTS=Object.freeze([
-  {id:'all',label:'All Acts',roman:'I–III',subtitle:'Complete Frontier Chronicles'},
+  {id:'all',label:'All Acts',roman:'I–IV',subtitle:'Complete Frontier Chronicles'},
   {id:'act1',label:'Act I',roman:'I',subtitle:'The Foothold'},
   {id:'act2',label:'Act II',roman:'II',subtitle:'The Border Wars'},
   {id:'act3',label:'Act III',roman:'III',subtitle:'The Shattered Crown'},
+  {id:'act4',label:'Act IV',roman:'IV',subtitle:'Legends of the Realm'},
 ]);
 
 export const DIFFICULTY_MEDALS=Object.freeze({
@@ -72,6 +73,26 @@ export const CAMPAIGN_NODES=Object.freeze([
     id:'campaign10',act:'act3',x:228,y:152,region:'The Shattered Crown',archetype:'Imperial Finale',
     lore:'The high summit ridge where the old realm fractured—and where one banner will claim the frontier.',
     unlockAfter:'campaign9',
+  },
+  {
+    id:'campaign11',act:'act4',x:316,y:246,region:'Iron Ring Basin',archetype:'Surrounded Citadel & Relief',
+    lore:'A grand walled stone fortress encircled by three rival warlords until the Western Allied Relief Kingdom smashes the pass.',
+    unlockAfter:'campaign10',
+  },
+  {
+    id:'campaign12',act:'act4',x:548,y:252,region:'The Sundered Pass',archetype:'Mountain Chokepoints & Ally',
+    lore:'Towering granite ranges carve three razor-thin passes held alongside an active Allied Northern Garrison.',
+    unlockAfter:'campaign11',
+  },
+  {
+    id:'campaign13',act:'act4',x:706,y:198,region:'Oakhold Deepwood',archetype:'Hero Rescue & Expand',
+    lore:'Cut off without a town, an elite vanguard fights through forest ambushes to liberate walled Oakhold and take command of the realm.',
+    unlockAfter:'campaign12',
+  },
+  {
+    id:'campaign14',act:'act4',x:516,y:448,region:'Three Crowns Reach',archetype:'Grand 2v2 Coalition War',
+    lore:'Two allied Imperial citadels march across twin rivers and cliff ridges against rival warlord capitals for the fate of the realm.',
+    unlockAfter:'campaign13',
   },
 ]);
 

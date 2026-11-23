@@ -21,6 +21,18 @@ function paintBridges(ctx,map,coord,scale){
   }
 }
 
+function paintBarriers(ctx,sim,coord,scale){
+  const barriers=sim?.barriers;
+  if(!barriers?.length)return;
+  for(const b of barriers){
+    const x=coord(b.x),y=coord(b.z),r=Math.max(2,b.r*scale);
+    ctx.fillStyle='#4a4b46';
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#787970';
+    ctx.beginPath();ctx.arc(x-r*.22,y-r*.22,r*.58,0,Math.PI*2);ctx.fill();
+  }
+}
+
 export function renderReliefBase(bctx,size,sim,view){
   const worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
   const map=sim.options?.map||'highlands',biome=terrainBiome(map);
@@ -86,6 +98,7 @@ export function renderReliefBase(bctx,size,sim,view){
     }
     bctx.putImageData(img,0,0);
     paintBridges(bctx,map,coord,scale);
+    paintBarriers(bctx,sim,coord,scale);
     return true;
   }
   bctx.fillStyle=biome.map;bctx.fillRect(0,0,size,size);
@@ -94,6 +107,7 @@ export function renderReliefBase(bctx,size,sim,view){
     for(let z=-half;z<=half;z+=2){const x=coord(channel.center+Math.sin(z*channel.frequency)*channel.bend),y=coord(z);if(z===-half)bctx.moveTo(x,y);else bctx.lineTo(x,y);}bctx.stroke();
   }
   paintBridges(bctx,map,coord,scale);
+  paintBarriers(bctx,sim,coord,scale);
   return false;
 }
 
@@ -108,7 +122,7 @@ function drawDiamond(ctx,x,z,r,fill,stroke=null){
 export function drawMinimap(canvas,sim,view,settings,options={}){
   const ctx=canvas.getContext('2d'),size=canvas.width,worldSize=sim.worldSize||WORLD,half=worldSize/2,scale=size/worldSize,coord=value=>(value+half)*scale;
   const filter=options.filter||view?.minimapFilter||'all';
-  const map=sim.options.map,land=view?.landscape,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}`;
+  const map=sim.options.map,land=view?.landscape,baseKey=`${map}:${sim.options.seed||0}:${size}:${worldSize}:${sim.barriers?.length||0}`;
   let base=canvas.cachedBaseKey===baseKey&&canvas.cachedLandscape===land?canvas.cachedBase:null;
   if(!base&&typeof document!=='undefined'){
     try{

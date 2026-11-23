@@ -39,7 +39,10 @@ export function pebbleGeometry(detail=1){
 export class TerrainDetails{
   constructor(view){
     this.view=view;const land=view.landscape,rng=seededRandom(land.seed+2903),low=view.settings.quality==='low',high=view.settings.quality==='high';
-    const capacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
+    const barriers=view.sim?.barriers||[];
+    const barrierSlots=barriers.length*3;
+    const baseCapacity=low?120:Math.min(high?1200:640,Math.max(360,Math.floor(land.worldSize**2*(high?.0045:.0025))));
+    const capacity=baseCapacity+barrierSlots;
     const cliffGeo=low?null:biomeCliffGeometry(land.map);
     const material=view.materials?.rock?.clone()||standardMaterial();material.color.setHex(0xffffff);material.roughness=.89;material.vertexColors=Boolean(cliffGeo?.attributes?.color);
     this.mesh=new THREE.InstancedMesh(cliffGeo||pebbleGeometry(high?2:1),material,capacity);this.mesh.name='Solid terrain pebbles';this.mesh.count=0;this.mesh.frustumCulled=false;this.mesh.castShadow=false;this.mesh.receiveShadow=true;
@@ -106,13 +109,27 @@ export class TerrainDetails{
       }
     }
 
-    for(let i=0;i<capacity*4&&this.entries.length<capacity;i++){
+    for(let i=0;i<baseCapacity*4&&this.entries.length<baseCapacity;i++){
       const x=(rng()-.5)*(land.worldSize-8),z=(rng()-.5)*(land.worldSize-8),y=land.surfaceHeightAt(x,z);
       if(y<.23||!validSite(x,z,2.4))continue;
       const distance=townDistance(x,z);
       if(distance<campRadius*.86||distance<campRadius*1.25&&rng()<.75)continue;
       const scale=.33+rng()*.65;
       add('field',x,y,z,rng()*Math.PI*2,scale,.84+rng()*.53,.65+rng()*.38,-scale*.07);
+    }
+    // Impassable natural stone cliff crags & granite chokepoint boulders share this single instanced draw call.
+    for(const b of barriers){
+      const brng=seededRandom((b.seed||1)*7919+land.seed);
+      const by=land.surfaceHeightAt(b.x,b.z);
+      const baseScale=Math.max(1.8,(b.r||2.8)*1.12);
+      const hScale=Math.max(1.35,(b.height||3.8)/Math.max(1.2,baseScale)*1.45);
+      add('barrier',b.x,by,b.z,brng()*Math.PI*2,baseScale,1.1+brng()*.32,hScale,-baseScale*.18);
+      for(let k=0;k<2;k++){
+        const a=brng()*Math.PI*2,dist=(b.r||2.8)*(.48+brng()*.36);
+        const sx=b.x+Math.cos(a)*dist,sz=b.z+Math.sin(a)*dist,sy=land.surfaceHeightAt(sx,sz);
+        const sScale=baseScale*(.55+brng()*.28);
+        add('barrier',sx,sy,sz,brng()*Math.PI*2,sScale,1.18+brng()*.35,hScale*(.58+brng()*.24),-sScale*.15);
+      }
     }
     this.visibleEntries=[];
     this.nextEntries=[];
@@ -130,8 +147,8 @@ export class TerrainDetails{
     visible.length=0;
     let changed=force;
     for(const e of this.entries){
-      if(!nearViewport(v,e.x,e.y,e.z,6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
-      if(sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+      if(!nearViewport(v,e.x,e.y,e.z,e.type==='barrier'?12:6)||!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z))continue;
+      if(e.type!=='barrier'&&sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
       if(e!==this.visibleEntries[visible.length])changed=true;
       visible.push(e);
     }

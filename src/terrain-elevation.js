@@ -1,6 +1,6 @@
 import {terrainNoise} from './terrain-fields.js';
 import {seededRandom} from './data.js';
-import {biomeProfile,NEW_BIOME_MAPS} from './terrain-biomes.js';
+import {biomeProfile,NEW_BIOME_MAPS,CLASSIC_TACTICAL_MAPS} from './terrain-biomes.js';
 
 // One height field drives the rendered mesh, picking, foundations, roads and
 // tactical combat. Keeping it free of THREE lets the headless simulation use
@@ -42,7 +42,7 @@ export function tacticalHeight(map,seed,x,z,phase=terrainPhase(seed)){return bro
 // Elevation gameplay belongs to the new cliff/mesa biomes. The seven legacy
 // maps keep their published, regression-tested combat, fog and speed numbers.
 export const HIGH_GROUND_THRESHOLD=1.1;
-export function tacticalTerrainEnabled(map){return NEW_BIOME_MAPS.includes(map);}
+export function tacticalTerrainEnabled(map){return NEW_BIOME_MAPS.includes(map)||CLASSIC_TACTICAL_MAPS.includes(map);}
 
 // Age of Empires style high-ground advantage, bounded so it can never become
 // an exploit: attacking downhill adds up to +25%, attacking uphill loses up to

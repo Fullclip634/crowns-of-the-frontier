@@ -22,12 +22,16 @@ const styles={
   woodland:{ground:['#3c6540','#5b8250','#26492d'],grassTint:0x79b46c,grass:[0x4a7641,0x699052,0x355934],map:'#3c6238',plaza:0x8d8c7e,cliff:0x6e7368,dense:true},
   riverland:{ground:['#548e88','#83b3a0','#376e68'],grassTint:0x8fc6b4,grass:[0x568e84,0x7fae99,0x3c7067],map:'#568c84',plaza:0x929e98,cliff:0x6d7f7a,lush:true},
   archipelago:{ground:['#b5b489','#d2cca2','#8b9a7d'],grassTint:0xb8c89a,grass:[0xa6b083,0xc5c59b,0x849975],map:'#a8b792',plaza:0xbcb69c,cliff:0x94927e,shore:true},
+  ironpass:{ground:['#6e7d63','#929f81','#4d5c49'],grassTint:0x9bb088,grass:[0x6c8258,0x8ca073,0x526546],map:'#6a7b5f',plaza:0x97968a,cliff:0x6d7068,rocky:true},
+  blackwood:{ground:['#335938','#4f7546','#203f27'],grassTint:0x6ea862,grass:[0x3e6939,0x5a8148,0x2b4d2c],map:'#325632',plaza:0x868576,cliff:0x63695f,dense:true},
+  bastion:{ground:['#60834f','#82a069','#46693d'],grassTint:0x95c184,grass:[0x628b48,0x81a360,0x4c733c],map:'#597b4c',plaza:0xa29d8f,cliff:0x7e8078,rocky:true},
 };
 for(const style of Object.values(styles)){Object.freeze(style.ground);Object.freeze(style.grass);Object.freeze(style);}
 Object.freeze(styles);
 
 export const LEGACY_MEADOW_MAPS=Object.freeze(['highlands','valley','rivers','desert','canyon','coast']);
 export const NEW_BIOME_MAPS=Object.freeze(['arid','tundra','volcanic','highland','woodland','riverland','archipelago']);
+export const CLASSIC_TACTICAL_MAPS=Object.freeze(['ironpass','blackwood','bastion']);
 
 // Distinct elevation profiles. `cliffs` drives smooth mesas/terraces in the
 // shared relief function; `strength` scales the rolling shoulders.
@@ -46,6 +50,9 @@ export const BIOME_PROFILES=Object.freeze({
   woodland:Object.freeze({strength:2.85,cliffs:.35,wood:1.85,gold:.85,stone:.9,food:1.15}),
   riverland:Object.freeze({strength:2.05,cliffs:.45,wood:1.15,gold:1,stone:1,food:1.35}),
   archipelago:Object.freeze({strength:1.7,cliffs:1.05,wood:.75,gold:1.2,stone:1.1,food:1.3}),
+  ironpass:Object.freeze({strength:3.85,cliffs:1.65,wood:.85,gold:1.35,stone:1.6,food:.9}),
+  blackwood:Object.freeze({strength:2.35,cliffs:.3,wood:1.95,gold:1.05,stone:1.0,food:1.15}),
+  bastion:Object.freeze({strength:2.2,cliffs:.6,wood:1.05,gold:1.25,stone:1.35,food:1.05}),
 });
 
 export const TREE_PALETTES=Object.freeze({
@@ -63,6 +70,9 @@ export const TREE_PALETTES=Object.freeze({
   woodland:Object.freeze({leaf:0x395c32,leafDark:0x213d22,trunk:0x524231,snow:0xe3e9e5,minimap:'#1e4224'}),
   riverland:Object.freeze({leaf:0x447548,leafDark:0x285137,trunk:0x5f4e39,snow:0xe3e9e5,minimap:'#24563a'}),
   archipelago:Object.freeze({leaf:0x5e7844,leafDark:0x3a5430,trunk:0x6d5a41,snow:0xe3e9e5,minimap:'#355532'}),
+  ironpass:Object.freeze({leaf:0x4b6447,leafDark:0x2c4232,trunk:0x594e43,snow:0xe3e9e5,minimap:'#2f4936'}),
+  blackwood:Object.freeze({leaf:0x31542c,leafDark:0x1b361e,trunk:0x4c3d2d,snow:0xe3e9e5,minimap:'#193a1f'}),
+  bastion:Object.freeze({leaf:0x4c6b3d,leafDark:0x2d492d,trunk:0x604f3a,snow:0xe3e9e5,minimap:'#264930'}),
 });
 
 export function terrainBiome(map){return styles[map]||styles.highlands;}

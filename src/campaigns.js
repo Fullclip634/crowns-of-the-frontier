@@ -1,9 +1,11 @@
 import {UNITS} from './data.js';
 import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaign-relics.js';
+import {applyCampaignScenario,triggerWesternReliefArrival,triggerOakholdLiberation} from './campaign-scenarios.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.count(1,'building','towncenter');
+const allHostileCapitalsFallen=s=>s.players.every((p,owner)=>!s.hostile(0,owner)||!s.count(owner,'building','towncenter'));
 const DIFFICULTY_ORDER=['story','normal','hard','brutal'];
 const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficulty)>=DIFFICULTY_ORDER.indexOf(level);
 
@@ -11,7 +13,7 @@ const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficul
 // campaign history, survive save/restore through campaignState.fired, and never
 // spawn on water or outside the map.
 function spawnReinforcements(sim,spec){
-  const owner=spec.owner??0,anchor=sim.owned(owner,'building','towncenter')[0];if(!anchor)return 0;
+  const owner=spec.owner??0,anchor=sim.owned(owner,'building','towncenter')[0]||sim.owned(owner,'unit','king')[0]||sim.owned(owner,'unit')[0]||(sim.players[owner]?.start?{...sim.players[owner].start,r:3}:null);if(!anchor)return 0;
   const count=Math.max(1,Math.round(spec.count||1)),placed=[];
   for(let i=0;i<count;i++){
     let point=null;
@@ -142,6 +144,50 @@ export const CAMPAIGN_SCRIPTS={
       {at:160,id:'c10-counter',text:'The rival claim throws its household guard at the ridge.',reinforce:{owner:1,type:'knight',count:3}},
       {at:210,id:'c10-guard',minDifficulty:'hard',text:'Their last guard marches under the crown banner.',reinforce:{owner:1,type:'sentinel',count:2}},
     ]},
+  campaign11:{speaker:'Lord Commander Aldric',intro:'Three warlord armies have closed the Iron Ring around our stone citadel. Hold all three gates until the Western Allied Relief Kingdom smashes through the pass and establishes a forward camp!',
+    stages:[
+      {title:'Hold the Iron Ring',text:'Defend your central walled citadel until Western Allied Relief breaks through the western cliffs.',seconds:105,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=105,onDone:s=>{triggerWesternReliefArrival(s);},dialogue:'Horns from the western cliffs! Our Allied Relief Kingdom has broken through and raised a forward war-camp—strike out together!'},
+      {title:'Break the Northern Siege Camp',text:'Coordinate with your Western Ally to destroy Lord Korr’s northern town center.',marker:{x:-8,z:-84},done:s=>!s.count(1,'building','towncenter'),dialogue:'Lord Korr’s siege camp is in ashes! Turn east and shatter General Syra’s raiders.'},
+      {title:'Shatter the Encirclement',text:'Destroy every remaining hostile town center across the valley.',marker:{x:86,z:4},done:allHostileCapitalsFallen,dialogue:'The Iron Ring is broken forever! The central citadel stands unbroken and the valley belongs to our alliance.'},
+    ],optional:{text:'Keep your central Castle Keep standing throughout the entire siege.',done:s=>completed(s,'keep').length>0},
+    events:[
+      {at:32,id:'c11-north-probe',text:'Lord Korr’s northern siege vanguard probes the North Gate!',reinforce:{owner:1,type:'swordsman',count:3}},
+      {at:64,id:'c11-east-riders',text:'General Syra’s cavalry sweeps toward the East Gate!',reinforce:{owner:2,type:'knight',count:2}},
+      {at:88,id:'c11-south-pressure',minDifficulty:'hard',text:'Raiders from the southern outpost press the South Gate!',reinforce:{owner:1,type:'spearman',count:4}},
+      {at:145,id:'c11-ally-knights',text:'The Western Allied forward camp sends fresh lancers to join your counter-offensive!',reinforce:{owner:3,type:'knight',count:3}},
+    ]},
+  campaign12:{speaker:'Marshal Vayne',intro:'Towering stone cliffs divide the Sundered Pass into three narrow valleys. Save your stone—wall only the cliff gaps, hold alongside our Allied Northern Garrison, and break the central pass fortress!',
+    stages:[
+      {title:'Lock Down the Cliff Passes',text:'Complete a Watchtower or four wall/gate sections near the passes, or muster twelve military troops.',marker:{x:-6,z:64},done:s=>completed(s,'tower').length>=2||completed(s,'wall').length+completed(s,'gate').length>=4||army(s).length>=12,dialogue:'The mountain chokepoints are sealed! Now prepare your siege engines and storm the central fortress gate.'},
+      {title:'Shatter the Central Fortress',text:'Destroy Iron-Marshal Garen’s central mountain fortress town center to collapse the pass defense.',marker:{x:20,z:-4},done:s=>!s.count(1,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=300;s.players[0].resources.stone+=200;spawnReinforcements(s,{owner:3,type:'knight',count:4});},dialogue:'The central fortress has fallen! War chests seized (+300 Gold, +200 Stone) and our Northern Ally sends Knights through the breach!'},
+      {title:'Conquer the Eastern Empire',text:'March through the Sundered Pass and destroy the Eastern Imperial capital.',marker:{x:82,z:-34},done:allHostileCapitalsFallen,dialogue:'The Sundered Pass is open from summit to valley. The Eastern Empire bows before your banners.'},
+    ],optional:{text:'Win while your Northern Allied Garrison still controls its fortress.',done:s=>s.count(3,'building','towncenter')>0},
+    events:[
+      {at:50,id:'c12-ally-rally',text:'Our Northern Allied Garrison sends archers to reinforce the upper cliff pass.',reinforce:{owner:3,type:'archer',count:3}},
+      {at:95,id:'c12-pass-sortie',text:'Enemy knights sally out through the central mountain pass!',reinforce:{owner:1,type:'knight',count:2}},
+      {at:155,id:'c12-empire-siege',minDifficulty:'hard',text:'The Eastern Empire rolls a battering ram toward the passes!',reinforce:{owner:2,type:'ram',count:1}},
+    ]},
+  campaign13:{speaker:'Lady Isolde',intro:'We have no town, no walls, and no supplies—only our Sovereign and this elite Royal Vanguard. Cut through the Blackwood ambush, crush the raiders outside Oakhold, and liberate the walled town to our banner!',
+    stages:[
+      {title:'Liberate the Village of Oakhold',text:'Fight through the forest trail and destroy the Raider Barracks and Watchtower besieging Oakhold.',marker:{x:12,z:34},done:s=>!s.count(1,'building','barracks')&&!s.count(1,'building','tower'),onDone:s=>{triggerOakholdLiberation(s);},dialogue:'Oakhold’s gates swing wide! The entire walled town and its ten villagers swear fealty to your crown—expand your kingdom and march north!'},
+      {title:'Rebuild & Muster in Oakhold',text:'Grow Oakhold to 14 villagers and complete a Blacksmith, Stable, or Archery Range to challenge Warlord Malrik.',marker:{x:-22,z:16},done:s=>s.count(0,'unit','villager')>=14&&(completed(s,'blacksmith').length>0||completed(s,'stable').length>0||completed(s,'range').length>0),dialogue:'Oakhold’s forges burn bright again! Push through the dense northern Blackwood trails toward Warlord Malrik’s citadel.'},
+      {title:'Topple Warlord Malrik',text:'Breach the northern Blackwood citadel and destroy Warlord Malrik’s town center.',marker:{x:72,z:-66},done:s=>!s.count(2,'building','towncenter'),dialogue:'Warlord Malrik is cast down! From a lone banner in the woods, you have reclaimed the entire Deepwood realm.'},
+    ],optional:{text:'Keep your Sovereign alive through the entire campaign.',done:s=>s.count(0,'unit','king')>0},
+    events:[
+      {at:65,id:'c13-wood-scouts',when:s=>s.campaignState?.stage>=1,text:'Oakhold rangers emerge from the deepwood trails to join your army.',reinforce:{owner:0,type:'archer',count:3}},
+      {at:135,id:'c13-malrik-raid',minDifficulty:'hard',text:'Warlord Malrik dispatches raiders down the forest corridor toward Oakhold!',reinforce:{owner:2,type:'knight',count:3}},
+    ]},
+  campaign14:{speaker:'Queen Maren',intro:'Here ends the War of Three Crowns. My Imperial fortress holds the northern crossing beside your citadel. Coordinate across the Twin Rivers, break the rival coalition, and claim the realm forever!',
+    stages:[
+      {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:76,z:52},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'catapult',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
+      {title:'Imperial Supremacy',text:'Advance to the Imperial Age (or tear down the remaining rival Castle Keep).',marker:{x:76,z:-56},done:s=>s.players[0].age>=3||(!s.count(1,'building','keep')&&!s.count(2,'building','keep')),dialogue:'The Imperial standard rises over Twin Rivers! Press the final assault on the last enemy capital.'},
+      {title:'Unite the Three Crowns',text:'Destroy both rival Imperial town centers to end the coalition war.',marker:{x:76,z:-56},done:allHostileCapitalsFallen,dialogue:'Both rival capitals have fallen! From Iron Ridge to Twin Rivers, the entire Frontier unites beneath one Crown!'},
+    ],optional:{text:'Finish with Queen Maren’s allied capital still standing.',done:s=>s.count(3,'building','towncenter')>0},
+    events:[
+      {at:75,id:'c14-maren-support',text:'Queen Maren dispatches royal men-at-arms across the southern flank.',reinforce:{owner:3,type:'swordsman',count:4}},
+      {at:130,id:'c14-usurper-wave',text:'The rival coalition launches a joint assault over the Twin Rivers bridges!',reinforce:{owner:2,type:'knight',count:3}},
+      {at:190,id:'c14-imperial-siege',minDifficulty:'hard',text:'Rival siege engines roll toward the central river crossings!',reinforce:{owner:1,type:'ram',count:2}},
+    ]},
 };
 
 function initializeStory(sim){
@@ -161,7 +207,7 @@ export function campaignObjective(sim){
 
 export function installCampaigns(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tick=p.tick,end=p.end,emit=p.emit,serialize=p.serialize,restore=Simulation.restore;
-  p.initialize=function(){initialize.call(this);initializeStory(this);if(this.campaignState)this.campaignCheckpoint=copy({...serialize.call(this),campaignState:this.campaignState,checkpointTag:true});};
+  p.initialize=function(){initialize.call(this);if(this.mission)applyCampaignScenario(this);initializeStory(this);if(this.campaignState)this.campaignCheckpoint=copy({...serialize.call(this),campaignState:this.campaignState,checkpointTag:true});};
   p.emit=function(type,data={}){if(type==='gathered'&&data.owner===0&&data.source==='fishingboat'&&this.campaignState&&!this.campaignState.legacy)this.campaignState.fish+=data.amount;emit.call(this,type,data);};
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
   p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
@@ -199,6 +245,7 @@ export function installCampaigns(Simulation){
     if(q.cartId&&!this.get(q.cartId)){end.call(this,false,'The supply caravan was lost. Restore a checkpoint or begin the escort again.');return;}
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
     const stage=script.stages[q.stage];if(!stage?.done(this,q))return;
+    stage.onDone?.(this,q);
     q.history.push({time:this.time,speaker:script.speaker,text:stage.dialogue});q.stage++;q.stageAt=this.time;q.elapsed=0;this.emit('campaign-stage',{title:stage.title,text:stage.dialogue,stage:q.stage,total:script.stages.length});
     if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,stage.dialogue);return;}
     this.campaignCheckpoint=copy({...serialize.call(this),campaignState:q,checkpointTag:true});this.emit('campaign-checkpoint',{stage:q.stage});

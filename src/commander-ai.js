@@ -19,7 +19,7 @@ export const AI_PROFILES={
   hard:{workers:40,raid:13,retreat:.6,memory:130},brutal:{workers:48,raid:16,retreat:.5,memory:160},
 };
 const freshState=()=>({known:{},phase:'opening',scoutIndex:0,lastOrders:-20,lastRebalance:-20,decision:0});
-const stateFor=(sim,owner)=>sim.options.mode==='custom'?(sim.aiStates[owner]??={...freshState(),nextAttack:DIFFICULTIES[sim.difficulty(owner)].attack}):(sim.commanderAI??=freshState());
+const stateFor=(sim,owner)=>(sim.options.mode==='custom'||sim.players.length>2)?((sim.aiStates??={})[owner]??={...freshState(),nextAttack:DIFFICULTIES[sim.difficulty(owner)].attack}):(sim.commanderAI??=freshState());
 const military=unit=>unit.kind==='unit'&&!unit.embarked&&!['worker','fisher','quest'].includes(UNITS[unit.type].role)&&!['king','scout','transport'].includes(unit.type);
 const power=unit=>UNITS[unit.type].damage*(unit.hp/unit.maxHp)*(UNITS[unit.type].role==='siege'?.65:1);
 const countQueued=(sim,type,owner=1)=>sim.owned(owner,'building').reduce((n,b)=>n+b.queue.filter(q=>q.kind==='unit'&&q.type===type).length,0);
@@ -461,7 +461,8 @@ export function installCommanderAI(Simulation){
       if(tech==='fortifiedWall'&&!buildings.some(b=>b.type==='wall'||b.type==='gate'))continue;
       const site=buildings.find(b=>b.progress>=1&&!b.queue.length&&TECHS[tech].at.includes(b.type));if(site&&this.canAfford(Object.fromEntries(Object.entries(TECHS[tech].cost).map(([r,c])=>[r,c*(player.tech[tech]+1)])),owner)){this.research(site.id,tech);break;}
     }
-    const scout=this.owned(owner,'unit','scout')[0],waypoints=this.options.mode==='custom'?this.spawnPositions.flatMap((point,i)=>{
+    const multiKingdom=this.options.mode==='custom'||this.players.length>2;
+    const scout=this.owned(owner,'unit','scout')[0],waypoints=multiKingdom?this.spawnPositions.flatMap((point,i)=>{
       if(!this.hostile(owner,i)||this.options.map==='coast'&&Math.sign(point.x)!==Math.sign(tc.x))return [];
       if(!state.scoutedSpawns?.[i])return [[point.x,point.z]];
       return [0,1,2,3,4,5].map(n=>{const angle=n*Math.PI/3,radius=n%2?45:28;return [point.x+Math.cos(angle)*radius,point.z+Math.sin(angle)*radius];}).filter(([x,z])=>Math.abs(x)<this.halfWorld-8&&Math.abs(z)<this.halfWorld-8&&!this.isWater(x,z)&&(this.options.map!=='coast'||Math.sign(x)===Math.sign(tc.x)));
@@ -471,8 +472,8 @@ export function installCommanderAI(Simulation){
       const point=scout.hp<scout.maxHp*.35?{x:tc.x+8,z:tc.z-6}:{x:waypoints[state.scoutIndex%waypoints.length][0],z:waypoints[state.scoutIndex%waypoints.length][1]};
       this.command([scout.id],{type:'move',...point});state.scoutIndex++;
     }
-    const protectedBases=this.options.mode==='custom'?this.entities.filter(e=>e.hp>0&&e.type==='towncenter'&&this.allied(owner,e.owner)):[tc];
-    const defendedBases=this.options.mode==='custom'?protectedBases.filter(base=>base.owner===owner):protectedBases;
+    const protectedBases=multiKingdom?this.entities.filter(e=>e.hp>0&&e.type==='towncenter'&&this.allied(owner,e.owner)):[tc];
+    const defendedBases=multiKingdom?protectedBases.filter(base=>base.owner===owner):protectedBases;
     const threats=baseThreats,fieldEnemies=visible.filter(e=>e.kind==='unit'&&military(e)&&(defendedBases.some(base=>distance(e,base)<60)||landArmy.some(unit=>distance(e,unit)<25)));
     const ownPower=landArmy.reduce((n,e)=>n+power(e),0),enemyPower=fieldEnemies.reduce((n,e)=>n+power(e),0),recovering=landArmy.filter(isWounded);
     for(const unit of landArmy){
@@ -504,7 +505,7 @@ export function installCommanderAI(Simulation){
     if(threats.length){phase='defend';target=threats.sort((a,b)=>distance(a,tc)-distance(b,tc))[0];}
     else if(enemyPower>0&&ownPower<enemyPower*profile.retreat&&ready.some(e=>distance(e,tc)>30)){phase='regroup';}
     else if(state.phase==='attack'&&ready.filter(e=>UNITS[e.type].damage>0).length>=Math.max(3,Math.floor(profile.raid/2))||offensiveReady&&this.time>=nextAttack&&ready.filter(e=>UNITS[e.type].damage>0).length>=(opening?.army??Math.min(profile.raid,6+player.age*3))){
-      phase='attack';target=this.options.mode==='custom'?customAttackTarget(this,owner,state,tc,knownBuildings):knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
+      phase='attack';target=multiKingdom?customAttackTarget(this,owner,state,tc,knownBuildings):knownBuildings.sort((a,b)=>(a.type==='towncenter'?-20:0)+distance(a,tc)-(b.type==='towncenter'?-20:0)-distance(b,tc))[0]||{x:0,z:0};
     }
     if(this.options.map==='coast')this.commanderNavy(state,visible,knownBuildings,landArmy.filter(e=>!support.has(e.id)),tc,owner);
     else if(this.options.map==='archipelago')manageArchipelagoNavy(this,owner,state,tc,visible,knownBuildings);
@@ -528,7 +529,7 @@ export function installCommanderAI(Simulation){
       state.target={x:target.x,z:target.z,lastSeen:target.lastSeen??this.time};
       if(phase==='attack')state.firstAttackAt??=this.time;
     }
-    if(phase==='attack'&&this.time>=nextAttack+55){if(this.options.mode==='custom')state.nextAttack=this.time+30;else this.nextAttack=this.time+30;}
+    if(phase==='attack'&&this.time>=nextAttack+55){if(multiKingdom)state.nextAttack=this.time+30;else this.nextAttack=this.time+30;}
     const king=this.owned(owner,'unit','king')[0];if(king&&king.hp<king.maxHp*.8)this.command([king.id],{type:'move',x:tc.x+8,z:tc.z-8});
     if((this.options.mode==='dominion'||this.mission?.dominion)&&phase!=='defend'&&this.time>70){
       const shrines=this.entities.filter(e=>e.kind==='shrine'&&!this.allied(owner,e.owner));for(let i=0;i<shrines.length;i++){const group=ready.filter(e=>UNITS[e.type].damage>0).slice(i*3,i*3+3);
