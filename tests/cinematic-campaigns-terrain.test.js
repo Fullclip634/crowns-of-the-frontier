@@ -7,7 +7,6 @@ import {MISSIONS,MAPS} from '../src/data.js';
 import {Simulation} from '../src/simulation.js';
 import {orderSiegeAssault} from '../src/ai-siege.js';
 import {MISSION_CHRONICLES,missionLoadingMarkup} from '../src/mission-loading.js';
-import {shouldRunMenuDiorama,createMenuDioramaSim} from '../src/menu-diorama.js';
 import {landingMarkup} from '../src/menus-ui.js';
 import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from '../src/biome-art.js';
 
@@ -54,22 +53,14 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     }finally{clearBiomeArtwork();}
   });
 
-  it('installs new painted citadel hero artwork, backdrop toggle, and grand walled 3D citadel diorama',()=>{
+  it('uses painted medieval citadel hero artwork on the home screen without a live 3D citadel toggle',()=>{
     assert.ok(fs.existsSync(new URL('../src/ui-art/frontier-citadel-hero.jpg',import.meta.url)),'painted medieval citadel hero key art exists');
     const styleCss=fs.readFileSync(new URL('../src/style.css',import.meta.url),'utf8');
     assert.match(styleCss,/frontier-citadel-hero\.jpg/);
 
-    assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:false,menuBackdrop:'artwork'},modestDevice:false,hasView:true}),false);
-    assert.equal(shouldRunMenuDiorama({settings:{quality:'high',reducedMotion:false,menuBackdrop:'diorama'},modestDevice:false,hasView:true}),true);
-
-    const diorama=createMenuDioramaSim();
-    assert.ok(diorama.owned(0,'building','keep').length>=1);
-    assert.ok(diorama.owned(0,'building','wall').length>=12);
-    assert.ok(diorama.owned(0,'building','gate').length>=1);
-    assert.ok(diorama.owned(0,'building','tower').length>=2);
-
-    const html=landingMarkup(null,{menuBackdrop:'artwork'});
-    assert.match(html,/data-action="toggle-menu-backdrop"/);
+    const html=landingMarkup(null);
+    assert.doesNotMatch(html,/data-action="toggle-menu-backdrop"/);
+    assert.doesNotMatch(html,/Live 3D Citadel/i);
     assert.match(html,/14 handcrafted chapters/);
   });
 

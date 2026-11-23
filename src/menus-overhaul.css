@@ -72,15 +72,6 @@
   color:#cbd7c0;font-size:11px;font-weight:600;cursor:pointer;
 }
 .landing-footer{margin-top:auto;padding-top:10px;gap:10px;flex-wrap:wrap}
-.landing-footer-right{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap}
-.backdrop-toggle-pill{
-  display:inline-flex;align-items:center;gap:6px;padding:4px 10px;min-height:26px;border-radius:999px;
-  border:1px solid rgba(224,185,110,.36);background:rgba(12,22,18,.84);color:#e7cf8e;
-  font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;cursor:pointer;
-}
-.backdrop-toggle-pill .ui-icon{width:12px;height:12px;color:#f0cf7b}
-.backdrop-toggle-pill:hover{border-color:#f4d587;background:rgba(28,44,36,.95);color:#fff}
-.backdrop-toggle-pill.is-3d{border-color:#f0cf7b;background:rgba(78,64,26,.92);color:#fff6db}
 @media(max-width:740px){.landing-footer-hint{display:none}}
 .hero-mini .ui-icon{width:15px;height:15px;color:#dec17a}
 .hero-mini:hover{border-color:#e9c779;color:#fff}
@@ -328,13 +319,7 @@
   .hero-subrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:1px}
   .hero-mini{min-height:31px;padding:3px 5px;font-size:10px;gap:4px;flex:none}
   .hero-mini .ui-icon{width:12px;height:12px}
-  .landing-footer{
-    display:flex!important;position:fixed;right:calc(14px + var(--safe-right,0px));bottom:calc(8px + var(--safe-bottom,0px));
-    margin:0;padding:0;pointer-events:none;z-index:2;
-  }
-  .landing-footer>span:first-child,.landing-footer-hint{display:none}
-  .landing-footer-right{pointer-events:auto}
-  .backdrop-toggle-pill{padding:4px 9px;min-height:28px;font-size:8.5px;background:rgba(10,19,16,.84)}
+  .landing-footer{display:none!important}
   .settings-tab span{font-size:10px}
 }
 @media(max-width:600px) and (orientation:portrait){

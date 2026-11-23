@@ -47,7 +47,6 @@ import {campaignMapMarkup,commanderBannerMarkup} from './campaign-map-ui.js';
 import {missionLoadingMarkup} from './mission-loading.js';
 import {MatchTimeline,matchSummaryMarkup} from './match-timeline.js';
 import {landingMarkup,skirmishHubMarkup,settingsModalMarkup,saveManagerMarkup} from './menus-ui.js';
-import {MenuDioramaController} from './menu-diorama.js';
 import {MatchReplayRecorder,ReplayDriver,listReplays,saveReplay,readReplay,deleteReplay} from './replay.js';
 import {technologyTreeMarkup} from './technology-tree.js';
 import {readBindings,bindingErrors,controlForKey,heldControl,keyLabel} from './controls.js';
@@ -83,8 +82,8 @@ const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}};
 const modestDevice=(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrency||8)<=4;
 const recommendedQuality=modestDevice?'low':matchMedia('(pointer: coarse)').matches?'medium':'high';
-const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,musicVolume:1,uiVolume:1,music:true,unitVoices:true,warHorns:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,reduceFoliage:false,colorblind:false,healthBarMode:'smart',hudScale:'1',minimapSide:'left',menuBackdrop:'artwork',...read('crowns-settings',{})};
-delete settings.gpuTiming;
+const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,musicVolume:1,uiVolume:1,music:true,unitVoices:true,warHorns:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,reduceFoliage:false,colorblind:false,healthBarMode:'smart',hudScale:'1',minimapSide:'left',...read('crowns-settings',{})};
+delete settings.gpuTiming;delete settings.menuBackdrop;
 settings.frameRate=normalizeFrameRate(settings.frameRate);
 let offlineGraphicsPreference=null;
 function saveSettings(){
@@ -95,7 +94,7 @@ let customDraft={map:'highlands',mapSize:'vast',playerSlot:1,spectator:false,sta
 settings.bindings=readBindings(settings.bindings);
 document.querySelector('#app').innerHTML=`
   <div id="world" class="world-poster" aria-label="3D strategy battlefield"></div><div class="vignette"></div><div id="graphics-status" class="graphics-status hidden" role="status">Updating graphics…</div>
-  <div id="landing" class="landing">${landingMarkup(latestSaveSummary(),{menuBackdrop:settings.menuBackdrop})}
+  <div id="landing" class="landing">${landingMarkup(latestSaveSummary())}
 
 
 
@@ -117,10 +116,10 @@ document.querySelector('#app').innerHTML=`
 const worldEl=$('#world'),graphicsStatusEl=$('#graphics-status'),hudEl=$('#hud'),healthLayerEl=$('#health-layer'),weatherLabelEl=$('#weather-label'),weatherButtonEl=weatherLabelEl?.parentElement||null;
 let lastGraphicsBusy=null,lastGraphicsText='',lastWeatherText='',lastWeatherTitle='';
 let selectionKey='',productionKey='',objectiveKey='',controlGroupKey='',activeSubgroup=null,productionOpen=false,buildCategory='economy',scoreboardOpen=false,globalQueueKey='',scoreboardKey='',idleCycleIndex=0,tcCycleIndex=0,minimapFilter='all',pingMode=false,demolishArmed=null,longPressTimer=0,longPressFired=false,alertClearTimer=0,atlasSelectedId=null,atlasActFilter='all',atlasFreeSelect=false,dialogueTimer=0;
-const tacticalAlerts=new TacticalAlerts(),matchTimeline=new MatchTimeline(),menuDiorama=new MenuDioramaController(),replayRecorder=new MatchReplayRecorder();
+const tacticalAlerts=new TacticalAlerts(),matchTimeline=new MatchTimeline(),replayRecorder=new MatchReplayRecorder();
 let lastEndResult=null,summaryTab='overview',summaryMetric='scores',settingsTab='graphics',hubDraft=null,exploringEnd=false,activeReplay=null,lastReplayRecord=null,chronicleActive=false,chronicleTimer=0;
 function applyHudPreferences(){if(!hudEl)return;hudEl.dataset.minimapSide=settings.minimapSide==='right'?'right':'left';hudEl.dataset.hudScale=String(settings.hudScale||'1');}
-function refreshLanding(){const el=$('#landing');if(!el)return;el.innerHTML=landingMarkup(latestSaveSummary(),{menuBackdrop:settings.menuBackdrop});if(typeof refreshInstallEntry==='function')refreshInstallEntry();if(!view)for(const b of el.querySelectorAll('button'))b.disabled=true;}
+function refreshLanding(){const el=$('#landing');if(!el)return;el.innerHTML=landingMarkup(latestSaveSummary());if(typeof refreshInstallEntry==='function')refreshInstallEntry();if(!view)for(const b of el.querySelectorAll('button'))b.disabled=true;}
 let objectivesUserToggled=false,objectiveChangedAt=0;
 let allianceRecipient=null;
 let modalOpener=null;
@@ -204,7 +203,7 @@ try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),setti
   document.body.append(failure);failure.querySelector('button').focus();console.error(error);
 }
 bootStatus.remove();for(const button of bootButtons)button.disabled=!view;
-if(view)menuDiorama.start(view,worldEl,settings,modestDevice);
+
 audio.setCombatListener(createCombatListener(view,()=>playing&&!paused&&!modal&&!document.hidden&&!sim.ended));
 refreshLanding();applyHudPreferences();
 const edgeScroll=new EdgeScroll();
@@ -301,7 +300,7 @@ function beginFromChronicle(){if(!chronicleActive)return;clearChronicleOverlay()
 function openChronicleOverlay(options){clearChronicleOverlay();const root=$('#chronicle-root');if(!root)return;chronicleActive=true;paused=true;root.innerHTML=missionLoadingMarkup(options);const setStep=(pct,msg)=>{const fill=$('#chronicle-progress-fill'),lbl=$('#chronicle-status-text'),num=$('#chronicle-percent'),bar=$('#chronicle-progressbar');if(fill)fill.style.width=`${pct}%`;if(lbl)lbl.textContent=msg;if(num)num.textContent=`${pct}%`;if(bar)bar.setAttribute('aria-valuenow',String(pct));};setStep(35,'Carving terrain passes & stone cliffs…');chronicleTimer=setTimeout(()=>{if(!chronicleActive)return;setStep(78,'Fortifying castles & deploying regiments…');chronicleTimer=setTimeout(()=>{if(!chronicleActive)return;setStep(100,'Battlefield ready.');$('#chronicle-progress-wrap')?.classList.add('hidden');const btn=$('#chronicle-begin-btn');if(btn){btn.classList.remove('hidden');btn.focus({preventScroll:true});}},340);},280);}
 function showCommanderDialogue(speaker,title,text,duration=9500){const box=$('#commander-dialogue');if(!box||!text)return;clearTimeout(dialogueTimer);box.innerHTML=commanderBannerMarkup({speaker,title,text});box.classList.remove('hidden');dialogueTimer=setTimeout(clearCommanderDialogue,duration);}
 function showCampaign(focusId=null){chat.close(false);if(!modal)modalOpener=document.activeElement;if(playing)paused=true;edgeScroll.reset();if(focusId)atlasSelectedId=focusId;else if(!atlasSelectedId)atlasSelectedId=nextCampaignMissionId(progress,atlasFreeSelect);modal='campaign';$('#modal-root').innerHTML=`<div class="modal-backdrop atlas-backdrop">${campaignMapMarkup({progress,selectedId:atlasSelectedId,actFilter:atlasActFilter,freeSelect:atlasFreeSelect,setupOptions})}</div>`;$('#modal-root [data-atlas-launch],#modal-root .atlas-close')?.focus({preventScroll:true});}
-function startGame(options,save=null){if(!view)return;clearChronicleOverlay();menuDiorama.stop(worldEl);replayRecorder.detach();activeReplay=null;$('#replay-banner')?.classList.add('hidden');chat.close(false);if(!net.active)chat.reset();resetCompactHud(document);objectivesUserToggled=false;objectiveChangedAt=0;audio.clearCombat();edgeScroll.reset();audio.lastThunder=undefined;tacticalMode=null;unloadMode=false;pingMode=false;demolishArmed=null;tacticalAlerts.clear();minimapFilter='all';view.tacticalAlerts=tacticalAlerts;view.minimapFilter='all';for(const b of document.querySelectorAll('[data-map-filter]')){const on=b.dataset.mapFilter==='all';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}$('#map-flare-btn')?.classList.remove('active');$('#map-flare-btn')?.setAttribute('aria-pressed','false');$('#alert-line').innerHTML='';clearTimeout(alertClearTimer);productionOpen=false;productionKey='';scoreboardOpen=false;scoreboardKey='';globalQueueKey='';idleCycleIndex=0;tcCycleIndex=0;$('#production-panel').classList.add('hidden');$('#production-toggle').setAttribute('aria-expanded','false');$('#scoreboard-panel')?.classList.add('hidden');$('#scoreboard-toggle')?.setAttribute('aria-expanded','false');$('#global-queue-strip')?.classList.add('hidden');$('#hud').classList.remove('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed','false');closeModal();const replayRec=options?.replayRecord||null;if(replayRec){sim=new Simulation({...replayRec.options,replay:true});activeReplay=new ReplayDriver(replayRec);$('#replay-banner')?.classList.remove('hidden');setUIText($('#replay-toggle-btn'),'Pause');setUIText($('#replay-speed-btn'),'1×');}else{setupOptions={...setupOptions,...options};sim=save?Simulation.restore(save):new Simulation(options);if(!save&&!net.active&&!sim.options.multiplayer)replayRecorder.attach(sim,sim.options);}
+function startGame(options,save=null){if(!view)return;clearChronicleOverlay();replayRecorder.detach();activeReplay=null;$('#replay-banner')?.classList.add('hidden');chat.close(false);if(!net.active)chat.reset();resetCompactHud(document);objectivesUserToggled=false;objectiveChangedAt=0;audio.clearCombat();edgeScroll.reset();audio.lastThunder=undefined;tacticalMode=null;unloadMode=false;pingMode=false;demolishArmed=null;tacticalAlerts.clear();minimapFilter='all';view.tacticalAlerts=tacticalAlerts;view.minimapFilter='all';for(const b of document.querySelectorAll('[data-map-filter]')){const on=b.dataset.mapFilter==='all';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}$('#map-flare-btn')?.classList.remove('active');$('#map-flare-btn')?.setAttribute('aria-pressed','false');$('#alert-line').innerHTML='';clearTimeout(alertClearTimer);productionOpen=false;productionKey='';scoreboardOpen=false;scoreboardKey='';globalQueueKey='';idleCycleIndex=0;tcCycleIndex=0;$('#production-panel').classList.add('hidden');$('#production-toggle').setAttribute('aria-expanded','false');$('#scoreboard-panel')?.classList.add('hidden');$('#scoreboard-toggle')?.setAttribute('aria-expanded','false');$('#global-queue-strip')?.classList.add('hidden');$('#hud').classList.remove('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed','false');closeModal();const replayRec=options?.replayRecord||null;if(replayRec){sim=new Simulation({...replayRec.options,replay:true});activeReplay=new ReplayDriver(replayRec);$('#replay-banner')?.classList.remove('hidden');setUIText($('#replay-toggle-btn'),'Pause');setUIText($('#replay-speed-btn'),'1×');}else{setupOptions={...setupOptions,...options};sim=save?Simulation.restore(save):new Simulation(options);if(!save&&!net.active&&!sim.options.multiplayer)replayRecorder.attach(sim,sim.options);}
   if(net.active&&save?.options?.spectator===true)sim.options.spectator=true;
   $('#world').classList.add('world-poster');presentingMatch=null;
   if(net.active&&save?.visible){sim.visible=save.visible;sim.explored=save.explored;}
@@ -470,7 +469,7 @@ function renderHUD(includeCanvas=true){if(!playing)return;$('.game-bottomline').
 }
 function renderMinimap(){drawMinimap($('#minimap'),sim,view,settings,{filter:minimapFilter});}
 function renderHealth(){if(!playing||hudEl.classList.contains('panels-hidden'))return;renderHealthBars(healthLayerEl,sim,view);}
-function menuReturn(){clearChronicleOverlay();audio.clearCombat();if(playing&&!sim.ended&&!activeReplay)saveGame(true);replayRecorder.detach();activeReplay=null;$('#replay-banner')?.classList.add('hidden');if(net.active)net.leave();closeModal();playing=false;paused=false;exploringEnd=false;lastEndResult=null;$('#explore-banner')?.classList.add('hidden');clearCommanderDialogue();cancelBuild();pingMode=false;demolishArmed=null;tacticalAlerts.clear();$('#alert-line').innerHTML='';clearTimeout(alertClearTimer);selection=[];view.selection.clear();controlGroupKey='';activeSubgroup=null;scoreboardOpen=false;scoreboardKey='';globalQueueKey='';$('#scoreboard-panel')?.classList.add('hidden');$('#global-queue-strip')?.classList.add('hidden');$('#control-groups-bar')?.classList.add('hidden');$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#world').classList.add('world-poster');presentingMatch=null;refreshLanding();applyHudPreferences();updateRotate();if(view)menuDiorama.start(view,worldEl,settings,modestDevice);}
+function menuReturn(){clearChronicleOverlay();audio.clearCombat();if(playing&&!sim.ended&&!activeReplay)saveGame(true);replayRecorder.detach();activeReplay=null;$('#replay-banner')?.classList.add('hidden');if(net.active)net.leave();closeModal();playing=false;paused=false;exploringEnd=false;lastEndResult=null;$('#explore-banner')?.classList.add('hidden');clearCommanderDialogue();cancelBuild();pingMode=false;demolishArmed=null;tacticalAlerts.clear();$('#alert-line').innerHTML='';clearTimeout(alertClearTimer);selection=[];view.selection.clear();controlGroupKey='';activeSubgroup=null;scoreboardOpen=false;scoreboardKey='';globalQueueKey='';$('#scoreboard-panel')?.classList.add('hidden');$('#global-queue-strip')?.classList.add('hidden');$('#control-groups-bar')?.classList.add('hidden');$('#hud').classList.add('hidden');$('#landing').classList.remove('hidden');$('#world').classList.add('world-poster');presentingMatch=null;refreshLanding();applyHudPreferences();updateRotate();}
 // The browser only offers installation once it has decided the page qualifies.
 // Keep that event so the landing screen can offer it in place. An install button
 // that cannot work is worse than no button, so it stays hidden until it can.
@@ -505,7 +504,7 @@ function action(name,shiftKey=false){
   if(name==='install'){installGame();return;}
   if(name==='credits'){showCredits();return;}
   if(name==='chronicle-begin'){beginFromChronicle();return;}
-  if(name==='toggle-menu-backdrop'){const want3d=settings.menuBackdrop!=='diorama';settings.menuBackdrop=want3d?'diorama':'artwork';if(!playing&&view){if(want3d){if(!menuDiorama.start(view,worldEl,settings,modestDevice)){settings.menuBackdrop='artwork';toast('Live 3D Citadel could not start on this renderer.','warning');}}else menuDiorama.stop(worldEl);}saveSettings();const pill=$('[data-action="toggle-menu-backdrop"]');if(pill){const is3d=settings.menuBackdrop==='diorama';pill.classList.toggle('is-3d',is3d);pill.setAttribute('aria-pressed',String(is3d));pill.innerHTML=`${uiIcon(is3d?'castle':'map')}<span>${is3d?'Live 3D Citadel':'Key Art · Switch to 3D'}</span>`;}else refreshLanding();return;}
+
   if(isAISpectator()&&!spectatorActionAllowed(name))return;
   if(name==='alliance'){showAlliance();return;}
   if(name==='send-donation'){sendAllianceGift();return;}
@@ -532,7 +531,7 @@ function action(name,shiftKey=false){
     settings.frameRate=normalizeFrameRate($('#frame-rate').value);settings.volume=Number($('#volume').value);settings.musicVolume=Number($('#music-volume')?.value??1);settings.uiVolume=Number($('#ui-volume')?.value??1);settings.healthBarMode=$('#health-bar-mode')?.value||'smart';settings.hudScale=$('#hud-scale')?.value||'1';settings.minimapSide=$('#minimap-side')?.value||'left';applyHudPreferences();settings.music=$('#music').checked;settings.unitVoices=$('#unit-voices')?.checked!==false;settings.warHorns=$('#war-horns')?.checked!==false;settings.weather=$('#weather-mode').value;settings.lighting=$('#lighting-mode').value;settings.weatherSounds=$('#weather-sounds').checked;settings.lightning=$('#weather-lightning').checked;settings.fog=$('#fog').checked;settings.distantUnits=$('#distant-units').checked;settings.edgeScroll=$('#edge-scroll').checked;settings.edgeScrollSpeed=Number($('#edge-scroll-speed').value);edgeScroll.reset();
     const reloadGraphics=graphicsChanged||previousQuality!==settings.quality||view.graphicsLoading||view.graphicsFatal||view.graphicsError||view.graphicsSceneValid===false;
     const graphicsReady=reloadGraphics?view.quality(settings.quality):Promise.resolve(true),graphicsRequest=view.graphicsRequest;
-    graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();saveSettings();if(!playing&&view)menuDiorama.start(view,worldEl,settings,modestDevice);if(!view?.graphicsLoading&&previousQuality===settings.quality)audio.unlock();else graphicsReady.finally(()=>{if(!view?.graphicsLoading)audio.unlock();});closeModal();return;}
+    graphicsReady.then(applied=>{if(!applied&&view.graphicsRequest===graphicsRequest&&view.graphicsError&&!view.graphicsFatal)toast(graphicsFailureMessage(view.graphicsRestoredQuality||view.renderQuality),'warning');});view.setCameraPreset($('#camera-preset').value,$('#camera-preset').value!==settings.cameraPreset);updateCameraLabel();saveSettings();if(!view?.graphicsLoading&&previousQuality===settings.quality)audio.unlock();else graphicsReady.finally(()=>{if(!view?.graphicsLoading)audio.unlock();});closeModal();return;}
   if(name==='fullscreen'){document.documentElement.requestFullscreen?.().then(()=>{screen.orientation?.lock?.('landscape').catch(()=>{});}).catch(()=>toast('Use your browser fullscreen control on this device.'));return;}
   if(!playing||sim.ended)return;
   if(name==='objectives-expand'){objectivesUserToggled=true;if(!$('#objectives').classList.contains('objectives-expanded')&&isCompactHUD(document)){closeSelectionDetails(document);closeCompactCommands(document);}$('#objectives').classList.toggle('objectives-expanded');renderHUD();return;}
@@ -753,7 +752,7 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
     if(playing&&!firstFrame&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal?100:1000/targetFrameRate(settings);
     // Keep the opening scene still so queued frames share its shadow map.
-    if(!playing){menuDiorama.tick(view,worldEl,dt,now,Boolean(modal));}
+
     if(playing&&framePacer.due(now,renderInterval)){
       const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;
       view.wallStep=firstFrame?0:paused?dt:renderGap*Math.max(1,speed);
