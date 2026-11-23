@@ -3,7 +3,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: #101c19 url('./ui-art/frontier-citadel-hero.jpg') 62% center / cover no-repeat;
+  background: #101c19 url('./ui-art/frontier-citadel-hero.jpg') 68% center / cover no-repeat;
 }
 #world.world-poster canvas { pointer-events: none; }
 

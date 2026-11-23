@@ -43,7 +43,7 @@ export function landingMarkup(latestSave=null,{menuBackdrop='artwork'}={}){
 
   return `
     <header class="landing-header">
-      <a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiIcon('castle')}</span><span>CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a>
+      <a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiIcon('castle')}</span><span class="brand-wordmark">CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a>
       <div class="header-links">
         <button data-action="tech-tree" aria-label="Open technology tree">${uiIcon('book-open')}<span>Tech tree</span></button>
         <button data-action="saves" aria-label="Saved kingdoms">${uiIcon('folder-open')}<span>Saves</span></button>
