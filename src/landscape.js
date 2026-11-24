@@ -174,13 +174,14 @@ function groundMap(landscape){
   for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
   const scale=1536/size;
   const shore=landscape.map==='coast'||landscape.map==='archipelago'||landscape.map==='templelagoon';
+  const sandyRiver=landscape.map==='waterfallgorge'||landscape.map==='ironfall';
   const jungle=isJungleBiome(landscape.map);
   for(const channel of landscape.channels()){
     const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
-    if(shore){
-      // Organic wavy sandy coves and coastal headlands along both sides of the channel.
-      const beachColors=jungle?[[17,'#c8b57d'],[11,'#ebe0b6']]:[[15,'#baa474'],[9.5,'#dfd0a4']];
+    if(shore||sandyRiver){
+      // Organic wavy golden sandy coves & riverbanks matching AoE:DE sunlit shorelines!
+      const beachColors=jungle?[[17,'#d4bd7c'],[11,'#f3e7bc']]:sandyRiver?[[11,'#c8af72'],[6.5,'#e7d59e']]:[[15,'#c2aa76'],[9.5,'#e4d5a6']];
       for(const [extra,color] of beachColors){
         ctx.beginPath();
         for(let z=-half;z<=half;z+=3){
@@ -215,8 +216,8 @@ function groundMap(landscape){
   }
   // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
   const volcanic=isVolcanicBiome(landscape.map);
-  const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[94,82,58];
-  const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[172,166,148]:[176,158,122];
+  const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[134,104,64];
+  const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[188,166,124]:[204,168,108];
   for(const road of terrainRoadPaths(landscape)){
     const wheelSpacing=road.local?.57:.79,wheelWidth=road.local?.37:.48;
     strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[

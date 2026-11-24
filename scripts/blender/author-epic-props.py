@@ -101,7 +101,7 @@ def write_triplanar_uv(bm, uv_scale=0.35):
                 loop[uv_layer].uv = (co.x * uv_scale + 0.5, co.z * uv_scale + 0.5)
 
 
-def finalize_mesh(bm, name, mat, color_fn, uv_scale=0.35, preserve_uv=False, recalc_normals=True):
+def finalize_mesh(bm, name, mat, color_fn, uv_scale=0.35, preserve_uv=False, recalc_normals=True, smooth=False):
     if recalc_normals:
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.normal_update()
@@ -117,10 +117,12 @@ def finalize_mesh(bm, name, mat, color_fn, uv_scale=0.35, preserve_uv=False, rec
     verts = mesh.vertices
     loops = mesh.loops
     for poly in mesh.polygons:
+        poly.use_smooth = smooth
         fn = poly.normal
         for li in poly.loop_indices:
-            co = verts[loops[li].vertex_index].co
-            c = color_fn(co, fn)
+            v = verts[loops[li].vertex_index]
+            n = v.normal if smooth else fn
+            c = color_fn(v.co, n)
             colors.data[li].color = (clamp(c[0]), clamp(c[1]), clamp(c[2]), 1.0)
 
     mesh.materials.append(mat)
@@ -260,11 +262,56 @@ def add_foliage_lobe(bm, center, radii, seed=1, subdiv=2):
     rx, ry, rz = radii
     for v in verts:
         p = v.co.copy()
-        lobe = 1.0 + 0.16 * math.sin(p.x * 4.5 + seed) * math.cos(p.y * 4.1 - seed * 0.7) + 0.10 * math.sin(p.z * 5.5 + seed * 1.9)
+        ang = math.atan2(p.y, p.x)
+        # Organic scalloped botanical leaf-cluster contour (layered leafy boughs, never round balls!)
+        scallop = (
+            1.0
+            + 0.22 * math.sin(ang * 5.0 + seed * 1.3 + p.z * 2.4)
+            + 0.14 * math.cos(ang * 8.0 - seed * 0.9 + p.z * 3.8)
+            + 0.10 * math.sin(p.z * 6.0 + seed * 2.1)
+        )
         if p.z < 0.0:
-            p.z *= 0.68
-        v.co = Vector((cx + p.x * rx * lobe, cy + p.y * ry * lobe, cz + p.z * rz * lobe))
+            p.z *= 0.56
+        elif p.z > 0.35:
+            p.z = 0.35 + (p.z - 0.35) * 0.78
+        v.co = Vector((cx + p.x * rx * scallop, cy + p.y * ry * scallop, cz + p.z * rz * (0.94 + 0.12 * math.sin(ang * 3.0 + seed))))
     return verts
+
+
+def add_canyon_pillar(bm, center, rx, ry, height, seed=1, flat_top=True, sides=14, rings=7):
+    """Vertical striated basalt/granite gorge cliff column with flat grassy plateau rim."""
+    cx, cy, cz = center
+    ring_verts = []
+    for r_i in range(rings):
+        t = r_i / max(1, rings - 1)
+        z = cz - 0.35 + t * (height + 0.35)
+        if t < 0.18:
+            prof = 1.22 - (t / 0.18) * 0.22
+        elif t < 0.88:
+            ledge = math.tanh(math.sin(t * math.pi * 4.0 + seed) * 2.4) * 0.045
+            prof = 1.0 - (t - 0.18) * 0.16 + ledge
+        else:
+            prof = 0.86 * (1.0 - (t - 0.88) * (0.35 if flat_top else 1.4))
+        row = []
+        for s in range(sides):
+            ang = (s / sides) * math.tau
+            # Crisp vertical basalt columnar flutes (matches AoE:DE gorge cliffs!)
+            flute = 0.90 + 0.13 * math.sin(ang * 5.0 + seed) + 0.08 * math.cos(ang * 9.0 - seed * 1.4)
+            px = cx + math.cos(ang) * rx * prof * flute
+            py = cy + math.sin(ang) * ry * prof * flute
+            pz = z + (0.0 if r_i == 0 else 0.07 * math.sin(ang * 3.0 + seed) * t)
+            row.append(bm.verts.new(Vector((px, py, pz))))
+        ring_verts.append(row)
+    bot_c = bm.verts.new(Vector((cx, cy, cz - 0.38)))
+    top_c = bm.verts.new(Vector((cx, cy, cz + height + (0.04 if flat_top else 0.32))))
+    for s in range(sides):
+        sn = (s + 1) % sides
+        bm.faces.new((ring_verts[0][sn], ring_verts[0][s], bot_c))
+        bm.faces.new((ring_verts[-1][s], ring_verts[-1][sn], top_c))
+    for i in range(rings - 1):
+        for s in range(sides):
+            sn = (s + 1) % sides
+            bm.faces.new((ring_verts[i][s], ring_verts[i][sn], ring_verts[i + 1][sn], ring_verts[i + 1][s]))
 
 
 def add_ribbon_surface(bm, rows_pts, uv_u_scale=1.0):
@@ -292,19 +339,21 @@ def add_ribbon_surface(bm, rows_pts, uv_u_scale=1.0):
 # Color shaders
 # ---------------------------------------------------------------------------
 def rock_color_fn(co, fn, moss=True, wet_z=1.5):
-    base = (0.34, 0.35, 0.34)
-    dark = (0.16, 0.18, 0.19)
-    light = (0.50, 0.49, 0.45)
-    moss_col = (0.24, 0.40, 0.19)
+    # Warm sunlit limestone/granite canyon strata + vibrant AoE:DE emerald mossy turf plateau caps!
+    base = (0.58, 0.56, 0.50)
+    dark = (0.30, 0.30, 0.28)
+    light = (0.80, 0.77, 0.69)
+    moss_col = (0.34, 0.64, 0.22)
     h = clamp((co.z + 0.5) / 7.5)
+    strata = math.sin(co.z * 6.5 + co.x * 0.7) * 0.5 + 0.5
     n = hash3(round(co.x * 2.5, 1), round(co.y * 2.5, 1), round(co.z * 2.5, 1))
-    col = lerp3(dark, lerp3(base, light, n * 0.6 + h * 0.4), 0.35 + h * 0.65)
+    col = lerp3(dark, lerp3(base, light, strata * 0.55 + n * 0.25 + h * 0.20), 0.42 + h * 0.58)
     if wet_z > 0.0 and co.z < wet_z:
         wet = 1.0 - clamp(co.z / wet_z)
-        col = lerp3(col, (0.13, 0.17, 0.19), wet * 0.48)
-    if moss and fn.z > 0.52 and co.z > 1.2:
-        m = clamp((fn.z - 0.52) / 0.36) * (0.65 + 0.35 * n)
-        col = lerp3(col, moss_col, m * 0.82)
+        col = lerp3(col, (0.20, 0.28, 0.30), wet * 0.45)
+    if moss and fn.z > 0.48 and co.z > 1.1:
+        m = clamp((fn.z - 0.48) / 0.30) * (0.72 + 0.28 * n)
+        col = lerp3(col, moss_col, m * 0.90)
     return col
 
 
@@ -312,91 +361,91 @@ def wood_color_fn(co, fn, dark=False):
     n = math.sin(co.x * 9.0 + co.y * 7.0 + co.z * 4.0) * 0.5 + 0.5
     ao = 0.68 + 0.32 * clamp((co.z + 0.3) / 2.2)
     if dark:
-        c = lerp3((0.18, 0.13, 0.09), (0.31, 0.22, 0.15), n)
+        c = lerp3((0.26, 0.19, 0.13), (0.42, 0.31, 0.21), n)
     else:
-        c = lerp3((0.36, 0.26, 0.17), (0.54, 0.40, 0.26), n)
+        c = lerp3((0.42, 0.31, 0.20), (0.62, 0.47, 0.31), n)
     top_lift = 1.08 if fn.z > 0.5 else 0.94
     return (c[0] * ao * top_lift, c[1] * ao * top_lift, c[2] * ao * top_lift)
 
 
 def jungle_leaf_color_fn(co, fn, top_z=7.0):
-    h = clamp((co.z - 1.2) / max(1.5, top_z - 1.2))
-    sun = clamp(fn.z * 0.55 + 0.45)
-    n = hash3(round(co.x * 3.0, 1), round(co.y * 3.0, 1), round(co.z * 3.0, 1))
-    deep = (0.09, 0.24, 0.11)
-    mid = (0.19, 0.42, 0.16)
-    bright = (0.37, 0.59, 0.22)
-    c = lerp3(deep, mid, clamp(h * 0.55 + sun * 0.45))
-    c = lerp3(c, bright, clamp((h * sun) * 0.78 + n * 0.18))
+    # Vivid sunlit AoE:DE tropical palette: deep emerald shadows -> lush leaf midtones -> golden-lime sunlit crowns!
+    h = clamp((co.z - 1.4) / max(1.6, top_z - 1.4))
+    sun = clamp(fn.z * 0.52 + fn.x * 0.18 + 0.42)
+    dapple = math.sin(co.x * 4.8 + co.y * 4.2 + co.z * 3.1) * 0.5 + 0.5
+    n = hash3(round(co.x * 3.5, 1), round(co.y * 3.5, 1), round(co.z * 3.5, 1))
+    deep = (0.09, 0.27, 0.11)
+    mid = (0.21, 0.54, 0.18)
+    sunlit = (0.50, 0.76, 0.22)
+    c = lerp3(deep, mid, clamp(h * 0.52 + sun * 0.48))
+    c = lerp3(c, sunlit, clamp(math.pow(clamp(h * 0.68 + sun * 0.52 - 0.15), 1.35) * 0.85 + dapple * 0.16 + n * 0.08))
     return c
 
 
 # ---------------------------------------------------------------------------
-# 1 & 2. WATERFALLS (Single-Drop & Two-Tier)
+# 1 & 2. WATERFALLS (Single-Drop & Two-Tier — Stratified Gorge Cliffs + Luminous Cascade!)
 # ---------------------------------------------------------------------------
 def build_waterfall(mats, tiered=False):
     key = "waterfall:tiered" if tiered else "waterfall:single"
     root = make_root(key)
 
-    # A. Carved flanking cliff amphitheater & spillway rock lip
+    # A. Stratified vertical canyon gorge cliffs with lush mossy tops flanking the cascade
     bm_rock = bmesh.new()
     if not tiered:
-        # Back cliff wall behind water
-        add_sculpted_rock(bm_rock, (0.0, 2.2, 3.6), (5.8, 2.6, 4.4), seed=11, subdiv=2, flat_top=True)
-        # Flanking rocky cheeks framing the cascade
-        add_sculpted_rock(bm_rock, (-5.4, 0.3, 3.3), (3.1, 3.0, 4.1), seed=21, subdiv=2, flat_top=True)
-        add_sculpted_rock(bm_rock, (5.4, 0.3, 3.3), (3.1, 3.0, 4.1), seed=29, subdiv=2, flat_top=True)
-        add_sculpted_rock(bm_rock, (-7.4, -0.8, 1.9), (2.5, 2.6, 2.4), seed=37, subdiv=2, flat_top=False)
-        add_sculpted_rock(bm_rock, (7.4, -0.8, 1.9), (2.5, 2.6, 2.4), seed=43, subdiv=2, flat_top=False)
-        # Wet boulders at plunge pool sides
-        add_sculpted_rock(bm_rock, (-4.3, -2.5, 0.6), (1.7, 1.5, 1.1), seed=51, subdiv=2)
-        add_sculpted_rock(bm_rock, (4.4, -2.4, 0.6), (1.8, 1.4, 1.15), seed=57, subdiv=2)
-        add_sculpted_rock(bm_rock, (-1.9, -2.8, 0.35), (1.0, 0.9, 0.65), seed=63, subdiv=1)
-        add_sculpted_rock(bm_rock, (2.2, -2.9, 0.35), (1.1, 0.9, 0.65), seed=67, subdiv=1)
+        # Back cliff wall & highland gorge cheeks (vertical striated columns, flat grassy tops!)
+        add_canyon_pillar(bm_rock, (0.0, 2.3, 0.0), 5.6, 2.5, 6.2, seed=11, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (-5.6, 0.5, 0.0), 2.9, 2.8, 6.6, seed=21, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (5.6, 0.5, 0.0), 2.9, 2.8, 6.5, seed=29, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (-7.8, -0.7, 0.0), 2.6, 2.4, 4.1, seed=37, flat_top=True, sides=12)
+        add_canyon_pillar(bm_rock, (7.8, -0.7, 0.0), 2.6, 2.4, 4.0, seed=43, flat_top=True, sides=12)
+        # Wet plunge-pool boulders
+        add_sculpted_rock(bm_rock, (-4.5, -2.5, 0.55), (1.6, 1.4, 0.95), seed=51, subdiv=2)
+        add_sculpted_rock(bm_rock, (4.6, -2.4, 0.55), (1.7, 1.3, 1.00), seed=57, subdiv=2)
+        add_sculpted_rock(bm_rock, (-2.3, -2.9, 0.30), (0.9, 0.8, 0.52), seed=63, subdiv=1)
+        add_sculpted_rock(bm_rock, (2.5, -3.0, 0.30), (1.0, 0.8, 0.52), seed=67, subdiv=1)
     else:
-        # Tall upper cliff wall + wide stepped mid ledge + lower flanking gorge cliffs
-        add_sculpted_rock(bm_rock, (0.0, 3.6, 5.2), (6.4, 2.8, 5.6), seed=101, subdiv=2, flat_top=True)
-        add_sculpted_rock(bm_rock, (0.0, 0.6, 2.2), (6.0, 2.5, 2.6), seed=109, subdiv=2, flat_top=True)
-        # Upper flanking cheeks
-        add_sculpted_rock(bm_rock, (-5.8, 2.2, 4.9), (3.1, 3.0, 5.2), seed=113, subdiv=2, flat_top=True)
-        add_sculpted_rock(bm_rock, (5.8, 2.2, 4.9), (3.1, 3.0, 5.2), seed=119, subdiv=2, flat_top=True)
-        # Lower flanking cheeks
-        add_sculpted_rock(bm_rock, (-6.2, -1.2, 2.6), (3.0, 2.8, 3.0), seed=127, subdiv=2, flat_top=True)
-        add_sculpted_rock(bm_rock, (6.2, -1.2, 2.6), (3.0, 2.8, 3.0), seed=131, subdiv=2, flat_top=True)
-        # Plunge boulders
-        add_sculpted_rock(bm_rock, (-4.9, -4.1, 0.7), (1.9, 1.6, 1.2), seed=137, subdiv=2)
-        add_sculpted_rock(bm_rock, (5.0, -4.0, 0.7), (1.9, 1.6, 1.2), seed=141, subdiv=2)
+        # Tall upper highland gorge + wide rocky mid-shelf + lower flanking striated basalt cheeks!
+        add_canyon_pillar(bm_rock, (0.0, 3.8, 0.0), 6.2, 2.7, 8.6, seed=101, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (0.0, 0.5, 0.0), 5.8, 2.4, 4.5, seed=109, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (-6.0, 2.3, 0.0), 3.0, 2.9, 9.0, seed=113, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (6.0, 2.3, 0.0), 3.0, 2.9, 8.9, seed=119, flat_top=True, sides=14)
+        add_canyon_pillar(bm_rock, (-6.6, -1.1, 0.0), 2.9, 2.7, 5.2, seed=127, flat_top=True, sides=12)
+        add_canyon_pillar(bm_rock, (6.6, -1.1, 0.0), 2.9, 2.7, 5.1, seed=131, flat_top=True, sides=12)
+        add_canyon_pillar(bm_rock, (-8.8, -2.2, 0.0), 2.4, 2.2, 3.1, seed=133, flat_top=True, sides=10)
+        add_canyon_pillar(bm_rock, (8.8, -2.2, 0.0), 2.4, 2.2, 3.0, seed=135, flat_top=True, sides=10)
+        add_sculpted_rock(bm_rock, (-5.1, -4.1, 0.60), (1.8, 1.5, 1.05), seed=137, subdiv=2)
+        add_sculpted_rock(bm_rock, (5.2, -4.0, 0.60), (1.8, 1.5, 1.05), seed=141, subdiv=2)
 
-    mesh_rock = finalize_mesh(bm_rock, f"{key}_rock", mats["rock"], lambda co, fn: rock_color_fn(co, fn, moss=True, wet_z=1.8))
+    mesh_rock = finalize_mesh(bm_rock, f"{key}_rock", mats["rock"], lambda co, fn: rock_color_fn(co, fn, moss=True, wet_z=1.8), smooth=False)
     attach_mesh(root, "CliffRock", mesh_rock, "rock")
 
-    # B. Curved pouring water sheet (UV.y goes 0 at crest -> 1 at plunge base)
+    # B. Smooth luminous pouring water sheet + upper highland river headwaters lip!
     bm_water = bmesh.new()
-    cols = 14
+    cols = 16
     if not tiered:
         profile = [
-            # (y, z, half_width)  — from upper river lip over crest down into plunge pool
-            (2.4, 6.25, 3.6),
-            (0.9, 6.18, 3.7),
-            (-0.2, 5.72, 3.75),
-            (-0.95, 4.65, 3.85),
-            (-1.45, 3.20, 4.00),
-            (-1.82, 1.60, 4.18),
-            (-2.12, 0.05, 4.35),
+            (4.6, 6.26, 3.55),
+            (2.4, 6.25, 3.65),
+            (0.9, 6.18, 3.72),
+            (-0.2, 5.72, 3.80),
+            (-0.95, 4.65, 3.92),
+            (-1.45, 3.20, 4.08),
+            (-1.82, 1.60, 4.28),
+            (-2.12, 0.04, 4.48),
         ]
     else:
         profile = [
-            # Upper cascade -> mid ledge -> lower wider cascade
-            (3.6, 8.65, 3.8),
-            (2.2, 8.58, 3.9),
-            (1.15, 7.95, 3.95),
-            (0.55, 6.40, 4.05),
-            (0.18, 4.75, 4.25),
-            (-0.75, 4.55, 4.45),
-            (-1.75, 4.18, 4.55),
-            (-2.45, 2.90, 4.75),
-            (-2.95, 1.45, 4.95),
-            (-3.35, 0.05, 5.20),
+            (6.0, 8.66, 3.75),
+            (3.6, 8.65, 3.85),
+            (2.2, 8.58, 3.92),
+            (1.15, 7.95, 3.98),
+            (0.55, 6.40, 4.10),
+            (0.18, 4.75, 4.30),
+            (-0.75, 4.55, 4.52),
+            (-1.75, 4.18, 4.64),
+            (-2.45, 2.90, 4.82),
+            (-2.95, 1.45, 5.05),
+            (-3.35, 0.04, 5.32),
         ]
     rows = []
     for r_i, (py, pz, hw) in enumerate(profile):
@@ -404,43 +453,40 @@ def build_waterfall(mats, tiered=False):
         for c_i in range(cols):
             u = (c_i / (cols - 1)) * 2.0 - 1.0
             px = u * hw
-            # Organic forward belly & vertical ribbon flutes so light catches water streams
-            flute = math.sin(u * math.pi * 5.0 + r_i * 0.25) * 0.12 * (1.0 - abs(u) * 0.4)
-            arch = (1.0 - u * u) * 0.35
+            flute = math.sin(u * math.pi * 6.0 + r_i * 0.22) * 0.11 * (1.0 - abs(u) * 0.35)
+            arch = (1.0 - u * u) * 0.34
             row.append((px, py - arch - flute, pz))
         rows.append(row)
-    add_ribbon_surface(bm_water, rows, uv_u_scale=2.0)
+    add_ribbon_surface(bm_water, rows, uv_u_scale=2.2)
 
     def water_sheet_color(co, fn):
-        # Bright foaming crest & frothy lower plume, turquoise rushing middle
         max_z = 8.7 if tiered else 6.3
         t = clamp(co.z / max_z)
-        mid_foam = 0.45 if (tiered and 3.8 < co.z < 5.0) else 0.0
-        crest = clamp((t - 0.78) / 0.22) * 0.65
-        base = clamp((0.25 - t) / 0.25) * 0.85
-        streak = (math.sin(co.x * 3.8) * 0.5 + 0.5) * 0.32
+        mid_foam = 0.58 if (tiered and 4.1 < co.z < 5.05) else 0.0
+        crest = clamp((t - 0.78) / 0.22) * 0.68
+        base = clamp((0.26 - t) / 0.26) * 0.90
+        streak = (math.sin(co.x * 4.2) * 0.5 + 0.5) * 0.36
+        # Deep crystal turquoise on upper highland pool -> bright dazzling whitewater on vertical drops!
+        if fn.z > 0.75 and t > 0.92:
+            return lerp3((0.18, 0.62, 0.88), (0.64, 0.90, 0.98), streak * 0.5)
         foam = clamp(max(crest, base, mid_foam) + streak)
-        return lerp3((0.36, 0.76, 0.88), (0.94, 0.98, 1.0), foam)
+        return lerp3((0.46, 0.84, 0.96), (0.98, 0.99, 1.0), foam)
 
-    mesh_water = finalize_mesh(bm_water, f"{key}_sheet", mats["waterSheet"], water_sheet_color, preserve_uv=True, recalc_normals=False)
+    mesh_water = finalize_mesh(bm_water, f"{key}_sheet", mats["waterSheet"], water_sheet_color, preserve_uv=True, recalc_normals=False, smooth=True)
     attach_mesh(root, "WaterSheet", mesh_water, "waterSheet")
 
-    # C. Sculpted churning foam plume / splash cushions at plunge base
+    # C. Smooth organic churning plunge-pool whitewater foam cushions (NO uniform bead row!)
     bm_foam = bmesh.new()
     base_y = -3.45 if tiered else -2.25
-    foam_span = 4.9 if tiered else 4.0
-    for i in range(9):
-        u = (i / 8.0) * 2.0 - 1.0
-        fx = u * foam_span
-        fy = base_y - (1.0 - u * u) * 0.85 + math.sin(i * 2.1) * 0.25
-        rad = (1.15 - abs(u) * 0.32) * (1.15 if tiered else 1.0)
-        add_foliage_lobe(bm_foam, (fx, fy, 0.38), (rad * 1.15, rad * 0.95, rad * 0.58), seed=200 + i * 7, subdiv=1)
-    if tiered:
-        for i in range(6):
-            u = (i / 5.0) * 2.0 - 1.0
-            add_foliage_lobe(bm_foam, (u * 3.8, -0.35, 4.55), (0.95, 0.72, 0.42), seed=300 + i * 11, subdiv=1)
+    foam_span = 4.95 if tiered else 4.05
+    for i in range(10):
+        u = (i / 9.0) * 2.0 - 1.0
+        fx = u * foam_span + math.sin(i * 3.7) * 0.22
+        fy = base_y - (1.0 - u * u) * 0.88 + math.cos(i * 2.3) * 0.28
+        rad = (1.12 - abs(u) * 0.30) * (1.15 if tiered else 1.0) * (0.86 + 0.28 * hash3(i, 2.0, 3.0))
+        add_foliage_lobe(bm_foam, (fx, fy, 0.34), (rad * 1.18, rad * 0.94, rad * 0.50), seed=200 + i * 7, subdiv=2)
 
-    mesh_foam = finalize_mesh(bm_foam, f"{key}_foam", mats["foam"], lambda co, fn: lerp3((0.76, 0.92, 0.97), (0.98, 0.99, 1.0), clamp(fn.z * 0.6 + 0.4)))
+    mesh_foam = finalize_mesh(bm_foam, f"{key}_foam", mats["foam"], lambda co, fn: lerp3((0.82, 0.95, 0.99), (1.0, 1.0, 1.0), clamp(fn.z * 0.6 + 0.4)), smooth=True)
     attach_mesh(root, "SplashFoam", mesh_foam, "foam")
     return root
 
@@ -523,25 +569,29 @@ def build_jungle_palm(mats):
             return lerp3((0.28, 0.36, 0.16), (0.42, 0.30, 0.16), ring)
         return lerp3((0.36, 0.28, 0.20), (0.54, 0.44, 0.32), ring * 0.7 + clamp(co.z / 6.0) * 0.3)
 
-    attach_mesh(root, "PalmTrunk", finalize_mesh(bm_t, "jungle_palm_trunk", mats["trunk"], palm_trunk_col), "trunk")
+    attach_mesh(root, "PalmTrunk", finalize_mesh(bm_t, "jungle_palm_trunk", mats["trunk"], palm_trunk_col, smooth=True), "trunk")
 
-    # 10 arched pinnate palm fronds in 2 graceful tiers (closed extruded leaf ribbons!)
+    # 14 gracefully arched pinnate palm fronds in 3 lush tiers (smooth-shaded AoE:DE tropical palm!)
     bm_l = bmesh.new()
-    fronds = [(i * math.tau / 6.0, 2.45, 0.55, 0.45) for i in range(6)] + [(i * math.tau / 4.0 + 0.42, 1.85, 0.95, 0.38) for i in range(4)]
+    fronds = (
+        [(i * math.tau / 6.0, 2.55, 0.52, 0.48) for i in range(6)]
+        + [(i * math.tau / 5.0 + 0.35, 2.10, 0.95, 0.42) for i in range(5)]
+        + [(i * math.tau / 3.0 + 0.78, 1.45, 1.25, 0.30) for i in range(3)]
+    )
     for f_i, (ang, length, lift, droop) in enumerate(fronds):
         dx, dy = math.cos(ang), math.sin(ang)
         sx, sy = -dy, dx
-        segs = 6
+        segs = 7
         prev_ring = None
         for s in range(segs + 1):
             t = s / segs
             r = t * length
-            z = crown.z + 0.10 + math.sin(t * math.pi * 0.78) * lift - (t * t) * droop * 1.45
+            z = crown.z + 0.12 + math.sin(t * math.pi * 0.78) * lift - (t * t) * droop * 1.42
             cx, cy = crown.x + dx * r, crown.y + dy * r
-            half_w = math.sin(max(0.08, t) * math.pi * 0.92) * 0.46 * (1.0 - t * 0.25)
-            thick = 0.055 * (1.0 - t * 0.65)
-            drop_edge = half_w * 0.38
-            # Diamond cross-section so fronds look crisp from every RTS camera angle & closed manifold!
+            leaflet = 1.0 + 0.18 * math.sin(t * math.pi * 6.0)
+            half_w = math.sin(max(0.08, t) * math.pi * 0.92) * 0.48 * (1.0 - t * 0.25) * leaflet
+            thick = 0.052 * (1.0 - t * 0.65)
+            drop_edge = half_w * 0.42
             v_top = bm_l.verts.new((cx, cy, z + thick))
             v_left = bm_l.verts.new((cx + sx * half_w, cy + sy * half_w, z - drop_edge))
             v_bot = bm_l.verts.new((cx, cy, z - thick * 0.8))
@@ -556,7 +606,7 @@ def build_jungle_palm(mats):
             prev_ring = ring
         bm_l.faces.new(prev_ring)
 
-    attach_mesh(root, "PalmFronds", finalize_mesh(bm_l, "jungle_palm_fronds", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=7.4)), "leaf")
+    attach_mesh(root, "PalmFronds", finalize_mesh(bm_l, "jungle_palm_fronds", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=7.4), smooth=True), "leaf")
     return root
 
 
@@ -564,83 +614,113 @@ def build_jungle_banyan(mats):
     root = make_root("tree:jungle:1")
     bm_t = bmesh.new()
     # Massive fluted buttress trunk + spreading upper boughs
-    add_tube(bm_t, [(0, 0, -0.2), (0.08, -0.05, 1.8), (0.14, 0.04, 3.6), (0.06, 0.08, 4.9)], [1.05, 0.72, 0.58, 0.42], segs=9)
-    # Flared buttress roots & hanging aerial prop-roots (signature Banyan silhouette from Image 9!)
+    add_tube(bm_t, [(0, 0, -0.2), (0.08, -0.05, 1.8), (0.14, 0.04, 3.6), (0.06, 0.08, 4.9)], [0.96, 0.66, 0.52, 0.38], segs=9)
     for i in range(6):
         a = i * math.tau / 6.0 + 0.2
         ca, sa = math.cos(a), math.sin(a)
-        add_tube(bm_t, [(ca * 0.45, sa * 0.45, 2.3), (ca * 1.05, sa * 1.05, 0.9), (ca * 1.48, sa * 1.48, -0.18)], [0.24, 0.20, 0.14], segs=6)
+        add_tube(bm_t, [(ca * 0.42, sa * 0.42, 2.2), (ca * 0.98, sa * 0.98, 0.88), (ca * 1.40, sa * 1.40, -0.18)], [0.22, 0.18, 0.13], segs=6)
     for i in range(5):
         a = i * math.tau / 5.0 + 0.55
         ca, sa = math.cos(a), math.sin(a)
-        # Spreading bough + aerial root dropping down to ground
-        add_tube(bm_t, [(0, 0, 3.8), (ca * 1.45, sa * 1.45, 4.65), (ca * 2.55, sa * 2.55, 5.1)], [0.34, 0.24, 0.14], segs=6)
-        add_tube(bm_t, [(ca * 1.95, sa * 1.95, 4.75), (ca * 2.02, sa * 2.02, 2.3), (ca * 1.88, sa * 1.88, -0.15)], [0.09, 0.075, 0.09], segs=5)
+        add_tube(bm_t, [(0, 0, 3.7), (ca * 1.35, sa * 1.35, 4.55), (ca * 2.35, sa * 2.35, 4.95)], [0.30, 0.21, 0.12], segs=6)
+        add_tube(bm_t, [(ca * 1.80, sa * 1.80, 4.60), (ca * 1.86, sa * 1.86, 2.25), (ca * 1.74, sa * 1.74, -0.15)], [0.08, 0.068, 0.08], segs=5)
 
-    attach_mesh(root, "BanyanTrunk", finalize_mesh(bm_t, "jungle_banyan_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=True)), "trunk")
+    attach_mesh(root, "BanyanTrunk", finalize_mesh(bm_t, "jungle_banyan_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=True), smooth=True), "trunk")
 
+    # 19 airy, layered scalloped foliage bough clouds (smooth-shaded lush tropical crown — ZERO chunky soccer balls!)
     bm_l = bmesh.new()
     crowns = [
-        ((0.0, 0.0, 6.45), (2.75, 2.65, 1.55)),
-        ((-2.15, 0.85, 5.55), (1.85, 1.75, 1.15)),
-        ((2.20, -0.65, 5.60), (1.90, 1.75, 1.18)),
-        ((0.75, 2.15, 5.45), (1.80, 1.65, 1.12)),
-        ((-0.85, -2.05, 5.35), (1.85, 1.70, 1.10)),
-        ((1.85, 1.45, 5.10), (1.45, 1.40, 0.95)),
-        ((-1.80, -1.35, 5.05), (1.45, 1.38, 0.95)),
+        # Upper sunlit crown cluster
+        ((0.0, 0.0, 6.75), (1.42, 1.36, 0.86)),
+        ((0.95, 0.58, 6.45), (1.12, 1.05, 0.72)),
+        ((-0.92, 0.65, 6.38), (1.15, 1.08, 0.72)),
+        ((0.25, -0.98, 6.42), (1.12, 1.06, 0.70)),
+        ((-0.85, -0.78, 6.22), (1.06, 1.02, 0.68)),
+        # Mid spreading umbrella boughs
+        ((-2.15, 0.85, 5.55), (1.28, 1.18, 0.78)),
+        ((-1.65, 1.75, 5.38), (1.05, 0.98, 0.68)),
+        ((2.20, -0.55, 5.58), (1.30, 1.18, 0.78)),
+        ((1.75, -1.55, 5.32), (1.06, 1.00, 0.66)),
+        ((0.68, 2.15, 5.48), (1.24, 1.12, 0.74)),
+        ((-0.65, 2.05, 5.25), (1.02, 0.96, 0.65)),
+        ((-0.82, -2.05, 5.40), (1.26, 1.16, 0.74)),
+        ((0.65, -2.08, 5.20), (1.04, 0.98, 0.66)),
+        ((1.88, 1.38, 5.25), (1.14, 1.06, 0.70)),
+        ((-1.85, -1.28, 5.18), (1.12, 1.05, 0.68)),
+        # Outer overhanging leafy tufts
+        ((2.65, 0.55, 4.92), (0.88, 0.82, 0.58)),
+        ((-2.60, -0.25, 4.88), (0.88, 0.84, 0.58)),
+        ((0.15, 2.65, 4.85), (0.86, 0.82, 0.56)),
+        ((-0.18, -2.62, 4.82), (0.86, 0.80, 0.56)),
     ]
     for i, (c, r) in enumerate(crowns):
-        add_foliage_lobe(bm_l, c, r, seed=710 + i * 13, subdiv=2)
-    attach_mesh(root, "BanyanCanopy", finalize_mesh(bm_l, "jungle_banyan_canopy", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=8.0)), "leaf")
+        add_foliage_lobe(bm_l, c, r, seed=710 + i * 13, subdiv=1 if i >= 5 else 2)
+    attach_mesh(root, "BanyanCanopy", finalize_mesh(bm_l, "jungle_banyan_canopy", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=7.6), smooth=True), "leaf")
     return root
 
 
 def build_jungle_canopy(mats):
     root = make_root("tree:jungle:2")
     bm_t = bmesh.new()
-    add_tube(bm_t, [(0, 0, -0.15), (-0.12, 0.08, 1.5), (0.06, 0.16, 3.1), (0.14, 0.05, 4.3)], [0.46, 0.30, 0.24, 0.16], segs=7)
+    add_tube(bm_t, [(0, 0, -0.15), (-0.12, 0.08, 1.5), (0.06, 0.16, 3.1), (0.14, 0.05, 4.3)], [0.44, 0.28, 0.22, 0.15], segs=7)
     for ang, bx, by, bz in [(0.4, 1.05, 0.45, 4.55), (2.5, -0.95, 0.65, 4.35), (4.6, -0.25, -1.05, 4.20)]:
-        add_tube(bm_t, [(0.05, 0.10, 3.2), (bx, by, bz)], [0.18, 0.10], segs=5)
-    attach_mesh(root, "CanopyTrunk", finalize_mesh(bm_t, "jungle_canopy_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=False)), "trunk")
+        add_tube(bm_t, [(0.05, 0.10, 3.2), (bx, by, bz)], [0.16, 0.09], segs=5)
+    attach_mesh(root, "CanopyTrunk", finalize_mesh(bm_t, "jungle_canopy_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=False), smooth=True), "trunk")
 
+    # 15 staggered organic rainforest foliage tufts (smooth-shaded, crisp sunlit tips!)
     bm_l = bmesh.new()
     for i, (c, r) in enumerate([
-        ((0.05, 0.05, 5.35), (1.85, 1.75, 1.25)),
-        ((1.25, 0.50, 4.65), (1.30, 1.25, 0.95)),
-        ((-1.15, 0.65, 4.55), (1.28, 1.22, 0.92)),
-        ((-0.25, -1.15, 4.45), (1.32, 1.25, 0.92)),
-        ((0.55, -0.85, 5.05), (1.15, 1.12, 0.85)),
+        ((0.05, 0.05, 5.75), (1.05, 1.00, 0.72)),
+        ((0.72, 0.42, 5.45), (0.86, 0.82, 0.62)),
+        ((-0.68, 0.50, 5.40), (0.88, 0.84, 0.62)),
+        ((0.08, -0.76, 5.35), (0.86, 0.82, 0.60)),
+        ((1.35, 0.55, 4.72), (0.98, 0.92, 0.66)),
+        ((1.10, -0.68, 4.65), (0.92, 0.88, 0.64)),
+        ((-1.28, 0.68, 4.62), (0.96, 0.92, 0.64)),
+        ((-1.05, -0.78, 4.58), (0.94, 0.88, 0.64)),
+        ((-0.22, -1.28, 4.55), (0.96, 0.90, 0.64)),
+        ((0.25, 1.25, 4.68), (0.94, 0.88, 0.62)),
+        ((1.75, -0.08, 4.32), (0.76, 0.72, 0.52)),
+        ((-1.68, 0.05, 4.28), (0.74, 0.70, 0.52)),
+        ((0.68, 1.38, 4.35), (0.72, 0.68, 0.50)),
+        ((-0.65, 1.28, 4.30), (0.72, 0.68, 0.50)),
+        ((0.48, -1.42, 4.25), (0.74, 0.70, 0.50)),
     ]):
-        add_foliage_lobe(bm_l, c, r, seed=810 + i * 11, subdiv=2)
-    attach_mesh(root, "CanopyLeaves", finalize_mesh(bm_l, "jungle_canopy_leaves", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=6.6)), "leaf")
+        add_foliage_lobe(bm_l, c, r, seed=810 + i * 11, subdiv=1 if i >= 3 else 2)
+    attach_mesh(root, "CanopyLeaves", finalize_mesh(bm_l, "jungle_canopy_leaves", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=6.4), smooth=True), "leaf")
     return root
 
 
 def build_jungle_mangrove(mats):
     root = make_root("tree:jungle:3")
     bm_t = bmesh.new()
-    add_tube(bm_t, [(0, 0, 1.2), (0.12, -0.08, 2.3), (0.04, 0.10, 3.3)], [0.34, 0.25, 0.18], segs=7)
-    # 7 arched mangrove stilt roots gripping muddy waterbank
-    for i in range(7):
-        a = i * math.tau / 7.0 + 0.15
+    add_tube(bm_t, [(0, 0, 1.2), (0.12, -0.08, 2.3), (0.04, 0.10, 3.3)], [0.32, 0.24, 0.17], segs=7)
+    for i in range(8):
+        a = i * math.tau / 8.0 + 0.15
         ca, sa = math.cos(a), math.sin(a)
         add_tube(bm_t, [
             (ca * 0.18, sa * 0.18, 1.75),
             (ca * 0.88, sa * 0.88, 1.25),
             (ca * 1.32, sa * 1.32, 0.45),
             (ca * 1.48, sa * 1.48, -0.25),
-        ], [0.12, 0.10, 0.09, 0.08], segs=5)
-    attach_mesh(root, "MangroveRoots", finalize_mesh(bm_t, "jungle_mangrove_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=True)), "trunk")
+        ], [0.11, 0.095, 0.085, 0.075], segs=5)
+    attach_mesh(root, "MangroveRoots", finalize_mesh(bm_t, "jungle_mangrove_trunk", mats["trunk"], lambda co, fn: wood_color_fn(co, fn, dark=True), smooth=True), "trunk")
 
     bm_l = bmesh.new()
     for i, (c, r) in enumerate([
-        ((0.0, 0.0, 3.85), (1.65, 1.60, 1.05)),
-        ((-1.10, 0.55, 3.35), (1.15, 1.12, 0.78)),
-        ((1.15, -0.45, 3.30), (1.18, 1.12, 0.78)),
-        ((0.25, 1.10, 3.25), (1.10, 1.05, 0.75)),
+        ((0.0, 0.0, 4.15), (0.96, 0.92, 0.66)),
+        ((0.68, 0.45, 3.85), (0.82, 0.78, 0.58)),
+        ((-0.72, 0.48, 3.82), (0.82, 0.78, 0.56)),
+        ((0.12, -0.78, 3.78), (0.84, 0.80, 0.56)),
+        ((-1.22, 0.52, 3.42), (0.84, 0.80, 0.56)),
+        ((1.24, -0.42, 3.40), (0.86, 0.80, 0.56)),
+        ((0.32, 1.18, 3.38), (0.82, 0.78, 0.54)),
+        ((-0.48, -1.12, 3.34), (0.82, 0.78, 0.54)),
+        ((1.12, 0.78, 3.30), (0.72, 0.68, 0.48)),
+        ((-1.08, -0.68, 3.28), (0.72, 0.68, 0.48)),
     ]):
-        add_foliage_lobe(bm_l, c, r, seed=910 + i * 9, subdiv=2)
-    attach_mesh(root, "MangroveCanopy", finalize_mesh(bm_l, "jungle_mangrove_leaves", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=5.0)), "leaf")
+        add_foliage_lobe(bm_l, c, r, seed=910 + i * 9, subdiv=1 if i >= 2 else 2)
+    attach_mesh(root, "MangroveCanopy", finalize_mesh(bm_l, "jungle_mangrove_leaves", mats["leaf"], lambda co, fn: jungle_leaf_color_fn(co, fn, top_z=4.9), smooth=True), "leaf")
     return root
 
 

@@ -6,6 +6,23 @@ const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.count(1,'building','towncenter');
 const allHostileCapitalsFallen=s=>s.players.every((p,owner)=>!s.hostile(0,owner)||!s.count(owner,'building','towncenter'));
+// Act V total-war wipeout helpers: an enemy base is only defeated when EVERY core/military/economic
+// structure (Town Center, Keep, Barracks, Range, Stable, Workshop, Tower, Blacksmith, Market, Monastery,
+// Mill, House, Dock, Camp) has been razed — not merely sniping the Town Center!
+const BASE_STRUCTURE_IGNORE=new Set(['wall','gate','farm']);
+export const baseStructures=(s,owner)=>s.owned(owner,'building').filter(b=>b.hp>0&&!BASE_STRUCTURE_IGNORE.has(b.type));
+export const baseWiped=(s,owner)=>baseStructures(s,owner).length===0;
+export const allHostileBasesWiped=s=>s.players.every((p,owner)=>!s.hostile(0,owner)||baseWiped(s,owner));
+function nearestHostileStructure(s,owners=null){
+  const tc0=s.owned(0,'building','towncenter')[0]||s.players[0]?.start||{x:0,z:0};
+  const candidates=[];
+  for(let owner=1;owner<s.players.length;owner++){
+    if(!s.hostile(0,owner)||(owners&&!owners.includes(owner)))continue;
+    for(const b of baseStructures(s,owner))candidates.push(b);
+  }
+  candidates.sort((a,b)=>Math.hypot(a.x-tc0.x,a.z-tc0.z)-Math.hypot(b.x-tc0.x,b.z-tc0.z));
+  return candidates[0]?{x:Math.round(candidates[0].x),z:Math.round(candidates[0].z)}:null;
+}
 const DIFFICULTY_ORDER=['story','normal','hard','brutal'];
 const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficulty)>=DIFFICULTY_ORDER.indexOf(level);
 
@@ -188,11 +205,11 @@ export const CAMPAIGN_SCRIPTS={
       {at:130,id:'c14-usurper-wave',text:'The rival coalition launches a joint assault over the Twin Rivers bridges!',reinforce:{owner:2,type:'knight',count:3}},
       {at:190,id:'c14-imperial-siege',minDifficulty:'hard',text:'Rival siege engines roll toward the central river crossings!',reinforce:{owner:1,type:'ram',count:2}},
     ]},
-  campaign15:{speaker:'Marshal Rowan',intro:'Four rival warlords have surrounded Ironfall Sanctuary, Commander! Thank the heavens our two walled citadels stand united behind this narrow waterfall pass. Hold the bridgehead with me, gather the valley’s gold and stone, and when their siege breaks—sound the horn and we march out together!',
+  campaign15:{speaker:'Marshal Rowan',intro:'Four rival warlords have surrounded Ironfall Sanctuary, Commander! Thank the heavens our two walled citadels stand united behind this narrow waterfall pass. Hold the bridgehead with me, gather the valley’s gold and stone, and when their siege breaks—sound the horn and wipe every enemy base off the map!',
     stages:[
-      {title:'Hold the Narrow Pass',text:'Defend the Ironfall bridgehead for two minutes (or shatter Warlord Vex’s forward stockade early).',seconds:120,marker:{x:-14,z:0},done:(s,q)=>q.elapsed>=120||!s.count(1,'building','towncenter'),dialogue:'Their first wave shattered against the pass! Marshal Rowan’s knights are saddled—use your War-Comms orders to strike out together!'},
-      {title:'Burn the Forward War-Camps',text:'Break out through the narrow pass with Marshal Rowan and destroy Warlord Vex’s Raider Stockade and Siege-Master Krag’s Siege Foundry.',marker:{x:44,z:64},done:s=>!s.count(1,'building','towncenter')&&!s.count(2,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=450;s.players[0].resources.stone+=350;spawnReinforcements(s,{owner:5,type:'knight',count:4});},dialogue:'Both outer war-camps are burning! Seized siege chests (+450 Gold, +350 Stone)—now crush Emir Soliman and High Overlord Draven!'},
-      {title:'Shatter the Four-Crown Coalition',text:'Destroy all four rival enemy capitals across Ironfall Pass.',marker:{x:136,z:88},done:allHostileCapitalsFallen,dialogue:'All four warlord capitals have fallen! Two united banners broke an empire at the Gates of Ironfall!'},
+      {title:'Hold the Narrow Pass',text:'Defend the Ironfall bridgehead for two minutes (or completely wipe out Warlord Vex’s forward stockade early).',seconds:120,marker:{x:-14,z:0},done:(s,q)=>q.elapsed>=120||baseWiped(s,1),dialogue:'Their first wave shattered against the pass! Marshal Rowan’s knights are saddled—use your War-Comms orders to strike out together!'},
+      {title:'Burn the Forward War-Camps',text:'Break out through the narrow pass with Marshal Rowan and wipe out every structure in Warlord Vex’s Raider Stockade and Siege-Master Krag’s Siege Foundry.',marker:{x:44,z:64},targetOwners:[1,2],done:s=>baseWiped(s,1)&&baseWiped(s,2),onDone:s=>{s.players[0].resources.gold+=450;s.players[0].resources.stone+=350;spawnReinforcements(s,{owner:5,type:'knight',count:4});},dialogue:'Both outer war-camps are razed to ashes! Seized siege chests (+450 Gold, +350 Stone)—now wipe out Emir Soliman’s and High Overlord Draven’s fortresses!'},
+      {title:'Wipe Out the Four-Crown Coalition',text:'Completely wipe out every base structure of all four enemy warlords across Ironfall Pass (not just Town Centers).',marker:{x:136,z:88},done:allHostileBasesWiped,dialogue:'Not a single rival tower or stronghold remains standing! Two united banners wiped out an empire at the Gates of Ironfall!'},
     ],optional:{text:'Finish with Marshal Rowan’s allied citadel still standing.',done:s=>s.count(5,'building','towncenter')>0},
     events:[
       {at:22,id:'c15-draven-taunt',speaker:'Overlord Draven',role:'enemy',text:'Two cramped kingdoms hiding behind one bridge? My four armies will grind your walls to gravel!'},
@@ -202,44 +219,44 @@ export const CAMPAIGN_SCRIPTS={
       {at:175,id:'c15-soliman-volley',speaker:'Emir Soliman',role:'enemy',text:'My Sunward marksmen will darken the sky above Ironfall!',reinforce:{owner:3,type:'marksman',count:4}},
       {at:240,id:'c15-draven-push',minDifficulty:'hard',speaker:'Overlord Draven',role:'enemy',text:'Enough delays! Send the Imperial siege column across the bridge!',reinforce:{owner:4,type:'knight',count:4}},
     ]},
-  campaign16:{speaker:'Lady Vaelen',intro:'The roaring waterfall splits this valley in two, Commander. Watch the central stone bridge, the timber trestle to the south, and the shallow ford up north! Coordinate with my Sunward garrison and shatter both rival strongholds.',
+  campaign16:{speaker:'Lady Vaelen',intro:'The roaring waterfall splits this valley in two, Commander. Watch the central stone bridge, the timber trestle to the south, and the shallow ford up north! Coordinate with my Sunward garrison and wipe out both rival strongholds completely.',
     stages:[
       {title:'Command the Gorge Crossings',text:'Hold the waterfall crossings for 90 seconds or destroy an enemy watchtower across the river.',seconds:90,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=90||!s.count(1,'building','tower'),dialogue:'The crossings are contested in blood and fire! Push across the stone bridge or flank through the shallow northern ford.'},
-      {title:'Break the First River Stronghold',text:'Destroy either Lord Korr’s Ironhold citadel or General Syra’s northern hold.',marker:{x:118,z:64},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{spawnReinforcements(s,{owner:3,type:'marksman',count:4});},dialogue:'One river fortress has crumbled! My Sunward marksmen march beside you to finish the valley!'},
-      {title:'Claim Waterfall Gorge',text:'Destroy both hostile capitals across the gorge.',marker:{x:118,z:-68},done:allHostileCapitalsFallen,dialogue:'Waterfall Gorge belongs to our alliance! The fires on the bridge fade into victory.'},
+      {title:'Raze the First River Stronghold',text:'Completely wipe out every base structure of either Lord Korr’s Ironhold citadel or General Syra’s northern hold.',marker:{x:118,z:64},targetOwners:[1,2],done:s=>baseWiped(s,1)||baseWiped(s,2),onDone:s=>{spawnReinforcements(s,{owner:3,type:'marksman',count:4});},dialogue:'One river fortress is completely leveled! My Sunward marksmen march beside you to finish the valley!'},
+      {title:'Claim Waterfall Gorge',text:'Wipe out all remaining enemy base structures across the gorge.',marker:{x:118,z:-68},done:allHostileBasesWiped,dialogue:'Not an enemy stone stands across Waterfall Gorge! The fires on the bridge fade into total victory.'},
     ],optional:{text:'Finish with Lady Vaelen’s citadel standing.',done:s=>s.count(3,'building','towncenter')>0},
     events:[
       {at:25,id:'c16-korr-taunt',speaker:'Lord Korr',role:'enemy',text:'Ironhold steel owns this gorge! Come across that bridge if you dare!'},
       {at:65,id:'c16-syra-ford',speaker:'General Syra',role:'enemy',text:'Riders! Wade straight through the shallow northern ford and hit their flank!',reinforce:{owner:2,type:'knight',count:3}},
       {at:125,id:'c16-vaelen-push',speaker:'Lady Vaelen',role:'ally',text:'I have archers ready at the stone crossing—call the target and we strike together!',reinforce:{owner:3,type:'marksman',count:4}},
     ]},
-  campaign17:{speaker:'Jarl Torin',intro:'Winter bites hard on Frostfall Cliff, Commander. Three warlord camps wait beyond the frozen river and drifting ice floes. Hold the stone and timber bridges with me, burn their outer stockades, and break Jarl Skald’s fortress!',
+  campaign17:{speaker:'Jarl Torin',intro:'Winter bites hard on Frostfall Cliff, Commander. Three warlord camps wait beyond the frozen river and drifting ice floes. Hold the stone and timber bridges with me, burn every outer stockade, and wipe Jarl Skald’s entire fortress from the snow!',
     stages:[
-      {title:'Weather the Winter Assault',text:'Hold the icy river bridges for 100 seconds or smash either forward enemy war-camp.',seconds:100,marker:{x:-6,z:0},done:(s,q)=>q.elapsed>=100||!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),dialogue:'The winter storm couldn’t crack our walls! Counter-attack across the ice bridges and burn their stockades!'},
-      {title:'Burn the Outer Siege Camps',text:'Destroy both the Frost Raiders stockade and the Iron Siege Camp.',marker:{x:56,z:68},done:s=>!s.count(1,'building','towncenter')&&!s.count(2,'building','towncenter'),onDone:s=>{s.players[0].resources.wood+=400;s.players[0].resources.gold+=350;},dialogue:'Their siege stockades are ash in the snow! Now march east and topple Jarl Skald!'},
-      {title:'End the Frostfall Siege',text:'Destroy all three hostile winter capitals.',marker:{x:132,z:2},done:allHostileCapitalsFallen,dialogue:'Jarl Skald’s banner falls into the snow! Frostfall Cliff is free!'},
+      {title:'Weather the Winter Assault',text:'Hold the icy river bridges for 100 seconds or completely wipe out either forward enemy war-camp.',seconds:100,marker:{x:-6,z:0},done:(s,q)=>q.elapsed>=100||baseWiped(s,1)||baseWiped(s,2),dialogue:'The winter storm couldn’t crack our walls! Counter-attack across the ice bridges and burn their stockades!'},
+      {title:'Burn the Outer Siege Camps',text:'Wipe out every structure in both the Frost Raiders stockade and the Iron Siege Camp.',marker:{x:56,z:68},targetOwners:[1,2],done:s=>baseWiped(s,1)&&baseWiped(s,2),onDone:s=>{s.players[0].resources.wood+=400;s.players[0].resources.gold+=350;},dialogue:'Both siege stockades are ash in the snow! Now march east and raze every building of Jarl Skald’s fortress!'},
+      {title:'End the Frostfall Siege',text:'Wipe out every base structure of all three hostile winter warlords.',marker:{x:132,z:2},done:allHostileBasesWiped,dialogue:'Every enemy fort lies buried beneath the snow! Frostfall Cliff is free!'},
     ],optional:{text:'Keep Jarl Torin’s allied fortress standing.',done:s=>s.count(4,'building','towncenter')>0},
     events:[
       {at:24,id:'c17-skald-taunt',speaker:'Jarl Skald',role:'enemy',text:'Freeze behind your walls! My three winter warbands will bury you beneath the snow!'},
       {at:68,id:'c17-iron-ram',speaker:'Iron Siege Camp',role:'enemy',text:'Roll the siege rams across the southern timber bridge!',reinforce:{owner:2,type:'ram',count:2}},
       {at:120,id:'c17-torin-charge',speaker:'Jarl Torin',role:'ally',text:'My household guard is marching to reinforce the central bridge!',reinforce:{owner:4,type:'sentinel',count:4}},
     ]},
-  campaign18:{speaker:'Admiral Iven',intro:'Welcome to the Emerald Temple Lagoon! Towering banyans and ancient stone temples hide ruthless jungle warlords. Seize the sacred Emerald Temple Shrine with me, cross the coral delta bridges, and conquer both rival holds!',
+  campaign18:{speaker:'Admiral Iven',intro:'Welcome to the Emerald Temple Lagoon! Towering banyans and ancient stone temples hide ruthless jungle warlords. Seize the sacred Emerald Temple Shrine with me, cross the coral delta bridges, and wipe out both rival jungle bases completely!',
     stages:[
-      {title:'Claim the Emerald Temple Shrine',text:'Capture the central Emerald Temple Shrine (or shatter either rival jungle capital).',marker:{x:-6,z:-10},done:s=>s.entities.some(e=>e.kind==='shrine'&&s.allied(0,e.owner))||!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=400;},dialogue:'The ancient temple shrine answers our banner (+400 Gold)! Push across the delta bridges and shallow coral ford!'},
-      {title:'Breach the Jungle Strongholds',text:'Destroy either Warlord Kael’s or Warden Arak’s jungle capital.',marker:{x:114,z:66},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),dialogue:'One jungle stronghold has fallen! Finish the remaining warlord!'},
-      {title:'Master of Temple Lagoon',text:'Destroy both rival jungle capitals.',marker:{x:114,z:-68},done:allHostileCapitalsFallen,dialogue:'The Emerald Temple Lagoon flies our colors from waterfall to coral reef!'},
+      {title:'Claim the Emerald Temple Shrine',text:'Capture the central Emerald Temple Shrine (or completely wipe out either rival jungle base).',marker:{x:-6,z:-10},done:s=>s.entities.some(e=>e.kind==='shrine'&&s.allied(0,e.owner))||baseWiped(s,1)||baseWiped(s,2),onDone:s=>{s.players[0].resources.gold+=400;},dialogue:'The ancient temple shrine answers our banner (+400 Gold)! Push across the delta bridges and shallow coral ford!'},
+      {title:'Raze the First Jungle Stronghold',text:'Completely wipe out every base structure of either Warlord Kael’s or Warden Arak’s jungle stronghold.',marker:{x:114,z:66},targetOwners:[1,2],done:s=>baseWiped(s,1)||baseWiped(s,2),dialogue:'One jungle stronghold is completely wiped out! Finish every building of the remaining warlord!'},
+      {title:'Master of Temple Lagoon',text:'Wipe out all enemy base structures across Temple Lagoon.',marker:{x:114,z:-68},done:allHostileBasesWiped,dialogue:'Every rival temple fort has fallen! The Emerald Temple Lagoon flies our colors from waterfall to coral reef!'},
     ],optional:{text:'Finish with Admiral Iven’s coastal citadel standing.',done:s=>s.count(3,'building','towncenter')>0},
     events:[
       {at:26,id:'c18-arak-taunt',speaker:'Temple Warden Arak',role:'enemy',text:'The jungle swallows every trespasser! You will never claim these ancient temples!'},
       {at:80,id:'c18-kael-flank',speaker:'Warlord Kael',role:'enemy',text:'Outriders! Sweep through the shallow coral ford and raid their workers!',reinforce:{owner:1,type:'outrider',count:4}},
       {at:135,id:'c18-iven-aid',speaker:'Admiral Iven',role:'ally',text:'Fresh Sunward lancers landing to reinforce your temple push!',reinforce:{owner:3,type:'knight',count:3}},
     ]},
-  campaign19:{speaker:'Queen Maren',intro:'Every banner in the realm meets here at Deepwood Ravine! You hold the center alongside Forgemaster Borin and my Royal Guard. Three Imperial warlords stand across the timber ravine bridge—coordinate our coalition, break their line, and end this war forever!',
+  campaign19:{speaker:'Queen Maren',intro:'Every banner in the realm meets here at Deepwood Ravine! You hold the center alongside Forgemaster Borin and my Royal Guard. Three Imperial warlords stand across the timber ravine bridge—coordinate our coalition and wipe every single enemy empire off the map!',
     stages:[
-      {title:'Break the First Enemy Empire',text:'Cross Deepwood Ravine with Queen Maren and Forgemaster Borin and destroy any enemy Imperial capital.',marker:{x:124,z:0},done:s=>[1,2,3].some(o=>!s.count(o,'building','towncenter')),onDone:s=>{spawnReinforcements(s,{owner:4,type:'knight',count:4});spawnReinforcements(s,{owner:5,type:'catapult',count:1});},dialogue:'An enemy empire has fallen! Borin brings up fresh Trebuchets and my Royal Knights charge through the ravine!'},
-      {title:'Collapse the Coalition',text:'Destroy at least two of the three rival Imperial capitals.',marker:{x:118,z:-108},done:s=>[1,2,3].filter(o=>!s.count(o,'building','towncenter')).length>=2,dialogue:'Two rival crowns lie broken! Only one hostile emperor remains—press the final assault!'},
-      {title:'The Grand Clash of Crowns',text:'Destroy all three rival Imperial capitals across Deepwood Ravine.',marker:{x:118,z:108},done:allHostileCapitalsFallen,dialogue:'Every rival empire has bowed! The Great Frontier War is won, and peace returns to the united kingdoms!'},
+      {title:'Wipe Out the First Enemy Empire',text:'Cross Deepwood Ravine with Queen Maren and Forgemaster Borin and wipe out every structure of any rival Imperial base.',marker:{x:124,z:0},targetOwners:[1,2,3],done:s=>[1,2,3].some(o=>baseWiped(s,o)),onDone:s=>{spawnReinforcements(s,{owner:4,type:'knight',count:4});spawnReinforcements(s,{owner:5,type:'catapult',count:1});},dialogue:'An entire enemy empire has been wiped out! Borin brings up fresh Trebuchets and my Royal Knights charge through the ravine!'},
+      {title:'Collapse the Coalition',text:'Completely wipe out at least two of the three rival Imperial bases.',marker:{x:118,z:-108},targetOwners:[1,2,3],done:s=>[1,2,3].filter(o=>baseWiped(s,o)).length>=2,dialogue:'Two rival empires lie in total ruins! Only one hostile stronghold remains—leave nothing standing!'},
+      {title:'The Grand Clash of Crowns',text:'Wipe out all remaining base structures of all three rival Imperial empires across Deepwood Ravine.',marker:{x:118,z:108},done:allHostileBasesWiped,dialogue:'Every rival empire has been completely wiped from the frontier! The Great Frontier War is won forever!'},
     ],optional:{text:'Finish with both Queen Maren’s and Forgemaster Borin’s capitals still standing.',done:s=>s.count(4,'building','towncenter')>0&&s.count(5,'building','towncenter')>0},
     events:[
       {at:20,id:'c19-malrik-taunt',speaker:'Overlord Malrik',role:'enemy',text:'Three empires against your fragile alliance! Burn the timber bridge and crush them all!'},
@@ -261,7 +278,21 @@ export function campaignObjective(sim){
   if(!q||q.legacy||q.finished||!script)return null;
   const sq=CAMPAIGN_SIDE_QUESTS[sim.options.mode]||null;
   const boss=CAMPAIGN_BOSSES[sim.options.mode]||null;
-  return {...script.stages[Math.min(q.stage,script.stages.length-1)],index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0,sideQuest:sq?{id:sq.id,title:sq.title,text:sq.text,rewardText:sq.rewardText,done:!!q.sideQuestDone}:null,boss};
+  const stage=script.stages[Math.min(q.stage,script.stages.length-1)];
+  let marker=stage.marker||null;
+  let progressText='';
+  if(sim.mission?.actFive){
+    const targetOwners=stage.targetOwners||sim.players.map((p,i)=>i).filter(i=>i>0&&sim.hostile(0,i));
+    const totalHostiles=sim.players.filter((p,i)=>i>0&&!sim.allied(0,i)).length;
+    const standingHostiles=sim.players.filter((p,i)=>i>0&&sim.hostile(0,i)&&!baseWiped(sim,i)).length;
+    const standingStructs=targetOwners.reduce((n,o)=>n+(sim.hostile(0,o)?baseStructures(sim,o).length:0),0);
+    if(q.stage>0||!stage.seconds){
+      const dyn=nearestHostileStructure(sim,stage.targetOwners||null);
+      if(dyn)marker=dyn;
+      progressText=`Enemy bases: ${standingHostiles}/${totalHostiles} · ${standingStructs} buildings left`;
+    }
+  }
+  return {...stage,marker,progressText,index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0,sideQuest:sq?{id:sq.id,title:sq.title,text:sq.text,rewardText:sq.rewardText,done:!!q.sideQuestDone}:null,boss};
 }
 
 export function installCampaigns(Simulation){
@@ -303,6 +334,36 @@ export function installCampaigns(Simulation){
       this.emit('campaign-event',{id:event.id,speaker:event.speaker||script.speaker,role:event.role||(isEnemy?'enemy':'ally'),text:event.text,enemy:isEnemy});
     }
     if(q.cartId&&!this.get(q.cartId)){end.call(this,false,'The supply caravan was lost. Restore a checkpoint or begin the escort again.');return;}
+    // Act V total-war elimination: each enemy warlord only falls when ALL of their base structures
+    // are wiped out (walls/gates/farms then collapse cleanly). Reveal last <=4 structures so no stray
+    // building ever hides in fog!
+    if(this.mission?.actFive){
+      for(let owner=1;owner<this.players.length;owner++){
+        const pl=this.players[owner];
+        if(!pl||pl.defeated||!this.hostile(0,owner))continue;
+        const structs=baseStructures(this,owner);
+        if(structs.length===0){
+          pl.defeated=true;
+          for(const e of this.entities){
+            if(e.hp>0&&e.owner===owner&&e.kind==='building')e.hp=0;
+          }
+          this.revision++;
+          this.emit('kingdom-defeated',{owner,name:pl.name,reason:'Base completely wiped out'});
+          this.updateFog();
+        }else if(structs.length<=4){
+          for(const b of structs){
+            const c=this.cell(b.x,b.z);
+            for(let dz=-4;dz<=4;dz++)for(let dx=-4;dx<=4;dx++){
+              const gx=c.x+dx,gz=c.z+dz;
+              if(gx>=0&&gz>=0&&gx<this.gridSize&&gz<this.gridSize){
+                const idx=gz*this.gridSize+gx;
+                this.explored[idx]=1;this.visible[idx]=1;
+              }
+            }
+          }
+        }
+      }
+    }
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
     const stage=script.stages[q.stage];if(!stage?.done(this,q))return;
     stage.onDone?.(this,q);

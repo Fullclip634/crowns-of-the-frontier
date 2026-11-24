@@ -4,6 +4,8 @@ import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,ad
 import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {seedDeerHerds} from './wildlife.js';
+import {waterChannels,waterFords} from './map-water.js';
+import {bridgeSpans,spanZ} from './bridge-layout.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
@@ -464,6 +466,24 @@ export function buildActFourScenario(sim){
     if(!sim.players[owner].dormant)sim.assignEconomy(owner);
   }
   sim.startingSites=sim.entities.filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type)).map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
+  // Pre-scout iconic frontier landmarks (waterfalls, bridges, fords, shrines) as explored terrain ONLY
+  // so players immediately see the grand geography on the minimap while enemy armies remain hidden in fog!
+  const markExplored=(wx,wz,rad=16)=>{
+    const c=sim.cell(wx,wz),rc=Math.ceil(rad/2);
+    for(let dz=-rc;dz<=rc;dz++)for(let dx=-rc;dx<=rc;dx++){
+      if(dx*dx+dz*dz>rc*rc)continue;
+      const gx=c.x+dx,gz=c.z+dz;
+      if(gx>=0&&gz>=0&&gx<sim.gridSize&&gz<sim.gridSize)sim.explored[gz*sim.gridSize+gx]=1;
+    }
+  };
+  const map=sim.options.map;
+  for(const ch of waterChannels(map)){
+    const wfZ=-sim.halfWorld+12;
+    markExplored(ch.center+Math.sin(wfZ*ch.frequency)*ch.bend,wfZ+6,18);
+  }
+  for(const span of bridgeSpans(map))markExplored(span.center,spanZ(span),16);
+  for(const ford of waterFords(map))markExplored(ford.center,ford.z,14);
+  for(const sh of sim.entities)if(sh.kind==='shrine')markExplored(sh.x,sh.z,16);
   sim.updateFog();
 }
 
@@ -752,6 +772,24 @@ function buildActFiveScenario(sim){
     if(!sim.players[owner].dormant)sim.assignEconomy(owner);
   }
   sim.startingSites=sim.entities.filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type)).map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
+  // Pre-scout iconic frontier landmarks (waterfalls, bridges, fords, shrines) as explored terrain ONLY
+  // so players immediately see the grand geography on the minimap while enemy armies remain hidden in fog!
+  const markExplored=(wx,wz,rad=16)=>{
+    const c=sim.cell(wx,wz),rc=Math.ceil(rad/2);
+    for(let dz=-rc;dz<=rc;dz++)for(let dx=-rc;dx<=rc;dx++){
+      if(dx*dx+dz*dz>rc*rc)continue;
+      const gx=c.x+dx,gz=c.z+dz;
+      if(gx>=0&&gz>=0&&gx<sim.gridSize&&gz<sim.gridSize)sim.explored[gz*sim.gridSize+gx]=1;
+    }
+  };
+  const map=sim.options.map;
+  for(const ch of waterChannels(map)){
+    const wfZ=-sim.halfWorld+12;
+    markExplored(ch.center+Math.sin(wfZ*ch.frequency)*ch.bend,wfZ+6,18);
+  }
+  for(const span of bridgeSpans(map))markExplored(span.center,spanZ(span),16);
+  for(const ford of waterFords(map))markExplored(ford.center,ford.z,14);
+  for(const sh of sim.entities)if(sh.kind==='shrine')markExplored(sh.x,sh.z,16);
   sim.updateFog();
 }
 

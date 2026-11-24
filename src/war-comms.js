@@ -425,8 +425,8 @@ export class WarCommsController{
     let target={x:0,z:0};
     if(kind==='attack'){
       const enemies=this.activeEnemies(sim);
-      const enemyTCs=enemies.flatMap(e=>sim.owned(e.owner,'building','towncenter')).sort((a,b)=>Math.hypot(a.x-p0.x,a.z-p0.z)-Math.hypot(b.x-p0.x,b.z-p0.z));
-      target=enemyTCs[0]||(enemies[0]?.player?.start)||{x:view?.target?.x||0,z:view?.target?.z||0};
+      const enemyTargets=enemies.flatMap(e=>sim.owned(e.owner,'building').filter(b=>b.hp>0&&!['wall','gate','farm'].includes(b.type))).sort((a,b)=>((a.type==='towncenter'||a.type==='keep')?-18:0)+Math.hypot(a.x-p0.x,a.z-p0.z)-(((b.type==='towncenter'||b.type==='keep')?-18:0)+Math.hypot(b.x-p0.x,b.z-p0.z)));
+      target=enemyTargets[0]||(enemies[0]?.player?.start)||{x:view?.target?.x||0,z:view?.target?.z||0};
     }else if(kind==='defend'){
       const spans=bridgeSpans(sim.options?.map);
       if(sim.options?.map==='ironfall')target={x:-24,z:0};

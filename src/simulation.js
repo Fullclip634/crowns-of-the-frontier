@@ -538,7 +538,22 @@ export class Simulation {
     const armor=target.kind==='unit'?this.unitArmor(target):(role==='ranged'?5:1)+wallArmorBonus(this,target);return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
   }
   unitArmor(e){const d=UNITS[e.type],p=this.players[e.owner];return (d.armor||0)+p.tech.armor*2+(['infantry','spear'].includes(d.role)?(p.tech.shieldDrill||0)*2:0);}
-  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
+  isKingdomThreat(target){
+    if(!target||target.owner!==0)return false;
+    if(target.kind==='building')return true;
+    const role=UNITS[target.type]?.role;
+    if(role==='worker'||role==='fisher'||role==='quest')return true;
+    // Combat troops engaging enemies in the field or assaulting an enemy base must NOT
+    // trigger "Your kingdom is under attack!" — only fire when fighting inside our own base.
+    let nearHome=false;
+    for(const b of this.candidatesFor('building')){
+      if(b.hp<=0)continue;
+      if(b.owner===0&&!['wall','gate','farm'].includes(b.type)&&distance(b,target)<22)nearHome=true;
+      else if(b.owner>=0&&this.hostile(0,b.owner)&&distance(b,target)<26)return false;
+    }
+    return nearHome;
+  }
+  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
     if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type].role==='cavalry'&&this.players[attacker.owner].tech.raidingParties)this.players[attacker.owner].resources.gold+=3;this.emit('death',{entity:target});for(const q of target.queue||[])if(q.kind==='age')this.players[target.owner].agePending=false;}}
   hit(e,target){if(e.cooldown>0||!this.hostile(e.owner,target.owner))return;e.heading=Math.atan2(target.x-e.x,target.z-e.z);const amount=this.attackDamage(e,target);this.hurt(target,amount,e);e.cooldown=e.kind==='building'?1.6:UNITS[e.type].cooldown||1.2;
     if(['catapult','warship'].includes(e.type))forEachNearbyUnit(this,target.x,target.z,4,nearby=>{if(nearby.hp>0&&!nearby.embarked&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&distance(nearby,target)<4)this.hurt(nearby,amount*.6,e);});

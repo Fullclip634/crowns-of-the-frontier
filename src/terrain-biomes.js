@@ -32,12 +32,12 @@ const styles={
   threecrowns:{ground:['#558650','#7ba569','#3c6b41'],grassTint:0x92c48c,grass:[0x5a8c4b,0x7da761,0x467640],map:'#4d7d4d',plaza:0x99988d,cliff:0x7c8078,lush:true},
   emberroad:{ground:['#493f3c','#6b584e','#2a2625'],grassTint:0x887b6e,grass:[0x68594f,0x826f63,0x463d36],map:'#4a403c',plaza:0x5b534f,cliff:0x473f3b,ash:true},
   frostvale:{ground:['#c1d2da','#e4edf1','#8da9b5'],grassTint:0xd6e6ec,grass:[0xafc5cc,0xd0dfe3,0x8ba6ae],map:'#b1c6d0',plaza:0xb3c3ca,cliff:0x7e939e,snow:true},
-  // Epic Frontier maps — waterfalls, glacial gorges, forest ravines, tropical temple lagoon & Ironfall Pass.
-  waterfallgorge:{ground:['#538748','#7ea85f','#386b3a'],grassTint:0x95cc84,grass:[0x5a8e46,0x7fab5e,0x44753a],map:'#4c8044',plaza:0x9e9a8c,cliff:0x757b73,lush:true,waterfall:true},
-  frostfallsiege:{ground:['#c2d4de','#e7f0f4','#8aa6b5'],grassTint:0xdbeaf0,grass:[0xb2c8d0,0xd4e3e8,0x8aa5af],map:'#b4cad4',plaza:0xb4c4cc,cliff:0x768c98,snow:true,waterfall:true},
-  deepwoodravine:{ground:['#3f6a39','#648e4c','#284e2c'],grassTint:0x83b96c,grass:[0x48763c,0x6a934f,0x335a30],map:'#3b6434',plaza:0x8e8c7e,cliff:0x6b7166,dense:true,rocky:true},
-  templelagoon:{ground:['#4c8e50','#7eb565','#2f6c3d'],grassTint:0x84cc76,grass:[0x488a45,0x73b058,0x2f6938],map:'#41854b',plaza:0xbcb092,cliff:0x6e7b68,jungle:true,shore:true,waterfall:true},
-  ironfall:{ground:['#5e7e56','#87a272','#3f5e42'],grassTint:0x97be86,grass:[0x5d824f,0x819f6a,0x466640],map:'#56774f',plaza:0x98968a,cliff:0x6e736b,rocky:true,waterfall:true},
+  // Epic Frontier maps — sunlit AoE:DE emerald meadows, glacial gorges, forest ravines, coral jungle lagoon & Ironfall Pass.
+  waterfallgorge:{ground:['#67a148','#96c660','#447c39'],grassTint:0xa8dc88,grass:[0x6ea649,0x97c562,0x4e863c],map:'#599344',plaza:0xaca490,cliff:0x868a7e,lush:true,waterfall:true},
+  frostfallsiege:{ground:['#c9dbe6','#eef6fa','#91aebf'],grassTint:0xe2f0f6,grass:[0xbad0d8,0xdcebf0,0x93aeb8],map:'#bcd2dc',plaza:0xbdc9d0,cliff:0x8298a4,snow:true,waterfall:true},
+  deepwoodravine:{ground:['#4e853c','#7db054','#32612d'],grassTint:0x95ca74,grass:[0x588e40,0x82b258,0x3c6b32],map:'#477a38',plaza:0x9a9685,cliff:0x787e70,dense:true,rocky:true},
+  templelagoon:{ground:['#5ca84e','#95cf66','#387f3d'],grassTint:0x9ae07c,grass:[0x5aa448,0x8bc95c,0x3a7d3a],map:'#4d994c',plaza:0xccb993,cliff:0x7d8a74,jungle:true,shore:true,waterfall:true},
+  ironfall:{ground:['#6b9654','#99bd72','#4a7140'],grassTint:0xa6d08a,grass:[0x6b984f,0x95ba6c,0x4f7840],map:'#628d4f',plaza:0xa7a18f,cliff:0x7e8378,rocky:true,waterfall:true},
 };
 for(const style of Object.values(styles)){Object.freeze(style.ground);Object.freeze(style.grass);Object.freeze(style);}
 Object.freeze(styles);

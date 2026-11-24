@@ -7,6 +7,7 @@ import {isWallCorner} from './walls.js';
 import {dockWaterAngle} from './naval-spacing.js';
 import {isSnowBiome,isJungleBiome} from './terrain-biomes.js';
 import {cloneEpicProp,epicPropRoot} from './epic-props-art.js';
+import {shadeBattlefieldFog} from './fog-surface.js';
 
 const Y=new THREE.Vector3(0,1,0);
 function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
@@ -427,11 +428,19 @@ export function treeModel(view,map,variant=0,far=false){
   if(isJungleBiome(map)&&epicPropRoot(`tree:jungle:${variant%4}`)){
     const jungle=cloneEpicProp(`tree:jungle:${variant%4}`);
     if(jungle){
+      // Dedicated neutral-white vertex-colored materials so Blender's sunlit golden-lime crowns & deep shadow
+      // undersides render at 100% full color brilliance without double-darkening against legacy leaf tint!
+      const jLeaf=view.materials.jungleLeaf??=(()=>{
+        const m=standardMaterial({color:0x6ab352,roughness:.88,vertexColors:true});
+        shadeBattlefieldFog(m,view);return m;
+      })();
+      const jTrunk=view.materials.jungleTrunk??=(()=>{
+        const m=standardMaterial({color:0xffffff,roughness:.88,vertexColors:true});
+        shadeBattlefieldFog(m,view);return m;
+      })();
       jungle.traverse(part=>{
         if(!part.isMesh)return;
-        const role=part.userData?.assetMaterial==='trunk'?'trunk':'leaf';
-        const mat=view.materials[role];
-        if(mat){mat.vertexColors=true;part.material=mat;}
+        part.material=part.userData?.assetMaterial==='trunk'?jTrunk:jLeaf;
         part.castShadow=true;part.receiveShadow=true;
       });
       jungle.userData.model3d={kind:'resource',type:'wood',biome:'jungle',authored:true};

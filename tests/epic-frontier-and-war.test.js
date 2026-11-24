@@ -177,3 +177,78 @@ test('WarCommsController delivers spoken enemy/ally comms, real Ally Tactical Or
   assert.equal(comms.toggleMute(),true);
   assert.equal(comms.muted,true);
 });
+
+test('Under-attack alarm ignores offensive field combat and fires only for base buildings, workers, or home defenders',()=>{
+  const sim=new Simulation({mode:'skirmish',map:'waterfallgorge',faction:'alder',difficulty:'normal',seed:101});
+  const alarmCount=()=>sim.events.filter(e=>e.type==='alarm').length;
+
+  // Place player soldier attacking an enemy unit out in the middle of the field (far from player base!)
+  const enemySoldier=sim.addUnit('swordsman',1,10,0);
+  const playerSoldier=sim.addUnit('swordsman',0,8,0);
+  sim.hurt(playerSoldier,10,enemySoldier);
+  assert.equal(alarmCount(),0,'Engaging enemies in the open field must NOT trigger "Your kingdom is under attack!"');
+
+  // Place player soldier assaulting an enemy base right next to enemy TC
+  const enemyTc=sim.owned(1,'building','towncenter')[0];
+  const raider=sim.addUnit('knight',0,enemyTc.x-5,enemyTc.z);
+  sim.hurt(raider,15,enemyTc);
+  assert.equal(alarmCount(),0,'Assaulting an enemy base must NOT trigger "Your kingdom is under attack!"');
+
+  // Now an enemy attacks a player building -> MUST fire alarm!
+  const myTc=sim.owned(0,'building','towncenter')[0];
+  sim.hurt(myTc,12,enemySoldier);
+  assert.equal(alarmCount(),1,'Attacking a player building MUST trigger "Your kingdom is under attack!"');
+
+  // Reset cooldown & test enemy attacking a player villager -> MUST fire alarm!
+  sim.time+=20;
+  const myVil=sim.owned(0,'unit','villager')[0];
+  sim.hurt(myVil,8,enemySoldier);
+  assert.equal(alarmCount(),2,'Attacking a player villager MUST trigger "Your kingdom is under attack!"');
+
+  // Reset cooldown & test enemy fighting a player soldier INSIDE player base -> MUST fire alarm!
+  sim.time+=20;
+  const homeGuard=sim.addUnit('spearman',0,myTc.x+6,myTc.z);
+  sim.hurt(homeGuard,8,enemySoldier);
+  assert.equal(alarmCount(),3,'Fighting enemies inside your home base perimeter MUST trigger alarm');
+});
+
+test('Act V missions require wiping out ALL enemy base structures, not just sniping Town Centers',()=>{
+  const sim=new Simulation({mode:'campaign15',faction:'alder',difficulty:'normal',seed:4315});
+  // Destroy ONLY all 4 enemy Town Centers — every enemy still has Keeps/Barracks/Towers/Houses!
+  for(const foe of [1,2,3,4]){
+    for(const tc of sim.owned(foe,'building','towncenter'))tc.hp=0;
+  }
+  sim.tick(1.0);
+  assert.equal(sim.ended,null,'Destroying only enemy Town Centers MUST NOT win Act V');
+  for(const foe of [1,2,3,4]){
+    assert.equal(sim.players[foe].defeated,false,`Enemy ${foe} stays active while base structures remain`);
+  }
+
+  // Advance timer past stage 0 hold & verify stage 1 still waits for full forward war-camp wipeout
+  sim.time=125;
+  sim.tick(1.0);
+  assert.equal(sim.campaignState.stage,1,'Stage 0 passes after hold timer');
+  assert.equal(sim.ended,null,'Stage 1 still requires wiping out every building in Warlord Vex & Krag camps');
+
+  // Wipe out ALL non-wall/non-gate/non-farm structures for Warlord Vex (1) & Krag (2)
+  for(const foe of [1,2]){
+    for(const b of sim.owned(foe,'building')){
+      if(!['wall','gate','farm'].includes(b.type))b.hp=0;
+    }
+  }
+  sim.tick(1.0);
+  assert.equal(sim.players[1].defeated,true,'Warlord Vex is defeated once all base structures are wiped');
+  assert.equal(sim.players[2].defeated,true,'Siege-Master Krag is defeated once all base structures are wiped');
+  assert.equal(sim.owned(1,'building').length,0,'Defeated enemy leftover walls/farms collapse cleanly');
+  assert.equal(sim.campaignState.stage,2,'Advances to final stage once both forward camps are wiped');
+  assert.equal(sim.ended,null,'Does not win while Emir Soliman & Draven still stand');
+
+  // Wipe out ALL non-wall/non-gate/non-farm structures for Emir Soliman (3) & Overlord Draven (4)
+  for(const foe of [3,4]){
+    for(const b of sim.owned(foe,'building')){
+      if(!['wall','gate','farm'].includes(b.type))b.hp=0;
+    }
+  }
+  sim.tick(1.0);
+  assert.ok(sim.ended?.won===true,'Act V wins only after ALL four enemy bases are completely wiped out!');
+});
