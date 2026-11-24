@@ -7,6 +7,7 @@ import {CAMERA_PRESETS} from './world.js';
 import {difficultyLabel} from './ui-format.js';
 import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
 import {terrainBiome} from './terrain-biomes.js';
+import {mapPreviewSvg} from './map-preview.js';
 import {AI_PERSONALITIES} from './ai-personalities.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -121,7 +122,7 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
   const mapCards=Object.entries(MAPS).map(([id,m])=>{
     const biome=terrainBiome(id);
     return `<button type="button" class="biome-card ${id===activeMap?'active':''}" data-hub-map="${id}" ${mapLocked&&id!==activeMap?'disabled':''} aria-pressed="${id===activeMap}" title="${esc(m.desc)}">
-      <span class="biome-swatch" style="background:${biome.map}"></span>
+      <span class="biome-swatch" style="background:${biome.map}">${mapPreviewSvg(id)}</span>
       <div><strong>${esc(m.name)}</strong><small>${esc(m.desc)}</small></div>
     </button>`;
   }).join('');

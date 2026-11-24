@@ -9,7 +9,7 @@ const source=new URL('./assets3d/frontier-biome-art.glb',import.meta.url).href;
 let pending=null,loaded=null;
 
 function registerScene(scene){
-  const cliffs=new Map(),cliffWalls=new Map(),mountains=new Map(),bushes=new Map(),volcanicTrees=new Map();
+  const cliffs=new Map(),cliffWalls=new Map(),mountains=new Map(),bushes=new Map(),ruins=new Map(),waystones=new Map(),fallenLogs=new Map(),spires=new Map(),volcanicTrees=new Map();
   scene.updateMatrixWorld(true);
   scene.traverse(node=>{
     if(node.isMesh)canonicalGeometry(node.geometry);
@@ -23,11 +23,19 @@ function registerScene(scene){
       mountains.set(key.slice(9),node.geometry);
     }else if(key.startsWith('bush:')&&node.isMesh){
       bushes.set(key.slice(5),node.geometry);
+    }else if(key.startsWith('ruin:')&&node.isMesh){
+      ruins.set(key.slice(5),node.geometry);
+    }else if(key.startsWith('waystone:')&&node.isMesh){
+      waystones.set(key.slice(9),node.geometry);
+    }else if(key.startsWith('fallenlog:')&&node.isMesh){
+      fallenLogs.set(key.slice(10),node.geometry);
+    }else if(key.startsWith('spire:')&&node.isMesh){
+      spires.set(key.slice(6),node.geometry);
     }else if(key.startsWith('tree:volcanic:')){
       volcanicTrees.set(key,node);
     }
   });
-  return {cliffs,cliffWalls,mountains,bushes,volcanicTrees};
+  return {cliffs,cliffWalls,mountains,bushes,ruins,waystones,fallenLogs,spires,volcanicTrees};
 }
 
 export async function loadBiomeArtwork(){
@@ -78,6 +86,36 @@ export function biomeBushGeometry(map){
   if(!loaded?.bushes?.size)return null;
   const style=isSnowBiome(map)?'snow':(isAridBiome(map)||map==='desert')?'arid':'meadow';
   const geo=loaded.bushes.get(style)||loaded.bushes.get('meadow');
+  return geo?geo.clone():null;
+}
+
+function landmarkStyle(map){
+  return isVolcanicBiome(map)?'volcanic':isSnowBiome(map)?'snow':(isAridBiome(map)||map==='desert')?'arid':'meadow';
+}
+
+export function biomeRuinGeometry(map){
+  if(!loaded?.ruins?.size)return null;
+  const geo=loaded.ruins.get(landmarkStyle(map))||loaded.ruins.get('meadow');
+  return geo?geo.clone():null;
+}
+
+export function biomeWaystoneGeometry(map){
+  if(!loaded?.waystones?.size)return null;
+  const geo=loaded.waystones.get(landmarkStyle(map))||loaded.waystones.get('meadow');
+  return geo?geo.clone():null;
+}
+
+export function biomeFallenLogGeometry(map){
+  if(!loaded?.fallenLogs?.size)return null;
+  if(isVolcanicBiome(map)||isAridBiome(map))return null;
+  const style=isSnowBiome(map)?'snow':'meadow';
+  const geo=loaded.fallenLogs.get(style)||loaded.fallenLogs.get('meadow');
+  return geo?geo.clone():null;
+}
+
+export function biomeSpireGeometry(map){
+  if(!loaded?.spires?.size)return null;
+  const geo=loaded.spires.get(landmarkStyle(map))||loaded.spires.get('meadow');
   return geo?geo.clone():null;
 }
 

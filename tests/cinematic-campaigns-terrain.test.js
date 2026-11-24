@@ -8,8 +8,12 @@ import {Simulation} from '../src/simulation.js';
 import {orderSiegeAssault} from '../src/ai-siege.js';
 import {MISSION_CHRONICLES,missionLoadingMarkup} from '../src/mission-loading.js';
 import {STARTUP_TIPS,startupSplashMarkup} from '../src/startup-loading.js';
-import {landingMarkup} from '../src/menus-ui.js';
-import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from '../src/biome-art.js';
+import {landingMarkup,skirmishHubMarkup} from '../src/menus-ui.js';
+import {mapCartography,drawBattlePreviewCanvas,mapPreviewSvg} from '../src/map-preview.js';
+import {Landscape} from '../src/landscape.js';
+import {TerrainDetails} from '../src/terrain-details.js';
+import * as THREE from 'three';
+import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry,biomeRuinGeometry,biomeWaystoneGeometry,biomeFallenLogGeometry,biomeSpireGeometry} from '../src/biome-art.js';
 
 const advance=(sim,seconds)=>{for(let i=0;i<seconds*10;i++)sim.tick(.1);};
 
@@ -51,7 +55,59 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
       for(let i=0;i<cc.count;i++)minLuma=Math.min(minLuma,(cc.getX(i)+cc.getY(i)+cc.getZ(i))/3);
       assert.ok(minLuma<0.55,`meadow cliffwall carries baked crevice AO shading (minLuma=${minLuma.toFixed(2)})`);
       meadowCliff.dispose();
+
+      // Verify new Blender 4.5 LTS medieval ruins, roadside waystones, mossy fallen logs & biome spires
+      for(const map of ['highlands','arid','tundra','volcanic']){
+        const ruin=biomeRuinGeometry(map),ws=biomeWaystoneGeometry(map),spire=biomeSpireGeometry(map);
+        assert.ok(ruin&&ruin.attributes.position.count>=120&&ruin.attributes.color,`${map} loads Blender medieval ruin archway`);
+        assert.ok(ws&&ws.attributes.position.count>=80&&ws.attributes.color,`${map} loads Blender roadside waystone`);
+        assert.ok(spire&&spire.attributes.position.count>=80&&spire.attributes.color,`${map} loads Blender geological spire`);
+        ruin.dispose();ws.dispose();spire.dispose();
+      }
+      const meadowLog=biomeFallenLogGeometry('timbervale'),snowLog=biomeFallenLogGeometry('frostvale');
+      assert.ok(meadowLog&&meadowLog.attributes.position.count>=80&&meadowLog.attributes.color,'woodland loads Blender mossy fallen log');
+      assert.ok(snowLog&&snowLog.attributes.color,'snow biome loads frost-dusted fallen log');
+      assert.equal(biomeFallenLogGeometry('arid'),null,'arid desert skips mossy woodland logs');
+      assert.equal(biomeFallenLogGeometry('volcanic'),null,'volcanic biome skips mossy woodland logs');
+      meadowLog.dispose();snowLog.dispose();
+
+      // Verify TerrainDetails places sparse, grounded, fog-aware landmarks cleanly across maps
+      const sim=new Simulation({mode:'skirmish',map:'sunderedpass',seed:2026});
+      const land=new Landscape(2026,'sunderedpass',sim.worldSize,sim.spawnPositions);
+      const ground=land.geometry(land.renderSize,112);
+      const view={landscape:land,terrain:new THREE.Group(),settings:{quality:'high',fog:false},sim,clock:0,target:new THREE.Vector3(0,0,0),zoom:42,angle:0,tilt:.6};
+      const details=new TerrainDetails(view);
+      assert.ok(details.waystoneEntries.length>=2&&details.waystoneEntries.length<=40,`sparse roadside waystones (${details.waystoneEntries.length})`);
+      assert.ok(details.ruinEntries.length>=2&&details.ruinEntries.length<=30,`sparse medieval ruins (${details.ruinEntries.length})`);
+      assert.ok(details.logEntries.length>=2&&details.logEntries.length<=60,`mossy woodland logs (${details.logEntries.length})`);
+      assert.ok(details.spireEntries.length>=2&&details.spireEntries.length<=40,`biome spires (${details.spireEntries.length})`);
+      for(const mesh of [details.mesh,details.cliffWallMesh,details.mountainMesh,details.bushMesh,details.waystoneMesh,details.ruinMesh,details.logMesh,details.spireMesh]){
+        if(!mesh)continue;
+        mesh.geometry.dispose();mesh.material.dispose();mesh.dispose();
+      }
+      ground.dispose();
     }finally{clearBiomeArtwork();}
+  });
+
+  it('renders accurate cartographic previews with mountains, passes, bridges & forests for all 24 maps',()=>{
+    const allMaps=Object.keys(MAPS);
+    assert.ok(allMaps.length>=24,'covers all registered maps');
+    for(const map of allMaps){
+      const carto=mapCartography(map);
+      assert.ok(carto.mountains.length+carto.forests.length>0,`${map} defines cartographic geography`);
+      const svg=mapPreviewSvg(map);
+      assert.match(svg,/<svg[^>]+class="biome-preview-svg"/,`${map} generates inline SVG mini-map`);
+      let fills=0,strokes=0;
+      const ctx={
+        fillStyle:'',strokeStyle:'',lineWidth:1,
+        fillRect(){fills++;},beginPath(){},moveTo(){},lineTo(){},arc(){},closePath(){},
+        fill(){fills++;},stroke(){strokes++;},
+      };
+      drawBattlePreviewCanvas(ctx,{map,worldSize:240,seed:2026,size:260});
+      assert.ok(fills>=10,`${map} renders rich filled relief/features (${fills})`);
+    }
+    const hubHtml=skirmishHubMarkup({mode:'skirmish',faction:'alder',map:'ironring'});
+    assert.match(hubHtml,/class="biome-preview-svg"/,'Skirmish Hub map cards render mini cartographic SVGs');
   });
 
   it('uses painted medieval citadel hero artwork on the home screen without a live 3D citadel toggle',()=>{

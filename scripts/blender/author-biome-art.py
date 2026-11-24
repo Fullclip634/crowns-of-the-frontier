@@ -9,6 +9,14 @@ ambient-occlusion + biome top-cap vertex colors:
       (towering multi-spire jagged mountain crags anchoring natural passes & valley walls)
   - bush:meadow, bush:arid, bush:snow
       (sculpted multi-lobed medieval woodland shrub & hedgerow clusters)
+  - ruin:meadow, ruin:arid, ruin:snow, ruin:volcanic
+      (crumbling weathered medieval stone archways & broken watchtower masonry with mossy/capped crevices)
+  - waystone:meadow, waystone:arid, waystone:snow, waystone:volcanic
+      (carved medieval roadside mile-markers & ancient border standing stones)
+  - fallenlog:meadow, fallenlog:snow
+      (moss-covered fallen ancient woodland timber trunks with broken roots & knots)
+  - spire:meadow, spire:arid, spire:snow, spire:volcanic
+      (weathered standing dolmens, desert sandstone hoodoos, alpine crags & dark basalt spires)
   - tree:volcanic:{0..3}:{near,far}                 (existing charred volcanic snags)
 """
 import argparse
@@ -19,7 +27,7 @@ import random
 import sys
 import bpy
 import bmesh
-from mathutils import Matrix, Vector
+from mathutils import Euler, Matrix, Vector
 
 
 def clear_scene():
@@ -377,6 +385,235 @@ def build_bush_mesh(name, style, seed, mat):
     return obj
 
 
+def add_weathered_block(bm, center, sx, sy, sz, rot_x=0.0, rot_y=0.0, rot_z=0.0, chip=0.045, seed=0):
+    """Creates a strictly closed 2-manifold chamfered/weathered stone masonry block."""
+    ret = bmesh.ops.create_cube(bm, size=1.0)
+    verts = ret["verts"]
+    sub = bmesh.ops.subdivide_edges(bm, edges=list({e for v in verts for e in v.link_edges}), cuts=1, use_grid_fill=True)
+    block_verts = {v for v in verts if v.is_valid}
+    for g in sub["geom"]:
+        if isinstance(g, bmesh.types.BMVert) and g.is_valid:
+            block_verts.add(g)
+    rot = Euler((rot_x, rot_y, rot_z), "XYZ").to_matrix()
+    for v in block_verts:
+        p = v.co.copy()
+        # Subtle medieval chisel bevel + weathered edge chipping
+        edge_pull = 1.0 - 0.06 * (abs(p.x) * abs(p.y) + abs(p.y) * abs(p.z) + abs(p.x) * abs(p.z))
+        p.x *= sx * edge_pull
+        p.y *= sy * edge_pull
+        p.z *= sz * edge_pull
+        n1 = math.sin(p.x * 13.7 + p.y * 19.3 + p.z * 11.1 + seed)
+        n2 = math.cos(p.x * 17.1 - p.y * 12.9 + p.z * 23.7 + seed * 1.4)
+        p.x += n1 * chip
+        p.y += n2 * chip
+        p.z += (n1 - n2) * chip * 0.55
+        v.co = (rot @ p) + center
+
+
+def build_ruin_mesh(name, style, seed, mat):
+    """Builds a grounded, realistic crumbling medieval stone archway & broken masonry ruin."""
+    bm = bmesh.new()
+    # Grounded foundation plinth extending below z=0 so it never floats on slopes
+    add_weathered_block(bm, Vector((0.0, 0.0, -0.06)), 3.25, 1.38, 0.56, chip=0.05, seed=seed + 1)
+    add_weathered_block(bm, Vector((-0.96, 0.02, 0.24)), 1.02, 1.04, 0.34, rot_z=0.04, chip=0.04, seed=seed + 2)
+    add_weathered_block(bm, Vector((0.98, -0.03, 0.22)), 0.98, 1.00, 0.32, rot_z=-0.05, chip=0.04, seed=seed + 3)
+
+    # Tall left ashlar masonry pier (weathered stacked courses)
+    add_weathered_block(bm, Vector((-0.98, 0.0, 0.72)), 0.82, 0.80, 0.66, rot_z=0.02, chip=0.045, seed=seed + 5)
+    add_weathered_block(bm, Vector((-0.96, -0.02, 1.34)), 0.78, 0.76, 0.64, rot_z=-0.03, chip=0.045, seed=seed + 7)
+    add_weathered_block(bm, Vector((-0.93, 0.01, 1.94)), 0.74, 0.72, 0.58, rot_y=0.04, chip=0.05, seed=seed + 11)
+    # Moulded stone impost cap + partial broken Gothic arch voussoirs curving rightward
+    add_weathered_block(bm, Vector((-0.90, 0.0, 2.28)), 0.86, 0.80, 0.22, rot_y=0.05, chip=0.035, seed=seed + 13)
+    add_weathered_block(bm, Vector((-0.56, 0.0, 2.58)), 0.66, 0.64, 0.44, rot_y=0.38, chip=0.045, seed=seed + 17)
+    add_weathered_block(bm, Vector((-0.08, -0.02, 2.74)), 0.62, 0.60, 0.42, rot_y=0.14, chip=0.055, seed=seed + 19)
+    # Flanking broken low curtain wall wing extending left
+    add_weathered_block(bm, Vector((-1.62, 0.06, 0.56)), 0.72, 0.62, 0.88, rot_z=0.12, chip=0.05, seed=seed + 23)
+    add_weathered_block(bm, Vector((-1.68, 0.08, 1.12)), 0.56, 0.54, 0.44, rot_z=0.16, rot_y=-0.12, chip=0.055, seed=seed + 29)
+
+    # Shorter broken right pier (collapsed halfway up)
+    add_weathered_block(bm, Vector((0.98, -0.02, 0.68)), 0.80, 0.78, 0.64, rot_z=-0.04, chip=0.045, seed=seed + 31)
+    add_weathered_block(bm, Vector((0.95, 0.01, 1.24)), 0.74, 0.72, 0.54, rot_y=-0.08, rot_z=-0.05, chip=0.05, seed=seed + 37)
+    add_weathered_block(bm, Vector((1.02, -0.05, 1.62)), 0.52, 0.54, 0.36, rot_y=-0.22, rot_x=0.10, chip=0.05, seed=seed + 41)
+
+    # Fallen dressed masonry rubble blocks resting naturally around the breach
+    add_weathered_block(bm, Vector((0.36, 0.52, 0.16)), 0.58, 0.44, 0.36, rot_x=0.18, rot_y=-0.28, rot_z=0.52, chip=0.04, seed=seed + 43)
+    add_weathered_block(bm, Vector((0.72, -0.66, 0.14)), 0.52, 0.48, 0.32, rot_x=-0.16, rot_y=0.22, rot_z=-0.74, chip=0.04, seed=seed + 47)
+    add_weathered_block(bm, Vector((-0.34, -0.62, 0.12)), 0.46, 0.40, 0.28, rot_x=0.24, rot_y=0.15, rot_z=0.35, chip=0.035, seed=seed + 53)
+
+    def ruin_vc(co, n):
+        h = max(0.0, min(1.0, (co.z + 0.15) / 2.95))
+        ao = 0.52 + 0.48 * (h * 0.58 + max(0.0, n.z) * 0.42)
+        course = 0.88 + 0.14 * math.sin(co.z * 11.5 + co.x * 2.4)
+        top_ledge = max(0.0, min(1.0, (n.z - 0.55) / 0.35))
+        base_damp = max(0.0, min(1.0, (0.34 - h) * 2.8))
+        if style == "arid":
+            stone = (0.94 * ao * course, 0.79 * ao * course, 0.59 * ao * course)
+            dust = (0.98 * ao, 0.87 * ao, 0.66 * ao)
+            m = max(top_ledge * 0.45, base_damp * 0.50)
+            return tuple(stone[i] * (1.0 - m) + dust[i] * m for i in range(3))
+        if style == "snow":
+            stone = (0.70 * ao * course, 0.74 * ao * course, 0.80 * ao * course)
+            snow = (0.97 * ao, 0.99 * ao, 1.00 * ao)
+            m = top_ledge * 0.85
+            return tuple(stone[i] * (1.0 - m) + snow[i] * m for i in range(3))
+        if style == "volcanic":
+            stone = (0.44 * ao * course, 0.41 * ao * course, 0.40 * ao * course)
+            ash = (0.56 * ao, 0.50 * ao, 0.46 * ao)
+            m = max(top_ledge * 0.35, base_damp * 0.40)
+            return tuple(stone[i] * (1.0 - m) + ash[i] * m for i in range(3))
+        # Weathered medieval limestone/granite with rich organic moss on base & broken ledges
+        stone = (0.82 * ao * course, 0.80 * ao * course, 0.74 * ao * course)
+        moss = (0.38 * ao, 0.62 * ao, 0.30 * ao)
+        m = max(top_ledge * 0.62, base_damp * 0.58 * max(0.0, n.z * 0.6 + 0.4))
+        return tuple(stone[i] * (1.0 - m) + moss[i] * m for i in range(3))
+
+    mesh = finalize_mesh(bm, name, mat, ruin_vc, uv_scale=0.32)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["assetKey"] = name
+    obj["assetMaterial"] = "rock"
+    return obj
+
+
+def build_waystone_mesh(name, style, seed, mat):
+    """Builds a medieval roadside stone mile-marker / ancient carved frontier waystone."""
+    bm = bmesh.new()
+    # Grounded stepped base plinth (extends down to z=-0.30)
+    add_weathered_block(bm, Vector((0.0, 0.0, -0.04)), 1.08, 1.04, 0.52, rot_z=0.10, chip=0.035, seed=seed + 1)
+    add_weathered_block(bm, Vector((0.0, 0.0, 0.30)), 0.82, 0.78, 0.24, rot_z=0.04, chip=0.025, seed=seed + 2)
+    # Tapered carved standing obelisk/mile-marker shaft
+    add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.36)), rx=0.33, ry=0.25, height=1.56, rings=7, sides=8, seed=seed + 5, flat_top=False, taper_top=0.58)
+    # Moulded stone crown cap slightly tilted with age
+    add_weathered_block(bm, Vector((0.0, 0.0, 1.48)), 0.54, 0.44, 0.16, rot_x=0.04, rot_y=-0.05, chip=0.02, seed=seed + 9)
+    # Leaning cobble boulders anchoring the foot into the road verge
+    add_stratified_rock_block(bm, Vector((0.46, 0.24, -0.05)), rx=0.32, ry=0.28, height=0.46, rings=4, sides=7, seed=seed + 13, flat_top=False, taper_top=0.48)
+    add_stratified_rock_block(bm, Vector((-0.44, -0.22, -0.06)), rx=0.26, ry=0.24, height=0.36, rings=4, sides=7, seed=seed + 17, flat_top=False, taper_top=0.50)
+
+    def ws_vc(co, n):
+        h = max(0.0, min(1.0, (co.z + 0.15) / 2.15))
+        ao = 0.54 + 0.46 * (h * 0.62 + max(0.0, n.z) * 0.38)
+        grain = 0.90 + 0.12 * math.sin(co.z * 14.0 + co.x * 5.0)
+        cap = max(0.0, min(1.0, (n.z - 0.55) / 0.35))
+        base = max(0.0, min(1.0, (0.30 - h) * 3.0))
+        if style == "arid":
+            return (0.94 * ao * grain, 0.80 * ao * grain, 0.58 * ao * grain)
+        if style == "snow":
+            stone = (0.72 * ao * grain, 0.77 * ao * grain, 0.84 * ao * grain)
+            snow = (0.97 * ao, 0.99 * ao, 1.00 * ao)
+            m = cap * 0.82
+            return tuple(stone[i] * (1.0 - m) + snow[i] * m for i in range(3))
+        if style == "volcanic":
+            return (0.45 * ao * grain, 0.42 * ao * grain, 0.41 * ao * grain)
+        stone = (0.83 * ao * grain, 0.81 * ao * grain, 0.75 * ao * grain)
+        moss = (0.38 * ao, 0.60 * ao, 0.29 * ao)
+        m = max(base * 0.62, cap * 0.42)
+        return tuple(stone[i] * (1.0 - m) + moss[i] * m for i in range(3))
+
+    mesh = finalize_mesh(bm, name, mat, ws_vc, uv_scale=0.40)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["assetKey"] = name
+    obj["assetMaterial"] = "rock"
+    return obj
+
+
+def build_fallen_log_mesh(name, style, seed, mat):
+    """Builds a realistic mossy fallen ancient woodland trunk with broken roots & stubs."""
+    bm = bmesh.new()
+    # Main slightly arched timber trunk resting naturally on the forest floor
+    trunk_pts = [
+        Vector((-1.75, -0.08, 0.16)),
+        Vector((-0.95, 0.04, 0.24)),
+        Vector((0.0, 0.06, 0.22)),
+        Vector((0.92, -0.03, 0.18)),
+        Vector((1.72, -0.10, 0.10)),
+    ]
+    trunk_rads = [0.36, 0.30, 0.27, 0.23, 0.16]
+    add_closed_tapered_limb(bm, trunk_pts, trunk_rads, sides=9)
+
+    # Flared upturned roots at the base end
+    add_closed_tapered_limb(bm, [Vector((-1.62, -0.06, 0.18)), Vector((-1.96, 0.36, 0.36)), Vector((-2.14, 0.56, 0.24))], [0.16, 0.11, 0.05], sides=6)
+    add_closed_tapered_limb(bm, [Vector((-1.64, -0.08, 0.14)), Vector((-2.02, -0.34, 0.06)), Vector((-2.18, -0.52, -0.12))], [0.17, 0.11, 0.05], sides=6)
+    # Two broken gnarled side branch stubs
+    add_closed_tapered_limb(bm, [Vector((-0.25, 0.06, 0.26)), Vector((-0.04, 0.44, 0.52)), Vector((0.14, 0.62, 0.62))], [0.13, 0.09, 0.04], sides=6)
+    add_closed_tapered_limb(bm, [Vector((0.68, -0.02, 0.20)), Vector((0.96, -0.36, 0.38))], [0.11, 0.05], sides=5)
+
+    def log_vc(co, n):
+        up = max(0.0, min(1.0, n.z))
+        h = max(0.0, min(1.0, (co.z + 0.10) / 0.72))
+        ao = 0.42 + 0.58 * (h * 0.55 + up * 0.45)
+        bark_grain = 0.84 + 0.20 * math.sin(co.x * 5.2 + co.y * 19.0 + seed)
+        bark = (0.36 * ao * bark_grain, 0.27 * ao * bark_grain, 0.19 * ao * bark_grain)
+        top_cover = max(0.0, min(1.0, (up - 0.48) / 0.38)) * (0.65 + 0.35 * math.sin(co.x * 2.8 + seed))
+        if style == "snow":
+            snow = (0.94 * ao, 0.97 * ao, 1.00 * ao)
+            return tuple(bark[i] * (1.0 - top_cover * 0.85) + snow[i] * (top_cover * 0.85) for i in range(3))
+        moss = (0.28 * ao, 0.50 * ao, 0.20 * ao)
+        return tuple(bark[i] * (1.0 - top_cover * 0.72) + moss[i] * (top_cover * 0.72) for i in range(3))
+
+    mesh = finalize_mesh(bm, name, mat, log_vc, uv_scale=0.45)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["assetKey"] = name
+    obj["assetMaterial"] = "bush"
+    return obj
+
+
+def build_spire_mesh(name, style, seed, mat):
+    """Builds a biome-specific natural stone landmark (volcanic basalt columns, desert hoodoo, alpine crag, or ancient dolmen)."""
+    bm = bmesh.new()
+    if style == "volcanic":
+        # Clustered jagged hexagonal obsidian/basalt volcanic spires
+        add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=0.66, ry=0.62, height=3.15, rings=7, sides=6, seed=seed + 1, flat_top=False, taper_top=0.34)
+        add_stratified_rock_block(bm, Vector((-0.68, 0.24, 0.0)), rx=0.48, ry=0.46, height=2.15, rings=6, sides=6, seed=seed + 5, flat_top=False, taper_top=0.42)
+        add_stratified_rock_block(bm, Vector((0.64, -0.26, 0.0)), rx=0.46, ry=0.44, height=1.75, rings=6, sides=6, seed=seed + 9, flat_top=False, taper_top=0.46)
+        add_stratified_rock_block(bm, Vector((0.12, 0.68, 0.0)), rx=0.42, ry=0.38, height=1.22, rings=5, sides=6, seed=seed + 13, flat_top=True, taper_top=0.68)
+    elif style == "arid":
+        # Sun-carved wind-layered sandstone desert hoodoo pillar + flanking talus
+        add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=0.78, ry=0.68, height=2.75, rings=8, sides=10, seed=seed + 1, flat_top=True, taper_top=0.84)
+        add_stratified_rock_block(bm, Vector((-0.72, 0.16, 0.0)), rx=0.52, ry=0.48, height=1.35, rings=6, sides=8, seed=seed + 7, flat_top=True, taper_top=0.72)
+        add_stratified_rock_block(bm, Vector((0.68, -0.28, 0.0)), rx=0.44, ry=0.40, height=0.92, rings=5, sides=8, seed=seed + 11, flat_top=False, taper_top=0.56)
+    elif style == "snow":
+        # Jagged frost-sheathed alpine granite crag monolith
+        add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=0.74, ry=0.64, height=2.95, rings=7, sides=9, seed=seed + 1, flat_top=False, taper_top=0.28)
+        add_stratified_rock_block(bm, Vector((-0.66, -0.22, 0.0)), rx=0.54, ry=0.48, height=1.65, rings=6, sides=8, seed=seed + 5, flat_top=False, taper_top=0.40)
+        add_stratified_rock_block(bm, Vector((0.58, 0.34, 0.0)), rx=0.46, ry=0.42, height=1.25, rings=5, sides=8, seed=seed + 9, flat_top=False, taper_top=0.48)
+    else:
+        # Ancient weathered mossy Celtic/medieval standing stones & capstone dolmen cluster
+        add_stratified_rock_block(bm, Vector((-0.56, 0.04, 0.0)), rx=0.40, ry=0.34, height=1.72, rings=6, sides=8, seed=seed + 1, flat_top=True, taper_top=0.76)
+        add_stratified_rock_block(bm, Vector((0.58, -0.06, 0.0)), rx=0.38, ry=0.34, height=1.58, rings=6, sides=8, seed=seed + 5, flat_top=True, taper_top=0.74)
+        add_weathered_block(bm, Vector((0.02, 0.0, 1.84)), 1.92, 0.96, 0.42, rot_x=0.06, rot_y=-0.08, rot_z=0.05, chip=0.065, seed=seed + 9)
+        add_stratified_rock_block(bm, Vector((0.18, 0.72, -0.05)), rx=0.38, ry=0.32, height=0.54, rings=4, sides=7, seed=seed + 13, flat_top=False, taper_top=0.52)
+
+    def spire_vc(co, n):
+        h = max(0.0, min(1.0, (co.z + 0.2) / 3.2))
+        ao = 0.50 + 0.50 * (h * 0.65 + max(0.0, n.z) * 0.35)
+        strata = 0.86 + 0.16 * math.sin(co.z * 8.4 + co.x * 1.9)
+        top_cap = max(0.0, min(1.0, (n.z - 0.50) / 0.34))
+        if style == "volcanic":
+            # Dark charcoal basalt with faint warm scorched mineral veining near the lower crevices
+            heat = max(0.0, min(1.0, (0.26 - h) * 3.5)) * (1.0 - max(0.0, n.z))
+            return (
+                0.38 * ao * strata + 0.42 * heat,
+                0.36 * ao * strata + 0.14 * heat,
+                0.37 * ao * strata + 0.04 * heat,
+            )
+        if style == "arid":
+            return (0.96 * ao * strata, 0.78 * ao * strata, 0.55 * ao * strata)
+        if style == "snow":
+            rock = (0.68 * ao * strata, 0.75 * ao * strata, 0.84 * ao * strata)
+            snow = (0.97 * ao, 0.99 * ao, 1.00 * ao)
+            m = top_cap * 0.88
+            return tuple(rock[i] * (1.0 - m) + snow[i] * m for i in range(3))
+        rock = (0.80 * ao * strata, 0.80 * ao * strata, 0.75 * ao * strata)
+        moss = (0.40 * ao, 0.66 * ao, 0.30 * ao)
+        m = max(top_cap * 0.68, max(0.0, (0.30 - h) * 2.5) * 0.45)
+        return tuple(rock[i] * (1.0 - m) + moss[i] * m for i in range(3))
+
+    mesh = finalize_mesh(bm, name, mat, spire_vc, uv_scale=0.26)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["assetKey"] = name
+    obj["assetMaterial"] = "rock"
+    return obj
+
+
 def add_closed_tapered_limb(bm, points, radii, sides):
     """Build a strictly closed 2-manifold gnarled branch tube along 3D points."""
     rings = []
@@ -536,6 +773,30 @@ def main():
     for style, seed in [("meadow", 611), ("arid", 622), ("snow", 633)]:
         key = f"bush:{style}"
         obj = build_bush_mesh(key, style, seed, bush_mat)
+        col.objects.link(obj)
+        summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
+
+    for style, seed in [("meadow", 711), ("arid", 722), ("snow", 733), ("volcanic", 744)]:
+        key = f"ruin:{style}"
+        obj = build_ruin_mesh(key, style, seed, rock_mat)
+        col.objects.link(obj)
+        summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
+
+    for style, seed in [("meadow", 811), ("arid", 822), ("snow", 833), ("volcanic", 844)]:
+        key = f"waystone:{style}"
+        obj = build_waystone_mesh(key, style, seed, rock_mat)
+        col.objects.link(obj)
+        summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
+
+    for style, seed in [("meadow", 911), ("snow", 922)]:
+        key = f"fallenlog:{style}"
+        obj = build_fallen_log_mesh(key, style, seed, bush_mat)
+        col.objects.link(obj)
+        summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
+
+    for style, seed in [("meadow", 1011), ("arid", 1022), ("snow", 1033), ("volcanic", 1044)]:
+        key = f"spire:{style}"
+        obj = build_spire_mesh(key, style, seed, rock_mat)
         col.objects.link(obj)
         summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
 

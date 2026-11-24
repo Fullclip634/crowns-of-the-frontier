@@ -2,10 +2,10 @@ import {difficultyLabel} from './ui-format.js';
 import {uiIcon} from './ui-icons.js';
 import {AGES,MAPS,FACTIONS,DIFFICULTIES} from './data.js';
 import {AI_HEALTH_LEVELS,BATTLE_SIZES,POPULATION_LIMITS,VICTORY_RULES,PLAYER_COLORS,landBattleSpawns,spawnContext,normalizeBattle} from './custom-battle.js';
-import {channelAt,waterChannels} from './map-water.js';
+import {channelAt} from './map-water.js';
 import {AI_PACES} from './allied-ai.js';
 import {AI_PERSONALITIES} from './ai-personalities.js';
-import {terrainBiome,isVolcanicBiome} from './terrain-biomes.js';
+import {drawBattlePreviewCanvas} from './map-preview.js';
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const options=(entries,current)=>entries.map(([value,label])=>`<option value="${value}" ${String(current)===String(value)?'selected':''}>${esc(label)}</option>`).join('');
 const color=slotNumber=>'#'+PLAYER_COLORS[slotNumber-1].toString(16).padStart(6,'0');
@@ -27,63 +27,8 @@ export function readBattleSetup(root=document){
 export function updateBattlePreview(root=document){
   const draft=readBattleSetup(root),canvas=root.querySelector('#battle-preview'),ctx=canvas.getContext('2d'),size=canvas.width;
   root.querySelectorAll('.battle-slot').forEach((row,i)=>{const active=draft.slots[i].enabled;row.classList.toggle('closed',!active);row.classList.toggle('player-slot',draft.playerSlot===i+1);row.querySelectorAll('input,select').forEach(input=>{if(!input.id.includes('-type-'))input.disabled=!active||(input.id.includes('-difficulty-')||input.id.includes('-ai-health-')||input.id.includes('-personality-'))&&draft.slots[i].controller==='human';});});
-  ctx.fillStyle=draft.map==='winter'?'#b7c4b2':terrainBiome(draft.map).map;ctx.fillRect(0,0,size,size);
-  const channels=waterChannels(draft.map);
-  if(channels.length){
-    const previewWorldSize=BATTLE_SIZES[draft.mapSize]?.size||480,previewScale=size/previewWorldSize;
-    ctx.strokeStyle=isVolcanicBiome(draft.map)?'#8a6a54':'#70a9b0';
-    for(const channel of channels){
-      ctx.lineWidth=Math.max(4,channel.width*2*previewScale);
-      ctx.beginPath();
-      for(let y=0;y<=size;y+=4){
-        const z=(y/size-.5)*previewWorldSize;
-        const x=((channel.center+Math.sin(z*channel.frequency)*channel.bend)/previewWorldSize+.5)*size;
-        if(!y)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-    }
-  }
-  // Cartographic geography hints for tactical & campaign-inspired battlefields
-  if(['ironpass','sunderedpass','ironring','emberroad','threecrowns','blackwood','timbervale','oakhold','frostvale','bastion'].includes(draft.map)){
-    ctx.save();
-    ctx.lineCap='round';
-    const ridgeCol=isVolcanicBiome(draft.map)?'rgba(28,23,21,0.72)':draft.map==='frostvale'?'rgba(235,244,248,0.68)':'rgba(54,58,50,0.58)';
-    const forestCol='rgba(26,56,28,0.48)';
-    if(draft.map==='sunderedpass'){
-      ctx.strokeStyle=ridgeCol;ctx.lineWidth=10;
-      for(const [a,b] of [[0.03,0.18],[0.30,0.44],[0.56,0.70],[0.82,0.97]]){
-        ctx.beginPath();ctx.moveTo(size*.5,size*a);ctx.lineTo(size*.5,size*b);ctx.stroke();
-      }
-    }else if(draft.map==='ironring'){
-      ctx.strokeStyle=ridgeCol;ctx.lineWidth=9;
-      for(const a of [-Math.PI*.75,-Math.PI*.25,Math.PI*.25,Math.PI*.75]){
-        ctx.beginPath();
-        ctx.moveTo(size*.5+Math.cos(a)*size*.16,size*.5+Math.sin(a)*size*.16);
-        ctx.lineTo(size*.5+Math.cos(a)*size*.40,size*.5+Math.sin(a)*size*.40);
-        ctx.stroke();
-      }
-    }else if(draft.map==='ironpass'||draft.map==='emberroad'){
-      ctx.strokeStyle=ridgeCol;ctx.lineWidth=10;
-      for(const [t0,t1] of [[0.04,0.22],[0.32,0.44],[0.56,0.68],[0.78,0.96]]){
-        ctx.beginPath();ctx.moveTo(size*t0,size*t0);ctx.lineTo(size*t1,size*t1);ctx.stroke();
-      }
-    }else if(draft.map==='threecrowns'){
-      ctx.strokeStyle=ridgeCol;ctx.lineWidth=8;
-      ctx.beginPath();ctx.moveTo(size*.45,size*.06);ctx.lineTo(size*.55,size*.26);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(size*.45,size*.74);ctx.lineTo(size*.55,size*.94);ctx.stroke();
-    }else if(draft.map==='oakhold'||draft.map==='timbervale'||draft.map==='blackwood'){
-      ctx.strokeStyle=forestCol;ctx.lineWidth=14;
-      for(const [t0,t1] of [[0.05,0.24],[0.36,0.45],[0.55,0.64],[0.76,0.95]]){
-        ctx.beginPath();ctx.moveTo(size*t0,size*t0);ctx.lineTo(size*t1,size*t1);ctx.stroke();
-      }
-      if(draft.map==='oakhold'){
-        for(const [t0,t1] of [[0.08,0.28],[0.72,0.92]]){
-          ctx.beginPath();ctx.moveTo(size*t0,size*(1-t0));ctx.lineTo(size*t1,size*(1-t1));ctx.stroke();
-        }
-      }
-    }
-    ctx.restore();
-  }
+  const previewWorldSize=BATTLE_SIZES[draft.mapSize]?.size||480;
+  drawBattlePreviewCanvas(ctx,{map:draft.map,worldSize:previewWorldSize,seed:draft.seed,size});
   const warning=root.querySelector('.custom-validation'),launch=root.querySelector('[data-action=custom-start]'),host=root.querySelector('[data-action=custom-host]'),networkNote=root.querySelector('#custom-network-note');
   launch.innerHTML=`${draft.spectator?'Watch AI battle':'Play against AI'} ${uiIcon(draft.spectator?'eye':'play')}`;
   host.disabled=false;host.textContent=draft.spectator?'Host as spectator':'Host multiplayer';

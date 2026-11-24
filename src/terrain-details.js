@@ -1,12 +1,12 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {seededRandom} from './data.js';
-import {roadDistance} from './terrain-layout.js';
+import {roadDistance,terrainRoadPaths} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
-import {biomeCliffGeometry,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from './biome-art.js';
+import {biomeCliffGeometry,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry,biomeRuinGeometry,biomeWaystoneGeometry,biomeFallenLogGeometry,biomeSpireGeometry} from './biome-art.js';
 
 export function pebbleGeometry(detail=1){
   const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
@@ -212,11 +212,176 @@ export class TerrainDetails{
       }else{bushGeo.dispose();this.bushMesh=null;}
     }else{if(bushGeo)bushGeo.dispose();this.bushMesh=null;}
 
+    // Blender 4.5 LTS Environmental Storytelling Landmarks (Natural Medieval Ruins, Roadside Waystones, Mossy Fallen Logs & Biome Spires)
+    // Purely visual scenery: sparse, climate-matched, grounded on slopes, fog-shaded & auto-cleared beneath player foundations.
+    const lrng=seededRandom(land.seed+9137);
+    const sizeFactor=Math.max(1,Math.min(1.65,land.worldSize/180));
+    const simEntities=view.sim?.entities||[];
+    const landmarksPlaced=[];
+    const isClearLandmarkSite=(x,z,minRoad,minTown,minSelf,selfList,maxSlope=.36,resPad=1.65)=>{
+      if(Math.abs(x)>mapEdge-3||Math.abs(z)>mapEdge-3)return false;
+      if(view.sim?.isWater?.(x,z)||bridgeFootprint(land.map,x,z,4.5))return false;
+      if(townDistance(x,z)<minTown)return false;
+      if(minRoad>0&&roadDistance(x,z,land,minRoad)<minRoad)return false;
+      const y=land.surfaceHeightAt(x,z);
+      if(y<.34)return false;
+      const dx=(land.surfaceHeightAt(x+1.8,z)-land.surfaceHeightAt(x-1.8,z))/3.6;
+      const dz=(land.surfaceHeightAt(x,z+1.8)-land.surfaceHeightAt(x,z-1.8))/3.6;
+      if(Math.hypot(dx,dz)>maxSlope)return false;
+      for(const b of barriers)if(Math.hypot(b.x-x,b.z-z)<(b.r||3.0)+1.8)return false;
+      for(const e of simEntities){
+        if(e.hp<=0)continue;
+        const pad=e.kind==='building'?e.r+3.0:e.kind==='resource'?e.r+resPad:e.kind==='shrine'?e.r+4.8:0;
+        if(pad>0&&Math.hypot(e.x-x,e.z-z)<pad)return false;
+      }
+      for(const prev of selfList)if(Math.hypot(prev.x-x,prev.z-z)<minSelf)return false;
+      for(const any of landmarksPlaced)if(Math.hypot(any.x-x,any.z-z)<5.0)return false;
+      return true;
+    };
+
+    const makeLandmarkMesh=(geo,name,entries,useRockMat=true,castShadow=!low)=>{
+      if(!geo)return null;
+      if(!entries.length){geo.dispose();return null;}
+      const lmat=useRockMat?(view.materials?.rock?.clone()||standardMaterial({roughness:.9})):standardMaterial({color:0xffffff,roughness:.93});
+      lmat.color.setHex(0xffffff);lmat.roughness=useRockMat?.90:.93;lmat.vertexColors=Boolean(geo.attributes?.color);
+      const mesh=new THREE.InstancedMesh(geo,lmat,entries.length);
+      mesh.name=name;mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=castShadow;mesh.receiveShadow=true;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      view.terrain.add(mesh);
+      this.fogMaterials.push(lmat);
+      return mesh;
+    };
+
+    // 1. Roadside Medieval Waystones (tucked organically along trade-road verges)
+    const waystoneGeo=biomeWaystoneGeometry(land.map);
+    this.waystoneEntries=[];
+    if(waystoneGeo){
+      const wsCap=Math.round((low?6:high?22:14)*sizeFactor);
+      const roads=terrainRoadPaths(land)||[];
+      let sideToggle=1;
+      for(const road of roads){
+        const pts=road.points||[];
+        let accum=12+lrng()*8;
+        for(let i=1;i<pts.length&&this.waystoneEntries.length<wsCap;i++){
+          const a=pts[i-1],b=pts[i],segLen=Math.hypot(b.x-a.x,b.z-a.z);
+          if(segLen<.1)continue;
+          accum-=segLen;
+          if(accum>0)continue;
+          accum=20+lrng()*12;
+          const nx=-(b.z-a.z)/segLen,nz=(b.x-a.x)/segLen;
+          const offset=sideToggle*(2.9+lrng()*1.1);
+          sideToggle*=-1;
+          const wx=(a.x+b.x)*.5+nx*offset,wz=(a.z+b.z)*.5+nz*offset;
+          if(!isClearLandmarkSite(wx,wz,2.1,18,18,this.waystoneEntries,.32))continue;
+          const roadAng=Math.atan2(-(b.z-a.z),b.x-a.x);
+          const sc=1.02+lrng()*.26;
+          const entry={x:wx,y:land.surfaceHeightAt(wx,wz)-.10,z:wz,angle:roadAng+Math.PI*.5+(lrng()-.5)*.35,sx:sc,sy:sc*(.94+lrng()*.18),sz:sc,shade:.88+lrng()*.18};
+          this.waystoneEntries.push(entry);landmarksPlaced.push(entry);
+        }
+      }
+      // Subtle border & pass trail markers if a map has short/few roads
+      for(let tries=0;tries<70&&this.waystoneEntries.length<Math.max(5,Math.floor(wsCap*.55));tries++){
+        const wx=(lrng()-.5)*(land.worldSize-24),wz=(lrng()-.5)*(land.worldSize-24);
+        if(!isClearLandmarkSite(wx,wz,3.0,22,22,this.waystoneEntries,.28))continue;
+        const sc=1.00+lrng()*.26;
+        const entry={x:wx,y:land.surfaceHeightAt(wx,wz)-.10,z:wz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.94+lrng()*.18),sz:sc,shade:.88+lrng()*.18};
+        this.waystoneEntries.push(entry);landmarksPlaced.push(entry);
+      }
+    }
+    this.waystoneMesh=makeLandmarkMesh(waystoneGeo,'Blender medieval waystones',this.waystoneEntries,true,!low);
+
+    // 2. Crumbling Medieval Stone Archway Ruins (near shrines, mountain foothills & quiet overlooks)
+    const ruinGeo=biomeRuinGeometry(land.map);
+    this.ruinEntries=[];
+    if(ruinGeo){
+      const ruinCap=Math.round((low?5:high?16:10)*sizeFactor);
+      const shrines=simEntities.filter(e=>e.hp>0&&e.kind==='shrine');
+      for(const sh of shrines){
+        if(this.ruinEntries.length>=ruinCap)break;
+        for(let k=0;k<8;k++){
+          const a=lrng()*Math.PI*2,d=8.5+lrng()*5.5;
+          const rx=sh.x+Math.cos(a)*d,rz=sh.z+Math.sin(a)*d;
+          if(!isClearLandmarkSite(rx,rz,4.0,24,26,this.ruinEntries,.28))continue;
+          const sc=1.05+lrng()*.24;
+          const entry={x:rx,y:land.surfaceHeightAt(rx,rz)-.14,z:rz,angle:a+Math.PI*.5+(lrng()-.5)*.45,sx:sc,sy:sc*(.94+lrng()*.16),sz:sc,shade:.86+lrng()*.18};
+          this.ruinEntries.push(entry);landmarksPlaced.push(entry);break;
+        }
+      }
+      if(barriers.length){
+        const bStep=Math.max(1,Math.floor(barriers.length/Math.max(1,ruinCap*2)));
+        for(let i=0;i<barriers.length&&this.ruinEntries.length<ruinCap;i+=bStep){
+          const b=barriers[i],a=lrng()*Math.PI*2,d=(b.r||3.0)+3.6+lrng()*3.8;
+          const rx=b.x+Math.cos(a)*d,rz=b.z+Math.sin(a)*d;
+          if(!isClearLandmarkSite(rx,rz,4.0,24,26,this.ruinEntries,.28))continue;
+          const sc=1.04+lrng()*.26;
+          const entry={x:rx,y:land.surfaceHeightAt(rx,rz)-.14,z:rz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.92+lrng()*.18),sz:sc,shade:.86+lrng()*.18};
+          this.ruinEntries.push(entry);landmarksPlaced.push(entry);
+        }
+      }
+      for(let tries=0;tries<160&&this.ruinEntries.length<ruinCap;tries++){
+        const rx=(lrng()-.5)*(land.worldSize-26),rz=(lrng()-.5)*(land.worldSize-26);
+        if(!isClearLandmarkSite(rx,rz,4.2,24,28,this.ruinEntries,.26))continue;
+        const sc=1.02+lrng()*.26;
+        const entry={x:rx,y:land.surfaceHeightAt(rx,rz)-.14,z:rz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.92+lrng()*.18),sz:sc,shade:.86+lrng()*.18};
+        this.ruinEntries.push(entry);landmarksPlaced.push(entry);
+      }
+    }
+    this.ruinMesh=makeLandmarkMesh(ruinGeo,'Blender medieval stone ruins',this.ruinEntries,true,!low);
+
+    // 3. Mossy Fallen Ancient Woodland Logs (tucked along forest edges & glade rims; skipped on arid/volcanic)
+    const logGeo=biomeFallenLogGeometry(land.map);
+    this.logEntries=[];
+    if(logGeo&&!view.settings.reduceFoliage){
+      const logCap=Math.round((low?10:high?34:22)*sizeFactor);
+      const woodTrees=simEntities.filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='wood');
+      const wStep=Math.max(1,Math.floor(woodTrees.length/Math.max(1,logCap*2)));
+      for(let i=0;i<woodTrees.length&&this.logEntries.length<logCap;i+=wStep){
+        const tr=woodTrees[i],a=lrng()*Math.PI*2,d=2.2+lrng()*2.2;
+        const lx=tr.x+Math.cos(a)*d,lz=tr.z+Math.sin(a)*d;
+        if(!isClearLandmarkSite(lx,lz,3.0,18,11,this.logEntries,.30,1.15))continue;
+        const sc=.94+lrng()*.36;
+        const entry={x:lx,y:land.surfaceHeightAt(lx,lz)-.06,z:lz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.90+lrng()*.22),sz:sc,shade:.86+lrng()*.20};
+        this.logEntries.push(entry);landmarksPlaced.push(entry);
+      }
+    }
+    this.logMesh=makeLandmarkMesh(logGeo,'Blender fallen woodland logs',this.logEntries,false,false);
+
+    // 4. Biome Geological Spires & Standing Stones (basalt spires, desert hoodoos, alpine crags, mossy dolmens)
+    const spireGeo=biomeSpireGeometry(land.map);
+    this.spireEntries=[];
+    if(spireGeo){
+      const spireRich=isVolcanicBiome(land.map)||isAridBiome(land.map)||isSnowBiome(land.map)||rocky;
+      const spireCap=Math.round((low?(spireRich?6:4):high?(spireRich?20:12):(spireRich?13:8))*sizeFactor);
+      if(barriers.length){
+        const sStep=Math.max(1,Math.floor(barriers.length/Math.max(1,spireCap*2)));
+        for(let i=0;i<barriers.length&&this.spireEntries.length<spireCap;i+=sStep){
+          const b=barriers[i],a=lrng()*Math.PI*2,d=(b.r||3.0)+2.8+lrng()*4.0;
+          const sx=b.x+Math.cos(a)*d,sz=b.z+Math.sin(a)*d;
+          if(!isClearLandmarkSite(sx,sz,3.8,24,20,this.spireEntries,.34))continue;
+          const sc=.98+lrng()*.36;
+          const entry={x:sx,y:land.surfaceHeightAt(sx,sz)-.16,z:sz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.92+lrng()*.28),sz:sc,shade:.88+lrng()*.18};
+          this.spireEntries.push(entry);landmarksPlaced.push(entry);
+        }
+      }
+      for(let tries=0;tries<140&&this.spireEntries.length<spireCap;tries++){
+        const sx=(lrng()-.5)*(land.worldSize-24),sz=(lrng()-.5)*(land.worldSize-24);
+        if(!isClearLandmarkSite(sx,sz,4.0,24,22,this.spireEntries,.32))continue;
+        const sc=.95+lrng()*.34;
+        const entry={x:sx,y:land.surfaceHeightAt(sx,sz)-.16,z:sz,angle:lrng()*Math.PI*2,sx:sc,sy:sc*(.90+lrng()*.26),sz:sc,shade:.88+lrng()*.18};
+        this.spireEntries.push(entry);landmarksPlaced.push(entry);
+      }
+    }
+    this.spireMesh=makeLandmarkMesh(spireGeo,'Blender biome geological spires',this.spireEntries,true,!low);
+
     this.visibleEntries=[];
     this.nextEntries=[];
     this.visibleCliffs=[];
     this.visibleMountains=[];
     this.visibleBushes=[];
+    this.visibleWaystones=[];
+    this.visibleRuins=[];
+    this.visibleLogs=[];
+    this.visibleSpires=[];
     this.update(true,true);
   }
 
@@ -228,6 +393,33 @@ export class TerrainDetails{
       if(!nearViewport(v,e.x,e.y,e.z,pad)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
       if(prevVisible[count]!==e){
         this.dummy.position.set(e.x,e.y-.2,e.z);
+        this.dummy.rotation.set(0,e.angle,0);
+        this.dummy.scale.set(e.sx,e.sy,e.sz);
+        this.dummy.updateMatrix();
+        mesh.setMatrixAt(count,this.dummy.matrix);
+        mesh.setColorAt(count,this.color.setHex(0xffffff).multiplyScalar(e.shade));
+        changed=true;
+      }
+      prevVisible[count++]=e;
+    }
+    if(count!==prevVisible.length){prevVisible.length=count;changed=true;}
+    mesh.count=count;
+    if(changed){
+      markInstancePrefix(mesh);
+      if(mesh.instanceColor&&count){mesh.instanceColor.clearUpdateRanges();mesh.instanceColor.addUpdateRange(0,count*3);mesh.instanceColor.needsUpdate=true;}
+    }
+    return count;
+  }
+
+  _updateLandmarkMesh(mesh,entries,prevVisible,menu,pad,sites,force){
+    if(!mesh)return 0;
+    const v=this.view;
+    let count=0,changed=force;
+    for(const e of entries){
+      if(!nearViewport(v,e.x,e.y,e.z,pad)||(!menu&&v.settings.fog!==false&&!v.sim.isExplored(e.x,e.z)))continue;
+      if(sites?.get(buildingSiteKey(e.x,e.z))?.some(b=>(b.x-e.x)**2+(b.z-e.z)**2<b.radiusSquared))continue;
+      if(prevVisible[count]!==e){
+        this.dummy.position.set(e.x,e.y,e.z);
         this.dummy.rotation.set(0,e.angle,0);
         this.dummy.scale.set(e.sx,e.sy,e.sz);
         this.dummy.updateMatrix();
@@ -307,16 +499,22 @@ export class TerrainDetails{
       }
     }
 
+    const waystoneCount=this._updateLandmarkMesh(this.waystoneMesh,this.waystoneEntries,this.visibleWaystones,menu,9,sites,force);
+    const ruinCount=this._updateLandmarkMesh(this.ruinMesh,this.ruinEntries,this.visibleRuins,menu,12,sites,force);
+    const logCount=this._updateLandmarkMesh(this.logMesh,this.logEntries,this.visibleLogs,menu,8,sites,force);
+    const spireCount=this._updateLandmarkMesh(this.spireMesh,this.spireEntries,this.visibleSpires,menu,11,sites,force);
+
     const count=this.mesh.count;
     v.terrainDetailDiagnostics={
       visible:count,
       cliffsVisible:cliffCount,
       mountainsVisible:mountainCount,
       bushesVisible:bushCount,
+      landmarksVisible:waystoneCount+ruinCount+logCount+spireCount,
       seeded:this.entries.length,
       capacity:this.mesh.instanceMatrix.count,
       triangles:count*this.mesh.geometry.attributes.position.count/3,
-      drawCalls:(count?1:0)+(cliffCount?1:0)+(mountainCount?1:0)+(bushCount?1:0),
+      drawCalls:(count?1:0)+(cliffCount?1:0)+(mountainCount?1:0)+(bushCount?1:0)+(waystoneCount?1:0)+(ruinCount?1:0)+(logCount?1:0)+(spireCount?1:0),
     };
   }
 }
