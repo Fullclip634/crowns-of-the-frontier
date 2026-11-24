@@ -1,4 +1,4 @@
-import {DIFFICULTIES,FACTIONS,MAPS,MISSIONS,MODES,RELEASE,TECHS,UNITS,formatTime} from './data.js';
+import {DIFFICULTIES,FACTIONS,MAPS,MISSIONS,MODES,TECHS,UNITS,formatTime} from './data.js';
 import {BATTLE_SIZES} from './custom-battle.js';
 import {WEATHER_NAMES} from './weather.js';
 import {LIGHTING_MODES} from './day-night.js';
@@ -47,7 +47,6 @@ export function landingMarkup(latestSave=null){
         <button data-action="tech-tree" aria-label="Open technology tree">${uiIcon('book-open')}<span>Tech tree</span></button>
         <button data-action="saves" aria-label="Saved kingdoms">${uiIcon('folder-open')}<span>Saves</span></button>
         <button data-action="settings" aria-label="Settings">${uiIcon('settings')}<span>Settings</span></button>
-        <span class="edition">${RELEASE.split(' - ').reverse().join(' / ').toUpperCase()}</span>
       </div>
     </header>
     <main class="landing-main hero-layout">

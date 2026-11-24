@@ -66,13 +66,6 @@
   clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);
 }
 .startup-crest .ui-icon{width:17px;height:17px}
-.startup-splash-edition{
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:2px;
-  color:rgba(222,226,204,.82);
-  text-shadow:0 1px 8px rgba(0,0,0,.78);
-}
 
 .startup-splash-dock{
   position:relative;
@@ -203,7 +196,6 @@
   .startup-splash-badge{font-size:9.5px;letter-spacing:2.4px;gap:7px}
   .startup-crest{width:26px;height:28px}
   .startup-crest .ui-icon{width:13px;height:13px}
-  .startup-splash-edition{font-size:8px}
   .startup-splash-dock{
     width:min(540px,calc(100vw - 40px - var(--safe-left,0px) - var(--safe-right,0px)));
     margin-bottom:calc(12px + var(--safe-bottom,0px));
@@ -221,7 +213,6 @@
 /* Phone Portrait */
 @media(max-width:600px) and (orientation:portrait){
   .startup-splash-art{background-position:56% 36%}
-  .startup-splash-edition{display:none}
   .startup-splash-title h1{font-size:40px}
   .startup-tip{font-size:10.5px;text-align:left}
 }

@@ -62,6 +62,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     const html=landingMarkup(null);
     assert.doesNotMatch(html,/data-action="toggle-menu-backdrop"/);
     assert.doesNotMatch(html,/Live 3D Citadel/i);
+    assert.doesNotMatch(html,/Fieldcraft/i);
     assert.match(html,/14 handcrafted chapters/);
   });
 
@@ -76,6 +77,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.match(splash,/role="progressbar"/);
     assert.match(splash,/Loading 3D models…/);
     assert.match(splash,/64%/);
+    assert.doesNotMatch(splash,/Fieldcraft/i);
     assert.match(splash,/id="startup-retry-btn"/);
     const mainJs=fs.readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
     assert.match(mainJs,/createStartupSplash/);

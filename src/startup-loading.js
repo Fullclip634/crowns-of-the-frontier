@@ -1,4 +1,3 @@
-import {RELEASE} from './data.js';
 import {uiIcon} from './ui-icons.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,7 +17,6 @@ export function startupSplashMarkup({
   status='Preparing your kingdom…',
   percent=0,
   tip=STARTUP_TIPS[0],
-  edition=RELEASE.split(' - ').reverse().join(' / ').toUpperCase(),
 }={}){
   const clamped=Math.max(0,Math.min(100,Math.round(Number(percent)||0)));
   return `<div id="startup-splash" class="startup-splash" role="status" aria-live="polite" aria-label="Loading Crowns of the Frontier">
@@ -26,7 +24,6 @@ export function startupSplashMarkup({
     <div class="startup-splash-vignette" aria-hidden="true"></div>
     <header class="startup-splash-top">
       <span class="startup-splash-badge"><span class="startup-crest">${uiIcon('castle')}</span><span>CROWNS OF THE FRONTIER</span></span>
-      <span class="startup-splash-edition">${esc(edition)}</span>
     </header>
     <div class="startup-splash-dock">
       <div class="startup-splash-title">
@@ -56,10 +53,10 @@ export function startupSplashMarkup({
  * Mounts and manages the full-screen medieval startup splash screen while
  * renderer, 3D GLB catalogues, and PBR surface textures load.
  */
-export function createStartupSplash(host=document.body,{edition}={}){
+export function createStartupSplash(host=document.body){
   const wrapper=document.createElement('div');
   let tipIndex=Math.floor(Math.random()*STARTUP_TIPS.length);
-  wrapper.innerHTML=startupSplashMarkup({tip:STARTUP_TIPS[tipIndex],edition});
+  wrapper.innerHTML=startupSplashMarkup({tip:STARTUP_TIPS[tipIndex]});
   const el=wrapper.firstElementChild;
   host.append(el);
 
