@@ -1,7 +1,7 @@
 import {WORLD} from './data.js';
 import {MAP_HALF,cameraMapBox} from './map-geometry.js';
 import {campaignObjective} from './campaigns.js';
-import {bridgeOuterHalfWidth,bridgeSpans} from './bridge-layout.js';
+import {bridgeOuterHalfWidth,bridgeSpans,spanZ,spanOuterHalfWidth} from './bridge-layout.js';
 import {terrainBiome,isSnowBiome,isVolcanicBiome,treePalette} from './terrain-biomes.js';
 import {minimapFilterStyle} from './tactical-ux.js';
 
@@ -13,10 +13,11 @@ function parseHex(hex){
 
 function paintBridges(ctx,map,coord,scale){
   for(const span of bridgeSpans(map)){
-    const x=coord(span.center-span.halfLength),z=coord(-bridgeOuterHalfWidth);
-    const width=span.halfLength*2*scale,height=bridgeOuterHalfWidth*2*scale;
-    ctx.fillStyle='#b8a47c';ctx.fillRect(x,z,width,height);
-    ctx.strokeStyle='#7a684b';ctx.lineWidth=1;
+    const cz=spanZ(span),halfW=spanOuterHalfWidth(span);
+    const x=coord(span.center-span.halfLength),z=coord(cz-halfW);
+    const width=span.halfLength*2*scale,height=halfW*2*scale;
+    ctx.fillStyle=span.style==='timber'?'#9c7448':'#b8a47c';ctx.fillRect(x,z,width,height);
+    ctx.strokeStyle=span.style==='timber'?'#5c4228':'#7a684b';ctx.lineWidth=1;
     ctx.strokeRect(x+.5,z+.5,Math.max(1,width-1),Math.max(1,height-1));
   }
 }

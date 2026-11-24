@@ -28,7 +28,8 @@ export function customOpening(sim,owner,profile){
 
 // A teammate's damage report shares the threatened base, not hidden enemy data.
 export function recordBaseAlarm(sim,target,attacker,damage){
-  if(sim.options.mode!=='custom'||target.owner<0||!attacker||!sim.hostile(target.owner,attacker.owner)||damage<=0)return;
+  const teamMatch=sim.options.mode==='custom'||(sim.players?.length>2);
+  if(!teamMatch||target.owner<0||!attacker||!sim.hostile(target.owner,attacker.owner)||damage<=0)return;
   if(target.kind!=='building'&&UNITS[target.type]?.role!=='worker')return;
   const sites=sim.owned(target.owner,'building').filter(b=>b.progress>=1&&!['wall','gate','farm'].includes(b.type));
   const perimeter=target.kind==='building'&&['wall','gate'].includes(target.type),radius=perimeter?48:24;
@@ -39,7 +40,8 @@ export function recordBaseAlarm(sim,target,attacker,damage){
 }
 
 export function alliedSupport(sim,owner,state,ready,visible,tc,ownThreats){
-  if(sim.options.mode!=='custom'||sim.players[owner].controller!=='ai')return new Set();
+  const teamMatch=sim.options.mode==='custom'||(sim.players?.length>2);
+  if(!teamMatch||sim.players[owner].controller!=='ai')return new Set();
   sim.teamAlarms??={};for(const [key,alarm] of Object.entries(sim.teamAlarms))if(sim.time-alarm.at>90||!sim.get(alarm.base)?.hp)delete sim.teamAlarms[key];
   const alertPoint=(base,alarm)=>Number.isFinite(alarm?.siteX)&&Number.isFinite(alarm?.siteZ)?{x:alarm.siteX,z:alarm.siteZ,r:1}:base;
   const dangers=(base,alarm)=>{const site=alertPoint(base,alarm);return visible.filter(e=>e.hp>0&&e.kind==='unit'&&UNITS[e.type]?.damage>0&&!UNITS[e.type].naval&&sim.hostile(owner,e.owner)&&(distance(e,site)<34||distance(e,base)<34));};

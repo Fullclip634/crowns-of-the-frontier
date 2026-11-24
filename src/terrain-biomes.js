@@ -32,6 +32,12 @@ const styles={
   threecrowns:{ground:['#558650','#7ba569','#3c6b41'],grassTint:0x92c48c,grass:[0x5a8c4b,0x7da761,0x467640],map:'#4d7d4d',plaza:0x99988d,cliff:0x7c8078,lush:true},
   emberroad:{ground:['#493f3c','#6b584e','#2a2625'],grassTint:0x887b6e,grass:[0x68594f,0x826f63,0x463d36],map:'#4a403c',plaza:0x5b534f,cliff:0x473f3b,ash:true},
   frostvale:{ground:['#c1d2da','#e4edf1','#8da9b5'],grassTint:0xd6e6ec,grass:[0xafc5cc,0xd0dfe3,0x8ba6ae],map:'#b1c6d0',plaza:0xb3c3ca,cliff:0x7e939e,snow:true},
+  // Epic Frontier maps — waterfalls, glacial gorges, forest ravines, tropical temple lagoon & Ironfall Pass.
+  waterfallgorge:{ground:['#538748','#7ea85f','#386b3a'],grassTint:0x95cc84,grass:[0x5a8e46,0x7fab5e,0x44753a],map:'#4c8044',plaza:0x9e9a8c,cliff:0x757b73,lush:true,waterfall:true},
+  frostfallsiege:{ground:['#c2d4de','#e7f0f4','#8aa6b5'],grassTint:0xdbeaf0,grass:[0xb2c8d0,0xd4e3e8,0x8aa5af],map:'#b4cad4',plaza:0xb4c4cc,cliff:0x768c98,snow:true,waterfall:true},
+  deepwoodravine:{ground:['#3f6a39','#648e4c','#284e2c'],grassTint:0x83b96c,grass:[0x48763c,0x6a934f,0x335a30],map:'#3b6434',plaza:0x8e8c7e,cliff:0x6b7166,dense:true,rocky:true},
+  templelagoon:{ground:['#4c8e50','#7eb565','#2f6c3d'],grassTint:0x84cc76,grass:[0x488a45,0x73b058,0x2f6938],map:'#41854b',plaza:0xbcb092,cliff:0x6e7b68,jungle:true,shore:true,waterfall:true},
+  ironfall:{ground:['#5e7e56','#87a272','#3f5e42'],grassTint:0x97be86,grass:[0x5d824f,0x819f6a,0x466640],map:'#56774f',plaza:0x98968a,cliff:0x6e736b,rocky:true,waterfall:true},
 };
 for(const style of Object.values(styles)){Object.freeze(style.ground);Object.freeze(style.grass);Object.freeze(style);}
 Object.freeze(styles);
@@ -40,6 +46,7 @@ export const LEGACY_MEADOW_MAPS=Object.freeze(['highlands','valley','rivers','de
 export const NEW_BIOME_MAPS=Object.freeze(['arid','tundra','volcanic','highland','woodland','riverland','archipelago']);
 export const CLASSIC_TACTICAL_MAPS=Object.freeze(['ironpass','blackwood','timbervale','bastion']);
 export const CAMPAIGN_BATTLEFIELD_MAPS=Object.freeze(['ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale']);
+export const EPIC_FRONTIER_MAPS=Object.freeze(['waterfallgorge','frostfallsiege','deepwoodravine','templelagoon','ironfall']);
 
 // Distinct elevation profiles. `cliffs` drives smooth mesas/terraces in the
 // shared relief function; `strength` scales the rolling shoulders.
@@ -68,6 +75,11 @@ export const BIOME_PROFILES=Object.freeze({
   threecrowns:Object.freeze({strength:2.2,cliffs:.55,wood:1.15,gold:1.25,stone:1.2,food:1.3}),
   emberroad:Object.freeze({strength:3.5,cliffs:1.7,wood:.4,gold:1.55,stone:1.8,food:.65}),
   frostvale:Object.freeze({strength:2.55,cliffs:.85,wood:1.45,gold:1.15,stone:1.3,food:.85}),
+  waterfallgorge:Object.freeze({strength:2.65,cliffs:1.1,wood:1.25,gold:1.25,stone:1.3,food:1.3}),
+  frostfallsiege:Object.freeze({strength:2.85,cliffs:1.25,wood:1.45,gold:1.2,stone:1.35,food:.9}),
+  deepwoodravine:Object.freeze({strength:2.6,cliffs:1.15,wood:1.95,gold:1.2,stone:1.25,food:1.2}),
+  templelagoon:Object.freeze({strength:1.95,cliffs:.95,wood:1.45,gold:1.35,stone:1.2,food:1.45}),
+  ironfall:Object.freeze({strength:3.1,cliffs:1.4,wood:1.3,gold:1.45,stone:1.5,food:1.25}),
 });
 
 export const TREE_PALETTES=Object.freeze({
@@ -95,6 +107,11 @@ export const TREE_PALETTES=Object.freeze({
   threecrowns:Object.freeze({leaf:0x496d3f,leafDark:0x2a4b30,trunk:0x60503b,snow:0xe3e9e5,minimap:'#244b32'}),
   emberroad:Object.freeze({leaf:0x4c473b,leafDark:0x292724,trunk:0x332b27,snow:0xd8dde0,minimap:'#2f2a25'}),
   frostvale:Object.freeze({leaf:0x587276,leafDark:0x2b444b,trunk:0x4d4948,snow:0xdfecf2,minimap:'#42636b'}),
+  waterfallgorge:Object.freeze({leaf:0x45743c,leafDark:0x254b2c,trunk:0x5e4d38,snow:0xe3e9e5,minimap:'#234e2e'}),
+  frostfallsiege:Object.freeze({leaf:0x557178,leafDark:0x29434b,trunk:0x4b4746,snow:0xe5f0f5,minimap:'#40616b'}),
+  deepwoodravine:Object.freeze({leaf:0x355c2e,leafDark:0x1b381f,trunk:0x50402e,snow:0xe3e9e5,minimap:'#1a3d1f'}),
+  templelagoon:Object.freeze({leaf:0x3f8838,leafDark:0x1d5428,trunk:0x664e34,snow:0xe3e9e5,minimap:'#1f5c2d'}),
+  ironfall:Object.freeze({leaf:0x466b3c,leafDark:0x27462d,trunk:0x5a4c3c,snow:0xe3e9e5,minimap:'#26492f'}),
 });
 
 export function terrainBiome(map){return styles[map]||styles.highlands;}
@@ -105,5 +122,7 @@ export function isSnowBiome(map){return map==='winter'||!!styles[map]?.snow;}
 export function isVolcanicBiome(map){return !!styles[map]?.ash;}
 export function isAridBiome(map){return !!styles[map]?.sand||!!styles[map]?.ash;}
 export function isRockyBiome(map){return !!styles[map]?.rocky||!!styles[map]?.ash;}
-export function treeBiome(map){return isSnowBiome(map)?'winter':'highlands';}
+export function isJungleBiome(map){return !!styles[map]?.jungle;}
+export function hasWaterfallBiome(map){return !!styles[map]?.waterfall;}
+export function treeBiome(map){return isSnowBiome(map)?'winter':isJungleBiome(map)?'jungle':'highlands';}
 export function treePalette(map){return TREE_PALETTES[map]||TREE_PALETTES.highlands;}

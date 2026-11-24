@@ -14,7 +14,7 @@ import {campaignMapMarkup, commanderBannerMarkup} from '../src/campaign-map-ui.j
 
 test('campaignAtlasState maps every mission to decoupled map coordinates, acts, routes, and unlock progression',()=>{
   assert.equal(CAMPAIGN_NODES.length,MISSIONS.length,'every campaign mission has an atlas node');
-  assert.equal(CAMPAIGN_ACTS.length,5,'All Acts + Acts I, II, III, IV');
+  assert.equal(CAMPAIGN_ACTS.length,6,'All Acts + Acts I, II, III, IV, V');
 
   const fresh=campaignAtlasState({},false);
   assert.equal(fresh.total,MISSIONS.length);
@@ -43,7 +43,8 @@ test('campaignAtlasState maps every mission to decoupled map coordinates, acts, 
   assert.ok(free.nodes.every(n=>n.unlocked),'Free Select unlocks every chapter immediately');
   assert.equal(nextChapterAfter('campaign1'),'campaign2');
   assert.equal(nextChapterAfter('campaign10'),'campaign11');
-  assert.equal(nextChapterAfter('campaign14'),null);
+  assert.equal(nextChapterAfter('campaign14'),'campaign15');
+  assert.equal(nextChapterAfter('campaign19'),null);
 });
 
 test('mergeCampaignVictory preserves best completion time, optional crown, and highest difficulty medal',()=>{

@@ -180,6 +180,66 @@ export const MISSION_CHRONICLES=Object.freeze({
     terrainIntel:'Sprawling 360×360 Grand Realm · River Bridges, Cliff Chokepoints & Forest Lanes',
     tip:'Use the Alliance menu to share surplus resources with your AI ally and drop minimap flares to coordinate pushes.',
   },
+  campaign15:{
+    act:'ACT V · THE GREAT FRONTIER WAR',
+    date:'Siege of Ironfall Sanctuary',
+    chronicle:[
+      'Four warlord banners have closed around Ironfall Sanctuary—Warlord Vex’s raiders, Siege-Master Krag’s Ironhold foundry, Emir Soliman’s Sunward citadels, and High Overlord Draven himself. Yet sheer mountain cliffs and a roaring waterfall lock the valley down to one single narrow stone bridgehead.',
+      'Inside the sanctuary, your walled citadel stands shoulder-to-shoulder with Marshal Rowan’s fortress, backed by rich sheltered mines and fertile fields. Hold the narrow pass together, use War-Comms (Alt+1..4) to coordinate assaults and supplies, and break out to crush all four enemy capitals!',
+    ],
+    startingBase:'Two Full Ready Walled Citadels (You + Marshal Rowan) + Fortified Narrow Pass Gatehouse & Sheltered Mines',
+    enemyIntel:'4 Rival Warlord Bases (2 Forward Stockades + 2 Eastern Fortresses) · Live Voiced Warlord Comms',
+    terrainIntel:'Ironfall Pass (380×380) · Waterfall Gorge, One Narrow Bridgehead Chokepoint & Sheltered Highland Valley',
+    tip:'Keep villagers repairing the narrow pass gatehouse and towers while Marshal Rowan reinforces; open War Comms (Alt+1) when ready to counter-attack together!',
+  },
+  campaign16:{
+    act:'ACT V · THE GREAT FRONTIER WAR',
+    date:'Battle of Waterfall Gorge',
+    chronicle:[
+      'A towering two-tier cascade feeds the turquoise gorge dividing west from east. Three ways cross the torrent: a burning central stone bridge, a southern timber trestle, and a shallow northern ford where cavalry can splash straight across.',
+      'Lady Vaelen’s Sunward citadel holds the northern bluffs beside your camp. Coordinate with her through War-Comms, watch the shallow ford for flank raids, and shatter Lord Korr and General Syra across the gorge.',
+    ],
+    startingBase:'2v2 Ready Walled Valley Fortresses (You + Lady Vaelen) with Stone & Timber Crossings',
+    enemyIntel:'Lord Korr (Ironhold Siege) & General Syra (Raven Flank Riders)',
+    terrainIntel:'Waterfall Gorge (360×360) · Two-Tier Waterfall, Stone & Timber Bridges + Walkable Shallow Ford',
+    tip:'Guard the shallow northern ford with towers or spearmen—General Syra loves wading cavalry across to raid workers.',
+  },
+  campaign17:{
+    act:'ACT V · THE GREAT FRONTIER WAR',
+    date:'Winter of the Frozen Falls',
+    chronicle:[
+      'Bitter snow sweeps down Frostfall Cliff as ice floes drift beneath two narrow bridges. Across the frozen river, three enemy camps—circular wooden palisade stockades and Jarl Skald’s alpine stronghold—prepare a relentless winter siege.',
+      'Jarl Torin’s northern bastion guards your flank. Hold the snowy crossings together, burn the outer palisade camps first to choke their siege flow, and march on Jarl Skald.',
+    ],
+    startingBase:'2v3 Walled Frozen Citadels (You + Jarl Torin) Facing Three Winter War-Camps',
+    enemyIntel:'Frost Raiders Stockade, Iron Siege Camp & Jarl Skald’s Alpine Fortress',
+    terrainIntel:'Frostfall Siege (360×360) · Snow Waterfall, Drifting Ice Floes, Stone & Timber Bridges',
+    tip:'Use War Comms → Hold Pass (Alt+2) during early siege waves, then strike the forward stockades together.',
+  },
+  campaign18:{
+    act:'ACT V · THE GREAT FRONTIER WAR',
+    date:'Expedition to the Emerald Lagoon',
+    chronicle:[
+      'Far south beyond the frontier ridges lies a tropical world of giant banyan canopies, coral turquoise reefs, and stepped mossy stone temples. Two jungle warlords have fortified the eastern deltas around the sacred Emerald Temple Shrine.',
+      'March alongside Admiral Iven across stone delta bridges and the shallow coral ford. Seize the ancient shrine to fuel your treasury and topple both jungle strongholds.',
+    ],
+    startingBase:'2v2 Ready Coastal Citadels (You + Admiral Iven) in the Tropical Jungle Biome',
+    enemyIntel:'Warlord Kael (Raven) & Temple Warden Arak (Ironhold) Guarding the Temple Lagoon',
+    terrainIntel:'Temple Lagoon (360×360) · Jungle Waterfall, Banyan & Palm Forests, Ancient Stone Temples & Coral Ford',
+    tip:'Capturing the central Emerald Temple Shrine delivers +400 Gold immediately to accelerate your Imperial push.',
+  },
+  campaign19:{
+    act:'ACT V · THE GREAT FRONTIER WAR',
+    date:'The Reckoning of Deepwood Ravine',
+    chronicle:[
+      'Every surviving empire converges upon Deepwood Ravine—a sheer wooded canyon spanned by a timber trestle bridge and flanked by narrow forest passes. All four civilizations stand in full Imperial Age battle array.',
+      'Queen Maren commands your northern wing while Forgemaster Borin brings Ironhold trebuchets to your south. Lead the three-kingdom alliance across the ravine and break all three hostile empires!',
+    ],
+    startingBase:'3v3 Full Imperial Age Coalition Citadels (You + Queen Maren + Forgemaster Borin)',
+    enemyIntel:'Overlord Malrik (Ironhold), Khan Varek (Raven) & Sultan Zafar (Sunward) Imperial Armies',
+    terrainIntel:'Deepwood Ravine (380×380) · Steep Forest Canyon, Timber Ravine Bridge & Walled Woodland Passes',
+    tip:'Use War Comms → Attack! (Alt+1) to concentrate all three allied armies on one enemy empire at a time.',
+  },
 });
 
 /** Small pure-SVG Warcraft-style cartographer inset showing the campaign march path to the current chapter. */

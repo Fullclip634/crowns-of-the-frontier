@@ -7,7 +7,11 @@ export const WATER_PALETTES=Object.freeze({
   coast:Object.freeze({shallow:0x7eb4ad,deep:0x26545c,opacity:.9,foam:.55}),
   riverland:Object.freeze({shallow:0x7aa89e,deep:0x2b5856,opacity:.92,foam:.32}),
   archipelago:Object.freeze({shallow:0x88c2be,deep:0x225866,opacity:.88,foam:.66}),
-  volcanic:Object.freeze({shallow:0x8a6a54,deep:0x3a2c2a,opacity:.96,foam:.23})
+  volcanic:Object.freeze({shallow:0x8a6a54,deep:0x3a2c2a,opacity:.96,foam:.23}),
+  waterfallgorge:Object.freeze({shallow:0x79c6d4,deep:0x226882,opacity:.90,foam:.62}),
+  frostfallsiege:Object.freeze({shallow:0x9bd2df,deep:0x2c6178,opacity:.92,foam:.58}),
+  templelagoon:Object.freeze({shallow:0x68dcd0,deep:0x17697a,opacity:.86,foam:.72}),
+  ironfall:Object.freeze({shallow:0x76c0cc,deep:0x235f75,opacity:.91,foam:.54}),
 });
 
 export function configureWaterPalette(material,map){

@@ -12,11 +12,12 @@ import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
 import {terrainMeadow} from './terrain-fields.js';
 import {terrainClarityPixels} from './terrain-clarity.js';
-import {waterChannels} from './map-water.js';
-import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome,terrainBiome} from './terrain-biomes.js';
-import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth} from './bridge-layout.js';
+import {waterChannels,waterFords,fordAt} from './map-water.js';
+import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome,isJungleBiome,terrainBiome} from './terrain-biomes.js';
+import {bridgeAt,bridgeDeckHeight,bridgeSpans,bridgeArtwork,bridgeRoadHalfWidth,bridgeOuterHalfWidth,spanZ,spanRoadHalfWidth,spanOuterHalfWidth} from './bridge-layout.js';
 import {buildBridges} from './bridge-art.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
+import {buildFrontierFeatures,updateFrontierFeatures} from './frontier-features.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export class Landscape {
@@ -40,17 +41,33 @@ export class Landscape {
       // Meet water level there instead of leaving a submerged "dry" bank.
       if(d<channel.width){
         const baseBed=-1.3+1.38*smooth(Math.max(0,channel.width-3),channel.width,d);
-        const sandbar=(this.map==='coast'||this.map==='archipelago')?Math.sin(z*.085+channel.center)*Math.cos(x*.21)*.20*(1-smooth(Math.max(0,channel.width-3.2),channel.width-.4,d)):0;
-        h=Math.min(.08,baseBed+sandbar);
+        const sandbar=(this.map==='coast'||this.map==='archipelago'||this.map==='templelagoon')?Math.sin(z*.085+channel.center)*Math.cos(x*.21)*.20*(1-smooth(Math.max(0,channel.width-3.2),channel.width-.4,d)):0;
+        let bed=Math.min(.08,baseBed+sandbar);
+        // Crossable shallow river fords raise the riverbed smoothly to an ankle-deep pebble shoal!
+        const ford=fordAt(this.map,x,z,3.5);
+        if(ford){
+          const fBlend=1-smooth(ford.halfWidth*.55,ford.halfWidth+3.5,Math.abs(z-ford.z));
+          bed=bed+(-0.11-bed)*fBlend;
+        }
+        h=bed;
       }
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
-      const span=bridgeSpans(this.map).find(span=>span.center===channel.center);
-      if(span){const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(bridgeOuterHalfWidth,bridgeOuterHalfWidth+6.8,Math.abs(z));h+=(bridgeArtwork.baseHeight-h)*bank*across;}
+      for(const span of bridgeSpans(this.map)){
+        if(Math.abs(span.center-channel.center)>10)continue;
+        const cz=spanZ(span),outerW=spanOuterHalfWidth(span);
+        const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(outerW,outerW+6.8,Math.abs(z-cz));
+        const deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
+        h+=(deckBase-h)*bank*across;
+      }
     }
     // Keep every terrain triangle adjacent to the crossing below its lowest
     // paving. The collar covers the coarsest supported grid at every quality.
     const collar=Math.max(2,this.renderSize/112+1);
-    for(const span of bridgeSpans(this.map)){const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(bridgeOuterHalfWidth+collar,bridgeOuterHalfWidth+4+collar,Math.abs(z));h-=Math.max(0,h-(bridgeArtwork.baseHeight-.35))*along*across;}
+    for(const span of bridgeSpans(this.map)){
+      const cz=spanZ(span),outerW=spanOuterHalfWidth(span),deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
+      const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(outerW+collar,outerW+4+collar,Math.abs(z-cz));
+      h-=Math.max(0,h-(deckBase-.35))*along*across;
+    }
     const edge=Math.max(Math.abs(x),Math.abs(z)),rise=smooth(this.half-4,this.half+30,edge);
     const ridges=7+Math.pow(Math.sin(x*.043+p)*Math.cos(z*.037-p),2)*18+Math.sin((x+z)*.07)*2;
     h+=rise*ridges;
@@ -74,15 +91,15 @@ export class Landscape {
   }
   walkableHeightAt(x,z){
     const span=bridgeAt(this.map,x,z,3);
-    if(!span||Math.abs(z)>bridgeRoadHalfWidth+1e-6)return this.surfaceHeightAt(x,z);
-    const distance=Math.abs(x-span.center);
+    if(!span||Math.abs(z-spanZ(span))>spanRoadHalfWidth(span)+1e-6)return this.surfaceHeightAt(x,z);
+    const distance=Math.abs(x-span.center),deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
     if(distance<=span.halfLength)return bridgeDeckHeight(span,x);
     const outer=span.center+Math.sign(x-span.center)*(span.halfLength+3),blend=smooth(0,3,distance-span.halfLength);
-    return Math.max(this.surfaceHeightAt(x,z),bridgeArtwork.baseHeight+(this.surfaceHeightAt(outer,z)-bridgeArtwork.baseHeight)*blend);
+    return Math.max(this.surfaceHeightAt(x,z),deckBase+(this.surfaceHeightAt(outer,z)-deckBase)*blend);
   }
   walkableSampleAt(x,z,output){
     const span=bridgeAt(this.map,x,z,3),grid=this.grid;
-    if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize||span&&Math.abs(z)<=bridgeRoadHalfWidth+1e-6){
+    if(!grid||Math.abs(x)>this.worldSize||Math.abs(z)>this.worldSize||span&&Math.abs(z-spanZ(span))<=spanRoadHalfWidth(span)+1e-6){
       output.height=this.walkableHeightAt(x,z);output.dx=(this.walkableHeightAt(x+.05,z)-this.walkableHeightAt(x-.05,z))/.1;output.dz=(this.walkableHeightAt(x,z+.05)-this.walkableHeightAt(x,z-.05))/.1;return output;
     }
     const xx=terrainGridCoordinate(x,grid),zz=terrainGridCoordinate(z,grid),ix=Math.min(grid.segments-1,Math.floor(xx)),iz=Math.min(grid.segments-1,Math.floor(zz)),u=xx-ix,v=zz-iz,stride=grid.segments+1,a=iz*stride+ix;
@@ -156,13 +173,15 @@ function groundMap(landscape){
   const grain=winter?['#d6cf9310','#2f492210']:arid?['#e8d3a414','#8a6b3a12']:rocky?['#b9b8aa12','#3c3a3410']:['#c3d2a912','#254d2a0e'];
   for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
   const scale=1536/size;
-  const shore=landscape.map==='coast'||landscape.map==='archipelago';
+  const shore=landscape.map==='coast'||landscape.map==='archipelago'||landscape.map==='templelagoon';
+  const jungle=isJungleBiome(landscape.map);
   for(const channel of landscape.channels()){
     const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
     if(shore){
       // Organic wavy sandy coves and coastal headlands along both sides of the channel.
-      for(const [extra,color] of [[15,'#baa474'],[9.5,'#dfd0a4']]){
+      const beachColors=jungle?[[17,'#c8b57d'],[11,'#ebe0b6']]:[[15,'#baa474'],[9.5,'#dfd0a4']];
+      for(const [extra,color] of beachColors){
         ctx.beginPath();
         for(let z=-half;z<=half;z+=3){
           const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
@@ -181,6 +200,18 @@ function groundMap(landscape){
       ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
       ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
     }
+  }
+  // Paint bright sandy/pebbly shallow river fords clearly across walkable crossings!
+  for(const ford of waterFords(landscape.map)){
+    const ch=landscape.channels().find(c=>c.center===ford.center);
+    const mid=ch?ch.center+Math.sin(ford.z*ch.frequency)*ch.bend:ford.center;
+    const fx=(mid+half)*scale,fz=(ford.z+half)*scale,fw=ford.halfLength*1.15*scale,fh=ford.halfWidth*1.05*scale;
+    const grad=ctx.createRadialGradient(fx,fz,fh*.15,fx,fz,Math.max(fw,fh));
+    grad.addColorStop(0,winter?'rgba(202,216,214,0.88)':jungle?'rgba(232,222,175,0.92)':'rgba(214,198,154,0.90)');
+    grad.addColorStop(.68,winter?'rgba(176,196,198,0.62)':jungle?'rgba(190,214,174,0.60)':'rgba(182,172,134,0.58)');
+    grad.addColorStop(1,'rgba(180,170,132,0)');
+    ctx.save();ctx.translate(fx,fz);ctx.scale(fw/Math.max(fw,fh),fh/Math.max(fw,fh));
+    ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,Math.max(fw,fh),0,Math.PI*2);ctx.fill();ctx.restore();
   }
   // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
   const volcanic=isVolcanicBiome(landscape.map);
@@ -243,8 +274,10 @@ export function buildLandscape(view){
   shadeBattlefieldFog(view.groundCover.mesh.material,view);
   view.terrainDetails=new TerrainDetails(view);
   for(const mat of view.terrainDetails.fogMaterials||[view.terrainDetails.mesh.material])shadeBattlefieldFog(mat,view);
+  buildFrontierFeatures(view);
 }
 
 export function animateWater(view){
   animateWaterSurface(view);
+  updateFrontierFeatures(view);
 }

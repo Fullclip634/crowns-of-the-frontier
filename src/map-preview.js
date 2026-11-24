@@ -1,7 +1,7 @@
 import {seededRandom} from './data.js';
-import {waterChannels} from './map-water.js';
-import {bridgeSpans} from './bridge-layout.js';
-import {terrainBiome,treePalette,isSnowBiome,isAridBiome,isVolcanicBiome} from './terrain-biomes.js';
+import {waterChannels,waterFords} from './map-water.js';
+import {bridgeSpans,spanZ} from './bridge-layout.js';
+import {terrainBiome,treePalette,isSnowBiome,isAridBiome,isVolcanicBiome,isJungleBiome} from './terrain-biomes.js';
 import {terrainRelief,terrainPhase} from './terrain-elevation.js';
 
 /**
@@ -154,6 +154,44 @@ export function mapCartography(map){
     addForestBelt([.66,.72],[.88,.84],{steps:5,r:.042,spread:.02,seed:19});
     addForestBelt([.14,.74],[.34,.84],{steps:4,r:.04,spread:.018,seed:20});
     addForestBelt([.66,.16],[.86,.26],{steps:4,r:.04,spread:.018,seed:21});
+  }else if(map==='waterfallgorge'){
+    addRidge([.12,.08],[.41,.19],{steps:5,r:.038,wobble:.01,seed:91});
+    addRidge([.59,.19],[.88,.08],{steps:5,r:.038,wobble:.01,seed:92});
+    addRidge([.40,.57],[.41,.66],{steps:3,r:.03,wobble:.006,seed:93});
+    addRidge([.60,.57],[.59,.66],{steps:3,r:.03,wobble:.006,seed:94});
+    addForestBelt([.10,.26],[.26,.46],{steps:4,r:.042,spread:.02,seed:95});
+    addForestBelt([.74,.56],[.90,.78],{steps:4,r:.042,spread:.02,seed:96});
+    minerals.push({x:.38,y:.31,type:'gold'},{x:.62,y:.31,type:'gold'},{x:.37,y:.70,type:'stone'},{x:.63,y:.70,type:'stone'});
+  }else if(map==='frostfallsiege'){
+    addRidge([.10,.08],[.39,.20],{steps:5,r:.04,wobble:.01,seed:97});
+    addRidge([.56,.20],[.88,.08],{steps:5,r:.04,wobble:.01,seed:98});
+    addMassif(.14,.82,.06);addMassif(.86,.18,.06);
+    addForestBelt([.12,.28],[.24,.56],{steps:4,r:.04,spread:.02,seed:99});
+    addForestBelt([.74,.44],[.88,.76],{steps:4,r:.04,spread:.02,seed:100});
+    minerals.push({x:.36,y:.40,type:'gold'},{x:.62,y:.60,type:'gold'},{x:.35,y:.62,type:'stone'},{x:.64,y:.38,type:'stone'});
+  }else if(map==='deepwoodravine'){
+    const passes=[[.5,.5,.07],[.48,.22,.06],[.52,.78,.06]];
+    addRidge([.42,.07],[.44,.93],{steps:12,r:.034,wobble:.012,seed:101,passes});
+    addRidge([.58,.07],[.56,.93],{steps:12,r:.034,wobble:.012,seed:102,passes});
+    addForestBelt([.08,.16],[.30,.36],{steps:5,r:.045,spread:.025,seed:103});
+    addForestBelt([.70,.64],[.92,.84],{steps:5,r:.045,spread:.025,seed:104});
+    addForestBelt([.10,.68],[.28,.88],{steps:4,r:.044,spread:.022,seed:105});
+    addForestBelt([.72,.12],[.90,.32],{steps:4,r:.044,spread:.022,seed:106});
+    minerals.push({x:.38,y:.35,type:'gold'},{x:.62,y:.65,type:'gold'},{x:.38,y:.65,type:'stone'},{x:.62,y:.35,type:'stone'});
+  }else if(map==='templelagoon'){
+    addMassif(.22,.14,.055);addMassif(.38,.12,.048);addMassif(.84,.82,.055);
+    addForestBelt([.10,.30],[.20,.78],{steps:5,r:.044,spread:.022,seed:107});
+    addForestBelt([.42,.18],[.54,.44],{steps:4,r:.04,spread:.018,seed:108});
+    addForestBelt([.76,.18],[.88,.66],{steps:5,r:.044,spread:.022,seed:109});
+    minerals.push({x:.46,y:.38,type:'gold'},{x:.52,y:.62,type:'gold'},{x:.45,y:.58,type:'stone'},{x:.54,y:.40,type:'stone'});
+  }else if(map==='ironfall'){
+    const passes=[[.44,.5,.08]];
+    addRidge([.38,.05],[.40,.95],{steps:14,r:.04,wobble:.012,seed:110,passes});
+    addRidge([.49,.05],[.48,.95],{steps:14,r:.034,wobble:.010,seed:111,passes});
+    addForestBelt([.10,.16],[.26,.36],{steps:4,r:.042,spread:.02,seed:112});
+    addForestBelt([.10,.64],[.26,.84],{steps:4,r:.042,spread:.02,seed:113});
+    addForestBelt([.74,.14],[.90,.34],{steps:4,r:.04,spread:.02,seed:114});
+    minerals.push({x:.26,y:.36,type:'gold'},{x:.26,y:.64,type:'gold'},{x:.22,y:.50,type:'stone'},{x:.68,y:.36,type:'gold'},{x:.68,y:.64,type:'gold'});
   }else{
     // Open classic / river / coast maps get subtle natural woodland clusters
     const hasWater=waterChannels(map).length>0;
@@ -212,11 +250,12 @@ export function drawBattlePreviewCanvas(ctx,{map,worldSize=480,seed=2026,size=26
     ctx.beginPath();ctx.arc(fx-fr*.22,fy-fr*.22,fr*.58,0,Math.PI*2);ctx.fill();
   }
 
-  // 4. Authoritative water channels (exact 1 stroke per channel!) + stone bridges
+  // 4. Authoritative water channels (exact 1 stroke per channel!) + shallow fords + stone/timber bridges
   const channels=waterChannels(map);
+  const jungle=isJungleBiome(map);
   if(channels.length){
     const previewScale=size/worldSize;
-    ctx.strokeStyle=volcanic?'#8a6a54':snow?'#7ca6b8':'#65a2ad';
+    ctx.strokeStyle=volcanic?'#8a6a54':snow?'#7ca6b8':jungle?'#48c2b8':'#65a2ad';
     for(const channel of channels){
       ctx.lineWidth=Math.max(4,channel.width*2*previewScale);
       ctx.beginPath();
@@ -227,16 +266,28 @@ export function drawBattlePreviewCanvas(ctx,{map,worldSize=480,seed=2026,size=26
       }
       ctx.stroke();
     }
-    // Stone bridge crossings drawn with fillRect (zero extra strokes!)
-    const bridges=bridgeSpans(map);
+    // Crossable shallow river fords (warm sandy shoal overlay)
+    for(const ford of waterFords(map)){
+      const ch=channels.find(c=>c.center===ford.center);
+      const mid=ch?ch.center+Math.sin(ford.z*ch.frequency)*ch.bend:ford.center;
+      const fx=(mid/worldSize+.5)*size,fy=(ford.z/worldSize+.5)*size;
+      const fw=Math.max(8,ford.halfLength*1.6*previewScale),fh=Math.max(5,ford.halfWidth*1.4*previewScale);
+      ctx.fillStyle='rgba(222,208,164,0.78)';
+      ctx.fillRect(fx-fw*.5,fy-fh*.5,fw,fh);
+    }
+  }
+  // Stone & timber bridge crossings drawn with fillRect (zero extra strokes — works on ravine maps too!)
+  const bridges=bridgeSpans(map);
+  if(bridges.length){
+    const previewScale=size/worldSize;
     for(const b of bridges){
-      const bx=(b.center/worldSize+.5)*size,by=size*.5;
-      const bw=Math.max(10,(b.halfLength*2)*previewScale+4),bh=Math.max(5,6);
+      const bx=(b.center/worldSize+.5)*size,by=(spanZ(b)/worldSize+.5)*size;
+      const bw=Math.max(10,(b.halfLength*2)*previewScale+4),bh=b.style==='timber'?4.5:6;
       ctx.fillStyle='rgba(24,20,16,0.45)';
       ctx.fillRect(bx-bw*.5,by-bh*.5+1.5,bw,bh);
-      ctx.fillStyle='#c9be9e';
+      ctx.fillStyle=b.style==='timber'?'#9b7044':'#c9be9e';
       ctx.fillRect(bx-bw*.5,by-bh*.5,bw,bh);
-      ctx.fillStyle='#efe6cb';
+      ctx.fillStyle=b.style==='timber'?'#c79a66':'#efe6cb';
       ctx.fillRect(bx-bw*.5+1,by-bh*.5+1,bw-2,2);
     }
   }
@@ -297,10 +348,10 @@ export function mapPreviewSvg(map){
     parts.push(`<circle cx="${(f.x*48).toFixed(1)}" cy="${(f.y*48).toFixed(1)}" r="${Math.max(1.8,f.r*48).toFixed(1)}" fill="${treeCol}" opacity="0.82"/>`);
   }
 
-  // Water channels & stone bridges
-  const channels=waterChannels(map);
+  // Water channels & stone/timber bridges
+  const channels=waterChannels(map),jungle=isJungleBiome(map),wSize=160;
   if(channels.length){
-    const wSize=160,waterCol=volcanic?'#8a6a54':snow?'#7ca6b8':'#5ea0ad';
+    const waterCol=volcanic?'#8a6a54':snow?'#7ca6b8':jungle?'#48c2b8':'#5ea0ad';
     for(const ch of channels){
       const pts=[];
       for(let y=0;y<=48;y+=6){
@@ -311,10 +362,10 @@ export function mapPreviewSvg(map){
       const sw=Math.max(2.6,(ch.width*2/wSize)*48);
       parts.push(`<polyline points="${pts.join(' ')}" fill="none" stroke="${waterCol}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round"/>`);
     }
-    for(const b of bridgeSpans(map)){
-      const bx=(b.center/wSize+.5)*48,bw=Math.max(4.5,(b.halfLength*2/wSize)*48+2);
-      parts.push(`<rect x="${(bx-bw/2).toFixed(1)}" y="22.4" width="${bw.toFixed(1)}" height="3.2" rx="0.6" fill="#e2d7b4"/>`);
-    }
+  }
+  for(const b of bridgeSpans(map)){
+    const bx=(b.center/wSize+.5)*48,by=(spanZ(b)/wSize+.5)*48,bw=Math.max(4.5,(b.halfLength*2/wSize)*48+2);
+    parts.push(`<rect x="${(bx-bw/2).toFixed(1)}" y="${(by-1.6).toFixed(1)}" width="${bw.toFixed(1)}" height="3.2" rx="0.6" fill="${b.style==='timber'?'#b58754':'#e2d7b4'}"/>`);
   }
 
   // Mountain ranges & peaks

@@ -1,8 +1,9 @@
 import {BUILDINGS,seededRandom} from './data.js';
 import {PLAYER_COLORS} from './custom-battle.js';
-import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,addDenseForestBelt,buildNaturalFortifiedBase,buildWoodlandGladePocket,connectCliffPassWall,scatterBiomeCliffs} from './terrain-barriers.js';
+import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,addDenseForestBelt,buildNaturalFortifiedBase,buildWoodlandGladePocket,connectCliffPassWall,scatterBiomeCliffs,applyMapGeography} from './terrain-barriers.js';
 import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
+import {seedDeerHerds} from './wildlife.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
@@ -512,8 +513,251 @@ export function triggerOakholdLiberation(sim){
   return true;
 }
 
+/** Builds a circular outer wooden/stone war-camp with tents, campfire, stakes & towers (Images 7, 8, 10, 11). */
+function buildCircularWarCamp(sim,owner,center,{radius=22,gateAngle=Math.PI,armyTypes=[],villagers=8,production=['barracks','stable']}={}){
+  placeBuilding(sim,'towncenter',owner,center.x,center.z,true);
+  if(production[0])placeBuilding(sim,production[0],owner,center.x-10,center.z-8,true);
+  if(production[1])placeBuilding(sim,production[1],owner,center.x+10,center.z+8,true);
+  placeBuilding(sim,'house',owner,center.x+10,center.z-9,true);
+  placeBuilding(sim,'house',owner,center.x-10,center.z+9,true);
+  placeBuilding(sim,'mill',owner,center.x,center.z-12,true);
+  const segs=24;
+  const angDiff=(a,b)=>Math.abs(((a-b+Math.PI*3)%(Math.PI*2))-Math.PI);
+  for(let i=0;i<segs;i++){
+    const a=(i/segs)*Math.PI*2-Math.PI;
+    const wx=center.x+Math.cos(a)*radius,wz=center.z+Math.sin(a)*radius;
+    const tangent=a+Math.PI*.5;
+    if(angDiff(a,gateAngle)<.24){
+      if(i===Math.round(((gateAngle+Math.PI)/(Math.PI*2))*segs)%segs){
+        placeBuilding(sim,'gate',owner,wx,wz,true,{angle:tangent});
+      }
+      continue;
+    }
+    if(i%6===0){
+      placeBuilding(sim,'tower',owner,wx,wz,true);
+    }else{
+      placeBuilding(sim,'wall',owner,wx,wz,true,{angle:tangent});
+    }
+  }
+  sim.battlefieldProps.push(
+    {kind:'campfire',x:center.x+4,z:center.z+4},
+    {kind:'tent',x:center.x-5,z:center.z-12,rot:.5},
+    {kind:'tent',x:center.x+6,z:center.z+12,rot:-1.1},
+    {kind:'crates',x:center.x-12,z:center.z+1},
+    {kind:'stakes',x:center.x+Math.cos(gateAngle)*(radius+5.5)+Math.sin(gateAngle)*5.5,z:center.z+Math.sin(gateAngle)*(radius+5.5)-Math.cos(gateAngle)*5.5,rot:gateAngle},
+    {kind:'stakes',x:center.x+Math.cos(gateAngle)*(radius+5.5)-Math.sin(gateAngle)*5.5,z:center.z+Math.sin(gateAngle)*(radius+5.5)+Math.cos(gateAngle)*5.5,rot:gateAngle},
+  );
+  for(let i=0;i<villagers;i++)placeUnit(sim,'villager',owner,center.x-4+(i%4)*2.5,center.z+4+Math.floor(i/4)*2.5);
+  armyTypes.forEach((t,i)=>placeUnit(sim,t,owner,center.x+Math.cos(gateAngle)*(radius+3.5)+(i%3-1)*2.5,center.z+Math.sin(gateAngle)*(radius+3.5)+(Math.floor(i/3)-1)*2.5));
+}
+
+/** Builds a full, battle-ready walled stronghold with castle keep, all military halls, farms & sheltered resources. */
+function buildReadyCitadel(sim,owner,center,{gates=['east'],keepClear=[],seedOffset=1,armyTypes=[],villagers=14,radius=36,backToBorder=true,richDeposits=true,compactForest=false}={}){
+  const dir=center.x<0?1:-1;
+  placeBuilding(sim,'towncenter',owner,center.x,center.z,true);
+  placeBuilding(sim,'keep',owner,center.x+dir*14,center.z+(center.z<0?11:-11),true);
+  placeBuilding(sim,'barracks',owner,center.x-dir*13,center.z+12,true);
+  placeBuilding(sim,'range',owner,center.x+dir*14,center.z-12,true);
+  placeBuilding(sim,'stable',owner,center.x-dir*13,center.z-12,true);
+  placeBuilding(sim,'workshop',owner,center.x,center.z+17,true);
+  placeBuilding(sim,'blacksmith',owner,center.x+dir*16,center.z,true);
+  placeBuilding(sim,'market',owner,center.x-dir*17,center.z+2,true);
+  placeBuilding(sim,'monastery',owner,center.x,center.z-17,true);
+  placeBuilding(sim,'house',owner,center.x-dir*10,center.z-21,true);
+  placeBuilding(sim,'house',owner,center.x+dir*10,center.z-21,true);
+  placeBuilding(sim,'house',owner,center.x-dir*10,center.z+21,true);
+  placeBuilding(sim,'house',owner,center.x+dir*10,center.z+21,true);
+  placeBuilding(sim,'mill',owner,center.x-dir*20,center.z-10,true);
+  for(const [fx,fz] of [[-dir*22,8],[-dir*22,15],[-dir*16,22],[-dir*22,-18],[-dir*16,-22],[dir*22,16]]){
+    placeBuilding(sim,'farm',owner,center.x+fx,center.z+fz,true);
+  }
+  buildNaturalFortifiedBase(sim,owner,center,{
+    radius,gates,towers:true,complete:true,includeResources:richDeposits,
+    keepClear,seedOffset,backToBorder,compactForest,
+  });
+  sim.battlefieldProps.push(
+    {kind:'campfire',x:center.x+dir*8,z:center.z+9},
+    {kind:'crates',x:center.x-dir*8,z:center.z-9},
+  );
+  for(let i=0;i<villagers;i++)placeUnit(sim,'villager',owner,center.x-5+(i%4)*3.2,center.z-4+Math.floor(i/4)*2.8);
+  armyTypes.forEach((t,i)=>placeUnit(sim,t,owner,center.x+dir*(radius+4)+(i%3-1)*2.6,center.z-8+Math.floor(i/3)*3.2));
+}
+
+/**
+ * Builds all 5 Act V "Great Frontier War" team-clash campaign missions (Chapters XV–XIX),
+ * featuring 2v4, 2v2, 2v3, and 3v3 real war battles with full ready bases, sustainable
+ * valley resources, circular palisade war-camps, waterfalls, jungle temples & roaming deer!
+ */
+function buildActFiveScenario(sim){
+  const mode=sim.options.mode;
+  const diff=sim.options.difficulty||'normal';
+  const playerFaction=sim.options.faction||'alder';
+  const half=sim.halfWorld;
+
+  sim.entities=[];
+  sim.barriers=[];
+  sim.battlefieldProps=[];
+  sim.nextId=1;
+
+  if(mode==='campaign15'){
+    // CHAPTER XV — THE GATES OF IRONFALL (380x380, 2 vs 4 Protected Walled Bases behind ONE Narrow Pass!)
+    const c0={x:-116,z:58},c5={x:-116,z:-58};
+    const c1={x:44,z:-64},c2={x:44,z:64},c3={x:132,z:-90},c4={x:136,z:88};
+    sim.players=[
+      {...sim.makePlayer(playerFaction),name:'Your Citadel',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:1800,wood:1800,gold:1250,stone:1350},defeated:false},
+      makeScenarioPlayer(sim,{name:'Warlord Vex (Raiders)',faction:'raven',team:2,age:1,difficulty:diff,aiPersonality:'rusher',colorIndex:1,start:c1,resources:{food:900,wood:900,gold:550,stone:350}}),
+      makeScenarioPlayer(sim,{name:'Siege-Master Krag',faction:'iron',team:2,age:2,difficulty:diff,aiPersonality:'aggressive',colorIndex:2,start:c2,resources:{food:1100,wood:1100,gold:750,stone:650}}),
+      makeScenarioPlayer(sim,{name:'Emir Soliman',faction:'sun',team:2,age:2,difficulty:diff,aiPersonality:'boomer',colorIndex:4,start:c3,resources:{food:1200,wood:1200,gold:850,stone:600}}),
+      makeScenarioPlayer(sim,{name:'Overlord Draven',faction:'alder',team:2,age:2,difficulty:diff,aiPersonality:'balanced',colorIndex:6,start:c4,resources:{food:1400,wood:1400,gold:950,stone:850}}),
+      makeScenarioPlayer(sim,{name:'Marshal Rowan (Ally)',faction:'alder',team:1,age:2,difficulty:diff,aiPersonality:'balanced',colorIndex:3,start:c5,resources:{food:1800,wood:1800,gold:1200,stone:1200}}),
+    ];
+    sim.spawnPositions=[c0,c1,c2,c3,c4,c5];
+    applyMapGeography(sim);
+
+    const allKeep=[c0,c1,c2,c3,c4,c5].map(c=>({x:c.x,z:c.z,r:38}));
+    // Full ready walled fortresses for BOTH You and Marshal Rowan inside the sheltered sanctuary!
+    buildReadyCitadel(sim,0,c0,{
+      gates:['north','east'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c0.x,k.z-c0.z)>10),seedOffset:1501,
+      villagers:16,radius:36,backToBorder:true,
+      armyTypes:['swordsman','swordsman','swordsman','swordsman','archer','archer','archer','archer','knight','knight','knight','spearman','spearman','monk','monk','ram'],
+    });
+    buildReadyCitadel(sim,5,c5,{
+      gates:['south','east'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c5.x,k.z-c5.z)>10),seedOffset:1505,
+      villagers:14,radius:36,backToBorder:true,
+      armyTypes:['sentinel','sentinel','swordsman','swordsman','archer','archer','archer','knight','knight','knight','spearman','spearman','monk'],
+    });
+
+    // OUTER NARROW PASS FORTIFICATION LINE sealing the western bridgehead (x = -30, z = -14..14)!
+    connectCliffPassWall(sim,0,{x:-30,z:-15},{x:-30,z:15},c0,{complete:true,withGate:true,withTower:true});
+    placeBuilding(sim,'tower',0,-35,-12,true);
+    placeBuilding(sim,'tower',5,-35,12,true);
+    for(const t of ['swordsman','spearman','archer','archer'])placeUnit(sim,t,0,-38,-5);
+    for(const t of ['sentinel','spearman','archer','archer'])placeUnit(sim,t,5,-38,5);
+
+    // Extra sheltered sustainable resource caches right inside the united sanctuary so 2v4 never starves!
+    for(const [rx,rz,type,amt] of [
+      [-68,0,'gold',3200],[-74,-8,'gold',3200],[-74,8,'stone',3200],[-68,14,'stone',3200],
+      [-148,0,'gold',3200],[-152,-12,'stone',3200],[-152,12,'gold',3200],
+      [-92,0,'wood',300],[-88,-6,'wood',300],[-88,6,'wood',300],
+    ]){
+      if(!sim.isWater(rx,rz)&&!sim.barriers.some(b=>Math.hypot(b.x-rx,b.z-rz)<b.r+2.4))sim.addNaturalResource(type,rx,rz,amt);
+    }
+
+    // FOUR OUTER ENEMY BASES (2 forward war-camps + 2 eastern fortified citadels!)
+    buildCircularWarCamp(sim,1,c1,{radius:21,gateAngle:Math.PI*.72,villagers:9,production:['barracks','stable'],armyTypes:['outrider','outrider','spearman','spearman','archer','archer']});
+    buildCircularWarCamp(sim,2,c2,{radius:22,gateAngle:-Math.PI*.72,villagers:10,production:['workshop','barracks'],armyTypes:['ironbreaker','ironbreaker','swordsman','swordsman','ram','archer']});
+    buildReadyCitadel(sim,3,c3,{gates:['west','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c3.x,k.z-c3.z)>10),seedOffset:1503,villagers:11,radius:32,backToBorder:true,armyTypes:['marksman','marksman','marksman','knight','knight','swordsman','swordsman']});
+    buildReadyCitadel(sim,4,c4,{gates:['west','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c4.x,k.z-c4.z)>10),seedOffset:1504,villagers:12,radius:34,backToBorder:true,armyTypes:['sentinel','sentinel','knight','knight','knight','archer','archer','ram']});
+  }else if(mode==='campaign16'){
+    // CHAPTER XVI — BRIDGE OF EMBERS (360x360, 2v2 on Waterfall Gorge — Images 4, 6 & 10)
+    const c0={x:-118,z:68},c3={x:-118,z:-64},c1={x:118,z:64},c2={x:118,z:-68};
+    sim.players=[
+      {...sim.makePlayer(playerFaction),name:'Your Vanguard',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:1300,wood:1300,gold:850,stone:900},defeated:false},
+      makeScenarioPlayer(sim,{name:'Lord Korr (Ironhold)',faction:'iron',team:2,age:2,difficulty:diff,aiPersonality:'aggressive',colorIndex:1,start:c1,resources:{food:1200,wood:1200,gold:800,stone:800}}),
+      makeScenarioPlayer(sim,{name:'General Syra (Raven)',faction:'raven',team:2,age:2,difficulty:diff,aiPersonality:'rusher',colorIndex:2,start:c2,resources:{food:1200,wood:1200,gold:800,stone:650}}),
+      makeScenarioPlayer(sim,{name:'Lady Vaelen (Ally)',faction:'sun',team:1,age:2,difficulty:diff,aiPersonality:'balanced',colorIndex:3,start:c3,resources:{food:1300,wood:1300,gold:850,stone:750}}),
+    ];
+    sim.spawnPositions=[c0,c1,c2,c3];
+    applyMapGeography(sim);
+    const allKeep=[c0,c1,c2,c3].map(c=>({x:c.x,z:c.z,r:38}));
+    buildReadyCitadel(sim,0,c0,{gates:['east','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c0.x,k.z-c0.z)>10),seedOffset:1601,villagers:14,radius:35,armyTypes:['swordsman','swordsman','archer','archer','archer','knight','knight','monk','ram']});
+    buildReadyCitadel(sim,3,c3,{gates:['east','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c3.x,k.z-c3.z)>10),seedOffset:1603,villagers:12,radius:34,armyTypes:['marksman','marksman','marksman','knight','knight','swordsman','swordsman','monk']});
+    buildReadyCitadel(sim,1,c1,{gates:['west','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c1.x,k.z-c1.z)>10),seedOffset:1602,villagers:12,radius:34,armyTypes:['ironbreaker','ironbreaker','swordsman','swordsman','archer','archer','ram']});
+    buildReadyCitadel(sim,2,c2,{gates:['west','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c2.x,k.z-c2.z)>10),seedOffset:1604,villagers:12,radius:34,armyTypes:['outrider','outrider','knight','knight','spearman','spearman','archer','archer']});
+    // Bridgehead watchtowers overlooking the central stone bridge!
+    placeBuilding(sim,'tower',0,-20,-6,true);placeBuilding(sim,'tower',1,20,6,true);
+  }else if(mode==='campaign17'){
+    // CHAPTER XVII — FROSTFALL SIEGE (360x360, 2v3 on Frostfall Siege — Image 7!)
+    const c0={x:-116,z:66},c4={x:-116,z:-62},c1={x:56,z:-68},c2={x:56,z:68},c3={x:132,z:2};
+    sim.players=[
+      {...sim.makePlayer(playerFaction),name:'Frostfall Bastion',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:1500,wood:1500,gold:1000,stone:1100},defeated:false},
+      makeScenarioPlayer(sim,{name:'Frost Raiders',faction:'raven',team:2,age:1,difficulty:diff,aiPersonality:'rusher',colorIndex:1,start:c1,resources:{food:900,wood:900,gold:550,stone:350}}),
+      makeScenarioPlayer(sim,{name:'Iron Siege Camp',faction:'iron',team:2,age:2,difficulty:diff,aiPersonality:'aggressive',colorIndex:2,start:c2,resources:{food:1100,wood:1100,gold:750,stone:600}}),
+      makeScenarioPlayer(sim,{name:'Jarl Skald (Overlord)',faction:'alder',team:2,age:2,difficulty:diff,aiPersonality:'balanced',colorIndex:4,start:c3,resources:{food:1300,wood:1300,gold:900,stone:750}}),
+      makeScenarioPlayer(sim,{name:'Jarl Torin (Ally)',faction:'alder',team:1,age:2,difficulty:diff,aiPersonality:'turtle',colorIndex:3,start:c4,resources:{food:1500,wood:1500,gold:1000,stone:1050}}),
+    ];
+    sim.spawnPositions=[c0,c1,c2,c3,c4];
+    applyMapGeography(sim);
+    const allKeep=[c0,c1,c2,c3,c4].map(c=>({x:c.x,z:c.z,r:36}));
+    buildReadyCitadel(sim,0,c0,{gates:['east','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c0.x,k.z-c0.z)>10),seedOffset:1701,villagers:15,radius:35,armyTypes:['swordsman','swordsman','swordsman','archer','archer','archer','knight','knight','monk','ram']});
+    buildReadyCitadel(sim,4,c4,{gates:['east','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c4.x,k.z-c4.z)>10),seedOffset:1704,villagers:13,radius:34,armyTypes:['sentinel','sentinel','swordsman','swordsman','archer','archer','knight','knight','monk']});
+    buildCircularWarCamp(sim,1,c1,{radius:21,gateAngle:Math.PI*.8,villagers:9,production:['barracks','stable'],armyTypes:['outrider','outrider','spearman','spearman','archer','archer']});
+    buildCircularWarCamp(sim,2,c2,{radius:22,gateAngle:-Math.PI*.8,villagers:10,production:['workshop','barracks'],armyTypes:['ironbreaker','ironbreaker','swordsman','swordsman','ram','archer']});
+    buildReadyCitadel(sim,3,c3,{gates:['west','north','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c3.x,k.z-c3.z)>10),seedOffset:1703,villagers:12,radius:34,armyTypes:['sentinel','sentinel','knight','knight','archer','archer','ram']});
+  }else if(mode==='campaign18'){
+    // CHAPTER XVIII — EMERALD TEMPLE LAGOON (360x360, 2v2 on Temple Lagoon — Image 9!)
+    const c0={x:-118,z:68},c3={x:-118,z:-64},c1={x:114,z:66},c2={x:114,z:-68};
+    sim.players=[
+      {...sim.makePlayer(playerFaction),name:'Lagoon Expedition',team:1,age:2,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:1350,wood:1400,gold:950,stone:850},defeated:false},
+      makeScenarioPlayer(sim,{name:'Warlord Kael',faction:'raven',team:2,age:2,difficulty:diff,aiPersonality:'rusher',colorIndex:1,start:c1,resources:{food:1200,wood:1200,gold:800,stone:650}}),
+      makeScenarioPlayer(sim,{name:'Temple Warden Arak',faction:'iron',team:2,age:2,difficulty:diff,aiPersonality:'turtle',colorIndex:2,start:c2,resources:{food:1200,wood:1200,gold:850,stone:850}}),
+      makeScenarioPlayer(sim,{name:'Admiral Iven (Ally)',faction:'sun',team:1,age:2,difficulty:diff,aiPersonality:'balanced',colorIndex:3,start:c3,resources:{food:1350,wood:1350,gold:900,stone:750}}),
+    ];
+    sim.spawnPositions=[c0,c1,c2,c3];
+    applyMapGeography(sim);
+    const allKeep=[c0,c1,c2,c3].map(c=>({x:c.x,z:c.z,r:36}));
+    buildReadyCitadel(sim,0,c0,{gates:['east','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c0.x,k.z-c0.z)>10),seedOffset:1801,villagers:14,radius:34,armyTypes:['swordsman','swordsman','archer','archer','archer','knight','knight','monk','ram']});
+    buildReadyCitadel(sim,3,c3,{gates:['east','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c3.x,k.z-c3.z)>10),seedOffset:1803,villagers:12,radius:33,armyTypes:['marksman','marksman','marksman','knight','knight','swordsman','swordsman']});
+    buildReadyCitadel(sim,1,c1,{gates:['west','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c1.x,k.z-c1.z)>10),seedOffset:1802,villagers:12,radius:33,armyTypes:['outrider','outrider','knight','knight','archer','archer','ram']});
+    buildReadyCitadel(sim,2,c2,{gates:['west','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c2.x,k.z-c2.z)>10),seedOffset:1804,villagers:12,radius:33,armyTypes:['ironbreaker','ironbreaker','swordsman','swordsman','archer','archer','ram']});
+    // Ancient sacred jungle shrine in the central temple island!
+    const shrine=sim.addShrine(-6,-10);
+    if(shrine)shrine.displayName='Emerald Temple Shrine';
+  }else if(mode==='campaign19'){
+    // CHAPTER XIX — THE GRAND CLASH OF CROWNS (380x380, 3 vs 3 Imperial Finale across Deepwood Ravine!)
+    const c0={x:-124,z:0},c4={x:-118,z:-108},c5={x:-118,z:108};
+    const c1={x:124,z:0},c2={x:118,z:-108},c3={x:118,z:108};
+    sim.players=[
+      {...sim.makePlayer(playerFaction),name:'High Crown Vanguard',team:1,age:3,controller:'human',slotNumber:1,color:PLAYER_COLORS[0],start:c0,resources:{food:2200,wood:2200,gold:1600,stone:1400},defeated:false},
+      makeScenarioPlayer(sim,{name:'Overlord Malrik',faction:'iron',team:2,age:3,difficulty:diff,aiPersonality:'aggressive',colorIndex:1,start:c1,resources:{food:2000,wood:2000,gold:1400,stone:1200}}),
+      makeScenarioPlayer(sim,{name:'Khan Varek',faction:'raven',team:2,age:3,difficulty:diff,aiPersonality:'rusher',colorIndex:2,start:c2,resources:{food:1800,wood:1800,gold:1300,stone:900}}),
+      makeScenarioPlayer(sim,{name:'Sultan Zafar',faction:'sun',team:2,age:3,difficulty:diff,aiPersonality:'boomer',colorIndex:4,start:c3,resources:{food:1800,wood:1800,gold:1400,stone:1000}}),
+      makeScenarioPlayer(sim,{name:'Queen Maren (Ally)',faction:'alder',team:1,age:3,difficulty:diff,aiPersonality:'balanced',colorIndex:3,start:c4,resources:{food:2000,wood:2000,gold:1400,stone:1200}}),
+      makeScenarioPlayer(sim,{name:'Forgemaster Borin (Ally)',faction:'iron',team:1,age:3,difficulty:diff,aiPersonality:'aggressive',colorIndex:5,start:c5,resources:{food:2000,wood:2000,gold:1400,stone:1300}}),
+    ];
+    sim.spawnPositions=[c0,c1,c2,c3,c4,c5];
+    // Iconic Deepwood Ravine cliff canyon flanking the central timber trestle bridge (without redundant glade rings over walled citadels!)
+    const ravPasses=[{x:0,z:0,r:16},{x:-4,z:-half*.54,r:14},{x:4,z:half*.54,r:14}];
+    const ravKeep=[c0,c1,c2,c3,c4,c5].map(c=>({x:c.x,z:c.z,r:36})).concat(ravPasses);
+    addCurvedCliffChain(sim,[{x:-16,z:-half*.86},{x:-11,z:-half*.34},{x:-11,z:half*.34},{x:-16,z:half*.86}],{step:3.8,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:1951,foothillTrees:false});
+    addCurvedCliffChain(sim,[{x:16,z:-half*.86},{x:11,z:-half*.34},{x:11,z:half*.34},{x:16,z:half*.86}],{step:3.8,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:1953,foothillTrees:false});
+    sim.battlefieldProps.push(
+      {kind:'brazier',x:-14,z:-6,burning:true},{kind:'brazier',x:14,z:6,burning:true},
+      {kind:'stakes',x:-16,z:6,rot:1.57},{kind:'stakes',x:16,z:-6,rot:-1.57},
+    );
+    const allKeep=[c0,c1,c2,c3,c4,c5].map(c=>({x:c.x,z:c.z,r:36}));
+    buildReadyCitadel(sim,0,c0,{gates:['east','north','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c0.x,k.z-c0.z)>10),seedOffset:1901,villagers:14,radius:30,compactForest:true,armyTypes:['swordsman','swordsman','swordsman','knight','knight','knight','archer','archer','archer','monk','ram','catapult']});
+    buildReadyCitadel(sim,4,c4,{gates:['east','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c4.x,k.z-c4.z)>10),seedOffset:1904,villagers:11,radius:28,richDeposits:false,compactForest:true,armyTypes:['sentinel','sentinel','knight','knight','archer','archer','monk','ram']});
+    buildReadyCitadel(sim,5,c5,{gates:['east','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c5.x,k.z-c5.z)>10),seedOffset:1905,villagers:11,radius:28,richDeposits:false,compactForest:true,armyTypes:['ironbreaker','ironbreaker','swordsman','swordsman','archer','archer','ram','catapult']});
+    buildReadyCitadel(sim,1,c1,{gates:['west','north','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c1.x,k.z-c1.z)>10),seedOffset:1902,villagers:12,radius:30,richDeposits:false,compactForest:true,armyTypes:['ironbreaker','ironbreaker','knight','knight','archer','archer','ram','catapult']});
+    buildReadyCitadel(sim,2,c2,{gates:['west','south'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c2.x,k.z-c2.z)>10),seedOffset:1903,villagers:11,radius:28,richDeposits:false,compactForest:true,armyTypes:['outrider','outrider','knight','knight','knight','spearman','spearman','ram']});
+    buildReadyCitadel(sim,3,c3,{gates:['west','north'],keepClear:allKeep.filter(k=>Math.hypot(k.x-c3.x,k.z-c3.z)>10),seedOffset:1906,villagers:11,radius:28,richDeposits:false,compactForest:true,armyTypes:['marksman','marksman','marksman','knight','knight','swordsman','swordsman','catapult']});
+    for(const base of [c1,c2,c3,c4,c5])seedBaseDeposits(sim,base,1910+Math.round(Math.abs(base.x+base.z)));
+  }
+
+  // Every Act V citadel already carries rich sheltered inner deposits & woodland coves; skip redundant starting-forest bloat!
+  const rng=seededRandom((sim.options.seed||2026)+9973);
+  for(let i=0;i<(sim.players.length>4?40:65);i++){
+    const x=(rng()-.5)*(sim.worldSize-18),z=(rng()-.5)*(sim.worldSize-18);
+    if(sim.isWater(x,z)||sim.barriers.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+3))continue;
+    if(sim.entities.some(e=>e.hp>0&&(e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+6||e.kind==='resource'&&Math.hypot(e.x-x,e.z-z)<2.4)))continue;
+    const type=i%10===0?'gold':i%13===0?'stone':i%9===0?'food':'wood';
+    sim.addNaturalResource(type,x,z,type==='wood'?280:type==='food'?380:2400);
+  }
+  seedDeerHerds(sim,{seedOffset:55,wildHerds:2});
+  // Prune cleared overlapping resource tombstones so saves & checkpoints stay ultra-compact.
+  sim.entities=sim.entities.filter(e=>e.hp>0);
+  sim.index=new Map(sim.entities.map(e=>[e.id,e]));
+  for(let owner=0;owner<sim.players.length;owner++){
+    if(!sim.players[owner].dormant)sim.assignEconomy(owner);
+  }
+  sim.startingSites=sim.entities.filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type)).map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
+  sim.updateFog();
+}
+
 export function applyCampaignScenario(sim){
   if(!sim.mission)return;
-  if(sim.mission.actFour)buildActFourScenario(sim);
+  if(sim.mission.actFive)buildActFiveScenario(sim);
+  else if(sim.mission.actFour)buildActFourScenario(sim);
   else applyClassicChapterArchitecture(sim);
 }

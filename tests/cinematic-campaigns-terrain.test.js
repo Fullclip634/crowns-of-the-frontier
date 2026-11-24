@@ -119,7 +119,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.doesNotMatch(html,/data-action="toggle-menu-backdrop"/);
     assert.doesNotMatch(html,/Live 3D Citadel/i);
     assert.doesNotMatch(html,/Fieldcraft/i);
-    assert.match(html,/14 handcrafted chapters/);
+    assert.match(html,/19 handcrafted chapters/);
   });
 
   it('replaces the floating boot bar with a full-screen painted medieval startup loading screen',()=>{
@@ -141,7 +141,7 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
   });
 
   it('renders Warcraft III / AoE2-style pre-mission chronicle loading screens for every campaign & skirmish mode',()=>{
-    assert.equal(MISSIONS.length,14);
+    assert.equal(MISSIONS.length,19);
     for(const m of MISSIONS){
       assert.ok(MISSION_CHRONICLES[m.id]);
       const html=missionLoadingMarkup({mode:m.id,faction:'alder',difficulty:'normal',map:m.map});

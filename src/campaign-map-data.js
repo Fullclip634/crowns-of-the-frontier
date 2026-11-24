@@ -7,11 +7,12 @@ import {CAMPAIGN_SCRIPTS} from './campaigns.js';
  * only adding or editing node coordinates and lore metadata here — zero UI rewrites.
  */
 export const CAMPAIGN_ACTS=Object.freeze([
-  {id:'all',label:'All Acts',roman:'I–IV',subtitle:'Complete Frontier Chronicles'},
+  {id:'all',label:'All Acts',roman:'I–V',subtitle:'Complete Frontier Chronicles'},
   {id:'act1',label:'Act I',roman:'I',subtitle:'The Foothold'},
   {id:'act2',label:'Act II',roman:'II',subtitle:'The Border Wars'},
   {id:'act3',label:'Act III',roman:'III',subtitle:'The Shattered Crown'},
   {id:'act4',label:'Act IV',roman:'IV',subtitle:'Legends of the Realm'},
+  {id:'act5',label:'Act V',roman:'V',subtitle:'The Great Frontier War'},
 ]);
 
 export const DIFFICULTY_MEDALS=Object.freeze({
@@ -93,6 +94,31 @@ export const CAMPAIGN_NODES=Object.freeze([
     id:'campaign14',act:'act4',x:516,y:448,region:'Three Crowns Reach',archetype:'Grand 2v2 Coalition War',
     lore:'Two allied Imperial citadels march across twin rivers and cliff ridges against rival warlord capitals for the fate of the realm.',
     unlockAfter:'campaign13',
+  },
+  {
+    id:'campaign15',act:'act5',x:192,y:252,region:'Ironfall Sanctuary',archetype:'2v4 Narrow Pass War',
+    lore:'Two united walled fortresses hold a cliff-locked valley behind a single narrow waterfall bridgehead against four surrounding enemy bases.',
+    unlockAfter:null,
+  },
+  {
+    id:'campaign16',act:'act5',x:360,y:322,region:'Waterfall Gorge',archetype:'2v2 Canyon River War',
+    lore:'Roaring two-tier waterfalls plunge into a contested gorge crossed by stone bridges, timber trestles, and a shallow northern ford.',
+    unlockAfter:'campaign15',
+  },
+  {
+    id:'campaign17',act:'act5',x:526,y:126,region:'Frostfall Cliff',archetype:'2v3 Frozen Siege War',
+    lore:'Glacial cliffs and drifting river ice floes guard an alpine stronghold battered by three outer wooden palisade war-camps.',
+    unlockAfter:'campaign16',
+  },
+  {
+    id:'campaign18',act:'act5',x:792,y:358,region:'Emerald Temple Lagoon',archetype:'2v2 Jungle Temple War',
+    lore:'Ancient stepped mossy stone temples rise above turquoise coral beaches, giant banyan groves, and contested delta bridges.',
+    unlockAfter:'campaign17',
+  },
+  {
+    id:'campaign19',act:'act5',x:676,y:284,region:'Deepwood Ravine',archetype:'3v3 Grand Coalition Finale',
+    lore:'All four civilizations clash across forested cliff canyons and timber ravine bridges in a thunderous six-kingdom Imperial war.',
+    unlockAfter:'campaign18',
   },
 ]);
 

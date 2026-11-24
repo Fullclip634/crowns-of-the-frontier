@@ -184,7 +184,7 @@
   box-shadow:0 3px 10px rgba(0,0,0,.52);
 }
 .atlas-pin-label b{font-family:var(--serif);font-size:11px;color:#f4d482}
-.atlas-pin-label em{font-style:normal;font-weight:500;max-width:118px;overflow:hidden;text-overflow:ellipsis}
+.atlas-pin-label em{font-style:normal;font-weight:500;max-width:152px;overflow:hidden;text-overflow:ellipsis}
 .atlas-node.selected .atlas-pin-label{border-color:#f6da8a;background:#1e3127;color:#fff}
 
 .atlas-legend{

@@ -505,8 +505,19 @@ export function installCommanderAI(Simulation){
     const healthy=landArmy.filter(e=>!wounded.includes(e)&&e.order?.type!=='board'),support=alliedSupport(this,owner,state,healthy.filter(e=>!recoveryHealers.has(e.id)),visible,tc,threats),ready=healthy.filter(e=>!support.has(e.id)&&!recoveryHealers.has(e.id)),knownBuildings=Object.values(state.known).filter(e=>e.kind==='building');
     const opening=this.options.mode==='custom'?customOpening(this,owner,profile):null,offensiveReady=!opening||this.time>=opening.earliest&&player.age>=opening.age&&workers.length>=opening.workers;
     let phase='muster',target={x:tc.x-12,z:tc.z+9};
+    const directive=owner>0&&this.allied(0,owner)&&this.allyDirective&&this.time<(this.allyDirective.until||0)?this.allyDirective:null;
+    const provoked=this.provokedWarlord&&this.provokedWarlord.owner===owner&&this.time<(this.provokedWarlord.until||0);
     if(threats.length){phase='defend';target=threats.sort((a,b)=>distance(a,tc)-distance(b,tc))[0];}
+    else if(directive&&(directive.type==='defend'||directive.type==='help')&&ready.filter(e=>UNITS[e.type].damage>0).length>=2){
+      phase='defend';target={x:directive.x,z:directive.z};
+    }
+    else if(directive&&directive.type==='attack'&&ready.filter(e=>UNITS[e.type].damage>0).length>=3){
+      phase='attack';target={x:directive.x,z:directive.z};
+    }
     else if(enemyPower>0&&ownPower<enemyPower*profile.retreat&&ready.some(e=>distance(e,tc)>30)){phase='regroup';}
+    else if(provoked&&ready.filter(e=>UNITS[e.type].damage>0).length>=4){
+      phase='attack';target=multiKingdom?customAttackTarget(this,owner,state,tc,knownBuildings):(this.players[0]?.start||{x:0,z:0});
+    }
     else if(state.phase==='attack'&&ready.filter(e=>UNITS[e.type].damage>0).length>=Math.max(3,Math.floor(profile.raid/2))||offensiveReady&&this.time>=nextAttack&&ready.filter(e=>UNITS[e.type].damage>0).length>=(opening?.army??Math.min(profile.raid,6+player.age*3))){
       const realKnown=knownBuildings.filter(b=>b.type!=='wall'&&b.type!=='gate');
       const raidSites=realKnown.length?realKnown:knownBuildings;

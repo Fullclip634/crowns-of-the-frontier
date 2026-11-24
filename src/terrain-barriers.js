@@ -351,6 +351,7 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
   keepClear=[],
   seedOffset=0,
   backToBorder=true,
+  compactForest=false,
 }={}){
   const rng=seededRandom((sim.options?.seed||2026)+4409+owner*137+seedOffset);
   const cx=center.x,cz=center.z,h=sim.halfWorld;
@@ -381,19 +382,20 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
     // Lush natural forest-and-mountain cove: massive mossy cliff headlands framing the shoulders +
     // thick sweeping ancient woodland tracts wrapping the rear & flanks (never a bare grey rock bowl!)
     placed.barriers.push(...addCurvedCliffChain(sim,[lOuter,lJaw,lBack],{
-      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+3,foothillTrees:true,
+      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+3,foothillTrees:!compactForest,
     }));
     placed.barriers.push(...addCurvedCliffChain(sim,[rBack,rJaw,rOuter],{
-      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+9,foothillTrees:true,
+      step:3.5,width:1,radius:3.2,height:4.7,wobble:2.3,keepClear:rimKeep,seedOffset:seedOffset+9,foothillTrees:!compactForest,
     }));
     placed.barriers.push(...addMountainMassif(sim,backPeak.x,backPeak.z,{
-      radius:10,peaks:3,keepClear:rimKeep,seedOffset:seedOffset+13,withTrees:true,
+      radius:10,peaks:3,keepClear:rimKeep,seedOffset:seedOffset+13,withTrees:!compactForest,
     }));
     // Dense sprawling ancient forests weaving naturally behind the cove & out into the wilderness
-    addDenseForestBelt(sim,lBack,backPeak,{step:2.4,thickness:3,keepClear:rimKeep,seedOffset:seedOffset+17});
-    addDenseForestBelt(sim,backPeak,rBack,{step:2.4,thickness:3,keepClear:rimKeep,seedOffset:seedOffset+23});
-    addDenseForestBelt(sim,lBack,lOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+29});
-    addDenseForestBelt(sim,rBack,rOuter,{step:2.6,thickness:2,keepClear:rimKeep,seedOffset:seedOffset+31});
+    const beltStep=compactForest?4.6:2.4,beltThick=compactForest?1:3,flankThick=compactForest?1:2;
+    addDenseForestBelt(sim,lBack,backPeak,{step:beltStep,thickness:beltThick,keepClear:rimKeep,seedOffset:seedOffset+17});
+    addDenseForestBelt(sim,backPeak,rBack,{step:beltStep,thickness:beltThick,keepClear:rimKeep,seedOffset:seedOffset+23});
+    addDenseForestBelt(sim,lBack,lOuter,{step:beltStep+.2,thickness:flankThick,keepClear:rimKeep,seedOffset:seedOffset+29});
+    addDenseForestBelt(sim,rBack,rOuter,{step:beltStep+.2,thickness:flankThick,keepClear:rimKeep,seedOffset:seedOffset+31});
 
     // Anchor twin mountain promontories at the valley mouth shoulders
     const mL=addNaturalBarrier(sim,lJaw.x,lJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+41,keepClear:rimKeep});
@@ -817,6 +819,95 @@ export function applyMapGeography(sim){
     }
     const snowKeep=[...bases.map(b=>({x:b.x,z:b.z,r:coveR+6})),{x:0,z:0,r:16}];
     scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear:snowKeep,passes:[{x:0,z:0,r:16}],seedOffset:823});
+  }else if(map==='waterfallgorge'){
+    // Epic Frontier — Waterfall Gorge (Images 4 & 10):
+    // Towering waterfall headwater cliffs in the north, sweeping canyon shoulders, central stone bridge,
+    // southern timber trestle bridge, and crossable shallow northern flank ford!
+    const gorgeKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),{x:0,z:0,r:20},{x:4,z:46,r:18},{x:0,z:-44,r:18}];
+    const passes=[{x:0,z:0,r:18},{x:4,z:46,r:16},{x:0,z:-44,r:17}];
+    addCurvedCliffChain(sim,[{x:-h*.68,z:-h*.84},{x:-26,z:-h*.76},{x:-16,z:-h*.62}],{step:3.5,width:2,radius:3.2,height:5.2,wobble:1.8,passes,keepClear:gorgeKeep,seedOffset:911,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:16,z:-h*.62},{x:26,z:-h*.76},{x:h*.68,z:-h*.84}],{step:3.5,width:2,radius:3.2,height:5.2,wobble:1.8,passes,keepClear:gorgeKeep,seedOffset:913,foothillTrees:true});
+    addCliffRidge(sim,{x:-22,z:14},{x:-20,z:32},{step:3.5,width:1,radius:3.0,height:4.6,wobble:1.4,passes,keepClear:gorgeKeep,seedOffset:915,foothillTrees:true});
+    addCliffRidge(sim,{x:22,z:14},{x:20,z:32},{step:3.5,width:1,radius:3.0,height:4.6,wobble:1.4,passes,keepClear:gorgeKeep,seedOffset:917,foothillTrees:true});
+    for(const [mx,mz,t] of [[-26,-44,'gold'],[26,-44,'gold'],[-28,46,'stone'],[28,46,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:5,ridgeLen:22,withMassifs:true,keepClear:gorgeKeep,passes,seedOffset:919});
+    sim.battlefieldProps.push(
+      {kind:'tent',x:-26,z:16,rot:.4},{kind:'campfire',x:-22,z:19},
+      {kind:'tent',x:28,z:-16,rot:-2.5},{kind:'campfire',x:24,z:-19},
+      {kind:'crates',x:-24,z:42},{kind:'crates',x:26,z:42},
+    );
+  }else if(map==='frostfallsiege'){
+    // Epic Frontier — Frostfall Siege (Image 7):
+    // Snow-capped waterfall cliffs, frozen gorge river with drifting ice floes, twin crossings & war-camps!
+    const frostKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),{x:-6,z:0,r:20},{x:-1,z:46,r:18},{x:-6,z:-48,r:18}];
+    const passes=[{x:-6,z:0,r:18},{x:-1,z:46,r:16},{x:-6,z:-48,r:17}];
+    addCurvedCliffChain(sim,[{x:-h*.76,z:-h*.84},{x:-34,z:-h*.74},{x:-20,z:-h*.60}],{step:3.4,width:2,radius:3.3,height:5.5,wobble:1.9,passes,keepClear:frostKeep,seedOffset:931,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:12,z:-h*.60},{x:28,z:-h*.74},{x:h*.72,z:-h*.84}],{step:3.4,width:2,radius:3.3,height:5.5,wobble:1.9,passes,keepClear:frostKeep,seedOffset:933,foothillTrees:true});
+    addMountainMassif(sim,-h*.72,h*.66,{radius:14,peaks:4,passes,keepClear:frostKeep,seedOffset:935});
+    addMountainMassif(sim,h*.72,-h*.58,{radius:14,peaks:4,passes,keepClear:frostKeep,seedOffset:937});
+    for(const [mx,mz,t] of [[-28,-22,'gold'],[24,22,'gold'],[-30,26,'stone'],[26,-26,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear:frostKeep,passes,seedOffset:939});
+    sim.battlefieldProps.push(
+      {kind:'tent',x:24,z:-18,rot:-1.2},{kind:'tent',x:30,z:-12,rot:-2.1},{kind:'campfire',x:26,z:-13},
+      {kind:'stakes',x:14,z:-10,rot:-1.5},{kind:'stakes',x:14,z:10,rot:-1.5},
+      {kind:'crates',x:-26,z:16},{kind:'campfire',x:-28,z:12},
+    );
+  }else if(map==='deepwoodravine'){
+    // Epic Frontier — Deepwood Ravine (Images 8 & 11):
+    // Sheer rocky canyon carving through dense ancient forest, spanned by a contested timber trestle bridge!
+    const ravPasses=[{x:0,z:0,r:14},{x:-4,z:-h*.56,r:12},{x:4,z:h*.56,r:12}];
+    const ravKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),...ravPasses];
+    addCurvedCliffChain(sim,[{x:-16,z:-h*.86},{x:-11,z:-h*.34},{x:-11,z:h*.34},{x:-16,z:h*.86}],{step:3.4,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:951,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:16,z:-h*.86},{x:11,z:-h*.34},{x:11,z:h*.34},{x:16,z:h*.86}],{step:3.4,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:953,foothillTrees:true});
+    for(const base of bases){
+      buildWoodlandGladePocket(sim,base,{gladeRadius:Math.min(34,adaptiveGladeR),passes:3,keepClear:[...bases.filter(o=>o.owner!==base.owner).map(o=>({x:o.x,z:o.z,r:36})),...ravPasses],seedOffset:base.owner*31+955,includeResources:false});
+    }
+    for(const [mx,mz,t] of [[-26,-34,'gold'],[26,34,'gold'],[-26,34,'stone'],[26,-34,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    sim.battlefieldProps.push(
+      {kind:'brazier',x:-14,z:-6,burning:true},{kind:'brazier',x:14,z:6,burning:true},
+      {kind:'stakes',x:-16,z:6,rot:1.57},{kind:'stakes',x:16,z:-6,rot:-1.57},
+      {kind:'tent',x:28,z:-24,rot:-.8},{kind:'campfire',x:25,z:-20},{kind:'crates',x:-26,z:22},
+    );
+  }else if(map==='templelagoon'){
+    // Epic Frontier — Temple Lagoon (Image 9):
+    // Tropical jungle waterfall, coral turquoise coast, palm & banyan forests, ancient mossy stone temples!
+    const lagPasses=[{x:-42,z:4,r:18},{x:24,z:0,r:18},{x:28,z:46,r:16},{x:24,z:-44,r:17}];
+    const lagKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),...lagPasses,{x:0,z:-h*.52,r:16}];
+    addMountainMassif(sim,-56,-h*.74,{radius:14,peaks:4,passes:lagPasses,keepClear:lagKeep,seedOffset:971,withTrees:true});
+    addMountainMassif(sim,-24,-h*.78,{radius:12,peaks:3,passes:lagPasses,keepClear:lagKeep,seedOffset:973,withTrees:true});
+    addMountainMassif(sim,h*.74,h*.68,{radius:13,peaks:3,passes:lagPasses,keepClear:lagKeep,seedOffset:975,withTrees:true});
+    for(const [mx,mz,t] of [[-8,-24,'gold'],[2,26,'gold'],[-10,20,'stone'],[6,-22,'stone']]){
+      if(!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2400);
+    }
+    scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear:lagKeep,passes:lagPasses,seedOffset:977});
+    sim.battlefieldProps.push(
+      {kind:'campfire',x:-8,z:12},{kind:'crates',x:-12,z:16},
+      {kind:'brazier',x:12,z:-6,burning:true},{kind:'stakes',x:12,z:8,rot:1.57},
+    );
+  }else if(map==='ironfall'){
+    // Epic Frontier — Ironfall Pass (Images 7, 10, 11):
+    // Cliff-locked Western Highland Sanctuary sealed by ONE narrow fortified waterfall bridgehead pass!
+    const pass={x:-14,z:0,r:16};
+    const ironKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),pass,{x:-14,z:0,r:18}];
+    addCurvedCliffChain(sim,[{x:-24,z:-h+6},{x:-18,z:-h*.52},{x:-22,z:-20}],{step:3.3,width:2,radius:3.4,height:5.5,wobble:1.8,passes:[pass],keepClear:ironKeep,seedOffset:991,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:-22,z:20},{x:-18,z:h*.52},{x:-24,z:h-6}],{step:3.3,width:2,radius:3.4,height:5.5,wobble:1.8,passes:[pass],keepClear:ironKeep,seedOffset:993,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:-4,z:-h+6},{x:0,z:-h*.52},{x:-2,z:-20}],{step:3.4,width:1,radius:3.2,height:5.1,wobble:1.6,passes:[pass],keepClear:ironKeep,seedOffset:995,foothillTrees:true});
+    addCurvedCliffChain(sim,[{x:-2,z:20},{x:0,z:h*.52},{x:-4,z:h-6}],{step:3.4,width:1,radius:3.2,height:5.1,wobble:1.6,passes:[pass],keepClear:ironKeep,seedOffset:997,foothillTrees:true});
+    // Rich sheltered gold & stone deposits inside the western valley so defenders can sustain long wars!
+    for(const [mx,mz,t] of [[-52,-32,'gold'],[-52,32,'gold'],[-62,0,'stone'],[-42,-58,'stone'],[42,-36,'gold'],[42,36,'gold'],[54,0,'stone']]){
+      if(Math.abs(mx)<h-12&&Math.abs(mz)<h-12&&!barrierCollision(sim,'mine',mx,mz,2)&&!sim.isWater(mx,mz))sim.addNaturalResource(t,mx,mz,2800);
+    }
+    sim.battlefieldProps.push(
+      {kind:'stakes',x:-30,z:-9,rot:1.57},{kind:'stakes',x:-30,z:9,rot:1.57},
+      {kind:'brazier',x:-28,z:-6,burning:true},{kind:'brazier',x:-28,z:6,burning:true},
+      {kind:'tent',x:28,z:-22,rot:-1.2},{kind:'campfire',x:24,z:-18},{kind:'tent',x:28,z:22,rot:1.2},{kind:'campfire',x:24,z:18},
+    );
   }else if(['highland','volcanic','arid','tundra'].includes(map)){
     // Rugged Rocky / Mesa / Volcanic / Alpine Biomes: Rich dramatic continent-wide cliff formations & mountain ridges!
     const passes=[{x:0,z:0,r:14},{x:-26,z:0,r:12},{x:26,z:0,r:12}];

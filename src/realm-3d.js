@@ -22,6 +22,7 @@ import {updateBridgeVisibility} from './bridge-art.js';
 import {forEachNearbyUnit} from './spatial-buckets.js';
 import {updateBuildingDamageVisuals} from './building-damage-visuals.js';
 import {selectionColorHex} from './selection-overlays.js';
+import {fordAt} from './map-water.js';
 
 export function forestTransform(view,base,id,leaves=false,fall=null){
   const pose=view.forestPose??=new THREE.Matrix4(),rotation=view.forestRotation??=new THREE.Matrix4();pose.copy(base);
@@ -453,6 +454,38 @@ export function installRealm3D(WorldView){
         const desired=nearby?(gate.userData.terrainGate?.openLift||2.5):0;gate.position.y=Math.abs(desired-gate.position.y)<.002?desired:gate.position.y+(desired-gate.position.y)*Math.min(1,dt*6);updateGatePortcullis(gate);
       }
       updateBuildingDamageVisuals(this,e,node);
+    }
+    // Live grazing & strolling animation for Blender 3D deer herds + shallow ford water splashes!
+    if(this.sim?.entities){
+      for(const e of this.sim.entities){
+        if(e.hp<=0||!e.wildlife)continue;
+        const node=this.nodes.get(e.id);
+        if(!node)continue;
+        const h=this.entityHeight(e);
+        const hop=e.wandering?Math.abs(Math.sin(this.clock*7.5+e.id))*.08:0;
+        node.position.set(e.x,h+hop,e.z);
+        node.rotation.y=e.angle||0;
+        // Subtle grazing head-dip when paused vs upright stride when strolling
+        node.rotation.x=e.wandering?Math.sin(this.clock*7.5+e.id)*.04:Math.max(0,Math.sin(this.clock*1.4+e.id*1.7))*.18;
+      }
+      if(!menu&&this.settings.quality!=='low'&&this.sim.options?.map){
+        const mapId=this.sim.options.map;
+        const units=typeof this.sim.candidatesFor==='function'?this.sim.candidatesFor('unit'):this.sim.entities;
+        for(const u of units){
+          if(u.hp<=0||u.embarked||!u.moving||UNITS[u.type]?.naval)continue;
+          if(!fordAt(mapId,u.x,u.z))continue;
+          if(this.clock-(u._fordSplashAt||0)<.45)continue;
+          u._fordSplashAt=this.clock;
+          if(this.fx.length<95&&this.impactEffects){
+            const wake=this.impactEffects.acquire('wake');
+            wake.position.set(u.x,0.13,u.z);
+            wake.rotation.x=-Math.PI/2;
+            wake.scale.setScalar(.55);
+            this.scene.add(wake);
+            this.fx.push({kind:'wake',object:wake,time:0,duration:.65,recycle:m=>this.impactEffects.release(m)});
+          }
+        }
+      }
     }
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);

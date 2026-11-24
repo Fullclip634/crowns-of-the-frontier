@@ -3,14 +3,15 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {canonicalGeometry} from './authored-assets.js';
 import {readAssetResponse} from './load-progress.js';
-import {bridgeArtwork,bridgeSpans,bridgeRoadHalfWidth,bridgeWidthScale} from './bridge-layout.js';
+import {bridgeArtwork,bridgeSpans,bridgeRoadHalfWidth,bridgeWidthScale,spanZ,spanRoadHalfWidth} from './bridge-layout.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
+import {cloneEpicProp} from './epic-props-art.js';
 const source=new URL('./assets3d/frontier-bridge.glb',import.meta.url).href;
 let pending,template,bytes=0;
 function bridgeAprons(view,span){
-  const positions=[],colors=[],uv=[],indices=[],land=view.landscape;
+  const positions=[],colors=[],uv=[],indices=[],land=view.landscape,cz=spanZ(span),roadHalf=spanRoadHalfWidth(span);
   for(const side of [-1,1])for(let row=0;row<6;row++)for(let col=0;col<12;col++){
-    const xx=[span.center+side*(span.halfLength+row*.5),span.center+side*(span.halfLength+(row+1)*.5)].sort((a,b)=>a-b),width=bridgeRoadHalfWidth/6,z0=-bridgeRoadHalfWidth+col*width,z1=Math.min(bridgeRoadHalfWidth,z0+width),points=[[xx[0],z0],[xx[1],z0],[xx[1],z1],[xx[0],z1]],base=positions.length/3;
+    const xx=[span.center+side*(span.halfLength+row*.5),span.center+side*(span.halfLength+(row+1)*.5)].sort((a,b)=>a-b),width=roadHalf/6,z0=cz-roadHalf+col*width,z1=Math.min(cz+roadHalf,z0+width),points=[[xx[0],z0],[xx[1],z0],[xx[1],z1],[xx[0],z1]],base=positions.length/3;
     const edgeShade=col===0||col===11?.82:1;
     const wearFade=row>=4?.86:row>=3?.94:1;
     const stoneVar=.93+((Math.abs((row*37+col*17+(side>0?11:3))%13))/12)*.12;
@@ -48,10 +49,30 @@ export function updateBridgeVisibility(view,menu=false){
 export function buildBridges(view){
   view.bridgeMeshes=[];const materials=new Map();let triangles=0,draws=0;
   for(const span of bridgeSpans(view.landscape.map)){
-    if(!template)throw new Error('Bridge artwork has not finished loading.');
-    const root=template.clone(true),group=new THREE.Group(),aprons=bridgeAprons(view,span);root.position.x=span.center;root.scale.set(span.halfLength/bridgeArtwork.halfLength,1,bridgeWidthScale);group.add(root,aprons);
-    root.traverse(part=>{if(!part.isMesh)return;const role=part.userData.assetMaterial,material=role==='stone'?(view.materials.rock||view.materials.stone):view.materials[role];if(!material)throw new Error('Unknown bridge material.');material.vertexColors=true;part.material=material;});
-    view.mergeModel(group);aprons.geometry.dispose();group.name='Authored stone river bridge';group.userData.bridge=span;
+    const timber=span.style==='timber';
+    const cz=spanZ(span);
+    let root=null;
+    if(timber)root=cloneEpicProp('bridge:timber');
+    if(!root){
+      if(!template)throw new Error('Bridge artwork has not finished loading.');
+      root=template.clone(true);
+    }
+    const group=new THREE.Group(),aprons=bridgeAprons(view,span);
+    root.position.set(span.center,0,cz);
+    if(timber){
+      root.scale.set(span.halfLength/10.6,1,1.18);
+    }else{
+      root.scale.set(span.halfLength/bridgeArtwork.halfLength,1,bridgeWidthScale);
+    }
+    group.add(root,aprons);
+    root.traverse(part=>{
+      if(!part.isMesh)return;
+      const role=part.userData.assetMaterial;
+      const material=role==='stone'?(view.materials.rock||view.materials.stone):(view.materials[role]||view.materials.wood);
+      if(!material)throw new Error('Unknown bridge material.');
+      material.vertexColors=true;part.material=material;
+    });
+    view.mergeModel(group);aprons.geometry.dispose();group.name=timber?'Authored timber trestle bridge':'Authored stone river bridge';group.userData.bridge=span;
     group.traverse(part=>{
       if(!part.isMesh)return;
       const source=part.material;

@@ -21,14 +21,15 @@ import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges
 import {constructionFace,constructionHeading} from './construction-contact.js';
 import {approachConstruction,approachMelee} from './construction-approach.js';
 import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading,meleeMinClearance,buildingClearanceStep} from './melee-contact.js';
-import {bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
+import {bridgeAt,bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCost,wallBuildTime,wallTier} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
-import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
-import {biomeProfile} from './terrain-biomes.js';
+import {channelAt,fordAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
+import {biomeProfile,EPIC_FRONTIER_MAPS} from './terrain-biomes.js';
+import {seedDeerHerds,tickWildlife} from './wildlife.js';
 import {closestCandidates} from './closest-candidates.js';
 import {navalPairClearance,separationUnitVector,resolveNavalSpacing,navalDestinationOccupied} from './naval-spacing.js';
 
@@ -79,10 +80,10 @@ export class Simulation {
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='siege')this.options.map='ironpass';
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
-    const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale'].includes(this.options.map)?240:WORLD;
+    const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale',...EPIC_FRONTIER_MAPS].includes(this.options.map)?240:WORLD;
     const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||defaultMapSize);
     this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
-    this.rng=seededRandom(this.options.seed);this.entities=[];this.barriers=[];this.nextId=1;this.time=0;this.revision=0;
+    this.rng=seededRandom(this.options.seed);this.entities=[];this.barriers=[];this.battlefieldProps=[];this.nextId=1;this.time=0;this.revision=0;
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
@@ -247,6 +248,7 @@ export class Simulation {
     plantStartingForests(this);
     groupFieldForests(this);
     if(!mission)applyMapGeography(this);
+    if(!mission&&([...EPIC_FRONTIER_MAPS,'timbervale','oakhold','threecrowns','frostvale','ironring','sunderedpass'].includes(this.options.map)))seedDeerHerds(this);
     if(m==='koth'){
       let spot={x:0,z:0},found=false;
       for(let r=0;r<=36&&!found;r+=3){
@@ -287,7 +289,7 @@ export class Simulation {
   fail(message,owner=0){this.emit('notice',{message,owner,tone:'warning'});return false;}
   buildValid(type,x,z,owner=0,ignored){const d=BUILDINGS[type];if(!d)return false;
     if(type==='gate'&&ignored===undefined)return gatePlacementPlan(this,x,z,owner).valid;
-    if(Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r))return false;
+    if(Math.abs(x)>this.halfWorld-d.r-2||Math.abs(z)>this.halfWorld-d.r-2||this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,d.r)||fordAt(this.options.map,x,z,d.r))return false;
     const edge=d.r;for(const dx of [-edge,0,edge])for(const dz of [-edge,0,edge])if(this.isWater(x+dx,z+dz))return false;
     if(owner===0&&!this.isVisible(x,z))return false;
     if(barrierCollision(this,type,x,z,d.r))return false;
@@ -410,7 +412,7 @@ export class Simulation {
     if(moving.length)this.command(moving,move,append);
   }
   stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
-  isWater(x,z){if(Math.abs(z)<=bridgeRoadHalfWidth-.6)return false;return channelAt(this.options.map,x,z);}
+  isWater(x,z){const map=this.options.map;if(bridgeAt(map,x,z,-.6))return false;if(fordAt(map,x,z))return false;return channelAt(map,x,z);}
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
     const size=this.gridSize,teamKey='team-'+(this.players[owner].team??owner);if(this.grids[teamKey]?.revision===this.revision){this.grids[owner]=this.grids[teamKey];return this.grids[owner].data;}
@@ -676,7 +678,8 @@ export class Simulation {
       if(distance(e,target)>gatheringRange(e,target)){this.move(e,target,dt,gatheringApproach(e,target));return;}
       e.heading=Math.atan2(target.x-e.x,target.z-e.z);
       const f=this.faction(e.owner),mineBonus=(type==='gold'||type==='stone')?(f.mineGather||1):1;
-      const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*f.gather*mineBonus*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
+      const huntBonus=target.wildlife?1.35:1;
+      const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*f.gather*mineBonus*huntBonus*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
       if(target.amount!==undefined&&takeFromResource(this,target,n)){this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}
     }
   }
@@ -769,7 +772,7 @@ export class Simulation {
       return;
     }
     if(!this.owned(0,'building','towncenter').length)return this.end(false,'Your last town center has fallen.');
-    if(this.mission?.actFour)return;
+    if(this.mission?.actFour||this.mission?.actFive)return;
     if(this.options.mode==='tutorial'){if(this.tutorialObjectives().every(o=>o.done))this.end(true,'Your first settlement is thriving. You are ready to rule.');return;}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival){const max=this.mission?.waves||10;if(this.wave>=max&&!this.owned(1,'unit').length&&(!this.mission||this.owned(0,'building','keep').some(b=>b.progress>=1)))this.end(true,'Your kingdom endured every assault.');return;}
     if(!this.owned(1,'building','towncenter').length){if(this.options.mode==='campaign1'&&(!this.owned(0,'building','barracks').length||this.owned(0,'unit').filter(e=>e.type!=='villager'&&e.type!=='scout').length<6))return;if(this.options.mode==='campaign2'&&this.players[0].age<2)return;this.end(true,'The rival capital has fallen. The frontier is yours.');}
@@ -788,6 +791,7 @@ export class Simulation {
     const tickEntityCount=this.entities.length;
     for(let i=0;i<tickEntityCount;i++){const e=this.entities[i];if(e.hp>0){if(e.kind==='unit')this.tickUnit(e,dt);else if(e.kind==='building')this.tickBuilding(e,dt);}}
     resolveNavalSpacing(this,dt);
+    tickWildlife(this,dt);
     this.tickProjectiles();
     this.aiClock+=dt;if(this.options.mode==='custom'||this.players.length>2)this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival&&this.time>=this.nextWave&&this.wave<(this.mission?.waves||10))this.spawnWave();
@@ -798,7 +802,7 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,barriers:this.barriers||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options);
@@ -814,6 +818,7 @@ export class Simulation {
     for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
     s.commanderAI=data.commanderAI||null;
     s.barriers=Array.isArray(data.barriers)?data.barriers.map(b=>({...b})):[];
+    s.battlefieldProps=Array.isArray(data.battlefieldProps)?data.battlefieldProps.map(b=>({...b})):[];
     restoreWallLinks(s.entities);
     if(data.rngState!==undefined)s.rng.state=data.rngState;
     s.explored=Uint8Array.from(data.explored);

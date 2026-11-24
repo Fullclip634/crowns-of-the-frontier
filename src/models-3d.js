@@ -5,7 +5,8 @@ import {authoredUnit,authoredBuilding,authoredResource,authoredTree,fortifyGateM
 import {wallTier} from './fortified-walls.js';
 import {isWallCorner} from './walls.js';
 import {dockWaterAngle} from './naval-spacing.js';
-import {isSnowBiome} from './terrain-biomes.js';
+import {isSnowBiome,isJungleBiome} from './terrain-biomes.js';
+import {cloneEpicProp,epicPropRoot} from './epic-props-art.js';
 
 const Y=new THREE.Vector3(0,1,0);
 function standard(color,extra={}){return standardMaterial({color,roughness:.85,...extra});}
@@ -382,7 +383,27 @@ export function buildingModel(view,e){
 }
 
 export function resourceModel(view,e){
-  ensureModels(view);const authored=authoredResource(view,e);if(authored)return authored;
+  ensureModels(view);
+  if(e.wildlife){
+    const key=e.wildlife==='doe'?'wildlife:doe':'wildlife:deer';
+    const deer=cloneEpicProp(key);
+    if(deer){
+      deer.traverse(part=>{
+        if(!part.isMesh)return;
+        const mat=view.materials.wildlife??=(()=>{
+          const m=standardMaterial({color:0xffffff,roughness:.84});
+          m.vertexColors=true;
+          return m;
+        })();
+        part.material=mat;
+        part.castShadow=true;part.receiveShadow=true;
+      });
+      deer.scale.setScalar(1.18);
+      deer.userData.model3d={kind:'resource',type:'food',wildlife:e.wildlife,authored:true};
+      return deer;
+    }
+  }
+  const authored=authoredResource(view,e);if(authored)return authored;
   ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(e.id*211+view.sim.options.seed);
   if(e.kind==='shrine'){
     for(let i=0;i<3;i++)b.piece(view.geo.cylinder,m.stoneDark,0,.12+i*.15,0,2.6-i*.35,.25,2.6-i*.35);
@@ -402,7 +423,22 @@ export function resourceModel(view,e){
 }
 
 export function treeModel(view,map,variant=0,far=false){
-  ensureModels(view);const authored=authoredTree(view,map,variant,far);if(authored)return authored;
+  ensureModels(view);
+  if(isJungleBiome(map)&&epicPropRoot(`tree:jungle:${variant%4}`)){
+    const jungle=cloneEpicProp(`tree:jungle:${variant%4}`);
+    if(jungle){
+      jungle.traverse(part=>{
+        if(!part.isMesh)return;
+        const role=part.userData?.assetMaterial==='trunk'?'trunk':'leaf';
+        const mat=view.materials[role];
+        if(mat){mat.vertexColors=true;part.material=mat;}
+        part.castShadow=true;part.receiveShadow=true;
+      });
+      jungle.userData.model3d={kind:'resource',type:'wood',biome:'jungle',authored:true};
+      return jungle;
+    }
+  }
+  const authored=authoredTree(view,map,variant,far);if(authored)return authored;
   ensureModels(view);const g=new THREE.Group(),b=builder(view,g),m=view.materials,rng=seededRandom(variant+128),snow=isSnowBiome(map);
   b.rod(m.trunk,[0,0,0],[.07,4.5,0],.22);
   if(!far){for(let i=0;i<4;i++){const angle=i*Math.PI/2+variant;b.rod(m.trunk,[0,.4,0],[Math.sin(angle)*.75,.04,Math.cos(angle)*.75],.12);}b.rod(m.trunk,[.02,2.2,0],[.45,4.8,.15],.12);}

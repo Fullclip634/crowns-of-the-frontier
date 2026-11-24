@@ -1,7 +1,7 @@
 import {terrainMeadow,terrainNoise} from './terrain-fields.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,terrainBiome} from './terrain-biomes.js';
-import {bridgeSpans} from './bridge-layout.js';
-import {channelAt} from './map-water.js';
+import {bridgeSpans,spanZ} from './bridge-layout.js';
+import {channelAt,waterFords,fordAt} from './map-water.js';
 import {seededRandom} from './data.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
@@ -32,7 +32,7 @@ function dryRoad(land,road){
     const count=Math.ceil(Math.sqrt(segment.length));
     for(let step=0;step<=count;step++){
       const t=step/count,x=segment.x+t*segment.dx,z=segment.z+t*segment.dz;
-      if(Math.abs(x)>land.half||Math.abs(z)>land.half||channelAt(land.map,x,z))return false;
+      if(Math.abs(x)>land.half||Math.abs(z)>land.half||(channelAt(land.map,x,z)&&!fordAt(land.map,x,z)))return false;
     }
   }
   return true;
@@ -42,14 +42,18 @@ export function terrainRoadPaths(land){
   if(land.roadPaths)return land.roadPaths;
   if(!land.startingSites)return land.roadPaths=land.settlements
     .map(town=>cartRoad(land,town,defaultRoadEnd(land,town))).filter(Boolean);
-  const roads=[],spans=bridgeSpans(land.map);
+  const roads=[],spans=bridgeSpans(land.map),fords=waterFords(land.map);
   for(const town of land.startingSites.filter(site=>site.type==='towncenter')){
-    const approaches=spans.map(span=>({x:span.center+Math.sign(town.x-span.center)*(span.halfLength+1.5),z:0}));
-    approaches.sort((a,b)=>Math.abs(a.x-town.x)-Math.abs(b.x-town.x));
+    const approaches=[
+      ...spans.map(span=>({x:span.center+Math.sign(town.x-span.center)*(span.halfLength+1.5),z:spanZ(span)})),
+      ...fords.map(ford=>({x:ford.center+Math.sign(town.x-ford.center)*(ford.halfLength+2),z:ford.z})),
+    ];
+    approaches.sort((a,b)=>Math.hypot(a.x-town.x,a.z-town.z)-Math.hypot(b.x-town.x,b.z-town.z));
     if(!approaches.length&&land.map!=='coast')approaches.push(defaultRoadEnd(land,town));
+    let connected=0;
     for(const end of approaches){
-      const outlet=cartRoad(land,town,end,false,spans.length>0);
-      if(dryRoad(land,outlet)){roads.push(outlet);break;}
+      const outlet=cartRoad(land,town,end,false,spans.length>0||fords.length>0);
+      if(dryRoad(land,outlet)){roads.push(outlet);connected++;if(connected>=2)break;}
     }
     for(const site of land.startingSites){
       if(site===town||site.owner!==town.owner)continue;
