@@ -6,6 +6,7 @@ import {groupFieldForests} from './field-forests.js';
 import {seedDeerHerds} from './wildlife.js';
 import {waterChannels,waterFords} from './map-water.js';
 import {bridgeSpans,spanZ} from './bridge-layout.js';
+import {spawnHeroGeneral} from './heroes.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
@@ -463,7 +464,10 @@ export function buildActFourScenario(sim){
     sim.addNaturalResource(type,x,z,type==='wood'?280:type==='food'?380:2200);
   }
   for(let owner=0;owner<sim.players.length;owner++){
-    if(!sim.players[owner].dormant)sim.assignEconomy(owner);
+    if(!sim.players[owner].dormant){
+      sim.assignEconomy(owner);
+      if(sim.players[owner].age>=2)spawnHeroGeneral(sim,owner);
+    }
   }
   sim.startingSites=sim.entities.filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type)).map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
   // Pre-scout iconic frontier landmarks (waterfalls, bridges, fords, shrines) as explored terrain ONLY
@@ -769,7 +773,10 @@ function buildActFiveScenario(sim){
   sim.entities=sim.entities.filter(e=>e.hp>0);
   sim.index=new Map(sim.entities.map(e=>[e.id,e]));
   for(let owner=0;owner<sim.players.length;owner++){
-    if(!sim.players[owner].dormant)sim.assignEconomy(owner);
+    if(!sim.players[owner].dormant){
+      sim.assignEconomy(owner);
+      if(sim.players[owner].age>=2)spawnHeroGeneral(sim,owner);
+    }
   }
   sim.startingSites=sim.entities.filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type)).map(({x,z,r,owner,type})=>({x,z,r,owner,type}));
   // Pre-scout iconic frontier landmarks (waterfalls, bridges, fords, shrines) as explored terrain ONLY

@@ -86,7 +86,7 @@ function jointAngle(view,m,e){
   if(m.type==='sail')return Math.sin(view.clock*1.5+e.id)*.035;
   if(m.type==='oar')return e.moving?Math.sin(view.clock*3+e.id)*.18*m.side:0;
   if(m.type==='ram')return 0;
-  if(m.type==='siege')return siegeArmAngle(e,combatRenderOffset(view));
+  if(m.type==='siege'||m.type==='siegearm')return siegeArmAngle(e,combatRenderOffset(view));
   if(m.type==='forearm'){
     return -.15*blend;
   }

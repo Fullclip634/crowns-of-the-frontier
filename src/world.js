@@ -273,12 +273,54 @@ export class WorldView {
     this.fx.push({object,time:0,duration:1.8,particles:velocities,smoke:true,size,recycle:mesh=>pool.release(mesh)});
     return true;
   }
+  heroShockwave(x,z,color=0xf5d46e,radius=10){
+    if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).effects))return;
+    const pool=this.impactEffects??=new ImpactEffects(),object=pool.acquire('heal',color);
+    const gy=this.groundHeight?.(x,z)||0;
+    object.rotation.x=-Math.PI/2;
+    object.position.set(x,gy+.28,z);
+    this.scene.add(object);
+    this.fx.push({object,time:0,duration:.95,shockwave:true,maxScale:Math.max(4,Math.min(14,radius*.85)),groundY:gy,recycle:mesh=>pool.release(mesh)});
+    this.sparks(x,gy+1.2,z,color,1.6);
+  }
   effect(event){if(!effectsAllowed(this.fx.length,vfxBudget(this.renderQuality||this.settings.quality).events))return;const e=event.entity;
     if(event.type==='death'&&!witnessedEffect(this,e))return;
     if(event.type==='heal'&&!witnessedEffect(this,event.target))return;
+    if(event.type==='hero-skill'){
+      if(e&&!witnessedEffect(this,e))return;
+      this.heroShockwave(event.x,event.z,event.color||0xf5d46e,event.radius||12);
+      if(event.offensive){this.burst(event.x,event.z,event.color||0xff8e42,2.1);this.crater(event.x,event.z,2.4,4);}
+      return;
+    }
+    if(event.type==='hero-levelup'&&e){
+      if(!witnessedEffect(this,e))return;
+      this.heroShockwave(e.x,e.z,0xffdf6b,7);
+      this.celebrateAgeUp(e);
+      return;
+    }
+    if(event.type==='boiling-oil'){
+      if(this.battleFog?.enabled.value&&!this.sim?.isVisible?.(event.x,event.z))return;
+      const gy=this.groundHeight?.(event.x,event.z)||0;
+      this.burst(event.x,event.z,0xff6a1a,2.2);
+      this.sparks(event.x,gy+2.8,event.z,0xff9e32,2.0);
+      this.smoke(event.x,gy+1.6,event.z,1.8);
+      this.crater(event.x,event.z,2.2,5.5);
+      return;
+    }
+    if(event.type==='wonder-completed'){
+      this.heroShockwave(event.x,event.z,0xffdf7a,14);
+      const gy=this.groundHeight?.(event.x,event.z)||0;
+      this.sparks(event.x,gy+4.8,event.z,0xffe488,2.4);
+      return;
+    }
     if(event.type==='attack'){
-      const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5,siege=['catapult','warship'].includes(e.type),kind=siege?'siege':ranged?'arrow':'slash';
-      const pool=this.attackEffects??=new AttackEffects(),object=pool.acquire(kind,siege?0xf0a564:0xf3db9b);
+      if(event.explosive&&event.target){
+        const gy=this.groundHeight?.(event.target.x,event.target.z)||0;
+        this.sparks(event.target.x,gy+1.1,event.target.z,0xff8e2c,1.45);
+        this.burst(event.target.x,event.target.z,0xff7424,1.2);
+      }
+      const target=event.target,ranged=e.kind==='building'||UNITS[e.type].range>5,siege=['catapult','trebuchet','warship'].includes(e.type),kind=siege?'siege':ranged?'arrow':'slash';
+      const pool=this.attackEffects??=new AttackEffects(),object=pool.acquire(kind,event.fireball?0xff6a18:siege?0xf0a564:event.flaming?0xff9c34:0xf3db9b);
       object.position.set(e.x,3,e.z);this.scene.add(object);
       this.fx.push({object,time:0,duration:siege?.65:ranged?.3:.2,from:new THREE.Vector3(e.x,e.kind==='building'?5:1.6,e.z),to:new THREE.Vector3(target.x,1.2,target.z),arc:siege?10:1,impact:siege,recycle:mesh=>pool.release(mesh)});
     }else if(event.type==='death'){const gy=this.groundHeight?.(e.x,e.z)||0;this.burst(e.x,e.z,0xcbb28d,e.kind==='building'?2.5:1);
@@ -345,7 +387,7 @@ export class WorldView {
       }
       if(f.from)updateFlight(f,t);
       // Opaque shots are culled at their current position during batch packing.
-      if(f.kind==='arrow'||f.kind==='stone')continue;
+      if(['arrow','firearrow','stone','fireball'].includes(f.kind))continue;
       object.visible=!fog||sim.isVisible(object.position.x,object.position.z);
       if(!object.visible)continue;
       if(f.particles){
@@ -387,6 +429,11 @@ export class WorldView {
         object.material.opacity=(1-t)*.34;
       }else if(f.crater){
         object.material.opacity=(1-t)*.7;
+      }else if(f.shockwave){
+        const ease=1-Math.pow(1-t,2.4);
+        object.scale.setScalar(.8+ease*(f.maxScale||9));
+        object.material.opacity=(1-t)*.82;
+        object.position.y=(f.groundY||0)+.24+t*.45;
       }else if(f.heal){
         object.scale.setScalar(1+t);
         object.material.opacity=(1-t)*.6;

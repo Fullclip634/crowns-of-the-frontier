@@ -2,7 +2,7 @@ import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {UNITS,seededRandom} from './data.js';
-import {workerVisualTask} from './authored-assets.js';
+import {workerVisualTask,authoredRubbleProp} from './authored-assets.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 
 // Materials whose .color is lifted to near-white once PBR albedo textures load
@@ -128,6 +128,18 @@ export class BattleRemains{
         const a=heading+rng()*Math.PI*2,dist=radius*(.1+rng()*.38);
         return {dx:Math.cos(a)*dist,dz:Math.sin(a)*dist,len:radius*(.7+rng()*.65),yaw:a+(rng()-.5)*1.2,pitch:.16+rng()*.38,roll:(rng()-.5)*.3,drop:.4+rng()*Math.min(1.6,radius*.45),color:TIMBER_COLORS[i%TIMBER_COLORS.length]};
       });
+      if(['wall','gate','tower','keep','wonder'].includes(e.type)){
+        const shell=authoredRubbleProp(v);
+        if(shell){
+          const scale=Math.max(.75,Math.min(2.1,radius*.42));
+          shell.position.set(e.x,v.groundHeight(e.x,e.z)-.04,e.z);
+          shell.rotation.y=e.wallAngle??(rng()*Math.PI*2);
+          shell.scale.setScalar(scale);
+          shell.userData.baseScale=scale;
+          this.group.add(shell);
+          item.shell=shell;
+        }
+      }
     }
     this.items.push(item);if(this.items.length>this.limit)this.retire(this.items.shift());
   }
@@ -150,6 +162,11 @@ export class BattleRemains{
       }
       // Smoothly settle beneath the soil over the final 4s so building ruins clear inside 12s.
       const fade=Math.max(0,Math.min(1,(age-(e.life-4))/4)),shrink=1-fade*.88,sink=fade*fade*1.15;
+      if(e.shell){
+        const bs=e.shell.userData.baseScale||1;
+        e.shell.position.y=v.groundHeight(e.x,e.z)-.04-sink*.85;
+        e.shell.scale.setScalar(bs*shrink);
+      }
       const collapse=Math.min(1,age/.65),t=Math.min(1,age/.85);
       for(const pier of e.piers){
         const x=e.x+pier.dx*collapse,z=e.z+pier.dz*collapse;

@@ -19,27 +19,31 @@ export function witnessedEffect(view,entity){
 // timing remain authoritative simulation events, independent of visual quality.
 export function attackFlight(view,entity,target,arrowIndex=0,event={}){
   const def=UNITS[entity.type],ranged=entity.kind==='building'||(def?.range||0)>5;
-  const siege=['catapult','warship'].includes(entity.type),kind=siege?'stone':ranged?'arrow':'slash';
+  const siege=['catapult','trebuchet','warship'].includes(entity.type);
+  const fireball=Boolean(event.fireball||entity.type==='trebuchet');
+  const flaming=Boolean(!siege&&ranged&&(event.flaming||view.sim?.players?.[entity.owner]?.tech?.fireArrows>0));
+  const kind=fireball?'fireball':siege?'stone':flaming?'firearrow':ranged?'arrow':'slash';
   const x=entity.renderX??entity.x,z=entity.renderZ??entity.z;
   const tx=target.renderX??target.x,tz=target.renderZ??target.z;
   const distance=Math.hypot(tx-x,tz-z),heading=Math.atan2(tx-x,tz-z);
   const ground=view.entityHeight(entity,x,z)+(entity.kind==='unit'?visualBodyOffset(view,entity):0),targetGround=view.entityHeight(target,tx,tz)+(target.kind==='unit'?visualBodyOffset(view,target):0);
-  const height=entity.kind==='building'?buildingHeight(entity.type):def?.naval?2.1:entity.type==='catapult'?3.3:1.95;
-  const localX=kind==='arrow'&&entity.kind==='unit'&&!def?.naval?-.48:entity.kind==='building'&&arrowIndex>0?(arrowIndex%2?-1:1)*Math.ceil(arrowIndex/2)*.55:0;
-  const forward=entity.kind==='building'?Math.min(2,entity.r||1):def?.naval?1.7:entity.type==='catapult'?1.1:.65;
+  const height=entity.kind==='building'?buildingHeight(entity.type):def?.naval?2.1:entity.type==='trebuchet'?4.4:entity.type==='catapult'?3.3:1.95;
+  const localX=(kind==='arrow'||kind==='firearrow')&&entity.kind==='unit'&&!def?.naval?-.48:entity.kind==='building'&&arrowIndex>0?(arrowIndex%2?-1:1)*Math.ceil(arrowIndex/2)*.55:0;
+  const forward=entity.kind==='building'?Math.min(2,entity.r||1):def?.naval?1.7:entity.type==='trebuchet'?1.4:entity.type==='catapult'?1.1:.65;
   const from=new THREE.Vector3(x+Math.cos(heading)*localX+Math.sin(heading)*forward,ground+height,z-Math.sin(heading)*localX+Math.cos(heading)*forward);
   if(bowArcher(entity)){const p=bowReleasePoint;from.set(x+Math.cos(heading)*p.x+Math.sin(heading)*p.z,ground+p.y,z-Math.sin(heading)*p.x+Math.cos(heading)*p.z);}
-  if(entity.type==='catapult'&&event.pendingImpact){
-    const angle=siegeArmAngle(entity),y=1.33*Math.cos(angle)+2.66*Math.sin(angle)+2.8,offset=1.33*Math.sin(angle)-2.66*Math.cos(angle);
+  if((entity.type==='catapult'||entity.type==='trebuchet')&&event.pendingImpact){
+    const angle=siegeArmAngle(entity),scale=entity.type==='trebuchet'?1.35:1;
+    const y=(1.33*Math.cos(angle)+2.66*Math.sin(angle))*scale+2.8*scale,offset=(1.33*Math.sin(angle)-2.66*Math.cos(angle))*scale;
     from.set(x+Math.sin(heading)*offset,ground+y,z+Math.cos(heading)*offset);
   }
   if(arrowIndex>0)from.y+=(arrowIndex%3-1)*.12;
   const to=new THREE.Vector3(tx,targetGround+projectileTargetHeight(target,!!event.pendingImpact&&siege),tz);
   if(event.pendingImpact&&siege){to.x=event.aimX;to.z=event.aimZ;to.y=view.entityHeight(target,to.x,to.z)+projectileTargetHeight(target,true);}
   if(!ranged)from.lerp(to,.7);
-  return {kind,from,to,duration:event.flightDuration??(siege?clamp(distance/30,.45,1.4):ranged?clamp(distance/34,.14,.65):.19),
-    arc:siege?clamp(distance*(entity.type==='warship'?.18:.32),2,12):ranged?clamp(distance*.045,.18,1.4):.12,
-    alignFlight:true,impact:siege&&!event.pendingImpact,authoritative:!!event.pendingImpact,releasedAt:event.releasedAt,tracked:!siege&&event.pendingImpact?target.id:null,impactColor:UNITS[target.type]?.naval?0xa6c9c4:0xb5aa95,impactSize:siege?1.6:0};
+  return {kind,from,to,duration:event.flightDuration??(siege?clamp(distance/(entity.type==='trebuchet'?26:30),.45,1.65):ranged?clamp(distance/34,.14,.65):.19),
+    arc:fireball?clamp(distance*.38,4,15):siege?clamp(distance*(entity.type==='warship'?.18:.32),2,12):ranged?clamp(distance*.045,.18,1.4):.12,
+    alignFlight:true,impact:siege&&!event.pendingImpact,fireball,flaming,authoritative:!!event.pendingImpact,releasedAt:event.releasedAt,tracked:!siege&&event.pendingImpact?target.id:null,impactColor:fireball?0xff8c38:UNITS[target.type]?.naval?0xa6c9c4:0xb5aa95,impactSize:fireball?2.35:siege?1.6:0};
 }
 
 export function updateFlight(effect,t){
@@ -73,6 +77,31 @@ function arrowGeometry(){
   const streakH=colored(new THREE.PlaneGeometry(.055,.92).rotateX(-Math.PI/2).translate(0,0,-.86),0xf2e7ca);
   const streakV=streakH.clone().rotateZ(Math.PI/2);
   const parts=[shaft,tip,feather,vertical,streakH,streakV].map(g=>{
+    const nonIdx=g.index?g.toNonIndexed():g;if(nonIdx!==g)g.dispose();
+    if(!nonIdx.attributes.normal)nonIdx.computeVertexNormals();
+    if(!nonIdx.attributes.uv)nonIdx.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(nonIdx.attributes.position.count*2),2));
+    return nonIdx;
+  }),merged=mergeGeometries(parts);
+  for(const part of parts)part.dispose();return merged;
+}
+function fireArrowGeometry(){
+  const shaft=colored(new THREE.CylinderGeometry(.018,.018,.88,5).rotateX(Math.PI/2),0x4e3722);
+  const flame=colored(new THREE.ConeGeometry(.095,.34,5).rotateX(Math.PI/2).translate(0,0,.48),0xffa828);
+  const core=colored(new THREE.IcosahedronGeometry(.075,0).translate(0,0,.38),0xfff08a);
+  const trailH=colored(new THREE.PlaneGeometry(.09,1.15).rotateX(-Math.PI/2).translate(0,0,-.34),0xff6a18);
+  const trailV=trailH.clone().rotateZ(Math.PI/2);
+  const parts=[shaft,flame,core,trailH,trailV].map(g=>{
+    const nonIdx=g.index?g.toNonIndexed():g;if(nonIdx!==g)g.dispose();
+    if(!nonIdx.attributes.normal)nonIdx.computeVertexNormals();
+    if(!nonIdx.attributes.uv)nonIdx.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(nonIdx.attributes.position.count*2),2));
+    return nonIdx;
+  }),merged=mergeGeometries(parts);
+  for(const part of parts)part.dispose();return merged;
+}
+function fireballGeometry(){
+  const rock=colored(new THREE.IcosahedronGeometry(.44,1),0xff6a18);
+  const tail=colored(new THREE.ConeGeometry(.38,1.25,6).rotateX(-Math.PI/2).translate(0,0,-.62),0xffb830);
+  const parts=[rock,tail].map(g=>{
     const nonIdx=g.index?g.toNonIndexed():g;if(nonIdx!==g)g.dispose();
     if(!nonIdx.attributes.normal)nonIdx.computeVertexNormals();
     if(!nonIdx.attributes.uv)nonIdx.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(nonIdx.attributes.position.count*2),2));
@@ -311,9 +340,14 @@ function wakeGeometry(){
 // retain individual opacity and transparent sorting.
 export class FlightEffects{
   constructor(){
-    this.geometry={arrow:arrowGeometry(),stone:stoneGeometry(),slash:new THREE.TorusGeometry(.42,.022,4,16,Math.PI*.78)};
-    this.material={arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.18}),stone:standardMaterial({vertexColors:true,roughness:.94})};
-    this.free={arrow:[],stone:[],slash:[]};this.retained=new Set();this.limit=96;this.batches={};
+    this.geometry={arrow:arrowGeometry(),firearrow:fireArrowGeometry(),stone:stoneGeometry(),fireball:fireballGeometry(),slash:new THREE.TorusGeometry(.42,.022,4,16,Math.PI*.78)};
+    this.material={
+      arrow:standardMaterial({vertexColors:true,roughness:.75,metalness:.18}),
+      firearrow:standardMaterial({vertexColors:true,emissive:0xff6b1c,emissiveIntensity:1.1,roughness:.45}),
+      stone:standardMaterial({vertexColors:true,roughness:.94}),
+      fireball:standardMaterial({vertexColors:true,emissive:0xff5512,emissiveIntensity:1.35,roughness:.42}),
+    };
+    this.free={arrow:[],firearrow:[],stone:[],fireball:[],slash:[]};this.retained=new Set();this.limit=96;this.batches={};
   }
   acquire(kind){
     let mesh=this.free[kind].pop();
@@ -334,12 +368,12 @@ export class FlightEffects{
     const fog=view.battleFog?.enabled.value;
     for(const effect of view.fx){
       const {kind,object}=effect;
-      if(kind!=='arrow'&&kind!=='stone'||!object.visible)continue;
+      if(!['arrow','firearrow','stone','fireball'].includes(kind)||!object.visible)continue;
       if(fog&&!view.sim.isVisible(object.position.x,object.position.z))continue;
       let batch=this.batches[kind];
       if(!batch){
         batch=this.batches[kind]=new THREE.InstancedMesh(this.geometry[kind],this.material[kind],this.limit);
-        batch.name=kind==='arrow'?'Battlefield arrows':'Battlefield siege stones';
+        batch.name=kind==='fireball'?'Trebuchet fire boulders':kind==='firearrow'?'Flaming arrows':kind==='arrow'?'Battlefield arrows':'Battlefield siege stones';
         batch.userData.flightKind=kind;
         batch.frustumCulled=false;
         batch.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

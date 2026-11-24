@@ -17,6 +17,7 @@ export const FACTION_SIGNATURES=Object.freeze({
   sun:{motto:'Gold commands the field.',unit:'marksman',tech:'caravanLedger',accent:'#e2b453'},
   raven:{motto:'Strike swift, ride before dawn.',unit:'outrider',tech:'raidingParties',accent:'#d9756d'},
   iron:{motto:'Forge and thunder.',unit:'ironbreaker',tech:'siegecraft',accent:'#c4603e'},
+  jade:{motto:'Harmony in jade. Thunder in fire.',unit:'chukonu',tech:'imperialGunpowder',accent:'#229972'},
 });
 
 export const SETTINGS_TABS=Object.freeze([

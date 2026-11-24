@@ -168,7 +168,7 @@ describe('Phase 5: Upgraded Tech Tree, Hero Menu, Skirmish Hub & 5-Tab Settings'
 
   it('renders Visual Skirmish Hub with Mode cards, Civ Crest cards & Biome picker',()=>{
     const html=skirmishHubMarkup({mode:'skirmish',faction:'raven',difficulty:'hard',map:'volcanic',mapSize:'vast',seed:777});
-    assert.equal(Object.keys(FACTION_SIGNATURES).length,4);
+    assert.equal(Object.keys(FACTION_SIGNATURES).length,5);
     assert.match(html,/data-hub-mode="skirmish"/);
     assert.match(html,/data-hub-mode="koth"/);
     assert.match(html,/data-hub-mode="deathmatch"/);
@@ -177,6 +177,7 @@ describe('Phase 5: Upgraded Tech Tree, Hero Menu, Skirmish Hub & 5-Tab Settings'
     assert.match(html,/data-hub-faction="sun"/);
     assert.match(html,/data-hub-faction="raven"/);
     assert.match(html,/data-hub-faction="iron"/);
+    assert.match(html,/data-hub-faction="jade"/);
     assert.match(html,/data-hub-map="volcanic"/);
     assert.match(html,/data-start="skirmish"/);
 

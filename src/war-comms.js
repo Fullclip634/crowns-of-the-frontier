@@ -331,6 +331,41 @@ export class WarCommsController{
   onSimEvent(sim,event){
     if(!sim||sim.options?.mode==='tutorial'||sim.options?.mode==='sandbox')return;
     const t=sim.time||0;
+    if(event.type==='hero-skill'&&event.owner===0&&this._ready('hero-skill-voice',t,18)){
+      const cries={
+        rally:'Sound the royal horn! Hold the line and strike as one!',
+        shieldwall:'Raise your shields! Nothing breaks the Aegis Bastion!',
+        solarblessing:'May the golden dawn mend our wounds and speed our blades!',
+        arrowstorm:'Sunfire volley! Darken the sky above them!',
+        bloodlust:'Blood and thunder! Ride them down, warband!',
+        whirlwind:'Clear the path—feel the storm of axes!',
+        earthshaker:'By hammer and rune—shatter their stones to dust!',
+        anvilfortify:'Stand like iron! Repair the engines and hold fast!',
+        dragonbanner:'Raise the Dragon Banner! Unleash imperial thunder!',
+        fireworkbarrage:'Light the black powder! Rain imperial fire upon them!',
+      };
+      const line=cries[event.skillId]||`${event.skillName}! Forward!`;
+      this.speak({speaker:event.heroTitle||'Hero General',role:'player',faction:sim.players?.[0]?.faction||'alder',color:sim.players?.[0]?.color,text:line,horn:true});
+      return;
+    }
+    if(event.type==='wonder-started'){
+      const pl=sim.players?.[event.owner];
+      if(event.owner===0){
+        this.speak({speaker:pl?.name||'Royal Architect',role:'player',faction:pl?.faction||'alder',color:pl?.color,text:`Our builders have laid the foundations of the ${event.wonderName}! Defend it until completion!`,urgent:true,horn:true});
+      }else if(sim.hostile(0,event.owner)){
+        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`Behold! We are raising the ${event.wonderName}! Try to stop us before its power awakens!`,urgent:true,horn:true});
+      }
+      return;
+    }
+    if(event.type==='wonder-completed'){
+      const pl=sim.players?.[event.owner];
+      if(event.owner===0){
+        this.speak({speaker:pl?.name||'High Herald',role:'player',faction:pl?.faction||'alder',color:pl?.color,text:`The ${event.wonderName} stands complete! Its eternal blessing now empowers our entire kingdom!`,urgent:true,horn:true});
+      }else if(sim.hostile(0,event.owner)){
+        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`The ${event.wonderName} is complete! Feel the wrath of our golden age!`,urgent:true,horn:true});
+      }
+      return;
+    }
     if(event.type==='campaign-event'&&event.text){
       const speaker=event.speaker||'Frontier Command';
       const role=event.role||(event.enemy?'enemy':'ally');

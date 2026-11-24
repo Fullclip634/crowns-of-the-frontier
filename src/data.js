@@ -56,7 +56,7 @@ export const BUILDINGS = {
   wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Starts as a wooden palisade in Frontier and Feudal Ages and upgrades to stone in the Castle Age. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:0},
   gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement. Starts as a wooden palisade gate and upgrades to a stone gatehouse in the Castle Age.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:0},
   monastery:{name:'Monastery',desc:'Trains healers. Heal wounded troops between engagements.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},
-  wonder:{name:'Grand monument',desc:'Imperial achievement. In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:120,age:3},
+  wonder:{name:'Grand monument',desc:'Imperial achievement granting a permanent kingdom-wide Super-Power! In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:120,age:3},
 };
 export const TECHS = {
   economy:{name:'Efficient tools',desc:'+25% gathering speed per level.',at:['towncenter','market','mill','camp','mine'],cost:{food:120,wood:80},max:3,age:0,time:28},
@@ -73,6 +73,7 @@ export const FACTIONS = {
   sun:{name:'The Sunward Sultanate',motto:'Prosperity is power.',desc:'Master merchants of the sunlit frontier. Gather 18% faster; buildings cost 10% less.',color:0xd4a24e,bonus:'Swift economy · Efficient construction',buildingHP:1,infantryHP:1,gather:1.18,cavalry:1,cost:.9},
   raven:{name:'The Raven Clans',motto:'Ride beyond the horizon.',desc:'Restless riders of the northern highlands. Cavalry move 15% faster and deal 20% more damage.',color:0x9a687d,bonus:'Fearsome cavalry · Fast reconnaissance',buildingHP:1,infantryHP:1,gather:1,cavalry:1.2,cost:1},
   iron:{name:'The Ironhold Vanguard',motto:'Forge and thunder.',desc:'Mountain engineers and siege masters. Mine gold and stone 20% faster; siege engines have 20% more health and cost 15% less.',color:0xc4603e,bonus:'Master miners · Armored siege',buildingHP:1,infantryHP:1,gather:1,mineGather:1.2,cavalry:1,cost:1,siegeHP:1.2,siegeCost:.85},
+  jade:{name:'The Jade Empire',motto:'Harmony in jade. Thunder in fire.',desc:'Imperial pagoda dynasty of repeating crossbows and black-powder lancers. Ranged units fire 15% faster; buildings rise 15% faster.',color:0x229972,bonus:'Rapid volleys · Gunpowder shock cavalry',buildingHP:1.05,infantryHP:1,gather:1.08,cavalry:1.05,rangedRate:1.15,cost:.95},
 };
 export const DIFFICULTIES = {
   story:{name:'Explorer',desc:'Room to learn. Slow raids and a forgiving opponent.',attack:220,ai:1.6,wave:.65},
@@ -106,20 +107,32 @@ Object.assign(UNITS,{
   marksman:{name:'Sunward marksman',desc:'Sunward unique longbow infantry. Long reach and 2 armor penetration; slow attacks and vulnerable to cavalry.',faction:'sun',model:'archer',cost:{food:60,gold:60},hp:80,damage:15,armor:0,penetration:2,range:14,speed:3.2,time:28,age:2,at:['range'],role:'ranged',vision:21,cooldown:1.8},
   outrider:{name:'Raven outrider',desc:'Raven unique light cavalry. Fast raiders deal double damage to workers; vulnerable to spearmen and heavy cavalry.',faction:'raven',model:'scout',cost:{food:80,wood:30,gold:30},hp:120,damage:11,armor:0,range:2,speed:8,time:22,age:2,at:['stable'],role:'cavalry',vision:23,workerBonus:2},
   ironbreaker:{name:'Ironhold ironbreaker',desc:'Ironhold unique siege infantry. Pierces 3 armor and deals 50% bonus damage to buildings; slow and vulnerable to archers and heavy cavalry.',faction:'iron',model:'swordsman',cost:{food:85,gold:65},hp:155,damage:18,armor:4,penetration:3,buildingBonus:1.5,range:2,speed:2.75,time:27,age:2,at:['barracks'],role:'infantry',vision:15,cooldown:1.35},
+  chukonu:{name:'Repeating crossbowman',desc:'Jade Empire unique ranged infantry. Fires rapid 3-bolt armor-piercing volleys that shred infantry and light cavalry.',faction:'jade',model:'archer',cost:{wood:65,gold:55},hp:76,damage:7,burstCount:3,armor:1,penetration:2,range:12.5,speed:3.6,time:24,age:2,at:['range'],role:'ranged',vision:19,cooldown:1.45},
+  firelancer:{name:'Fire lancer',desc:'Jade Empire unique gunpowder shock cavalry. Unleashes explosive fire-lance cones damaging clusters and fortifications.',faction:'jade',model:'knight',cost:{food:115,gold:75},hp:205,damage:23,armor:3,penetration:2,buildingBonus:1.35,splashRadius:3.2,range:2.8,speed:6.4,time:30,age:2,at:['stable'],role:'cavalry',vision:19,cooldown:1.35},
+  trebuchet:{name:'Giant trebuchet',desc:'Monumental counterweight siege engine. Hurls blazing fire boulders across rivers and cliffs to shatter castles and walls.',model:'catapult',cost:{wood:280,gold:200},hp:250,damage:76,armor:2,buildingBonus:2.2,splashRadius:5.2,range:28,speed:1.95,time:44,age:3,at:['workshop'],role:'siege',vision:26,cooldown:4.2},
+  hero_alder:{name:'Marshal Rowan',desc:'Alder Hero General (Auto-Cast Skills). Automatically blows War Horn Rally and projects Aegis Bastion in battle. Revivable at Castle or Town Center.',faction:'alder',hero:true,maxAlive:1,model:'knight',cost:{food:220,gold:200},hp:680,damage:34,armor:7,range:2.6,speed:5.9,time:32,age:2,at:['keep','towncenter'],role:'cavalry',vision:23,cooldown:1.05},
+  hero_sun:{name:'Sun Sovereign',desc:'Sunward Hero General (Auto-Cast Skills). Automatically casts Solar Blessing heals and Sunfire Volley barrages. Revivable at Castle or Town Center.',faction:'sun',hero:true,maxAlive:1,model:'knight',cost:{food:220,gold:200},hp:620,damage:32,armor:5,range:3.0,speed:6.1,time:32,age:2,at:['keep','towncenter'],role:'cavalry',vision:24,cooldown:1.05},
+  hero_raven:{name:'Shadow Khan',desc:'Raven Hero General (Auto-Cast Skills). Automatically triggers Warband Charge frenzy and Storm of Axes cleaves. Revivable at Castle or Town Center.',faction:'raven',hero:true,maxAlive:1,model:'knight',cost:{food:220,gold:200},hp:640,damage:38,armor:5,range:2.5,speed:6.6,time:32,age:2,at:['keep','towncenter'],role:'cavalry',vision:24,cooldown:1.0},
+  hero_iron:{name:'Forgemaster Borin',desc:'Ironhold Hero General (Auto-Cast Skills). Colossal rune champion who automatically unleashes Earthshaker Slam and Ironclad Forge. Revivable at Castle or Town Center.',faction:'iron',hero:true,maxAlive:1,model:'swordsman',cost:{food:220,gold:200},hp:820,damage:38,armor:9,buildingBonus:1.7,range:2.6,speed:4.2,time:32,age:2,at:['keep','towncenter'],role:'infantry',vision:22,cooldown:1.15},
+  hero_jade:{name:'Dragon Marshal',desc:'Jade Hero General (Auto-Cast Skills). Automatically raises the Dragon Banner and unleashes Imperial Firestorm shells. Revivable at Castle or Town Center.',faction:'jade',hero:true,maxAlive:1,model:'knight',cost:{food:220,gold:200},hp:660,damage:35,armor:6,range:2.8,speed:6.2,time:32,age:2,at:['keep','towncenter'],role:'cavalry',vision:24,cooldown:1.05},
 });
 Object.assign(TECHS,{
   shieldDrill:{name:'Shield drill',desc:'Alder unique technology: infantry and spearmen gain 2 armor.',faction:'alder',at:['blacksmith'],cost:{food:250,gold:200},max:1,age:2,time:45},
   caravanLedger:{name:'Caravan ledger',desc:'Sunward unique technology: market sales yield 90 gold; purchases provide 110 resources.',faction:'sun',at:['market'],cost:{wood:200,gold:250},max:1,age:2,time:45},
   raidingParties:{name:'Raiding parties',desc:'Raven unique technology: cavalry move 10% faster and earn 3 gold for each enemy unit they defeat.',faction:'raven',at:['stable'],cost:{food:300,gold:250},max:1,age:2,time:45},
   siegecraft:{name:'Master siegecraft',desc:'Ironhold unique technology: siege engines move 15% faster and deal 15% more damage.',faction:'iron',at:['workshop'],cost:{wood:250,gold:250},max:1,age:2,time:45},
+  imperialGunpowder:{name:'Imperial gunpowder',desc:'Jade unique technology: Fire Lancers, Repeating Crossbowmen, and Giant Trebuchets deal +25% explosive damage.',faction:'jade',at:['workshop','blacksmith'],cost:{wood:220,gold:260},max:1,age:2,time:45},
+  boilingOil:{name:'Boiling oil',desc:'Fortified Gatehouses automatically pour scorching molten oil onto hostile soldiers and siege rams bashing the gate.',at:['keep','towncenter'],cost:{wood:180,gold:200,stone:120},max:1,age:2,time:38},
+  fireArrows:{name:'Flaming arrows',desc:'Watchtowers, Castles, and Archers fire blazing arrows dealing +30% bonus damage to siege engines and buildings.',at:['blacksmith','range','keep'],cost:{wood:200,gold:180},max:1,age:2,time:38},
 });
-Object.assign(ICONS,{sentinel:'♜',marksman:'➶',outrider:'♞',ironbreaker:'⚒',shieldDrill:'⛨',caravanLedger:'⚖',raidingParties:'⚑',siegecraft:'⚙'});
+Object.assign(ICONS,{sentinel:'♜',marksman:'➶',outrider:'♞',ironbreaker:'⚒',chukonu:'➶',firelancer:'☄',trebuchet:'☄',hero_alder:'♛',hero_sun:'♛',hero_raven:'♛',hero_iron:'♛',hero_jade:'♛',shieldDrill:'⛨',caravanLedger:'⚖',raidingParties:'⚑',siegecraft:'⚙',imperialGunpowder:'☄',boilingOil:'🔥',fireArrows:'➶'});
 UNITS.cart={name:'Supply caravan',desc:'A campaign supply wagon. Escort it with military units; it cannot attack or be trained.',cost:{},hp:240,damage:0,range:0,speed:3.2,time:0,age:0,at:[],role:'quest',vision:14,radius:1.15};
 ICONS.cart='▰';
 FACTIONS.alder.desc+=' Unique sentinel infantry and Shield drill reinforce the frontline.';
 FACTIONS.sun.desc+=' Unique marksmen provide long-range support; Caravan ledger improves market trades.';
 FACTIONS.raven.desc+=' Unique outriders raid workers; Raiding parties reward cavalry victories.';
 FACTIONS.iron.desc+=' Unique ironbreakers crush armor and walls; Master siegecraft empowers siege engines.';
+FACTIONS.jade.desc+=' Unique repeating crossbowmen, fire lancers, and Imperial gunpowder dominate ranged and siege warfare.';
 
 MAPS.coast={name:'The divided coast',desc:'Two kingdoms separated by a wide sea channel. Fish, fight, and land troops across the water.'};
 Object.assign(ICONS,{dock:'⚓',fishingboat:'⚓',galley:'⛵',warship:'⛵',transport:'⚓',king:'♛'});

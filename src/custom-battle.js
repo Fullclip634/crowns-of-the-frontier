@@ -7,6 +7,7 @@ import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
 import {applyMapGeography} from './terrain-barriers.js';
+import {spawnHeroGeneral} from './heroes.js';
 
 export const AI_HEALTH_LEVELS=Object.freeze([100,90,80,70,60,50]);
 
@@ -182,7 +183,10 @@ function initializeBattle(sim){
     for(let i=0;i<Math.round(sim.worldSize/10);i++){const z=-sim.halfWorld+12+i*10,x=Math.sin(z*.03)*2+(sim.rng()-.5)*12,fish=sim.addNaturalResource('food',x,z,2600);fish.water=true;fish.r=2.1;}
   }
   if(sim.options.map==='archipelago')seedArchipelagoFish(sim);
-  for(let owner=0;owner<sim.players.length;owner++)sim.assignEconomy(owner);
+  for(let owner=0;owner<sim.players.length;owner++){
+    sim.assignEconomy(owner);
+    if(sim.players[owner]?.age>=2)spawnHeroGeneral(sim,owner);
+  }
   for(const unit of sim.entities.filter(e=>e.type==='fishingboat'))sim.assignWorker(unit);
   sim.updateFog();
 }

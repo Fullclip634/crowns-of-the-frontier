@@ -293,6 +293,51 @@ def build_cliffwall_mesh(name, style, seed, mat):
     return obj
 
 
+def build_cliffcap_mesh(name, style, seed, mat):
+    """Builds a smooth, overhanging lush grass/snow/sand turf cap matching cliffwall plateaus 1:1
+    so cliff tops render in vivid natural biome colors without brown rock texture muddying them!"""
+    bm = bmesh.new()
+    shelves = [
+        (Vector((0.0, 0.0, 2.94)), 1.38, 1.02, 0.28, 16, seed),
+        (Vector((-1.20, 0.12, 2.45)), 0.88, 0.78, 0.24, 14, seed + 17),
+        (Vector((1.22, -0.10, 2.58)), 0.90, 0.77, 0.24, 14, seed + 31),
+    ]
+    for center, rx, ry, thick, sides, sd in shelves:
+        bot_ring, mid_ring, top_ring = [], [], []
+        for s in range(sides):
+            ang = (s / sides) * math.tau
+            crag = 0.92 + 0.11 * math.sin(ang * 4.0 + sd * 1.3) + 0.06 * math.cos(ang * 7.0 - sd * 0.9)
+            lip = 1.03 + 0.05 * math.sin(ang * 6.0 + sd)
+            dx, dy = math.cos(ang) * rx * crag, math.sin(ang) * ry * crag
+            bot_ring.append(bm.verts.new(Vector((center.x + dx * 0.94, center.y + dy * 0.94, center.z - 0.10))))
+            mid_ring.append(bm.verts.new(Vector((center.x + dx * lip, center.y + dy * lip, center.z + thick * 0.42))))
+            top_ring.append(bm.verts.new(Vector((center.x + dx * 0.86, center.y + dy * 0.86, center.z + thick))))
+        bot_c = bm.verts.new(Vector((center.x, center.y, center.z - 0.10)))
+        top_c = bm.verts.new(Vector((center.x, center.y, center.z + thick + 0.06)))
+        for s in range(sides):
+            sn = (s + 1) % sides
+            bm.faces.new((bot_ring[sn], bot_ring[s], bot_c))
+            bm.faces.new((bot_ring[s], bot_ring[sn], mid_ring[sn], mid_ring[s]))
+            bm.faces.new((mid_ring[s], mid_ring[sn], top_ring[sn], top_ring[s]))
+            bm.faces.new((top_ring[s], top_ring[sn], top_c))
+
+    def cap_vc(co, n):
+        sun = max(0.0, min(1.0, n.z * 0.50 + 0.50))
+        dapple = 0.88 + 0.20 * math.sin(co.x * 2.8 + co.y * 2.4 + seed)
+        if style == "snow":
+            return (0.90 * sun + 0.08, 0.95 * sun + 0.04, 0.99)
+        if style == "arid":
+            return (0.88 * sun * dapple, 0.74 * sun * dapple, 0.46 * sun * dapple)
+        # Sunlit AoE:DE emerald meadow grass turf matching the battlefield floor!
+        return (0.36 * sun * dapple, 0.64 * sun * dapple, 0.22 * sun * dapple)
+
+    mesh = finalize_mesh(bm, name, mat, cap_vc, uv_scale=0.32, smooth=True)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["assetKey"] = name
+    obj["assetMaterial"] = "bush"
+    return obj
+
+
 def build_mountain_mesh(name, style, seed, mat):
     """Builds a sweeping AoE:DE sunlit alpine mountain massif with sculpted ridges and grassy foothills."""
     bm = bmesh.new()
@@ -760,6 +805,12 @@ def main():
     for style, seed in [("meadow", 411), ("arid", 422), ("volcanic", 433), ("snow", 444)]:
         key = f"cliffwall:{style}"
         obj = build_cliffwall_mesh(key, style, seed, rock_mat)
+        col.objects.link(obj)
+        summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
+
+    for style, seed in [("meadow", 411), ("arid", 422), ("snow", 444)]:
+        key = f"cliffcap:{style}"
+        obj = build_cliffcap_mesh(key, style, seed, bush_mat)
         col.objects.link(obj)
         summary[key] = {"tris": sum(len(p.vertices) - 2 for p in obj.data.polygons)}
 

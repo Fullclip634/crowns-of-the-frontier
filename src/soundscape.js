@@ -1,8 +1,15 @@
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-// D-Dorian medieval modal scale (D3..A4) for authentic frontier harp/lute & choral cadence.
-const DORIAN_NOTES=[146.83,164.81,174.61,196.00,220.00,246.94,261.63,293.66,329.63,349.23,440.00];
+// Faction-authentic medieval & imperial scales driving adaptive peace -> siege -> climax scoring!
+const FACTION_SCALES={
+  alder:[146.83,164.81,174.61,196.00,220.00,246.94,261.63,293.66,329.63,349.23,440.00], // D-Dorian
+  raven:[146.83,164.81,174.61,196.00,220.00,246.94,261.63,293.66,329.63,349.23,440.00], // Highland Dorian
+  sun:[146.83,155.56,185.00,196.00,220.00,233.08,261.63,293.66,311.13,369.99,440.00],   // D-Phrygian Dominant (Oud)
+  iron:[130.81,146.83,155.56,174.61,196.00,207.65,233.08,261.63,293.66,311.13,392.00],  // Heavy C-Aeolian Forge
+  jade:[146.83,164.81,196.00,220.00,246.94,293.66,329.63,392.00,440.00,493.88,587.33],  // D-Pentatonic Guqin/Taiko
+};
 const PEACE_PHRASE=[0,4,7,5,4,2,0,4,7,9,7,4];
 const TENSION_PHRASE=[0,2,4,2,0,6,4,2];
+const SIEGE_PHRASE=[0,0,4,3,0,6,5,4,7,4,2,0];
 
 function createOpenAirImpulse(ctx){
   const seconds=.68,length=Math.max(64,Math.floor((ctx.sampleRate||22050)*seconds));
@@ -87,8 +94,8 @@ export function installSoundscape(AudioEngine){
     this.battleBedGain=ctx.createGain();this.battleBedGain.gain.value=0;
     murmur.connect(murmurFilter);murmurFilter.connect(this.battleBedGain);this.battleBedGain.connect(this.sfxBus);murmur.start();
 
-    this.voices=0;this.birdTimer=10;this.drumTimer=0;this.combatIntensity=0;this.musicDuckUntil=0;
-    this.currentMap='highlands';this.cameraZoom=48;this.sceneScanTimer=0;this.modalStep=0;this.modalTimer=.8;
+    this.voices=0;this.birdTimer=10;this.drumTimer=0;this.snareTimer=0;this.brassTimer=0;this.combatIntensity=0;this.musicDuckUntil=0;
+    this.currentMap='highlands';this.currentFaction='alder';this.cameraZoom=48;this.sceneScanTimer=0;this.modalStep=0;this.modalTimer=.8;
   };
 
   p.duckMusic=function(duration=1.1,level=.66){
@@ -115,6 +122,34 @@ export function installSoundscape(AudioEngine){
   p.scoreStage=function(){
     const level=this.combatIntensity||0;
     return level>=.72?'climax':level>=.42?'battle':level>=.18?'tension':'peace';
+  };
+
+  /** Dynamic Siege Music stinger for Hero Skills, Boiling Oil, Siege impacts & World Wonders! */
+  p.triggerSiegeStinger=function(kind='hero'){
+    if(!this.context||this.context.state!=='running'||this.settings.volume<=0)return;
+    const scale=FACTION_SCALES[this.currentFaction]||FACTION_SCALES.alder;
+    const root=scale[0];
+    if(kind==='hero'){
+      this.noteCombatActivity(.32);
+      this.busTone(this.musicBus,root,.55,'sawtooth',.045,0,true);
+      this.busTone(this.musicBus,root*1.5,.65,'triangle',.052,.08,true);
+      this.busTone(this.musicBus,root*2,.85,'triangle',.048,.18,true);
+      this.impact(130,.24,.09);
+    }else if(kind==='wonder'){
+      this.noteCombatActivity(.45);
+      for(const [i,mult]of [[0,1],[1,1.25],[2,1.5],[3,2]]){
+        this.busTone(this.musicBus,root*mult,1.4,'triangle',.046,i*.14,true);
+      }
+      this.busTone(this.musicBus,root*.5,2.2,'sine',.065,0,true);
+    }else if(kind==='oil'){
+      this.noteCombatActivity(.24);
+      this.impact(920,.32,.09);
+      this.busTone(this.sfxBus,108,.28,'sawtooth',.045,.04,false);
+    }else if(kind==='siege'){
+      this.noteCombatActivity(.28);
+      this.busTone(this.musicBus,root*.5,.36,'sine',.075,0,false);
+      this.impact(105,.28,.085);
+    }
   };
 
   p.busTone=function(bus,freq,duration=.22,type='triangle',gain=.08,delay=0,reverb=true){
@@ -183,6 +218,7 @@ export function installSoundscape(AudioEngine){
     if(view?.zoom)this.setCameraZoom(view.zoom);
     const map=sim?.options?.map||'highlands';
     this.currentMap=map;
+    this.currentFaction=sim?.players?.[0]?.faction||'alder';
     this.isNight=(view?.lightingState?.night??view?.atmosphereUniforms?.night?.value??0)>.45;
     this.isStormy=(view?.weatherState?.amount??view?.atmosphereUniforms?.wetness?.value??0)>.30;
     // Tune ambient wind filter color to the current biome.
@@ -249,26 +285,39 @@ export function installSoundscape(AudioEngine){
     // skip the procedural D-Dorian oscillator synth so keys never clash.
     if(this.hasSampledMusic)return;
 
-    // Adaptive D-Dorian medieval modal score (peace -> tension -> battle -> climax).
+    // Dynamic Siege Music: Faction-themed modal melodies + pounding siege timpani,
+    // marching snare rolls & heroic brass fanfares swelling seamlessly with combat intensity!
     const stage=this.scoreStage();
+    const faction=this.currentFaction||'alder';
+    const scale=FACTION_SCALES[faction]||FACTION_SCALES.alder;
+    const rootFreq=scale[0];
     this.modalTimer=(this.modalTimer??0)-dt;
     if(this.modalTimer<=0){
-      const phrase=stage==='peace'?PEACE_PHRASE:TENSION_PHRASE;
+      const phrase=stage==='peace'?PEACE_PHRASE:stage==='tension'?TENSION_PHRASE:SIEGE_PHRASE;
       const idx=phrase[(this.modalStep=(this.modalStep||0)+1)%phrase.length];
-      const freq=DORIAN_NOTES[idx];
-      this.modalTimer=stage==='climax'?1.15:stage==='battle'?1.45:stage==='tension'?2.0:2.65;
-      // Plucked lute / medieval harp voice (warm triangle + delicate octave shimmer)
-      this.busTone(this.musicBus,freq,stage==='peace'?2.2:1.4,'triangle',stage==='peace'?.044:.038,0,true);
-      this.busTone(this.musicBus,freq*2,1.1,'sine',.014,.04,true);
+      const freq=scale[idx%scale.length];
+      this.modalTimer=stage==='climax'?.88:stage==='battle'?1.18:stage==='tension'?1.85:2.55;
+      // Faction-colored melodic voice (Jade plucked guqin, Sun desert oud, Iron low forge horn, Alder/Raven harp)
+      const wave=faction==='iron'?'sawtooth':faction==='sun'?'triangle':'triangle';
+      this.busTone(this.musicBus,freq,stage==='peace'?2.2:1.25,wave,stage==='peace'?.044:.040,0,true);
+      this.busTone(this.musicBus,freq*2,faction==='jade'?1.5:1.05,'sine',faction==='jade'?.022:.014,.04,true);
       if(this.modalStep%4===0){
-        // Deep open-fifth medieval drone (D2 / A2)
-        this.busTone(this.musicBus,73.42,3.4,'sine',stage==='peace'?.034:.052,0,true);
-        if(stage!=='peace')this.busTone(this.musicBus,110.0,2.8,'triangle',.026,.12,true);
+        // Deep open-fifth medieval/imperial bass drone
+        this.busTone(this.musicBus,rootFreq*.5,3.2,'sine',stage==='peace'?.034:.056,0,true);
+        if(stage!=='peace')this.busTone(this.musicBus,rootFreq*.75,2.4,'triangle',.030,.10,true);
       }
-      if(stage==='climax'){
-        // Low heroic brass swell on strong beats
-        this.busTone(this.musicBus,146.83,1.2,'triangle',.036,.08,true);
-        this.busTone(this.musicBus,220.0,1.0,'triangle',.022,.14,true);
+      if(stage==='battle'||stage==='climax'){
+        // Rising heroic horn harmony on accented beats
+        if(this.modalStep%2===0){
+          this.busTone(this.musicBus,rootFreq,1.05,'sawtooth',stage==='climax'?.026:.016,.04,true);
+          this.busTone(this.musicBus,rootFreq*1.5,1.05,'triangle',stage==='climax'?.034:.022,.08,true);
+        }
+      }
+      if(stage==='climax'&&this.modalStep%4===0){
+        // Climax brass fanfare fifth + Jade gong / Iron anvil punctuation
+        this.busTone(this.musicBus,rootFreq*2,1.25,'triangle',.038,.06,true);
+        if(faction==='jade')this.busTone(this.musicBus,rootFreq*.5,2.4,'sine',.052,0,true);
+        else if(faction==='iron')this.busTone(this.musicBus,1160,.24,'sine',.018,.04,true);
       }
     }
 
@@ -286,18 +335,39 @@ export function installSoundscape(AudioEngine){
       }
     }
 
-    // Adaptive medieval frame-drum pulse (calm heartbeat in peace, urgent war cadence in battle).
+    // Pounding Siege Timpani & Taiko War-Drums (calm pulse in peace -> thunderous triplet siege drums in battle/climax!)
     this.drumTimer-=dt;
     if(this.drumTimer<0){
-      this.drumTimer=stage==='climax'?1.55:stage==='battle'?2.2:stage==='tension'?3.4:6.2;
-      const drumGain=stage==='climax'?.065:stage==='battle'?.052:stage==='tension'?.042:.032;
-      this.busTone(this.musicBus,73.4,.28,'sine',drumGain,0,false);
-      this.impact(118,.20,drumGain*.65);
+      this.drumTimer=stage==='climax'?1.12:stage==='battle'?1.55:stage==='tension'?2.85:6.0;
+      const drumGain=stage==='climax'?.074:stage==='battle'?.058:stage==='tension'?.044:.030;
+      const lowDrum=faction==='iron'?65.4:73.4;
+      this.busTone(this.musicBus,lowDrum,.30,'sine',drumGain,0,false);
+      this.impact(112,.22,drumGain*.72);
       if(stage==='battle'||stage==='climax'){
-        this.busTone(this.musicBus,110.0,.18,'sine',drumGain*.65,.28,false);
-        this.busTone(this.musicBus,73.4,.22,'sine',drumGain*.75,.56,false);
+        // Authentic siege triplet cadence (BOOM - ba-BOOM - BOOM!)
+        this.busTone(this.musicBus,lowDrum*1.5,.18,'sine',drumGain*.68,.24,false);
+        this.busTone(this.musicBus,lowDrum,.24,'sine',drumGain*.82,.48,false);
+        this.impact(136,.16,drumGain*.62);
+        if(stage==='climax'){
+          this.busTone(this.musicBus,lowDrum*1.5,.16,'sine',drumGain*.62,.72,false);
+          this.busTone(this.musicBus,lowDrum,.26,'sine',drumGain*.86,.90,false);
+        }
       }else{
-        this.busTone(this.musicBus,146.83,.20,'triangle',.020,.32,true);
+        this.busTone(this.musicBus,rootFreq,.20,'triangle',.020,.32,true);
+      }
+    }
+
+    // Marching War Snare Cadence (kicks in automatically during Battle & Siege Climax!)
+    if(stage==='battle'||stage==='climax'){
+      this.snareTimer=(this.snareTimer??0)-dt;
+      if(this.snareTimer<=0){
+        this.snareTimer=stage==='climax'?.56:.78;
+        const sg=stage==='climax'?.042:.028;
+        this.impact(1350,.075,sg);
+        if(stage==='climax'){
+          setTimeout(()=>{if(this.context?.state==='running')this.impact(1480,.06,sg*.8);},140)?.unref?.();
+          setTimeout(()=>{if(this.context?.state==='running')this.impact(1280,.085,sg*1.05);},280)?.unref?.();
+        }
       }
     }
   };

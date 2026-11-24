@@ -12,6 +12,7 @@ import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
 import {ironholdUnitTemplate,ironholdBuildingTemplate,ironholdGeometries} from './ironhold-art.js';
+import {jadeHeroesUnitTemplate,jadeBuildingTemplate,jadeHeroesGeometries,rubblePropTemplate} from './jade-heroes-art.js';
 import {readAssetResponse} from './load-progress.js';
 import {loadStartupGraphics} from './offline-registration.js';
 import {UNITS} from './data.js';
@@ -166,7 +167,7 @@ export function trimAuthoredAssets(view){
     const materials=new Set();for(const [key,root]of catalogue.templates){if(catalogue.trees?.templates.has(key))continue;root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});}for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(ironholdGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(ironholdGeometries()||[]),...(jadeHeroesGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
   view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,sharedTrees?.bytes||0),sharedTreeBytes:sharedTrees?.bytes||0,evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
@@ -222,11 +223,32 @@ export function workerVisualTask(view,e){
   if(resource==='food'||resource==='farm')return 'food';
   return 'wood';
 }
+export function authoredRubbleProp(view){
+  const template=rubblePropTemplate();
+  if(!template)return null;
+  return bindAuthoredTemplate(view,template,'prop:rubble',0,'jade-heroes');
+}
 export function authoredUnit(view,e,catalogue=null){
   const task=workerVisualTask(view,e);
   const ironUnit=e.type==='ironbreaker'?ironholdUnitTemplate(e.type):null;
   if(ironUnit){
     const root=bindAuthoredTemplate(view,ironUnit.template,ironUnit.key,e.owner,'ironhold');
+    root.userData.model3d={...root.userData.model3d,type:e.type};
+    return root;
+  }
+  const jadeHeroUnit=jadeHeroesUnitTemplate(e.type);
+  if(jadeHeroUnit){
+    const root=bindAuthoredTemplate(view,jadeHeroUnit.template,jadeHeroUnit.key,e.owner,'jade-heroes');
+    // Radiant Hero General ground halo ring so Heroes are unmistakably heroic on any screen size!
+    if(UNITS[e.type]?.hero&&view.geo?.ring){
+      const haloMat=new THREE.MeshBasicMaterial({color:0xf5d46e,transparent:true,opacity:.68,side:THREE.DoubleSide,depthWrite:false});
+      const halo=new THREE.Mesh(view.geo.ring,haloMat);
+      halo.rotation.x=-Math.PI/2;
+      halo.position.y=.08;
+      halo.scale.setScalar(1.55);
+      halo.userData.heroHalo=true;
+      root.add(halo);
+    }
     root.userData.model3d={...root.userData.model3d,type:e.type};
     return root;
   }
@@ -239,10 +261,21 @@ export function authoredUnit(view,e,catalogue=null){
 }
 export function authoredBuilding(view,e){
   const rawFaction=view.sim?.players[e.owner]?.faction||'alder';
-  const faction=rawFaction==='iron'?'alder':rawFaction;
+  const faction=(rawFaction==='iron'||rawFaction==='jade')?'alder':rawFaction;
   const playerAge=architectureAge(view.sim,e);
   const tier=(e.type==='wall'||e.type==='gate')?wallTier(view.sim,e):'stone';
   const corner=e.type==='wall'&&isWallCorner(view.sim,e);
+  const jadeModel=rawFaction==='jade'?jadeBuildingTemplate(e.type,playerAge):null;
+  if(jadeModel){
+    const root=bindAuthoredTemplate(view,jadeModel.template,jadeModel.key,e.owner,'jade-heroes');
+    if(jadeModel.early){
+      const sc=jadeModel.scale||1;
+      if(sc!==1){for(const child of root.children){child.position.multiplyScalar(sc);child.scale.multiplyScalar(sc);}}
+    }
+    if(e.type==='dock')orientDockPier(view,root,e);
+    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:playerAge};
+    return root;
+  }
   const ironModel=rawFaction==='iron'?ironholdBuildingTemplate(e.type,playerAge):null;
   if(ironModel){
     const root=bindAuthoredTemplate(view,ironModel.template,ironModel.key,e.owner,'ironhold');

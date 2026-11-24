@@ -260,7 +260,7 @@ export function installRealm3D(WorldView){
   };
   p.buildLandscape=function(){
     ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);
-    const roofColors={alder:new THREE.Color(0x687982),raven:new THREE.Color(0x716d68),sun:new THREE.Color(0x9d754d)};
+    const roofColors={alder:new THREE.Color(0x687982),raven:new THREE.Color(0x716d68),sun:new THREE.Color(0x9d754d),iron:new THREE.Color(0x5e5854),jade:new THREE.Color(0x288c6a)};
     for(const [i,player] of this.sim.players.entries()){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }
@@ -408,6 +408,11 @@ export function installRealm3D(WorldView){
   p.burst=function(x,z,color,size){const count=this.fx.length;burst.call(this,x,z,color,size);for(let i=count;i<this.fx.length;i++)this.fx[i].object.position.y=this.groundHeight(x,z)+.4;};
   p.effect=function(event){
     if(event.type==='attack'){
+      if(event.explosive&&event.target&&witnessedEffect(this,event.target)){
+        const gy=this.groundHeight?.(event.target.x,event.target.z)||0;
+        this.sparks(event.target.x,gy+1.1,event.target.z,0xff8e2c,1.45);
+        this.burst(event.target.x,event.target.z,0xff7424,1.2);
+      }
       if(this.fx.length>(this.settings.quality==='low'?32:90))return;
       const flight=attackFlight(this,event.entity,event.target,event.garrisonArrow||0,event),pool=this.flightEffects??=new FlightEffects(),object=pool.acquire(flight.kind);
       const shot={...flight,object,time:event.flightAge||0,recycle:mesh=>pool.release(mesh)};updateFlight(shot,Math.min(1,shot.time/shot.duration));if(flight.kind==='slash')this.scene.add(object);this.fx.push(shot);return;

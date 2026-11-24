@@ -27,11 +27,11 @@ export function restoreProjectileState(data,sim){
     }else if(input.stage==='flight'){
       const entity=actor(sim,input.entity),victim=actor(sim,input.victim),bonus=input.bonus??[];
       if(!entity||!victim||entity.id!==input.source||victim.id!==input.target||entity.owner!==input.owner||!projectileWeapon(entity)||!point(sim,input.aim)||!amount(input.damage))continue;
-      if(!Number.isFinite(input.releasedAt)||input.releasedAt<0||input.releasedAt>sim.time+1e-7||!Number.isFinite(input.duration)||input.duration<.14||input.duration>1.4||!Number.isFinite(input.impactAt)||Math.abs(input.impactAt-input.releasedAt-input.duration)>1e-7)continue;
-      const baseBonus=entity.kind==='building'?Math.max(0,(BUILDINGS[entity.type].volley||1)-1):0;
+      if(!Number.isFinite(input.releasedAt)||input.releasedAt<0||input.releasedAt>sim.time+1e-7||!Number.isFinite(input.duration)||input.duration<.14||input.duration>1.7||!Number.isFinite(input.impactAt)||Math.abs(input.impactAt-input.releasedAt-input.duration)>1e-7)continue;
+      const baseBonus=entity.kind==='building'?Math.max(0,(BUILDINGS[entity.type].volley||1)-1):Math.max(0,(UNITS[entity.type]?.burstCount||1)-1);
       const maxBonus=baseBonus+(GARRISONS[entity.type]?Math.ceil(GARRISONS[entity.type].capacity/GARRISONS[entity.type].perArrow):0);
       if(!Array.isArray(bonus)||bonus.length>maxBonus||!bonus.every(amount)||input.siege!==siegeProjectile(entity))continue;
-      Object.assign(shot,{entity,victim,aim:{x:input.aim.x,z:input.aim.z},damage:input.damage,siege:input.siege,releasedAt:input.releasedAt,duration:input.duration,impactAt:input.impactAt,bonus:[...bonus]});
+      Object.assign(shot,{entity,victim,aim:{x:input.aim.x,z:input.aim.z},damage:input.damage,siege:input.siege,releasedAt:input.releasedAt,duration:input.duration,impactAt:input.impactAt,bonus:[...bonus],...(Number.isFinite(input.splashRadius)&&input.splashRadius>0&&input.splashRadius<=12?{splashRadius:input.splashRadius}:{}),...(input.fireball===true?{fireball:true}:{}),...(input.flaming===true?{flaming:true}:{})});
     }else continue;
     seen.add(shot.id);highest=Math.max(highest,shot.id);shots.push(shot);
   }

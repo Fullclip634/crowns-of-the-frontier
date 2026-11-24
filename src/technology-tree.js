@@ -1,5 +1,6 @@
 import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
 import {AGES,UNITS,BUILDINGS,TECHS,FACTIONS,AGE_COSTS,availableTo,costText} from './data.js';
+import {WONDER_POWERS} from './heroes.js';
 
 const AGE_ROMAN=['I','II','III','IV'];
 
@@ -7,6 +8,7 @@ export function technologyState(sim,type,kind,faction){
   const d=(kind==='unit'?UNITS:TECHS)[type];if(!availableTo(d,faction))return {status:'other civilization',tone:'locked',site:null};
   if(!sim||sim.players[0].faction!==faction)return {status:`${AGES[d.age]} · ${d.at.map(t=>BUILDINGS[t].name).join(' / ')}`,tone:'info',site:null};
   const player=sim.players[0],sites=sim.owned(0,'building').filter(b=>b.progress>=1&&d.at.includes(b.type));
+  if(kind==='unit'&&d.hero&&sim.owned(0,'unit').some(u=>UNITS[u.type]?.hero))return {status:'Leading battlefield',tone:'done',site:null};
   if(kind==='tech'&&player.tech[type]>=d.max)return {status:'Completed',tone:'done',site:null};
   if(kind==='tech'&&sites.some(b=>b.queue.some(q=>q.kind==='tech'&&q.type===type)))return {status:'Research queued',tone:'active',site:null};
   if(player.age<d.age)return {status:`Requires ${AGES[d.age]}`,tone:'locked',site:null};
@@ -32,7 +34,9 @@ export function technologyTreeMarkup(sim,faction){
       return `<article class="tree-card tone-${state.tone||'info'} ${d.faction?'signature':''}"><div><span>${ICONS[id]||uiIcon('age')}</span><strong>${d.name}</strong></div><small>${d.faction?'Civilization exclusive · ':''}${kind==='tech'?`Technology · ${level}/${d.max}`:'Unit'} · ${d.time}s</small><p>${d.desc}</p><div class="tree-prerequisite">${d.at.map(t=>BUILDINGS[t].name).join(' / ')}</div><div class="tree-cost">${costText(cost)}</div><button ${state.site?'':'disabled'} data-tree-${kind}="${id}" data-building="${state.site?.id||''}">${state.status}</button></article>`;
     }).join('')}</section>`;
   }).join('');
+  const wp=WONDER_POWERS[faction];
   return `<div class="eyebrow">PLAN YOUR KINGDOM</div><h2>Technology tree</h2><p class="modal-intro">${FACTIONS[faction].name} · ${FACTIONS[faction].desc}</p>
+  ${wp?`<div class="counter-strip" aria-label="Wonder Super-Power"><span>${ICONS.wonder||uiIcon('monument')} <b>World Wonder — ${wp.name}:</b> ${wp.desc}</span></div>`:''}
   <div class="counter-strip" aria-label="Unit counter triangle">
     <span>${ICONS.spearman} <b>Spearmen</b> → Cavalry</span>
     <span>${ICONS.knight} <b>Cavalry</b> → Archers</span>

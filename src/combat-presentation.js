@@ -23,9 +23,12 @@ export function installCombatPresentation(WorldView){
     if(event.type==='projectile-impact'){
       const point=event.target;if(!point||!witnessedEffect(this,point))return;
       prepareViewport(this);if(!nearViewport(this,point.x,this.entityHeight(point)+1,point.z,5))return;
-      const before=this.fx.length;this.burst(point.x,point.z,event.siege?0xb5aa95:point.kind==='building'?0xc3a17a:0xd9d7bd,event.siege?1.6:.24);
-      if(event.siege){this.sparks?.(point.x,this.entityHeight(point)+.4,point.z,0xffd68a,1.2);this.crater?.(point.x,point.z,1.6);}
-      for(let i=before;i<this.fx.length;i++)this.fx[i].object.position.y=this.entityHeight(point)+projectileTargetHeight(point,event.siege);
+      const before=this.fx.length,gy=this.entityHeight(point);
+      this.burst(point.x,point.z,event.fireball?0xff7a22:event.siege?0xb5aa95:event.flaming?0xffa438:point.kind==='building'?0xc3a17a:0xd9d7bd,event.fireball?2.35:event.siege?1.6:event.flaming?.55:.24);
+      if(event.fireball){this.sparks?.(point.x,gy+.6,point.z,0xffa634,2.1);this.smoke?.(point.x,gy+.7,point.z,1.75);this.crater?.(point.x,point.z,2.5,5.5);}
+      else if(event.siege){this.sparks?.(point.x,gy+.4,point.z,0xffd68a,1.2);this.crater?.(point.x,point.z,1.6);}
+      else if(event.flaming){this.sparks?.(point.x,gy+.8,point.z,0xff9e38,.7);}
+      for(let i=before;i<this.fx.length;i++)if(!this.fx[i].crater)this.fx[i].object.position.y=gy+projectileTargetHeight(point,event.siege);
       return;
     }
     return effect.call(this,event);

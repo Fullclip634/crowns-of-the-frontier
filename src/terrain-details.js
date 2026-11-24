@@ -4,9 +4,9 @@ import {seededRandom} from './data.js';
 import {roadDistance,terrainRoadPaths} from './terrain-layout.js';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 import {bridgeFootprint} from './bridge-layout.js';
-import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
+import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome,terrainBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
-import {biomeCliffGeometry,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry,biomeRuinGeometry,biomeWaystoneGeometry,biomeFallenLogGeometry,biomeSpireGeometry} from './biome-art.js';
+import {biomeCliffGeometry,biomeCliffWallGeometry,biomeCliffCapGeometry,biomeMountainGeometry,biomeBushGeometry,biomeRuinGeometry,biomeWaystoneGeometry,biomeFallenLogGeometry,biomeSpireGeometry} from './biome-art.js';
 
 export function pebbleGeometry(detail=1){
   const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
@@ -63,9 +63,10 @@ export class TerrainDetails{
       this.entries.push({type,x,y,z,angle,scale,color,stretch,heightScale,shade,sink});
     };
 
-    if(coastal){
-      const limit=Math.floor(baseCapacity*.32),channels=land.channels();
-      const pockets=Math.ceil(limit/(channels.length*2*6));
+    const channels=land.channels();
+    if(channels.length){
+      const limit=Math.floor(baseCapacity*(coastal?.32:.22));
+      const pockets=Math.max(1,Math.ceil(limit/(channels.length*2*6)));
       for(const channel of channels)for(const side of [-1,1])for(let i=0;i<pockets&&this.entries.length<limit;i++){
         const centerZ=((i+.15+rng()*.7)/pockets-.5)*(land.worldSize-16);
         const setback=.95+rng()*2.2,spread=1.6+rng()*2.1;
@@ -149,7 +150,19 @@ export class TerrainDetails{
       this.cliffWallMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       view.terrain.add(this.cliffWallMesh);
       this.fogMaterials.push(mat);
-    }else this.cliffWallMesh=null;
+      const capGeo=biomeCliffCapGeometry(land.map);
+      if(capGeo){
+        const biomeTint=new THREE.Color(terrainBiome(land.map).grassTint||0xffffff);
+        const capTint=isSnowBiome(land.map)?new THREE.Color(0xffffff):isVolcanicBiome(land.map)?new THREE.Color(0x6c625b):new THREE.Color(0xffffff).lerp(biomeTint,.42);
+        const capMat=standardMaterial({color:capTint,roughness:.92,vertexColors:Boolean(capGeo.attributes?.color)});
+        this.cliffCapMesh=new THREE.InstancedMesh(capGeo,capMat,this.cliffEntries.length);
+        this.cliffCapMesh.name='Blender grass-capped cliff plateaus';this.cliffCapMesh.count=0;this.cliffCapMesh.frustumCulled=false;
+        this.cliffCapMesh.castShadow=false;this.cliffCapMesh.receiveShadow=true;
+        this.cliffCapMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        view.terrain.add(this.cliffCapMesh);
+        this.fogMaterials.push(capMat);
+      }else this.cliffCapMesh=null;
+    }else{this.cliffWallMesh=null;this.cliffCapMesh=null;}
 
     if(this.mountainEntries.length){
       const geo=biomeMountainGeometry(land.map)||biomeCliffWallGeometry(land.map)||pebbleGeometry(1);
@@ -376,6 +389,7 @@ export class TerrainDetails{
     this.visibleEntries=[];
     this.nextEntries=[];
     this.visibleCliffs=[];
+    this.visibleCliffCaps=[];
     this.visibleMountains=[];
     this.visibleBushes=[];
     this.visibleWaystones=[];
@@ -473,6 +487,7 @@ export class TerrainDetails{
     }
 
     const cliffCount=this._updateBarrierMesh(this.cliffWallMesh,this.cliffEntries,this.visibleCliffs,menu,14);
+    this._updateBarrierMesh(this.cliffCapMesh,this.cliffEntries,this.visibleCliffCaps,menu,14);
     const mountainCount=this._updateBarrierMesh(this.mountainMesh,this.mountainEntries,this.visibleMountains,menu,18);
     let bushCount=0;
     if(this.bushMesh){

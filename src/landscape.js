@@ -170,36 +170,47 @@ function groundMap(landscape){
   overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
   overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
   // Coherent, restrained grain: the old 38k single-pixel speckles read as mud.
+  const volcanicGround=isVolcanicBiome(landscape.map);
   const grain=winter?['#d6cf9310','#2f492210']:arid?['#e8d3a414','#8a6b3a12']:rocky?['#b9b8aa12','#3c3a3410']:['#c3d2a912','#254d2a0e'];
   for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
+  // Natural feathered biome mottling (sunlit clover clearings, mossy woodland glades,
+  // warm dune drifts, glacial snowbanks & dark volcanic ash pockets) for organic realism!
+  const patchPalette=winter?['rgba(238,246,252,0.16)','rgba(148,176,188,0.14)']
+    :volcanicGround?['rgba(128,88,66,0.14)','rgba(32,26,24,0.18)']
+    :arid?['rgba(236,204,142,0.17)','rgba(156,118,68,0.14)']
+    :rocky?['rgba(154,174,126,0.14)','rgba(92,108,82,0.13)']
+    :['rgba(154,202,98,0.13)','rgba(46,94,44,0.12)'];
+  for(let i=0;i<44;i++){
+    const px=rng()*1536,py=rng()*1536,rad=48+rng()*128;
+    const grad=ctx.createRadialGradient(px,py,rad*.08,px,py,rad);
+    grad.addColorStop(0,patchPalette[i%2]);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;ctx.beginPath();ctx.arc(px,py,rad,0,Math.PI*2);ctx.fill();
+  }
   const scale=1536/size;
   const shore=landscape.map==='coast'||landscape.map==='archipelago'||landscape.map==='templelagoon';
   const sandyRiver=landscape.map==='waterfallgorge'||landscape.map==='ironfall';
   const jungle=isJungleBiome(landscape.map);
   for(const channel of landscape.channels()){
-    const path=new Path2D();for(let z=-half;z<=half;z+=2){const x=channel.center+Math.sin(z*channel.frequency)*channel.bend;path.lineTo((x+half)/size*1536,(z+half)/size*1536);}
     ctx.lineCap='round';ctx.lineJoin='round';
-    if(shore||sandyRiver){
-      // Organic wavy golden sandy coves & riverbanks matching AoE:DE sunlit shorelines!
-      const beachColors=jungle?[[17,'#d4bd7c'],[11,'#f3e7bc']]:sandyRiver?[[11,'#c8af72'],[6.5,'#e7d59e']]:[[15,'#c2aa76'],[9.5,'#e4d5a6']];
-      for(const [extra,color] of beachColors){
-        ctx.beginPath();
-        for(let z=-half;z<=half;z+=3){
-          const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
-          const cove=Math.sin(z*.11+channel.center*.7)*2.2+Math.cos(z*.23-channel.center*.4)*1.1+Math.sin(z*.15+1.3)*.75;
-          const px=(cx+channel.width+extra*.5+cove+half)/size*1536,py=(z+half)/size*1536;
-          if(z===-half)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-        }
-        for(let z=half;z>=-half;z-=3){
-          const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
-          const cove=Math.sin(z*.11+channel.center*.7)*2.2+Math.cos(z*.23-channel.center*.4)*1.1-Math.sin(z*.15-1.3)*.75;
-          ctx.lineTo((cx-channel.width-extra*.5-cove+half)/size*1536,(z+half)/size*1536);
-        }
-        ctx.closePath();ctx.fillStyle=color;ctx.fill();
+    // Organic wavy coves & riverbanks across ALL waterways (no rigid straight stripes!)
+    const bankBands=shore||sandyRiver
+      ?(jungle?[[17,'#d4bd7c'],[11,'#f3e7bc']]:sandyRiver?[[11,'#c8af72'],[6.5,'#e7d59e']]:[[15,'#c2aa76'],[9.5,'#e4d5a6']])
+      :(winter?[[11,'#a8b6b4'],[6.5,'#cfdcd8']]:arid?[[11,'#9d8154'],[6.5,'#cab080']]:[[9.5,'#6f805c'],[5.0,'#9d9973']]);
+    for(const [extra,color] of bankBands){
+      ctx.beginPath();
+      for(let z=-half;z<=half;z+=3){
+        const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+        const cove=Math.sin(z*.11+channel.center*.7)*2.0+Math.cos(z*.23-channel.center*.4)*1.0+Math.sin(z*.15+1.3)*.65;
+        const px=(cx+channel.width+extra*.5+cove+half)/size*1536,py=(z+half)/size*1536;
+        if(z===-half)ctx.moveTo(px,py);else ctx.lineTo(px,py);
       }
-    }else{
-      ctx.lineWidth=(channel.width*2+(winter?10:6))*scale;ctx.strokeStyle=winter?'#aeb7ab':arid?'#9b8156':'#67795f';ctx.stroke(path);
-      ctx.lineWidth=(channel.width*2+(winter?8:4))*scale;ctx.strokeStyle=winter?'#b2b8aa':arid?'#c2a878':'#7b876b';ctx.stroke(path);
+      for(let z=half;z>=-half;z-=3){
+        const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
+        const cove=Math.sin(z*.11+channel.center*.7)*2.0+Math.cos(z*.23-channel.center*.4)*1.0-Math.sin(z*.15-1.3)*.65;
+        ctx.lineTo((cx-channel.width-extra*.5-cove+half)/size*1536,(z+half)/size*1536);
+      }
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();
     }
   }
   // Paint bright sandy/pebbly shallow river fords clearly across walkable crossings!
