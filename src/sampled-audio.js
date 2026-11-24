@@ -16,7 +16,7 @@ const BIOME_AMBIENCE={
   highlands:'amb-meadow',meadow:'amb-meadow',steppe:'amb-meadow',frontier:'amb-meadow',
 };
 const VOICE_MAP={select:'voice-select',order:'voice-order',attack:'voice-attack',work:'voice-work'};
-const FACTION_VOICE_RATE={alder:1.0,sun:1.05,raven:.93};
+const FACTION_VOICE_RATE={alder:1.0,sun:1.05,raven:.93,iron:.90};
 const STAGE_STEM={peace:'music-peace',tension:'music-tension',battle:'music-battle',climax:'music-climax'};
 
 function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){

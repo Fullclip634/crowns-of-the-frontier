@@ -21,6 +21,7 @@ const ROLE_CALLOUTS=Object.freeze({
   sentinel:'Heavy Shield Infantry',
   marksman:'2 Armor Piercing',
   outrider:'2× vs Villagers',
+  ironbreaker:'3 Armor Piercing · 1.5× vs Buildings',
   monk:'Auto-Heals Living Allies',
   scout:'Wide Recon Vision',
   warship:'Bombards Fortifications',
@@ -117,6 +118,7 @@ export function unitAttackValue(sim,e){
     *(1+(d.role==='ranged'?(tech.ranged||0):(tech.attack||0))*.2)
     *(d.naval?1+(tech.seamanship||0)*.2:1)
     *(d.role==='cavalry'?(faction.cavalry||1):1)
+    *(d.role==='siege'?(1+(tech.siegecraft||0)*.15):1)
   );
 }
 
@@ -128,7 +130,8 @@ export function unitSpeedValue(sim,e){
   const tech=p.tech||{};
   const cav=d.role==='cavalry'?(1+(tech.husbandry||0)*.2)*(p.faction==='raven'?1.15:1)*(1+(tech.raidingParties||0)*.1):1;
   const naval=d.naval?(1+(tech.seamanship||0)*.15):1;
-  return (d.speed*cav*naval).toFixed(1).replace(/\.0$/,'');
+  const siege=d.role==='siege'?(1+(tech.siegecraft||0)*.15):1;
+  return (d.speed*cav*naval*siege).toFixed(1).replace(/\.0$/,'');
 }
 
 /** Render sculpted attribute chips for ANY selected entity (unit, building, resource, shrine). */

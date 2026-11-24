@@ -26,7 +26,7 @@ import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeO
 import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCost,wallBuildTime,wallTier} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
-import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography} from './terrain-barriers.js';
+import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
 import {channelAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile} from './terrain-biomes.js';
 import {closestCandidates} from './closest-candidates.js';
@@ -77,6 +77,7 @@ export class Simulation {
   constructor(options={}) {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
+    if(this.options.mode==='siege')this.options.map='ironpass';
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
     const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale'].includes(this.options.map)?240:WORLD;
     const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||defaultMapSize);
@@ -85,7 +86,7 @@ export class Simulation {
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
-    this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':'raven')];
+    this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':this.options.faction==='iron'?'alder':'raven')];
     this.initialize();
     this.startingSites=this.entities
       .filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','farm'].includes(e.type))
@@ -141,25 +142,51 @@ export class Simulation {
     let dx1=expandedMission?(coastalMission?62:66):(mission?0:Math.round(46*scale)-40);
     let dz1=expandedMission?(coastalMission?-50:-56):(mission?0:Math.round(-39*scale)-(-34));
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
-    this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='regicide'?2:mission?.age||0;});
+    this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='deathmatch'?3:(m==='regicide'||m==='siege')?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
+    if(m==='deathmatch'){this.players.forEach(p=>p.resources={food:10000,wood:10000,gold:6000,stone:4000});this.nextAttack=Math.min(this.nextAttack,65);}
+    if(m==='siege'){this.players.forEach(p=>p.resources={food:1400,wood:1400,gold:1000,stone:1200});this.nextAttack=Math.min(this.nextAttack,75);}
     if(m==='sandbox'){this.players[0].resources={food:6000,wood:6000,gold:6000,stone:6000};this.players[0].age=3;}
     if(survival){this.players[0].resources={food:1000,wood:1100,gold:600,stone:800};this.players[0].age=Math.max(1,this.players[0].age);}
     this.addBuilding('towncenter',0,-39+dx0,30+dz0,true);
     this.addBuilding('house',0,-48+dx0,20+dz0,true);this.addBuilding('house',0,-30+dx0,40+dz0,true);
     this.addBuilding('mill',0,-49+dx0,36+dz0,true);
     this.addBuilding('barracks',0,-27+dx0,24+dz0,true);
-    const startWorkers=mission?.age?12:8;
+    const startWorkers=mission?.age?12:(m==='deathmatch'||m==='siege')?10:8;
     for(let i=0;i<startWorkers;i++)this.addUnit('villager',0,-43+dx0+(i%4)*2.4,43+dz0+Math.floor(i/4)*2.4);
     this.addUnit('scout',0,-27+dx0,33+dz0);
     if(m==='regicide')this.addUnit('king',0,-39+dx0,21+dz0);
+    if(m==='deathmatch'){
+      this.addBuilding('range',0,-47+dx0,10+dz0,true);this.addBuilding('stable',0,-24+dx0,13+dz0,true);
+      this.addBuilding('workshop',0,-19+dx0,33+dz0,true);this.addBuilding('blacksmith',0,-40+dx0,15+dz0,true);
+      this.addBuilding('house',0,-55+dx0,28+dz0,true);this.addBuilding('house',0,-36+dx0,48+dz0,true);
+    }
+    if(m==='siege'){
+      this.addBuilding('keep',0,-28+dx0,20+dz0,true);this.addBuilding('range',0,-49+dx0,17+dz0,true);
+      this.addBuilding('blacksmith',0,-51+dx0,42+dz0,true);this.addBuilding('stable',0,-27+dx0,40+dz0,true);
+      const garrison=['spearman','spearman','spearman','spearman','archer','archer','archer','archer','swordsman','swordsman','knight','knight'];
+      garrison.forEach((type,i)=>this.addUnit(type,0,-35+dx0+(i%4)*2.2,22+dz0-Math.floor(i/4)*2.2));
+    }
     if(survival||mission?.age){for(let i=0;i<8;i++)this.addUnit(i%3?'spearman':'archer',0,-23+dx0+i%4*2,34+dz0+Math.floor(i/4)*2);this.addBuilding('range',0,-47+dx0,10+dz0,true);}
     if(!peaceful&&!survival){
       this.addBuilding('towncenter',1,40+dx1,-34+dz1,true);this.addBuilding('house',1,51+dx1,-26+dz1,true);this.addBuilding('house',1,29+dx1,-43+dz1,true);this.addBuilding('barracks',1,(shift||expandedMission?28+dx1:33),(shift||expandedMission?-24+dz1:-28),true);this.addBuilding('mill',1,49+dx1,-44+dz1,true);
-      for(let i=0;i<(mission?.age?12:8);i++)this.addUnit('villager',1,33+dx1+i%4*2,-43+dz1-Math.floor(i/4)*2);
-      const count=mission?.enemies??5;
+      for(let i=0;i<(mission?.age?12:(m==='deathmatch'||m==='siege')?10:8);i++)this.addUnit('villager',1,33+dx1+i%4*2,-43+dz1-Math.floor(i/4)*2);
+      const count=m==='siege'?0:(mission?.enemies??5);
       if(m==='regicide')this.addUnit('king',1,40+dx1,-43+dz1);
       for(let i=0;i<count;i++)this.addUnit(this.players[1].age>=2&&i%4===0?'knight':this.players[1].age>=1&&i%3===0?'archer':'spearman',1,25+dx1+i%6*2,-35+dz1-Math.floor(i/6)*2);
+      if(m==='deathmatch'){
+        this.addBuilding('range',1,48+dx1,-14+dz1,true);this.addBuilding('stable',1,25+dx1,-17+dz1,true);
+        this.addBuilding('workshop',1,20+dx1,-37+dz1,true);this.addBuilding('blacksmith',1,41+dx1,-19+dz1,true);
+        this.addBuilding('house',1,56+dx1,-32+dz1,true);this.addBuilding('house',1,37+dx1,-52+dz1,true);
+      }
+      if(m==='siege'){
+        this.addBuilding('keep',1,29+dx1,-23+dz1,true);this.addBuilding('workshop',1,24+dx1,-39+dz1,true);
+        this.addBuilding('range',1,51+dx1,-22+dz1,true);this.addBuilding('stable',1,38+dx1,-18+dz1,true);
+        this.addBuilding('blacksmith',1,53+dx1,-38+dz1,true);
+        this.addBuilding('tower',1,21+dx1,-27+dz1,true);this.addBuilding('tower',1,35+dx1,-12+dz1,true);
+        const vanguard=['ram','ram','catapult','knight','knight','knight','knight','swordsman','swordsman','swordsman','swordsman','archer','archer','archer','archer'];
+        vanguard.forEach((type,i)=>this.addUnit(type,1,19+dx1+(i%5)*2.4,-22+dz1+Math.floor(i/5)*2.4));
+      }
       if(mission?.age>=1)this.addBuilding('range',1,52+dx1,-12+dz1,true);
       if(mission?.age>=2){this.addBuilding('stable',1,37+dx1,-13+dz1,true);this.addBuilding('blacksmith',1,58+dx1,-38+dz1,true);}
       if(mission?.fortress){
@@ -220,19 +247,41 @@ export class Simulation {
     plantStartingForests(this);
     groupFieldForests(this);
     if(!mission)applyMapGeography(this);
+    if(m==='koth'){
+      let spot={x:0,z:0},found=false;
+      for(let r=0;r<=36&&!found;r+=3){
+        const steps=r===0?1:16;
+        for(let i=0;i<steps;i++){
+          const a=i*Math.PI*2/steps,x=Math.cos(a)*r,z=Math.sin(a)*r;
+          if(this.isWater(x,z)||bridgeFootprint(this.options.map,x,z,5))continue;
+          if(this.barriers.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+4))continue;
+          if(this.entities.some(e=>e.hp>0&&e.kind==='building'&&distance(e,{x,z})<e.r+5))continue;
+          spot={x,z};found=true;break;
+        }
+      }
+      for(const e of this.entities)if(e.hp>0&&e.kind==='resource'&&!e.water&&distance(e,spot)<7.5)e.hp=0;
+      const monument=this.addShrine(spot.x,spot.z);
+      monument.displayName='Crown monument';
+      this.revision++;
+    }
+    if(m==='siege'){
+      const tc0=this.spawnPositions[0],tc1=this.spawnPositions[1];
+      buildNaturalFortifiedBase(this,0,tc0,{radius:27,gates:['north','east'],towers:true,complete:true,wallGaps:true,includeResources:false,keepClear:[{x:tc1.x,z:tc1.z,r:34},{x:0,z:0,r:16}],seedOffset:51,backToBorder:true});
+      this.revision++;
+    }
     for(const owner of movedStarts)replaceMissingShoreResources(this,owner);
     this.assignEconomy(0);this.assignEconomy(1);this.updateFog();
   }
   addResource(type,x,z,amount){const previousRevision=this.revision,e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;recordPlacementAppend(this,e,previousRevision);return e;}
   addNaturalResource(type,x,z,baseAmount){return this.addResource(type,x,z,baseAmount*2);}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
-  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;return base*(p.controller==='ai'?(p.aiHealth??100)/100:1)*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1));}
+  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;return base*(p.controller==='ai'?(p.aiHealth??100)/100:1)*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1)*(d.role==='siege'?(f.siegeHP||1):1));}
   addBuilding(type,owner,x,z,complete=false,layout){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);if(layout?.angle!==undefined)e.wallAngle=layout.angle;if(layout?.links)e.wallLinks=layout.links;else connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const previousRevision=this.revision,e={id:this.nextId++,kind:'unit',type,owner,x,z,r:UNITS[type].radius??(type==='ram'?1.35:type==='catapult'?1.1:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   population(owner){return this.count(owner,'unit');}
   capacity(owner){const limit=this.options.populationLimit||160;let total=0;for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner===owner&&e.progress>=1)total+=BUILDINGS[e.type].cap||0;return Math.min(limit,total);}
   reservedPopulation(owner){let total=0;for(const e of this.candidatesFor('building'))if(e.hp>0&&e.owner===owner)for(const q of e.queue)if(q.kind==='unit')total++;return total;}
-  cost(cost,owner=0,kind=''){const factor=kind==='building'?this.faction(owner).cost:1;return Object.fromEntries(Object.entries(cost).map(([r,n])=>[r,Math.ceil(n*factor)]));}
+  cost(cost,owner=0,kind='',unitType=''){const f=this.faction(owner),factor=kind==='building'?f.cost:kind==='unit'&&UNITS[unitType]?.role==='siege'?(f.siegeCost||1):1;return Object.fromEntries(Object.entries(cost).map(([r,n])=>[r,Math.ceil(n*factor)]));}
   canAfford(cost,owner=0){return Object.entries(cost).every(([r,n])=>this.players[owner].resources[r]>=n);}
   spend(cost,owner){if(!this.canAfford(cost,owner))return false;for(const[r,n]of Object.entries(cost))this.players[owner].resources[r]-=n;return true;}
   fail(message,owner=0){this.emit('notice',{message,owner,tone:'warning'});return false;}
@@ -318,8 +367,9 @@ export class Simulation {
     const capacity=this.capacity(owner);
     if(this.population(owner)+this.reservedPopulation(owner)>=capacity)return this.fail(capacity>=(this.options.populationLimit||160)?`Population limit reached (${this.options.populationLimit||160} per kingdom).`:'Housing capacity reached. Build another house.',owner);
     if(b.queue.length>=8)return this.fail('Training queue is full.',owner);
-    if(!this.spend(d.cost,owner))return this.fail('Not enough resources.',owner);
-    b.queue.push({kind:'unit',type,remaining:d.time,total:d.time,cost:{...d.cost}});return true;
+    const unitCost=this.cost(d.cost,owner,'unit',type);
+    if(!this.spend(unitCost,owner))return this.fail('Not enough resources.',owner);
+    b.queue.push({kind:'unit',type,remaining:d.time,total:d.time,cost:{...unitCost}});return true;
   }
   research(buildingId,type){const b=this.get(buildingId);if(!b||b.kind!=='building'||b.progress<1)return false;const p=this.players[b.owner];
     if(type==='age'){
@@ -400,7 +450,7 @@ export class Simulation {
     if(!e.path.length||e.pathRevision!==this.revision||navigationChanged||rangeChanged||targetChanged||e.repath<=0&&Math.hypot(dest.x-(e.pathTargetX??Infinity),dest.z-(e.pathTargetZ??Infinity))>2){e.path=normalOverride?findPath(this,e,dest,stop,normalOverride):this.pathTo(e,dest,stop);e.repath=1.5;e.pathRevision=this.revision;e.pathNavigationKey=navigationKey;e.pathTargetX=dest.x;e.pathTargetZ=dest.z;e.pathTargetId=targetId;e.pathRange=stop;}
     let point=e.path[0];if(!point){this.blockedMovement(e,dt);return false;}let dx=point.x-e.x,dz=point.z-e.z,len=Math.hypot(dx,dz);
     if(len<(e.path.length>1?.5:.05)){e.path.shift();point=e.path[0];if(!point){if(distance(e,dest)<=Math.max(stop,precise?.05:1.5)){e.stuckTime=0;return true;}this.blockedMovement(e,dt);return false;}dx=point.x-e.x;dz=point.z-e.z;len=Math.hypot(dx,dz);}
-    const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1);
+    const d=UNITS[e.type],p=this.players[e.owner];const speed=d.speed*(d.role==='cavalry'?(1+p.tech.husbandry*.2)*(this.players[e.owner].faction==='raven'?1.15:1)*(1+(p.tech.raidingParties||0)*.1):1)*(d.role==='siege'?(1+(p.tech.siegecraft||0)*.15):1);
     // Steep cliffs and soft valley lowlands slow troops on tactical-terrain maps;
     // legacy maps keep their published movement speeds.
     const phase=this.tacticalEnabled()&&!d.naval?this.tacticalPhase():0;
@@ -478,9 +528,9 @@ export class Simulation {
   }
   attackDamage(e,target){const d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type],p=this.players[e.owner],role=d.role;let n=d.damage||0;if(d.naval)n*=1+(p.tech.seamanship||0)*.2;
     if(e.kind==='building')n*=1+p.tech.fortification*.15;
-    else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;}
+    else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;if(role==='siege')n*=1+(p.tech.siegecraft||0)*.15;}
     const other=target.kind==='unit'?UNITS[target.type]:null;if(role==='spear'&&other?.role==='cavalry')n*=3;if(role==='ranged'&&other?.role==='spear')n*=1.5;if(role==='cavalry'&&other?.role==='ranged')n*=1.7;if(role==='siege')n*=target.kind==='building'?3: e.type==='ram'?.22:1;
-    if(target.kind==='building'&&role!=='siege')n*=.65;
+    if(target.kind==='building'&&role!=='siege')n*=d.buildingBonus||.65;
     if(other?.role==='worker')n*=d.workerBonus||1;
     n*=this.terrainCombatMultiplier(e,target,role);
     const armor=target.kind==='unit'?this.unitArmor(target):(role==='ranged'?5:1)+wallArmorBonus(this,target);return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
@@ -625,7 +675,8 @@ export class Simulation {
       }
       if(distance(e,target)>gatheringRange(e,target)){this.move(e,target,dt,gatheringApproach(e,target));return;}
       e.heading=Math.atan2(target.x-e.x,target.z-e.z);
-      const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*this.faction(e.owner).gather*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
+      const f=this.faction(e.owner),mineBonus=(type==='gold'||type==='stone')?(f.mineGather||1):1;
+      const rate=(type==='food'?3.1:type==='wood'?2.9:2.6)*f.gather*mineBonus*(1+this.players[e.owner].tech.economy*.25),n=Math.min(dt*rate,capacity-e.carry,target.amount??Infinity);e.carry+=n;e.carryType=type;e.work+=dt;
       if(target.amount!==undefined&&takeFromResource(this,target,n)){this.revision++;this.emit('depleted',{entity:target});if(e.carry>0)order.returning=true;}
     }
   }
@@ -674,7 +725,7 @@ export class Simulation {
     const soldiers=this.owned(1,'unit').filter(e=>e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='king'&&!e.embarked);
     if(this.time>=this.nextAttack&&soldiers.length>=4){const target=this.options.mode==='regicide'?this.owned(0,'unit','king')[0]:this.owned(0,'building','towncenter')[0];if(target){this.command(soldiers.map(e=>e.id),{type:'attackmove',x:target.x,z:target.z});this.nextAttack=this.time+Math.max(35,70*difficulty.ai);this.emit('raid',{});}}
     const king=this.owned(1,'unit','king')[0];if(king&&king.hp<king.maxHp*.6&&tc)king.order={type:'move',x:tc.x+8,z:tc.z-7};
-    if((m==='dominion'||this.mission?.dominion)&&this.time>65){const free=soldiers.filter(e=>!e.order||e.order.type!=='attack');for(const shrine of this.entities.filter(e=>e.kind==='shrine'&&e.owner!==1)){const group=free.splice(0,3);this.command(group.map(e=>e.id),{type:'attackmove',x:shrine.x,z:shrine.z});}}
+    if((m==='dominion'||m==='koth'||this.mission?.dominion)&&this.time>65){const free=soldiers.filter(e=>!e.order||e.order.type!=='attack');for(const shrine of this.entities.filter(e=>e.kind==='shrine'&&e.owner!==1)){const group=free.splice(0,3);this.command(group.map(e=>e.id),{type:'attackmove',x:shrine.x,z:shrine.z});}}
     if(m==='wonder'&&p.age===3&&this.time>700&&!this.owned(1,'building','wonder').length&&this.canAfford(BUILDINGS.wonder.cost,1))this.aiBuild('wonder');
   }
   spawnWave(){this.wave++;const d=DIFFICULTIES[this.options.difficulty],count=Math.round((5+this.wave*2.5)*d.wave),s=this.worldSize/WORLD,sides=[{x:58*s,z:55*s},{x:-58*s,z:-55*s},{x:60*s,z:-50*s}],base=sides[(this.wave-1)%sides.length];
@@ -690,7 +741,8 @@ export class Simulation {
       if(side>=0&&s.owner!==side){if(s.capturer!==side){s.capturer=side;s.progress=0;}s.progress+=dt;if(s.progress>=18){s.owner=side;s.progress=0;this.emit('capture',{owner:side});}}else if(side<0)s.progress=Math.max(0,s.progress-dt*.5);
       if(s.owner>=0)this.players[s.owner].resources.gold+=dt*.55;
     }
-    this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,'The rival kingdom united the sacred valley.');
+    const isKoth=this.options.mode==='koth';
+    this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,isKoth?'The central monument belongs to your crown.':'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,isKoth?'The rival kingdom held the central monument.':'The rival kingdom united the sacred valley.');
   }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}

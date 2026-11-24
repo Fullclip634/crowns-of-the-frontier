@@ -168,7 +168,8 @@ function armyPlan(sim,state,owner){
   const wishes={spearman:2+(roles.cavalry||0)*2,archer:1+(roles.spear||0)*1.5,swordsman:1+(roles.ranged||0),knight:1+(roles.ranged||0)*1.8,
     ram:known.some(e=>e.kind==='building')?Math.max(1,army.length/9):0,catapult:known.some(e=>e.kind==='building')?Math.max(1,army.length/12):0,monk:Math.floor(army.length/8)};
   if(player.faction==='alder')wishes.swordsman+=2;if(player.faction==='raven')wishes.knight+=3;
-  wishes.sentinel=2+(roles.ranged||0);wishes.marksman=2+(roles.infantry||0);wishes.outrider=2+(roles.worker||0);
+  if(player.faction==='iron'){wishes.ram=Math.max(wishes.ram,1.6);wishes.catapult=Math.max(wishes.catapult,1.2);}
+  wishes.sentinel=2+(roles.ranged||0);wishes.marksman=2+(roles.infantry||0);wishes.outrider=2+(roles.worker||0);wishes.ironbreaker=2+(roles.infantry||0)+(roles.siege||0);
   const owned={},queued={};for(const unit of army)owned[unit.type]=(owned[unit.type]||0)+1;for(const site of sim.owned(owner,'building'))for(const item of site.queue)if(item.kind==='unit')queued[item.type]=(queued[item.type]||0)+1;
   return {wishes,owned,queued};
 }
@@ -177,7 +178,8 @@ export function chooseArmyUnit(sim,building,state,owner=1,plan=null){
   for(const [type,definition]of Object.entries(UNITS)){
     if(!plan.wishes[type]||!availableTo(definition,player.faction)||definition.age>player.age||!definition.at.includes(building.type))continue;
     const owned=(plan.owned[type]||0)+(plan.queued[type]||0),next=plan.wishes[type]/(owned+1);
-    if(next>score&&sim.canAfford(definition.cost,owner)){best=type;score=next;}
+    const unitCost=sim.cost(definition.cost,owner,'unit',type);
+    if(next>score&&sim.canAfford(unitCost,owner)){best=type;score=next;}
   }return best;
 }
 
@@ -449,9 +451,10 @@ export function installCommanderAI(Simulation){
       if(this.options.mode==='custom'&&this.options.map==='coast'){const navy=this.owned(owner,'unit').filter(e=>UNITS[e.type].naval).length+buildings.reduce((n,site)=>n+site.queue.filter(q=>q.kind==='unit'&&UNITS[q.type]?.naval).length,0),fleetGoal=Math.min(9,Math.max(4,Math.floor((this.options.populationLimit||160)*.25))),reserve=Math.max(0,fleetGoal-navy);if(this.population(owner)+this.reservedPopulation(owner)+(UNITS[type].pop||1)>this.capacity(owner)-reserve)continue;}
       const reserve=state.budget.savingAge?{food:Math.min(ageCost.food*.35,player.resources.food),gold:Math.min(ageCost.gold*.35,player.resources.gold)}:{};
       if(state.expansion)for(const [resource,amount] of Object.entries(this.cost(BUILDINGS.towncenter.cost,owner,'building')))reserve[resource]=Math.max(reserve[resource]||0,amount);
-      if(Object.entries(UNITS[type].cost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
+      const unitCost=this.cost(UNITS[type].cost,owner,'unit',type);
+      if(Object.entries(unitCost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
     }
-    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','economy','attack','armor','ranged','husbandry','fortification','fortifiedWall']){
+    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','siegecraft','economy','attack','armor','ranged','husbandry','fortification','fortifiedWall']){
       if(!availableTo(TECHS[tech],player.faction))continue;
       // A tech that cannot be researched yet must not consume the single
       // research slot for this tick and starve the affordable upgrades.
@@ -533,7 +536,7 @@ export function installCommanderAI(Simulation){
     }
     if(phase==='attack'&&this.time>=nextAttack+55){if(multiKingdom)state.nextAttack=this.time+30;else this.nextAttack=this.time+30;}
     const king=this.owned(owner,'unit','king')[0];if(king&&king.hp<king.maxHp*.8)this.command([king.id],{type:'move',x:tc.x+8,z:tc.z-8});
-    if((this.options.mode==='dominion'||this.mission?.dominion)&&phase!=='defend'&&this.time>70){
+    if((this.options.mode==='dominion'||this.options.mode==='koth'||this.mission?.dominion)&&phase!=='defend'&&this.time>70){
       const shrines=this.entities.filter(e=>e.kind==='shrine'&&!this.allied(owner,e.owner));for(let i=0;i<shrines.length;i++){const group=ready.filter(e=>UNITS[e.type].damage>0).slice(i*3,i*3+3);
         for(const unit of group)if(unit.order?.type!=='attackmove'||distance(unit.order,shrines[i])>6)this.command([unit.id],{type:'attackmove',x:shrines[i].x,z:shrines[i].z});}
     }

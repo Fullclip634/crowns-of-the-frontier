@@ -61,7 +61,8 @@ export function earlyAgeBuildingKey(type,faction='alder',age=0,tier='stone',corn
   if((type==='wall'||type==='gate')&&tier==='palisade')return `building:${type}:palisade`;
   if(type==='wall'||type==='gate'||type==='farm')return null;
   if(age===0)return `building:${type}:frontier`;
-  if(age===1)return `building:${type}:${faction||'alder'}:1`;
+  const artFaction=faction==='iron'?'alder':(faction||'alder');
+  if(age===1)return `building:${type}:${artFaction}:1`;
   return null;
 }
 

@@ -22,7 +22,8 @@ const FORMANTS = {
 const FACTION_CADENCE = {
   alder: { basePitch: 120, formants: ['eh', 'ah', 'oh'], inflection: 1.05, speed: 1.0 },
   sun: { basePitch: 135, formants: ['ah', 'oh', 'uh'], inflection: 1.12, speed: 1.1 },
-  raven: { basePitch: 95, formants: ['oh', 'uh', 'ah'], inflection: 0.98, speed: 0.92 }
+  raven: { basePitch: 95, formants: ['oh', 'uh', 'ah'], inflection: 0.98, speed: 0.92 },
+  iron: { basePitch: 88, formants: ['uh', 'oh', 'ah'], inflection: 0.96, speed: 0.90 }
 };
 
 export const VOICE_COOLDOWN = 0.75;

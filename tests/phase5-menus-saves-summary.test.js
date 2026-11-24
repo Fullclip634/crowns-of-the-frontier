@@ -168,18 +168,25 @@ describe('Phase 5: Upgraded Tech Tree, Hero Menu, Skirmish Hub & 5-Tab Settings'
 
   it('renders Visual Skirmish Hub with Mode cards, Civ Crest cards & Biome picker',()=>{
     const html=skirmishHubMarkup({mode:'skirmish',faction:'raven',difficulty:'hard',map:'volcanic',mapSize:'vast',seed:777});
-    assert.equal(Object.keys(FACTION_SIGNATURES).length,3);
+    assert.equal(Object.keys(FACTION_SIGNATURES).length,4);
     assert.match(html,/data-hub-mode="skirmish"/);
+    assert.match(html,/data-hub-mode="koth"/);
+    assert.match(html,/data-hub-mode="deathmatch"/);
+    assert.match(html,/data-hub-mode="siege"/);
     assert.match(html,/data-hub-faction="alder"/);
     assert.match(html,/data-hub-faction="sun"/);
     assert.match(html,/data-hub-faction="raven"/);
+    assert.match(html,/data-hub-faction="iron"/);
     assert.match(html,/data-hub-map="volcanic"/);
     assert.match(html,/data-start="skirmish"/);
 
-    // Tides locks map selection to coast
+    // Tides locks map selection to coast, Castle Siege locks map to ironpass
     const tidesHtml=skirmishHubMarkup({mode:'tides',faction:'alder',map:'highlands'});
     assert.match(tidesHtml,/id="map" value="coast"/);
     assert.match(tidesHtml,/fixed by mode/);
+    const siegeHtml=skirmishHubMarkup({mode:'siege',faction:'iron',map:'highlands'});
+    assert.match(siegeHtml,/id="map" value="ironpass"/);
+    assert.match(siegeHtml,/fixed by mode/);
   });
 
   it('renders 5-Tab Settings Modal with all tab inputs simultaneously mounted',()=>{

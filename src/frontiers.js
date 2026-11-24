@@ -36,7 +36,7 @@ export function installFrontiers(Simulation){
   p.get=function(id){if(!this.index)this.index=new Map(this.entities.map(e=>[e.id,e]));const e=this.index.get(id);return e?.hp>0?e:null;};
   const restore=Simulation.restore;
   Simulation.restore=function(data){const sim=restore.call(this,data);sim.index=new Map(sim.entities.map(e=>[e.id,e]));sim.sightCache=null;for(const player of sim.players)for(const key of Object.keys(TECHS))player.tech[key]??=0;sim.intel=data.intel||{};return sim;};
-  p.initialize=function(){this.intel={};if(this.options.mode==='tides')this.options.map='coast';original.initialize.call(this);
+  p.initialize=function(){this.intel={};if(this.options.mode==='tides')this.options.map='coast';if(this.options.mode==='siege')this.options.map='ironpass';original.initialize.call(this);
     this.players.forEach(player=>{player.tech.seamanship??=0;});
     if(this.options.map==='archipelago')seedArchipelagoFish(this);
     if(this.options.map==='coast'){

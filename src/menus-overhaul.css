@@ -93,7 +93,7 @@
 .hub-mode-card.active small{color:#ead39b}
 .hub-mode-card em{display:none}
 
-.civ-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.civ-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .civ-card{
   display:flex;flex-direction:column;gap:7px;padding:11px 12px;border-radius:5px;
   border:1px solid rgba(224,185,110,.24);border-top:3px solid var(--civ-accent,#d9bc7a);

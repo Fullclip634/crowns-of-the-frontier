@@ -12,7 +12,7 @@ export function technologyState(sim,type,kind,faction){
   if(player.age<d.age)return {status:`Requires ${AGES[d.age]}`,tone:'locked',site:null};
   if(kind==='tech'&&player.tech[type]>=Math.min(d.max,player.age+1))return {status:'Advance an age for the next level',tone:'locked',site:null};
   if(!sites.length)return {status:`Build ${d.at.map(t=>BUILDINGS[t].name).join(' / ')}`,tone:'need',site:null};
-  const cost=kind==='unit'?d.cost:Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,n*((player.tech[type]||0)+1)]));
+  const cost=kind==='unit'?sim.cost(d.cost,0,'unit',type):Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,n*((player.tech[type]||0)+1)]));
   if(!sim.canAfford(cost,0))return {status:'More resources needed',tone:'need',site:null};
   if(kind==='unit'&&sim.population(0)+sim.reservedPopulation(0)>=sim.capacity(0))return {status:'More population capacity needed',tone:'need',site:null};
   const site=sites.filter(b=>b.queue.length<8).sort((a,b)=>a.queue.length-b.queue.length)[0];
@@ -27,7 +27,8 @@ export function technologyTreeMarkup(sim,faction){
     const reached=activeAge>=index;
     return `<section class="tree-age ${reached?'reached':''}"><h3><span>${AGE_ROMAN[index]}</span>${age}</h3>${index>0?`<p class="tree-age-cost">Advance at town center<br>${costText(AGE_COSTS[index-1])}</p>`:'<p class="tree-age-cost">Your starting age</p>'}${entries.map(({id,d,kind})=>{
       const state=technologyState(sim,id,kind,faction),level=kind==='tech'&&sim?.players[0].faction===faction?(sim.players[0].tech[id]||0):0;
-      const cost=kind==='tech'?Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,n*(Math.min(level,d.max-1)+1)])):d.cost;
+      const siegeFactor=kind==='unit'&&d.role==='siege'&&FACTIONS[faction]?.siegeCost?FACTIONS[faction].siegeCost:1;
+      const cost=kind==='tech'?Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,n*(Math.min(level,d.max-1)+1)])):(siegeFactor===1?d.cost:Object.fromEntries(Object.entries(d.cost).map(([r,n])=>[r,Math.ceil(n*siegeFactor)])));
       return `<article class="tree-card tone-${state.tone||'info'} ${d.faction?'signature':''}"><div><span>${ICONS[id]||uiIcon('age')}</span><strong>${d.name}</strong></div><small>${d.faction?'Civilization exclusive · ':''}${kind==='tech'?`Technology · ${level}/${d.max}`:'Unit'} · ${d.time}s</small><p>${d.desc}</p><div class="tree-prerequisite">${d.at.map(t=>BUILDINGS[t].name).join(' / ')}</div><div class="tree-cost">${costText(cost)}</div><button ${state.site?'':'disabled'} data-tree-${kind}="${id}" data-building="${state.site?.id||''}">${state.status}</button></article>`;
     }).join('')}</section>`;
   }).join('');

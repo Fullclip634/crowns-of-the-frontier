@@ -216,6 +216,24 @@ function miniRouteMapSvg(missionId){
   </svg>`;
 }
 
+const MODE_CHRONICLES=Object.freeze({
+  koth:{
+    startingBase:'Frontier Settlement · Race for the Central Monument',
+    enemyIntel:'Rival Commander contesting the central hill monument',
+    tip:'Send an early garrison to capture the central monument at (0, 0), then fortify the high ground around it with watchtowers and walls to hold the 3-minute countdown.',
+  },
+  deathmatch:{
+    startingBase:'Imperial Age Treasury (10,000 Food/Wood · 6,000 Gold · 4,000 Stone) + Full Military Halls',
+    enemyIntel:'Imperial Age Rival · Immediate Large-Scale Warfare',
+    tip:'Start training armies and researching upgrades from second one! Drop extra barracks, stables, and siege workshops immediately to spend your vast Imperial war chest.',
+  },
+  siege:{
+    startingBase:'Mountain-Backed Stone Castle · Keep, Curtain Walls, Gatehouses & Starting Garrison',
+    enemyIntel:'Fortified Rival Siege War-Camp across Iron Pass with Rams, Trebuchets & Heavy Cavalry',
+    tip:'Station villagers near your gates to repair masonry under ram fire, use your Keep and towers to thin infantry, and counter-push with siege engines once their first wave breaks.',
+  },
+});
+
 /**
  * Renders the full-screen Warcraft III / Age of Empires II-style Pre-Battle
  * Chronicle & Loading Screen for campaign chapters, skirmishes, and custom battles.
@@ -225,10 +243,11 @@ export function missionLoadingMarkup(options={}){
   const mission=MISSIONS.find(m=>m.id===mode)||null;
   const script=mission?CAMPAIGN_SCRIPTS[mode]:null;
   const chronicle=mission?MISSION_CHRONICLES[mode]:null;
+  const modeChronicle=!mission?MODE_CHRONICLES[mode]:null;
   const boss=mission?CAMPAIGN_BOSSES[mode]:null;
   const sideQuest=mission?CAMPAIGN_SIDE_QUESTS[mode]:null;
   const modeDef=MODES.find(m=>m.id===mode)||MODES[0];
-  const mapId=mission?.map||options.map||'highlands';
+  const mapId=mission?.map||modeDef?.map||options.map||'highlands';
   const mapDef=MAPS[mapId]||MAPS.highlands;
   const factionDef=FACTIONS[options.faction||'alder']||FACTIONS.alder;
   const diffDef=DIFFICULTIES[options.difficulty||'normal']||DIFFICULTIES.normal;
@@ -243,11 +262,11 @@ export function missionLoadingMarkup(options={}){
     modeDef.desc,
     `Your banner of ${factionDef.name} deploys across ${mapDef.name}. ${mapDef.desc}`,
   ];
-  const startingBase=chronicle?.startingBase||(mapId==='bastion'?'Pre-Walled Stone Bastion · Towers & Gatehouse Ready':`Frontier Settlement · ${AGES[options.startAge??mission?.age??0]||'Frontier Age'}`);
-  const enemyIntel=chronicle?.enemyIntel||(mode==='custom'?`${(options.slots?.length||4)-1} Rival & Allied Kingdoms · Custom Rules`:`Rival Commander (${diffDef.name})`);
+  const startingBase=chronicle?.startingBase||modeChronicle?.startingBase||(mapId==='bastion'?'Pre-Walled Stone Bastion · Towers & Gatehouse Ready':`Frontier Settlement · ${AGES[options.startAge??mission?.age??0]||'Frontier Age'}`);
+  const enemyIntel=chronicle?.enemyIntel||modeChronicle?.enemyIntel||(mode==='custom'?`${(options.slots?.length||4)-1} Rival & Allied Kingdoms · Custom Rules`:`Rival Commander (${diffDef.name})`);
   const terrainIntel=chronicle?.terrainIntel||`${mapDef.name} · ${mapDef.desc}`;
   const primaryGoal=mission?.objective||modeDef.objective||'Eliminate the opposing forces.';
-  const tip=chronicle?.tip||'Use natural cliffs, rivers, and dense tree lines as free fortifications to conserve stone and timber.';
+  const tip=chronicle?.tip||modeChronicle?.tip||'Use natural cliffs, rivers, and dense tree lines as free fortifications to conserve stone and timber.';
 
   const leftVisual=mission
     ? `<div class="chronicle-map-card">
@@ -264,7 +283,7 @@ export function missionLoadingMarkup(options={}){
       </div>`
     : `<div class="chronicle-map-card skirmish-card">
         <div class="chronicle-emblem-stage">
-          <span class="chronicle-crest-seal">${uiIcon(mode==='tides'?'anchor':mode==='custom'?'custom':'crown')}</span>
+          <span class="chronicle-crest-seal">${uiIcon(mode==='tides'?'anchor':mode==='custom'?'custom':mode==='siege'?'castle':mode==='deathmatch'?'swords':'crown')}</span>
           <small>${esc(factionDef.motto)}</small>
           <strong>${esc(factionDef.name)}</strong>
           <p>${esc(factionDef.bonus)}</p>

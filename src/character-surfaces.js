@@ -1,11 +1,11 @@
 // Codes share the existing palette attribute: 0 plain, 1 timber, 2..5 atlas.
 export const CHARACTER_SURFACE_MODES=Object.freeze({cloth:2,leather:3,metal:4,skin:5});
 export const CHARACTER_ATLAS=Object.freeze({size:512,cell:256,core:224,padding:16});
-const humans=new Set(['villager','spearman','swordsman','archer','scout','knight','monk','king','sentinel','marksman','outrider']);
+const humans=new Set(['villager','spearman','swordsman','archer','scout','knight','monk','king','sentinel','marksman','outrider','ironbreaker']);
 export const characterSurfaceKinds=quality=>quality==='low'?['color']:['color','normal'];
 export function characterSurfaceMode(role,type,motion){
   // Shield paint shares its team material with garments, but is not woven cloth.
-  if(role==='team'&&['swordsman','sentinel','king'].includes(type)&&motion?.type==='forearm'&&motion.side<0)return 0;
+  if(role==='team'&&['swordsman','sentinel','ironbreaker','king'].includes(type)&&motion?.type==='forearm'&&motion.side<0)return 0;
   if(['canvas','pants'].includes(role)||role==='team'&&humans.has(type))return 2;
   if(role==='leather')return 3;
   if(['steel','iron'].includes(role))return 4;

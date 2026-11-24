@@ -67,6 +67,7 @@ export const FACTIONS = {
   alder:{name:'The Alder Kingdom',motto:'Steadfast. Unbroken.',desc:'A resilient kingdom of stone and steel. Buildings have 20% more health; infantry have 15% more health.',color:0x397f8c,bonus:'Fortified buildings · Hardy infantry',buildingHP:1.2,infantryHP:1.15,gather:1,cavalry:1,cost:1},
   sun:{name:'The Sunward Sultanate',motto:'Prosperity is power.',desc:'Master merchants of the sunlit frontier. Gather 18% faster; buildings cost 10% less.',color:0xd4a24e,bonus:'Swift economy · Efficient construction',buildingHP:1,infantryHP:1,gather:1.18,cavalry:1,cost:.9},
   raven:{name:'The Raven Clans',motto:'Ride beyond the horizon.',desc:'Restless riders of the northern highlands. Cavalry move 15% faster and deal 20% more damage.',color:0x9a687d,bonus:'Fearsome cavalry · Fast reconnaissance',buildingHP:1,infantryHP:1,gather:1,cavalry:1.2,cost:1},
+  iron:{name:'The Ironhold Vanguard',motto:'Forge and thunder.',desc:'Mountain engineers and siege masters. Mine gold and stone 20% faster; siege engines have 20% more health and cost 15% less.',color:0xc4603e,bonus:'Master miners · Armored siege',buildingHP:1,infantryHP:1,gather:1,mineGather:1.2,cavalry:1,cost:1,siegeHP:1.2,siegeCost:.85},
 };
 export const DIFFICULTIES = {
   story:{name:'Explorer',desc:'Room to learn. Slow raids and a forgiving opponent.',attack:220,ai:1.6,wave:.65},
@@ -99,18 +100,21 @@ Object.assign(UNITS,{
   sentinel:{name:'Alder sentinel',desc:'Alder unique heavy infantry. Durable against arrows; slow and vulnerable to concentrated siege.',faction:'alder',model:'swordsman',cost:{food:90,gold:55},hp:175,damage:15,armor:6,range:2,speed:2.65,time:26,age:2,at:['barracks'],role:'infantry',vision:15},
   marksman:{name:'Sunward marksman',desc:'Sunward unique longbow infantry. Long reach and 2 armor penetration; slow attacks and vulnerable to cavalry.',faction:'sun',model:'archer',cost:{food:60,gold:60},hp:80,damage:15,armor:0,penetration:2,range:14,speed:3.2,time:28,age:2,at:['range'],role:'ranged',vision:21,cooldown:1.8},
   outrider:{name:'Raven outrider',desc:'Raven unique light cavalry. Fast raiders deal double damage to workers; vulnerable to spearmen and heavy cavalry.',faction:'raven',model:'scout',cost:{food:80,wood:30,gold:30},hp:120,damage:11,armor:0,range:2,speed:8,time:22,age:2,at:['stable'],role:'cavalry',vision:23,workerBonus:2},
+  ironbreaker:{name:'Ironhold ironbreaker',desc:'Ironhold unique siege infantry. Pierces 3 armor and deals 50% bonus damage to buildings; slow and vulnerable to archers and heavy cavalry.',faction:'iron',model:'swordsman',cost:{food:85,gold:65},hp:155,damage:18,armor:4,penetration:3,buildingBonus:1.5,range:2,speed:2.75,time:27,age:2,at:['barracks'],role:'infantry',vision:15,cooldown:1.35},
 });
 Object.assign(TECHS,{
   shieldDrill:{name:'Shield drill',desc:'Alder unique technology: infantry and spearmen gain 2 armor.',faction:'alder',at:['blacksmith'],cost:{food:250,gold:200},max:1,age:2,time:45},
   caravanLedger:{name:'Caravan ledger',desc:'Sunward unique technology: market sales yield 90 gold; purchases provide 110 resources.',faction:'sun',at:['market'],cost:{wood:200,gold:250},max:1,age:2,time:45},
   raidingParties:{name:'Raiding parties',desc:'Raven unique technology: cavalry move 10% faster and earn 3 gold for each enemy unit they defeat.',faction:'raven',at:['stable'],cost:{food:300,gold:250},max:1,age:2,time:45},
+  siegecraft:{name:'Master siegecraft',desc:'Ironhold unique technology: siege engines move 15% faster and deal 15% more damage.',faction:'iron',at:['workshop'],cost:{wood:250,gold:250},max:1,age:2,time:45},
 });
-Object.assign(ICONS,{sentinel:'♜',marksman:'➶',outrider:'♞',shieldDrill:'⛨',caravanLedger:'⚖',raidingParties:'⚑'});
+Object.assign(ICONS,{sentinel:'♜',marksman:'➶',outrider:'♞',ironbreaker:'⚒',shieldDrill:'⛨',caravanLedger:'⚖',raidingParties:'⚑',siegecraft:'⚙'});
 UNITS.cart={name:'Supply caravan',desc:'A campaign supply wagon. Escort it with military units; it cannot attack or be trained.',cost:{},hp:240,damage:0,range:0,speed:3.2,time:0,age:0,at:[],role:'quest',vision:14,radius:1.15};
 ICONS.cart='▰';
 FACTIONS.alder.desc+=' Unique sentinel infantry and Shield drill reinforce the frontline.';
 FACTIONS.sun.desc+=' Unique marksmen provide long-range support; Caravan ledger improves market trades.';
 FACTIONS.raven.desc+=' Unique outriders raid workers; Raiding parties reward cavalry victories.';
+FACTIONS.iron.desc+=' Unique ironbreakers crush armor and walls; Master siegecraft empowers siege engines.';
 
 MAPS.coast={name:'The divided coast',desc:'Two kingdoms separated by a wide sea channel. Fish, fight, and land troops across the water.'};
 Object.assign(ICONS,{dock:'⚓',fishingboat:'⚓',galley:'⛵',warship:'⛵',transport:'⚓',king:'♛'});
@@ -124,6 +128,9 @@ Object.assign(UNITS,{
 TECHS.seamanship={name:'Seamanship',desc:'+15% ship speed and +20% ship attack per level.',at:['dock'],cost:{wood:160,gold:120},max:2,age:1,time:35};
 ICONS.seamanship='⚓';
 MODES.push({id:'tides',name:'Masters of the tide',label:'NAVAL CONQUEST',tag:'Naval warfare',map:'coast',desc:'Two kingdoms face each other across the sea. Fish to grow your economy, escort transports, and land an army on the rival coast.',objective:'Destroy the rival town center. Use transports or Imperial siege ships.',time:'25–45 min'});
+MODES.push({id:'koth',name:'Crown of the hill',label:'KING OF THE HILL',tag:'King of the hill',desc:'A single ancient monument commands the center of the battlefield. Capture the hill and hold it for three minutes, or shatter the rival capital.',objective:'Capture and hold the central monument for 180 seconds, or destroy the rival town center.',time:'15–30 min'});
+MODES.push({id:'deathmatch',name:'Imperial deathmatch',label:'IMPERIAL DEATHMATCH',tag:'Grand war',desc:'Skip the slow early village and jump straight into full-scale Imperial Age warfare with vast treasuries and military halls ready to train.',objective:'Destroy the rival town center in an instant Imperial Age war.',time:'15–25 min'});
+MODES.push({id:'siege',name:'Bastion under siege',label:'CASTLE SIEGE',tag:'Castle siege',map:'ironpass',desc:'Command a mountain-backed stone castle in Iron Pass against a rival siege army massing across the valley with rams and trebuchets. Defend your keep and break their fortress.',objective:'Defend your castle and destroy the rival stronghold across Iron Pass.',time:'20–35 min'});
 MISSIONS.push({id:'campaign6',chapter:'VI',name:'Beyond the horizon',desc:'The frontier war reaches the sea. Establish a fleet, protect the fishing grounds, and carry your army to the enemy capital.',objective:'Destroy the rival coastal capital.',age:2,enemies:12,seed:4306,map:'coast',worldSize:320});
 MISSIONS.push({id:'campaign7',chapter:'VII',name:'The ember road',desc:'A volcanic frontier blocks the last supply road. Hold the ash pass, break the cinder camp that feeds the raiders, and take the ember keep before the mountain wakes.',objective:'Hold the ash pass, destroy the rival barracks, and take the ember keep.',age:2,enemies:14,seed:4307,map:'volcanic',worldSize:320});
 MISSIONS.push({id:'campaign8',chapter:'VIII',name:'The deepwood oath',desc:'The old forest has swallowed the border road. Raise a timber camp, break the ambush waiting in the deepwood, and swear the woodfort to your banner.',objective:'Raise a lumber camp, break the rival barracks, and take the woodfort.',age:1,enemies:10,seed:4308,map:'woodland',worldSize:320});

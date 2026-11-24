@@ -8,7 +8,7 @@ import {ensureAtmosphereUniforms,ANALYTIC_IBL_GLSL} from './atmosphere-uniforms.
 const GARMENT_TINT={
   villager:[1.02,.98,.87],spearman:[.78,.68,.53],swordsman:[.72,.65,.60],
   archer:[.61,.72,.51],marksman:[.69,.60,.47],knight:[.71,.67,.62],
-  scout:[.93,.95,.88],outrider:[.77,.60,.50],sentinel:[.73,.73,.66],
+  scout:[.93,.95,.88],outrider:[.77,.60,.50],sentinel:[.73,.73,.66],ironbreaker:[.66,.69,.74],
   monk:[.91,.82,.69],king:[.88,.77,.66],
 };
 const FIELD_FABRIC={

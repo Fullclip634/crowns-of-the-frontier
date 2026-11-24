@@ -16,6 +16,7 @@ export const FACTION_SIGNATURES=Object.freeze({
   alder:{motto:'Hold the line. Build to endure.',unit:'sentinel',tech:'shieldDrill',accent:'#4fa896'},
   sun:{motto:'Gold commands the field.',unit:'marksman',tech:'caravanLedger',accent:'#e2b453'},
   raven:{motto:'Strike swift, ride before dawn.',unit:'outrider',tech:'raidingParties',accent:'#d9756d'},
+  iron:{motto:'Forge and thunder.',unit:'ironbreaker',tech:'siegecraft',accent:'#c4603e'},
 });
 
 export const SETTINGS_TABS=Object.freeze([
@@ -64,7 +65,7 @@ export function landingMarkup(latestSave=null){
           </button>
           <button class="hero-btn" data-action="skirmish-hub">
             <span class="hero-btn-icon">${uiIcon('swords')}</span>
-            <span class="hero-btn-copy"><strong>Skirmish & Modes</strong><small>Conquest, Regicide, Survival, Dominion, Naval & Sandbox</small></span>
+            <span class="hero-btn-copy"><strong>Skirmish & Modes</strong><small>Conquest, King of the Hill, Castle Siege, Grand War, Naval & more</small></span>
             ${uiIcon('chevron-right')}
           </button>
           <button class="hero-btn" data-action="custom-battle">

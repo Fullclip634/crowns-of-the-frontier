@@ -146,6 +146,7 @@ function human(view,e){
   if(e.type==='sentinel'){const cape=b.piece(view.geo.cloth3d,team,0,1.35,-.31,.77,1.3,1);cape.rotation.x=.15;b.box(m.gold,0,2.40,0,.08,.28,.3);b.box(m.steel,-.68,1.3,.23,.10,.85,.55);}
   if(e.type==='marksman'){const cape=b.piece(view.geo.cloth3d,m.canvas,0,1.40,-.30,.7,1.1,1);cape.rotation.x=.12;b.oval(m.leather,0,1.76,-.10,.3,.12,.22);tool.scale.set(1,1.18,1.15);}
   if(e.type==='outrider'){b.piece(view.geo.cloth3d,team,0,2.04,-.37,.75,.85,1);b.box(m.gold,.58,4.15,.2,.08,.16,.34);}
+  if(e.type==='ironbreaker'){b.box(m.iron,0,2.38,0,.10,.26,.34);b.box(m.iron,-.68,1.3,.23,.12,.78,.50);t.box(m.iron,.56,1.25+y,.94,.22,.22,.34);}
   root.userData.model3d={kind:'unit',type:e.type,articulated:true};return root;
 }
 

@@ -11,8 +11,10 @@ import {dockWaterAngle} from './naval-spacing.js';
 import {treeBiome} from './terrain-biomes.js';
 import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,strengthenArchitecture} from './architecture-age.js';
 import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
+import {ironholdUnitTemplate,ironholdBuildingTemplate,ironholdGeometries} from './ironhold-art.js';
 import {readAssetResponse} from './load-progress.js';
 import {loadStartupGraphics} from './offline-registration.js';
+import {UNITS} from './data.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -164,7 +166,7 @@ export function trimAuthoredAssets(view){
     const materials=new Set();for(const [key,root]of catalogue.templates){if(catalogue.trees?.templates.has(key))continue;root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});}for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(ironholdGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
   view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,sharedTrees?.bytes||0),sharedTreeBytes:sharedTrees?.bytes||0,evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
@@ -222,13 +224,58 @@ export function workerVisualTask(view,e){
 }
 export function authoredUnit(view,e,catalogue=null){
   const task=workerVisualTask(view,e);
-  return (e.type==='villager'?cloneAsset(view,`unit:villager:${task}`,e.owner,catalogue):null)||cloneAsset(view,`unit:${e.type}`,e.owner,catalogue);
+  const ironUnit=e.type==='ironbreaker'?ironholdUnitTemplate(e.type):null;
+  if(ironUnit){
+    const root=bindAuthoredTemplate(view,ironUnit.template,ironUnit.key,e.owner,'ironhold');
+    root.userData.model3d={...root.userData.model3d,type:e.type};
+    return root;
+  }
+  const modelType=UNITS[e.type]?.model;
+  const root=(e.type==='villager'?cloneAsset(view,`unit:villager:${task}`,e.owner,catalogue):null)
+    ||cloneAsset(view,`unit:${e.type}`,e.owner,catalogue)
+    ||(modelType?cloneAsset(view,`unit:${modelType}`,e.owner,catalogue):null);
+  if(root&&modelType&&root.userData.model3d)root.userData.model3d={...root.userData.model3d,type:e.type};
+  return root;
 }
 export function authoredBuilding(view,e){
-  const faction=view.sim?.players[e.owner]?.faction||'alder';
+  const rawFaction=view.sim?.players[e.owner]?.faction||'alder';
+  const faction=rawFaction==='iron'?'alder':rawFaction;
   const playerAge=architectureAge(view.sim,e);
   const tier=(e.type==='wall'||e.type==='gate')?wallTier(view.sim,e):'stone';
   const corner=e.type==='wall'&&isWallCorner(view.sim,e);
+  const ironModel=rawFaction==='iron'?ironholdBuildingTemplate(e.type,playerAge):null;
+  if(ironModel){
+    const root=bindAuthoredTemplate(view,ironModel.template,ironModel.key,e.owner,'ironhold');
+    if(ironModel.feudal){
+      const earlyScale=ironModel.scale||1;
+      if(earlyScale!==1){
+        for(const child of root.children){
+          child.position.multiplyScalar(earlyScale);
+          child.scale.multiplyScalar(earlyScale);
+        }
+      }
+      const style=architectureStyle(playerAge);
+      root.userData.model3d={
+        ...root.userData.model3d,
+        authoredAgeVariant:true,
+        ...(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type)?{architectureAge:playerAge,architectureLabel:style.label}:{}),
+      };
+      if(e.type==='dock')orientDockPier(view,root,e);
+      if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.48,4.82,.15).multiplyScalar(earlyScale);
+      else if(e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.42,3.88,-.62).multiplyScalar(earlyScale);
+      else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(1.55,5.15,-1.60).multiplyScalar(earlyScale);
+      return root;
+    }
+    const styledAge=e.type==='towncenter'?Math.max(2,Math.min(3,playerAge)):playerAge;
+    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
+    if(e.type==='keep')root.scale.set(root.scale.x*1.25,root.scale.y*1.28,root.scale.z*1.25);
+    foundation(view,root,e,styledAge);
+    if(e.type==='dock')orientDockPier(view,root,e);
+    if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.95,5.95,.15);
+    else if(e.type==='workshop')root.userData.chimneyOutlet=new THREE.Vector3(2.68,7.05,-1.35);
+    else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(2.65,7.85,-3.15);
+    return root;
+  }
   const early=earlyAgeBuildingTemplate(e.type,faction,playerAge,tier,corner);
   if(early){
     const root=bindAuthoredTemplate(view,early.template,early.key,e.owner,'early-ages');

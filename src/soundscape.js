@@ -214,7 +214,7 @@ export function installSoundscape(AudioEngine){
         }else if(e.order?.type==='build'||e.order?.type==='repair')kind='hammer';
       }else if(e.kind==='unit'&&['knight','scout','outrider'].includes(e.type)&&e.moving){
         kind='hoof';weight=.18;
-      }else if(e.kind==='unit'&&['spearman','swordsman','archer','sentinel','marksman'].includes(e.type)&&e.moving){
+      }else if(e.kind==='unit'&&['spearman','swordsman','archer','sentinel','marksman','ironbreaker'].includes(e.type)&&e.moving){
         kind='march';weight=.13;
       }else if(e.kind==='building'&&e.progress>=1&&e.hp<e.maxHp*.5){
         kind='fire';weight=.22;

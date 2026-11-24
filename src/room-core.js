@@ -102,7 +102,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=spectator?emptyStats():custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
     data.ended=sim.ended?{...sim.ended,won:spectator?false:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won,...(spectator?{spectator:true}:{})}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
-    if(data.ended&&!spectator)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race'}[room.options.mode]} match.`;
+    if(data.ended&&!spectator)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race',koth:'king of the hill',deathmatch:'grand war'}[room.options.mode]||room.options.mode} match.`;
     const resourceChanges=[];
     if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities){if(e.kind!=='resource'||!observer&&!shown(e))continue;const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
     const previous=compact&&deltaVisibility&&!forceVisibility?room.visibility[side]:null,sequence=previous?previous.sequence+1:0;
@@ -122,7 +122,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     room.sim=new Simulation({...room.options,multiplayer:true,faction:room.players[0].faction});
     if(!custom(room)){
       room.sim.players[1].faction=room.players[1].faction;
-      for(const type of ['towncenter','house','mill','barracks','dock']){const a=room.sim.owned(0,'building',type),b=room.sim.owned(1,'building',type);for(let i=0;i<Math.min(a.length,b.length);i++){b[i].x=-a[i].x;b[i].z=-a[i].z;}}
+      for(const type of ['towncenter','house','mill','barracks','range','stable','workshop','blacksmith','dock']){const a=room.sim.owned(0,'building',type),b=room.sim.owned(1,'building',type);for(let i=0;i<Math.min(a.length,b.length);i++){b[i].x=-a[i].x;b[i].z=-a[i].z;}}
       for(const unit of room.sim.owned(1,'unit'))unit.hp=0;for(const unit of room.sim.owned(0,'unit')){const mirror=room.sim.addUnit(unit.type,1,-unit.x,-unit.z);if(unit.type==='fishingboat')room.sim.assignWorker(mirror);}room.sim.assignEconomy(1);room.sim.revision++;
       for(const e of room.sim.owned(1).filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=room.sim.maxHP(e);e.hp=e.maxHp;}
     }
@@ -183,7 +183,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
         if(rooms.size>=maxRooms)return send(ws,{type:'error',message:'All match slots are busy. Try again after a match finishes.'});
         const input=message.options||{},base={map:MAPS[input.map]?input.map:'highlands',seed:Number.isFinite(input.seed)?input.seed:2026};let options;
         if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<(options.hostSpectator?1:2))return send(ws,{type:'error',message:options.hostSpectator?'Open at least one Human slot for a friend.':'Choose at least two human slots for a multiplayer room.'});}
-        else options={...base,mode:['skirmish','regicide','dominion','wonder','tides'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
+        else options={...base,mode:['skirmish','regicide','dominion','wonder','tides','koth','deathmatch'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
         room={code:code(),options,players:[],created:now,slotDefaults:options.mode==='custom'?options.slots.map(({name,faction})=>({name,faction})):null};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
         player={side:options.hostSpectator?options.slots.length:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomHex(16),ws};room.players.push(player);
         if(custom(room)&&!options.hostSpectator){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
