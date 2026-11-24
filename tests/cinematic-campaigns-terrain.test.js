@@ -132,8 +132,8 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.ok(timberTrees>=160,`Timbervale Glades plants dense natural woodland belts (${timberTrees} trees)`);
     assert.ok(timber.barriers.length>=16,'Timbervale Glades anchors glades with mossy granite bluffs');
 
-    // Open & rugged biomes (Emerald Highlands, Amber Wastes, Frostmarch, Volcanic) ALSO get natural continent-wide cliffs!
-    for(const openMap of ['highlands','arid','tundra','volcanic']){
+    // Rugged biomes (Highland Crags, Amber Wastes, Frostmarch, Volcanic) get natural continent-wide cliffs!
+    for(const openMap of ['highland','arid','tundra','volcanic']){
       const openSim=new Simulation({mode:'skirmish',map:openMap,seed:2026});
       const qs=new Set(openSim.barriers.map(p=>`${p.x>=0?'E':'W'}${p.z>=0?'S':'N'}`));
       assert.ok(openSim.barriers.length>=15&&qs.size>=3,`${openMap} generates organic map-wide cliff bluffs & border headlands (${openSim.barriers.length} barriers across ${qs.size} quadrants)`);

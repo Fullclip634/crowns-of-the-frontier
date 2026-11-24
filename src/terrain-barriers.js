@@ -817,7 +817,7 @@ export function applyMapGeography(sim){
     }
     const snowKeep=[...bases.map(b=>({x:b.x,z:b.z,r:coveR+6})),{x:0,z:0,r:16}];
     scatterBiomeCliffs(sim,{count:6,ridgeLen:24,withMassifs:true,keepClear:snowKeep,passes:[{x:0,z:0,r:16}],seedOffset:823});
-  }else if(['highland','volcanic','canyon','arid','tundra'].includes(map)){
+  }else if(['highland','volcanic','arid','tundra'].includes(map)){
     // Rugged Rocky / Mesa / Volcanic / Alpine Biomes: Rich dramatic continent-wide cliff formations & mountain ridges!
     const passes=[{x:0,z:0,r:14},{x:-26,z:0,r:12},{x:26,z:0,r:12}];
     addCurvedCliffChain(sim,[{x:-h*.74,z:-h*.18},{x:-h*.45,z:-h*.22},{x:-h*.20,z:-h*.14}],{step:3.6,width:1,radius:3.0,height:4.6,wobble:2.4,passes,keepClear,seedOffset:81,foothillTrees:map!=='arid'&&map!=='volcanic'});
@@ -833,10 +833,5 @@ export function applyMapGeography(sim){
       });
     }
     scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear:[...bases.map(b=>({x:b.x,z:b.z,r:gladeR+2})),{x:0,z:0,r:14}],passes:[{x:0,z:0,r:15}],seedOffset:97});
-  }else if(['highlands','winter','desert'].includes(map)){
-    // Classic Open Biomes (Emerald Highlands / Winterwood / Sunlit Meadows):
-    // Realistic natural cliff bluffs & border mountain headlands so players can scout & wall between cliffs & forests!
-    const passes=[{x:0,z:0,r:15}];
-    scatterBiomeCliffs(sim,{count:4,ridgeLen:20,withMassifs:true,keepClear,passes,seedOffset:101});
   }
 }
