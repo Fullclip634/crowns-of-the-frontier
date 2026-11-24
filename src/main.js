@@ -23,6 +23,7 @@ import './interface-design.css';
 import './campaign-map.css';
 import './menus-overhaul.css';
 import './mission-loading.css';
+import './startup-loading.css';
 import './phone-hud.css';
 import {WallPlacement,wallPlacementPlan,wallPointerPoint} from './wall-placement.js';
 import {WallPreview} from './wall-preview.js';
@@ -45,6 +46,7 @@ import {campaignObjective,CAMPAIGN_SCRIPTS} from './campaigns.js';
 import {mergeCampaignVictory,nextCampaignMissionId,nextChapterAfter} from './campaign-map-data.js';
 import {campaignMapMarkup,commanderBannerMarkup} from './campaign-map-ui.js';
 import {missionLoadingMarkup} from './mission-loading.js';
+import {createStartupSplash} from './startup-loading.js';
 import {MatchTimeline,matchSummaryMarkup} from './match-timeline.js';
 import {landingMarkup,skirmishHubMarkup,settingsModalMarkup,saveManagerMarkup} from './menus-ui.js';
 import {MatchReplayRecorder,ReplayDriver,listReplays,saveReplay,readReplay,deleteReplay} from './replay.js';
@@ -132,18 +134,18 @@ let pointer=null,hover=null,keys=new Set(),touches=new Map(),pinch=null,portrait
 const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const bootButtons=[...document.querySelectorAll('#landing button')];for(const button of bootButtons)button.disabled=true;
-const bootStatus=document.createElement('div');bootStatus.className='battlefield-loading';bootStatus.setAttribute('role','status');
-const bootLabel=document.createElement('span');bootLabel.textContent='Preparing your kingdom…';
-const bootProgress=document.createElement('div');bootProgress.className='battlefield-progress';bootProgress.hidden=true;const bootProgressFill=document.createElement('i');bootProgress.append(bootProgressFill);
-const bootPercent=document.createElement('span');bootPercent.className='battlefield-progress-label';bootPercent.hidden=true;
-bootStatus.append(bootLabel,bootProgress,bootPercent);$('#landing').append(bootStatus);
+const startupSplash=createStartupSplash(document.querySelector('#app'));
+
+
+
+
 const stopAssetProgress=onAssetProgress(({percent,label})=>{
   if(percent===null)return;
-  bootProgress.hidden=false;bootPercent.hidden=false;
-  bootProgressFill.style.width=`${percent}%`;
-  bootProgress.setAttribute('role','progressbar');bootProgress.setAttribute('aria-valuenow',String(percent));bootProgress.setAttribute('aria-valuemin','0');bootProgress.setAttribute('aria-valuemax','100');
-  bootLabel.textContent=`Loading ${label}…`;
-  bootPercent.textContent=`${percent}%`;
+  startupSplash.setStatus(`Loading ${label}…`,Math.max(8,Math.round(percent*.92)));
+
+
+
+
 });
 const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
 const requestedRenderer=preferredRenderer(location.href,graphicsSession);
@@ -154,6 +156,7 @@ function currentGraphicsReport(failure=null,phase=playing?'battle':'landing'){
 }
 function recordGraphicsFailure(failure,phase){lastGraphicsFailure=rememberGraphicsFailure(graphicsSession,currentGraphicsReport(failure,phase));}
 function graphicsSupport(){return graphicsSupportMarkup({current:currentGraphicsReport(),lastFailure:lastGraphicsFailure});}
+startupSplash.setStatus('Initializing 3D renderer…',6);
 let startupRenderer,startupFailure;try{startupRenderer=await initializeWorldRenderer({backend:requestedRenderer,onFallback:error=>{recordGraphicsFailure(error,'initialization');console.warn('WebGPU could not start; using WebGL 2:',error.message);}});document.documentElement.dataset.renderer=rendererBackend(startupRenderer);}catch(error){startupFailure=error;recordGraphicsFailure(error,'initialization');}
 window.addEventListener('pagehide',event=>{if(event.persisted)return;releaseSurfaceCodec();if(!view&&startupRenderer)releaseRenderers({renderer:startupRenderer});});
 // Keep using the authored battlefield catalogue, including on a cached launch.
@@ -161,7 +164,7 @@ for(;!startupFailure;){
   let attemptActive=true;
   try{
     let modelsReady=false,surfacesReady=false;
-    const status=()=>{if(attemptActive&&bootProgress.hidden)bootLabel.textContent=modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…';};
+    const status=()=>{if(attemptActive)startupSplash.setStatus(modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…',modelsReady||surfacesReady?90:null);};
     const requestedQuality=settings.quality;
     const [loadedQuality]=await Promise.all([
       Promise.all([
@@ -185,16 +188,16 @@ for(;!startupFailure;){
   catch(error){
     attemptActive=false;
     console.warn('Battlefield artwork could not load:',error.message);
-    const title=document.createElement('strong');title.textContent='The battlefield artwork could not load.';
-    const detail=document.createElement('span');detail.textContent='Check your connection, then try again.';
-    const retry=document.createElement('button');retry.className='secondary';retry.textContent='Try again';
-    bootStatus.replaceChildren(title,detail,retry);
-    await new Promise(resolve=>{retry.onclick=resolve;});
-    resetAssetProgress();bootStatus.replaceChildren(bootLabel,bootProgress,bootPercent);
-    bootLabel.textContent='Preparing your kingdom…';bootProgress.hidden=true;bootPercent.hidden=true;
+    await startupSplash.showError('The battlefield artwork could not load.','Check your connection, then try again.');
+    resetAssetProgress();startupSplash.resetProgress('Preparing your kingdom…');
+
+
+
+
+
   }
 }
-stopAssetProgress();
+stopAssetProgress();startupSplash.setStatus('Raising the citadel…',96);
 try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),settings,startupRenderer);view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);watchRendererDevice(view);} catch(error){
   if(!startupFailure)recordGraphicsFailure(error,'scene-startup');
   releaseRenderers(view||{renderer:startupRenderer});view=null;sim=null;startupRenderer=null;$('#world').textContent='';$('#landing').inert=true;
@@ -202,7 +205,7 @@ try {if(startupFailure)throw startupFailure;view=new WorldView($('#world'),setti
   failure.innerHTML=`<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="graphics-error-title" aria-describedby="graphics-error-body"><div class="eyebrow">GRAPHICS UNAVAILABLE</div><h2 id="graphics-error-title">3D graphics could not start.</h2><p id="graphics-error-body" class="modal-intro">This game needs a supported 3D graphics API (WebGPU or WebGL 2). Use an updated Chrome, Edge, Safari, or Firefox with hardware acceleration enabled, then reload the game.</p><p class="settings-note">${esc(error.message)}</p><button class="primary full" data-action="retry-graphics">Reload game</button>${graphicsSupport()}</div>`;
   document.body.append(failure);failure.querySelector('button').focus();console.error(error);
 }
-bootStatus.remove();for(const button of bootButtons)button.disabled=!view;
+startupSplash.dismiss();for(const button of bootButtons)button.disabled=!view;
 
 audio.setCombatListener(createCombatListener(view,()=>playing&&!paused&&!modal&&!document.hidden&&!sim.ended));
 refreshLanding();applyHudPreferences();

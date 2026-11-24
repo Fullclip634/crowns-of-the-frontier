@@ -7,6 +7,7 @@ import {MISSIONS,MAPS} from '../src/data.js';
 import {Simulation} from '../src/simulation.js';
 import {orderSiegeAssault} from '../src/ai-siege.js';
 import {MISSION_CHRONICLES,missionLoadingMarkup} from '../src/mission-loading.js';
+import {STARTUP_TIPS,startupSplashMarkup} from '../src/startup-loading.js';
 import {landingMarkup} from '../src/menus-ui.js';
 import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry,biomeMountainGeometry,biomeBushGeometry} from '../src/biome-art.js';
 
@@ -62,6 +63,23 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.doesNotMatch(html,/data-action="toggle-menu-backdrop"/);
     assert.doesNotMatch(html,/Live 3D Citadel/i);
     assert.match(html,/14 handcrafted chapters/);
+  });
+
+  it('replaces the floating boot bar with a full-screen painted medieval startup loading screen',()=>{
+    assert.ok(fs.existsSync(new URL('../src/ui-art/frontier-startup-loading.jpg',import.meta.url)),'painted medieval startup loading key art exists');
+    const css=fs.readFileSync(new URL('../src/startup-loading.css',import.meta.url),'utf8');
+    assert.match(css,/frontier-startup-loading\.jpg/);
+    assert.doesNotMatch(css,/backdrop-filter:\s*blur/i,'startup splash stays blur-free for mobile and WebGPU');
+    assert.ok(STARTUP_TIPS.length>=5,'provides rotating medieval fieldcraft tips');
+    const splash=startupSplashMarkup({status:'Loading 3D models…',percent:64});
+    assert.match(splash,/id="startup-splash"/);
+    assert.match(splash,/role="progressbar"/);
+    assert.match(splash,/Loading 3D models…/);
+    assert.match(splash,/64%/);
+    assert.match(splash,/id="startup-retry-btn"/);
+    const mainJs=fs.readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+    assert.match(mainJs,/createStartupSplash/);
+    assert.doesNotMatch(mainJs,/bootStatus\.className='battlefield-loading'/);
   });
 
   it('renders Warcraft III / AoE2-style pre-mission chronicle loading screens for every campaign & skirmish mode',()=>{

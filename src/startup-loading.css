@@ -1,0 +1,227 @@
+/* Full-Screen AAA Medieval Startup Loading Screen (Zero backdrop-filter blur) */
+.startup-splash{
+  position:fixed;
+  inset:0;
+  z-index:85;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  background:#0a1310;
+  color:#f4edd8;
+  overflow:hidden;
+  opacity:1;
+  transition:opacity .4s ease-out;
+  user-select:none;
+}
+.startup-splash.is-exiting{
+  opacity:0;
+  pointer-events:none;
+}
+.startup-splash-art{
+  position:absolute;
+  inset:0;
+  background:#0b1512 url('./ui-art/frontier-startup-loading.jpg') center 36% / cover no-repeat;
+  transform:scale(1.01);
+}
+.startup-splash-vignette{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,
+      rgba(8,15,12,.58) 0%,
+      rgba(8,15,12,.06) 24%,
+      rgba(8,15,12,.08) 54%,
+      rgba(8,15,12,.82) 79%,
+      rgba(7,13,10,.96) 100%),
+    radial-gradient(ellipse at 50% 42%, transparent 48%, rgba(6,12,10,.55) 100%);
+}
+
+.startup-splash-top{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:calc(18px + var(--safe-top,0px)) calc(26px + var(--safe-right,0px)) 0 calc(26px + var(--safe-left,0px));
+}
+.startup-splash-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:3.2px;
+  color:#e9d6a3;
+  text-shadow:0 2px 10px rgba(0,0,0,.78);
+}
+.startup-crest{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:37px;
+  border:1px solid rgba(235,202,126,.7);
+  background:rgba(12,24,19,.76);
+  color:#f2d17d;
+  clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);
+}
+.startup-crest .ui-icon{width:17px;height:17px}
+.startup-splash-edition{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:2px;
+  color:rgba(222,226,204,.82);
+  text-shadow:0 1px 8px rgba(0,0,0,.78);
+}
+
+.startup-splash-dock{
+  position:relative;
+  z-index:2;
+  width:min(680px,calc(100vw - 36px - var(--safe-left,0px) - var(--safe-right,0px)));
+  margin:0 auto calc(26px + var(--safe-bottom,0px));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  text-align:center;
+}
+.startup-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:3px;
+  color:#e6c677;
+  text-shadow:0 2px 8px rgba(0,0,0,.85);
+}
+.startup-rule{
+  display:inline-block;
+  width:28px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,#e6c677,transparent);
+}
+.startup-splash-title h1{
+  font-family:var(--serif);
+  font-size:clamp(38px,5.2vw,68px);
+  font-weight:500;
+  line-height:.96;
+  letter-spacing:-1.4px;
+  margin:6px 0 0;
+  color:#f9f2dc;
+  text-shadow:0 4px 24px rgba(0,0,0,.85),0 1px 4px rgba(0,0,0,.9);
+}
+.startup-splash-title h1 em{
+  font-weight:400;
+  font-size:.54em;
+  letter-spacing:0;
+  color:#d9d9c3;
+  vertical-align:middle;
+}
+.startup-splash-title h1 .title-dot{color:#f0cf7b}
+
+.startup-loader-box{
+  width:100%;
+  padding:12px 16px 11px;
+  border-radius:6px;
+  border:1px solid rgba(232,199,122,.36);
+  background:linear-gradient(180deg,rgba(14,25,20,.88),rgba(8,16,13,.94));
+  box-shadow:0 16px 40px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,240,192,.14);
+}
+.startup-loader-meta{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.startup-status-text{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.35px;
+  color:#ede6cf;
+  text-align:left;
+}
+.startup-percent{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.6px;
+  font-variant-numeric:tabular-nums;
+  color:#f4d380;
+}
+.startup-bar-track{
+  position:relative;
+  width:100%;
+  height:7px;
+  border-radius:999px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(232,199,122,.28);
+  overflow:hidden;
+}
+.startup-bar-fill{
+  display:block;
+  height:100%;
+  width:4%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#a67c32 0%,#e5be63 55%,#fff1c2 100%);
+  box-shadow:0 0 14px rgba(244,211,128,.55);
+  transition:width .24s ease-out;
+}
+.startup-tip{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin:9px 0 0;
+  font-size:11px;
+  line-height:1.4;
+  color:#b9c7af;
+}
+.startup-tip .ui-icon{
+  width:13px;
+  height:13px;
+  flex:none;
+  color:#dfc074;
+}
+
+.startup-error-box{
+  width:min(440px,100%);
+  padding:16px 20px;
+  border-radius:6px;
+  border:1px solid rgba(230,148,122,.54);
+  background:rgba(24,20,17,.94);
+  box-shadow:0 16px 40px rgba(0,0,0,.68);
+}
+.startup-error-box strong{display:block;font-size:14px;color:#ffe6d6;margin-bottom:5px}
+.startup-error-box p{margin:0 0 12px;font-size:11.5px;color:#d8c3b8;line-height:1.5}
+.startup-retry-btn{min-height:42px;padding:10px 24px;justify-content:center}
+
+/* Phone Landscape: Keep the knights, bridge & fortress painting wide open! */
+@media(max-height:520px) and (orientation:landscape){
+  .startup-splash-art{background-position:center 32%}
+  .startup-splash-top{padding:calc(10px + var(--safe-top,0px)) calc(18px + var(--safe-right,0px)) 0 calc(18px + var(--safe-left,0px))}
+  .startup-splash-badge{font-size:9.5px;letter-spacing:2.4px;gap:7px}
+  .startup-crest{width:26px;height:28px}
+  .startup-crest .ui-icon{width:13px;height:13px}
+  .startup-splash-edition{font-size:8px}
+  .startup-splash-dock{
+    width:min(540px,calc(100vw - 40px - var(--safe-left,0px) - var(--safe-right,0px)));
+    margin-bottom:calc(12px + var(--safe-bottom,0px));
+    gap:7px;
+  }
+  .startup-eyebrow{display:none}
+  .startup-splash-title h1{font-size:30px;margin:0}
+  .startup-loader-box{padding:8px 13px 7px}
+  .startup-loader-meta{margin-bottom:5px}
+  .startup-status-text,.startup-percent{font-size:10.5px}
+  .startup-bar-track{height:5px}
+  .startup-tip{margin-top:6px;font-size:9.5px;line-height:1.3}
+}
+
+/* Phone Portrait */
+@media(max-width:600px) and (orientation:portrait){
+  .startup-splash-art{background-position:56% 36%}
+  .startup-splash-edition{display:none}
+  .startup-splash-title h1{font-size:40px}
+  .startup-tip{font-size:10.5px;text-align:left}
+}
