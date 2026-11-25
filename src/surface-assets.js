@@ -134,9 +134,9 @@ export function applySurfaceMaterials(view){
   applyCoolAshlarStone(m.stone);applyCoolAshlarStone(m.stoneDark);
   bind(m.plaster,'plaster',0xe8dec3);
   bind(m.wood,'wood',0xe4d7bf);bind(m.darkwood,'wood',0xb09c84);bind(m.timberEdge,'wood',0x9c8770);
-  // Realistic Poly Haven PBR textures for The Jade Empire's glazed celadon roof tiles & weathered cinnabar timber!
-  bind(m.jadeRoof,'roof',0x548b78,{roughness:.76,metalness:.05});
-  bind(m.lacquer,'wood',0x91392d,{roughness:.74,metalness:.03});
+  // Realistic Poly Haven PBR textures for The Jade Empire's weathered celadon-jade roof tiles & aged cinnabar cedar!
+  bind(m.jadeRoof,'roof',0x427564,{roughness:.80,metalness:.04});
+  bind(m.lacquer,'wood',0x853429,{roughness:.78,metalness:.02});
   bind(m.rock,'boulder',0xd8ded8);
   // Dark granite-slate host rock contrasts cleanly against inlaid metallic gold
   // veins without crushing boulder albedo into flat charcoal black.

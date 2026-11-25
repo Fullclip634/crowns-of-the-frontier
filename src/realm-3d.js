@@ -260,7 +260,7 @@ export function installRealm3D(WorldView){
   };
   p.buildLandscape=function(){
     ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);
-    const roofColors={alder:new THREE.Color(0x687982),raven:new THREE.Color(0x716d68),sun:new THREE.Color(0x9d754d),iron:new THREE.Color(0x5e5854),jade:new THREE.Color(0x288c6a)};
+    const roofColors={alder:new THREE.Color(0x687982),raven:new THREE.Color(0x716d68),sun:new THREE.Color(0x9d754d),iron:new THREE.Color(0x5e5854),jade:new THREE.Color(0x4c7366)};
     for(const [i,player] of this.sim.players.entries()){
       this.roofMaterials[i].color.copy(roofColors[player.faction]||roofColors.alder).lerp(this.teamMaterials[i].color,.11);
     }

@@ -373,8 +373,8 @@ function bakeSurface(view,part,matrix,tint,roughnessScale,wallAge,roofFinish,sil
   const old=geometry.attributes.color,colors=new Float32Array(count*3),surface=new Float32Array(count*3),emission=new Float32Array(count*3),nightGlow=new Float32Array(count);
   const m=view.materials,material=part.material,emissive=material.emissive?.toArray()||[0,0,0];
   const hasRoofMap=Boolean(roofSurfaceMaps().color||material.map);
-  const rawMode=[m.wood,m.timberEdge].includes(material)&&m.wood.map?1:material===m.darkwood&&m.wood.map?1:preserveSurface&&(material===m.straw||material===m.trunk)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:(material===m.plaster||(preserveSurface&&material===m.canvas))&&m.plaster.map?3:view.roofMaterials?.includes(material)&&hasRoofMap?4:0;
-  const mode=preserveSurface?rawMode:(material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
+  const rawMode=[m.wood,m.timberEdge,m.darkwood,m.lacquer].includes(material)&&m.wood.map?1:preserveSurface&&(material===m.straw||material===m.trunk)&&m.wood.map?1:[m.stone,m.stoneDark,m.brick].includes(material)&&m.stone.map?2:(material===m.plaster||(preserveSurface&&material===m.canvas))&&m.plaster.map?3:(view.roofMaterials?.includes(material)||material===m.jadeRoof)&&hasRoofMap?4:0;
+  const mode=preserveSurface?rawMode:(material===m.lacquer&&rawMode===1?1:material===m.darkwood&&rawMode===1&&wallAge<3?1:ageSurface(rawMode,wallAge));
   if(mode===4&&!/SlateTiles/i.test(part.name||''))smoothShallowCreases(geometry,.52);
   let sourceColor=promotedWallColor(material,rawMode,mode,m);
   if(preserveSurface){
