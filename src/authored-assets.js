@@ -13,6 +13,7 @@ import {isAgeStyled,architectureAge,architectureStyle,applyArchitectureAge,stren
 import {earlyAgeBuildingTemplate,earlyAgeGeometries} from './early-ages-art.js';
 import {ironholdUnitTemplate,ironholdBuildingTemplate,ironholdGeometries} from './ironhold-art.js';
 import {jadeHeroesUnitTemplate,jadeBuildingTemplate,jadeHeroesGeometries,rubblePropTemplate} from './jade-heroes-art.js';
+import {tacticalDepthUnitTemplate,tacticalDepthBuildingTemplate,tacticalDepthGeometries} from './tactical-depth-art.js';
 import {readAssetResponse} from './load-progress.js';
 import {loadStartupGraphics} from './offline-registration.js';
 import {UNITS} from './data.js';
@@ -167,7 +168,7 @@ export function trimAuthoredAssets(view){
     const materials=new Set();for(const [key,root]of catalogue.templates){if(catalogue.trees?.templates.has(key))continue;root.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])materials.add(material);});}for(const material of materials)material.dispose();
     loaded.delete(detail);pending.delete(detail);evicted++;
   }
-  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(ironholdGeometries()||[]),...(jadeHeroesGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
+  view.authoredGeometry=new Set([...(sharedTrees?.geometries||[]),...(earlyAgeGeometries()||[]),...(ironholdGeometries()||[]),...(jadeHeroesGeometries()||[]),...(tacticalDepthGeometries()||[]),...(active?.geometries||[]),...[...loaded.values(),...retained.keys()].flatMap(catalogue=>[...catalogue.geometries])]);
   view.artCacheDiagnostics={catalogues:[...loaded.keys()],bytes:[...loaded.values()].reduce((sum,c)=>sum+c.bytes,sharedTrees?.bytes||0),sharedTreeBytes:sharedTrees?.bytes||0,evicted,retained:retained.size,reservations:reservations.size};return view.artCacheDiagnostics;
 }
 export function clearAuthoredAssets(){active=null;}
@@ -252,22 +253,82 @@ export function authoredUnit(view,e,catalogue=null){
     root.userData.model3d={...root.userData.model3d,type:e.type};
     return root;
   }
+  const tacticalUnit=tacticalDepthUnitTemplate(e.type);
+  if(tacticalUnit){
+    const root=bindAuthoredTemplate(view,tacticalUnit.template,tacticalUnit.key,e.owner,'tactical-depth');
+    root.userData.model3d={...root.userData.model3d,type:e.type};
+    return root;
+  }
   const modelType=UNITS[e.type]?.model;
   const root=(e.type==='villager'?cloneAsset(view,`unit:villager:${task}`,e.owner,catalogue):null)
     ||cloneAsset(view,`unit:${e.type}`,e.owner,catalogue)
     ||(modelType?cloneAsset(view,`unit:${modelType}`,e.owner,catalogue):null);
+  if(root&&e.type==='skirmisher'&&view.geo?.cylinder&&view.materials?.wood&&view.materials?.gold){
+    if(!view.geo.cylinder.getAttribute('color'))canonicalGeometry(view.geo.cylinder);
+    const parent=root.userData.body||root;
+    const buckler=new THREE.Mesh(view.geo.cylinder,view.materials.wood);
+    buckler.position.set(-.42,1.28,.24);
+    buckler.rotation.set(Math.PI/2,0,-.35);
+    buckler.scale.set(.44,.07,.44);
+    buckler.castShadow=true;buckler.receiveShadow=true;
+    const boss=new THREE.Mesh(view.geo.cylinder,view.materials.gold);
+    boss.position.set(-.45,1.28,.29);
+    boss.rotation.set(Math.PI/2,0,-.35);
+    boss.scale.set(.15,.09,.15);
+    boss.castShadow=true;
+    parent.add(buckler,boss);
+  }
   if(root&&modelType&&root.userData.model3d)root.userData.model3d={...root.userData.model3d,type:e.type};
   return root;
 }
+function crownBombardTower(view,root){
+  const m=view.materials;
+  if(!m?.stoneDark||!m?.iron||!view.geo?.cylinder||!view.geo?.box||root.userData.bombardCrowned)return;
+  if(!view.geo.cylinder.getAttribute('color'))canonicalGeometry(view.geo.cylinder);
+  if(!view.geo.box.getAttribute('color'))canonicalGeometry(view.geo.box);
+  root.userData.bombardCrowned=true;
+  root.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(root);
+  const size=bounds.isEmpty()?new THREE.Vector3(2.8,7.2,2.8):bounds.getSize(new THREE.Vector3());
+  const radius=Math.max(1.15,Math.min(2.1,Math.min(size.x,size.z)*.48));
+  const deckY=Math.max(4.6,bounds.max.y*.74);
+  const add=(geo,mat,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{
+    const piece=new THREE.Mesh(geo,mat);
+    piece.position.set(x,y,z);piece.scale.set(sx,sy,sz);piece.rotation.set(rx,ry,rz);
+    piece.castShadow=true;piece.receiveShadow=true;piece.userData.architectureDetail=true;
+    root.add(piece);
+  };
+  // Heavy fortified stone cannon drum & Imperial gold rim collar.
+  add(view.geo.cylinder,m.stoneDark,0,deckY,0,radius*1.22,.72,radius*1.22);
+  if(m.gold)add(view.geo.cylinder,m.gold,0,deckY+.38,0,radius*1.25,.12,radius*1.25);
+  // Four cardinal blackened cast-iron cannon barrels with brass muzzle rings.
+  for(let i=0;i<4;i++){
+    const a=i*Math.PI/2,sin=Math.sin(a),cos=Math.cos(a);
+    add(view.geo.cylinder,m.iron,sin*(radius*1.08),deckY+.18,cos*(radius*1.08),.20,1.45,.20,Math.PI/2,0,-a);
+    if(m.gold)add(view.geo.cylinder,m.gold,sin*(radius*1.46),deckY+.18,cos*(radius*1.46),.24,.16,.24,Math.PI/2,0,-a);
+    // Heavy corner stone bastions flanking the lower shaft.
+    const ba=a+Math.PI/4;
+    add(view.geo.box,m.stoneDark,Math.sin(ba)*radius*.98,1.55,Math.cos(ba)*radius*.98,.58,3.1,.58,0,ba,0);
+  }
+}
 export function authoredBuilding(view,e){
+  const tacticalBld=tacticalDepthBuildingTemplate(e.type);
+  if(tacticalBld){
+    const root=bindAuthoredTemplate(view,tacticalBld.template,tacticalBld.key,e.owner,'tactical-depth');
+    root.userData.model3d={...root.userData.model3d,type:e.type};
+    return root;
+  }
   const rawFaction=view.sim?.players[e.owner]?.faction||'alder';
   const faction=(rawFaction==='iron'||rawFaction==='jade')?'alder':rawFaction;
-  const playerAge=architectureAge(view.sim,e);
+  const isBombard=e.type==='bombard';
+  const modelType=isBombard?'tower':e.type;
+  const playerAge=isBombard?3:architectureAge(view.sim,e);
   const tier=(e.type==='wall'||e.type==='gate')?wallTier(view.sim,e):'stone';
   const corner=e.type==='wall'&&isWallCorner(view.sim,e);
-  const jadeModel=rawFaction==='jade'?jadeBuildingTemplate(e.type,playerAge):null;
+  const jadeModel=rawFaction==='jade'?jadeBuildingTemplate(modelType,playerAge):null;
   if(jadeModel){
     const root=bindAuthoredTemplate(view,jadeModel.template,jadeModel.key,e.owner,'jade-heroes');
+    if(isBombard){root.scale.set(root.scale.x*1.12,root.scale.y*1.14,root.scale.z*1.12);crownBombardTower(view,root);return root;}
     if(jadeModel.feudal){
       const sc=jadeModel.scale||1;
       if(sc!==1){for(const child of root.children){child.position.multiplyScalar(sc);child.scale.multiplyScalar(sc);}}
@@ -294,9 +355,10 @@ export function authoredBuilding(view,e){
     else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(2.45,6.68,-1.75);
     return root;
   }
-  const ironModel=rawFaction==='iron'?ironholdBuildingTemplate(e.type,playerAge):null;
+  const ironModel=rawFaction==='iron'?ironholdBuildingTemplate(modelType,playerAge):null;
   if(ironModel){
     const root=bindAuthoredTemplate(view,ironModel.template,ironModel.key,e.owner,'ironhold');
+    if(isBombard){root.scale.set(root.scale.x*1.12,root.scale.y*1.14,root.scale.z*1.12);crownBombardTower(view,root);return root;}
     if(ironModel.feudal){
       const earlyScale=ironModel.scale||1;
       if(earlyScale!==1){
@@ -359,14 +421,15 @@ export function authoredBuilding(view,e){
     return root;
   }
   const age=e.type==='towncenter'?(view.sim?.players[e.owner]?.age||0):0;
-  const root=cloneAsset(view,`building:${e.type}:${faction}:${age}`,e.owner);
+  const root=cloneAsset(view,`building:${modelType}:${faction}:${age}`,e.owner);
   // Landmark buildings gain age-specific massing and crenellation from their
   // single authored base; Castle & Imperial Age visuals remain completely unchanged.
   if(root){
     const styledAge=e.type==='towncenter'?Math.max(0,Math.min(3,age)):playerAge;
-    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
-    if(isAgeStyled(e.type))applyArchitectureAge(view,root,e,styledAge);
+    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(modelType))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
+    if(isAgeStyled(modelType))applyArchitectureAge(view,root,e,styledAge);
     if(e.type==='keep')root.scale.set(root.scale.x*1.25,root.scale.y*1.28,root.scale.z*1.25);
+    if(isBombard){root.scale.set(root.scale.x*1.12,root.scale.y*1.14,root.scale.z*1.12);crownBombardTower(view,root);}
     strengthenArchitecture(view,root,e,styledAge);
     foundation(view,root,e,styledAge);
   }
@@ -445,7 +508,7 @@ function foundation(view,root,e,age=0){
   // skirt, a field is soil rather than masonry, and a tower's own footing is
   // already authored. A mill keeps a plinth but one that does not protrude at
   // all, because its blades sweep close to the front wall.
-  if(['farm','dock','wall','gate','tower'].includes(e.type))return;
+  if(['farm','dock','wall','gate','tower','bombard'].includes(e.type))return;
   const overhang=['mill','keep'].includes(e.type)?1:1.12;
   root.updateMatrixWorld(true);
   // Measure the building only. A rotor or a moving gate sits outside the walls

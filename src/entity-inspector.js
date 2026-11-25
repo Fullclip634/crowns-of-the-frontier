@@ -16,8 +16,9 @@ const RESOURCE_LABELS=Object.freeze({
 
 const ROLE_CALLOUTS=Object.freeze({
   spearman:'3× vs Cavalry',
+  skirmisher:'2.2× vs Archers · Zero Gold',
   ram:'Bonus vs Buildings',
-  catapult:'Long-Range Splash Siege',
+  catapult:'Castle Age Splash Siege · 4.2m Radius',
   trebuchet:'28m Fire Boulder Siege · 5.2m Splash',
   sentinel:'Heavy Shield Infantry',
   marksman:'2 Armor Piercing',
@@ -141,7 +142,9 @@ export function unitSpeedValue(sim,e){
   const cav=d.role==='cavalry'?(1+(tech.husbandry||0)*.2)*(p.faction==='raven'?1.15:1)*(1+(tech.raidingParties||0)*.1):1;
   const naval=d.naval?(1+(tech.seamanship||0)*.15):1;
   const siege=d.role==='siege'?(1+(tech.siegecraft||0)*.15):1;
-  return (d.speed*cav*naval*siege).toFixed(1).replace(/\.0$/,'');
+  const worker=d.role==='worker'?(1+(tech.wheelbarrow||0)*.15):1;
+  const healer=d.role==='healer'?(1+(tech.sanctuary||0)*.25):1;
+  return (d.speed*cav*naval*siege*worker*healer).toFixed(1).replace(/\.0$/,'');
 }
 
 /** Render sculpted attribute chips for ANY selected entity (unit, building, resource, shrine). */
@@ -158,7 +161,7 @@ export function inspectorStatsMarkup(sim,e){
     const arm=typeof sim?.unitArmor==='function'?sim.unitArmor(e):(d.armor||0);
     const rng=d.range?(d.range+(d.role==='ranged'?(p.tech?.ranged||0):0)):0;
     if(atk>0)add('swords','ATK',atk,'Attack damage');
-    else if(e.type==='monk')add('church','HEAL','12/s','Healing rate');
+    else if(e.type==='monk')add('church','HEAL',`${Math.round(12*(1+(p.tech?.sanctuary||0)*.4))}/s`,'Healing rate');
     else if(e.type==='transport')add('anchor','LOAD',`${e.passengers?.length||0}/${d.capacity||8}`,'Embarked troops');
     add('shield','ARM',arm,'Armor rating');
     if(rng>0)add('target','RNG',`${rng}m`,'Action range');
@@ -187,8 +190,9 @@ export function inspectorStatsMarkup(sim,e){
       const dmg=Math.round(d.damage*(1+fort*.15));
       const arrows=isMineOrAlly&&GARRISONS[e.type]?garrisonArrows(sim,e):0;
       const volley=(d.volley||1)+arrows;
+      const rng=d.range+(['tower','keep','bombard'].includes(e.type)?(p.tech?.arrowslits||0)*2:0);
       add('swords','ATK',volley>1?`${dmg}×${volley}`:dmg,'Building attack & arrows per volley');
-      add('target','RNG',`${d.range}m`,'Defensive firing range');
+      add('target','RNG',`${rng}m`,'Defensive firing range');
     }
     add('shield','ARM',arm,'Building armor (higher against arrows)');
     if(GARRISONS[e.type]){

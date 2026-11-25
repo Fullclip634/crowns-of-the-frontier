@@ -13,6 +13,7 @@ function rangedAttackInterval(sim,entity){
   const pl=sim.players?.[entity.owner];
   if(!pl)return interval;
   const def=entity.kind==='unit'?UNITS[entity.type]:null;
+  if(entity.kind==='building'&&['tower','keep','bombard'].includes(entity.type)&&(pl.tech?.arrowslits||0)>0)interval/=1.2;
   if(entity.kind==='unit'){
     if((entity.buffHasteUntil||0)>sim.time)interval/=1.25;
     if(def?.role==='ranged'&&sim.faction(entity.owner)?.rangedRate)interval/=sim.faction(entity.owner).rangedRate;
@@ -26,11 +27,13 @@ function release(sim,shot){
   if(!source||source.owner!==shot.owner||source.embarked||!targetAllowed(sim,shot,target)||source.moving||source.order?.type==='move'||source.order?.type==='garrison')return false;
   if((source.order?.type||null)!==shot.orderType)return false;
   if(source.order?.type==='attack'&&source.order.target!==target.id)return false;
-  const def=source.kind==='building'?BUILDINGS[source.type]:UNITS[source.type],range=source.kind==='building'?def.range+target.r:Math.max(def.range+(def.role==='ranged'?sim.players[source.owner].tech.ranged:0)+target.r,target.kind==='building'?target.r+3:0);
+  const pl=sim.players?.[source.owner];
+  const def=source.kind==='building'?BUILDINGS[source.type]:UNITS[source.type];
+  const buildingRangeBonus=source.kind==='building'&&['tower','keep','bombard'].includes(source.type)?(pl?.tech?.arrowslits||0)*2:0;
+  const range=source.kind==='building'?def.range+buildingRangeBonus+target.r:Math.max(def.range+(def.role==='ranged'?(pl?.tech?.ranged||0):0)+target.r,target.kind==='building'?target.r+3:0);
   if(distance(source,target)>range+.15)return false;
   source.heading=Math.atan2(target.x-source.x,target.z-source.z);
   shot.stage='flight';shot.entity=actor(source);shot.victim=actor(target);shot.aim={x:target.x,z:target.z};
-  const pl=sim.players?.[source.owner];
   const burst=source.kind==='unit'?(def.burstCount||1):1;
   // Divide the existing building damage across its visible base volley; the
   // faster reload strengthens defenses without multiplying damage per arrow.
@@ -38,15 +41,17 @@ function release(sim,shot){
   const unitDamage=sim.attackDamage(source,target);
   shot.damage=source.kind==='building'?unitDamage/baseArrows:unitDamage;
   shot.siege=siegeProjectile(source);
-  if(source.kind==='unit'&&def.splashRadius)shot.splashRadius=def.splashRadius;
+  if(def.splashRadius)shot.splashRadius=def.splashRadius;
   if(source.type==='trebuchet')shot.fireball=true;
-  if(!shot.siege&&pl?.tech?.fireArrows>0)shot.flaming=true;
+  if(source.type==='bombard')shot.cannonball=true;
+  if(source.type==='skirmisher')shot.javelin=true;
+  if(!shot.siege&&!shot.javelin&&pl?.tech?.fireArrows>0)shot.flaming=true;
   shot.releasedAt=sim.time;shot.duration=flightDuration(source,distance(source,target));shot.impactAt=sim.time+shot.duration;
   shot.bonus=Array(baseArrows-1).fill(source.kind==='building'?shot.damage:Math.max(1,shot.damage*.85));
   if(source.kind==='building'&&GARRISONS[source.type])for(let i=0;i<garrisonArrows(sim,source);i++){
     const armor=target.kind==='unit'?sim.unitArmor(target):5,damage=GARRISONS[source.type].damage*(1+(sim.players[source.owner].tech.fortification||0)*.15);shot.bonus.push(Math.max(1,damage-armor));
   }
-  for(let i=0;i<=shot.bonus.length;i++)sim.emit('attack',{entity:{...shot.entity},target:{...shot.victim},damage:i?shot.bonus[i-1]:shot.damage,garrisonArrow:i,projectile:shot.id,pendingImpact:true,flightDuration:shot.duration,releasedAt:shot.releasedAt,aimX:shot.aim.x,aimZ:shot.aim.z,...(shot.fireball?{fireball:true}:{}),...(shot.flaming?{flaming:true}:{})});
+  for(let i=0;i<=shot.bonus.length;i++)sim.emit('attack',{entity:{...shot.entity},target:{...shot.victim},damage:i?shot.bonus[i-1]:shot.damage,garrisonArrow:i,projectile:shot.id,pendingImpact:true,flightDuration:shot.duration,releasedAt:shot.releasedAt,aimX:shot.aim.x,aimZ:shot.aim.z,...(shot.fireball?{fireball:true}:{}),...(shot.cannonball?{cannonball:true}:{}),...(shot.javelin?{javelin:true}:{}),...(shot.flaming?{flaming:true}:{})});
   return true;
 }
 
@@ -66,11 +71,11 @@ function impact(sim,shot){
     }
   }
   const point=shot.siege?shot.aim:struck;
-  sim.emit('projectile-impact',{entity:source,target:{...(struck?actor(struck):shot.victim),x:point.x,z:point.z},projectile:shot.id,damage,siege:shot.siege,fireball:shot.fireball,flaming:shot.flaming});
+  sim.emit('projectile-impact',{entity:source,target:{...(struck?actor(struck):shot.victim),x:point.x,z:point.z},projectile:shot.id,damage,siege:shot.siege,fireball:shot.fireball,cannonball:shot.cannonball,javelin:shot.javelin,flaming:shot.flaming});
 }
 
 export function projectileVisualEvents(shots,time){
-  return (shots||[]).filter(shot=>shot.stage==='flight'&&shot.impactAt>time).flatMap(shot=>Array.from({length:1+(shot.bonus?.length||0)},(_,i)=>({type:'attack',entity:{...shot.entity},target:{...shot.victim},projectile:shot.id,garrisonArrow:i,pendingImpact:true,flightDuration:shot.duration,releasedAt:shot.releasedAt,flightAge:Math.max(0,time-shot.releasedAt),aimX:shot.aim.x,aimZ:shot.aim.z,fireball:shot.fireball,flaming:shot.flaming})));
+  return (shots||[]).filter(shot=>shot.stage==='flight'&&shot.impactAt>time).flatMap(shot=>Array.from({length:1+(shot.bonus?.length||0)},(_,i)=>({type:'attack',entity:{...shot.entity},target:{...shot.victim},projectile:shot.id,garrisonArrow:i,pendingImpact:true,flightDuration:shot.duration,releasedAt:shot.releasedAt,flightAge:Math.max(0,time-shot.releasedAt),aimX:shot.aim.x,aimZ:shot.aim.z,fireball:shot.fireball,cannonball:shot.cannonball,javelin:shot.javelin,flaming:shot.flaming})));
 }
 
 export function installProjectileCombat(Simulation){

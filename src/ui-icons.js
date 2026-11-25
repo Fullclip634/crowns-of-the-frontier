@@ -4,9 +4,9 @@ const available=new Set(manifest.icons);
 
 export const ICON_MAP=Object.freeze({
   food:'wheat',wood:'logs',gold:'coins',stone:'mountain',pop:'users-round',population:'users-round',
-  villager:'user-round',scout:'spyglass',spearman:'spear',archer:'bow-arrow',swordsman:'sword',knight:'chess-knight',ram:'siege-ram',catapult:'trebuchet',trebuchet:'trebuchet',monk:'church',king:'crown',sentinel:'shield-half',marksman:'crossbow',outrider:'lance',ironbreaker:'hammer',chukonu:'crossbow',firelancer:'lance',hero_alder:'crown',hero_sun:'crown',hero_raven:'crown',hero_iron:'crown',hero_jade:'crown',cart:'shopping-cart',fishingboat:'fish',galley:'sailboat',warship:'ship',transport:'ship-cargo',
-  towncenter:'landmark',house:'house',farm:'farm-plot',mill:'wind',camp:'trees',mine:'pickaxe',barracks:'swords',range:'crossbow',stable:'lance',workshop:'hammer',blacksmith:'anvil',market:'store',tower:'watchtower',keep:'castle',wall:'brick-wall',gate:'door-open',monastery:'church',wonder:'monument',dock:'anchor',
-  economy:'coins',attack:'swords',armor:'shield',ranged:'bow-arrow',fortification:'brick-wall',fortifiedWall:'bastion',husbandry:'horseshoe',shieldDrill:'shield-check',caravanLedger:'book-open',raidingParties:'spear',siegecraft:'anvil',imperialGunpowder:'sun',boilingOil:'bastion',fireArrows:'bow-arrow',seamanship:'ship-wheel',age:'crown',
+  villager:'user-round',scout:'spyglass',spearman:'spear',archer:'bow-arrow',skirmisher:'spear',swordsman:'sword',knight:'chess-knight',ram:'siege-ram',catapult:'trebuchet',trebuchet:'trebuchet',monk:'church',king:'crown',sentinel:'shield-half',marksman:'crossbow',outrider:'lance',ironbreaker:'hammer',chukonu:'crossbow',firelancer:'lance',hero_alder:'crown',hero_sun:'crown',hero_raven:'crown',hero_iron:'crown',hero_jade:'crown',cart:'shopping-cart',fishingboat:'fish',galley:'sailboat',warship:'ship',transport:'ship-cargo',
+  towncenter:'landmark',house:'house',farm:'farm-plot',mill:'wind',camp:'trees',mine:'pickaxe',barracks:'swords',range:'crossbow',stable:'lance',workshop:'hammer',blacksmith:'anvil',market:'store',tower:'watchtower',bombard:'bastion',keep:'castle',wall:'brick-wall',gate:'door-open',monastery:'church',wonder:'monument',dock:'anchor',
+  economy:'coins',wheelbarrow:'shopping-cart',attack:'swords',armor:'shield',ranged:'bow-arrow',fortification:'brick-wall',fortifiedWall:'bastion',arrowslits:'watchtower',conscription:'shield-check',husbandry:'horseshoe',sanctuary:'church',shieldDrill:'shield-check',caravanLedger:'book-open',raidingParties:'spear',siegecraft:'anvil',imperialGunpowder:'sun',boilingOil:'bastion',fireArrows:'bow-arrow',seamanship:'ship-wheel',age:'crown',
   tutorial:'graduation-cap',skirmish:'swords',regicide:'crown',survival:'shield',dominion:'landmark',sandbox:'tent-tree',tides:'sailboat',koth:'crown',deathmatch:'swords',siege:'castle',custom:'users-round',campaign:'book-open',
 });
 
@@ -22,14 +22,14 @@ export const PAINTED_ICONS=Object.freeze({
   // Core Units & Siege
   villager:[5,'common'],'user-round':[5,'common'],
   scout:[6,'uncommon'],spyglass:[6,'uncommon'],
-  spearman:[7,'uncommon'],spear:[7,'uncommon'],
+  spearman:[7,'uncommon'],spear:[7,'uncommon'],skirmisher:[7,'uncommon'],
   archer:[8,'uncommon'],'bow-arrow':[8,'uncommon'],
   swordsman:[9,'uncommon'],sword:[9,'uncommon'],
   knight:[10,'rare'],'chess-knight':[10,'rare'],
   ram:[11,'rare'],'siege-ram':[11,'rare'],
   catapult:[12,'rare'],
   trebuchet:[13,'legendary'],
-  monk:[14,'rare'],
+  monk:[14,'rare'],sanctuary:[14,'rare'],
   king:[15,'legendary'],age:[15,'legendary'],crown:[15,'legendary'],regicide:[15,'legendary'],koth:[15,'legendary'],
   // Civ Unique Troops, Hero Generals & Naval Fleet
   sentinel:[16,'epic'],'shield-half':[16,'epic'],
@@ -43,7 +43,7 @@ export const PAINTED_ICONS=Object.freeze({
   hero_raven:[24,'legendary'],
   hero_iron:[25,'legendary'],
   hero_jade:[26,'legendary'],
-  cart:[27,'common'],'shopping-cart':[27,'common'],
+  cart:[27,'common'],'shopping-cart':[27,'common'],wheelbarrow:[27,'rare'],
   fishingboat:[28,'common'],fish:[28,'common'],
   galley:[29,'rare'],sailboat:[29,'rare'],tides:[29,'rare'],
   warship:[30,'rare'],ship:[30,'rare'],
@@ -61,7 +61,8 @@ export const PAINTED_ICONS=Object.freeze({
   workshop:[41,'rare'],
   blacksmith:[42,'rare'],anvil:[42,'rare'],
   market:[43,'uncommon'],store:[43,'uncommon'],
-  tower:[44,'rare'],watchtower:[44,'rare'],
+  tower:[44,'rare'],watchtower:[44,'rare'],arrowslits:[44,'epic'],
+  bombard:[54,'legendary'],
   keep:[45,'epic'],castle:[45,'epic'],siege:[45,'epic'],
   wall:[46,'common'],'brick-wall':[46,'common'],
   gate:[47,'common'],
@@ -74,7 +75,7 @@ export const PAINTED_ICONS=Object.freeze({
   fireArrows:[53,'epic'],ranged:[53,'uncommon'],
   bastion:[54,'epic'],fortification:[54,'rare'],fortifiedWall:[54,'epic'],
   husbandry:[55,'rare'],horseshoe:[55,'rare'],
-  shieldDrill:[56,'rare'],'shield-check':[56,'rare'],
+  shieldDrill:[56,'rare'],'shield-check':[56,'rare'],conscription:[56,'epic'],
   'book-open':[57,'uncommon'],caravanLedger:[57,'rare'],campaign:[57,'legendary'],tutorial:[57,'uncommon'],'graduation-cap':[57,'uncommon'],
   boilingOil:[58,'epic'],
   imperialGunpowder:[59,'legendary'],

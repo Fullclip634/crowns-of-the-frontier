@@ -20,10 +20,10 @@ export const MINIMAP_FILTERS=Object.freeze([
   {id:'economy',label:'Eco',title:'Economy view (emphasize resources, villagers & trade)'},
 ]);
 
-const HIGH_VALUE_BUILDINGS=new Set(['towncenter','keep','wonder','market','blacksmith','monastery','dock']);
+const HIGH_VALUE_BUILDINGS=new Set(['towncenter','keep','bombard','wonder','market','blacksmith','monastery','dock']);
 const RALLY_BUILDINGS=new Set(Object.values(UNITS).flatMap(u=>u.at||[]));
 const ECON_BUILDINGS=new Set(['towncenter','mill','camp','mine','market','dock','farm','house']);
-const MILITARY_BUILDINGS=new Set(['barracks','range','stable','workshop','tower','keep','wall','gate','monastery','towncenter']);
+const MILITARY_BUILDINGS=new Set(['barracks','range','stable','workshop','tower','bombard','keep','wall','gate','monastery','towncenter']);
 
 /** High-value completed buildings require a 2-click confirm to prevent accidental deletion. */
 export function needsDemolishConfirm(entity){
@@ -63,7 +63,7 @@ export function resolveCursorState(sim,selectedEntities=[],target=null,modes={})
   if(target.owner===0&&target.kind==='building'){
     if(target.type==='farm'&&hasWorkers)return 'gather';
     if(hasWorkers&&(target.progress<1||target.hp<target.maxHp))return 'repair';
-    if(target.type==='towncenter'||target.type==='keep'||target.type==='tower'){
+    if(target.type==='towncenter'||target.type==='keep'||target.type==='tower'||target.type==='bombard'){
       return hasWorkers?'embark':'default';
     }
   }

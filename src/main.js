@@ -41,6 +41,7 @@ import {loadEarlyAgeArtwork} from './early-ages-art.js';
 import {loadIronholdArtwork} from './ironhold-art.js';
 import {loadJadeHeroesArtwork} from './jade-heroes-art.js';
 import {loadEpicPropsArtwork} from './epic-props-art.js';
+import {loadTacticalDepthArtwork} from './tactical-depth-art.js';
 import {HERO_DEFS,isHeroUnit,triggerHeroSkill,wonderPowerFor} from './heroes.js';
 import {loadSurfaceAssets} from './surface-assets.js';
 import {AudioEngine} from './audio.js';
@@ -228,6 +229,7 @@ async function initializeBattlefield(){
         loadIronholdArtwork().catch(error=>{console.warn('Ironhold artwork could not load:',error.message);return null;}),
         loadJadeHeroesArtwork().catch(error=>{console.warn('Jade & Heroes artwork could not load:',error.message);return null;}),
         loadEpicPropsArtwork().catch(error=>{console.warn('Epic props artwork could not load:',error.message);return null;}),
+        loadTacticalDepthArtwork().catch(error=>{console.warn('Tactical depth artwork could not load:',error.message);return null;}),
         // Optional: a missing or failed distant catalogue must never prevent
         // the game from starting. It only enables the extra LOD tier.
         settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
@@ -512,7 +514,7 @@ function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!=
   if(e.type==='raid'){toast('Scouts report an enemy army on the move.','warning');audio.warHorn?.();}
   if(e.type==='wave'){toast(`Wave ${e.wave} · ${e.count} enemies approach. Supplies have arrived.`,'warning');audio.announceAttack?.('An enemy wave is approaching.');}
   if(e.type==='capture'){toast(e.owner===0?'An ancient shrine is under your control.':'The enemy has captured a shrine.',e.owner===0?'':'warning');audio.play('complete');}
-  if(e.type==='attack'||e.type==='projectile-impact'||e.type==='death'||e.type==='heal'){view.effect(e);if(e.type==='attack'){if(e.pendingImpact)audio.combat(e.entity,e.target,['catapult','trebuchet','warship'].includes(e.entity.type)?'wood':'arrow');else audio.play('attack',e.entity,e.target);}if(e.type==='projectile-impact'){audio.combat(e.target,e.entity,projectileImpactSound(e));if(e.fireball)audio.triggerSiegeStinger?.('siege');}}
+  if(e.type==='attack'||e.type==='projectile-impact'||e.type==='death'||e.type==='heal'){view.effect(e);if(e.type==='attack'){if(e.pendingImpact)audio.combat(e.entity,e.target,['catapult','trebuchet','warship','bombard'].includes(e.entity.type)?(e.entity.type==='bombard'?'siege':'wood'):'arrow');else audio.play('attack',e.entity,e.target);}if(e.type==='projectile-impact'){audio.combat(e.target,e.entity,projectileImpactSound(e));if(e.fireball||e.cannonball)audio.triggerSiegeStinger?.('siege');}}
   if(e.type==='hero-skill'){view.effect(e);if(e.owner===0){audio.triggerSiegeStinger?.('hero');toast(`${e.heroTitle} unleashed ${e.skillName}!`);}}
   if(e.type==='hero-levelup'){view.effect(e);if(e.owner===0){audio.play('complete');toast(`${e.title} reached Level ${e.level}!`);renderSelection();}}
   if(e.type==='veteran'&&e.owner===0){audio.play('complete');toast(`${UNITS[e.entity?.type]?.name||'Soldier'} promoted to ${['','Veteran ★','Elite ★★','Champion ★★★'][e.rank]||''}!`);renderSelection();}

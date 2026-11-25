@@ -20,7 +20,7 @@ export function createCombatListener(view,active=()=>true){
 }
 
 export function combatSoundKind(entity,target){
-  if(['catapult','warship'].includes(entity?.type))return 'siege';
+  if(['catapult','trebuchet','warship','bombard'].includes(entity?.type))return 'siege';
   if(entity?.kind==='building'||UNITS[entity?.type]?.role==='ranged')return 'arrow';
   if(entity?.type==='ram'||target?.kind==='building')return 'wood';
   return 'metal';

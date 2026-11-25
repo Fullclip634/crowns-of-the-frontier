@@ -25,16 +25,17 @@ export const MAPS={highlands:{name:'Emerald highlands',desc:'Balanced forests, f
   deepwoodravine:{name:'Deepwood ravine',desc:'An ancient woodland gorge split by a sheer rocky canyon and spanned by a contested timber trestle bridge, walled trails, and forward campfires.'},
   templelagoon:{name:'Temple lagoon',desc:'A lush tropical jungle waterfall, turquoise coral coast, towering banyan and palm forests, and ancient mossy stepped stone temples across river delta bridges.'},
   ironfall:{name:'Ironfall pass',desc:'A cliff-locked mountain sanctuary behind a single narrow waterfall bridgehead pass, built for united allies holding off overwhelming outer armies.'}};
-export const ICONS = {food:'◒',wood:'♣',gold:'◆',stone:'⬟',pop:'♟',villager:'♟',scout:'♞',spearman:'⚑',archer:'➶',swordsman:'⚔',knight:'♞',ram:'▰',catapult:'☄',monk:'✚',towncenter:'♜',house:'⌂',farm:'▤',mill:'✣',camp:'♣',mine:'⬟',barracks:'⚔',range:'➶',stable:'♞',workshop:'⚙',tower:'♜',keep:'♜',wall:'▥',gate:'⋂',market:'⚖',blacksmith:'⚒',monastery:'✚',wonder:'♛',age:'✧',economy:'♣',attack:'⚔',armor:'⬟',ranged:'➶',fortification:'♜',fortifiedWall:'▦',husbandry:'♞'};
+export const ICONS = {food:'◒',wood:'♣',gold:'◆',stone:'⬟',pop:'♟',villager:'♟',scout:'♞',spearman:'⚑',archer:'➶',skirmisher:'⚐',swordsman:'⚔',knight:'♞',ram:'▰',catapult:'☄',monk:'✚',towncenter:'♜',house:'⌂',farm:'▤',mill:'✣',camp:'♣',mine:'⬟',barracks:'⚔',range:'➶',stable:'♞',workshop:'⚙',tower:'♜',bombard:'♖',keep:'♜',wall:'▥',gate:'⋂',market:'⚖',blacksmith:'⚒',monastery:'✚',wonder:'♛',age:'✧',economy:'♣',attack:'⚔',armor:'⬟',ranged:'➶',fortification:'♜',fortifiedWall:'▦',husbandry:'♞',sanctuary:'✚',wheelbarrow:'▤',conscription:'⚔',arrowslits:'♜'};
 export const UNITS = {
   villager:{name:'Villager',desc:'Builds, repairs, farms, and gathers every resource.',cost:{food:50},hp:55,damage:3,range:1.9,speed:4.1,time:12,age:0,at:['towncenter'],role:'worker',vision:15},
   scout:{name:'Scout',desc:'Fast reconnaissance. Reveals a wide area; weak in battle.',cost:{food:70},hp:85,damage:5,range:2,speed:7.5,time:16,age:0,at:['towncenter','stable'],role:'cavalry',vision:24},
   spearman:{name:'Spearman',desc:'Cheap defensive infantry. Deals triple damage to cavalry.',cost:{food:60,wood:25},hp:105,damage:10,range:2.5,speed:3.6,time:17,age:0,at:['barracks'],role:'spear',vision:15},
-  archer:{name:'Archer',desc:'Ranged infantry. Counters spearmen; vulnerable to cavalry.',cost:{wood:50,gold:25},hp:65,damage:9,range:11,speed:3.7,time:18,age:1,at:['range'],role:'ranged',vision:17},
-  swordsman:{name:'Man-at-arms',desc:'Armored frontline infantry. Excels against archers and spears.',cost:{food:75,gold:30},hp:145,damage:16,armor:3,range:2,speed:3.2,time:22,age:1,at:['barracks'],role:'infantry',vision:15},
-  knight:{name:'Knight',desc:'Heavy cavalry. Devastates archers; beware of spearmen.',cost:{food:110,gold:65},hp:215,damage:24,armor:3,range:2.4,speed:6.2,time:29,age:2,at:['stable'],role:'cavalry',vision:18},
+  archer:{name:'Archer',desc:'Ranged infantry. Counters spearmen; vulnerable to cavalry and skirmishers.',cost:{wood:50,gold:25},hp:65,damage:9,range:11,speed:3.7,time:18,age:1,at:['range'],role:'ranged',vision:17},
+  skirmisher:{name:'Skirmisher',desc:'Cheap javelin counter trained without gold. High armor and bonus damage against archers; vulnerable to cavalry and swordsmen.',model:'spearman',cost:{food:35,wood:45},hp:70,damage:7,armor:3,antiRanged:2.2,range:9.5,speed:3.75,time:16,age:1,at:['range'],role:'ranged',vision:17,cooldown:1.5},
+  swordsman:{name:'Man-at-arms',desc:'Armored frontline infantry. Excels against archers, skirmishers, and spears.',cost:{food:75,gold:30},hp:145,damage:16,armor:3,range:2,speed:3.2,time:22,age:1,at:['barracks'],role:'infantry',vision:15},
+  knight:{name:'Knight',desc:'Heavy cavalry. Devastates archers and skirmishers; beware of spearmen.',cost:{food:110,gold:65},hp:215,damage:24,armor:3,range:2.4,speed:6.2,time:29,age:2,at:['stable'],role:'cavalry',vision:18},
   ram:{name:'Battering ram',desc:'Slow, armored siege. Crushing damage to buildings. Villagers repair it using timber and gold.',cost:{wood:170,gold:50},hp:440,damage:38,armor:8,range:3.1,speed:2.5,time:32,age:2,at:['workshop'],role:'siege',vision:14},
-  catapult:{name:'Trebuchet',desc:'Long-range siege with splash damage. Protect it with infantry.',cost:{wood:240,gold:150},hp:180,damage:52,range:25,speed:2.1,time:40,age:3,at:['workshop'],role:'siege',vision:23,cooldown:3.8},
+  catapult:{name:'Mangonel',desc:'Castle Age splash siege. Hurls heavy rock volleys that smash packed archers, infantry, and outer defenses. Protect it from cavalry.',cost:{wood:195,gold:125},hp:170,damage:42,armor:1,range:17,speed:2.35,time:34,age:2,at:['workshop'],role:'siege',vision:20,cooldown:3.4,splashRadius:4.2},
   monk:{name:'Healer',desc:'Automatically heals nearby living allies. Siege engines and ships need villager repairs. Cannot attack.',cost:{gold:90},hp:65,damage:0,range:10,speed:3.1,time:25,age:2,at:['monastery'],role:'healer',vision:18},
   king:{name:'Sovereign',desc:'Your irreplaceable ruler in Crownfall mode. Protect the sovereign at all costs.',cost:{},hp:360,damage:15,armor:4,range:2,speed:4.2,time:0,age:2,at:[],role:'infantry',vision:20},
 };
@@ -46,26 +47,31 @@ export const BUILDINGS = {
   camp:{name:'Lumber camp',desc:'A timber drop-off near forests.',cost:{wood:80},hp:450,r:2.2,time:18,age:0,drop:['wood']},
   mine:{name:'Mining camp',desc:'A drop-off point for gold and stone.',cost:{wood:85},hp:500,r:2.2,time:20,age:0,drop:['gold','stone']},
   barracks:{name:'Barracks',desc:'Trains spearmen and men-at-arms.',cost:{wood:150},hp:1050,r:3.5,time:30,age:0},
-  range:{name:'Archery range',desc:'Trains archers.',cost:{wood:175},hp:950,r:3.5,time:32,age:1},
+  range:{name:'Archery range',desc:'Trains archers and anti-archer skirmishers.',cost:{wood:175},hp:950,r:3.5,time:32,age:1},
   stable:{name:'Stable',desc:'Trains scouts and knights.',cost:{wood:180},hp:1100,r:3.5,time:32,age:1},
-  workshop:{name:'Siege workshop',desc:'Builds battering rams and trebuchets.',cost:{wood:220,gold:100},hp:1200,r:3.8,time:40,age:2},
+  workshop:{name:'Siege workshop',desc:'Builds battering rams, mangonels, and giant trebuchets.',cost:{wood:220,gold:100},hp:1200,r:3.8,time:40,age:2},
   blacksmith:{name:'Blacksmith',desc:'Researches weapons, armor, and ranged upgrades.',cost:{wood:160},hp:900,r:2.8,time:30,age:1},
   market:{name:'Market',desc:'Exchange resources for gold, or buy supplies. Economic research is available here.',cost:{wood:180},hp:900,r:3.4,time:32,age:1},
   tower:{name:'Watchtower',desc:'Automatically fires on enemies. Provides excellent vision.',cost:{wood:90,stone:130},hp:1400,r:2,time:35,age:1,damage:18,range:20,vision:27,volley:3,reload:1.1},
+  bombard:{name:'Bombard tower',desc:'Imperial cannon bastion. Fires heavy armor-piercing cannonballs that shatter battering rams, siege engines, and heavy cavalry.',cost:{stone:240,gold:140,wood:80},hp:2400,r:2.3,time:52,age:3,damage:78,penetration:5,siegeBonus:1.6,range:22,vision:29,volley:1,reload:3.2,splashRadius:2.4},
   keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:80,age:2,damage:35,range:23,cap:20,vision:30,volley:5,reload:1},
   wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Starts as a wooden palisade in Frontier and Feudal Ages and upgrades to stone in the Castle Age. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:0},
   gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement. Starts as a wooden palisade gate and upgrades to a stone gatehouse in the Castle Age.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:0},
-  monastery:{name:'Monastery',desc:'Trains healers. Heal wounded troops between engagements.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},
+  monastery:{name:'Monastery',desc:'Trains healers and researches Sanctuary discipline.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},
   wonder:{name:'Grand monument',desc:'Imperial achievement granting a permanent kingdom-wide Super-Power! In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:120,age:3},
 };
 export const TECHS = {
   economy:{name:'Efficient tools',desc:'+25% gathering speed per level.',at:['towncenter','market','mill','camp','mine'],cost:{food:120,wood:80},max:3,age:0,time:28},
+  wheelbarrow:{name:'Wheelbarrow',desc:'Villagers move 15% faster and carry +35% more resources per trip.',at:['towncenter','mill'],cost:{food:175,wood:100},max:1,age:2,time:36},
   attack:{name:'Forged weapons',desc:'+20% melee attack per level.',at:['blacksmith'],cost:{food:130,gold:100},max:3,age:1,time:32},
   armor:{name:'Tempered armor',desc:'+2 armor and +15% maximum health per level.',at:['blacksmith'],cost:{food:100,gold:130},max:3,age:1,time:32},
   ranged:{name:'Bodkin arrows',desc:'+20% ranged attack and +1 range per level.',at:['blacksmith','range'],cost:{wood:120,gold:110},max:3,age:1,time:32},
   fortification:{name:'Masonry',desc:'+30% building health and +15% tower attack per level.',at:['towncenter','keep'],cost:{wood:100,stone:150},max:3,age:1,time:35},
   fortifiedWall:{name:'Fortified walls',desc:'Reinforce every stone wall and gatehouse with gleaming fortified masonry: 4,000 base health and +4 armor. Existing and future defenses are upgraded.',at:['towncenter','keep'],cost:{wood:150,stone:400,gold:250},max:1,age:3,time:55},
+  arrowslits:{name:'Keep emplacements',desc:'Watchtowers, Castles, and Bombard Towers gain +2 firing range and reload 20% faster.',at:['keep','towncenter'],cost:{wood:200,stone:250,gold:150},max:1,age:3,time:42},
+  conscription:{name:'Conscription',desc:'Military halls train infantry, archers, cavalry, healers, and siege engines 25% faster.',at:['keep','towncenter'],cost:{food:220,gold:220},max:1,age:3,time:42},
   husbandry:{name:'Husbandry',desc:'+20% cavalry movement speed.',at:['stable'],cost:{food:180,gold:80},max:1,age:1,time:30},
+  sanctuary:{name:'Sanctuary',desc:'Healers move 25% faster and restore 40% more health per blessing.',at:['monastery'],cost:{gold:180,food:120},max:1,age:2,time:35},
 };
 export const AGE_COSTS = [{food:350,gold:150},{food:650,gold:350},{food:1000,gold:650}];
 export const FACTIONS = {

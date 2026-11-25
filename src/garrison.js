@@ -1,7 +1,7 @@
 import {BUILDINGS,UNITS} from './data.js';
 import {formationSlot} from './tactics.js';
 
-export const GARRISONS={towncenter:{capacity:15,perArrow:3,damage:5},keep:{capacity:15,perArrow:3,damage:7},tower:{capacity:8,perArrow:3,damage:5}};
+export const GARRISONS={towncenter:{capacity:15,perArrow:3,damage:5},keep:{capacity:15,perArrow:3,damage:7},tower:{capacity:8,perArrow:3,damage:5},bombard:{capacity:5,perArrow:3,damage:6}};
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const clone=value=>JSON.parse(JSON.stringify(value));
 const eligible=(unit,owner)=>unit?.hp>0&&unit.owner===owner&&unit.type==='villager'&&!unit.embarked;

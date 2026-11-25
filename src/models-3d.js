@@ -311,6 +311,14 @@ export function buildingModel(view,e){
     barrel(view,g,2.7,0,.1,.55);crate(view,g,-2.8,0,.1,.7);
   }else if(type==='tower'){
     turret(view,g,o,0,0,7,1.25,true);flag(view,g,team,0,10,0,.8);
+  }else if(type==='bombard'){
+    turret(view,g,o,0,0,7.8,1.45,true);
+    b.piece(view.geo.cylinder,m.stoneDark,0,6.65,0,1.72,.58,1.72);
+    for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+      const barrel=b.piece(view.geo.cylinder,m.iron,Math.sin(a)*1.45,6.88,Math.cos(a)*1.45,.22,1.65,.22);
+      barrel.rotation.set(Math.PI/2,0,-a);
+    }
+    flag(view,g,team,0,10.8,0,.9);
   }else if(type==='keep'){
     b.box(m.stone,-.35,2.46,.05,5.3,4.92,5.2);
     for(const [bx,bz]of [[-2.82,2.48],[2.12,2.48],[-2.82,-2.38]])b.box(m.stone,bx,2.74,bz,1.24,4.4,1.24);

@@ -41,7 +41,8 @@ export function technologyTreeMarkup(sim,faction){
     <span>${ICONS.spearman} <b>Spearmen</b> → Cavalry</span>
     <span>${ICONS.knight} <b>Cavalry</b> → Archers</span>
     <span>${ICONS.archer} <b>Archers</b> → Spearmen</span>
-    <span>${ICONS.catapult} <b>Siege</b> → Fortifications</span>
+    <span>${ICONS.skirmisher} <b>Skirmishers</b> → Archers</span>
+    <span>${ICONS.catapult} <b>Siege</b> → Packed Armies &amp; Fortifications</span>
   </div>
   <nav class="tree-factions" aria-label="View a civilization">${Object.entries(FACTIONS).map(([id,f])=>`<button data-tree-faction="${id}" class="${id===faction?'active':''}">${f.name}</button>`).join('')}</nav><p class="tree-note">Unlocks progress from left to right. Train or research directly when your kingdom meets the requirements. Select another civilization to compare its choices.</p><div class="technology-tree">${groups}</div>`;
 }

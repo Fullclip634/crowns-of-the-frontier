@@ -165,8 +165,8 @@ export function rememberVisibleEnemies(sim,state,owner=1){
 function armyPlan(sim,state,owner){
   const player=sim.players[owner],army=sim.owned(owner,'unit').filter(military),known=Object.values(state.known),roles={};
   for(const enemy of known.filter(e=>e.kind==='unit')){const role=UNITS[enemy.type]?.role;roles[role]=(roles[role]||0)+1;}
-  const wishes={spearman:2+(roles.cavalry||0)*2,archer:1+(roles.spear||0)*1.5,swordsman:1+(roles.ranged||0),knight:1+(roles.ranged||0)*1.8,
-    ram:known.some(e=>e.kind==='building')?Math.max(1,army.length/9):0,catapult:known.some(e=>e.kind==='building')?Math.max(1,army.length/12):0,trebuchet:known.some(e=>e.kind==='building')&&player.age>=3?Math.max(1.4,army.length/10):0,monk:Math.floor(army.length/8)};
+  const wishes={spearman:2+(roles.cavalry||0)*2,archer:1+(roles.spear||0)*1.5,skirmisher:(roles.ranged||0)*1.6,swordsman:1+(roles.ranged||0),knight:1+(roles.ranged||0)*1.8,
+    ram:known.some(e=>e.kind==='building')?Math.max(1,army.length/9):0,catapult:(known.some(e=>e.kind==='building')||(roles.ranged||0)>=3||(roles.infantry||0)>=4)?Math.max(1,army.length/10):0,trebuchet:known.some(e=>e.kind==='building')&&player.age>=3?Math.max(1.4,army.length/10):0,monk:Math.floor(army.length/8)};
   if(player.faction==='alder')wishes.swordsman+=2;if(player.faction==='raven')wishes.knight+=3;
   if(player.faction==='iron'){wishes.ram=Math.max(wishes.ram,1.6);wishes.catapult=Math.max(wishes.catapult,1.2);wishes.trebuchet=Math.max(wishes.trebuchet,1.6);}
   if(player.faction==='jade'){wishes.chukonu=3+(roles.infantry||0)+(roles.spear||0);wishes.firelancer=2.4+(roles.ranged||0)+(roles.siege||0);}
@@ -189,7 +189,7 @@ export function chooseArmyUnit(sim,building,state,owner=1,plan=null){
 const BUILDING_REPAIR_THRESHOLD=.92,ALLIED_REPAIR_THRESHOLD=.75,MECHANICAL_REPAIR_THRESHOLD=.9;
 function buildingRepairPriority(b){
   if(b.type==='towncenter'||b.type==='wonder')return 0;
-  if(b.type==='keep')return 1;
+  if(b.type==='keep'||b.type==='bombard')return 1;
   if(b.type==='tower'||b.type==='gate'||b.type==='wall')return 2;
   if(['barracks','range','stable','workshop','dock'].includes(b.type))return 3;
   return 4;
@@ -200,7 +200,7 @@ function canAffordRepair(sim,owner,target){
     const step=Math.min(target.maxHp-target.hp,2.3);if(!(step>0))return false;
     return Object.entries(UNITS[target.type].cost||{}).every(([r,n])=>(resources[r]||0)>=n*.35*step/target.maxHp);
   }
-  const resource=['wall','tower','keep','gate','wonder'].includes(target.type)?'stone':'wood';
+  const resource=['wall','tower','bombard','keep','gate','wonder'].includes(target.type)?'stone':'wood';
   return (resources[resource]||0)>=.6;
 }
 function canReachRepairTarget(sim,worker,target){
@@ -229,7 +229,7 @@ export function manageRepairs(sim,owner,workers,buildings,visible,tc){
     sim.command([worker.id],{type:'repair',target:target.id});siegeRepairs++;
   }
   const ownDamaged=buildings.filter(b=>b.progress>=1&&b.hp<b.maxHp*BUILDING_REPAIR_THRESHOLD);
-  const alliedDamaged=tc?sim.entities.filter(b=>b.hp>0&&b.kind==='building'&&b.owner!==owner&&sim.allied(owner,b.owner)&&b.progress>=1&&b.hp<b.maxHp*ALLIED_REPAIR_THRESHOLD&&['towncenter','keep','tower','gate','wonder'].includes(b.type)&&distance(b,tc)<42):[];
+  const alliedDamaged=tc?sim.entities.filter(b=>b.hp>0&&b.kind==='building'&&b.owner!==owner&&sim.allied(owner,b.owner)&&b.progress>=1&&b.hp<b.maxHp*ALLIED_REPAIR_THRESHOLD&&['towncenter','keep','bombard','tower','gate','wonder'].includes(b.type)&&distance(b,tc)<42):[];
   const repairBuildings=[...ownDamaged,...alliedDamaged].sort((a,b)=>Number(a.owner!==owner)-Number(b.owner!==owner)||buildingRepairPriority(a)-buildingRepairPriority(b)||a.hp/a.maxHp-b.hp/b.maxHp||a.id-b.id);
   let buildingRepairs=workers.filter(w=>w.order?.type==='repair'&&sim.get(w.order.target)?.kind==='building').length;
   const maxBuildingRepairs=workers.length>=8?3:workers.length>=5?2:1;
@@ -457,7 +457,7 @@ export function installCommanderAI(Simulation){
       const unitCost=this.cost(UNITS[type].cost,owner,'unit',type);
       if(Object.entries(unitCost).every(([r,cost])=>player.resources[r]-cost>=(reserve[r]||0))&&this.train(b.id,type))plan.queued[type]=(plan.queued[type]||0)+1;
     }
-    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','siegecraft','imperialGunpowder','fireArrows','boilingOil','economy','attack','armor','ranged','husbandry','fortification','fortifiedWall']){
+    if(!state.budget.savingAge)for(const tech of ['shieldDrill','caravanLedger','raidingParties','siegecraft','imperialGunpowder','conscription','arrowslits','fireArrows','boilingOil','wheelbarrow','sanctuary','economy','attack','armor','ranged','husbandry','fortification','fortifiedWall']){
       if(!availableTo(TECHS[tech],player.faction))continue;
       // A tech that cannot be researched yet must not consume the single
       // research slot for this tick and starve the affordable upgrades.

@@ -128,7 +128,7 @@ export class BattleRemains{
         const a=heading+rng()*Math.PI*2,dist=radius*(.1+rng()*.38);
         return {dx:Math.cos(a)*dist,dz:Math.sin(a)*dist,len:radius*(.7+rng()*.65),yaw:a+(rng()-.5)*1.2,pitch:.16+rng()*.38,roll:(rng()-.5)*.3,drop:.4+rng()*Math.min(1.6,radius*.45),color:TIMBER_COLORS[i%TIMBER_COLORS.length]};
       });
-      if(['wall','gate','tower','keep','wonder'].includes(e.type)){
+      if(['wall','gate','tower','bombard','keep','wonder'].includes(e.type)){
         const shell=authoredRubbleProp(v);
         if(shell){
           const scale=Math.max(.75,Math.min(2.1,radius*.42));

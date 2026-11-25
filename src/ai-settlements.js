@@ -96,14 +96,15 @@ export function manageExpansion(sim,state,owner,workers,threats){
 
 export function fortifySettlements(sim,state,owner,workers,buildings,threats){
   const player=sim.players[owner];
-  if(player.age<1||workers.length<14||buildings.some(b=>['tower','keep'].includes(b.type)&&b.progress<1)||state.expansion||player.resources.wood<260)return;
+  if(player.age<1||workers.length<14||buildings.some(b=>['tower','bombard','keep'].includes(b.type)&&b.progress<1)||state.expansion||player.resources.wood<260)return;
   const bases=buildings.filter(b=>b.type==='towncenter'&&b.progress>=1);
   for(const base of bases){
-    const nearby=buildings.filter(b=>b.type==='tower'&&distance(b,base)<30),wanted=player.age>=3&&workers.length>=28?2:1;
+    const nearby=buildings.filter(b=>(b.type==='tower'||b.type==='bombard')&&distance(b,base)<30),wanted=player.age>=3&&workers.length>=28?2:1;
     if(nearby.length>=wanted)continue;
     const enemy=threats.slice().sort((a,b)=>distance(a,base)-distance(b,base))[0]||hostileMemory(state).filter(e=>e.kind==='building').sort((a,b)=>distance(a,base)-distance(b,base))[0]||{x:0,z:0};
     const angle=Math.atan2(enemy.z-base.z,enemy.x-base.x)+(nearby.length?Math.PI*.65:0),point={x:base.x+Math.cos(angle)*15,z:base.z+Math.sin(angle)*15};
-    if(sim.commanderBuild('tower',point,owner))return;
+    const towerType=player.age>=3&&player.resources.stone>=280&&player.resources.gold>=180?'bombard':'tower';
+    if(sim.commanderBuild(towerType,point,owner))return;
   }
   if(player.age>=2&&workers.length>=26&&!buildings.some(b=>b.type==='keep')&&player.resources.wood>=420&&player.resources.stone>=800){
     const base=bases[0];if(base)sim.commanderBuild('keep',{x:base.x*.88,z:base.z*.88},owner);

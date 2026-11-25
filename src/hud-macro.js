@@ -8,7 +8,7 @@ export const AGE_ROMAN=Object.freeze(['I','II','III','IV']);
 export const BUILD_CATEGORIES=Object.freeze([
   {id:'economy',label:'Economy',icon:'wheat',items:['house','farm','mill','camp','mine','market','dock']},
   {id:'military',label:'Military',icon:'swords',items:['barracks','range','stable','workshop','blacksmith','monastery']},
-  {id:'defense',label:'Defense',icon:'shield',items:['wall','gate','tower','keep','towncenter','wonder']},
+  {id:'defense',label:'Defense',icon:'shield',items:['wall','gate','tower','bombard','keep','towncenter','wonder']},
 ]);
 
 /**
@@ -103,7 +103,7 @@ export function kingdomScore(sim,owner){
   const units=typeof sim.candidatesFor==='function'?sim.candidatesFor('unit'):(sim.entities||[]);
   for(const u of units)if(u.hp>0&&u.owner===owner&&!u.embarked)assets+=u.type==='villager'?25:45;
   const buildings=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):(sim.entities||[]);
-  for(const b of buildings)if(b.hp>0&&b.owner===owner&&b.progress>=1)assets+=b.type==='wall'?8:b.type==='farm'?15:b.type==='keep'?180:b.type==='wonder'?600:65;
+  for(const b of buildings)if(b.hp>0&&b.owner===owner&&b.progress>=1)assets+=b.type==='wall'?8:b.type==='farm'?15:b.type==='bombard'?115:b.type==='keep'?180:b.type==='wonder'?600:65;
   return Math.max(0,Math.round(econ+tech+mil+assets));
 }
 
