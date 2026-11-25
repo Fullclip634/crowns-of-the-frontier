@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {nearViewport,markInstancePrefix} from './render-batches.js';
 
-import {buildingFireLevel,buildingSmokeLevel} from './battle-effects.js';
+import {buildingFireLevel,buildingSmokeLevel,buildingFirePoints} from './battle-effects.js';
 const GLOW_BUILDINGS=new Set(['towncenter','house','blacksmith','workshop','mill','barracks','range','stable','market','monastery','keep','tower','wonder','gate']);
 const FORGE_BUILDINGS=new Set(['blacksmith','towncenter','wonder']);
 
@@ -178,12 +178,25 @@ export class NightAtmosphere {
 
       const forgeSparks=hearth&&e.type==='blacksmith'&&night>.25;
       if(allowParticles&&(fire>0||forgeSparks)&&sparkCount<128){
+        const firePts=fire>0?buildingFirePoints(e).filter(pt=>fire>pt.threshold):null;
+        const halfX=(node?.userData.fireSpanX??radius*1.3)*.5;
+        const halfZ=(node?.userData.fireSpanZ??radius*1.3)*.5;
+        const rotAngle=e.type==='gate'?0:((e.id*5)%8)*(Math.PI/4);
+        const cosR=Math.cos(rotAngle),sinR=Math.sin(rotAngle);
+        const fHeight=node?.userData.fireHeight??radius*1.48;
         const ox=Math.min(1.1,(e.r||2)*.22);
-        const x=forgeSparks?node.position.x+outlet.x:e.x+ox;
-        const y=ground+(forgeSparks?outlet.y:(node?.userData.fireHeight??radius*1.48)*.76);
-        const z=forgeSparks?node.position.z+outlet.z:e.z+ox*.7;
         const count=fire>0?sparksPerForge:2;
         for(let p=0;p<count&&sparkCount<128;p++){
+          let x=e.x+ox,y=ground+fHeight*.76,z=e.z+ox*.7;
+          if(forgeSparks&&outlet){
+            x=node.position.x+outlet.x;y=ground+outlet.y;z=node.position.z+outlet.z;
+          }else if(firePts?.length){
+            const pt=firePts[p%firePts.length];
+            const lx=pt.rx*halfX,lz=pt.rz*halfZ;
+            x=e.x+lx*cosR-lz*sinR;
+            y=ground+fHeight*pt.hy;
+            z=e.z+lx*sinR+lz*cosR;
+          }
           const cycle=(time*.43+e.id*.41+p/count)%1;
           const rise=cycle*(fire>0?2.0+fire*2.6:1.7);
           const drift=cycle*cycle*.75;

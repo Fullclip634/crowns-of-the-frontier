@@ -138,27 +138,43 @@ export function crossedPlumeGeometry(width=1.2,height=1.8,yOffset=.75){
   for(const p of parts)p.dispose();
   return merged;
 }
-export function fireTongueTexture(size=64){
+export function fireTongueTexture(size=128){
   const data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++){
     const v=y/(size-1); // 0=bottom base, 1=flame tip
     for(let x=0;x<size;x++){
       const u=(x/(size-1))*2-1;
-      const sway=Math.sin(v*6.2+Math.cos(v*2.8))*.14*v;
-      const halfW=Math.max(.08,(1-Math.pow(v,.92))*(.84+.18*Math.sin(v*11.0+u*2.4)));
-      const d=Math.abs(u-sway)/halfW;
-      const sideLick=Math.abs(u+sway*.7-.32*(1-v))/Math.max(.08,(1-Math.pow(v,.82))*.46);
-      const shape=Math.max(clamp(1-d,0,1),clamp(1-sideLick,0,1)*.78);
-      const licks=.86+.14*Math.sin(u*9.5-v*8.5);
-      const baseFade=clamp(v/.12,0,1);
-      const tipFade=clamp((1-v)/.24,0,1);
-      const sideFade=clamp((1-Math.abs(u))/.10,0,1);
-      const body=Math.pow(shape,.85)*baseFade*tipFade*sideFade*licks;
-      const core=Math.pow(clamp(1-Math.hypot((u-sway)*.78,(v-.28)*1.35),0,1),1.4)*baseFade*tipFade*sideFade;
-      const r=clamp(255*(body*1.15+core),0,255);
-      const g=clamp((185*(1-v*.52)+55)*body+248*core,0,255);
-      const b=clamp(28*(1-v)*body+205*core,0,255);
-      const a=clamp((body*1.15+core*.8)*255,0,255);
+      // Wide roaring multi-tongue medieval fire: central blaze + 3 curling flanking tongues.
+      const sway=Math.sin(v*5.6+Math.cos(v*2.7))*.11*v;
+      const tMain=Math.abs(u-sway)/Math.max(.08,(1-Math.pow(v,.92))*(.66+.14*Math.sin(v*9.5+u*2.8)));
+      const tLeft=Math.abs(u+.36*(1-v*.58)-sway*.65)/Math.max(.07,(1-Math.pow(clamp(v/.84,0,1),.86))*.46);
+      const tRight=Math.abs(u-.38*(1-v*.55)+sway*.55)/Math.max(.07,(1-Math.pow(clamp(v/.88,0,1),.84))*.48);
+      const tLow=Math.abs(u+.16*Math.sin(v*6.2))/Math.max(.08,(1-Math.pow(clamp(v/.62,0,1),.95))*.78);
+      const shape=Math.max(
+        clamp(1-tMain,0,1),
+        clamp(1-tLeft,0,1)*.92,
+        clamp(1-tRight,0,1)*.94,
+        clamp(1-tLow,0,1)*.88,
+      );
+      const turbulence=.82+.18*Math.sin(u*9.8-v*11.4)*Math.cos(v*6.7+u*5.1);
+      const baseFade=clamp(v/.11,0,1);
+      const tipFade=clamp((1-v)/.18,0,1);
+      const sideFade=clamp((1-Math.abs(u))/.11,0,1);
+      const mask=baseFade*tipFade*sideFade;
+      const body=Math.pow(shape,.78)*turbulence*mask;
+      // Rich heat gradient (NormalBlending): deep crimson-red outer tongues -> vivid orange -> golden inner heart -> hot yellow base.
+      const midHeat=Math.pow(clamp(shape*1.12-v*.42,0,1),1.25)*mask;
+      const core=Math.pow(clamp(1-Math.hypot((u-sway)*.92,(v-.24)*1.65),0,1),1.65)*mask;
+      // Detached glowing ember flecks rising above the curling tips.
+      const e1=Math.pow(clamp(1-Math.hypot((u-.22)*10.5,(v-.82)*10.5),0,1),1.5);
+      const e2=Math.pow(clamp(1-Math.hypot((u+.26)*11.0,(v-.76)*11.0),0,1),1.5);
+      const e3=Math.pow(clamp(1-Math.hypot((u-.03)*11.5,(v-.89)*11.5),0,1),1.5);
+      const ember=(e1+e2*.92+e3*.88)*mask;
+
+      const r=clamp(212*body+55*midHeat+40*core+255*ember,0,255);
+      const g=clamp(42*body+148*midHeat+102*core+152*ember,0,255);
+      const b=clamp(6*body+22*midHeat+118*core+28*ember,0,255);
+      const a=clamp((body*1.12+midHeat*.35+ember*.95)*255,0,255);
       const i=(y*size+x)*4;
       data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=a;
     }
@@ -182,9 +198,9 @@ export function smokePlumeTexture(size=64){
       const wisp=.88+.12*Math.sin(u*7.4+v*5.6)*Math.cos(v*8.1-u*4.8);
       const borderFade=clamp((1-Math.max(Math.abs(u),Math.abs(v)))/.14,0,1);
       const edge=Math.pow(clamp(1-d/.94,0,1),1.25)*wisp*borderFade;
-      const shade=78+Math.round(clamp((v+1)*.5,0,1)*66);
+      const shade=42+Math.round(clamp((v+1)*.5,0,1)*54);
       const i=(y*size+x)*4;
-      data[i]=shade+10;data[i+1]=shade+5;data[i+2]=shade;data[i+3]=Math.round(clamp(edge*1.15,0,1)*245);
+      data[i]=shade+10;data[i+1]=shade+5;data[i+2]=shade;data[i+3]=Math.round(clamp(edge*1.18,0,1)*242);
     }
   }
   const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
@@ -197,11 +213,52 @@ export function buildingSmokeLevel(hpRatio){
 }
 
 export function buildingFireLevel(building,hpRatio){
-  return building.type==='wall'?0:clamp(1-hpRatio/.30,0,1);
+  return building.type==='wall'?0:clamp(1-hpRatio/.50,0,1);
 }
 
-function plumeBatch(geometry,material,renderOrder){
-  const mesh=new THREE.InstancedMesh(geometry,material,80);
+const GRAND_BUILDINGS=new Set(['towncenter','keep','wonder']);
+const FIRE_TEMPLATES={
+  palisade:[
+    {rx:.12,rz:.06,hy:.74,scale:.88,threshold:0,tint:0xffe4b8},
+  ],
+  small:[
+    {rx:.22,rz:.16,hy:.80,scale:.96,threshold:0,tint:0xfff0cc},
+    {rx:-.46,rz:-.30,hy:.62,scale:.84,threshold:.20,tint:0xffbf7c},
+    {rx:-.22,rz:.46,hy:.66,scale:.76,threshold:.42,tint:0xffd89e},
+  ],
+  medium:[
+    {rx:.22,rz:.16,hy:.82,scale:1.02,threshold:0,tint:0xfff0cc},
+    {rx:-.48,rz:-.34,hy:.64,scale:.90,threshold:.16,tint:0xffba74},
+    {rx:-.30,rz:.48,hy:.68,scale:.84,threshold:.32,tint:0xffd698},
+    {rx:.48,rz:-.34,hy:.58,scale:.80,threshold:.48,tint:0xffaa62},
+  ],
+  gate:[
+    {rx:.46,rz:.12,hy:.76,scale:.94,threshold:0,tint:0xffecc2},
+    {rx:-.46,rz:-.12,hy:.74,scale:.90,threshold:.18,tint:0xffc27e},
+    {rx:.40,rz:-.30,hy:.60,scale:.78,threshold:.36,tint:0xffd89e},
+    {rx:-.40,rz:.30,hy:.58,scale:.76,threshold:.50,tint:0xffb26a},
+  ],
+  grand:[
+    {rx:.16,rz:.12,hy:.84,scale:1.14,threshold:0,tint:0xfff2d2},
+    {rx:-.48,rz:-.38,hy:.72,scale:1.02,threshold:.14,tint:0xffc07a},
+    {rx:.48,rz:-.32,hy:.66,scale:.94,threshold:.26,tint:0xffda9e},
+    {rx:-.36,rz:.48,hy:.60,scale:.90,threshold:.38,tint:0xffb068},
+    {rx:.38,rz:.44,hy:.54,scale:.84,threshold:.52,tint:0xffe2ae},
+  ],
+};
+
+export function buildingFirePoints(building,{palisadeWall=false}={}){
+  if(palisadeWall)return FIRE_TEMPLATES.palisade;
+  if(building.type==='wall')return [];
+  if(building.type==='gate')return FIRE_TEMPLATES.gate;
+  const r=building.r||2;
+  if(GRAND_BUILDINGS.has(building.type)||r>3.1)return FIRE_TEMPLATES.grand;
+  if(r>2.2)return FIRE_TEMPLATES.medium;
+  return FIRE_TEMPLATES.small;
+}
+
+function plumeBatch(geometry,material,renderOrder,capacity=80){
+  const mesh=new THREE.InstancedMesh(geometry,material,capacity);
   mesh.count=0;mesh.frustumCulled=false;mesh.renderOrder=renderOrder;
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   return mesh;
@@ -211,13 +268,16 @@ export class BuildingDamageEffects {
   constructor(scene){
     this.dummy=new THREE.Object3D();
     this.bounds=new THREE.Box3();
+    this.color=new THREE.Color();
     const transparent={transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true};
-    this.flames=plumeBatch(crossedPlumeGeometry(1.8,2.9,1.45),new THREE.MeshBasicMaterial({
-      ...transparent,map:fireTongueTexture(),color:0xff9c4c,opacity:.78,blending:THREE.AdditiveBlending,
-    }),3);
-    this.smoke=plumeBatch(crossedPlumeGeometry(2.6,2.6,.85),new THREE.MeshBasicMaterial({
-      ...transparent,map:smokePlumeTexture(),opacity:.48,
-    }),2);
+    this.flames=plumeBatch(crossedPlumeGeometry(2.2,2.4,1.08),new THREE.MeshBasicMaterial({
+      ...transparent,map:fireTongueTexture(),color:0xffffff,opacity:.94,blending:THREE.NormalBlending,
+    }),3,240);
+    // Pre-allocate instanceColor so WebGPU/WebGL never recompile shaders mid-match.
+    this.flames.setColorAt(0,this.color.setHex(0xffa448));
+    this.smoke=plumeBatch(crossedPlumeGeometry(2.8,2.7,.92),new THREE.MeshBasicMaterial({
+      ...transparent,map:smokePlumeTexture(),opacity:.58,
+    }),2,140);
     scene.add(this.flames,this.smoke);
   }
   beginFrame(){this.flames.count=0;this.smoke.count=0;}
@@ -225,19 +285,30 @@ export class BuildingDamageEffects {
     if(e.hp<=0||e.progress<1)return;
     const data=node.userData,hpRatio=e.hp/e.maxHp,smokeLevel=buildingSmokeLevel(hpRatio);
     const palisadeWall=e.type==='wall'&&data.model3d?.wallTier==='palisade';
-    const target=palisadeWall?clamp(1-hpRatio/.30,0,1):buildingFireLevel(e,hpRatio);
+    const target=palisadeWall?clamp(1-hpRatio/.50,0,1):buildingFireLevel(e,hpRatio);
     if(target<=0)data.fireGrowth=0;
     const smoke=this.smoke,flames=this.flames;
     if(smokeLevel<=0||smoke.count>=smoke.instanceMatrix.count)return;
 
     if(data.fireHeight===undefined){
       this.bounds.setFromObject(node);
-      data.fireHeight=this.bounds.isEmpty()?Math.max(1,(e.r||2)*1.5):Math.max(.4,this.bounds.max.y-node.position.y);
+      if(this.bounds.isEmpty()){
+        const r=Math.max(.8,e.r||2);
+        data.fireHeight=Math.max(1,r*1.5);
+        data.fireSpanX=r*1.3;
+        data.fireSpanZ=r*1.3;
+      }else{
+        data.fireHeight=Math.max(.4,this.bounds.max.y-node.position.y);
+        data.fireSpanX=Math.max(.8,this.bounds.max.x-this.bounds.min.x);
+        data.fireSpanZ=Math.max(.8,this.bounds.max.z-this.bounds.min.z);
+      }
     }
 
     const grows=Math.min(target,(data.fireGrowth??0)+dt*1.5);
     data.fireGrowth=grows;
     const dummy=this.dummy,{x,y,z}=node.position,height=data.fireHeight;
+    const halfX=(data.fireSpanX??Math.max(1.2,(e.r||2)*1.3))*.5;
+    const halfZ=(data.fireSpanZ??Math.max(1.2,(e.r||2)*1.3))*.5;
     const ox=Math.min(1.1,(e.r||2)*.22),oz=ox*.7;
     const sway=reducedMotion?0:Math.sin(time*1.7+e.id*.71);
     const smokeSize=Math.sqrt(smokeLevel)*(.76+.45*smokeLevel);
@@ -249,14 +320,63 @@ export class BuildingDamageEffects {
     smoke.setMatrixAt(smoke.count++,dummy.matrix);
 
     if(grows<=0)return;
-    const flicker=reducedMotion?1:1+Math.sin(time*7.5+e.id*2.1)*.09;
-    const flameSize=grows*flicker;
-    dummy.position.set(x+ox,y+height*.76,z+oz);
-    dummy.scale.set(flameSize*1.15,flameSize*1.45,flameSize*1.15);
-    dummy.updateMatrix();
-    flames.setMatrixAt(flames.count++,dummy.matrix);
+    const points=buildingFirePoints(e,{palisadeWall});
+    if(!points.length)return;
+
+    // Deterministic orientation per building (skip rotation for gatehouses so flames hug both flanking towers).
+    const rotAngle=e.type==='gate'||palisadeWall?0:((e.id*5)%8)*(Math.PI/4);
+    const cosR=Math.cos(rotAngle),sinR=Math.sin(rotAngle);
+    const footprintScale=clamp(Math.sqrt(halfX*halfZ*4)/3.4,.74,1.34);
+    const wx=wind?.x??.4,wz=wind?.z??.2;
+    const maxFlames=flames.instanceMatrix.count;
+
+    for(let i=0;i<points.length&&flames.count<maxFlames;i++){
+      const pt=points[i];
+      if(grows<=pt.threshold)continue;
+      const local=clamp((grows-pt.threshold)/Math.max(.22,1-pt.threshold),0,1);
+      const localGrowth=i===0?grows:Math.pow(local,.74)*grows;
+      const phase=e.id*2.13+i*1.97;
+      const flicker=reducedMotion?1:1+Math.sin(time*(7.2+i*.85)+phase)*.10+Math.cos(time*(11.4-i*.6)+phase*.7)*.05;
+      const flameSize=localGrowth*pt.scale*footprintScale*flicker;
+      const lx=pt.rx*halfX,lz=pt.rz*halfZ;
+      const fx=x+lx*cosR-lz*sinR,fz=z+lx*sinR+lz*cosR;
+      const fy=y+height*pt.hy;
+      const leanX=reducedMotion?0:wz*.08*grows+Math.sin(time*4.8+phase)*.04;
+      const leanZ=reducedMotion?0:-wx*.08*grows+Math.cos(time*4.3+phase)*.04;
+
+      dummy.position.set(fx,fy,fz);
+      dummy.rotation.set(leanX,e.id*.7+i*1.37,leanZ);
+      dummy.scale.set(flameSize*1.26,flameSize*1.12,flameSize*1.26);
+      dummy.updateMatrix();
+      const idx=flames.count++;
+      flames.setMatrixAt(idx,dummy.matrix);
+      const heatGlow=reducedMotion?1:.92+.16*Math.sin(time*9.2+phase);
+      this.color.setHex(pt.tint).multiplyScalar(heatGlow);
+      flames.setColorAt(idx,this.color);
+    }
+
+    // Large heavily burning structures also vent a secondary smoke plume from their second blaze point.
+    if(points.length>=4&&grows>=.45&&smoke.count<smoke.instanceMatrix.count){
+      const p2=points[1];
+      const lx=p2.rx*halfX,lz=p2.rz*halfZ;
+      const s2=smokeSize*.82;
+      const sway2=reducedMotion?0:Math.sin(time*1.5+e.id*1.3+2.1);
+      dummy.position.set(x+lx*cosR-lz*sinR+wx*drift*.9,y+height*(p2.hy+.24),z+lx*sinR+lz*cosR+wz*drift*.9);
+      dummy.rotation.set(0,e.id*1.1+1.6,0);
+      dummy.scale.set(s2*(1+sway2*.10),s2*(1.12+sway2*.12),s2*(1+sway2*.10));
+      dummy.updateMatrix();
+      smoke.setMatrixAt(smoke.count++,dummy.matrix);
+    }
   }
-  endFrame(){markInstancePrefix(this.flames);markInstancePrefix(this.smoke);}
+  endFrame(){
+    markInstancePrefix(this.flames);
+    if(this.flames.instanceColor&&this.flames.count>0){
+      this.flames.instanceColor.clearUpdateRanges();
+      this.flames.instanceColor.addUpdateRange(0,this.flames.count*3);
+      this.flames.instanceColor.needsUpdate=true;
+    }
+    markInstancePrefix(this.smoke);
+  }
   dispose(){
     for(const batch of [this.flames,this.smoke]){
       batch.removeFromParent();batch.geometry.dispose();batch.material.map.dispose();batch.material.dispose();batch.dispose();
