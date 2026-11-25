@@ -237,10 +237,15 @@ export class WarCommsController{
     try{window.speechSynthesis?.cancel?.();}catch{}
   }
 
+  hideBanner(){
+    clearTimeout(this.bannerTimer);
+    this.banner?.classList.add('hidden');
+  }
+
   /** Speaks a warlord or allied commander line aloud with faction war-horn intro + live subtitle banner. */
-  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',urgent=false,horn=false}){
+  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',urgent=false,horn=false,showBanner=true}){
     if(!text)return;
-    const item={speaker,role,faction,color,text,horn};
+    const item={speaker,role,faction,color,text,horn,showBanner};
     if(urgent){
       try{window.speechSynthesis?.cancel?.();}catch{}
       this.queue=[item];
@@ -258,7 +263,7 @@ export class WarCommsController{
     if(!item){this.speaking=false;return;}
     this.speaking=true;
     this._recordLog(item);
-    this._showBanner(item);
+    if(item.showBanner!==false)this._showBanner(item);
     if(item.horn&&this.settings.warHorns!==false){
       this.audio?.warHorn?.();
     }
@@ -296,6 +301,8 @@ export class WarCommsController{
   _showBanner(item){
     if(!this.banner)return;
     clearTimeout(this.bannerTimer);
+    // Never overlap the campaign commander dialogue box with a second banner!
+    this.root?.querySelector('#commander-dialogue')?.classList.add('hidden');
     const hex=item.color!=null?`#${Number(item.color).toString(16).padStart(6,'0')}`:(item.role==='enemy'?'#e07566':item.role==='player'?'#e6c064':'#66cec0');
     const tag=item.role==='enemy'?'ENEMY WARLORD':item.role==='player'?'YOUR COMMAND':'ALLIED COMMAND';
     this.banner.dataset.role=item.role;
@@ -370,11 +377,11 @@ export class WarCommsController{
       const speaker=event.speaker||'Frontier Command';
       const role=event.role||(event.enemy?'enemy':'ally');
       const matched=sim.players?.find(p=>p.name&&speaker.toLowerCase().includes(p.name.split(' ')[0].toLowerCase()));
-      this.speak({speaker,role,faction:matched?.faction||'alder',color:matched?.color,text:event.text,horn:role==='enemy'});
+      this.speak({speaker,role,faction:matched?.faction||'alder',color:matched?.color,text:event.text,horn:role==='enemy',showBanner:false});
       return;
     }
     if(event.type==='campaign-stage'&&event.text){
-      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text});
+      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text,showBanner:false});
       return;
     }
     if(event.type==='ally-support'&&sim.allied(0,event.ally)&&this._ready('ally-support',t,35)){

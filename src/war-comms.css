@@ -58,7 +58,7 @@
 .war-comms-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.10);}
 .war-comms-title{display:flex;align-items:center;gap:7px;font-size:.9rem;letter-spacing:.05em;text-transform:uppercase;color:#edd08b;}
 .war-comms-head-tools{display:flex;align-items:center;gap:6px;}
-.war-comms-icon-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#f3ebd9;font-size:.74rem;cursor:pointer;}
+.war-comms-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#f3ebd9;font-size:.74rem;cursor:pointer;}
 .war-comms-icon-btn:hover{background:rgba(230,192,100,.18);border-color:rgba(230,192,100,.55);}
 .war-comms-icon-btn.muted{color:#f09a8e;border-color:rgba(224,117,102,.45);}
 .war-comms-section{display:flex;flex-direction:column;gap:6px;}

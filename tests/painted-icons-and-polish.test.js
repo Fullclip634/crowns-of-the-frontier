@@ -7,6 +7,7 @@ import {jadeBuildingKey} from '../src/jade-heroes-art.js';
 import {Simulation} from '../src/simulation.js';
 import {tacticalRangeRadius} from '../src/selection-overlays.js';
 import {inspectorStatsMarkup,unitAttackValue} from '../src/entity-inspector.js';
+import {WarCommsController} from '../src/war-comms.js';
 
 test('painted medieval icon atlas covers all resources, units, heroes, buildings, techs and modes',()=>{
   const atlasPath=new URL('../src/ui-art/medieval-icons-atlas.webp',import.meta.url);
@@ -107,4 +108,51 @@ test('Giant Counterweight Trebuchet exposes 28m tactical range ring and phone HU
   assert.match(phoneCss,/--ph-hdr-h:\s*clamp\(/,'fluid dvh header scaling');
   assert.match(phoneCss,/flex:\s*0 1 auto/, 'hug-content selection dock prevents hollow empty bar');
   assert.doesNotMatch(phoneCss,/backdrop-filter:\s*blur/i,'no expensive canvas blur on mobile');
+});
+
+test('WarCommsController prevents duplicate overlapping banners during campaign dialogue',()=>{
+  const makeClassList=(initial=[])=>{
+    const s=new Set(initial);
+    return {
+      add:(...c)=>c.forEach(x=>s.add(x)),
+      remove:(...c)=>c.forEach(x=>s.delete(x)),
+      toggle:(c,force)=>force===undefined?(s.has(c)?(s.delete(c),false):(s.add(c),true)):(force?(s.add(c),true):(s.delete(c),false)),
+      contains:(c)=>s.has(c),
+    };
+  };
+  const banner={classList:makeClassList(['hidden']),dataset:{},innerHTML:''};
+  const dialogue={classList:makeClassList([]),innerHTML:''};
+  const root={
+    querySelector:(sel)=>sel==='#war-comms-banner'?banner:sel==='#commander-dialogue'?dialogue:null,
+  };
+  const wc=new WarCommsController(root,{settings:{unitVoices:false,warHorns:false}});
+
+  // Campaign intro with showBanner:false logs to War Comms without opening a duplicate banner
+  wc.speak({speaker:'Admiral Iven',role:'ally',text:'Welcome to the Emerald Temple Lagoon!',showBanner:false});
+  assert.equal(wc.history.length,1);
+  assert.equal(banner.classList.contains('hidden'),true,'war-comms banner stays hidden for showBanner:false');
+  assert.equal(dialogue.classList.contains('hidden'),false,'commander dialogue stays visible');
+
+  // Campaign sim events also suppress the duplicate war-comms banner
+  const fakeSim={time:12,options:{mode:'campaign18'},players:[{faction:'alder',name:'Admiral Iven',color:0x40a0e0}]};
+  wc.onSimEvent(fakeSim,{type:'campaign-event',speaker:'Admiral Iven',text:'Seize the temple!'});
+  wc.onSimEvent(fakeSim,{type:'campaign-stage',speaker:'Admiral Iven',text:'Hold the shrine!'});
+  assert.equal(banner.classList.contains('hidden'),true,'campaign-event and campaign-stage never open a duplicate banner');
+
+  // When a non-campaign war-comms banner displays, it hides #commander-dialogue so only one modal is ever shown
+  wc._showBanner({speaker:'Rival Warlord',role:'enemy',text:'You dare enter my bay?'});
+  assert.equal(banner.classList.contains('hidden'),false,'war-comms banner displays for combat taunts');
+  assert.equal(dialogue.classList.contains('hidden'),true,'commander dialogue is automatically hidden when war-comms banner opens');
+
+  wc.hideBanner();
+  assert.equal(banner.classList.contains('hidden'),true,'hideBanner hides war-comms banner immediately');
+  wc.reset();
+});
+
+test('Campaign World Map centers atlas top-bar icon chips, progress pill, and act tabs on mobile',()=>{
+  const css=fs.readFileSync(new URL('../src/campaign-map.css',import.meta.url),'utf8');
+  assert.match(css,/\.atlas-chip\{[^}]*justify-content:center/,'atlas-chip centers icon and text');
+  assert.match(css,/\.atlas-progress-pill\{[^}]*justify-content:center/,'atlas-progress-pill centers trophy and count');
+  assert.match(css,/#modal-root \.atlas-chip,#modal-root \.atlas-close\{[^}]*padding:0;justify-content:center;align-items:center/,'mobile atlas icon chips override modal button sizing and stay dead-center');
+  assert.match(css,/#modal-root \.atlas-act-tab\{[^}]*align-items:center;justify-content:center/,'mobile landscape act tabs center text cleanly');
 });
