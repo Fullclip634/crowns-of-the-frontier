@@ -7,7 +7,7 @@ function collapseObjectives(root){
 }
 export function selectionDetailsMarkup(panel){
   const expanded=panel.classList.contains('selection-expanded');
-  return `<button class="selection-details" data-action="selection-details" aria-expanded="${expanded}" aria-label="${expanded?'Collapse':'Expand'} selection options">${uiIcon(expanded?'x':'ellipsis')}<span>${expanded?'Close':'Options'}</span></button>`;
+  return `<button class="selection-details" data-action="selection-details" aria-expanded="${expanded}" aria-label="${expanded?'Collapse':'Expand'} selection options">${uiIcon(expanded?'chevron-down':'ellipsis')}<span>${expanded?'Less':'Options'}</span></button>`;
 }
 
 export function closeCompactCommands(root){
@@ -24,7 +24,7 @@ export function toggleCompactCommands(root){
 export function toggleSelectionDetails(root){
   const panel=root.querySelector('#selection-panel'),expanded=panel.classList.toggle('selection-expanded'),button=panel.querySelector('.selection-details');
   if(expanded&&isCompactHUD(root)){closeCompactCommands(root);collapseObjectives(root);}
-  button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',`${expanded?'Collapse':'Expand'} selection options`);button.innerHTML=uiIcon(expanded?'x':'ellipsis')+`<span>${expanded?'Close':'Options'}</span>`;
+  button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',`${expanded?'Collapse':'Expand'} selection options`);button.innerHTML=uiIcon(expanded?'chevron-down':'ellipsis')+`<span>${expanded?'Less':'Options'}</span>`;
 }
 
 export function closeSelectionDetails(root){

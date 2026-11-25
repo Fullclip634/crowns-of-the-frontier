@@ -153,13 +153,18 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
         <label class="field-label" for="difficulty">DIFFICULTY</label>
         <select id="difficulty">${Object.entries(DIFFICULTIES).map(([id,d])=>`<option value="${id}" ${id===difficulty?'selected':''}>${difficultyLabel(id,d.name)}</option>`).join('')}</select>
         <div id="difficulty-description" class="faction-description">${esc(DIFFICULTIES[difficulty]?.desc||'')}</div>
-        <label class="field-label" for="ai-personality" style="margin-top:8px">RIVAL AI PERSONALITY</label>
-        <select id="ai-personality">${Object.values(AI_PERSONALITIES).map(p=>`<option value="${p.id}" ${p.id===aiPersonality?'selected':''}>${esc(p.name)} · ${esc(p.desc)}</option>`).join('')}</select>
       </div>
       <div>
         <label class="field-label" for="map-size">BATTLEFIELD SIZE</label>
         <select id="map-size">${Object.entries(BATTLE_SIZES).map(([id,s])=>`<option value="${id}" ${id===mapSize?'selected':''}>${esc(s.name)} · ${esc(s.desc)}</option>`).join('')}</select>
-        <label class="field-label" for="seed" style="margin-top:10px">WORLD SEED</label>
+      </div>
+      <div>
+        <label class="field-label" for="ai-personality">RIVAL AI PERSONALITY</label>
+        <select id="ai-personality">${Object.values(AI_PERSONALITIES).map(p=>`<option value="${p.id}" ${p.id===aiPersonality?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+        <div id="ai-personality-description" class="faction-description">${esc((AI_PERSONALITIES[aiPersonality]||AI_PERSONALITIES.balanced).desc)}</div>
+      </div>
+      <div>
+        <label class="field-label" for="seed">WORLD SEED</label>
         <input id="seed" type="number" min="1" max="999999999" value="${seed}">
       </div>
     </div>

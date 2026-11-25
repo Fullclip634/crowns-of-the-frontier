@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
-import {terrainRoadPaths,strokeTaperedRoad,strokeCobblestoneRoad,paintSettlementPaving} from './terrain-layout.js';
+import {terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
 import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {createAtmosphereUniforms,CLOUD_SHADOW_GLSL} from './atmosphere-uniforms.js';
 
@@ -35,17 +35,16 @@ export function roadMask(land){
     }
     ctx.putImageData(mask,0,0);
   }
-  // Twin wheel ruts stay <= 196 for packed ochre shoulders, while broken-edge
-  // cobblestone pavers along road cores & town plazas rise above 210 to trigger real PBR stone paving.
+  // Red values above the lane range identify the flagstone pads; twin wheel ruts
+  // stay <= 196 so cart tracks read with a grassy center crown and never trigger paving.
   for(const road of paths){
     const wheelOffset=(road.local?.62:.92)*scale,rutWidth=(road.local?.74:.96)*scale;
     strokeTaperedRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,layers:[
-      {width:(road.local?3.6:5.2)*scale,rgba:t=>`rgba(196,0,0,${(.30*t).toFixed(3)})`},
-      {width:(road.local?1.3:1.8)*scale,rgba:t=>`rgba(196,0,0,${(.32*t).toFixed(3)})`},
+      {width:(road.local?3.4:4.9)*scale,rgba:t=>`rgba(196,0,0,${(.28*t).toFixed(3)})`},
+      {width:(road.local?1.2:1.6)*scale,rgba:t=>`rgba(196,0,0,${(.30*t).toFixed(3)})`},
       {width:rutWidth,offset:-wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
       {width:rutWidth,offset:wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
     ],gravelColor:a=>`rgba(196,0,0,${a.toFixed(3)})`});
-    strokeCobblestoneRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,local:road.local,mask:true,seed:land.seed});
   }
   paintSettlementPaving(ctx,land,half,scale,true);
   ctx.fillStyle='#000';
@@ -227,22 +226,22 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 finalRock = mix(rawRock, lushGrass * 0.90, ledgeDust * ${snow?'0.58':'0.34'});
       vec3 finalSoil = soilSample * frontierTerrainsoilTint * mix(1.0, 0.70, terrainShore) * mix(1.0, 0.88, terrainRoad);${beachSoilGlsl}
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
-      // Real 1k CC0 medieval flagstone cobblestone roads & sunlit town plazas (AoE2:DE readability!).
+      // Real 1k CC0 medieval flagstone cobblestone plazas around settlements.
       float pavingLuma = 0.5;
       float pavingAo = 1.0;
       if (terrainPaving > 0.01) {
-        vec2 pavingUv = vTerrainWorldPos.xz * 0.46;
+        vec2 pavingUv = vTerrainWorldPos.xz * 0.36;
         vec3 pavingBase = texture2D(frontierTerrainpaving, pavingUv).rgb;
         vec3 pavingVar = texture2D(frontierTerrainpaving, antiTileRot * (pavingUv * 0.31) + vec2(0.41, 0.19)).rgb;
-        vec3 pavingTex = mix(pavingBase, pavingVar, 0.20);
+        vec3 pavingTex = mix(pavingBase, pavingVar, 0.22);
         pavingLuma = dot(pavingTex, vec3(0.3, 0.59, 0.11));
-        pavingAo = mix(0.62, 1.12, smoothstep(0.16, 0.70, pavingLuma));
-        // Warm sunlit sandstone/limestone flagstones with dark mortar seams & organic dirt at worn edges.
-        float mortar = 1.0 - smoothstep(0.18, 0.46, pavingLuma);
-        float edgeWear = (1.0 - smoothstep(0.22, 0.86, terrainPaving)) * 0.58;
-        vec3 plazaColor = pavingTex * mix(vec3(1.08, 1.02, 0.90), frontierTerrainplazaTint * 1.42, 0.44) * pavingAo;
-        plazaColor = mix(plazaColor, finalSoil * 0.88, clamp(mortar * 0.34 + edgeWear * 0.44, 0.0, 0.72));
-        terrainColor = mix(terrainColor, plazaColor, terrainPaving * 0.94);
+        pavingAo = mix(0.72, 1.04, smoothstep(0.16, 0.68, pavingLuma));
+        // Subtle soil/moss in mortar seams near courtyard perimeter so plazas blend naturally.
+        float mortar = 1.0 - smoothstep(0.18, 0.44, pavingLuma);
+        float edgeWear = (1.0 - smoothstep(0.25, 0.88, terrainPaving)) * 0.65;
+        vec3 plazaColor = pavingTex * mix(vec3(1.0), frontierTerrainplazaTint * 1.25, 0.45) * pavingAo;
+        plazaColor = mix(plazaColor, finalSoil * 0.85, clamp(mortar * 0.32 + edgeWear * 0.48, 0.0, 0.75));
+        terrainColor = mix(terrainColor, plazaColor, terrainPaving * 0.90);
       }
       float packedGround = terrainRoad * 0.18 * (1.0 - terrainPaving * 0.85);
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - packedGround));
@@ -259,8 +258,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 terrainNormal = grassNorm * terrainBlend.x + soilNorm * terrainBlend.y + rockNorm * terrainBlend.z;
       terrainNormal = terrainNormal * 2.0 - 1.0;
       terrainNormal.xy *= mix(0.52, 0.96, terrainBlend.z) * (1.0 - terrainPaving * 0.55);
-      vec2 pavingBump = vec2(dFdx(pavingLuma), dFdy(pavingLuma)) * 13.5;
-      terrainNormal.xy += clamp(pavingBump, vec2(-0.56), vec2(0.56)) * smoothstep(0.08, 0.38, terrainPaving);
+      vec2 pavingBump = vec2(dFdx(pavingLuma), dFdy(pavingLuma)) * 10.0;
+      terrainNormal.xy += clamp(pavingBump, vec2(-0.48), vec2(0.48)) * smoothstep(0.08, 0.38, terrainPaving);
       normal = normalize(tbn * terrainNormal);
       #endif`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>

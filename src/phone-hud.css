@@ -209,19 +209,23 @@
   #hud .selection-panel:not(.selection-expanded) .worker-actions [data-action=build]{display:none}
   #hud .worker-actions button{flex:0 0 auto;min-width:58px;min-height:clamp(30px,8.2dvh,36px);padding:4px 7px;font-size:9.5px;border-radius:5px}
   #hud .production-actions>button{
-    flex:0 0 clamp(76px,13vw,98px);
-    width:clamp(76px,13vw,98px);
-    min-width:74px;
+    flex:0 0 auto;
+    width:auto;
+    min-width:clamp(92px,14.5vw,118px);
+    max-width:152px;
     height:clamp(34px,9.4dvh,40px);
     min-height:34px;
-    padding:2px 5px;
-    gap:2px;
+    padding:2px 7px 2px 5px;
+    grid-template-columns:24px minmax(0,1fr);
+    column-gap:6px;
+    row-gap:1px;
     border-radius:5px;
   }
+  #hud .production-actions>button>span{display:grid;place-items:center;width:24px;height:24px;line-height:1}
   #hud .production-actions>button>span>.ui-icon{width:18px;height:18px}
-#hud .production-actions>button>span>.ui-icon-painted{width:22px;height:22px;border-radius:5px}
-  #hud .production-actions>button strong{font-size:9px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #hud .production-actions>button small{font-size:7.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hud .production-actions>button>span>.ui-icon-painted{width:22px;height:22px;border-radius:5px}
+  #hud .production-actions>button strong{font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hud .production-actions>button small{font-size:8px;line-height:1.15;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* Sleek proportional Options & Close controls on selection dock */
   #hud .selection-details{
@@ -255,25 +259,77 @@
     bottom:calc(var(--ph-dock-h) + var(--ph-pad) + 12px + var(--safe));
     display:block;
     width:auto;
-    max-width:min(400px,calc(100vw - var(--ph-map) - 24px - var(--safe-left,0px) - var(--safe-right,0px)));
-    height:auto;min-height:60px;
-    max-height:min(210px,calc(100dvh - var(--ph-hdr-h) - var(--ph-dock-h) - 34px));
-    padding:9px 10px;
+    max-width:min(420px,calc(100vw - var(--ph-map) - 24px - var(--safe-left,0px) - var(--safe-right,0px)));
+    height:auto;min-height:0;
+    max-height:min(232px,calc(100dvh - var(--ph-hdr-h) - var(--ph-dock-h) - 26px));
+    padding:10px 12px;
     margin:0;
     overflow:auto;
     z-index:30;
   }
-  #hud .selection-panel.selection-expanded .selection-deselect{position:absolute;right:44px;top:6px;width:32px;height:32px}
-  #hud .selection-panel.selection-expanded .selection-details{position:absolute;right:6px;top:6px;width:34px;height:32px}
-  #hud .selection-panel.selection-expanded>.selection-title{max-width:none;max-height:none;padding-right:82px;gap:8px;margin-bottom:7px;overflow:visible}
-  #hud .selection-expanded .selection-portrait{display:block;width:40px;height:44px;min-width:40px;min-height:40px}
-  #hud .selection-expanded .selection-title .eyebrow{display:block;font-size:7px}
-  #hud .selection-expanded .selection-title h3{font-size:16px;white-space:normal}
+  #hud .selection-panel.selection-expanded .selection-deselect{
+    position:absolute;right:8px;top:8px;width:32px;height:32px;min-width:32px;min-height:32px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid rgba(224,185,110,.30);background:rgba(16,26,22,.92);color:#d7e0cf;
+  }
+  #hud .selection-panel.selection-expanded .selection-details{
+    position:absolute;right:46px;top:8px;width:auto;min-width:52px;height:32px;min-height:32px;
+    padding:0 8px;flex-direction:row;gap:4px;
+  }
+  #hud .selection-panel.selection-expanded .selection-details span{margin-top:0;font-size:9px;letter-spacing:.03em}
+  #hud .selection-panel.selection-expanded>.selection-title{max-width:none;max-height:none;padding-right:104px;gap:9px;margin-bottom:8px;overflow:visible}
+  #hud .selection-expanded .selection-portrait{display:block;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:5px}
+  #hud .selection-expanded .selection-title .eyebrow{display:block;font-size:7.5px}
+  #hud .selection-expanded .selection-title h3{font-size:17px;white-space:normal}
   #hud .selection-expanded .selection-title small{white-space:normal}
-  #hud .selection-expanded>.worker-actions,#hud .selection-expanded>.production-actions{flex-wrap:wrap;max-height:none;overflow:visible;margin:5px 0}
+  #hud .selection-expanded .health-track{width:min(164px,100%)}
+  #hud .selection-expanded>.worker-actions{flex-wrap:wrap;max-height:none;overflow:visible;margin:6px 0}
+  #hud .selection-expanded>.production-actions{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(168px,1fr));
+    gap:6px;
+    max-height:none;
+    overflow:visible;
+    margin:8px 0 6px;
+    padding-right:0;
+  }
+  #hud .selection-panel.selection-expanded .production-actions>button{
+    flex:none;
+    width:100%;
+    min-width:0;
+    max-width:none;
+    height:auto;
+    min-height:44px;
+    padding:6px 10px;
+    grid-template-columns:28px minmax(0,1fr);
+    column-gap:8px;
+    row-gap:2px;
+    align-items:center;
+    border-radius:6px;
+    border:1px solid rgba(224,185,110,.30);
+    background:linear-gradient(180deg,rgba(32,48,39,.92),rgba(18,29,24,.96));
+  }
+  #hud .selection-panel.selection-expanded .production-actions>button>span{width:28px;height:28px}
+  #hud .selection-panel.selection-expanded .production-actions>button>span>.ui-icon{width:22px;height:22px}
+  #hud .selection-panel.selection-expanded .production-actions>button>span>.ui-icon-painted{width:26px;height:26px;border-radius:5px}
+  #hud .selection-panel.selection-expanded .production-actions>button strong{
+    font-size:11px;line-height:1.2;font-weight:600;color:#f4eedb;
+    white-space:normal;overflow:visible;text-overflow:clip;
+  }
+  #hud .selection-panel.selection-expanded .production-actions>button small{
+    font-size:9.5px;line-height:1.25;color:var(--gold);
+    white-space:normal;overflow:visible;text-overflow:clip;margin-top:0;
+  }
   #hud .selection-expanded .worker-actions [data-action=build]{display:inline-flex}
   #hud .selection-expanded .sel-card{width:34px;height:36px}
-  #hud .selection-expanded .training-queue button,#hud .selection-expanded .demolish,#hud .selection-expanded .trade-actions button{min-width:34px;min-height:32px}
+  #hud .selection-expanded .training-queue button,#hud .selection-expanded .trade-actions button{min-width:34px;min-height:32px}
+  #hud .selection-expanded .demolish{
+    display:inline-flex;align-items:center;justify-content:center;
+    margin-top:8px;padding:4px 10px;min-width:0;min-height:28px;
+    font-size:10px;font-weight:600;color:#e6ae9f;
+    border:1px solid rgba(224,132,116,.30);border-radius:5px;background:rgba(68,26,22,.42);
+  }
+  #hud .selection-expanded .demolish:hover{border-color:rgba(240,152,136,.6);color:#fff;background:rgba(98,34,28,.65)}
   #hud .selection-expanded .selection-desc,#hud .selection-expanded .order-summary{font-size:10px;line-height:1.45;margin:6px 0}
 
   /* 3. Sleek Compact Build Panel */

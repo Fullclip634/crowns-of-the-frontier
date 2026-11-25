@@ -9,10 +9,12 @@ import {tacticalRangeRadius} from '../src/selection-overlays.js';
 import {inspectorStatsMarkup,unitAttackValue} from '../src/entity-inspector.js';
 import {WarCommsController} from '../src/war-comms.js';
 import {WATER_PALETTES} from '../src/water-surface.js';
-import {strokeCobblestoneRoad} from '../src/terrain-layout.js';
+import {bridgeArtwork} from '../src/bridge-layout.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry} from '../src/biome-art.js';
+import {selectionDetailsMarkup} from '../src/compact-hud.js';
+import {skirmishHubMarkup} from '../src/menus-ui.js';
 
 test('painted medieval icon atlas covers all resources, units, heroes, buildings, techs and modes',()=>{
   const atlasPath=new URL('../src/ui-art/medieval-icons-atlas.webp',import.meta.url);
@@ -162,7 +164,7 @@ test('Campaign World Map centers atlas top-bar icon chips, progress pill, and ac
   assert.match(css,/#modal-root \.atlas-act-tab\{[^}]*align-items:center;justify-content:center/,'mobile landscape act tabs center text cleanly');
 });
 
-test('AoE2:DE battlefield upgrades deliver chiseled stone cliffs, sunlit turquoise water palettes, and cobblestone road pavers',async()=>{
+test('AoE2:DE battlefield upgrades deliver chiseled stone cliffs, sunlit turquoise water palettes, and flat stone causeway bridges',async()=>{
   // 1. Verify sunlit turquoise water palettes on river/coastal/epic maps
   for(const map of ['rivers','riverland','coast','archipelago','waterfallgorge','templelagoon','ironfall','threecrowns']){
     const pal=WATER_PALETTES[map];
@@ -173,16 +175,13 @@ test('AoE2:DE battlefield upgrades deliver chiseled stone cliffs, sunlit turquoi
     assert.ok(db>dr*3,`${map} deep water is rich cerulean blue (${pal.deep.toString(16)})`);
   }
 
-  // 2. Verify cobblestone road painter draws weathered flagstones cleanly onto both mask and color canvases
-  let fills=0,maskRed=false;
-  const mockCtx={
-    fillStyle:'',
-    beginPath(){},moveTo(){},lineTo(){},
-    fill(){fills++;if(/^rgba\((248|255),0,0,/.test(this.fillStyle))maskRed=true;},
-  };
-  strokeCobblestoneRoad(mockCtx,[{x:-20,z:0},{x:20,z:0}],{half:80,size:160,canvasSize:768,connected:true,mask:true,seed:42});
-  assert.ok(fills>=60,`cobblestone road paints weathered flagstone blocks (${fills})`);
-  assert.equal(maskRed,true,'cobblestone road mask raises red channel above paving threshold');
+  // 2. Verify flat-decked AoE2:DE monumental stone causeway bridge replaces the arched hump across the game
+  assert.equal(bridgeArtwork.revision,'aoe-causeway-v2');
+  assert.ok(bridgeArtwork.crownHeight<=0.10,`bridge deck stays flat and level (crownHeight=${bridgeArtwork.crownHeight})`);
+  assert.ok(bridgeArtwork.triangles<=7600,`bridge stays within lean triangle budget (${bridgeArtwork.triangles})`);
+  const bridgeArtSrc=fs.readFileSync(new URL('../src/bridge-art.js',import.meta.url),'utf8');
+  assert.doesNotMatch(bridgeArtSrc,/cloneEpicProp\('bridge:timber'\)/,'all maps use the unified AoE2:DE stone causeway bridge');
+  assert.match(bridgeArtSrc,/view\.materials\.stone/,'bridge masonry uses crisp dressed ashlar stone texture');
 
   // 3. Verify Blender chiseled cliffwall carries deep V-cleft AO and stays natural stone (zero neon green on rocks)
   const bytes=fs.readFileSync(new URL('../src/assets3d/frontier-biome-art.glb',import.meta.url));
@@ -201,4 +200,30 @@ test('AoE2:DE battlefield upgrades deliver chiseled stone cliffs, sunlit turquoi
     assert.equal(neonGreen,0,'cliffwall rock faces stay pure weathered limestone/slate without neon green paint');
     cliff.dispose();
   }finally{clearBiomeArtwork();}
+});
+
+test('Phone selection drawer and setup/multiplayer modals keep aligned inputs, readable cards, and opaque footers',()=>{
+  // 1. Expanded selection drawer replaces confusing double-X with chevron-down "Less" button
+  const fakePanel={classList:{contains:cls=>cls==='selection-expanded'}};
+  const expandedBtn=selectionDetailsMarkup(fakePanel);
+  assert.match(expandedBtn,/<span>Less<\/span>/,'expanded selection toggle says Less instead of duplicate Close X');
+  assert.match(expandedBtn,/aria-expanded="true"/);
+
+  // 2. Expanded selection drawer gives production/research buttons roomy grid layout with zero icon overlap
+  const phoneCss=fs.readFileSync(new URL('../src/phone-hud.css',import.meta.url),'utf8');
+  assert.match(phoneCss,/#hud \.selection-panel\.selection-expanded \.production-actions>button\{[^}]*grid-template-columns:28px minmax\(0,1fr\)/,'expanded research/train cards reserve dedicated 28px icon track');
+  assert.match(phoneCss,/#hud \.selection-panel\.selection-expanded \.production-actions>button strong\{[^}]*white-space:normal/,'expanded research/train titles wrap cleanly without truncation');
+
+  // 3. Modals prevent Android font-boosting inflation, unify input/select heights & fills, and keep custom-launch 100% opaque
+  const ifaceCss=fs.readFileSync(new URL('../src/interface.css',import.meta.url),'utf8');
+  assert.match(ifaceCss,/text-size-adjust:100%/,'prevents mobile browser text inflation on modal captions');
+  const menusCss=fs.readFileSync(new URL('../src/menus-overhaul.css',import.meta.url),'utf8');
+  assert.match(menusCss,/#modal-root #lan-name[^}]*background-color:#11251c/s,'lan-name shares identical obsidian surface with select fields');
+  assert.match(menusCss,/#modal-root \.modal select\{[^}]*appearance:none/,'select dropdowns use unified sizing instead of shrunken native bar');
+  assert.match(menusCss,/#modal-root \.custom-dialog \.custom-launch\{[^}]*background:#12221b/,'custom-launch sticky footer is 100% solid opaque with zero bleed-through');
+
+  // 4. Skirmish Hub keeps AI Personality options concise (no mid-word truncation) with dedicated description below
+  const hubHtml=skirmishHubMarkup({mode:'skirmish',faction:'alder',aiPersonality:'balanced'});
+  assert.match(hubHtml,/<option value="balanced" selected>Balanced Marshal<\/option>/,'AI personality dropdown shows concise name without overflowing description');
+  assert.match(hubHtml,/id="ai-personality-description"/,'AI personality renders dedicated description element below dropdown');
 });

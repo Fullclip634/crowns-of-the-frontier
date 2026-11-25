@@ -36,7 +36,6 @@ export const spanZ=span=>span?.z||0;
 export const spanRoadHalfWidth=span=>span?.style==='timber'?3.6:bridgeRoadHalfWidth;
 export const spanOuterHalfWidth=span=>span?.style==='timber'?4.8:bridgeOuterHalfWidth;
 export function bridgeDeckHeight(span,x){
-  if(span?.style==='timber')return 1.45+.22*Math.cos(Math.min(1,Math.abs(x-span.center)/span.halfLength)*Math.PI/2);
   return artwork.baseHeight+artwork.crownHeight*Math.cos(Math.min(1,Math.abs(x-span.center)/span.halfLength)*Math.PI/2)**2;
 }
 export function bridgeAt(map,x,z,padding=0){return bridgeSpans(map).find(span=>Math.abs(x-span.center)<=span.halfLength+padding&&Math.abs(z-spanZ(span))<=spanRoadHalfWidth(span)+padding);}

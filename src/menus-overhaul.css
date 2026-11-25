@@ -247,7 +247,83 @@
 .custom-dialog .battle-slot{border-radius:5px;border-color:rgba(224,185,110,.26);background:linear-gradient(180deg,rgba(20,34,28,.9),rgba(12,21,17,.94))}
 .custom-dialog .battle-slot.player-slot{border-color:#f0cf7b;box-shadow:0 0 0 1px rgba(240,207,123,.3)}
 .custom-dialog .battle-preview canvas{border-radius:5px;border-color:rgba(224,185,110,.42);box-shadow:0 8px 24px rgba(0,0,0,.45)}
-.custom-dialog .custom-launch{background:linear-gradient(180deg,rgba(18,30,25,.96),rgba(12,21,17,.99));border-top:1px solid rgba(224,185,110,.24);padding-top:12px}
+/* Unified Obsidian & Brass Modal Inputs, Selects & Opaque Sticky Launch Bar */
+#modal-root .modal .setup-grid{align-items:start}
+#modal-root .modal .setup-grid>div{min-width:0}
+#modal-root .modal .faction-description,#modal-root .modal .tree-note{min-height:0;margin:6px 0 2px;font-size:11.5px;line-height:1.45;color:#a4b79d}
+#modal-root .modal select,
+#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]),
+#modal-root #lan-name,
+#modal-root .lan-join input{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  height:42px;
+  min-height:42px;
+  margin:0;
+  padding:0 12px;
+  background-color:#11251c;
+  border:1px solid rgba(208,181,118,.32);
+  border-radius:5px;
+  color:#f1ece0;
+  font-size:13.5px;
+  line-height:1.25;
+  vertical-align:middle;
+  transition:border-color .16s ease,box-shadow .16s ease;
+}
+#modal-root .modal select{
+  appearance:none;
+  -webkit-appearance:none;
+  padding-right:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23e2c683' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  background-size:14px 14px;
+  text-overflow:ellipsis;
+}
+#modal-root .modal select:focus,
+#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]):focus,
+#modal-root #lan-name:focus,
+#modal-root .lan-join input:focus{
+  border-color:#e6c87d;
+  box-shadow:0 0 0 2px rgba(230,200,125,.18);
+}
+#modal-root .battle-slot input,
+#modal-root .battle-slot select{
+  height:38px;
+  min-height:38px;
+  font-size:12.5px;
+  padding:0 10px;
+}
+#modal-root .battle-slot select{padding-right:30px;background-position:right 8px center}
+#modal-root .custom-dialog .custom-launch{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 10px;
+  position:sticky;
+  bottom:-35px;
+  z-index:8;
+  margin:14px -40px -35px;
+  padding:12px 40px 20px;
+  background:#12221b;
+  border-top:1px solid rgba(224,185,110,.34);
+  box-shadow:0 -14px 28px rgba(4,10,8,.86);
+}
+#modal-root .custom-dialog .custom-launch>small{
+  grid-column:1 / -1;
+  margin:0;
+  font-size:11px;
+  line-height:1.35;
+  color:#a2b69b;
+  text-align:center;
+}
+@media(max-width:899px){
+  #modal-root .custom-dialog .custom-launch{
+    bottom:-27px;
+    margin:12px -27px -27px;
+    padding:10px 27px 16px;
+  }
+}
 .net-shell .net-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
 .net-shell .net-tab{border-radius:5px;border:1px solid rgba(224,185,110,.26);background:rgba(12,22,18,.84);padding:10px 12px;text-align:left}
 .net-shell .net-tab[aria-selected=true]{border-color:#f0cf7b;background:linear-gradient(180deg,rgba(78,64,26,.92),rgba(40,32,12,.96));color:#fff5d4}
@@ -326,9 +402,53 @@
   .hero-mini .ui-icon{width:12px;height:12px}
   .landing-footer{display:none!important}
   .settings-tab span{font-size:10px}
+  /* Phone Landscape: Crisp, tightly proportioned setup & multiplayer modals with pixel-matched fields */
+  #modal-root .modal-backdrop{padding:7px calc(10px + var(--safe-right,0px)) 7px calc(10px + var(--safe-left,0px))}
+  #modal-root .modal{padding:14px 18px;max-height:calc(100dvh - 14px)}
+  #modal-root .modal .modal-close{top:8px;right:10px;width:34px;height:34px;min-height:34px}
+  #modal-root .modal h2{font-size:23px;line-height:1.1;margin:4px 0 8px}
+  #modal-root .modal .modal-intro{font-size:11.5px;line-height:1.42;margin:0 0 10px}
+  #modal-root .modal .hub-section{margin:10px 0}
+  #modal-root .modal .hub-footer-grid{margin:10px 0 4px}
+  #modal-root .modal .setup-grid{gap:8px 14px}
+  #modal-root .modal .field-label{margin:2px 0 5px;font-size:9.5px;letter-spacing:.9px}
+  #modal-root .modal select,
+  #modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]),
+  #modal-root #lan-name,
+  #modal-root .lan-join input{
+    height:36px;
+    min-height:36px;
+    padding:0 10px;
+    font-size:13px!important;
+  }
+  #modal-root .modal select{padding-right:30px;background-position:right 9px center}
+  #modal-root .battle-slot input,
+  #modal-root .battle-slot select{height:34px;min-height:34px;font-size:12px!important}
+  #modal-root .modal .faction-description,#modal-root .modal .tree-note{min-height:0;margin:5px 0 2px;font-size:11px;line-height:1.4}
+  #modal-root .modal .mission-brief{margin:10px 0;padding:10px 14px}
+  #modal-root .modal .mission-brief p{font-size:13px;line-height:1.45;margin:4px 0}
+  #modal-root .modal .mission-brief small{font-size:10.5px;line-height:1.35}
+  #modal-root .net-shell .net-mode{margin:6px 0 8px;gap:8px}
+  #modal-root .net-shell .net-tab{min-height:48px;padding:7px 11px;gap:10px}
+  #modal-root .net-shell .net-tab strong{font-size:16px}
+  #modal-root .net-shell .net-tab small{font-size:10px;line-height:1.25}
+  #modal-root .net-shell .net-tab .nearby-icon{width:20px;height:20px;padding:5px}
+  #modal-root .net-actions{gap:7px;margin:10px 0 8px}
+  #modal-root .modal .primary,#modal-root .modal .secondary{min-height:36px;padding:7px 14px;font-size:12px}
+  #modal-root .custom-dialog .custom-launch{
+    bottom:-14px;
+    margin:10px -18px -14px;
+    padding:9px 18px 11px;
+    gap:6px 10px;
+  }
+  #modal-root .custom-dialog .custom-launch .primary,
+  #modal-root .custom-dialog .custom-launch .secondary{min-height:36px;height:36px;padding:0 12px;font-size:12px}
+  #modal-root .custom-dialog .custom-launch>small{font-size:10.5px;line-height:1.3}
 }
 @media(max-width:600px) and (orientation:portrait){
   .hero-column h1{font-size:50px}
   .hero-subrow{grid-template-columns:1fr 1fr}
   .settings-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #modal-root .modal{padding:20px 16px}
+  #modal-root .custom-dialog .custom-launch{bottom:-20px;margin:12px -16px -20px;padding:10px 16px 14px}
 }

@@ -1,14 +1,14 @@
 {
-  "revision": "masonry-vault-v1",
+  "revision": "aoe-causeway-v2",
   "halfLength": 13.0,
   "roadHalfWidth": 9.6,
-  "baseHeight": 0.72,
-  "crownHeight": 1.5,
-  "triangles": 7224,
+  "baseHeight": 1.78,
+  "crownHeight": 0.04,
+  "triangles": 6764,
   "materialRoles": [
     "stone",
     "stoneDark",
     "leafDark"
   ],
-  "sourceSHA256": "0d522ff2ef6e1313dc78356f5a8a685a6a6ba2032feac0ca96dccca83dc43001"
+  "sourceSHA256": "1b77f355aa3e4a426380fc005948d717d9445dafb6e5dbd08f79aee9a87d9393"
 }

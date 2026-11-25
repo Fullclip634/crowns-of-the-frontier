@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface,retainedSurfaceTextures} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,strokeCobblestoneRoad,paintSettlementPaving} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
@@ -54,9 +54,9 @@ export class Landscape {
       else if(d<channel.width+6)h=.08+(Math.max(.3,h)-.08)*smooth(channel.width,channel.width+6,d);
       for(const span of bridgeSpans(this.map)){
         if(Math.abs(span.center-channel.center)>10)continue;
-        const cz=spanZ(span),outerW=spanOuterHalfWidth(span);
-        const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2,-.5,outward)*(1-smooth(10,18,outward)),across=1-smooth(outerW,outerW+6.8,Math.abs(z-cz));
-        const deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
+        const cz=spanZ(span),roadW=spanRoadHalfWidth(span);
+        const outward=Math.abs(x-span.center)-span.halfLength,bank=smooth(-2.2,2.8,outward)*(1-smooth(10,18,outward)),across=1-smooth(roadW+.4,roadW+5.4,Math.abs(z-cz));
+        const deckBase=bridgeArtwork.baseHeight;
         h+=(deckBase-h)*bank*across;
       }
     }
@@ -64,9 +64,9 @@ export class Landscape {
     // paving. The collar covers the coarsest supported grid at every quality.
     const collar=Math.max(2,this.renderSize/112+1);
     for(const span of bridgeSpans(this.map)){
-      const cz=spanZ(span),outerW=spanOuterHalfWidth(span),deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
+      const cz=spanZ(span),outerW=spanOuterHalfWidth(span),deckBase=bridgeArtwork.baseHeight;
       const along=1-smooth(span.halfLength+collar,span.halfLength+collar+4,Math.abs(x-span.center)),across=1-smooth(outerW+collar,outerW+4+collar,Math.abs(z-cz));
-      h-=Math.max(0,h-(deckBase-.35))*along*across;
+      h-=Math.max(0,h-(deckBase-.24))*along*across;
     }
     const edge=Math.max(Math.abs(x),Math.abs(z)),rise=smooth(this.half-4,this.half+30,edge);
     const ridges=7+Math.pow(Math.sin(x*.043+p)*Math.cos(z*.037-p),2)*18+Math.sin((x+z)*.07)*2;
@@ -92,7 +92,7 @@ export class Landscape {
   walkableHeightAt(x,z){
     const span=bridgeAt(this.map,x,z,3);
     if(!span||Math.abs(z-spanZ(span))>spanRoadHalfWidth(span)+1e-6)return this.surfaceHeightAt(x,z);
-    const distance=Math.abs(x-span.center),deckBase=span.style==='timber'?1.45:bridgeArtwork.baseHeight;
+    const distance=Math.abs(x-span.center),deckBase=bridgeArtwork.baseHeight;
     if(distance<=span.halfLength)return bridgeDeckHeight(span,x);
     const outer=span.center+Math.sign(x-span.center)*(span.halfLength+3),blend=smooth(0,3,distance-span.halfLength);
     return Math.max(this.surfaceHeightAt(x,z),deckBase+(this.surfaceHeightAt(outer,z)-deckBase)*blend);
@@ -230,19 +230,17 @@ function groundMap(landscape){
     ctx.save();ctx.translate(fx,fz);ctx.scale(fw/Math.max(fw,fh),fh/Math.max(fw,fh));
     ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,Math.max(fw,fh),0,Math.PI*2);ctx.fill();ctx.restore();
   }
-  // Warm sunlit medieval cobblestone trade roads with packed ochre shoulders & broken flagstone edges!
+  // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
   const volcanic=isVolcanicBiome(landscape.map);
-  const roadShoulder=volcanic?[48,42,39]:winter?[156,166,164]:arid?[166,132,82]:[158,128,80];
-  const roadTrack=volcanic?[92,80,72]:winter?[202,210,206]:arid?[214,182,126]:rocky?[198,178,136]:[214,184,126];
-  const cobbleRgb=volcanic?[116,106,100]:winter?[208,216,220]:arid?[222,196,148]:[212,200,172];
+  const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[134,104,64];
+  const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[188,166,124]:[204,168,108];
   for(const road of terrainRoadPaths(landscape)){
     const wheelSpacing=road.local?.57:.79,wheelWidth=road.local?.37:.48;
     strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[
-      {width:(road.local?3.6:5.2)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.38*t).toFixed(3)})`},
-      {width:(road.local?2.3:3.2)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.86*t).toFixed(3)})`},
-      ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.48*t).toFixed(3)})`})),
+      {width:(road.local?3.2:4.4)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.34*t).toFixed(3)})`},
+      {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.84*t).toFixed(3)})`},
+      ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.55*t).toFixed(3)})`})),
     ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
-    strokeCobblestoneRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,local:road.local,mask:false,seed:landscape.seed,stoneRgb:cobbleRgb});
   }
   paintSettlementPaving(ctx,landscape,half,scale);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
