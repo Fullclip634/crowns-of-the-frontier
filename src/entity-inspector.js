@@ -18,7 +18,7 @@ const ROLE_CALLOUTS=Object.freeze({
   spearman:'3× vs Cavalry',
   skirmisher:'2.2× vs Archers · Zero Gold',
   ram:'Bonus vs Buildings',
-  catapult:'Castle Age Splash Siege · 4.2m Radius',
+  catapult:'Castle Age Splash Siege · 4m Radius',
   trebuchet:'28m Fire Boulder Siege · 5.2m Splash',
   sentinel:'Heavy Shield Infantry',
   marksman:'2 Armor Piercing',
