@@ -516,6 +516,6 @@ export function authoredResource(view,e){
   return cloneAsset(view,key,Math.max(0,e.owner||0));
 }
 export function authoredTree(view,map,variant,far){
-  const biome=treeBiome(map);
-  return cloneAsset(view,`tree:${biome}:${variant}:${far?'far':'near'}`);
+  const biome=treeBiome(map),detail=far?'far':'near';
+  return cloneAsset(view,`tree:${biome}:${variant}:${detail}`)||cloneAsset(view,`tree:highlands:${variant}:${detail}`);
 }
