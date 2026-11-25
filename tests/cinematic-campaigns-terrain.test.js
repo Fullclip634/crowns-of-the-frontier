@@ -147,7 +147,9 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
       const html=missionLoadingMarkup({mode:m.id,faction:'alder',difficulty:'normal',map:m.map});
       assert.match(html,/id="chronicle-overlay"/);
       assert.match(html,/chronicle-minimap/);
-      assert.match(html,/chronicle-begin-btn/);
+      assert.match(html,/class="chronicle-begin-btn hidden"/);
+      assert.match(html,/id="chronicle-progress-wrap" role="status"/);
+      assert.doesNotMatch(html,/aria-valuenow/);
       assert.ok(html.includes(m.name));
     }
     const css=fs.readFileSync(new URL('../src/mission-loading.css',import.meta.url),'utf8');

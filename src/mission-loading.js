@@ -405,15 +405,7 @@ export function missionLoadingMarkup(options={}){
       </div>
 
       <footer class="chronicle-footer">
-        <div class="chronicle-progress-wrap" id="chronicle-progress-wrap">
-          <div class="chronicle-progress-meta">
-            <span id="chronicle-status-text">Marshalling forces &amp; carving frontier terrain…</span>
-            <strong id="chronicle-percent">15%</strong>
-          </div>
-          <div class="chronicle-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="15" id="chronicle-progressbar">
-            <i id="chronicle-progress-fill" style="width:15%"></i>
-          </div>
-        </div>
+        <div class="chronicle-progress-wrap" id="chronicle-progress-wrap" role="status">Preparing the battlefield…</div>
         <button type="button" class="chronicle-begin-btn hidden" id="chronicle-begin-btn" data-action="chronicle-begin">
           ${uiIcon('swords')}
           <span>Sound the Horns — Begin Battle</span>

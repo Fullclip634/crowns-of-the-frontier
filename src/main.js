@@ -139,7 +139,7 @@ function issueAllyOrder(kind){
   replayRecorder.note('allyOrder',kind,view.target.x,view.target.z);
   return warComms.issueAllyOrder(sim,view,kind);
 }
-let lastEndResult=null,summaryTab='overview',summaryMetric='scores',settingsTab='graphics',hubDraft=null,exploringEnd=false,activeReplay=null,lastReplayRecord=null,chronicleActive=false,chronicleTimer=0;
+let lastEndResult=null,summaryTab='overview',summaryMetric='scores',settingsTab='graphics',hubDraft=null,exploringEnd=false,activeReplay=null,lastReplayRecord=null,chronicleActive=false;
 function applyHudPreferences(){if(!hudEl)return;hudEl.dataset.minimapSide=settings.minimapSide==='right'?'right':'left';hudEl.dataset.hudScale=String(settings.hudScale||'1');}
 function refreshLanding(){const el=$('#landing');if(!el)return;el.innerHTML=landingMarkup(latestSaveSummary());if(typeof refreshInstallEntry==='function')refreshInstallEntry();if(startupFailure)for(const b of el.querySelectorAll('button'))b.disabled=true;}
 let objectivesUserToggled=false,objectiveChangedAt=0;
@@ -401,9 +401,27 @@ function launchCustom(multiplayer){
 }
 function showJournal(){if(!sim.campaignState||sim.campaignState.legacy)return;if(playing)paused=true;showModal('<div class="eyebrow">THE FRONTIER CHRONICLES</div><h2>Campaign journal.</h2><div class="campaign-journal">'+sim.campaignState.history.map(entry=>'<article><span>'+esc(entry.speaker)+' · '+formatTime(entry.time)+'</span><p>'+esc(entry.text)+'</p></article>').join('')+'</div><p class="journal-optional">Optional goal: '+esc(CAMPAIGN_SCRIPTS[sim.options.mode].optional.text)+'</p>','journal-game',true);}
 function clearCommanderDialogue(){clearTimeout(dialogueTimer);const box=$('#commander-dialogue');if(box){box.classList.add('hidden');box.innerHTML='';}}
-function clearChronicleOverlay(){clearTimeout(chronicleTimer);chronicleTimer=0;chronicleActive=false;const root=$('#chronicle-root');if(root)root.innerHTML='';}
-function beginFromChronicle(){if(!chronicleActive)return;clearChronicleOverlay();if(!playing||!sim)return;paused=false;simulationPacer.reset();accumulator=0;audio.unlock();if(settings.warHorns!==false)audio.warHorn?.();const focusTarget=sim.owned(0,'building','towncenter')[0]||sim.owned(0,'unit','king')[0]||sim.owned(0,'unit')[0];if(focusTarget)view?.focus?.(focusTarget.x,focusTarget.z);const introScript=CAMPAIGN_SCRIPTS[sim.options.mode];if(introScript){showCommanderDialogue(introScript.speaker,sim.mission?`Chapter ${sim.mission.chapter} · ${sim.mission.name}`:'',introScript.intro,16000);warComms.speak({speaker:introScript.speaker,role:'ally',faction:sim.players?.[0]?.faction||'alder',text:introScript.intro,showBanner:false});}else{warComms.announceOpening(sim);toast(isAISpectator()?'Select a kingdom on the roster to follow the battle.':'Your kingdom awaits. Select a villager or your town center.');}}
-function openChronicleOverlay(options){clearChronicleOverlay();const root=$('#chronicle-root');if(!root)return;chronicleActive=true;paused=true;root.innerHTML=missionLoadingMarkup(options);const setStep=(pct,msg)=>{const fill=$('#chronicle-progress-fill'),lbl=$('#chronicle-status-text'),num=$('#chronicle-percent'),bar=$('#chronicle-progressbar');if(fill)fill.style.width=`${pct}%`;if(lbl)lbl.textContent=msg;if(num)num.textContent=`${pct}%`;if(bar)bar.setAttribute('aria-valuenow',String(pct));};setStep(35,'Carving terrain passes & stone cliffs…');chronicleTimer=setTimeout(()=>{if(!chronicleActive)return;setStep(78,'Fortifying castles & deploying regiments…');chronicleTimer=setTimeout(()=>{if(!chronicleActive)return;setStep(100,'Battlefield ready.');$('#chronicle-progress-wrap')?.classList.add('hidden');const btn=$('#chronicle-begin-btn');if(btn){btn.classList.remove('hidden');btn.focus({preventScroll:true});}},340);},280);}
+function clearChronicleOverlay(){
+  chronicleActive=false;
+  const root=$('#chronicle-root');
+  if(root){root.hidden=false;root.innerHTML='';}
+}
+function beginFromChronicle(){if(!chronicleActive||worldEl.classList.contains('world-poster')||view?.graphicsFatal)return;clearChronicleOverlay();if(!playing||!sim)return;paused=false;lastRender=last=performance.now();simulationPacer.reset();accumulator=0;audio.unlock();if(settings.warHorns!==false)audio.warHorn?.();const focusTarget=sim.owned(0,'building','towncenter')[0]||sim.owned(0,'unit','king')[0]||sim.owned(0,'unit')[0];if(focusTarget)view?.focus?.(focusTarget.x,focusTarget.z);const introScript=CAMPAIGN_SCRIPTS[sim.options.mode];if(introScript){showCommanderDialogue(introScript.speaker,sim.mission?`Chapter ${sim.mission.chapter} · ${sim.mission.name}`:'',introScript.intro,16000);warComms.speak({speaker:introScript.speaker,role:'ally',faction:sim.players?.[0]?.faction||'alder',text:introScript.intro,showBanner:false});}else{warComms.announceOpening(sim);toast(isAISpectator()?'Select a kingdom on the roster to follow the battle.':'Your kingdom awaits. Select a villager or your town center.');}}
+function openChronicleOverlay(options){
+  clearChronicleOverlay();
+  const root=$('#chronicle-root');
+  if(!root)return;
+  chronicleActive=true;
+  paused=true;
+  root.innerHTML=missionLoadingMarkup(options);
+}
+function setChronicleReady(ready){
+  if(!chronicleActive)return;
+  $('#chronicle-progress-wrap')?.classList.toggle('hidden',ready);
+  const button=$('#chronicle-begin-btn');
+  button?.classList.toggle('hidden',!ready);
+  if(ready)button?.focus({preventScroll:true});
+}
 function showCommanderDialogue(speaker,title,text,duration=9500){const box=$('#commander-dialogue');if(!box||!text)return;clearTimeout(dialogueTimer);warComms?.hideBanner?.();box.innerHTML=commanderBannerMarkup({speaker,title,text});box.classList.remove('hidden');dialogueTimer=setTimeout(clearCommanderDialogue,duration);}
 function showCampaign(focusId=null){chat.close(false);if(!modal)modalOpener=document.activeElement;if(playing)paused=true;edgeScroll.reset();if(focusId)atlasSelectedId=focusId;else if(!atlasSelectedId)atlasSelectedId=nextCampaignMissionId(progress,atlasFreeSelect);modal='campaign';$('#modal-root').innerHTML=`<div class="modal-backdrop atlas-backdrop">${campaignMapMarkup({progress,selectedId:atlasSelectedId,actFilter:atlasActFilter,freeSelect:atlasFreeSelect,setupOptions})}</div>`;$('#modal-root [data-atlas-launch],#modal-root .atlas-close')?.focus({preventScroll:true});}
 function startGame(options,save=null){if(!view){audio.unlock();return withBattlefield(()=>startGame(options,save));}clearChronicleOverlay();replayRecorder.detach();activeReplay=null;lastReplayRecord=null;$('#replay-banner')?.classList.add('hidden');chat.close(false);if(!net.active)chat.reset();resetCompactHud(document);objectivesUserToggled=false;objectiveChangedAt=0;audio.clearCombat();edgeScroll.reset();audio.lastThunder=undefined;tacticalMode=null;unloadMode=false;pingMode=false;demolishArmed=null;tacticalAlerts.clear();minimapFilter='all';view.tacticalAlerts=tacticalAlerts;view.minimapFilter='all';for(const b of document.querySelectorAll('[data-map-filter]')){const on=b.dataset.mapFilter==='all';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}$('#map-flare-btn')?.classList.remove('active');$('#map-flare-btn')?.setAttribute('aria-pressed','false');$('#alert-line').innerHTML='';clearTimeout(alertClearTimer);productionOpen=false;productionKey='';scoreboardOpen=false;scoreboardKey='';globalQueueKey='';idleCycleIndex=0;tcCycleIndex=0;$('#production-panel').classList.add('hidden');$('#production-toggle').setAttribute('aria-expanded','false');$('#scoreboard-panel')?.classList.add('hidden');$('#scoreboard-toggle')?.setAttribute('aria-expanded','false');$('#global-queue-strip')?.classList.add('hidden');$('#hud').classList.remove('panels-hidden');$('[data-action=camera-panels]').setAttribute('aria-pressed','false');closeModal();const replayRec=options?.replayRecord||null;if(replayRec){sim=new Simulation({...replayRec.options,replay:true});activeReplay=new ReplayDriver(replayRec,replayActions);$('#replay-banner')?.classList.remove('hidden');$('#replay-toggle-btn').disabled=false;setUIText($('#replay-toggle-btn'),'Pause');setUIText($('#replay-speed-btn'),'1×');}else{setupOptions={...setupOptions,...options};sim=save?Simulation.restore(save):new Simulation(options);if(!save&&!net.active&&!sim.options.multiplayer)replayRecorder.attach(sim,sim.options);}
@@ -855,10 +873,17 @@ function syncGraphicsRecovery(){
     if(compatible){renderClosed=true;$('#graphics-status').textContent='Opening compatible graphics…';$('#graphics-status').classList.remove('hidden');location.replace(compatible);return true;}
     const wasPaused=graphicsRecoveryUi?.wasPaused??paused,network=!!(net.active||sim?.options.multiplayer),saved=playing&&!network&&saveGame(true);
     graphicsRecoveryUi={failure:view.graphicsFatal,wasPaused};paused=true;keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();
+    if(chronicleActive){
+      $('#chronicle-root').hidden=true;
+      worldEl.classList.add('world-poster');
+      presentingMatch=null;
+      setChronicleReady(false);
+    }
     showModal(graphicsRecoveryMarkup({playing,network,saved,deviceLost:!!view.graphicsFatal.deviceLost,backendError:!!view.graphicsFatal.backendError,support:graphicsSupport()}),'graphics-recovery');$('#modal-root [data-action="close"]')?.remove();$('#modal-root [data-action="retry-battlefield"],#modal-root [data-action="reload-battlefield"]')?.focus();
   }else if(graphicsRecoveryUi){
     const state=graphicsRecoveryUi;graphicsRecoveryUi=null;
     if(modal==='graphics-recovery'){closeModal();paused=state.wasPaused;toast('The battlefield is restored.');}
+    if(chronicleActive)$('#chronicle-root').hidden=false;
   }
 }
 async function retryBattlefield(){
@@ -876,7 +901,12 @@ function presentBattlefield(){
   const finish=ready=>{
     if(presentingMatch!==match)return;
     presentingMatch=null;
-    if(ready&&playing&&sim===match&&!view.graphicsFatal){world.classList.remove('world-poster');lastRender=last=performance.now();simulationPacer.reset();}
+    if(ready&&playing&&sim===match&&!view.graphicsFatal){
+      world.classList.remove('world-poster');
+      lastRender=last=performance.now();
+      simulationPacer.reset();
+      setChronicleReady(true);
+    }
   };
   const queue=view.renderer.backend?.device?.queue;
   if(!queue?.onSubmittedWorkDone){finish(true);return;}
@@ -892,12 +922,11 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(playing&&!firstFrame&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal&&(!paused&&!sim.ended||exploringEnd)){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
       if(!paused&&!sim.ended){const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){if(activeReplay){activeReplay.step(sim);if(activeReplay.finished||sim.ended){paused=true;setUIText($('#replay-toggle-btn'),'Finished');$('#replay-toggle-btn').disabled=true;if(activeReplay.failed)toast('A recorded command failed. Playback stopped.','warning');break;}}view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){matchTimeline.sample(sim);if(activeReplay){setUIText($('#replay-status'),`REPLAY · ${formatTime(sim.time)} / ${formatTime(activeReplay.record.duration||0)}`);const rp=$('#replay-progress');if(rp)rp.style.width=`${Math.round(activeReplay.progress*100)}%`;}renderHUD(false);renderSelection();uiTime=0;}if(!activeReplay&&sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}}
     }
-    if(playing){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
+    if(playing&&!chronicleActive){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
     if(playing&&!firstFrame&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal?100:1000/targetFrameRate(settings);
-    // Keep the opening scene still so queued frames share its shadow map.
-
-    if(playing&&framePacer.due(now,renderInterval)){
+    // Present one frame for the opaque briefing and avoid queuing extra frames while it is submitted.
+    if(playing&&(!chronicleActive||(firstFrame&&presentingMatch!==sim))&&framePacer.due(now,renderInterval)){
       const renderGap=lastRender?Math.min(1.5,Math.max(0,(now-lastRender)/1000)):dt;
       view.wallStep=firstFrame?0:paused?dt:renderGap*Math.max(1,speed);
       if(view.render(firstFrame?0:Math.min(.2,Math.max(0,(now-lastRender)/1000)),false)!==false){
