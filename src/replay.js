@@ -1,32 +1,34 @@
 import {AGES,FACTIONS,MAPS,MISSIONS,MODES} from './data.js';
+import {SIMULATION_STEP} from './simulation-pacing.js';
 
 const REPLAY_KEY='crowns-replays';
 const MAX_REPLAYS=5;
 const MAX_COMMANDS=4000;
+export const REPLAY_VERSION=1;
 
-const RECORDED_OPS=Object.freeze([
+const RECORDED_OPS=[
   'smartCommand','build','buildWallDraft','train','research','cancelQueue',
   'trade','stop','patrol','guard','setStance','townBell','returnToWork',
   'demolish','convertWallToGate','unload','seekShelter','donateResources','resign',
-]);
+];
 
-function cloneArgs(args){
-  return args.map(a=>{
-    if(a===null||a===undefined||typeof a!=='object')return a;
-    // Reference entities strictly by ID so replay logs stay tiny (~10 KB/match)
-    if(typeof a.id==='number'&&a.kind)return {__eid:a.id};
-    try{return JSON.parse(JSON.stringify(a));}catch{return null;}
-  });
+function cloneArg(sim,arg){
+  if(Array.isArray(arg))return arg.map(item=>cloneArg(sim,item));
+  if(!arg||typeof arg!=='object')return arg;
+  // Remembered resources may outlive the live entity visible to Simulation.get.
+  if(typeof arg.id==='number'&&arg.kind&&sim.get(arg.id)===arg)return {__eid:arg.id};
+  return JSON.parse(JSON.stringify(arg));
 }
 
-function hydrateArgs(sim,args){
-  return (args||[]).map(a=>a&&typeof a==='object'&&typeof a.__eid==='number'?(sim.get(a.__eid)||null):a);
+function hydrateArg(sim,arg){
+  if(Array.isArray(arg))return arg.map(item=>hydrateArg(sim,item));
+  return arg&&typeof arg==='object'&&typeof arg.__eid==='number'?(sim.get(arg.__eid)||null):arg;
 }
 
-/**
- * Lightweight deterministic command-log match recorder (~5–20 KB per match,
- * < 0.01ms overhead per click, strictly zero per-frame allocations).
- */
+function replayTick(sim){
+  return Math.round((sim.time||0)/SIMULATION_STEP);
+}
+
 export class MatchReplayRecorder {
   constructor(){
     this.active=false;
@@ -34,6 +36,8 @@ export class MatchReplayRecorder {
     this.commands=[];
     this.sim=null;
     this.unhooked=null;
+    this.depth=0;
+    this.incomplete=false;
   }
 
   attach(sim,options){
@@ -42,24 +46,53 @@ export class MatchReplayRecorder {
     this.sim=sim;
     this.options=JSON.parse(JSON.stringify({...options,replay:false}));
     this.commands=[];
+    this.incomplete=false;
     this.active=true;
     const originals=new Map();
+
+    // Commands issued by AI during a simulation tick are regenerated during
+    // playback. Nested calls are replayed by their outer command.
+    const tick=sim.tick;
+    originals.set('tick',tick);
+    sim.tick=dt=>{
+      this.depth++;
+      try{
+        return tick.call(sim,dt);
+      }finally{
+        this.depth--;
+      }
+    };
     for(const op of RECORDED_OPS){
       if(typeof sim[op]!=='function')continue;
-      const fn=sim[op].bind(sim);
-      originals.set(op,sim[op]);
+      const fn=sim[op];
+      originals.set(op,fn);
       sim[op]=(...args)=>{
-        if(this.active&&this.commands.length<MAX_COMMANDS){
-          this.commands.push({t:Math.round((sim.time||0)*10)/10,op,a:cloneArgs(args)});
+        this.note(op,...args);
+        this.depth++;
+        try{
+          return fn.apply(sim,args);
+        }finally{
+          this.depth--;
         }
-        return fn(...args);
       };
     }
     this.unhooked=()=>{
       for(const [op,orig] of originals)sim[op]=orig;
-      originals.clear();
     };
     return true;
+  }
+
+  note(op,...args){
+    if(!this.active||this.depth||this.incomplete)return;
+    if(this.commands.length>=MAX_COMMANDS){
+      this.incomplete=true;
+      return;
+    }
+    try{
+      this.commands.push({tick:replayTick(this.sim),op,a:args.map(arg=>cloneArg(this.sim,arg))});
+    }catch{
+      this.incomplete=true;
+    }
   }
 
   detach(){
@@ -69,17 +102,19 @@ export class MatchReplayRecorder {
   }
 
   buildRecord(result=null){
-    if(!this.options)return null;
+    if(!this.active||this.incomplete)return null;
     const sim=this.sim;
     const mode=this.options.mode||'skirmish';
     const modeDef=MODES.find(m=>m.id===mode)||MISSIONS.find(m=>m.id===mode);
-    const faction=sim?.players?.[0]?.faction||this.options.faction||'alder';
+    const faction=sim.players?.[0]?.faction||this.options.faction||'alder';
     const map=this.options.map||'highlands';
-    const age=Math.max(0,Math.min(3,sim?.players?.[0]?.age||0));
+    const age=Math.max(0,Math.min(3,sim.players?.[0]?.age||0));
     return {
       id:`rep-${Date.now()}-${Math.floor(Math.random()*9999)}`,
       recordedAt:Date.now(),
-      duration:Math.round(sim?.time||0),
+      version:REPLAY_VERSION,
+      endTick:replayTick(sim),
+      duration:Math.round(sim.time||0),
       won:result?Boolean(result.won):null,
       mode,
       modeName:modeDef?.name||'Skirmish',
@@ -125,31 +160,51 @@ export function deleteReplay(id,storage){
   }catch{return false;}
 }
 
-/** Replays recorded player commands deterministically as Simulation time advances. */
 export class ReplayDriver {
-  constructor(record){
+  constructor(record,actions={}){
     this.record=record;
+    this.actions=actions;
     this.cursor=0;
     this.finished=false;
+    this.failed=false;
+    this.lastTime=0;
   }
 
   get progress(){
-    const total=Math.max(1,this.record?.duration||1);
-    return Math.min(1,this.lastTime/total);
+    const total=this.record?.endTick==null?this.record?.duration:this.record.endTick*SIMULATION_STEP;
+    return this.finished&&!this.failed?1:Math.min(1,this.lastTime/Math.max(SIMULATION_STEP,total||0));
   }
 
   step(sim){
-    if(!sim||!this.record)return 0;
+    if(!sim||!this.record||this.finished)return 0;
     this.lastTime=sim.time||0;
     let applied=0;
     const cmds=this.record.commands||[];
-    while(this.cursor<cmds.length&&cmds[this.cursor].t<=(sim.time||0)+.05){
+    const tick=replayTick(sim);
+    const versioned=this.record.version===REPLAY_VERSION;
+    while(this.cursor<cmds.length&&(versioned?cmds[this.cursor].tick<=tick:cmds[this.cursor].t<=this.lastTime+.05)){
       const {op,a}=cmds[this.cursor++];
-      if(typeof sim[op]==='function'){
-        try{sim[op](...hydrateArgs(sim,a));applied++;}catch{}
+      try{
+        const args=(a||[]).map(arg=>hydrateArg(sim,arg));
+        if(RECORDED_OPS.includes(op)&&typeof sim[op]==='function'){
+          sim[op](...args);
+          applied++;
+        }else if(versioned){
+          if(!Object.hasOwn(this.actions,op)){
+            this.failed=this.finished=true;
+            return applied;
+          }
+          this.actions[op](...args);
+          applied++;
+        }
+      }catch{
+        if(versioned){
+          this.failed=this.finished=true;
+          return applied;
+        }
       }
     }
-    if(this.cursor>=cmds.length&&(sim.time||0)>=(this.record.duration||0)){
+    if(this.cursor>=cmds.length&&(versioned?tick>=this.record.endTick:this.lastTime>=(this.record.duration||0))){
       this.finished=true;
     }
     return applied;

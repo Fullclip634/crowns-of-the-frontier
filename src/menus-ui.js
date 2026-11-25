@@ -9,6 +9,7 @@ import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {mapPreviewSvg} from './map-preview.js';
 import {AI_PERSONALITIES} from './ai-personalities.js';
+import {REPLAY_VERSION} from './replay.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -297,6 +298,7 @@ export function saveManagerMarkup(slots,{canSave=false,networkActive=false,repla
         </div>
         <p>${esc(r.factionName)} · ${esc(r.mapName)}</p>
         <small>${esc(r.ageName)} · ${formatTime(r.duration||0)} · ${(r.commands?.length||0)} commands</small>
+        ${r.version===REPLAY_VERSION?'':'<small>Legacy recording · playback may differ from the original battle.</small>'}
       </div>
       <div class="save-slot-actions">
         <button type="button" class="primary" data-play-replay="${esc(r.id)}">${uiIcon('play')}<span>Watch</span></button>
