@@ -1,16 +1,17 @@
 import * as THREE from 'three';
 import {nodeRuntime} from './render-runtime.js';
-import {terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
-import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome} from './terrain-biomes.js';
+import {terrainRoadPaths,strokeTaperedRoad,strokeCobblestoneRoad,paintSettlementPaving} from './terrain-layout.js';
+import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {createAtmosphereUniforms,CLOUD_SHADOW_GLSL} from './atmosphere-uniforms.js';
 
 export function roadMask(land){
   const paths=terrainRoadPaths(land),size=768,canvas=document.createElement('canvas');canvas.width=canvas.height=size;
   const ctx=canvas.getContext('2d'),half=land.half,scale=size/land.worldSize;
   ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.lineCap='round';ctx.lineJoin='round';
-  const beach=land.map==='coast'||land.map==='archipelago';
+  const coastal=land.map==='coast'||land.map==='archipelago'||land.map==='templelagoon';
+  const sandyBeach=!isSnowBiome(land.map)&&!isVolcanicBiome(land.map);
   const channels=land.channels?.()||[];
-  if(channels.length){
+  if(channels.length&&typeof ctx.createImageData==='function'&&typeof ctx.putImageData==='function'){
     const mask=ctx.createImageData(size,size),pixels=mask.data;
     for(let i=3;i<pixels.length;i+=4)pixels[i]=255;
     const fade=(distance,width)=>{
@@ -20,30 +21,31 @@ export function roadMask(land){
     for(const channel of channels)for(let row=0;row<size;row++){
       const z=(row+.5)/scale-half,center=channel.center+Math.sin(z*channel.frequency)*channel.bend;
       const coveWave=Math.sin(z*.11+channel.center*.7)*1.85+Math.cos(z*.23-channel.center*.4)*.95+Math.sin(z*.47)*.42;
-      const bankWidth=beach?Math.max(2.6,5.2+coveWave):Math.max(2.2,3.1+Math.sin(z*.18+channel.center)*.55);
+      const bankWidth=coastal?Math.max(3.0,5.6+coveWave):Math.max(2.6,4.0+coveWave*.7);
       const left=Math.max(0,Math.floor((center-channel.width-bankWidth+half)*scale));
       const right=Math.min(size-1,Math.ceil((center+channel.width+bankWidth+half)*scale));
       for(let column=left;column<=right;column++){
         const side=(column+.5)/scale-half-center>=0?1:-1;
-        const sideWave=beach?Math.sin(z*.15*side+side*1.3)*.75:0;
+        const sideWave=Math.sin(z*.15*side+side*1.3)*(coastal?.75:.50);
         const distance=Math.abs((column+.5)/scale-half-center)-channel.width;
         const i=(row*size+column)*4;
-        if(beach)pixels[i+1]=Math.max(pixels[i+1],224*fade(distance,Math.max(2.2,bankWidth+sideWave)));
-        pixels[i+2]=Math.max(pixels[i+2],220*fade(distance+1.25,Math.max(2.0,bankWidth+sideWave*.5)));
+        if(sandyBeach)pixels[i+1]=Math.max(pixels[i+1],236*fade(distance,Math.max(2.4,bankWidth+sideWave)));
+        pixels[i+2]=Math.max(pixels[i+2],224*fade(distance+1.25,Math.max(2.0,bankWidth+sideWave*.5)));
       }
     }
     ctx.putImageData(mask,0,0);
   }
-  // Red values above the lane range identify the flagstone pads; twin wheel ruts
-  // stay <= 196 so cart tracks read with a grassy center crown and never trigger paving.
+  // Twin wheel ruts stay <= 196 for packed ochre shoulders, while broken-edge
+  // cobblestone pavers along road cores & town plazas rise above 210 to trigger real PBR stone paving.
   for(const road of paths){
     const wheelOffset=(road.local?.62:.92)*scale,rutWidth=(road.local?.74:.96)*scale;
     strokeTaperedRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,layers:[
-      {width:(road.local?3.4:4.9)*scale,rgba:t=>`rgba(196,0,0,${(.28*t).toFixed(3)})`},
-      {width:(road.local?1.2:1.6)*scale,rgba:t=>`rgba(196,0,0,${(.30*t).toFixed(3)})`},
+      {width:(road.local?3.6:5.2)*scale,rgba:t=>`rgba(196,0,0,${(.30*t).toFixed(3)})`},
+      {width:(road.local?1.3:1.8)*scale,rgba:t=>`rgba(196,0,0,${(.32*t).toFixed(3)})`},
       {width:rutWidth,offset:-wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
       {width:rutWidth,offset:wheelOffset,rgba:t=>`rgba(196,0,0,${(.82*t).toFixed(3)})`},
     ],gravelColor:a=>`rgba(196,0,0,${a.toFixed(3)})`});
+    strokeCobblestoneRoad(ctx,road.points,{half,size:land.worldSize,canvasSize:size,connected:road.connected,local:road.local,mask:true,seed:land.seed});
   }
   paintSettlementPaving(ctx,land,half,scale,true);
   ctx.fillStyle='#000';
@@ -56,7 +58,8 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
   const soil=surfaces.soil||grass,rock=surfaces.rock||grass,paving=surfaces.paving||surfaces.stone||rock,normal=quality!=='low'&&grass.normal;
   material.bumpMap?.dispose();material.bumpMap=null;
   material.normalMap=normal||null;material.roughnessMap=null;
-  const biome=terrainBiome(land.map),snow=isSnowBiome(land.map),arid=isAridBiome(land.map),volcanic=Boolean(biome.ash),rocky=isRockyBiome(land.map),shore=land.map==='coast'||land.map==='archipelago';
+  const biome=terrainBiome(land.map),snow=isSnowBiome(land.map),arid=isAridBiome(land.map),volcanic=Boolean(biome.ash),rocky=isRockyBiome(land.map);
+  const shore=!snow&&!volcanic&&((land.channels?.()?.length||0)>0||land.map==='coast'||land.map==='archipelago');
   const amount=snow?.74:arid?.88:rocky?.92:.86;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
   const roads=roadMask(land);material.frontierOwnedTextures=[roads];
@@ -116,15 +119,20 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       float coreHot = smoothstep(0.62, 0.95, crevice) * emberMask;
       rawRock += (vec3(1.65, 0.34, 0.04) * emberMask * 0.78 + vec3(2.1, 1.05, 0.30) * coreHot * 0.75);`
     : `
-      float crevice = smoothstep(0.42, 0.88, sin(vTerrainWorldPos.x * 1.45 - vTerrainWorldPos.y * 2.6) * cos(vTerrainWorldPos.z * 1.45 + vTerrainWorldPos.y * 2.3));
-      float ledgeDust = smoothstep(0.66, 0.91, vTerrainNormalY);
-      vec3 rawRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.42);`;
+      float creviceA = smoothstep(0.34, 0.88, abs(sin(vTerrainWorldPos.x * 1.65 - vTerrainWorldPos.y * 2.8) * cos(vTerrainWorldPos.z * 1.65 + vTerrainWorldPos.y * 2.5)));
+      float vertFissure = 1.0 - smoothstep(0.05, 0.34, abs(sin(vTerrainWorldPos.x * 1.15 + vTerrainWorldPos.z * 0.95 + sin(vTerrainWorldPos.y * 1.2) * 0.45)));
+      float crevice = clamp(creviceA * 0.72 + vertFissure * 0.52 * (1.0 - vTerrainNormalY), 0.0, 1.0);
+      float ledgeDust = smoothstep(0.72, 0.93, vTerrainNormalY);
+      float rimHighlight = smoothstep(0.54, 0.72, vTerrainNormalY) * (1.0 - smoothstep(0.76, 0.92, vTerrainNormalY));
+      vec3 rawRock = rockSample * frontierTerraincliffTint * strata * (1.0 - crevice * 0.50);
+      rawRock = mix(rawRock, rawRock * vec3(1.16, 1.12, 1.01) + vec3(0.06, 0.05, 0.03), rimHighlight * 0.65);`;
   const beachSoilGlsl=shore ? `
       if (terrainBeach > 0.01) {
-        // Real CC0 sand_01 coastal cove sand with dark wet swash zone near the waterline.
+        // Warm sunlit AoE2:DE golden-cream sandy riverbank & cove beach with damp swash darkening at the waterline.
         float swashRipple = sin(vTerrainWorldPos.x * 2.6 + vTerrainWorldPos.z * 1.5 + sin(vTerrainWorldPos.z * 0.42) * 1.3);
-        vec3 beachWarmth = mix(vec3(0.86, 0.78, 0.60), vec3(1.08, 0.99, 0.80), smoothstep(-0.65, 0.65, swashRipple));
-        vec3 beachSand = soilSample * beachWarmth * mix(1.0, 0.68, terrainShore);
+        vec3 sandGrain = mix(vec3(dot(soilSample, vec3(0.3, 0.59, 0.11))), soilSample, 0.48);
+        vec3 beachWarmth = mix(vec3(1.06, 0.96, 0.72), vec3(1.26, 1.16, 0.92), smoothstep(-0.65, 0.65, swashRipple));
+        vec3 beachSand = sandGrain * beachWarmth * mix(1.0, 0.74, terrainShore * 0.78);
         finalSoil = mix(finalSoil, beachSand, terrainBeach);
       }` : '';
   const snowRoughGlsl=snow ? 'terrainRoughness = mix(terrainRoughness, 0.44, 0.38);' : '';
@@ -219,22 +227,22 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 finalRock = mix(rawRock, lushGrass * 0.90, ledgeDust * ${snow?'0.58':'0.34'});
       vec3 finalSoil = soilSample * frontierTerrainsoilTint * mix(1.0, 0.70, terrainShore) * mix(1.0, 0.88, terrainRoad);${beachSoilGlsl}
       vec3 terrainColor = lushGrass * terrainBlend.x + finalSoil * terrainBlend.y + finalRock * terrainBlend.z;
-      // Real 1k CC0 medieval flagstone cobblestone plazas around settlements.
+      // Real 1k CC0 medieval flagstone cobblestone roads & sunlit town plazas (AoE2:DE readability!).
       float pavingLuma = 0.5;
       float pavingAo = 1.0;
       if (terrainPaving > 0.01) {
-        vec2 pavingUv = vTerrainWorldPos.xz * 0.36;
+        vec2 pavingUv = vTerrainWorldPos.xz * 0.46;
         vec3 pavingBase = texture2D(frontierTerrainpaving, pavingUv).rgb;
         vec3 pavingVar = texture2D(frontierTerrainpaving, antiTileRot * (pavingUv * 0.31) + vec2(0.41, 0.19)).rgb;
-        vec3 pavingTex = mix(pavingBase, pavingVar, 0.22);
+        vec3 pavingTex = mix(pavingBase, pavingVar, 0.20);
         pavingLuma = dot(pavingTex, vec3(0.3, 0.59, 0.11));
-        pavingAo = mix(0.72, 1.04, smoothstep(0.16, 0.68, pavingLuma));
-        // Subtle soil/moss in mortar seams near courtyard perimeter so plazas blend naturally.
-        float mortar = 1.0 - smoothstep(0.18, 0.44, pavingLuma);
-        float edgeWear = (1.0 - smoothstep(0.25, 0.88, terrainPaving)) * 0.65;
-        vec3 plazaColor = pavingTex * mix(vec3(1.0), frontierTerrainplazaTint * 1.25, 0.45) * pavingAo;
-        plazaColor = mix(plazaColor, finalSoil * 0.85, clamp(mortar * 0.32 + edgeWear * 0.48, 0.0, 0.75));
-        terrainColor = mix(terrainColor, plazaColor, terrainPaving * 0.90);
+        pavingAo = mix(0.62, 1.12, smoothstep(0.16, 0.70, pavingLuma));
+        // Warm sunlit sandstone/limestone flagstones with dark mortar seams & organic dirt at worn edges.
+        float mortar = 1.0 - smoothstep(0.18, 0.46, pavingLuma);
+        float edgeWear = (1.0 - smoothstep(0.22, 0.86, terrainPaving)) * 0.58;
+        vec3 plazaColor = pavingTex * mix(vec3(1.08, 1.02, 0.90), frontierTerrainplazaTint * 1.42, 0.44) * pavingAo;
+        plazaColor = mix(plazaColor, finalSoil * 0.88, clamp(mortar * 0.34 + edgeWear * 0.44, 0.0, 0.72));
+        terrainColor = mix(terrainColor, plazaColor, terrainPaving * 0.94);
       }
       float packedGround = terrainRoad * 0.18 * (1.0 - terrainPaving * 0.85);
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - packedGround));
@@ -250,9 +258,9 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 rockNorm = rockNormX * triW.x + rockNormTop * triW.y + rockNormZ * triW.z;
       vec3 terrainNormal = grassNorm * terrainBlend.x + soilNorm * terrainBlend.y + rockNorm * terrainBlend.z;
       terrainNormal = terrainNormal * 2.0 - 1.0;
-      terrainNormal.xy *= mix(0.52, 0.86, terrainBlend.z) * (1.0 - terrainPaving * 0.55);
-      vec2 pavingBump = vec2(dFdx(pavingLuma), dFdy(pavingLuma)) * 10.0;
-      terrainNormal.xy += clamp(pavingBump, vec2(-0.48), vec2(0.48)) * smoothstep(0.08, 0.38, terrainPaving);
+      terrainNormal.xy *= mix(0.52, 0.96, terrainBlend.z) * (1.0 - terrainPaving * 0.55);
+      vec2 pavingBump = vec2(dFdx(pavingLuma), dFdy(pavingLuma)) * 13.5;
+      terrainNormal.xy += clamp(pavingBump, vec2(-0.56), vec2(0.56)) * smoothstep(0.08, 0.38, terrainPaving);
       normal = normalize(tbn * terrainNormal);
       #endif`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
@@ -274,7 +282,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       roughnessFactor = clamp(mix(roughnessFactor, 0.22, wetSurface * 0.74), 0.16, 1.0);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= terrainAo;');
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v11:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v12:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled biome-authentic PBR grass, snow, sand, basalt, cobblestone and rocky terrain';
   material.needsUpdate=true;
 }

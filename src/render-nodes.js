@@ -202,12 +202,13 @@ export function terrain(material,u){
   let soilCol=baseSoilCol;
   if(isShore){
     const swashRipple=sin(worldPos.x.mul(2.6).add(worldPos.z.mul(1.5)).add(sin(worldPos.z.mul(.42)).mul(1.3)));
-    const beachSand=soilSample.mul(mix(vec3(.86,.78,.60),vec3(1.08,.99,.80),smoothstep(-.65,.65,swashRipple))).mul(mix(1,.68,shore));
+    const sandGrain=mix(vec3(dot(soilSample,lumaWeights)),soilSample,.48);
+    const beachSand=sandGrain.mul(mix(vec3(1.06,.96,.72),vec3(1.26,1.16,.92),smoothstep(-.65,.65,swashRipple))).mul(mix(1,.74,shore.mul(.78)));
     soilCol=mix(baseSoilCol,beachSand,terrainBeach);
   }
   const strataWarp=sin(worldPos.x.mul(.19)).mul(1.5).add(cos(worldPos.z.mul(.19)).mul(1.5));
   const strata=float(.84).add(sin(worldPos.y.mul(6.4).add(strataWarp)).mul(.20)).add(cos(worldPos.y.mul(15.2).add(strataWarp.mul(1.7))).mul(.08));
-  const ledgeDust=smoothstep(.66,.91,worldNormalY);
+  const ledgeDust=smoothstep(.72,.93,worldNormalY);
   let rawRock;
   if(isVolcanic){
     // Multi-frequency jagged basalt fractures broken into localized magma pockets (matches WebGL2).
@@ -224,21 +225,25 @@ export function terrain(material,u){
     const lavaGlow=vec3(1.65,.34,.04).mul(emberMask).mul(.78).add(vec3(2.1,1.05,.30).mul(coreHot).mul(.75));
     rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.42))).mul(vec3(.74,.72,.74)).add(lavaGlow);
   }else{
-    const crevice=smoothstep(.42,.88,sin(worldPos.x.mul(1.45).sub(worldPos.y.mul(2.6))).mul(cos(worldPos.z.mul(1.45).add(worldPos.y.mul(2.3)))));
-    rawRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.42)));
+    const creviceA=smoothstep(.34,.88,abs(sin(worldPos.x.mul(1.65).sub(worldPos.y.mul(2.8))).mul(cos(worldPos.z.mul(1.65).add(worldPos.y.mul(2.5))))));
+    const vertFissure=float(1).sub(smoothstep(.05,.34,abs(sin(worldPos.x.mul(1.15).add(worldPos.z.mul(.95)).add(sin(worldPos.y.mul(1.2)).mul(.45))))));
+    const crevice=clamp(creviceA.mul(.72).add(vertFissure.mul(.52).mul(float(1).sub(worldNormalY))),0,1);
+    const rimHighlight=smoothstep(.54,.72,worldNormalY).mul(float(1).sub(smoothstep(.76,.92,worldNormalY)));
+    const baseRock=rockSample.mul(value(u.cliffTint,'color')).mul(strata).mul(float(1).sub(crevice.mul(.50)));
+    rawRock=mix(baseRock,baseRock.mul(vec3(1.16,1.12,1.01)).add(vec3(.06,.05,.03)),rimHighlight.mul(.65));
   }
   const rockCol=mix(rawRock,grassCol.mul(.90),ledgeDust.mul(isSnow?.58:.34));
   const baseTerrainColor=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z));
   const pavingHolder=u.paving||u.rock;
-  const pavingUv=worldPos.xz.mul(.36);
-  const pavingTex=mix(sample(pavingHolder,pavingUv).rgb,sample(pavingHolder,rotUv(pavingUv.mul(.31)).add(vec2(.41,.19))).rgb,.22);
+  const pavingUv=worldPos.xz.mul(.46);
+  const pavingTex=mix(sample(pavingHolder,pavingUv).rgb,sample(pavingHolder,rotUv(pavingUv.mul(.31)).add(vec2(.41,.19))).rgb,.20);
   const pavingLuma=dot(pavingTex,lumaWeights);
-  const pavingAo=mix(.72,1.04,smoothstep(.16,.68,pavingLuma));
-  const mortar=float(1).sub(smoothstep(.18,.44,pavingLuma));
-  const edgeWear=float(1).sub(smoothstep(.25,.88,terrainPaving)).mul(.65);
+  const pavingAo=mix(.62,1.12,smoothstep(.16,.70,pavingLuma));
+  const mortar=float(1).sub(smoothstep(.18,.46,pavingLuma));
+  const edgeWear=float(1).sub(smoothstep(.22,.86,terrainPaving)).mul(.58);
   const plazaTint=u.plazaTint?value(u.plazaTint,'color'):vec3(.61,.60,.55);
-  const plazaColor=mix(pavingTex.mul(mix(vec3(1),plazaTint.mul(1.25),.45)).mul(pavingAo),soilCol.mul(.85),clamp(mortar.mul(.32).add(edgeWear.mul(.48)),0,.75));
-  const color=mix(baseTerrainColor,plazaColor,terrainPaving.mul(.90)).mul(value(u.tint,'color'));
+  const plazaColor=mix(pavingTex.mul(mix(vec3(1.08,1.02,.90),plazaTint.mul(1.42),.44)).mul(pavingAo),soilCol.mul(.88),clamp(mortar.mul(.34).add(edgeWear.mul(.44)),0,.72));
+  const color=mix(baseTerrainColor,plazaColor,terrainPaving.mul(.94)).mul(value(u.tint,'color'));
   const packedGround=terrainRoad.mul(.18).mul(float(1).sub(terrainPaving.mul(.85)));
   const atm=u.atmosphere||fallbackAtmosphere();
   const wetness=value(atm.wetness);
@@ -474,34 +479,39 @@ export function water(material){
   const displaced=positionGeometry.add(vec3(0,wave.x,0));
   const waveNormal=Fn(()=>{normalLocal.assign(normalize(vec3(wave.y.negate(),1,wave.z.negate())));return displaced;})();
   material.positionNode=waveNormal;
-  const depth=min(max(bank.x,0),bank.y.mul(1.6)),absorption=float(1).sub(exp(depth.mul(-1.65)));
-  const transmit=exp(vec3(depth.mul(-2.05),depth.mul(-1.38),depth.mul(-1.08)));
+  const depth=min(max(bank.x,0),bank.y.mul(1.6)),absorption=float(1).sub(exp(depth.mul(-1.48)));
+  const transmit=exp(vec3(depth.mul(-1.95),depth.mul(-1.04),depth.mul(-.72)));
   const shallowCol=value(material.frontierWaterShallow,'color'),deepCol=value(material.frontierWaterDeep,'color');
   const current=sin(xz.x.mul(1.22).add(sin(xz.y.mul(.34).add(time.mul(.34))).mul(.86)).add(xz.y.mul(.13)).sub(time.mul(.55)));
-  const shallowVis=float(1).sub(smoothstep(.06,.92,depth)).mul(smoothstep(0,.30,bank.y));
+  const rippleFlow=vec2(time.mul(.22),time.mul(-.14));
+  const flowWarp=noise(xz.mul(.24).add(rippleFlow.mul(.35))).mul(2.4);
+  const streakA=noise(vec2(xz.x.mul(.42).add(flowWarp),xz.y.mul(1.85).sub(time.mul(.32))));
+  const streakB=noise(vec2(xz.x.mul(1.15).sub(flowWarp.mul(.65)),xz.y.mul(3.4).add(time.mul(.42))));
+  const waveStreak=smoothstep(.56,.88,streakA.mul(.62).add(streakB.mul(.38))).mul(smoothstep(.22,1.05,bank.y));
+  const shallowVis=float(1).sub(smoothstep(.06,.98,depth)).mul(smoothstep(0,.30,bank.y));
   material.colorNode=Fn(()=>{
-    const baseCol=mix(deepCol,shallowCol,clamp(transmit.mul(.65).add(float(1).sub(absorption).mul(.35)),0,1)).toVar();
+    const baseCol=mix(deepCol,shallowCol,clamp(transmit.mul(.68).add(float(1).sub(absorption).mul(.32)),0,1)).toVar();
     If(detail.greaterThan(.5).and(shallowVis.greaterThan(.01)),()=>{
       const pebbles=mix(noise(xz.mul(2.4)),noise(xz.mul(6.2).add(vec2(3.7,1.9))),.45);
-      const bedTint=shallowCol.mul(mix(vec3(.84,.80,.68),vec3(1.16,1.11,.96),pebbles));
-      baseCol.assign(mix(baseCol,bedTint,shallowVis.mul(.42)));
+      const bedTint=shallowCol.mul(mix(vec3(.92,.90,.76),vec3(1.18,1.16,1.02),pebbles));
+      baseCol.assign(mix(baseCol,bedTint,shallowVis.mul(.46)));
     });
-    const tone=materialColor.rgb.mul(baseCol).mul(float(1).add(current.mul(.085))).toVar();
-    If(detail.greaterThan(.5).and(depth.lessThan(1.25)),()=>{
+    const tone=materialColor.rgb.mul(baseCol).mul(float(1.02).add(current.mul(.095))).add(shallowCol.mul(.55).add(vec3(.32,.52,.58)).mul(waveStreak).mul(.22).mul(light)).toVar();
+    If(detail.greaterThan(.5).and(depth.lessThan(1.35)),()=>{
       const warp=vec2(noise(xz.mul(.72).add(vec2(time.mul(.11),time.mul(-.08)))).sub(.5),noise(xz.mul(.78).sub(vec2(time.mul(.09),time.mul(.12)))).sub(.5)).mul(.55);
       const cuv=xz.add(warp);
       const ca=noise(cuv.mul(1.55).add(vec2(time.mul(.24),time.mul(.15))));
       const cb=noise(cuv.mul(2.35).sub(vec2(time.mul(.18),time.mul(-.26))));
       const cc=noise(cuv.mul(3.8).add(vec2(time.mul(-.21),time.mul(.19))));
-      const web=pow(max(0,float(1).sub(abs(ca.sub(cb)).mul(2.15))),4.2);
-      const shimmer=pow(max(0,float(1).sub(abs(cb.sub(cc)).mul(2.3))),3.6).mul(.45);
-      const caustic=web.add(shimmer).mul(float(1).sub(absorption.mul(.85))).mul(light).mul(float(1).sub(smoothstep(.55,1.25,depth))).mul(.34);
-      tone.addAssign(shallowCol.mul(.65).add(sunColor.mul(.45)).mul(caustic));
+      const web=pow(max(0,float(1).sub(abs(ca.sub(cb)).mul(2.15))),4.0);
+      const shimmer=pow(max(0,float(1).sub(abs(cb.sub(cc)).mul(2.3))),3.5).mul(.48);
+      const caustic=web.add(shimmer).mul(float(1).sub(absorption.mul(.80))).mul(light).mul(float(1).sub(smoothstep(.60,1.35,depth))).mul(.40);
+      tone.addAssign(shallowCol.mul(.70).add(sunColor.mul(.48)).mul(caustic));
     });
     return tone;
   })();
-  const wetEdge=smoothstep(0,.38,bank.y).mul(smoothstep(0,.18,depth));
-  material.opacityNode=materialOpacity.mul(mix(.24,1,smoothstep(0,.85,absorption))).mul(wetEdge);
+  const wetEdge=smoothstep(0,.36,bank.y).mul(smoothstep(0,.16,depth));
+  material.opacityNode=materialOpacity.mul(mix(.28,1,smoothstep(0,.82,absorption))).mul(wetEdge);
   material.normalNode=Fn(()=>{
     const distortion=float(0).toVar();
     If(detail.greaterThan(.5),()=>{distortion.assign(noise(xz.mul(.30).add(vec2(time.mul(.09),time.mul(.06)))).sub(.5).mul(4.1));});
@@ -532,15 +542,15 @@ export function water(material){
       const wash=sin(dot(xz,vec2(.27,.58)).add(time.mul(1.15))).mul(.12).add(cells.sub(.5).mul(.2));
       const waterline=float(1).sub(smoothstep(.14,.58,depth.add(wash))).mul(float(1).sub(smoothstep(.55,1.55,bank.y)));
       const lacing=smoothstep(.30,.76,foamNoise).mul(smoothstep(.04,.20,bank.y));
-      const foamMask=clamp(waterline.mul(.85).add(surfBand.mul(.55)).mul(lacing).mul(foamStrength),0,.92);
-      const foamCol=mix(vec3(.82,.87,.84),vec3(.95,.97,.95),surfBand).mul(light);
+      const foamMask=clamp(waterline.mul(.94).add(surfBand.mul(.64)).mul(lacing).mul(foamStrength),0,.95);
+      const foamCol=mix(vec3(.88,.95,.97),vec3(.99,1,1),surfBand).mul(light);
       color.assign(mix(color,foamCol,foamMask));
     });
     If(pierWake.greaterThan(.02),()=>{
       const pierPulse=sin(xz.y.mul(3.8).sub(time.mul(4.4)).add(abs(xz.x).mul(1.4))).mul(.5).add(.5);
       const pierNoise=noise(xz.mul(2.9).sub(vec2(0,time.mul(.65))));
       const pierFoam=clamp(pierWake.mul(float(.48).add(pierPulse.mul(.52))).mul(smoothstep(.22,.78,pierNoise.add(pierWake.mul(.35)))),0,.78);
-      color.assign(mix(color,vec3(.90,.94,.93).mul(light),pierFoam));
+      color.assign(mix(color,vec3(.94,.98,1).mul(light),pierFoam));
     });
     return vec4(color,output.a);
   })();

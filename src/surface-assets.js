@@ -143,13 +143,23 @@ export function applySurfaceMaterials(view){
   bind(m.oreRock,'boulder',0x969188,{metalness:.08,roughness:.84});
   const atm=ensureAtmosphereUniforms(view);
   for(const key of ['rock','oreRock','gold','iron'])applyAnalyticIblToMaterial(m[key],atm);
-  // Propagate loaded Poly Haven rock & turf PBR maps to cloned TerrainDetails cliff/mountain/cap meshes
+  // Propagate loaded Poly Haven fractured cliff/rock & turf PBR maps to cloned TerrainDetails cliff/mountain/cap meshes
   if(view.terrainDetails&&m.rock){
+    const cliffSet=surfaces.volcanic?.color?surfaces.volcanic:(surfaces.rock?.color?surfaces.rock:surfaces.boulder);
+    const cliffNormal=quality==='low'?null:(cliffSet?.normal||m.rock.normalMap||null);
+    const cliffRough=quality==='high'?(cliffSet?.arm||m.rock.roughnessMap||null):null;
     for(const mesh of [view.terrainDetails.mesh,view.terrainDetails.cliffWallMesh,view.terrainDetails.mountainMesh]){
       const dm=mesh?.material;if(!dm)continue;
-      const changed=dm.map!==m.rock.map||dm.normalMap!==m.rock.normalMap||dm.roughnessMap!==m.rock.roughnessMap;
-      dm.map=m.rock.map;dm.normalMap=m.rock.normalMap;dm.roughnessMap=m.rock.roughnessMap;
-      if(dm.normalScale&&m.rock.normalScale)dm.normalScale.copy(m.rock.normalScale);
+      const isEscarpment=mesh===view.terrainDetails.cliffWallMesh||mesh===view.terrainDetails.mountainMesh;
+      const nextMap=isEscarpment?(cliffSet?.color||m.rock.map):m.rock.map;
+      const nextNorm=isEscarpment?cliffNormal:m.rock.normalMap;
+      const nextRough=isEscarpment?cliffRough:m.rock.roughnessMap;
+      const changed=dm.map!==nextMap||dm.normalMap!==nextNorm||dm.roughnessMap!==nextRough;
+      dm.map=nextMap;dm.normalMap=nextNorm;dm.roughnessMap=nextRough;
+      if(dm.normalScale){
+        if(isEscarpment)dm.normalScale.setScalar(.86);
+        else if(m.rock.normalScale)dm.normalScale.copy(m.rock.normalScale);
+      }
       if(changed)dm.needsUpdate=true;
     }
     const capMat=view.terrainDetails.cliffCapMesh?.material;

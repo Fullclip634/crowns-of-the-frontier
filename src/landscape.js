@@ -6,7 +6,7 @@ import {GroundCover} from './ground-cover.js';
 import {applyGroundSurface,retainedSurfaceTextures} from './surface-assets.js';
 import {configureWaterSurface,configureWaterPalette,animateWaterSurface} from './water-surface.js';
 import {WATER_WAVE_BOUND} from './water-waves.js';
-import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrain-layout.js';
+import {prepareTerrainGeometry,terrainRoadPaths,strokeTaperedRoad,strokeCobblestoneRoad,paintSettlementPaving} from './terrain-layout.js';
 import {TerrainDetails} from './terrain-details.js';
 import {terrainRelief} from './terrain-relief.js';
 import {terrainGridAxis,terrainGridCoordinate} from './terrain-grid.js';
@@ -189,14 +189,19 @@ function groundMap(landscape){
   }
   const scale=1536/size;
   const shore=landscape.map==='coast'||landscape.map==='archipelago'||landscape.map==='templelagoon';
-  const sandyRiver=landscape.map==='waterfallgorge'||landscape.map==='ironfall';
   const jungle=isJungleBiome(landscape.map);
   for(const channel of landscape.channels()){
     ctx.lineCap='round';ctx.lineJoin='round';
-    // Organic wavy coves & riverbanks across ALL waterways (no rigid straight stripes!)
-    const bankBands=shore||sandyRiver
-      ?(jungle?[[17,'#d4bd7c'],[11,'#f3e7bc']]:sandyRiver?[[11,'#c8af72'],[6.5,'#e7d59e']]:[[15,'#c2aa76'],[9.5,'#e4d5a6']])
-      :(winter?[[11,'#a8b6b4'],[6.5,'#cfdcd8']]:arid?[[11,'#9d8154'],[6.5,'#cab080']]:[[9.5,'#6f805c'],[5.0,'#9d9973']]);
+    // Warm sunlit AoE2:DE golden sandy riverbanks & coastal coves across all temperate/tropical waterways!
+    const bankBands=winter
+      ? [[11,'#a8b6b4'],[6.5,'#cfdcd8']]
+      : volcanicGround
+        ? [[10,'#544a44'],[5.5,'#6b5e54']]
+        : arid
+          ? [[12,'#b89862'],[7.0,'#dfc58e']]
+          : shore
+            ? (jungle?[[17,'#dcc480'],[11.5,'#f7ecc0'],[5.0,'#e2cd96']]:[[15.5,'#d4bd82'],[10.2,'#f2e4b6'],[4.4,'#dcc894']])
+            : [[12.5,'#c8b57c'],[8.0,'#eee0b2'],[3.6,'#d8c490']];
     for(const [extra,color] of bankBands){
       ctx.beginPath();
       for(let z=-half;z<=half;z+=3){
@@ -219,23 +224,25 @@ function groundMap(landscape){
     const mid=ch?ch.center+Math.sin(ford.z*ch.frequency)*ch.bend:ford.center;
     const fx=(mid+half)*scale,fz=(ford.z+half)*scale,fw=ford.halfLength*1.15*scale,fh=ford.halfWidth*1.05*scale;
     const grad=ctx.createRadialGradient(fx,fz,fh*.15,fx,fz,Math.max(fw,fh));
-    grad.addColorStop(0,winter?'rgba(202,216,214,0.88)':jungle?'rgba(232,222,175,0.92)':'rgba(214,198,154,0.90)');
-    grad.addColorStop(.68,winter?'rgba(176,196,198,0.62)':jungle?'rgba(190,214,174,0.60)':'rgba(182,172,134,0.58)');
+    grad.addColorStop(0,winter?'rgba(202,216,214,0.88)':jungle?'rgba(238,228,182,0.92)':'rgba(226,210,164,0.92)');
+    grad.addColorStop(.68,winter?'rgba(176,196,198,0.62)':jungle?'rgba(202,222,180,0.62)':'rgba(194,184,142,0.60)');
     grad.addColorStop(1,'rgba(180,170,132,0)');
     ctx.save();ctx.translate(fx,fz);ctx.scale(fw/Math.max(fw,fh),fh/Math.max(fw,fh));
     ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,Math.max(fw,fh),0,Math.PI*2);ctx.fill();ctx.restore();
   }
-  // Organic worn cart trails tinted to match each biome with tapered wilderness ends.
+  // Warm sunlit medieval cobblestone trade roads with packed ochre shoulders & broken flagstone edges!
   const volcanic=isVolcanicBiome(landscape.map);
-  const roadShoulder=volcanic?[48,42,39]:winter?[152,162,158]:arid?[148,116,70]:[134,104,64];
-  const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[188,166,124]:[204,168,108];
+  const roadShoulder=volcanic?[48,42,39]:winter?[156,166,164]:arid?[166,132,82]:[158,128,80];
+  const roadTrack=volcanic?[92,80,72]:winter?[202,210,206]:arid?[214,182,126]:rocky?[198,178,136]:[214,184,126];
+  const cobbleRgb=volcanic?[116,106,100]:winter?[208,216,220]:arid?[222,196,148]:[212,200,172];
   for(const road of terrainRoadPaths(landscape)){
     const wheelSpacing=road.local?.57:.79,wheelWidth=road.local?.37:.48;
     strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[
-      {width:(road.local?3.2:4.4)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.34*t).toFixed(3)})`},
-      {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.84*t).toFixed(3)})`},
-      ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.55*t).toFixed(3)})`})),
+      {width:(road.local?3.6:5.2)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.38*t).toFixed(3)})`},
+      {width:(road.local?2.3:3.2)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.86*t).toFixed(3)})`},
+      ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.48*t).toFixed(3)})`})),
     ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
+    strokeCobblestoneRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,local:road.local,mask:false,seed:landscape.seed,stoneRgb:cobbleRgb});
   }
   paintSettlementPaving(ctx,landscape,half,scale);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;

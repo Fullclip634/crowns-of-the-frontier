@@ -192,37 +192,53 @@ def build_cliff_mesh(name, style, seed, mat):
 
 
 def add_stratified_rock_block(bm, center, rx, ry, height, rings, sides, seed, flat_top=True, taper_top=0.72):
-    """Creates a strictly closed 2-manifold AoE:DE vertical striated rock escarpment / sweeping mountain ridge."""
+    """Creates a strictly closed 2-manifold AoE2:DE chiseled vertical limestone/granite cliff escarpment or faceted mountain ridge."""
     ring_verts = []
     for r_idx in range(rings):
         t = r_idx / max(1, rings - 1)
         z = -0.35 + t * (height + 0.35)
         if flat_top:
-            # Classic AoE:DE terraced cliff escarpment: broad grounded foot -> vertical fluted basalt face -> crisp grassy plateau!
-            if t < 0.16:
-                profile = 1.24 - (t / 0.16) * 0.22
-            elif t < 0.88:
-                shelf = math.tanh(math.sin(t * math.pi * 4.0 + seed) * 2.2) * 0.038
-                profile = 1.02 - (t - 0.16) * (1.02 - taper_top) * 0.72 + shelf
+            # AoE2:DE sheer vertical chiseled cliff wall: flared talus base -> stepped vertical strata ledges -> crisp overhanging pale stone brow -> flat plateau!
+            if t < 0.14:
+                profile = 1.24 - (t / 0.14) * 0.20
+            elif t < 0.42:
+                profile = 1.04 - (t - 0.14) * 0.26
+            elif t < 0.48:
+                # Crisp mid-wall horizontal fracture shelf
+                profile = 0.967 - ((t - 0.42) / 0.06) * 0.055
+            elif t < 0.78:
+                profile = 0.912 - (t - 0.48) * 0.14
+            elif t < 0.92:
+                # Subtle chiseled limestone upper rim overhang
+                profile = max(taper_top, 0.87 + (t - 0.78) * 0.24)
             else:
-                profile = taper_top * (1.0 - (t - 0.88) * 0.28)
+                profile = max(taper_top * 0.95, 0.903 - ((t - 0.92) / 0.08) * 0.06)
         else:
-            # Sweeping curved alpine peak with natural buttress slopes (NEVER a harsh jagged pyramid cone!)
-            curve = math.pow(1.0 - t, 0.78)
-            profile = max(0.06, taper_top * 0.45 + curve * (1.28 - taper_top * 0.45))
+            # Chiseled faceted alpine peak with crisp stepped granite buttress shoulders
+            curve = math.pow(1.0 - t, 0.74)
+            shelf = math.tanh(math.sin(t * math.pi * 5.0 + seed) * 2.4) * 0.032 * (1.0 - t * 0.5)
+            profile = max(0.06, taper_top * 0.42 + curve * (1.26 - taper_top * 0.42) + shelf)
         verts = []
         for s in range(sides):
             ang = (s / sides) * math.tau
             if flat_top:
-                # Subtle vertical columnar basalt fluting + organic horizontal rim curve (no spiky zigzags!)
-                crag = 0.91 + 0.11 * math.sin(ang * 4.0 + seed * 1.3) + 0.06 * math.cos(ang * 7.0 - seed * 0.9)
+                # Sharp columnar vertical rock slabs separated by deep V-cut fracture clefts (AoE2:DE cliff silhouette!)
+                rib_a = abs(math.sin(ang * 5.0 + seed * 1.3))
+                rib_b = abs(math.sin(ang * 9.0 - seed * 0.8 + 0.65))
+                rib_c = abs(math.cos(ang * 3.0 + seed * 0.45))
+                cleft = math.pow(rib_a, 0.46) * 0.19 + math.pow(rib_b, 0.58) * 0.095 + rib_c * 0.045
+                # Keep upper rim slightly sharper while talus foot spreads naturally
+                cleft_depth = 0.65 + 0.35 * min(1.0, t * 2.2)
+                crag = 0.78 + cleft * cleft_depth
             else:
-                # Sweeping natural mountain ridgelines (3–4 major radiating buttress ridges!)
-                ridge = 0.86 + 0.20 * math.pow(math.sin(ang * 2.0 + seed) * 0.5 + 0.5, 1.3) + 0.10 * math.cos(ang * 5.0 - seed * 1.1) * (1.0 - t * 0.4)
-                crag = ridge
+                # Chiseled alpine buttress ribs with sharp fractured valleys between them
+                ridge_a = math.pow(abs(math.sin(ang * 2.5 + seed)), 0.55)
+                ridge_b = math.pow(abs(math.cos(ang * 5.0 - seed * 1.1)), 0.65)
+                crag = 0.78 + 0.24 * ridge_a + 0.11 * ridge_b * (1.0 - t * 0.35)
             px = center.x + math.cos(ang) * rx * profile * crag
             py = center.y + math.sin(ang) * ry * profile * crag
-            pz = center.z + z + (0.0 if r_idx == 0 else (0.10 if not flat_top else 0.05) * math.sin(ang * 2.0 + seed) * t)
+            rim_step = (0.045 * math.sin(ang * 5.0 + seed) + 0.03 * math.cos(ang * 3.0 - seed)) if flat_top else (0.12 * math.sin(ang * 2.5 + seed))
+            pz = center.z + z + (0.0 if r_idx == 0 else rim_step * t)
             verts.append(bm.verts.new(Vector((px, py, pz))))
         ring_verts.append(verts)
 
@@ -237,7 +253,7 @@ def add_stratified_rock_block(bm, center, rx, ry, height, rings, sides, seed, fl
             sn = (s + 1) % sides
             bm.faces.new((r0[s], r0[sn], r1[sn], r1[s]))
 
-    top_z = center.z + height + (0.03 if flat_top else 0.26)
+    top_z = center.z + height + (0.02 if flat_top else 0.28)
     top_center = bm.verts.new(Vector((center.x, center.y, top_z)))
     top_ring = ring_verts[-1]
     for s in range(sides):
@@ -246,47 +262,59 @@ def add_stratified_rock_block(bm, center, rx, ry, height, rings, sides, seed, fl
 
 
 def build_cliffwall_mesh(name, style, seed, mat):
-    """Builds an AoE:DE vertical striated stone cliff ledge with lush overhanging grass plateau top."""
+    """Builds an AoE2:DE chiseled vertical columnar limestone/granite cliff wall with deep fracture clefts & sunlit rim brow."""
     bm = bmesh.new()
-    # Broad interlocking vertical striated cliff ledges (all flat grassy plateaus, zero pointy spikes!)
-    add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=1.62, ry=1.18, height=3.05, rings=8, sides=16, seed=seed, flat_top=True, taper_top=0.84)
-    add_stratified_rock_block(bm, Vector((-1.20, 0.12, 0.0)), rx=1.02, ry=0.92, height=2.55, rings=7, sides=14, seed=seed + 17, flat_top=True, taper_top=0.82)
-    add_stratified_rock_block(bm, Vector((1.22, -0.10, 0.0)), rx=1.04, ry=0.90, height=2.68, rings=7, sides=14, seed=seed + 31, flat_top=True, taper_top=0.82)
-    # Soft stepped lower rocky apron (flat-topped terraced shelf, never harsh triangular spikes!)
-    add_stratified_rock_block(bm, Vector((-0.55, -0.82, 0.0)), rx=0.74, ry=0.58, height=0.88, rings=5, sides=10, seed=seed + 47, flat_top=True, taper_top=0.72)
-    add_stratified_rock_block(bm, Vector((0.68, 0.76, 0.0)), rx=0.70, ry=0.55, height=0.82, rings=5, sides=10, seed=seed + 63, flat_top=True, taper_top=0.72)
+    # Broad interlocking vertical fluted stone escarpments (flat rocky plateaus — separate inset cliffcap handles turf!)
+    add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=1.64, ry=1.18, height=3.08, rings=10, sides=24, seed=seed, flat_top=True, taper_top=0.86)
+    add_stratified_rock_block(bm, Vector((-1.22, 0.10, 0.0)), rx=1.04, ry=0.92, height=2.58, rings=9, sides=18, seed=seed + 17, flat_top=True, taper_top=0.84)
+    add_stratified_rock_block(bm, Vector((1.24, -0.10, 0.0)), rx=1.06, ry=0.90, height=2.70, rings=9, sides=18, seed=seed + 31, flat_top=True, taper_top=0.84)
+    # Angular faceted talus / scree rock shelves wedged cleanly at the cliff foot
+    add_stratified_rock_block(bm, Vector((-0.62, -0.92, 0.0)), rx=0.68, ry=0.52, height=0.82, rings=5, sides=9, seed=seed + 47, flat_top=True, taper_top=0.68)
+    add_stratified_rock_block(bm, Vector((0.72, 0.86, 0.0)), rx=0.66, ry=0.50, height=0.76, rings=5, sides=9, seed=seed + 63, flat_top=True, taper_top=0.68)
+    add_stratified_rock_block(bm, Vector((0.28, -1.04, 0.0)), rx=0.46, ry=0.38, height=0.56, rings=4, sides=8, seed=seed + 89, flat_top=True, taper_top=0.62)
 
     def wall_vc(co, n):
-        h = max(0.0, min(1.0, co.z / 3.10))
-        ao = 0.64 + 0.36 * (h * 0.62 + max(0.0, n.z) * 0.38)
-        strata = 0.90 + 0.14 * math.sin(co.z * 8.2 + co.x * 1.15)
-        top_cap = max(0.0, min(1.0, (n.z - 0.44) / 0.26)) * (1.0 if co.z > 0.72 else 0.0)
-        foot_moss = max(0.0, min(1.0, (0.30 - h) * 3.0)) * max(0.0, n.z * 0.7 + 0.3)
+        h = max(0.0, min(1.0, co.z / 3.12))
+        ang = math.atan2(co.y, co.x)
+        # High-contrast vertical V-cleft AO & stepped horizontal strata shading (iconic AoE2:DE cliff readability!)
+        rib_a = abs(math.sin(ang * 5.0 + seed * 1.3))
+        rib_b = abs(math.sin(ang * 9.0 - seed * 0.8 + 0.65))
+        cleft_mask = 1.0 - max(0.0, min(1.0, math.pow(rib_a, 0.45) * 0.72 + math.pow(rib_b, 0.55) * 0.28))
+        # Darken vertical fracture cracks & cliff foot deeply while sunlit limestone ledges & upper rim glow crisply
+        vert_face = 1.0 - max(0.0, min(1.0, n.z))
+        foot_dark = max(0.0, min(1.0, (0.28 - h) / 0.28))
+        strata_step = 0.84 + 0.18 * math.sin(co.z * 9.5 + co.x * 1.35) + 0.08 * math.cos(co.z * 19.0 - co.y * 1.6)
+        ao = (0.42 + 0.54 * (h * 0.58 + max(0.0, n.z) * 0.42)) * (1.0 - cleft_mask * 0.50 * vert_face) * (1.0 - foot_dark * 0.26)
+        ao = max(0.28, min(1.06, ao))
+        # Sun-bleached pale limestone/granite rim along the upper cliff lip (0.76 < h <= 1.0)
+        rim_lip = max(0.0, min(1.0, (h - 0.74) / 0.20)) * (0.45 + 0.55 * max(0.0, n.z))
 
         if style == "volcanic":
-            rock = (0.54 * ao * strata, 0.50 * ao * strata, 0.48 * ao * strata)
-            cap = (0.64 * ao, 0.58 * ao, 0.52 * ao)
-            return (rock[0]*(1-top_cap)+cap[0]*top_cap, rock[1]*(1-top_cap)+cap[1]*top_cap, rock[2]*(1-top_cap)+cap[2]*top_cap)
+            rock = (0.48 * ao * strata_step, 0.44 * ao * strata_step, 0.43 * ao * strata_step)
+            rim = (0.64 * ao, 0.57 * ao, 0.52 * ao)
+            return (rock[0]*(1-rim_lip)+rim[0]*rim_lip, rock[1]*(1-rim_lip)+rim[1]*rim_lip, rock[2]*(1-rim_lip)+rim[2]*rim_lip)
         if style == "arid":
-            rock = (1.00 * ao * strata, 0.84 * ao * strata, 0.62 * ao * strata)
-            cap = (1.00 * ao, 0.90 * ao, 0.66 * ao)
-            return (rock[0]*(1-top_cap)+cap[0]*top_cap, rock[1]*(1-top_cap)+cap[1]*top_cap, rock[2]*(1-top_cap)+cap[2]*top_cap)
+            rock = (0.98 * ao * strata_step, 0.80 * ao * strata_step, 0.56 * ao * strata_step)
+            rim = (1.04 * ao, 0.92 * ao, 0.70 * ao)
+            return (rock[0]*(1-rim_lip)+rim[0]*rim_lip, rock[1]*(1-rim_lip)+rim[1]*rim_lip, rock[2]*(1-rim_lip)+rim[2]*rim_lip)
         if style == "snow":
-            rock = (0.78 * ao * strata, 0.84 * ao * strata, 0.92 * ao * strata)
-            cap = (0.99 * ao, 1.00 * ao, 1.00 * ao)
-            return (rock[0]*(1-top_cap)+cap[0]*top_cap, rock[1]*(1-top_cap)+cap[1]*top_cap, rock[2]*(1-top_cap)+cap[2]*top_cap)
+            rock = (0.70 * ao * strata_step, 0.78 * ao * strata_step, 0.88 * ao * strata_step)
+            rim = (0.98 * ao, 0.99 * ao, 1.00 * ao)
+            return (rock[0]*(1-rim_lip)+rim[0]*rim_lip, rock[1]*(1-rim_lip)+rim[1]*rim_lip, rock[2]*(1-rim_lip)+rim[2]*rim_lip)
 
-        # Sunlit warm limestone/granite vertical strata + vibrant AoE:DE emerald meadow grass turf top!
-        rock = (0.94 * ao * strata, 0.90 * ao * strata, 0.82 * ao * strata)
-        cap = (0.58 * ao, 0.94 * ao, 0.34 * ao)
-        m = max(top_cap, foot_moss * 0.60)
+        # AoE2:DE cool-slate vertical crevices transitioning to sunlit warm pale-tan weathered limestone rim (ZERO neon green on rocks!)
+        cool_cleft = cleft_mask * 0.35 * vert_face
+        rock_r = (0.86 - cool_cleft * 0.22) * ao * strata_step
+        rock_g = (0.83 - cool_cleft * 0.16) * ao * strata_step
+        rock_b = (0.76 + cool_cleft * 0.04) * ao * strata_step
+        rim_r, rim_g, rim_b = 1.02 * ao, 0.97 * ao, 0.84 * ao
         return (
-            rock[0] * (1.0 - m) + cap[0] * m,
-            rock[1] * (1.0 - m) + cap[1] * m,
-            rock[2] * (1.0 - m) + cap[2] * m,
+            rock_r * (1.0 - rim_lip) + rim_r * rim_lip,
+            rock_g * (1.0 - rim_lip) + rim_g * rim_lip,
+            rock_b * (1.0 - rim_lip) + rim_b * rim_lip,
         )
 
-    mesh = finalize_mesh(bm, name, mat, wall_vc, uv_scale=0.22, smooth=False)
+    mesh = finalize_mesh(bm, name, mat, wall_vc, uv_scale=0.26, smooth=False)
     obj = bpy.data.objects.new(name, mesh)
     obj["assetKey"] = name
     obj["assetMaterial"] = "rock"
@@ -294,26 +322,27 @@ def build_cliffwall_mesh(name, style, seed, mat):
 
 
 def build_cliffcap_mesh(name, style, seed, mat):
-    """Builds a smooth, overhanging lush grass/snow/sand turf cap matching cliffwall plateaus 1:1
-    so cliff tops render in vivid natural biome colors without brown rock texture muddying them!"""
+    """Builds a crisp inset grassy/snowy/sandy plateau turf cap sitting cleanly INSIDE the sunlit limestone cliff rim
+    (so the pale exposed stone brow frames every cliff edge like AoE2:DE, with zero puffy overhanging cushions!)."""
     bm = bmesh.new()
     shelves = [
-        (Vector((0.0, 0.0, 2.94)), 1.38, 1.02, 0.28, 16, seed),
-        (Vector((-1.20, 0.12, 2.45)), 0.88, 0.78, 0.24, 14, seed + 17),
-        (Vector((1.22, -0.10, 2.58)), 0.90, 0.77, 0.24, 14, seed + 31),
+        (Vector((0.0, 0.0, 3.04)), 1.18, 0.84, 0.13, 20, seed),
+        (Vector((-1.22, 0.10, 2.54)), 0.74, 0.64, 0.11, 16, seed + 17),
+        (Vector((1.24, -0.10, 2.66)), 0.76, 0.63, 0.11, 16, seed + 31),
     ]
     for center, rx, ry, thick, sides, sd in shelves:
         bot_ring, mid_ring, top_ring = [], [], []
         for s in range(sides):
             ang = (s / sides) * math.tau
-            crag = 0.92 + 0.11 * math.sin(ang * 4.0 + sd * 1.3) + 0.06 * math.cos(ang * 7.0 - sd * 0.9)
-            lip = 1.03 + 0.05 * math.sin(ang * 6.0 + sd)
+            rib_a = abs(math.sin(ang * 5.0 + sd * 1.3))
+            rib_b = abs(math.sin(ang * 9.0 - sd * 0.8 + 0.65))
+            crag = 0.78 + math.pow(rib_a, 0.46) * 0.18 + math.pow(rib_b, 0.58) * 0.08
             dx, dy = math.cos(ang) * rx * crag, math.sin(ang) * ry * crag
-            bot_ring.append(bm.verts.new(Vector((center.x + dx * 0.94, center.y + dy * 0.94, center.z - 0.10))))
-            mid_ring.append(bm.verts.new(Vector((center.x + dx * lip, center.y + dy * lip, center.z + thick * 0.42))))
-            top_ring.append(bm.verts.new(Vector((center.x + dx * 0.86, center.y + dy * 0.86, center.z + thick))))
-        bot_c = bm.verts.new(Vector((center.x, center.y, center.z - 0.10)))
-        top_c = bm.verts.new(Vector((center.x, center.y, center.z + thick + 0.06)))
+            bot_ring.append(bm.verts.new(Vector((center.x + dx * 0.96, center.y + dy * 0.96, center.z - 0.06))))
+            mid_ring.append(bm.verts.new(Vector((center.x + dx * 0.98, center.y + dy * 0.98, center.z + thick * 0.52))))
+            top_ring.append(bm.verts.new(Vector((center.x + dx * 0.84, center.y + dy * 0.84, center.z + thick))))
+        bot_c = bm.verts.new(Vector((center.x, center.y, center.z - 0.06)))
+        top_c = bm.verts.new(Vector((center.x, center.y, center.z + thick + 0.03)))
         for s in range(sides):
             sn = (s + 1) % sides
             bm.faces.new((bot_ring[sn], bot_ring[s], bot_c))
@@ -322,16 +351,16 @@ def build_cliffcap_mesh(name, style, seed, mat):
             bm.faces.new((top_ring[s], top_ring[sn], top_c))
 
     def cap_vc(co, n):
-        sun = max(0.0, min(1.0, n.z * 0.35 + 0.65))
-        dapple = 0.92 + 0.12 * math.sin(co.x * 2.8 + co.y * 2.4 + seed)
+        sun = max(0.0, min(1.0, n.z * 0.30 + 0.70))
+        dapple = 0.92 + 0.10 * math.sin(co.x * 2.8 + co.y * 2.4 + seed)
         # Neutral-warm AO multiplier so Poly Haven grass/snow/sand textures blend 1:1 with terrain!
         if style == "snow":
             return (0.94 * sun, 0.96 * sun, 0.99 * sun)
         if style == "arid":
             return (0.96 * sun * dapple, 0.88 * sun * dapple, 0.72 * sun * dapple)
-        return (0.86 * sun * dapple, 0.94 * sun * dapple, 0.78 * sun * dapple)
+        return (0.85 * sun * dapple, 0.92 * sun * dapple, 0.76 * sun * dapple)
 
-    mesh = finalize_mesh(bm, name, mat, cap_vc, uv_scale=0.32, smooth=True)
+    mesh = finalize_mesh(bm, name, mat, cap_vc, uv_scale=0.34, smooth=False)
     obj = bpy.data.objects.new(name, mesh)
     obj["assetKey"] = name
     obj["assetMaterial"] = "bush"
@@ -339,40 +368,40 @@ def build_cliffcap_mesh(name, style, seed, mat):
 
 
 def build_mountain_mesh(name, style, seed, mat):
-    """Builds a sweeping AoE:DE sunlit alpine mountain massif with sculpted ridges and grassy foothills."""
+    """Builds a chiseled AoE2:DE alpine granite massif with crisp faceted crag ridges and deep shadow ravines."""
     bm = bmesh.new()
-    # Smooth sweeping central alpine peak + interlocking warm-granite side ridges + grassy shoulders
-    add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=2.05, ry=1.82, height=5.4, rings=10, sides=16, seed=seed, flat_top=False, taper_top=0.14)
-    add_stratified_rock_block(bm, Vector((-1.25, 0.58, 0.0)), rx=1.42, ry=1.24, height=3.8, rings=8, sides=14, seed=seed + 23, flat_top=False, taper_top=0.18)
-    add_stratified_rock_block(bm, Vector((1.22, -0.52, 0.0)), rx=1.40, ry=1.22, height=3.4, rings=8, sides=14, seed=seed + 41, flat_top=False, taper_top=0.20)
-    add_stratified_rock_block(bm, Vector((0.18, 1.24, 0.0)), rx=1.22, ry=1.00, height=2.05, rings=6, sides=12, seed=seed + 59, flat_top=True, taper_top=0.72)
-    add_stratified_rock_block(bm, Vector((-0.34, -1.24, 0.0)), rx=1.18, ry=0.96, height=1.80, rings=6, sides=12, seed=seed + 71, flat_top=True, taper_top=0.74)
+    # Chiseled faceted central crag + interlocking stepped limestone/granite ridges + flat rocky shoulders
+    add_stratified_rock_block(bm, Vector((0.0, 0.0, 0.0)), rx=2.08, ry=1.82, height=5.5, rings=11, sides=20, seed=seed, flat_top=False, taper_top=0.14)
+    add_stratified_rock_block(bm, Vector((-1.26, 0.56, 0.0)), rx=1.44, ry=1.24, height=3.85, rings=9, sides=16, seed=seed + 23, flat_top=False, taper_top=0.18)
+    add_stratified_rock_block(bm, Vector((1.24, -0.52, 0.0)), rx=1.42, ry=1.22, height=3.45, rings=9, sides=16, seed=seed + 41, flat_top=False, taper_top=0.20)
+    add_stratified_rock_block(bm, Vector((0.20, 1.24, 0.0)), rx=1.24, ry=1.00, height=2.10, rings=7, sides=14, seed=seed + 59, flat_top=True, taper_top=0.76)
+    add_stratified_rock_block(bm, Vector((-0.34, -1.24, 0.0)), rx=1.20, ry=0.96, height=1.85, rings=7, sides=14, seed=seed + 71, flat_top=True, taper_top=0.76)
 
     def mtn_vc(co, n):
-        h = max(0.0, min(1.0, co.z / 5.4))
-        ao = 0.62 + 0.38 * (h * 0.68 + max(0.0, n.z) * 0.32)
-        strata = 0.90 + 0.14 * math.sin(co.z * 5.2 - co.x * 0.85)
+        h = max(0.0, min(1.0, co.z / 5.5))
+        ang = math.atan2(co.y, co.x)
+        rib = 1.0 - math.pow(abs(math.sin(ang * 2.5 + seed)), 0.55)
+        vert_face = 1.0 - max(0.0, min(1.0, n.z))
+        ao = (0.44 + 0.52 * (h * 0.65 + max(0.0, n.z) * 0.35)) * (1.0 - rib * 0.36 * vert_face)
+        ao = max(0.30, min(1.05, ao))
+        strata = 0.86 + 0.16 * math.sin(co.z * 6.4 - co.x * 0.95)
         if style == "volcanic":
-            return (0.50 * ao * strata, 0.46 * ao * strata, 0.45 * ao * strata)
+            return (0.46 * ao * strata, 0.42 * ao * strata, 0.42 * ao * strata)
         if style == "snow":
             snow = max(0.0, min(1.0, (h - 0.28) * 2.1 + max(0.0, n.z - 0.34)))
-            r = 0.74 * ao * strata * (1.0 - snow) + 0.99 * ao * snow
-            g = 0.80 * ao * strata * (1.0 - snow) + 1.00 * ao * snow
-            b = 0.88 * ao * strata * (1.0 - snow) + 1.00 * ao * snow
+            r = 0.68 * ao * strata * (1.0 - snow) + 0.99 * ao * snow
+            g = 0.76 * ao * strata * (1.0 - snow) + 1.00 * ao * snow
+            b = 0.86 * ao * strata * (1.0 - snow) + 1.00 * ao * snow
             return (r, g, b)
-        # Warm AoE:DE sunlit tan-grey granite ridges + rich emerald grassy foothills + pale alpine crest!
-        moss = max(0.0, min(1.0, (0.44 - h) * 2.6)) * max(0.0, n.z * 0.82 + 0.18)
-        peak = max(0.0, min(1.0, (h - 0.66) * 2.5)) * max(0.0, n.z * 0.62 + 0.38)
-        base_r, base_g, base_b = 0.94 * ao * strata, 0.89 * ao * strata, 0.81 * ao * strata
-        r = base_r * (1.0 - moss) + 0.54 * ao * moss
-        g = base_g * (1.0 - moss) + 0.88 * ao * moss
-        b = base_b * (1.0 - moss) + 0.34 * ao * moss
-        r = r * (1.0 - peak) + 0.98 * ao * peak
-        g = g * (1.0 - peak) + 0.98 * ao * peak
-        b = b * (1.0 - peak) + 0.95 * ao * peak
+        # Authentic AoE2:DE weathered slate-limestone crags with pale sunlit granite ridges (no fake neon green paint!)
+        peak = max(0.0, min(1.0, (h - 0.64) * 2.4)) * max(0.0, n.z * 0.65 + 0.35)
+        base_r, base_g, base_b = 0.88 * ao * strata, 0.85 * ao * strata, 0.78 * ao * strata
+        r = base_r * (1.0 - peak) + 0.98 * ao * peak
+        g = base_g * (1.0 - peak) + 0.97 * ao * peak
+        b = base_b * (1.0 - peak) + 0.91 * ao * peak
         return (r, g, b)
 
-    mesh = finalize_mesh(bm, name, mat, mtn_vc, uv_scale=0.18, smooth=True)
+    mesh = finalize_mesh(bm, name, mat, mtn_vc, uv_scale=0.22, smooth=False)
     obj = bpy.data.objects.new(name, mesh)
     obj["assetKey"] = name
     obj["assetMaterial"] = "rock"

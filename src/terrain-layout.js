@@ -64,42 +64,129 @@ export function terrainRoadPaths(land){
   return land.roadPaths=roads;
 }
 
-export function paintSettlementPaving(ctx,land,half,scale,mask=false){
-  const color=terrainBiome(land.map).plaza,r=color>>16,g=color>>8&255,b=color&255;
-  const soil=mask?'196,0,0':`${Math.round(r*.72)},${Math.round(g*.65)},${Math.round(b*.52)}`;
-  for(const site of land.startingSites||[]){
-    if(site.type==='dock')continue;
-    const radius=site.r+(site.type==='towncenter'?1.65:.95),size=2*radius;
-    const cx=(site.x+half)*scale,cz=(site.z+half)*scale,wear=(radius+1.4)*scale;
+function paintFlagstonePatch(ctx,cxWorld,czWorld,radius,seed,half,scale,{mask=false,r=160,g=154,b=138,soil='196,0,0',soilAlpha=.42,density=1,square=false}){
+  if(typeof ctx.fill!=='function')return;
+  const size=2*radius,cx=(cxWorld+half)*scale,cz=(czWorld+half)*scale,wear=(radius+1.7)*scale;
+  if(typeof ctx.createRadialGradient==='function'){
     const packed=ctx.createRadialGradient(cx,cz,0,cx,cz,wear);
-    for(const [stop,alpha] of [[0,.87],[.5,.76],[.78,.36],[1,0]]){
-      packed.addColorStop(stop,`rgba(${soil},${mask?alpha*.42:alpha})`);
+    for(const [stop,alpha] of [[0,.86],[.52,.72],[.80,.34],[1,0]]){
+      packed.addColorStop(stop,`rgba(${soil},${(mask?alpha*soilAlpha:alpha).toFixed(3)})`);
     }
     ctx.fillStyle=packed;
     ctx.fillRect(cx-wear,cz-wear,wear*2,wear*2);
-    const rows=Math.ceil(size/1.03),columns=Math.ceil(size/1.32),tileX=size/columns,tileZ=size/rows;
-    const random=seededRandom(land.seed^Math.imul(Math.round(site.x*128),73856093)^Math.imul(Math.round(site.z*128),19349663));
-    for(let row=0;row<rows;row++)for(let column=-1;column<columns;column++){
-      const shift=row%2*.47,start=Math.max(0,column+shift),end=Math.min(columns,column+1+shift);
-      if(end-start<.25)continue;
-      const x=Math.abs((start+end)*.5*tileX-radius),z=Math.abs((row+.5)*tileZ-radius);
-      const edge=radius-Math.max(x,z)-Math.max(0,Math.min(x,z)-radius*.48)*.5;
-      const coverage=smooth(0,.72,edge+(random()-.5)*.72);
-      if(coverage<.12)continue;
-      const grout=.10+random()*.065,shade=.48+random()*.13,vein=(random()-.5)*7;
-      const left=(site.x-radius+start*tileX+grout*.5+half)*scale,right=(site.x-radius+end*tileX-grout*.5+half)*scale;
-      const top=(site.z-radius+row*tileZ+grout*.5+half)*scale,bottom=(site.z-radius+(row+1)*tileZ-grout*.5+half)*scale;
-      const chip=Math.min(right-left,bottom-top)*(.09+random()*.2),alpha=Math.min(1,coverage*1.3).toFixed(2);
-      ctx.fillStyle=mask?`rgba(255,0,0,${alpha})`:`rgba(${Math.round(r*shade+vein)},${Math.round(g*shade+vein*.4)},${Math.round(b*shade-vein*.65)},${alpha})`;
+  }
+  const rows=Math.ceil(size/.96),columns=Math.ceil(size/1.22),tileX=size/columns,tileZ=size/rows;
+  const random=seededRandom(seed^Math.imul(Math.round(cxWorld*128),73856093)^Math.imul(Math.round(czWorld*128),19349663));
+  for(let row=0;row<rows;row++)for(let column=-1;column<columns;column++){
+    const shift=row%2*.48,start=Math.max(0,column+shift),end=Math.min(columns,column+1+shift);
+    if(end-start<.25)continue;
+    const x=Math.abs((start+end)*.5*tileX-radius),z=Math.abs((row+.5)*tileZ-radius);
+    const dist=square?Math.max(x,z)+Math.max(0,Math.min(x,z)-radius*.50)*.42:Math.hypot(x,z);
+    const edge=radius-dist;
+    const coverage=smooth(0,1.05,edge+(random()-.48)*1.15)*density;
+    if(coverage<.14)continue;
+    const grout=.09+random()*.06,shade=.66+random()*.20,vein=(random()-.5)*11;
+    const left=(cxWorld-radius+start*tileX+grout*.5+half)*scale,right=(cxWorld-radius+end*tileX-grout*.5+half)*scale;
+    const top=(czWorld-radius+row*tileZ+grout*.5+half)*scale,bottom=(czWorld-radius+(row+1)*tileZ-grout*.5+half)*scale;
+    const chip=Math.min(right-left,bottom-top)*(.08+random()*.18),alpha=Math.min(1,coverage*1.32).toFixed(2);
+    ctx.fillStyle=mask?`rgba(255,0,0,${alpha})`:`rgba(${Math.min(255,Math.round(r*shade+vein))},${Math.min(255,Math.round(g*shade+vein*.5))},${Math.min(255,Math.round(b*shade-vein*.45))},${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(left+chip,top);
+    ctx.lineTo(right-chip*.7,top);
+    ctx.lineTo(right,top+chip);
+    ctx.lineTo(right,bottom-chip*.65);
+    ctx.lineTo(right-chip,bottom);
+    ctx.lineTo(left+chip*.6,bottom);
+    ctx.lineTo(left,bottom-chip);
+    ctx.lineTo(left,top+chip*.7);
+    ctx.fill();
+  }
+}
+
+export function paintSettlementPaving(ctx,land,half,scale,mask=false){
+  const color=terrainBiome(land.map).plaza,r=Math.min(255,Math.round((color>>16)*1.16)),g=Math.min(255,Math.round((color>>8&255)*1.14)),b=Math.min(255,Math.round((color&255)*1.08));
+  const soil=mask?'196,0,0':`${Math.round(r*.76)},${Math.round(g*.68)},${Math.round(b*.52)}`;
+  // Unifying sunlit AoE2:DE medieval cobblestone town square around each settlement hub
+  for(const town of land.settlements||[]){
+    paintFlagstonePatch(ctx,town.x,town.z,9.4,land.seed^0x217a,half,scale,{mask,r,g,b,soil,soilAlpha:.38,density:.86,square:false});
+  }
+  for(const site of land.startingSites||[]){
+    if(site.type==='dock')continue;
+    const radius=site.r+(site.type==='towncenter'?4.2:site.type==='keep'?3.2:1.45);
+    paintFlagstonePatch(ctx,site.x,site.z,radius,land.seed^0x51a3,half,scale,{mask,r,g,b,soil,soilAlpha:.44,density:1,square:true});
+  }
+  // Paved cobblestone bridgehead aprons linking roads smoothly onto every stone/timber bridge!
+  for(const span of bridgeSpans(land.map)){
+    const cz=spanZ(span);
+    for(const side of [-1,1]){
+      const ax=span.center+side*(span.halfLength+2.1);
+      paintFlagstonePatch(ctx,ax,cz,4.2,land.seed^(side>0?0x71b3:0x39e5),half,scale,{mask,r,g,b,soil,soilAlpha:.45,density:.94,square:true});
+    }
+  }
+}
+
+/** Paints weathered, broken-edge medieval cobblestone flagstones down road cores (matching AoE2:DE paved trade roads). */
+export function strokeCobblestoneRoad(ctx,points,{half,size,canvasSize,connected=false,local=false,mask=false,seed=1,stoneRgb=[204,191,164]}){
+  if(!points||points.length<2||typeof ctx.fill!=='function')return;
+  const scale=canvasSize/size,cum=[0];
+  for(let i=1;i<points.length;i++)cum.push(cum[i-1]+Math.hypot(points[i].x-points[i-1].x,points[i].z-points[i-1].z));
+  const total=cum[cum.length-1]||1,fadeStart=Math.min(total*.06,2.2),fadeEnd=Math.min(total*.28,12.5);
+  const step=mask?(local?.85:.78):(local?.92:.85),halfRoad=local?1.35:2.05;
+  const rng=seededRandom((seed|0)^Math.imul(Math.round(points[0].x*64),73856093)^Math.imul(Math.round(points[0].z*64),19349663));
+  let segIdx=0,row=0;
+  for(let d=0.4;d<total-0.3;d+=step,row++){
+    while(segIdx<points.length-2&&cum[segIdx+1]<d)segIdx++;
+    const segLen=Math.max(1e-4,cum[segIdx+1]-cum[segIdx]),u=(d-cum[segIdx])/segLen;
+    const a=points[segIdx],b=points[segIdx+1];
+    const wx=a.x+(b.x-a.x)*u,wz=a.z+(b.z-a.z)*u;
+    const tx=(b.x-a.x)/segLen,tz=(b.z-a.z)/segLen,nx=-tz,nz=tx;
+    const dStart=Math.min(1,d/Math.max(fadeStart,.01)),dEnd=Math.max(0,Math.min(1,(total-d)/Math.max(fadeEnd,.01)));
+    const taper=connected?1:dEnd*dEnd*(3-2*dEnd)*(.6+.4*dStart);
+    if(taper<.15)continue;
+    if(mask){
+      // Solid broken-edge cobblestone ribbon in the shader mask so bilinear filtering
+      // triggers crisp 1K Poly Haven medieval_blocks_05 pavers along the entire trade road!
+      const coreHalf=(local?1.08:1.68)*taper*(.84+rng()*.26);
+      const halfLen=(step*.72)*scale,ang=Math.atan2(tz,tx)+(rng()-.5)*.14,ca=Math.cos(ang),sa=Math.sin(ang);
+      const px=(wx+nx*((rng()-.5)*.32)+half)*scale,pz=(wz+nz*((rng()-.5)*.32)+half)*scale;
+      const hw=halfLen,hh=coreHalf*scale;
+      const ux=ca*hw,uy=sa*hw,vx=-sa*hh,vy=ca*hh;
+      ctx.fillStyle=`rgba(255,0,0,${Math.min(1,.88*taper+.12).toFixed(2)})`;
       ctx.beginPath();
-      ctx.moveTo(left+chip,top);
-      ctx.lineTo(right-chip*.7,top);
-      ctx.lineTo(right,top+chip);
-      ctx.lineTo(right,bottom-chip*.65);
-      ctx.lineTo(right-chip,bottom);
-      ctx.lineTo(left+chip*.6,bottom);
-      ctx.lineTo(left,bottom-chip);
-      ctx.lineTo(left,top+chip*.7);
+      ctx.moveTo(px-ux-vx,pz-uy-vy);
+      ctx.lineTo(px+ux-vx,pz+uy-vy);
+      ctx.lineTo(px+ux+vx,pz+uy+vy);
+      ctx.lineTo(px-ux+vx,pz-uy+vy);
+      ctx.fill();
+      // Occasional broken stone cobble cluster crumbling outward along the road shoulder
+      if(rng()<.55){
+        const side=row%2?1:-1,off=side*(coreHalf+.45+rng()*.45);
+        const cx=(wx+nx*off+half)*scale,cz=(wz+nz*off+half)*scale,cr=(.48+rng()*.32)*scale;
+        ctx.fillStyle=`rgba(248,0,0,${Math.min(1,.92*taper).toFixed(2)})`;
+        ctx.beginPath();
+        ctx.moveTo(cx-cr,cz-cr*.8);ctx.lineTo(cx+cr,cz-cr*.7);ctx.lineTo(cx+cr*.9,cz+cr*.8);ctx.lineTo(cx-cr*.8,cz+cr*.7);
+        ctx.fill();
+      }
+      continue;
+    }
+    const cols=local?2:3;
+    for(let c=0;c<cols;c++){
+      const lane=((c+.5)/cols-.5)*2*halfRoad*taper+(row%2?.24:-.24)+(rng()-.5)*.28;
+      // Leave organic broken-edge weathered gaps on the outer pavers just like AoE2:DE cobblestone roads!
+      const edgeFrac=Math.abs(lane)/Math.max(.5,halfRoad);
+      if(edgeFrac>.68&&rng()<.32)continue;
+      if(rng()<.06)continue;
+      const px=(wx+nx*lane+half)*scale,pz=(wz+nz*lane+half)*scale;
+      const hw=(.36+rng()*.20)*scale,hh=(.28+rng()*.16)*scale;
+      const ang=Math.atan2(tz,tx)+(rng()-.5)*.24,ca=Math.cos(ang),sa=Math.sin(ang);
+      const ux=ca*hw,uy=sa*hw,vx=-sa*hh,vy=ca*hh;
+      const shade=.78+rng()*.24,vein=(rng()-.5)*14,alpha=Math.min(1,(.82+rng()*.18)*taper).toFixed(2);
+      ctx.fillStyle=`rgba(${Math.min(255,Math.round(stoneRgb[0]*shade+vein))},${Math.min(255,Math.round(stoneRgb[1]*shade+vein*.6))},${Math.min(255,Math.round(stoneRgb[2]*shade-vein*.3))},${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(px-ux-vx,pz-uy-vy);
+      ctx.lineTo(px+ux-vx,pz+uy-vy);
+      ctx.lineTo(px+ux+vx,pz+uy+vy);
+      ctx.lineTo(px-ux+vx,pz-uy+vy);
       ctx.fill();
     }
   }

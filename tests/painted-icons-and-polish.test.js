@@ -8,6 +8,11 @@ import {Simulation} from '../src/simulation.js';
 import {tacticalRangeRadius} from '../src/selection-overlays.js';
 import {inspectorStatsMarkup,unitAttackValue} from '../src/entity-inspector.js';
 import {WarCommsController} from '../src/war-comms.js';
+import {WATER_PALETTES} from '../src/water-surface.js';
+import {strokeCobblestoneRoad} from '../src/terrain-layout.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {registerBiomeArtwork,clearBiomeArtwork,biomeCliffWallGeometry} from '../src/biome-art.js';
 
 test('painted medieval icon atlas covers all resources, units, heroes, buildings, techs and modes',()=>{
   const atlasPath=new URL('../src/ui-art/medieval-icons-atlas.webp',import.meta.url);
@@ -155,4 +160,45 @@ test('Campaign World Map centers atlas top-bar icon chips, progress pill, and ac
   assert.match(css,/\.atlas-progress-pill\{[^}]*justify-content:center/,'atlas-progress-pill centers trophy and count');
   assert.match(css,/#modal-root \.atlas-chip,#modal-root \.atlas-close\{[^}]*padding:0;justify-content:center;align-items:center/,'mobile atlas icon chips override modal button sizing and stay dead-center');
   assert.match(css,/#modal-root \.atlas-act-tab\{[^}]*align-items:center;justify-content:center/,'mobile landscape act tabs center text cleanly');
+});
+
+test('AoE2:DE battlefield upgrades deliver chiseled stone cliffs, sunlit turquoise water palettes, and cobblestone road pavers',async()=>{
+  // 1. Verify sunlit turquoise water palettes on river/coastal/epic maps
+  for(const map of ['rivers','riverland','coast','archipelago','waterfallgorge','templelagoon','ironfall','threecrowns']){
+    const pal=WATER_PALETTES[map];
+    assert.ok(pal,`WATER_PALETTES.${map} is defined`);
+    const sb=pal.shallow&255,sg=(pal.shallow>>8)&255,sr=(pal.shallow>>16)&255;
+    const db=pal.deep&255,dr=(pal.deep>>16)&255;
+    assert.ok(sb>sr*1.8&&sg>sr*1.8,`${map} shallow water is sunlit turquoise (${pal.shallow.toString(16)})`);
+    assert.ok(db>dr*3,`${map} deep water is rich cerulean blue (${pal.deep.toString(16)})`);
+  }
+
+  // 2. Verify cobblestone road painter draws weathered flagstones cleanly onto both mask and color canvases
+  let fills=0,maskRed=false;
+  const mockCtx={
+    fillStyle:'',
+    beginPath(){},moveTo(){},lineTo(){},
+    fill(){fills++;if(/^rgba\((248|255),0,0,/.test(this.fillStyle))maskRed=true;},
+  };
+  strokeCobblestoneRoad(mockCtx,[{x:-20,z:0},{x:20,z:0}],{half:80,size:160,canvasSize:768,connected:true,mask:true,seed:42});
+  assert.ok(fills>=60,`cobblestone road paints weathered flagstone blocks (${fills})`);
+  assert.equal(maskRed,true,'cobblestone road mask raises red channel above paving threshold');
+
+  // 3. Verify Blender chiseled cliffwall carries deep V-cleft AO and stays natural stone (zero neon green on rocks)
+  const bytes=fs.readFileSync(new URL('../src/assets3d/frontier-biome-art.glb',import.meta.url));
+  const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+  registerBiomeArtwork(gltf.scene);
+  try{
+    const cliff=biomeCliffWallGeometry('ironpass');
+    const col=cliff.attributes.color;
+    let minLuma=1,neonGreen=0;
+    for(let i=0;i<col.count;i++){
+      const r=col.getX(i),g=col.getY(i),b=col.getZ(i);
+      minLuma=Math.min(minLuma,(r+g+b)/3);
+      if(g>r*1.15&&g>b*1.25)neonGreen++;
+    }
+    assert.ok(minLuma<0.45,`chiseled cliffwall carries crisp deep V-cleft AO (${minLuma.toFixed(2)})`);
+    assert.equal(neonGreen,0,'cliffwall rock faces stay pure weathered limestone/slate without neon green paint');
+    cliff.dispose();
+  }finally{clearBiomeArtwork();}
 });

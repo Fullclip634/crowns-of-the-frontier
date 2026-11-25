@@ -4,14 +4,18 @@ import {WATER_WAVES_GLSL,waterMotionScale} from './water-waves.js';
 
 export const WATER_PALETTES=Object.freeze({
   river:Object.freeze({shallow:0x838268,deep:0x344f3f,opacity:.94,foam:.22}),
-  coast:Object.freeze({shallow:0x7eb4ad,deep:0x26545c,opacity:.9,foam:.55}),
-  riverland:Object.freeze({shallow:0x7aa89e,deep:0x2b5856,opacity:.92,foam:.32}),
-  archipelago:Object.freeze({shallow:0x88c2be,deep:0x225866,opacity:.88,foam:.66}),
+  rivers:Object.freeze({shallow:0x52e0f4,deep:0x117ac4,opacity:.88,foam:.68}),
+  coast:Object.freeze({shallow:0x58e6f6,deep:0x0f76c0,opacity:.87,foam:.76}),
+  riverland:Object.freeze({shallow:0x4cdcf0,deep:0x137bc0,opacity:.88,foam:.64}),
+  archipelago:Object.freeze({shallow:0x5cebf4,deep:0x0e78bc,opacity:.85,foam:.80}),
   volcanic:Object.freeze({shallow:0x8a6a54,deep:0x3a2c2a,opacity:.96,foam:.23}),
-  waterfallgorge:Object.freeze({shallow:0x6edcf0,deep:0x1975aa,opacity:.88,foam:.70}),
-  frostfallsiege:Object.freeze({shallow:0xa2e0f0,deep:0x2b6e90,opacity:.90,foam:.64}),
-  templelagoon:Object.freeze({shallow:0x66eee4,deep:0x137b94,opacity:.84,foam:.78}),
-  ironfall:Object.freeze({shallow:0x6cd6e8,deep:0x1b6e98,opacity:.89,foam:.62}),
+  waterfallgorge:Object.freeze({shallow:0x5ce8fa,deep:0x117ec8,opacity:.86,foam:.78}),
+  frostfallsiege:Object.freeze({shallow:0x94e6f8,deep:0x1b74b0,opacity:.89,foam:.68}),
+  templelagoon:Object.freeze({shallow:0x5af4ea,deep:0x0c88b2,opacity:.83,foam:.84}),
+  ironfall:Object.freeze({shallow:0x52e0f6,deep:0x1278be,opacity:.87,foam:.72}),
+  threecrowns:Object.freeze({shallow:0x52e0f4,deep:0x127ac2,opacity:.88,foam:.66}),
+  sunderedpass:Object.freeze({shallow:0x50def2,deep:0x1478be,opacity:.88,foam:.64}),
+  deepwoodravine:Object.freeze({shallow:0x4edae8,deep:0x1374b2,opacity:.89,foam:.62}),
 });
 
 export function configureWaterPalette(material,map){
@@ -99,22 +103,29 @@ export function configureWaterSurface(material){
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
       float frontierShore = vFrontierWaterBank.y;
       float frontierDepth = min(max(0.0, vFrontierWaterBank.x), frontierShore * 1.6);
-      float frontierAbsorption = 1.0 - exp(-frontierDepth * 1.65);
-      // Spectral Beer-Lambert transmittance: red absorbs faster than green/blue for realistic shallow clarity.
-      vec3 frontierTransmit = exp(-frontierDepth * vec3(2.05, 1.38, 1.08));
+      float frontierAbsorption = 1.0 - exp(-frontierDepth * 1.48);
+      // Spectral Beer-Lambert transmittance: red absorbs faster than green/blue for sunlit AoE2:DE turquoise clarity.
+      vec3 frontierTransmit = exp(-frontierDepth * vec3(1.95, 1.04, 0.72));
       float frontierCurrent = sin(vFrontierWaterXZ.x * 1.22 + sin(vFrontierWaterXZ.y * 0.34 + frontierWaterTime * 0.34) * 0.86 + vFrontierWaterXZ.y * 0.13 - frontierWaterTime * 0.55);
-      vec3 frontierWaterBase = mix(frontierWaterDeep, frontierWaterShallow, clamp(frontierTransmit * 0.65 + (1.0 - frontierAbsorption) * 0.35, 0.0, 1.0));
-      // Subtle submerged pebble/sandbed micro-variation visible through crystal-clear shallows.
-      float frontierShallowVis = (1.0 - smoothstep(0.06, 0.92, frontierDepth)) * smoothstep(0.0, 0.30, frontierShore);
+      // Organic wind-swept sunlit turquoise surface ripple streaks (domain-warped noise — zero regular polka-dots!)
+      vec2 frontierRippleFlow = vec2(frontierWaterTime * 0.22, -frontierWaterTime * 0.14);
+      float frontierFlowWarp = frontierWaterNoise(vFrontierWaterXZ * 0.24 + frontierRippleFlow * 0.35) * 2.4;
+      float frontierStreakA = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 0.42 + frontierFlowWarp, vFrontierWaterXZ.y * 1.85 - frontierWaterTime * 0.32));
+      float frontierStreakB = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 1.15 - frontierFlowWarp * 0.65, vFrontierWaterXZ.y * 3.4 + frontierWaterTime * 0.42));
+      float frontierWaveStreak = smoothstep(0.56, 0.88, frontierStreakA * 0.62 + frontierStreakB * 0.38) * smoothstep(0.22, 1.05, frontierShore);
+      vec3 frontierWaterBase = mix(frontierWaterDeep, frontierWaterShallow, clamp(frontierTransmit * 0.68 + (1.0 - frontierAbsorption) * 0.32, 0.0, 1.0));
+      // Subtle submerged sandy/pebble bed glow visible through crystal-clear shallows.
+      float frontierShallowVis = (1.0 - smoothstep(0.06, 0.98, frontierDepth)) * smoothstep(0.0, 0.30, frontierShore);
       if (frontierWaterDetail > 0.5 && frontierShallowVis > 0.01) {
         float frontierBedA = frontierWaterNoise(vFrontierWaterXZ * 2.4);
         float frontierBedB = frontierWaterNoise(vFrontierWaterXZ * 6.2 + vec2(3.7, 1.9));
         float frontierPebbles = mix(frontierBedA, frontierBedB, 0.45);
-        vec3 frontierBedTint = frontierWaterShallow * mix(vec3(0.84, 0.80, 0.68), vec3(1.16, 1.11, 0.96), frontierPebbles);
-        frontierWaterBase = mix(frontierWaterBase, frontierBedTint, frontierShallowVis * 0.42);
+        vec3 frontierBedTint = frontierWaterShallow * mix(vec3(0.92, 0.90, 0.76), vec3(1.18, 1.16, 1.02), frontierPebbles);
+        frontierWaterBase = mix(frontierWaterBase, frontierBedTint, frontierShallowVis * 0.46);
       }
-      diffuseColor.rgb *= frontierWaterBase * (1.0 + frontierCurrent * 0.085);
-      if (frontierWaterDetail > 0.5 && frontierDepth < 1.25) {
+      diffuseColor.rgb *= frontierWaterBase * (1.02 + frontierCurrent * 0.095);
+      diffuseColor.rgb += (frontierWaterShallow * 0.55 + vec3(0.32, 0.52, 0.58)) * frontierWaveStreak * 0.22 * frontierWaterLight;
+      if (frontierWaterDetail > 0.5 && frontierDepth < 1.35) {
         vec2 frontierWarp = vec2(
           frontierWaterNoise(vFrontierWaterXZ * 0.72 + vec2(frontierWaterTime * 0.11, -frontierWaterTime * 0.08)) - 0.5,
           frontierWaterNoise(vFrontierWaterXZ * 0.78 - vec2(frontierWaterTime * 0.09, frontierWaterTime * 0.12)) - 0.5
@@ -123,13 +134,13 @@ export function configureWaterSurface(material){
         float frontierCausticA = frontierWaterNoise(frontierCausticUv * 1.55 + vec2(frontierWaterTime * 0.24, frontierWaterTime * 0.15));
         float frontierCausticB = frontierWaterNoise(frontierCausticUv * 2.35 - vec2(frontierWaterTime * 0.18, -frontierWaterTime * 0.26));
         float frontierCausticC = frontierWaterNoise(frontierCausticUv * 3.8 + vec2(-frontierWaterTime * 0.21, frontierWaterTime * 0.19));
-        float frontierWeb = pow(max(0.0, 1.0 - abs(frontierCausticA - frontierCausticB) * 2.15), 4.2);
-        float frontierShimmer = pow(max(0.0, 1.0 - abs(frontierCausticB - frontierCausticC) * 2.3), 3.6) * 0.45;
-        float frontierCaustic = (frontierWeb + frontierShimmer) * (1.0 - frontierAbsorption * 0.85) * frontierWaterLight;
-        diffuseColor.rgb += (frontierWaterShallow * 0.65 + frontierWaterSunColor * 0.45) * frontierCaustic * (1.0 - smoothstep(0.55, 1.25, frontierDepth)) * 0.34;
+        float frontierWeb = pow(max(0.0, 1.0 - abs(frontierCausticA - frontierCausticB) * 2.15), 4.0);
+        float frontierShimmer = pow(max(0.0, 1.0 - abs(frontierCausticB - frontierCausticC) * 2.3), 3.5) * 0.48;
+        float frontierCaustic = (frontierWeb + frontierShimmer) * (1.0 - frontierAbsorption * 0.80) * frontierWaterLight;
+        diffuseColor.rgb += (frontierWaterShallow * 0.70 + frontierWaterSunColor * 0.48) * frontierCaustic * (1.0 - smoothstep(0.60, 1.35, frontierDepth)) * 0.40;
       }
-      float frontierWetEdge = smoothstep(0.0, 0.38, frontierShore) * smoothstep(0.0, 0.18, frontierDepth);
-      diffuseColor.a *= mix(0.24, 1.0, smoothstep(0.0, 0.85, frontierAbsorption)) * frontierWetEdge;`);
+      float frontierWetEdge = smoothstep(0.0, 0.36, frontierShore) * smoothstep(0.0, 0.16, frontierDepth);
+      diffuseColor.a *= mix(0.28, 1.0, smoothstep(0.0, 0.82, frontierAbsorption)) * frontierWetEdge;`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       if (frontierWaterRipples > 0.0) {
         float frontierDistortion = 0.0;
@@ -168,8 +179,8 @@ export function configureWaterSurface(material){
         float frontierWash = 0.12 * sin(dot(vFrontierWaterXZ, vec2(0.27, 0.58)) + frontierWaterTime * 1.15) + (frontierCells - 0.5) * 0.20;
         float frontierWaterline = (1.0 - smoothstep(0.14, 0.58, frontierDepth + frontierWash)) * (1.0 - smoothstep(0.55, 1.55, frontierShore));
         float frontierLacing = smoothstep(0.30, 0.76, frontierFoamNoise) * smoothstep(0.04, 0.20, frontierShore);
-        float frontierFoamMask = clamp((frontierWaterline * 0.85 + frontierSurfBand * 0.55) * frontierLacing * frontierWaterFoam, 0.0, 0.92);
-        vec3 frontierFoamColor = mix(vec3(0.82, 0.87, 0.84), vec3(0.95, 0.97, 0.95), frontierSurfBand) * frontierWaterLight;
+        float frontierFoamMask = clamp((frontierWaterline * 0.94 + frontierSurfBand * 0.64) * frontierLacing * frontierWaterFoam, 0.0, 0.95);
+        vec3 frontierFoamColor = mix(vec3(0.88, 0.95, 0.97), vec3(0.99, 1.0, 1.0), frontierSurfBand) * frontierWaterLight;
         outgoingLight = mix(outgoingLight, frontierFoamColor, frontierFoamMask);
       }
       if (vFrontierWaterBank.z > 0.02) {
@@ -177,11 +188,11 @@ export function configureWaterSurface(material){
         float frontierPierPulse = 0.5 + 0.5 * sin(vFrontierWaterXZ.y * 3.8 - frontierWaterTime * 4.4 + abs(vFrontierWaterXZ.x) * 1.4);
         float frontierPierNoise = frontierWaterNoise(vFrontierWaterXZ * 2.9 - vec2(0.0, frontierWaterTime * 0.65));
         float frontierPierFoam = clamp(frontierPierWake * (0.48 + 0.52 * frontierPierPulse) * smoothstep(0.22, 0.78, frontierPierNoise + frontierPierWake * 0.35), 0.0, 0.78);
-        outgoingLight = mix(outgoingLight, vec3(0.90, 0.94, 0.93) * frontierWaterLight, frontierPierFoam);
+        outgoingLight = mix(outgoingLight, vec3(0.94, 0.98, 1.0) * frontierWaterLight, frontierPierFoam);
       }
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v12';material.needsUpdate=true;
+  material.customProgramCacheKey=()=> 'frontier-water-depth-weather-v13';material.needsUpdate=true;
 }
 
 export function animateWaterSurface(view){
