@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import WebSocket from 'ws';
+import {gzipSync} from 'node:zlib';
+import {MODEL_GZIP_DIR,modelGzipName} from '../server/model-transfer.js';
 import {inspectRelease,writeReleaseManifest} from '../server/release.js';
 import {createGameServer} from '../server/http-app.js';
 import {verifyRelease} from '../scripts/verify-release.mjs';
@@ -31,6 +33,44 @@ test('a verified game package reports its actual commit/build and serves its exa
   }
   const ws=new WebSocket(app.base.replace('http:','ws:')+'/socket');t.after(()=>ws.terminate());await new Promise((resolve,reject)=>{ws.once('open',resolve);ws.once('error',reject);});
   const pong=new Promise(resolve=>ws.once('message',raw=>resolve(JSON.parse(raw))));ws.send(JSON.stringify({type:'ping',stamp:42}));assert.deepEqual(await pong,{type:'pong',stamp:42});ws.close();
+});
+
+test('serves a verified smaller gzip model and preserves identity and ranged requests', async t=>{
+  const {root}=fixture(t);
+  const filename='frontier-low-test.glb',url='/assets/'+filename;
+  const original=Buffer.from('model bytes '.repeat(128)),compressed=gzipSync(original);
+  fs.writeFileSync(path.join(root,url.slice(1)),original);
+  fs.mkdirSync(path.join(root,MODEL_GZIP_DIR));
+  fs.writeFileSync(path.join(root,modelGzipName(filename)),compressed);
+  const {base}=await serve(t,root,{});
+
+  const encoded=await fetch(base+url,{headers:{'Accept-Encoding':'br, gzip'}});
+  assert.equal(encoded.status,200);
+  assert.equal(encoded.headers.get('content-type'),'model/gltf-binary');
+  assert.equal(encoded.headers.get('content-encoding'),'gzip');
+  assert.equal(encoded.headers.get('content-length'),String(compressed.length));
+  assert.equal(encoded.headers.get('x-uncompressed-length'),String(original.length));
+  assert.equal(encoded.headers.get('vary'),'Accept-Encoding');
+  assert.deepEqual(Buffer.from(await encoded.arrayBuffer()),original);
+
+  for(const headers of [
+    {'Accept-Encoding':'identity'},
+    {'Accept-Encoding':'gzip;q=0, *;q=1'},
+    {'Accept-Encoding':'gzip;q=0.1, identity;q=1'},
+    {'Accept-Encoding':'gzip',Range:'bytes=0-15'},
+  ]){
+    const identity=await fetch(base+url,{headers});
+    assert.equal(identity.headers.get('content-encoding'),null);
+    assert.equal(identity.headers.get('content-length'),String(original.length));
+    assert.equal(identity.headers.get('vary'),'Accept-Encoding');
+    assert.deepEqual(Buffer.from(await identity.arrayBuffer()),original);
+  }
+
+  const head=await fetch(base+url,{method:'HEAD',headers:{'Accept-Encoding':'gzip'}});
+  assert.equal(head.headers.get('content-encoding'),'gzip');
+  assert.equal(head.headers.get('content-length'),String(compressed.length));
+  assert.equal((await head.arrayBuffer()).byteLength,0);
+  assert.equal((await fetch(base+'/'+modelGzipName(filename))).status,404);
 });
 
 test('missing chunks and a build from another commit cannot pass hosted readiness or accept rooms',async t=>{

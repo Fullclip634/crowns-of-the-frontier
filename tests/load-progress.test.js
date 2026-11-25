@@ -42,6 +42,24 @@ test('readAssetResponse streams bytes and reports progress', async () => {
   off();
 });
 
+test('asset progress counts decoded bytes for compressed transfers', async t=>{
+  resetAssetProgress();
+  const seen=[];
+  t.after(onAssetProgress(snapshot=>seen.push(snapshot)));
+  const payload=new Uint8Array([1,2,3,4,5,6,7,8]);
+  const stream=new ReadableStream({start(controller){
+    controller.enqueue(payload.subarray(0,4));
+    controller.enqueue(payload.subarray(4));
+    controller.close();
+  }});
+  const response=new Response(stream,{headers:{
+    'content-encoding':'gzip','content-length':'4','x-uncompressed-length':'8',
+  }});
+  assert.deepEqual(new Uint8Array(await readAssetResponse(response,'compressed','Model')),payload);
+  assert.equal(seen.find(snapshot=>snapshot.loaded===4).percent,50);
+  assert.equal(seen.at(-1).percent,100);
+});
+
 test('readAssetResponse falls back to arrayBuffer for mock responses', async () => {
   const bytes = new Uint8Array([9, 8, 7]).buffer;
   const response = {ok: true, arrayBuffer: async () => bytes};

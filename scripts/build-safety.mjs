@@ -3,6 +3,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execSync} from 'node:child_process';
 import {Script} from 'node:vm';
+import {gunzipSync} from 'node:zlib';
+import {MODEL_GZIP_DIR} from '../server/model-transfer.js';
 import {inspectRelease} from '../server/release.js';
 
 // A build is only publishable if every emitted byte survived the write. Vite's
@@ -126,6 +128,27 @@ export function validateBuild(root, {sourceDir = null, minimumCatalogues = 0} = 
       if (!isFile(source)) { failures.push(`missing-catalogue-source:${sourceName}`); continue; }
       if (fs.statSync(file).size !== fs.statSync(source).size) {
         failures.push(`truncated-catalogue:${path.basename(file)}`);
+      }
+    }
+  }
+
+  const transfers=path.join(root,MODEL_GZIP_DIR);
+  if(fs.existsSync(transfers)){
+    for(const name of fs.readdirSync(transfers)){
+      const original=path.join(assets,name.slice(0,-3));
+      const file=path.join(transfers,name);
+      if(!name.endsWith('.glb.gz')||!isFile(original)||!isFile(file)){
+        failures.push('unexpected-model-transfer:'+name);
+        continue;
+      }
+      try{
+        const uncompressed=fs.readFileSync(original),compressed=fs.readFileSync(file);
+        if(compressed.length>=uncompressed.length||
+          !gunzipSync(compressed,{maxOutputLength:uncompressed.length}).equals(uncompressed)){
+          failures.push('invalid-model-transfer:'+name);
+        }
+      }catch{
+        failures.push('invalid-model-transfer:'+name);
       }
     }
   }

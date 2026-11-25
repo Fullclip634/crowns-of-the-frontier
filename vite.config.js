@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execSync} from 'node:child_process';
 import {Script} from 'node:vm';
+import {gzipSync} from 'node:zlib';
+import {modelGzipName} from './server/model-transfer.js';
 import {writeReleaseManifest} from './server/release.js';
 import {precacheFiles} from './scripts/offline-assets.js';
 import {fingerprintBuildId} from './scripts/build-safety.mjs';
@@ -26,6 +28,15 @@ export default defineConfig({
   plugins:[{name:'offline-game',
     configResolved(config){projectRoot=config.root;outputDirectory=path.resolve(config.root,config.build.outDir);},
     transformIndexHtml(){return [{tag:'meta',attrs:{name:'frontier-build',content:buildId},injectTo:'head'}];},
+    generateBundle(_options,bundle){
+      for(const asset of Object.values(bundle)){
+        if(asset.type!=='asset'||!asset.fileName.startsWith('assets/')||!asset.fileName.endsWith('.glb'))continue;
+        const compressed=gzipSync(asset.source,{level:6});
+        if(compressed.length<asset.source.length){
+          this.emitFile({type:'asset',fileName:modelGzipName(asset.fileName),source:compressed});
+        }
+      }
+    },
     // writeBundle runs only after a successful emit. closeBundle is also
     // invoked from Rollup's finally on failure, where a release error would
     // mask the actual build failure.

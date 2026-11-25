@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {gzipSync} from 'node:zlib';
+import {MODEL_GZIP_DIR,modelGzipName} from '../server/model-transfer.js';
 import {writeReleaseManifest} from '../server/release.js';
 import {fingerprintBuildId, validateBuild, publishStaging} from '../scripts/build-safety.mjs';
 import {build} from '../scripts/build-safe.mjs';
@@ -75,6 +77,22 @@ test('a partially written GLB is rejected by size parity with its source', t => 
   const result = validateBuild(root, {sourceDir: path.join(root, 'sources'), minimumCatalogues: 4});
   assert.equal(result.ok, false);
   assert.ok(result.failures.includes('truncated-catalogue:frontier-near-HASH123.glb'));
+});
+
+test('validates the compressed model against its source bytes',t=>{
+  const {root,assets}=fixture(t,{catalogues:1});
+  const filename='frontier-low-HASH123.glb';
+  const original=fs.readFileSync(path.join(assets,filename));
+  fs.mkdirSync(path.join(root,MODEL_GZIP_DIR));
+  const transfer=path.join(root,modelGzipName(filename));
+  const compressed=gzipSync(original);
+  fs.writeFileSync(transfer,compressed);
+  assert.equal(validateBuild(root).ok,true);
+
+  fs.writeFileSync(transfer,compressed.subarray(0,-4));
+  assert.ok(validateBuild(root).failures.includes('invalid-model-transfer:'+filename+'.gz'));
+  fs.writeFileSync(transfer,gzipSync(Buffer.alloc(original.length,99)));
+  assert.ok(validateBuild(root).failures.includes('invalid-model-transfer:'+filename+'.gz'));
 });
 
 test('a zero-byte asset outside the release manifest is still rejected', t => {

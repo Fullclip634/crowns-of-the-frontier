@@ -38,7 +38,9 @@ export function reportAssetProgress(id, {loaded = 0, total = 0, label = ''} = {}
 // browsers without ReadableStream support.
 export async function readAssetResponse(response, id, label) {
   if (!response.body?.getReader || !listeners.size) return response.arrayBuffer();
-  const declared = Number(response.headers?.get?.('content-length')) || 0;
+  const encoding=response.headers?.get?.('content-encoding');
+  const uncompressed=response.headers?.get?.('x-uncompressed-length');
+  const declared=Number(uncompressed||(!encoding||encoding==='identity'?response.headers?.get?.('content-length'):0))||0;
   const reader = response.body.getReader();
   const chunks = [];
   let loaded = 0;

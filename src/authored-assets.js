@@ -53,7 +53,7 @@ export function useSharedTrees(catalogue,trees){
 
 async function sharedTreeCatalogue(){
   if(!treesPending)treesPending=(async()=>{
-    const response=await fetch(sources.trees);if(!response.ok)throw new Error(`Tree asset request failed (${response.status}).`);
+    const response=await fetch(sources.trees,{priority:'high'});if(!response.ok)throw new Error(`Tree asset request failed (${response.status}).`);
     const buffer=await readAssetResponse(response,'trees','Woodland'),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');
     return sharedTrees=registerSharedTrees(gltf,buffer.byteLength);
   })();
@@ -102,7 +102,7 @@ export function registerAuthoredAssets(gltf,detail='high',bytes=0,activate=true)
 const detailFor=quality=>['high','medium'].includes(quality)?quality:'low';
 async function catalogueFor(detail){
   if(!pending.has(detail))pending.set(detail,(async()=>{
-    const [response,trees]=await Promise.all([fetch(sources[detail]),sharedTreeCatalogue()]);
+    const [response,trees]=await Promise.all([fetch(sources[detail],{priority:detail==='far'?'low':'high'}),sharedTreeCatalogue()]);
     if(!response.ok)throw new Error(`3D asset request failed (${response.status}).`);
     const buffer=await readAssetResponse(response,detail,'3D models');
     const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
