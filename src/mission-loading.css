@@ -160,7 +160,20 @@
   border-top:1px solid rgba(214,179,102,.32);
   display:flex;align-items:center;justify-content:center;
 }
-.chronicle-progress-wrap{padding:5px 0;font-size:12px;color:#c9d6be}
+.chronicle-progress-wrap{width:100%;display:flex;flex-direction:column;gap:6px}
+.chronicle-progress-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;color:#c9d6be}
+.chronicle-progress-meta strong{color:#f0cf7b;font-variant-numeric:tabular-nums}
+.chronicle-progress-track{
+  width:100%;height:10px;border-radius:999px;overflow:hidden;
+  background:rgba(28,42,34,.92);border:1px solid rgba(214,179,102,.42);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.55);
+}
+.chronicle-progress-track i{
+  display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#a68436,#f0cf7b,#ffe7a8);
+  box-shadow:0 0 12px rgba(240,207,123,.45);
+  transition:width .24s ease-out;
+}
 .chronicle-begin-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:12px;
   min-height:48px;padding:11px 30px;border-radius:5px;
@@ -188,5 +201,8 @@
   .chronicle-prose p{font-size:13.5px;line-height:1.4}
   .chronicle-prose p.dropcap::first-letter{font-size:32px}
   .chronicle-footer{padding:8px 14px}
+  .chronicle-progress-wrap{gap:4px}
+  .chronicle-progress-meta{font-size:10.5px}
+  .chronicle-progress-track{height:8px}
   .chronicle-begin-btn{min-height:38px;padding:7px 20px;font-size:12px}
 }

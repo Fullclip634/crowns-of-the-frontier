@@ -139,9 +139,9 @@ function issueAllyOrder(kind){
   replayRecorder.note('allyOrder',kind,view.target.x,view.target.z);
   return warComms.issueAllyOrder(sim,view,kind);
 }
-let lastEndResult=null,summaryTab='overview',summaryMetric='scores',settingsTab='graphics',hubDraft=null,exploringEnd=false,activeReplay=null,lastReplayRecord=null,chronicleActive=false;
+let lastEndResult=null,summaryTab='overview',summaryMetric='scores',settingsTab='graphics',hubDraft=null,exploringEnd=false,activeReplay=null,lastReplayRecord=null,chronicleActive=false,chronicleTimer=0,chronicleFrameReady=false,chronicleVisualReady=false;
 function applyHudPreferences(){if(!hudEl)return;hudEl.dataset.minimapSide=settings.minimapSide==='right'?'right':'left';hudEl.dataset.hudScale=String(settings.hudScale||'1');}
-function refreshLanding(){const el=$('#landing');if(!el)return;el.innerHTML=landingMarkup(latestSaveSummary());if(typeof refreshInstallEntry==='function')refreshInstallEntry();if(startupFailure)for(const b of el.querySelectorAll('button'))b.disabled=true;}
+function refreshLanding(){const el=$('#landing');if(!el)return;el.innerHTML=landingMarkup(latestSaveSummary());if(typeof refreshInstallEntry==='function')refreshInstallEntry();if(!view||startupFailure)for(const b of el.querySelectorAll('button'))b.disabled=true;}
 let objectivesUserToggled=false,objectiveChangedAt=0;
 let allianceRecipient=null;
 let modalOpener=null;
@@ -155,8 +155,12 @@ const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const warComms=new WarCommsController($('#hud'),{audio,settings,onPing:(x,z,kind,label)=>dropTacticalPing(x,z,kind,label)});
 
-let startupRenderer,startupFailure,startupTask,startupAction,startupSplash;
+let startupRenderer,startupFailure,startupTask,startupAction;
 let startupLabel='Initializing 3D renderer…',startupPercent=4;
+const landingBootEl=$('#landing');
+if(landingBootEl){landingBootEl.inert=true;for(const b of landingBootEl.querySelectorAll('button'))b.disabled=true;}
+let startupSplash=createStartupSplash($('#app'));
+startupSplash.setStatus(startupLabel,startupPercent);
 
 const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
 const requestedRenderer=preferredRenderer(location.href,graphicsSession);
@@ -211,6 +215,8 @@ async function initializeBattlefield(){
     if(percent!==null)reportStartup('Loading '+label+'…',Math.max(8,Math.round(percent*.92)));
   });
   reportStartup('Loading battlefield artwork…',8);
+  let modelsReady=false,surfacesReady=false,attemptActive=true;
+  const reportStages=()=>{if(attemptActive)reportStartup(modelsReady&&!surfacesReady?'Adding battlefield surfaces…':surfacesReady&&!modelsReady?'Loading buildings and troops…':'Preparing your kingdom…',modelsReady||surfacesReady?90:null);};
   try{
     const requestedQuality=settings.quality;
     const [loadedQuality]=await Promise.all([
@@ -225,8 +231,8 @@ async function initializeBattlefield(){
         // Optional: a missing or failed distant catalogue must never prevent
         // the game from starting. It only enables the extra LOD tier.
         settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
-      ]).then(([quality])=>quality),
-      loadSurfaceAssets(requestedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Detailed surfaces could not load:',error.message)),
+      ]).then(([quality])=>{modelsReady=true;reportStages();return quality;}),
+      loadSurfaceAssets(requestedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;reportStages();}),
     ]);
     if(renderClosed)return false;
     if(loadedQuality!==requestedQuality){
@@ -235,14 +241,16 @@ async function initializeBattlefield(){
       await loadSurfaceAssets(loadedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Cached battlefield surfaces could not load:',error.message));
     }
   }catch(error){
+    attemptActive=false;
     console.warn('Battlefield artwork could not load:',error.message);
     return false;
   }finally{
+    attemptActive=false;
     stopAssetProgress();
   }
   if(renderClosed)return false;
 
-  reportStartup('Preparing the battlefield…',96);
+  reportStartup('Raising the citadel…',96);
   try{
     view=new WorldView($('#world'),settings,startupRenderer);
     view.onGraphicsFailure=failure=>recordGraphicsFailure(failure);
@@ -270,8 +278,30 @@ function prepareBattlefield(){
   return startupTask;
 }
 
-// The painted menu is usable while the current quality's assets load.
-// Gameplay and room connections wait for the same preparation attempt.
+async function bootBattlefield(){
+  const landingEl=$('#landing');
+  const splash=startupSplash||(startupSplash=createStartupSplash($('#app')));
+  if(landingEl){landingEl.inert=true;for(const b of landingEl.querySelectorAll('button'))b.disabled=true;}
+  splash.setStatus(startupLabel,startupPercent);
+  let ready=false;
+  try{
+    ready=await prepareBattlefield();
+    while(!ready&&!startupFailure&&!renderClosed){
+      await splash.showError('The battlefield artwork could not load.','Check your connection, then try again.');
+      startupPercent=4;
+      splash.resetProgress('Preparing your kingdom…');
+      ready=await prepareBattlefield();
+    }
+  }finally{
+    if(startupSplash===splash)startupSplash=null;
+    splash.dismiss();
+    if(landingEl&&!startupFailure)landingEl.inert=false;
+    refreshLanding();
+  }
+  return ready;
+}
+
+// Keep gameplay and room entry guarded if invoked before startup completes.
 function withBattlefield(callback){
   if(view)return callback();
   if(startupFailure||renderClosed)return;
@@ -280,7 +310,8 @@ function withBattlefield(callback){
   const roots=[$('#landing'),$('#modal-root')];
   const opener=document.activeElement;
   for(const root of roots)root.inert=true;
-  const splash=startupSplash=createStartupSplash($('#app'));
+  const ownedSplash=!startupSplash;
+  const splash=startupSplash||(startupSplash=createStartupSplash($('#app')));
   splash.setStatus(startupLabel,startupPercent);
   splash.el.tabIndex=-1;
   splash.el.focus({preventScroll:true});
@@ -291,12 +322,15 @@ function withBattlefield(callback){
       ready=await prepareBattlefield();
       while(!ready&&!startupFailure&&!renderClosed){
         await splash.showError('The battlefield artwork could not load.','Check your connection, then try again.');
-        splash.resetProgress('Preparing the battlefield…');
+        startupPercent=4;
+        splash.resetProgress('Preparing your kingdom…');
         ready=await prepareBattlefield();
       }
     }finally{
-      startupSplash=null;
-      splash.dismiss();
+      if(ownedSplash){
+        if(startupSplash===splash)startupSplash=null;
+        splash.dismiss();
+      }
       if(!startupFailure){
         for(const root of roots)root.inert=false;
         if(opener?.isConnected)opener.focus({preventScroll:true});
@@ -402,9 +436,33 @@ function launchCustom(multiplayer){
 function showJournal(){if(!sim.campaignState||sim.campaignState.legacy)return;if(playing)paused=true;showModal('<div class="eyebrow">THE FRONTIER CHRONICLES</div><h2>Campaign journal.</h2><div class="campaign-journal">'+sim.campaignState.history.map(entry=>'<article><span>'+esc(entry.speaker)+' · '+formatTime(entry.time)+'</span><p>'+esc(entry.text)+'</p></article>').join('')+'</div><p class="journal-optional">Optional goal: '+esc(CAMPAIGN_SCRIPTS[sim.options.mode].optional.text)+'</p>','journal-game',true);}
 function clearCommanderDialogue(){clearTimeout(dialogueTimer);const box=$('#commander-dialogue');if(box){box.classList.add('hidden');box.innerHTML='';}}
 function clearChronicleOverlay(){
+  clearTimeout(chronicleTimer);
+  chronicleTimer=0;
   chronicleActive=false;
+  chronicleFrameReady=false;
+  chronicleVisualReady=false;
   const root=$('#chronicle-root');
   if(root){root.hidden=false;root.innerHTML='';}
+}
+function setChronicleProgress(pct,msg){
+  const fill=$('#chronicle-progress-fill'),lbl=$('#chronicle-status-text'),num=$('#chronicle-percent'),bar=$('#chronicle-progressbar');
+  if(fill)fill.style.width=`${pct}%`;
+  if(lbl)lbl.textContent=msg;
+  if(num)num.textContent=`${pct}%`;
+  if(bar)bar.setAttribute('aria-valuenow',String(pct));
+}
+function syncChronicleReady(){
+  if(!chronicleActive)return;
+  const ready=chronicleFrameReady&&chronicleVisualReady&&!worldEl.classList.contains('world-poster')&&!view?.graphicsFatal;
+  if(ready){
+    setChronicleProgress(100,'Battlefield ready.');
+  }else if(chronicleVisualReady&&!chronicleFrameReady){
+    setChronicleProgress(92,'Finalizing battlefield lighting & shadows…');
+  }
+  $('#chronicle-progress-wrap')?.classList.toggle('hidden',ready);
+  const button=$('#chronicle-begin-btn');
+  button?.classList.toggle('hidden',!ready);
+  if(ready)button?.focus({preventScroll:true});
 }
 function beginFromChronicle(){if(!chronicleActive||worldEl.classList.contains('world-poster')||view?.graphicsFatal)return;clearChronicleOverlay();if(!playing||!sim)return;paused=false;lastRender=last=performance.now();simulationPacer.reset();accumulator=0;audio.unlock();if(settings.warHorns!==false)audio.warHorn?.();const focusTarget=sim.owned(0,'building','towncenter')[0]||sim.owned(0,'unit','king')[0]||sim.owned(0,'unit')[0];if(focusTarget)view?.focus?.(focusTarget.x,focusTarget.z);const introScript=CAMPAIGN_SCRIPTS[sim.options.mode];if(introScript){showCommanderDialogue(introScript.speaker,sim.mission?`Chapter ${sim.mission.chapter} · ${sim.mission.name}`:'',introScript.intro,16000);warComms.speak({speaker:introScript.speaker,role:'ally',faction:sim.players?.[0]?.faction||'alder',text:introScript.intro,showBanner:false});}else{warComms.announceOpening(sim);toast(isAISpectator()?'Select a kingdom on the roster to follow the battle.':'Your kingdom awaits. Select a villager or your town center.');}}
 function openChronicleOverlay(options){
@@ -412,15 +470,24 @@ function openChronicleOverlay(options){
   const root=$('#chronicle-root');
   if(!root)return;
   chronicleActive=true;
+  chronicleFrameReady=false;
+  chronicleVisualReady=false;
   paused=true;
   root.innerHTML=missionLoadingMarkup(options);
+  setChronicleProgress(35,'Carving terrain passes & stone cliffs…');
+  chronicleTimer=setTimeout(()=>{
+    if(!chronicleActive)return;
+    setChronicleProgress(78,'Fortifying castles & deploying regiments…');
+    chronicleTimer=setTimeout(()=>{
+      if(!chronicleActive)return;
+      chronicleVisualReady=true;
+      syncChronicleReady();
+    },340);
+  },280);
 }
 function setChronicleReady(ready){
-  if(!chronicleActive)return;
-  $('#chronicle-progress-wrap')?.classList.toggle('hidden',ready);
-  const button=$('#chronicle-begin-btn');
-  button?.classList.toggle('hidden',!ready);
-  if(ready)button?.focus({preventScroll:true});
+  chronicleFrameReady=Boolean(ready);
+  syncChronicleReady();
 }
 function showCommanderDialogue(speaker,title,text,duration=9500){const box=$('#commander-dialogue');if(!box||!text)return;clearTimeout(dialogueTimer);warComms?.hideBanner?.();box.innerHTML=commanderBannerMarkup({speaker,title,text});box.classList.remove('hidden');dialogueTimer=setTimeout(clearCommanderDialogue,duration);}
 function showCampaign(focusId=null){chat.close(false);if(!modal)modalOpener=document.activeElement;if(playing)paused=true;edgeScroll.reset();if(focusId)atlasSelectedId=focusId;else if(!atlasSelectedId)atlasSelectedId=nextCampaignMissionId(progress,atlasFreeSelect);modal='campaign';$('#modal-root').innerHTML=`<div class="modal-backdrop atlas-backdrop">${campaignMapMarkup({progress,selectedId:atlasSelectedId,actFilter:atlasActFilter,freeSelect:atlasFreeSelect,setupOptions})}</div>`;$('#modal-root [data-atlas-launch],#modal-root .atlas-close')?.focus({preventScroll:true});}
@@ -808,7 +875,7 @@ $('#control-groups-bar')?.addEventListener('contextmenu',event=>{const el=event.
  document.addEventListener('input',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);const lbl=event.target.id&&document.querySelector(`[data-vol-label="${event.target.id}"]`);if(lbl)lbl.textContent=`${Math.round(Number(event.target.value)*100)}%`;});
  document.addEventListener('change',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);});
 document.addEventListener('change',event=>{updateSetupDescriptions();if(modal==='lan-lobby'&&event.target.dataset.aiHealthSlot){net.send({type:'ai-health',slot:Number(event.target.dataset.aiHealthSlot),health:Number(event.target.value)});return;}if(modal==='custom-setup'){if(event.target.id==='custom-player-slot'||event.target.id.startsWith('custom-type-')){const id=event.target.id,scroll=$('#modal-root .modal').scrollTop;customDraft=readBattleSetup($('#modal-root'));showCustomBattle();$('#modal-root .modal').scrollTop=scroll;document.getElementById(id)?.focus({preventScroll:true});}else customDraft=updateBattlePreview($('#modal-root'));try{localStorage.setItem('crowns-custom-setup',JSON.stringify(customDraft));}catch{}}if(event.target.id==='lobby-slot')net.send({type:'slot',slot:Number(event.target.value)});});
-document.addEventListener('keydown',event=>{if(startupAction)return;const key=event.key.toLowerCase();if(chronicleActive){if((key==='enter'||key===' ')&&!$('#chronicle-begin-btn')?.classList.contains('hidden')){event.preventDefault();beginFromChronicle();}return;}if(key==='escape'&&chat.opened){event.preventDefault();chat.close();return;}if(key==='escape'&&modal){event.preventDefault();closeModal();return;}if(['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)||event.target.isContentEditable)return;if(!playing)return;if((key===' '||key==='enter')&&event.target.closest('button,a,summary'))return;if(key==='escape'&&$('#objectives').contains(event.target)&&$('#objectives').classList.contains('objectives-expanded')){event.preventDefault();action('objectives-expand');$('#objectives .objective-toggle').focus({preventScroll:true});return;}if(key==='enter'&&net.active&&!modal&&!event.target.closest('button,a')){event.preventDefault();chat.open(true);return;}if(chat.opened)return;
+document.addEventListener('keydown',event=>{if(startupSplash||startupAction)return;const key=event.key.toLowerCase();if(chronicleActive){if((key==='enter'||key===' ')&&!$('#chronicle-begin-btn')?.classList.contains('hidden')){event.preventDefault();beginFromChronicle();}return;}if(key==='escape'&&chat.opened){event.preventDefault();chat.close();return;}if(key==='escape'&&modal){event.preventDefault();closeModal();return;}if(['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)||event.target.isContentEditable)return;if(!playing)return;if((key===' '||key==='enter')&&event.target.closest('button,a,summary'))return;if(key==='escape'&&$('#objectives').contains(event.target)&&$('#objectives').classList.contains('objectives-expanded')){event.preventDefault();action('objectives-expand');$('#objectives .objective-toggle').focus({preventScroll:true});return;}if(key==='enter'&&net.active&&!modal&&!event.target.closest('button,a')){event.preventDefault();chat.open(true);return;}if(chat.opened)return;
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(key))event.preventDefault();
   if(key==='escape'){if(tacticalMode||attackMove||unloadMode||pingMode){tacticalMode=null;unloadMode=false;pingMode=false;$('#map-flare-btn')?.classList.remove('active');$('#map-flare-btn')?.setAttribute('aria-pressed','false');setAttackMove(false);}else if(buildType||!$('#build-panel').classList.contains('hidden'))cancelBuild();else if(modal)closeModal();else if(productionOpen)action('production');else if(scoreboardOpen)action('scoreboard');else showPause();return;}
   if(event.key==='Alt'&&playing&&view){view.altPeek=true;renderHealth();}
@@ -942,7 +1009,7 @@ window.addEventListener('pagehide',event=>{if(event.persisted)return;renderClose
 // Expose the running game for reproducible browser QA and debugging.
 window.frontier={get sim(){return sim;},get view(){return view;},get audio(){return audio;},get warComms(){return warComms;},get playing(){return playing;},get paused(){return paused;},get selection(){return selection;},get groups(){return groups;},get alerts(){return tacticalAlerts;},get timeline(){return matchTimeline;},start:startGame,select:setSelection,action,ping:dropTacticalPing,save:saveGame,showEnd};
 
-document.addEventListener('keydown',event=>{if(startupAction||event.key!=='Tab'||!modal)return;const dialog=$('#modal-root [role=dialog]');if(!dialog||getComputedStyle(dialog).visibility==='hidden')return;const buttons=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden');if(!buttons.length)return;const first=buttons[0],last=buttons.at(-1);if(!dialog.contains(document.activeElement)||event.shiftKey&&document.activeElement===first){event.preventDefault();(event.shiftKey?last:first).focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
+document.addEventListener('keydown',event=>{if(startupSplash||startupAction||event.key!=='Tab'||!modal)return;const dialog=$('#modal-root [role=dialog]');if(!dialog||getComputedStyle(dialog).visibility==='hidden')return;const buttons=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden');if(!buttons.length)return;const first=buttons[0],last=buttons.at(-1);if(!dialog.contains(document.activeElement)||event.shiftKey&&document.activeElement===first){event.preventDefault();(event.shiftKey?last:first).focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
 
 let netMode=(()=>{try{return localStorage.getItem('crowns-net-mode')==='nearby'?'nearby':'online';}catch{return 'online';}})();
 // Online rooms use the hosted server; Nearby rooms are hosted by one player's
@@ -973,4 +1040,4 @@ if(import.meta.env.PROD){
   window.frontier.checkUpdate=updates.check;
 }
 
-requestAnimationFrame(()=>setTimeout(()=>{void prepareBattlefield();},0));
+void bootBattlefield();

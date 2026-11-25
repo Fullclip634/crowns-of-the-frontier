@@ -21,14 +21,14 @@ export const NEARBY_ICONS={
 const spinner='<span class="nearby-spinner" aria-hidden="true"></span>';
 
 export function createNearby({net,showModal,closeModal,toast,getModal,onRoomEnded}){
-  let host=null,lastRoom=null,invite={status:'idle'},join=null,stopScanner=null,wakeLock=null,wakeWanted=false;
+  let host=null,lastRoom=null,invite={status:'idle'},join=null,stopScanner=null,scanRunId=0,scanActive=false,wakeLock=null,wakeWanted=false;
 
   // --- Screen wake lock: a sleeping host phone pauses every player's match.
   async function acquireWake(){wakeWanted=true;if(wakeLock||!navigator.wakeLock?.request||document.visibilityState!=='visible')return;try{wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});}catch{wakeLock=null;}}
   function releaseWake(){wakeWanted=false;const lock=wakeLock;wakeLock=null;lock?.release?.().catch(()=>{});}
   document.addEventListener('visibilitychange',()=>{if(wakeWanted&&document.visibilityState==='visible')acquireWake();});
 
-  function scanStop(){const stop=stopScanner;stopScanner=null;try{stop?.();}catch{}}
+  function scanStop(){scanRunId++;scanActive=false;const stop=stopScanner;stopScanner=null;try{stop?.();}catch{}}
   const root=()=>document.querySelector('#modal-root');
 
   // --- Host --------------------------------------------------------------
@@ -61,8 +61,9 @@ export function createNearby({net,showModal,closeModal,toast,getModal,onRoomEnde
 <div class="qr-frame" data-qr="invite">${invite.svg}</div>
 <div class="nearby-row"><button class="secondary" data-action="nearby-copy" data-copy="invite">${NEARBY_ICONS.copy} Copy code</button>${navigator.share?`<button class="secondary" data-action="nearby-share" data-copy="invite">${NEARBY_ICONS.share} Share</button>`:''}</div>
 ${invite.error?`<p class="nearby-error" role="alert">${esc(invite.error)}</p>`:''}
-<div class="nearby-camera" ${invite.scanning?'':'hidden'}><video class="nearby-video" playsinline muted></video><span class="scan-reticle" aria-hidden="true"></span></div>
-${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply">${NEARBY_ICONS.camera} ${invite.scanning?'Point the camera at the reply code':'Scan your friend\'s reply'}</button>`:''}
+<div class="nearby-camera" ${invite.scanning?'':'hidden'}><video class="nearby-video" autoplay playsinline muted></video><span class="scan-reticle" aria-hidden="true"></span><div class="camera-status" aria-live="polite">${spinner}<span>Starting camera…</span></div></div>
+${invite.scanning?'<p class="camera-hint">Point the camera at your friend\'s reply code.</p>':''}
+${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply">${NEARBY_ICONS.camera} ${invite.scanning?'Stop camera':'Scan your friend\'s reply'}</button>`:''}
 <details class="nearby-paste" ${cameraAvailable()?'':'open'}><summary>${cameraAvailable()?'No camera? Paste the reply code':'Paste your friend\'s reply code'}</summary><textarea id="nearby-reply" rows="3" spellcheck="false" autocomplete="off" placeholder="CF1z.…" aria-label="Reply code"></textarea><button class="secondary full" data-action="nearby-accept-paste">Connect</button></details>
 <button class="text-button" data-action="nearby-invite-cancel">Cancel this invite</button>`;
     }
@@ -121,11 +122,20 @@ ${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply
   }
   async function scanReply(){
     if(invite.status!=='ready')return;
-    if(stopScanner){scanStop();invite.scanning=false;renderInvite();return;}
+    if(scanActive||stopScanner){scanStop();invite.scanning=false;renderInvite();return;}
+    const runId=++scanRunId;scanActive=true;
     invite.scanning=true;invite.error='';renderInvite();
-    const video=root()?.querySelector('.nearby-invite .nearby-video');
-    try{stopScanner=await startQrScanner(video,text=>{stopScanner=null;acceptReply(text);});}
-    catch(error){invite.scanning=false;invite.error=error.message;renderInvite();}
+    const camBox=root()?.querySelector('.nearby-invite .nearby-camera');
+    const video=camBox?.querySelector('.nearby-video');
+    if(!video){scanStop();invite.scanning=false;renderInvite();return;}
+    try{
+      const stop=await startQrScanner(video,text=>{if(runId!==scanRunId)return;scanActive=false;stopScanner=null;acceptReply(text);},{onReady:()=>{if(runId===scanRunId)camBox?.classList.add('is-live');}});
+      if(runId!==scanRunId||!video.isConnected){try{stop();}catch{}return;}
+      stopScanner=stop;
+    }catch(error){
+      if(runId!==scanRunId)return;
+      scanActive=false;invite.scanning=false;invite.error=error.message;renderInvite();
+    }
   }
 
   // --- Guest -------------------------------------------------------------
@@ -134,7 +144,7 @@ ${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply
     const error=join.error?`<p class="nearby-error" role="alert">${esc(join.error)}</p>`:'';
     if(join.status==='answering')return `${head}<div class="nearby-panel"><div class="nearby-wait">${spinner}<span>Preparing your reply…</span></div></div><button class="text-button" data-action="nearby-join-cancel">Cancel</button>`;
     if(join.status==='reply')return `${head}<p class="modal-intro">Show this reply to the host. They scan it to let you in.</p><div class="nearby-panel"><ol class="nearby-steps"><li class="done"><b>✓</b><span>Invite scanned</span></li><li><b>2</b><span>Host scans this reply code</span></li></ol><div class="qr-frame">${join.svg}</div><div class="nearby-row"><button class="secondary" data-action="nearby-copy" data-copy="reply">${NEARBY_ICONS.copy} Copy reply</button>${navigator.share?`<button class="secondary" data-action="nearby-share" data-copy="reply">${NEARBY_ICONS.share} Share</button>`:''}</div><div class="nearby-wait">${spinner}<span>Waiting for the host to scan…</span></div></div>${error}<button class="text-button" data-action="nearby-join-cancel">Cancel</button>`;
-    return `${head}<p class="modal-intro">Join the host's Wi-Fi or phone hotspot first. Then scan the invite on the host's screen. No internet is needed.</p><div class="nearby-panel">${cameraAvailable()?`<div class="nearby-camera" ${join.scanning?'':'hidden'}><video class="nearby-video" playsinline muted></video><span class="scan-reticle" aria-hidden="true"></span></div><button class="primary full" data-action="nearby-join-scan">${NEARBY_ICONS.camera} ${join.scanning?'Point the camera at the host\'s invite':'Scan the host\'s invite'}</button>`:''}<details class="nearby-paste" ${cameraAvailable()?'':'open'}><summary>${cameraAvailable()?'No camera? Paste the invite code':'Paste the host\'s invite code'}</summary><textarea id="nearby-invite-text" rows="3" spellcheck="false" autocomplete="off" placeholder="CF1z.…" aria-label="Invite code"></textarea><button class="secondary full" data-action="nearby-join-paste">Continue</button></details></div>${error}<button class="text-button" data-action="nearby-join-cancel">Cancel</button>`;
+    return `${head}<p class="modal-intro">Join the host's Wi-Fi or phone hotspot first. Then scan the invite on the host's screen. No internet is needed.</p><div class="nearby-panel">${cameraAvailable()?`<div class="nearby-camera" ${join.scanning?'':'hidden'}><video class="nearby-video" autoplay playsinline muted></video><span class="scan-reticle" aria-hidden="true"></span><div class="camera-status" aria-live="polite">${spinner}<span>Starting camera…</span></div></div>${join.scanning?'<p class="camera-hint">Point the camera at the host\'s invite code.</p>':''}<button class="primary full" data-action="nearby-join-scan">${NEARBY_ICONS.camera} ${join.scanning?'Stop camera':'Scan the host\'s invite'}</button>`:''}<details class="nearby-paste" ${cameraAvailable()?'':'open'}><summary>${cameraAvailable()?'No camera? Paste the invite code':'Paste the host\'s invite code'}</summary><textarea id="nearby-invite-text" rows="3" spellcheck="false" autocomplete="off" placeholder="CF1z.…" aria-label="Invite code"></textarea><button class="secondary full" data-action="nearby-join-paste">Continue</button></details></div>${error}<button class="text-button" data-action="nearby-join-cancel">Cancel</button>`;
   }
   function renderJoin(){if(getModal()!=='nearby-join'){showModal(joinMarkup(),'nearby-join');}else{const dialog=root()?.querySelector('.modal');if(!dialog)return;const close=dialog.querySelector('.modal-close');dialog.innerHTML='';if(close)dialog.append(close);dialog.insertAdjacentHTML('beforeend',joinMarkup());const heading=dialog.querySelector('h2');if(heading){heading.id='dialog-heading';dialog.setAttribute('aria-labelledby',heading.id);}}}
   function showJoin(profile,{rejoin=false}={}){
@@ -147,11 +157,20 @@ ${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply
   }
   async function scanInvite(){
     if(!join||join.status!=='scan')return;
-    if(stopScanner){scanStop();join.scanning=false;renderJoin();return;}
+    if(scanActive||stopScanner){scanStop();join.scanning=false;renderJoin();return;}
+    const runId=++scanRunId;scanActive=true;
     join.scanning=true;join.error='';renderJoin();
-    const video=root()?.querySelector('.nearby-video');
-    try{stopScanner=await startQrScanner(video,text=>{stopScanner=null;answer(text);});}
-    catch(error){if(join){join.scanning=false;join.error=error.message;renderJoin();}}
+    const camBox=root()?.querySelector('.nearby-camera');
+    const video=camBox?.querySelector('.nearby-video');
+    if(!video){scanStop();join.scanning=false;renderJoin();return;}
+    try{
+      const stop=await startQrScanner(video,text=>{if(runId!==scanRunId)return;scanActive=false;stopScanner=null;answer(text);},{onReady:()=>{if(runId===scanRunId)camBox?.classList.add('is-live');}});
+      if(runId!==scanRunId||!video.isConnected){try{stop();}catch{}return;}
+      stopScanner=stop;
+    }catch(error){
+      if(runId!==scanRunId)return;
+      scanActive=false;if(join){join.scanning=false;join.error=error.message;renderJoin();}
+    }
   }
   async function answer(text){
     if(!join)return;scanStop();

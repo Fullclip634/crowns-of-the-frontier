@@ -12,8 +12,8 @@
 .net-tab[aria-selected="true"] .nearby-icon{background:linear-gradient(180deg,#ebd49a,#cfa95e);color:#12221b;border-color:#f0da9f}
 .net-shell[data-net-mode="online"] .nearby-only,.net-shell[data-net-mode="nearby"] .online-only{display:none!important}
 .net-actions{display:grid;gap:8px;margin:14px 0 12px}
-.net-actions .primary,.net-actions .secondary{justify-content:center}
-.net-actions .nearby-icon,.nearby-panel .primary .nearby-icon,.nearby-panel .secondary .nearby-icon{width:18px;height:18px}
+#modal-root .net-actions .primary,#modal-root .net-actions .secondary,#modal-root .nearby-panel .primary,#modal-root .nearby-panel .secondary{justify-content:center;gap:8px}
+.net-actions .nearby-icon,.nearby-panel .primary .nearby-icon,.nearby-panel .secondary .nearby-icon{width:18px;height:18px;flex:none}
 .net-offline{margin:0 0 12px;padding:9px 12px;border-radius:4px;border:1px solid rgba(159,212,182,.35);background:rgba(159,212,182,.08);color:var(--mint);font-size:12px;line-height:1.45}
 
 .nearby-panel{display:grid;gap:12px;margin:16px 0 10px;padding:16px;border-radius:8px;border:1px solid var(--ui-border);background:radial-gradient(120% 90% at 50% 0%,rgba(226,198,132,.09),transparent 60%),var(--ui-panel-bg);box-shadow:var(--ui-inset),var(--ui-shadow)}
@@ -36,13 +36,18 @@
 .qr-svg{display:block;width:100%;height:auto;image-rendering:pixelated}
 .nearby-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .nearby-row .secondary{justify-content:center}
-.nearby-camera{position:relative;justify-self:center;width:min(100%,340px);aspect-ratio:1;border-radius:10px;overflow:hidden;background:#050b08;border:1px solid var(--ui-border-strong);box-shadow:var(--ui-shadow)}
+.nearby-camera{position:relative;isolation:isolate;justify-self:center;width:min(100%,320px);aspect-ratio:1;border-radius:10px;overflow:hidden;background:#050b08;border:1px solid var(--ui-border-strong);box-shadow:var(--ui-shadow);transform:translateZ(0)}
 .nearby-camera[hidden]{display:none}
-.nearby-video{width:100%;height:100%;object-fit:cover;display:block}
-.scan-reticle{position:absolute;inset:14%;border-radius:12px;border:2px solid rgba(235,212,154,.9);box-shadow:0 0 0 999px rgba(5,11,8,.42)}
+.nearby-video{position:relative;z-index:0;width:100%;height:100%;object-fit:cover;display:block;transform:translateZ(0)}
+.scan-reticle{position:absolute;z-index:1;inset:14%;border-radius:12px;border:2px solid rgba(235,212,154,.9);box-shadow:0 0 0 999px rgba(5,11,8,.42);pointer-events:none}
 .scan-reticle::after{content:"";position:absolute;left:6%;right:6%;height:2px;top:10%;background:linear-gradient(90deg,transparent,#ebd49a,transparent);box-shadow:0 0 12px #ebd49a;animation:nearby-scan 2.2s ease-in-out infinite}
+.camera-status{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(5,11,8,.72);color:#e6dfb8;font-size:12px;font-weight:600;pointer-events:none;transition:opacity .2s ease}
+.nearby-camera.is-live .camera-status{opacity:0;visibility:hidden}
+.camera-hint{margin:-4px 0 0;text-align:center;font-size:11.5px;line-height:1.4;color:#c9d6be}
 .nearby-paste{border:1px solid var(--ui-border);border-radius:6px;padding:0 12px;background:rgba(8,16,13,.45)}
-.nearby-paste summary{cursor:pointer;padding:11px 0;font-size:12px;color:var(--ui-secondary);list-style-position:inside}
+.nearby-paste summary{cursor:pointer;padding:11px 0;font-size:12px;color:var(--ui-secondary);list-style-position:inside;background:transparent;-webkit-tap-highlight-color:transparent;border-radius:4px}
+.nearby-paste summary:focus{outline:none}
+.nearby-paste summary:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
 .nearby-paste[open]{padding-bottom:12px}
 .nearby-paste textarea{width:100%;box-sizing:border-box;margin:0 0 8px;padding:10px;border-radius:4px;border:1px solid var(--ui-border);background:#0b1611;color:var(--ui-text);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical;word-break:break-all}
 .nearby-paste textarea:focus{outline:2px solid var(--ui-accent);outline-offset:1px}
@@ -51,12 +56,22 @@
 @keyframes nearby-spin{to{transform:rotate(360deg)}}
 @keyframes nearby-scan{0%,100%{top:10%}50%{top:88%}}
 @keyframes nearby-rise{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-height:540px) and (min-width:520px){
+  .nearby-panel{gap:9px;margin:10px 0 8px;padding:11px 13px}
+  .nearby-head h3{font-size:19px}
+  .nearby-steps{gap:5px}
+  .nearby-steps li{font-size:11px;line-height:1.38}
+  .qr-frame{width:min(100%,196px);padding:9px}
+  .nearby-camera{width:min(100%,216px);max-height:208px}
+  .nearby-paste summary{padding:9px 0;font-size:11.5px}
+}
 @media(max-width:600px){
   .net-tab{padding:10px;gap:9px;min-height:58px}
   .net-tab strong{font-size:17px}
   .net-tab small{font-size:10.5px}
   .net-tab .nearby-icon{width:20px;height:20px;padding:5px}
   .nearby-panel{padding:13px}
-  .qr-frame{width:min(100%,260px)}
+  .qr-frame{width:min(100%,250px)}
+  .nearby-camera{width:min(100%,270px)}
 }
 @media(prefers-reduced-motion:reduce){.nearby-spinner,.scan-reticle::after,.qr-frame{animation:none}}

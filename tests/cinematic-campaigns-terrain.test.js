@@ -136,7 +136,8 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.doesNotMatch(splash,/Fieldcraft/i);
     assert.match(splash,/id="startup-retry-btn"/);
     const mainJs=fs.readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-    assert.match(mainJs,/createStartupSplash/);
+    assert.match(mainJs,/let startupSplash=createStartupSplash\(\$\('#app'\)\)/);
+    assert.match(mainJs,/void bootBattlefield\(\)/);
     assert.doesNotMatch(mainJs,/bootStatus\.className='battlefield-loading'/);
   });
 
@@ -149,10 +150,13 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
       assert.match(html,/chronicle-minimap/);
       assert.match(html,/class="chronicle-begin-btn hidden"/);
       assert.match(html,/id="chronicle-progress-wrap" role="status"/);
-      assert.doesNotMatch(html,/aria-valuenow/);
+      assert.match(html,/id="chronicle-progressbar"/);
+      assert.match(html,/aria-valuenow="15"/);
+      assert.match(html,/id="chronicle-progress-fill"/);
       assert.ok(html.includes(m.name));
     }
     const css=fs.readFileSync(new URL('../src/mission-loading.css',import.meta.url),'utf8');
+    assert.match(css,/\.chronicle-progress-track/);
     assert.doesNotMatch(css,/backdrop-filter:\s*blur/i);
   });
 

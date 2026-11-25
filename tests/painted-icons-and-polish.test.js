@@ -231,4 +231,18 @@ test('Phone selection drawer and setup/multiplayer modals keep aligned inputs, r
   assert.match(phoneCss,/#hud \.game-header \.time-controls button\{[^}]*flex-direction:row/s,'phone top-bar buttons lay icon + label side-by-side without vertical clipping');
   assert.match(phoneCss,/#hud \.game-header \.time-controls button \.ui-icon-painted\{[^}]*height:clamp\(14px/s,'painted Tech icon matches header pill height without overflowing');
   assert.match(phoneCss,/#hud #build-panel \.floating-heading>button\{[^}]*padding:0;display:inline-flex;align-items:center;justify-content:center/s,'Construction close X clears UA button padding and centers dead-on');
+
+  // 6. Alliance resources modal spans painted .ui-icon across both rows so numbers never truncate in col 1
+  const allianceCss=fs.readFileSync(new URL('../src/alliance-ui.css',import.meta.url),'utf8');
+  assert.match(allianceCss,/\.alliance-balance>\.ui-icon,\.alliance-balance>svg\{[^}]*grid-row:1 \/ 3/s,'painted resource icon spans 2 rows in col 1');
+  assert.match(allianceCss,/\.alliance-balance>b\{[^}]*grid-column:2;grid-row:2/s,'resource amounts always occupy full-width col 2');
+
+  // 7. Nearby QR camera scanner centers CTA buttons, fits landscape, guards camera startup races, and retries black frames
+  const nearbyCss=fs.readFileSync(new URL('../src/nearby-ui.css',import.meta.url),'utf8');
+  const qrSrc=fs.readFileSync(new URL('../src/qr-scan.js',import.meta.url),'utf8');
+  const nearbySrc=fs.readFileSync(new URL('../src/nearby-ui.js',import.meta.url),'utf8');
+  assert.match(nearbyCss,/\.nearby-panel \.primary[^}]*justify-content:center/s,'Nearby CTA buttons center icon and text together');
+  assert.match(nearbyCss,/\.nearby-camera\.is-live \.camera-status/s,'camera viewfinder displays live loading state until frames arrive');
+  assert.match(qrSrc,/waitForLiveFrame/,'QR scanner verifies real video frames and retries fallback camera constraints');
+  assert.match(nearbySrc,/scanRunId/,'Nearby QR scanner cancels in-flight getUserMedia cleanly without leaking hardware camera');
 });
