@@ -226,4 +226,9 @@ test('Phone selection drawer and setup/multiplayer modals keep aligned inputs, r
   const hubHtml=skirmishHubMarkup({mode:'skirmish',faction:'alder',aiPersonality:'balanced'});
   assert.match(hubHtml,/<option value="balanced" selected>Balanced Marshal<\/option>/,'AI personality dropdown shows concise name without overflowing description');
   assert.match(hubHtml,/id="ai-personality-description"/,'AI personality renders dedicated description element below dropdown');
+
+  // 5. Phone top-bar action buttons use horizontal unclipped pills & Construction close X stays dead-center
+  assert.match(phoneCss,/#hud \.game-header \.time-controls button\{[^}]*flex-direction:row/s,'phone top-bar buttons lay icon + label side-by-side without vertical clipping');
+  assert.match(phoneCss,/#hud \.game-header \.time-controls button \.ui-icon-painted\{[^}]*height:clamp\(14px/s,'painted Tech icon matches header pill height without overflowing');
+  assert.match(phoneCss,/#hud #build-panel \.floating-heading>button\{[^}]*padding:0;display:inline-flex;align-items:center;justify-content:center/s,'Construction close X clears UA button padding and centers dead-on');
 });

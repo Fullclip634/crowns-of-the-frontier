@@ -12,8 +12,8 @@
        (pointer:coarse) and (max-width:600px) and (orientation:portrait),
        (max-width:480px) and (orientation:portrait){
   #hud{
-    --ph-hdr-h:clamp(30px,8.4dvh,38px);
-    --ph-btn-h:clamp(24px,6.8dvh,31px);
+    --ph-hdr-h:clamp(32px,8.6dvh,38px);
+    --ph-btn-h:clamp(25px,7.0dvh,31px);
     --ph-pad:clamp(6px,1.4vw,10px);
     --ph-map:clamp(66px,20.5dvh,94px);
     --ph-cmd:clamp(33px,9.2dvh,42px);
@@ -48,18 +48,34 @@
   #hud .idle-pill-label{display:none}
   #hud .time-controls{gap:clamp(3px,.6vw,5px);height:var(--ph-hdr-h);width:auto;flex:0 0 auto;align-items:center}
   #hud .game-header .time-controls button{
+    display:inline-flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
     width:auto;
     min-width:var(--ph-btn-h);
     height:var(--ph-btn-h);
     min-height:var(--ph-btn-h);
     margin:0;
-    padding:0 clamp(5px,.9vw,8px);
+    padding:0 clamp(6px,.95vw,9px);
     gap:4px;
     border-radius:5px;
-    font-size:clamp(9px,2.4dvh,11px);
+    font-size:clamp(9.5px,2.4dvh,11px);
+    line-height:1;
+    overflow:hidden;
   }
-  #hud .game-header .time-controls button .ui-icon{width:clamp(13px,3.4dvh,16px);height:clamp(13px,3.4dvh,16px)}
-  #hud .game-header .header-button-label{font-size:clamp(9px,2.2dvh,10.5px);font-weight:600}
+  #hud .game-header .time-controls button .ui-icon,
+  #hud .game-header .time-controls button .ui-icon-painted{
+    width:clamp(14px,3.6dvh,16px);
+    height:clamp(14px,3.6dvh,16px);
+    border-radius:3px;
+    margin:0;
+    flex:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #hud .game-header .header-button-label{font-size:clamp(9.5px,2.3dvh,10.5px);font-weight:600;line-height:1;white-space:nowrap}
   #hud .production-count{top:-3px;right:-3px;min-width:14px;height:14px;font-size:8px}
 
   /* 2. Floating Bottom Bar — Left Minimap, Hug-Content Center Selection Card, Right Action Cluster */
@@ -245,9 +261,11 @@
   #hud .selection-deselect{
     flex:0 0 auto;order:21;
     position:static;
+    display:inline-flex;align-items:center;justify-content:center;
     width:clamp(28px,7.6dvh,34px);
     height:clamp(34px,9.2dvh,40px);
     min-width:28px;min-height:32px;
+    padding:0;
     border-radius:5px;
   }
 
@@ -346,7 +364,8 @@
     z-index:31;
   }
   #hud #build-panel .floating-heading{margin-bottom:5px;min-height:28px}
-  #hud #build-panel .floating-heading>button{width:28px;height:28px;min-width:28px;min-height:28px}
+  #hud #build-panel .floating-heading>button{width:28px;height:28px;min-width:28px;min-height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  #hud #build-panel .floating-heading>button .ui-icon{width:16px;height:16px;margin:0;display:block}
   #hud #build-panel .build-tabs{margin:0 0 6px;gap:4px}
   #hud #build-panel .build-tab{min-height:28px;padding:3px 6px;font-size:10px;gap:4px}
   #hud #build-panel .build-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
@@ -403,7 +422,7 @@
 
   #hud #control-groups-bar{left:calc(var(--ph-map) + 18px + var(--safe-left,0px));right:calc(170px + var(--safe-right,0px));bottom:calc(var(--ph-dock-h) + var(--ph-pad) + 10px + var(--safe));transform:none;justify-content:center;max-width:none}
   #hud #placement-controls{left:calc(var(--ph-pad) + var(--safe-left,0px));top:calc(var(--ph-hdr-h) + 5px + var(--safe-top,0px))}
-  #hud #toasts{top:calc(var(--ph-hdr-h) + 38px + var(--safe-top,0px));left:calc(var(--ph-pad) + var(--safe-left,0px));right:auto;max-width:min(220px,46vw)}
+  #hud #toasts{top:calc(var(--ph-hdr-h) + 38px + var(--safe-top,0px));left:calc(var(--ph-pad) + var(--safe-left,0px));right:auto;max-width:min(176px,34vw)}
   #hud .toast{font-size:9.5px;line-height:1.3;padding:5px 8px;border-radius:5px}
   #hud #alert-line{top:calc(var(--ph-hdr-h) + 6px + var(--safe-top,0px))}
   #hud #alert-line .alert-jump{padding:4px 9px;font-size:9px;gap:5px}
@@ -418,7 +437,7 @@
 /* Narrow phones (e.g. 568x320 SE, 667x375): icon-only header actions to prevent any crowding */
 @media(max-width:740px) and (max-height:520px) and (orientation:landscape){
   #hud .game-header .header-button-label{display:none}
-  #hud .game-header .time-controls button{padding:0 5px}
+  #hud .game-header .time-controls button{width:var(--ph-btn-h);padding:0}
   #hud .selection-panel{max-width:calc(100vw - var(--ph-map) - (var(--ph-cmd) * 4) - 34px - var(--safe-left,0px) - var(--safe-right,0px))}
 }
 
@@ -445,7 +464,7 @@
   #hud .age-progress-track{width:52px}
   #hud .idle-pill{order:3;height:28px;min-height:28px;padding:0 7px!important}
   #hud .time-controls{order:4;margin-left:auto;height:28px;gap:3px}
-  #hud .game-header .time-controls button{height:28px;min-height:28px;min-width:28px;padding:0 6px}
+  #hud .game-header .time-controls button{width:28px;height:28px;min-height:28px;min-width:28px;padding:0}
   #hud .game-header .header-button-label{display:none}
   #hud #tech-tree-toggle{display:none}
   #hud #scoreboard-toggle{display:inline-flex}
