@@ -7,6 +7,7 @@ import {bridgeFootprint} from './bridge-layout.js';
 import {isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome,terrainBiome} from './terrain-biomes.js';
 import {buildingSiteKey} from './ground-cover.js';
 import {biomeCliffGeometry,biomeCliffWallGeometry,biomeCliffCapGeometry,biomeMountainGeometry,biomeBushGeometry,biomeRuinGeometry,biomeWaystoneGeometry,biomeFallenLogGeometry,biomeSpireGeometry} from './biome-art.js';
+import {terrainTurfMaps} from './surface-assets.js';
 
 export function pebbleGeometry(detail=1){
   const geometry=new THREE.IcosahedronGeometry(.66,detail),p=geometry.attributes.position;
@@ -152,9 +153,13 @@ export class TerrainDetails{
       this.fogMaterials.push(mat);
       const capGeo=biomeCliffCapGeometry(land.map);
       if(capGeo){
-        const biomeTint=new THREE.Color(terrainBiome(land.map).grassTint||0xffffff);
-        const capTint=isSnowBiome(land.map)?new THREE.Color(0xffffff):isVolcanicBiome(land.map)?new THREE.Color(0x6c625b):new THREE.Color(0xffffff).lerp(biomeTint,.42);
-        const capMat=standardMaterial({color:capTint,roughness:.92,vertexColors:Boolean(capGeo.attributes?.color)});
+        const turf=terrainTurfMaps(land.map);
+        const biomeTint=new THREE.Color(terrainBiome(land.map).grassTint||0x88b058);
+        const textured=Boolean(turf?.color);
+        const fallbackTint=isSnowBiome(land.map)?new THREE.Color(0xe6edf2):isAridBiome(land.map)?new THREE.Color(0xc4a26a):isVolcanicBiome(land.map)?new THREE.Color(0x524b45):new THREE.Color(0x4b7434).lerp(biomeTint,.35);
+        const capTint=textured?(isSnowBiome(land.map)?new THREE.Color(0xffffff):isVolcanicBiome(land.map)?new THREE.Color(0x6c625b):new THREE.Color(0xffffff).lerp(biomeTint,.42)):fallbackTint;
+        const capMat=standardMaterial({color:capTint,map:turf?.color||null,normalMap:low?null:(turf?.normal||null),roughness:.92,vertexColors:Boolean(capGeo.attributes?.color)});
+        if(capMat.normalScale&&capMat.normalMap)capMat.normalScale.setScalar(.35);
         this.cliffCapMesh=new THREE.InstancedMesh(capGeo,capMat,this.cliffEntries.length);
         this.cliffCapMesh.name='Blender grass-capped cliff plateaus';this.cliffCapMesh.count=0;this.cliffCapMesh.frustumCulled=false;
         this.cliffCapMesh.castShadow=false;this.cliffCapMesh.receiveShadow=true;
@@ -191,28 +196,23 @@ export class TerrainDetails{
         if(y<.24)return;
         this.bushEntries.push({x,y,z,angle:brng()*Math.PI*2,sx:scale*(.85+brng()*.45),sy:scale*(.75+brng()*.42),sz:scale*(.85+brng()*.45),shade:.86+brng()*.24});
       };
-      // 1. Natural undergrowth hugging cliff bases & mountain feet evenly across the ENTIRE map!
-      const cliffBudget=Math.floor(bushCap*.52);
+      // 1. Natural fern & bramble undergrowth hugging cliff bases & mountain feet
+      const cliffBudget=Math.floor(bushCap*.56);
       const bStride=Math.max(1,Math.floor(barriers.length/Math.max(1,Math.floor(cliffBudget/2))));
       for(let i=0;i<barriers.length&&this.bushEntries.length<cliffBudget;i+=bStride){
-        const b=barriers[i],count=b.kind==='mountain'?3:2;
+        const b=barriers[i],count=b.kind==='mountain'?2:2;
         for(let k=0;k<count&&this.bushEntries.length<cliffBudget;k++){
-          const a=brng()*Math.PI*2,d=(b.r||3.0)+.65+brng()*1.45;
-          plantBush(b.x+Math.cos(a)*d,b.z+Math.sin(a)*d,.85+brng()*.55);
+          const a=brng()*Math.PI*2,d=(b.r||3.0)+.55+brng()*1.25;
+          plantBush(b.x+Math.cos(a)*d,b.z+Math.sin(a)*d,.75+brng()*.42);
         }
       }
-      // 2. Woodland bushes tucked along natural timber lines
+      // 2. Woodland fern undergrowth tucked closely along natural timber lines (never floating in open town grass!)
       const trees=(view.sim?.entities||[]).filter(e=>e.hp>0&&e.kind==='resource'&&e.type==='wood');
-      const stride=Math.max(1,Math.floor(trees.length/Math.max(1,Math.floor(bushCap*.35))));
-      for(let i=0;i<trees.length&&this.bushEntries.length<bushCap*.88;i+=stride){
-        const tr=trees[i],a=brng()*Math.PI*2,d=1.35+brng()*1.6;
-        plantBush(tr.x+Math.cos(a)*d,tr.z+Math.sin(a)*d,.75+brng()*.45);
-      }
-      // 3. Organic hedgerow clusters across meadows & hillsides
-      for(let i=0;i<bushCap*2&&this.bushEntries.length<bushCap;i++){
-        const x=(brng()-.5)*(land.worldSize-12),z=(brng()-.5)*(land.worldSize-12);
-        if(townDistance(x,z)<14)continue;
-        plantBush(x,z,.7+brng()*.5);
+      const stride=Math.max(1,Math.floor(trees.length/Math.max(1,Math.floor(bushCap*.44))));
+      for(let i=0;i<trees.length&&this.bushEntries.length<bushCap;i+=stride){
+        const tr=trees[i],a=brng()*Math.PI*2,d=1.05+brng()*1.15;
+        if(townDistance(tr.x+Math.cos(a)*d,tr.z+Math.sin(a)*d)<18)continue;
+        plantBush(tr.x+Math.cos(a)*d,tr.z+Math.sin(a)*d,.68+brng()*.36);
       }
       if(this.bushEntries.length){
         const bmat=standardMaterial({color:0xffffff,roughness:.92,vertexColors:Boolean(bushGeo.attributes?.color)});

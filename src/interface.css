@@ -33,33 +33,35 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,su
 .floating-heading{position:sticky;top:0;z-index:1;background:var(--panel)}
 .production-panel{border-radius:3px;scroll-padding:12px}
 @media(pointer:coarse){
-  #modal-root button{min-height:44px;min-width:44px;font-size:12px}
-  #modal-root .modal-close{font-size:26px}
-  #modal-root input[type=checkbox]{width:20px;height:20px;flex-shrink:0}
-  .landing .header-links button,.network-entry,.custom-entry{min-height:44px;display:inline-flex;align-items:center}
-  .mode-card{min-height:44px}.mode-card:focus-visible{outline-offset:-3px}
+  #modal-root button{min-height:clamp(32px,8dvh,38px);min-width:32px;font-size:12px}
+  #modal-root .modal-close{font-size:22px;width:34px;height:34px}
+  #modal-root input[type=checkbox]{width:18px;height:18px;flex-shrink:0}
+  .landing .header-links button,.network-entry,.custom-entry{min-height:34px;display:inline-flex;align-items:center}
+  .mode-card{min-height:38px}.mode-card:focus-visible{outline-offset:-3px}
   .selection-title small{font-size:10px}.selection-title .eyebrow{font-size:8px;letter-spacing:.4px}
   .production-actions strong,.group-production strong{font-size:11px}.production-actions small,.group-production small{font-size:10px}
-  .worker-actions button{font-size:11px;line-height:1.3}
-  .selection-desc,.order-summary{font-size:11px;line-height:1.4}
-  .floating-heading{font-size:10px;min-height:44px}
-  .build-option{min-height:84px}.build-option strong{font-size:11px;line-height:1.25}.build-option small{font-size:10px;line-height:1.25}
-  .build-footnote{font-size:11px;line-height:1.4}
-  .production-site strong,.production-current,.production-choice strong{font-size:11px}
-  .production-site small,.production-note,.production-choice small{font-size:10px}
-  .production-groups button{font-size:11px}
-  .custom-dialog .modal-intro{font-size:12px;line-height:1.45;margin-bottom:12px}
+  .worker-actions button{font-size:10.5px;line-height:1.25}
+  .selection-desc,.order-summary{font-size:10.5px;line-height:1.38}
+  .floating-heading{font-size:10px;min-height:32px}
+  .build-option{min-height:56px}.build-option strong{font-size:10px;line-height:1.2}.build-option small{font-size:9px;line-height:1.2}
+  .build-footnote{font-size:10px;line-height:1.35}
+  .production-site strong,.production-current,.production-choice strong{font-size:10.5px}
+  .production-site small,.production-note,.production-choice small{font-size:9.5px}
+  .production-groups button{font-size:10.5px}
+  .custom-dialog .modal-intro{font-size:11.5px;line-height:1.4;margin-bottom:10px}
   .custom-dialog .battle-presets{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#9eaa78 #183329}
-  .custom-dialog .battle-presets button{flex-shrink:0;scroll-snap-align:start}
-  .custom-dialog .custom-launch{gap:4px;padding:8px 0}
-  .custom-dialog .custom-launch .primary,.custom-dialog .custom-launch .secondary{min-height:44px;height:44px;padding:8px 10px;line-height:1.3}
+  .custom-dialog .battle-presets button{flex-shrink:0;scroll-snap-align:start;min-height:32px}
+  .custom-dialog .custom-launch{gap:5px;padding:6px 0}
+  .custom-dialog .custom-launch .primary,.custom-dialog .custom-launch .secondary{min-height:36px;height:auto;padding:7px 10px;line-height:1.25}
 }
-@media(pointer:coarse) and (max-height:520px) and (orientation:landscape){
-  .modal{padding:18px 20px}.modal h2{font-size:34px}
-  .modal .modal-intro,.modal .mission-brief p,.modal .help-grid p{font-size:12px;line-height:1.5}
-  .selection-title h3{font-size:18px}.selection-title .eyebrow{font-size:7px}
-  .main-actions .primary,.main-actions .secondary{min-height:44px;font-size:12px}
-  .network-entry,.custom-entry{font-size:11px;margin-top:4px}
+@media(pointer:coarse) and (max-height:520px) and (orientation:landscape),(max-height:460px) and (orientation:landscape){
+  .modal-backdrop{padding:8px calc(10px + var(--safe-right,0px)) 8px calc(10px + var(--safe-left,0px))}
+  .modal{padding:14px 16px;max-height:calc(100dvh - 16px)}.modal h2{font-size:24px;margin:6px 0 8px}
+  .modal .modal-intro,.modal .mission-brief p,.modal .help-grid p{font-size:11px;line-height:1.45;margin-bottom:10px}
+  .modal select,.modal input[type=number],.modal input[type=text],.modal input:not([type]){min-height:34px;padding:6px 9px;font-size:12px!important}
+  .modal .primary,.modal .secondary,.modal .text-button{min-height:34px;padding:7px 14px;font-size:11.5px}
+  .selection-title h3{font-size:15px}.selection-title .eyebrow{font-size:7px}
+  .network-entry,.custom-entry{font-size:10.5px;margin-top:4px}
 }
 @media(pointer:coarse) and (max-width:600px) and (orientation:portrait){
   #resource-bar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}

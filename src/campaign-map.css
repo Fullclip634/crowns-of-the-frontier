@@ -347,19 +347,24 @@
   .brief-header h3{font-size:22px}
   .atlas-chip span{display:none}
 }
-@media(pointer:coarse) and (max-height:520px) and (orientation:landscape){
-  .atlas-topbar{padding:5px 8px;gap:6px;flex-wrap:nowrap}
-  .atlas-brand h2{font-size:17px}
+@media(pointer:coarse) and (max-height:520px) and (orientation:landscape),(max-height:460px) and (min-width:480px) and (orientation:landscape){
+  .atlas-topbar{padding:4px 8px;gap:6px;flex-wrap:nowrap}
+  .atlas-crest{width:28px;height:28px}
+  .atlas-brand h2{font-size:16px}
   .atlas-brand .eyebrow,.atlas-act-tab small,.atlas-chip span{display:none}
-  .atlas-acts{order:0;width:auto;flex-wrap:nowrap}
-  .atlas-act-tab{min-height:36px;padding:4px 8px}
-  .atlas-chip,.atlas-close{min-width:40px;min-height:36px}
-  .atlas-workspace{grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr)}
-  .atlas-stage{padding:6px 8px}
+  .atlas-acts{order:0;width:auto;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .atlas-act-tab{min-height:28px;padding:3px 7px}
+  .atlas-act-tab strong{font-size:10px}
+  .atlas-progress-pill{min-height:26px;padding:0 7px;font-size:10px}
+  .atlas-chip,.atlas-close{min-width:28px;min-height:28px;width:28px;height:28px;padding:0}
+  .atlas-workspace{grid-template-columns:minmax(0,1.18fr) minmax(240px,.82fr)}
+  .atlas-stage{padding:5px 7px}
   .atlas-legend{display:none}
-  .atlas-briefing{padding:10px 12px;gap:8px}
-  .brief-header h3{font-size:20px}
-  .commander-dialogue{top:calc(52px + var(--safe-top,0px));width:min(420px,calc(100vw - 190px))}
-  .commander-banner{padding:7px 9px}
-  .commander-copy p{font-size:11px}
+  .atlas-briefing{padding:8px 10px;gap:6px}
+  .brief-header h3{font-size:18px}
+  .brief-setup select{min-height:30px;padding:4px 6px;font-size:10.5px}
+  .commander-dialogue{top:calc(clamp(30px,8.4dvh,38px) + 5px + var(--safe-top,0px));width:min(390px,calc(100vw - 148px))}
+  .commander-banner{padding:6px 9px;gap:7px}
+  .commander-crest{width:26px;height:26px}
+  .commander-copy p{font-size:10.5px;line-height:1.32}
 }

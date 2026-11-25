@@ -75,11 +75,14 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
       const armor=layer.ownerDocument.createElement('span');
       armor.className='armor-pips';
       armor.hidden=true;
+      const vet=layer.ownerDocument.createElement('span');
+      vet.className='vet-pips';
+      vet.hidden=true;
       root.style.left='0px';
       root.style.top='0px';
-      root.append(bar,label,armor);
+      root.append(bar,label,armor,vet);
       layer.append(root);
-      entry={root,bar,label,armor,cls:'',width:'',progress:'',armorTier:0,x:'',y:'',stamp:0};
+      entry={root,bar,label,armor,vet,cls:'',width:'',progress:'',armorTier:0,vetRank:0,x:'',y:'',stamp:0};
       active.set(e.id,entry);
     }
     entry.stamp=stamp;
@@ -120,6 +123,13 @@ export function renderHealthBars(layer, sim, view, viewport = {width: innerWidth
       entry.armor.className=tier?`armor-pips tier-${tier}`:'armor-pips';
       entry.armor.hidden=!tier;
       entry.armor.textContent=tier?'◆'.repeat(tier):'';
+    }
+    const vetRank=e.kind==='unit'?(e.vetRank||0):0;
+    if(entry.vetRank!==vetRank){
+      entry.vetRank=vetRank;
+      entry.vet.className=vetRank?`vet-pips vet-${vetRank}`:'vet-pips';
+      entry.vet.hidden=!vetRank;
+      entry.vet.textContent=vetRank?'★'.repeat(vetRank):'';
     }
   });
   for(const [id,entry] of active){

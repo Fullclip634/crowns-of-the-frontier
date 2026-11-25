@@ -89,3 +89,26 @@
 .wc-log-item{padding:4px 7px;border-radius:6px;background:rgba(255,255,255,.05);}
 .wc-log-item.enemy strong{color:#f59e90;}
 .wc-log-item.ally strong{color:#8ce8db;}
+
+@media(max-height:520px) and (orientation:landscape),(max-width:600px){
+  .war-comms-banner{
+    top:calc(clamp(32px,8.6dvh,40px) + 4px + var(--safe-top,0px));
+    max-width:min(400px,calc(100vw - 130px));
+    padding:6px 10px;gap:8px;border-radius:8px;
+  }
+  .wc-pip{width:6px;height:24px;flex:0 0 6px}
+  .wc-meta{font-size:10px;gap:5px}
+  .wc-tag{font-size:8px;padding:1px 4px}
+  .wc-body p{font-size:11.5px;line-height:1.25}
+  .war-comms-panel{
+    top:calc(clamp(32px,8.6dvh,40px) + 5px + var(--safe-top,0px));
+    right:calc(8px + var(--safe-right,0px));
+    width:min(286px,calc(100vw - 16px));
+    max-height:calc(100dvh - 54px);
+    overflow-y:auto;
+    padding:8px 10px;gap:7px;border-radius:9px;
+  }
+  .war-comms-grid button{padding:5px 7px;font-size:11px}
+  .war-comms-taunts button{padding:5px 8px;font-size:10.5px}
+  .war-comms-log{max-height:72px;font-size:10px}
+}

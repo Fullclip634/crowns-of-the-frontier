@@ -70,9 +70,10 @@ export function jadeHeroesUnitTemplate(type){
 }
 
 export function jadeBuildingKey(type,age=0){
-  if(!JADE_BUILDINGS.has(type))return null;
-  if(type==='towncenter')return `building:towncenter:jade:${age>=3?3:2}`;
-  return `building:${type}:jade`;
+  if(!JADE_BUILDINGS.has(type)||age===0)return null;
+  if(age===1)return `building:${type}:jade:1`;
+  if(type==='towncenter')return `building:towncenter:jade:${Math.max(2,Math.min(3,age))}`;
+  return `building:${type}:jade:0`;
 }
 
 export function jadeBuildingTemplate(type,age=0){
@@ -81,8 +82,8 @@ export function jadeBuildingTemplate(type,age=0){
   if(!key)return null;
   const template=loaded.templates.get(key);
   if(!template)return null;
-  const early=age<2;
-  return {key,template,early,scale:early?earlyAgeBuildingScale(type,Math.max(0,age)):1};
+  const feudal=age===1;
+  return {key,template,feudal,scale:feudal?earlyAgeBuildingScale(type,1):1};
 }
 
 export function rubblePropTemplate(){

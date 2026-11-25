@@ -127,6 +127,8 @@ export function unitAttackValue(sim,e){
     *(d.naval?1+(tech.seamanship||0)*.2:1)
     *(d.role==='cavalry'?(faction.cavalry||1):1)
     *(d.role==='siege'?(1+(tech.siegecraft||0)*.15):1)
+    *(e.heroLevel>1?1+(e.heroLevel-1)*.16:1)
+    *(!d.hero&&e.vetRank?1+e.vetRank*.10:1)
   );
 }
 
@@ -164,6 +166,10 @@ export function inspectorStatsMarkup(sim,e){
     add('spyglass','VIS',`${d.vision||15}m`,'Line of sight');
     if(e.owner===0&&e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='cart'){
       add(e.stance==='hold'?'shield-check':'swords','STANCE',e.stance==='hold'?'Hold':'Engage','Current combat stance','stat-stance');
+    }
+    if(e.vetRank>0){
+      const vetNames=['','★ Veteran','★★ Elite','★★★ Champion'];
+      chips.push(`<span class="stat-tag stat-veteran vet-tier-${e.vetRank}" title="${e.kills||0} confirmed kills · +${e.vetRank*10}% ATK & HP">${vetNames[e.vetRank]} (${e.kills||0})</span>`);
     }
     const callout=ROLE_CALLOUTS[e.type];
     if(callout)chips.push(`<span class="stat-tag" title="Unit specialty">${esc(callout)}</span>`);

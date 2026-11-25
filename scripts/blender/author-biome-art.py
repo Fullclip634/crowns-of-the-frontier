@@ -322,14 +322,14 @@ def build_cliffcap_mesh(name, style, seed, mat):
             bm.faces.new((top_ring[s], top_ring[sn], top_c))
 
     def cap_vc(co, n):
-        sun = max(0.0, min(1.0, n.z * 0.50 + 0.50))
-        dapple = 0.88 + 0.20 * math.sin(co.x * 2.8 + co.y * 2.4 + seed)
+        sun = max(0.0, min(1.0, n.z * 0.35 + 0.65))
+        dapple = 0.92 + 0.12 * math.sin(co.x * 2.8 + co.y * 2.4 + seed)
+        # Neutral-warm AO multiplier so Poly Haven grass/snow/sand textures blend 1:1 with terrain!
         if style == "snow":
-            return (0.90 * sun + 0.08, 0.95 * sun + 0.04, 0.99)
+            return (0.94 * sun, 0.96 * sun, 0.99 * sun)
         if style == "arid":
-            return (0.88 * sun * dapple, 0.74 * sun * dapple, 0.46 * sun * dapple)
-        # Sunlit AoE:DE emerald meadow grass turf matching the battlefield floor!
-        return (0.36 * sun * dapple, 0.64 * sun * dapple, 0.22 * sun * dapple)
+            return (0.96 * sun * dapple, 0.88 * sun * dapple, 0.72 * sun * dapple)
+        return (0.86 * sun * dapple, 0.94 * sun * dapple, 0.78 * sun * dapple)
 
     mesh = finalize_mesh(bm, name, mat, cap_vc, uv_scale=0.32, smooth=True)
     obj = bpy.data.objects.new(name, mesh)
@@ -380,49 +380,104 @@ def build_mountain_mesh(name, style, seed, mat):
 
 
 def build_bush_mesh(name, style, seed, mat):
-    """Builds a lush, smooth-shaded multi-tuft AoE:DE woodland shrub cluster."""
+    """Builds a realistic crisp-faceted woodland fern & leafy bramble tuft (zero spherical bubbles!)."""
     bm = bmesh.new()
-    lobes = [
-        (Vector((0.0, 0.0, 0.44)), 0.54, 0.50, 0.44, 2),
-        (Vector((-0.44, 0.24, 0.34)), 0.42, 0.38, 0.34, 1),
-        (Vector((0.46, 0.18, 0.36)), 0.44, 0.40, 0.36, 1),
-        (Vector((-0.26, -0.44, 0.32)), 0.40, 0.38, 0.32, 1),
-        (Vector((0.34, -0.38, 0.30)), 0.40, 0.36, 0.32, 1),
-        (Vector((0.06, 0.14, 0.68)), 0.36, 0.34, 0.28, 1),
-        (Vector((-0.20, 0.36, 0.48)), 0.34, 0.32, 0.28, 1),
-        (Vector((0.28, 0.32, 0.44)), 0.32, 0.30, 0.26, 1),
-        (Vector((-0.38, -0.14, 0.42)), 0.32, 0.30, 0.26, 1),
-        (Vector((0.12, -0.22, 0.52)), 0.32, 0.30, 0.26, 1),
-    ]
-    for idx, (offset, rx, ry, rz, subdivs) in enumerate(lobes):
-        ret = bmesh.ops.create_icosphere(bm, subdivisions=subdivs, radius=1.0)
-        for v in ret["verts"]:
-            p = v.co
-            ripple = 0.80 + 0.28 * math.sin(p.x * 6.3 + p.y * 4.7 + seed + idx * 1.9) * math.cos(p.z * 5.3 - idx)
-            flat_base = 0.50 if p.z < -0.2 else 1.0
-            v.co = Vector((
-                offset.x + p.x * rx * ripple,
-                offset.y + p.y * ry * ripple,
-                max(-0.08, offset.z + p.z * rz * ripple * flat_base),
-            ))
+    rng = random.Random(seed * 313 + 17)
+
+    def add_frond(angle, length, width, arch_h, pitch, offset_x=0.0, offset_y=0.0, base_z=-0.04):
+        """Creates a strictly closed 2-manifold tapered arching botanical frond blade."""
+        ca, sa = math.cos(angle), math.sin(angle)
+        tx, ty = -sa, ca
+        segs = 4
+        rings = []
+        for s in range(segs):
+            t = s / (segs - 1)
+            r = t * length
+            z = base_z + math.sin(t * math.pi * 0.82) * arch_h + t * pitch
+            # Tapered lance-leaf profile: narrow stem -> broad leafy mid-blade -> crisp point
+            w = width * (0.18 if s == 0 else (1.0 if s == 1 else (0.68 if s == 2 else 0.08)))
+            thick = 0.028 * (1.0 - t * 0.65)
+            cx = offset_x + ca * r
+            cy = offset_y + sa * r
+            v_l = bm.verts.new(Vector((cx - tx * w, cy - ty * w, z - thick * 0.35)))
+            v_t = bm.verts.new(Vector((cx, cy, z + thick)))
+            v_r = bm.verts.new(Vector((cx + tx * w, cy + ty * w, z - thick * 0.35)))
+            v_b = bm.verts.new(Vector((cx, cy, z - thick)))
+            rings.append((v_l, v_t, v_r, v_b))
+        for i in range(segs - 1):
+            a0, a1, a2, a3 = rings[i]
+            b0, b1, b2, b3 = rings[i + 1]
+            bm.faces.new((a0, a1, b1, b0))
+            bm.faces.new((a1, a2, b2, b1))
+            bm.faces.new((a2, a3, b3, b2))
+            bm.faces.new((a3, a0, b0, b3))
+        # Cap stem base & frond tip so geometry is 100% closed manifold
+        bm.faces.new((rings[0][3], rings[0][2], rings[0][1], rings[0][0]))
+        bm.faces.new((rings[-1][0], rings[-1][1], rings[-1][2], rings[-1][3]))
+
+    # Outer ring of low arching fern & bramble fronds radiating naturally around dark woodland core
+    outer_n = 11
+    for i in range(outer_n):
+        ang = (i / outer_n) * math.tau + rng.uniform(-0.18, 0.18)
+        ox = math.cos(ang) * rng.uniform(0.04, 0.14)
+        oy = math.sin(ang) * rng.uniform(0.04, 0.14)
+        add_frond(
+            angle=ang,
+            length=rng.uniform(0.68, 0.96),
+            width=rng.uniform(0.16, 0.23),
+            arch_h=rng.uniform(0.28, 0.44),
+            pitch=rng.uniform(0.04, 0.16),
+            offset_x=ox,
+            offset_y=oy,
+        )
+
+    # Mid-tier rising woodland foliage fronds (gives natural crisp silhouette like pine branches!)
+    mid_n = 8
+    for i in range(mid_n):
+        ang = ((i + 0.5) / mid_n) * math.tau + rng.uniform(-0.20, 0.20)
+        add_frond(
+            angle=ang,
+            length=rng.uniform(0.46, 0.68),
+            width=rng.uniform(0.14, 0.20),
+            arch_h=rng.uniform(0.36, 0.56),
+            pitch=rng.uniform(0.22, 0.36),
+            offset_x=rng.uniform(-0.08, 0.08),
+            offset_y=rng.uniform(-0.08, 0.08),
+            base_z=0.02,
+        )
+
+    # Inner upright shoots
+    for i in range(4):
+        ang = (i / 4.0) * math.tau + rng.uniform(-0.25, 0.25)
+        add_frond(
+            angle=ang,
+            length=rng.uniform(0.30, 0.44),
+            width=rng.uniform(0.11, 0.15),
+            arch_h=rng.uniform(0.44, 0.62),
+            pitch=rng.uniform(0.38, 0.52),
+            base_z=0.06,
+        )
 
     def bush_vc(co, n):
-        h = max(0.0, min(1.0, co.z / 0.94))
-        sun = max(0.0, min(1.0, n.z * 0.55 + 0.45))
-        ao = 0.42 + 0.58 * (h * 0.58 + sun * 0.42)
+        r = math.hypot(co.x, co.y)
+        h = max(0.0, min(1.0, co.z / 0.78))
+        tip = max(0.0, min(1.0, r / 0.85))
+        sun = max(0.0, min(1.0, n.z * 0.48 + 0.52))
+        # Deep grounded woodland interior shadow -> rich organic sunlit leaf tips (calibrated linear RGB!)
+        ao = 0.32 + 0.68 * (h * 0.48 + tip * 0.26 + sun * 0.26)
         dapple = 0.86 + 0.22 * math.sin(co.x * 7.8 - co.y * 6.5 + seed)
         if style == "snow":
-            frost = max(0.0, min(1.0, (n.z - 0.36) * 1.45)) * h
-            r = 0.16 * ao * dapple * (1.0 - frost) + 0.84 * ao * frost
-            g = 0.32 * ao * dapple * (1.0 - frost) + 0.90 * ao * frost
-            b = 0.22 * ao * dapple * (1.0 - frost) + 0.94 * ao * frost
-            return (r, g, b)
+            frost = max(0.0, min(1.0, (n.z - 0.32) * 1.35)) * (0.45 + 0.55 * h)
+            r_c = 0.06 * ao * dapple * (1.0 - frost) + 0.66 * ao * frost
+            g_c = 0.13 * ao * dapple * (1.0 - frost) + 0.74 * ao * frost
+            b_c = 0.08 * ao * dapple * (1.0 - frost) + 0.80 * ao * frost
+            return (r_c, g_c, b_c)
         if style == "arid":
-            return (0.44 * ao * dapple, 0.48 * ao * dapple, 0.22 * ao * dapple)
-        # Vibrant sunlit AoE:DE emerald-gold woodland bush!
-        return (0.34 * ao * dapple, 0.62 * ao * dapple, 0.20 * ao * dapple)
+            return (0.16 * ao * dapple, 0.19 * ao * dapple, 0.07 * ao * dapple)
+        # Authentic deep forest-olive & warm fern-green linear RGB matching our pine trees & grass!
+        return (0.075 * ao * dapple, 0.165 * ao * dapple, 0.042 * ao * dapple)
 
-    mesh = finalize_mesh(bm, name, mat, bush_vc, uv_scale=0.55, smooth=True)
+    mesh = finalize_mesh(bm, name, mat, bush_vc, uv_scale=0.55, smooth=False)
     obj = bpy.data.objects.new(name, mesh)
     obj["assetKey"] = name
     obj["assetMaterial"] = "bush"

@@ -1,5 +1,6 @@
 import {uiIcon} from './ui-icons.js';
-export function isCompactHUD(root){return !!root.defaultView?.matchMedia('(pointer:coarse) and (max-height:520px) and (orientation:landscape), (pointer:coarse) and (max-width:600px) and (orientation:portrait)').matches;}
+const COMPACT_QUERY='(pointer:coarse) and (max-height:520px) and (orientation:landscape), (max-height:460px) and (min-width:480px) and (orientation:landscape), (pointer:coarse) and (max-width:600px) and (orientation:portrait), (max-width:480px) and (orientation:portrait)';
+export function isCompactHUD(root){return !!root.defaultView?.matchMedia(COMPACT_QUERY).matches;}
 function collapseObjectives(root){
   const panel=root.querySelector('#objectives');panel.classList.remove('objectives-expanded');const body=panel.querySelector('#objective-body');if(body)body.hidden=true;
   const toggle=panel.querySelector('.objective-toggle');if(toggle){toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open battle objectives');toggle.title='Open objectives';toggle.innerHTML='Objectives <span class="objective-icon" aria-hidden="true">'+uiIcon('chevron-down')+'</span>';}
@@ -49,7 +50,7 @@ export function shouldAutoCollapseObjectives({mode='',interactive=false,simTime=
 }
 
 export function resetCompactHud(root){
-  const compactObjectives=typeof matchMedia==='function'&&matchMedia('(pointer:coarse) and (max-height:520px) and (orientation:landscape), (pointer:coarse) and (max-width:600px) and (orientation:portrait)').matches;
+  const compactObjectives=typeof matchMedia==='function'&&matchMedia(COMPACT_QUERY).matches;
   root.querySelector('#objectives')?.classList.toggle('objectives-expanded',!compactObjectives);
   closeCompactCommands(root);root.querySelector('#selection-panel').classList.remove('selection-expanded');root.querySelector('.map-panel').classList.remove('map-expanded');
   for(const button of root.querySelectorAll('[data-action=map-expand]')){button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Expand minimap');}

@@ -268,12 +268,30 @@ export function authoredBuilding(view,e){
   const jadeModel=rawFaction==='jade'?jadeBuildingTemplate(e.type,playerAge):null;
   if(jadeModel){
     const root=bindAuthoredTemplate(view,jadeModel.template,jadeModel.key,e.owner,'jade-heroes');
-    if(jadeModel.early){
+    if(jadeModel.feudal){
       const sc=jadeModel.scale||1;
       if(sc!==1){for(const child of root.children){child.position.multiplyScalar(sc);child.scale.multiplyScalar(sc);}}
+      const style=architectureStyle(playerAge);
+      root.userData.model3d={
+        ...root.userData.model3d,
+        authoredAgeVariant:true,
+        ...(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type)?{architectureAge:playerAge,architectureLabel:style.label}:{}),
+      };
+      if(e.type==='dock')orientDockPier(view,root,e);
+      if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.38,4.68,.15).multiplyScalar(sc);
+      else if(e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.28,3.78,-.55).multiplyScalar(sc);
+      else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(1.45,5.08,-1.55).multiplyScalar(sc);
+      return root;
     }
+    const styledAge=e.type==='towncenter'?Math.max(2,Math.min(3,playerAge)):playerAge;
+    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:styledAge};
+    if(e.type==='keep')root.scale.set(root.scale.x*1.25,root.scale.y*1.28,root.scale.z*1.25);
+    foundation(view,root,e,styledAge);
     if(e.type==='dock')orientDockPier(view,root,e);
-    if(e.type==='towncenter'||e.type==='dock'||isAgeStyled(e.type))root.userData.model3d={...root.userData.model3d,architectureAge:playerAge};
+    if(e.type==='blacksmith')root.userData.chimneyOutlet=new THREE.Vector3(-1.58,5.48,.05);
+    else if(e.type==='workshop')root.userData.chimneyOutlet=new THREE.Vector3(2.15,5.98,-1.35);
+    else if(e.type==='house')root.userData.chimneyOutlet=new THREE.Vector3(-1.38,4.18,-.65);
+    else if(e.type==='towncenter')root.userData.chimneyOutlet=new THREE.Vector3(2.45,6.68,-1.75);
     return root;
   }
   const ironModel=rawFaction==='iron'?ironholdBuildingTemplate(e.type,playerAge):null;

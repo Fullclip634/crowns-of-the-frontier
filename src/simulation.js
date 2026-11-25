@@ -278,7 +278,7 @@ export class Simulation {
   addResource(type,x,z,amount){const previousRevision=this.revision,e={id:this.nextId++,kind:'resource',type,x,z,hp:1,maxHp:1,amount,initialAmount:amount,r:type==='wood'?1.1:1.7,owner:-1};this.entities.push(e);if(['wood','gold','stone'].includes(type))this.revision++;recordPlacementAppend(this,e,previousRevision);return e;}
   addNaturalResource(type,x,z,baseAmount){return this.addResource(type,x,z,baseAmount*2);}
   addShrine(x,z){const e={id:this.nextId++,kind:'shrine',type:'shrine',x,z,hp:1,maxHp:1,r:3,owner:-1,progress:0,capturer:-1};this.entities.push(e);return e;}
-  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;const ironWonder=e.kind==='unit'&&(d.role==='siege'||e.type==='ironbreaker')&&wonderPowerFor(this,e.owner)?.faction==='iron'?1.35:1;const heroScale=e.kind==='unit'&&e.heroLevel>1?Math.pow(1.16,e.heroLevel-1):1;return base*(p.controller==='ai'?(p.aiHealth??100)/100:1)*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1)*(d.role==='siege'?(f.siegeHP||1):1)*ironWonder*heroScale);}
+  maxHP(e){const p=this.players[e.owner],f=this.faction(e.owner),d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type];const base=e.kind==='building'&&isFortifiable(e)?wallBaseHP(this,e):d.hp;const ironWonder=e.kind==='unit'&&(d.role==='siege'||e.type==='ironbreaker')&&wonderPowerFor(this,e.owner)?.faction==='iron'?1.35:1;const heroScale=e.kind==='unit'&&e.heroLevel>1?Math.pow(1.16,e.heroLevel-1):1;const vetScale=e.kind==='unit'&&!d.hero&&e.vetRank?1+e.vetRank*.10:1;return base*(p.controller==='ai'?(p.aiHealth??100)/100:1)*(e.kind==='building'?f.buildingHP*(1+p.tech.fortification*.3):(1+p.age*.13)*(1+p.tech.armor*.15)*(d.role==='infantry'||d.role==='spear'?f.infantryHP:1)*(d.role==='siege'?(f.siegeHP||1):1)*ironWonder*heroScale*vetScale);}
   addBuilding(type,owner,x,z,complete=false,layout){const d=BUILDINGS[type],previousRevision=this.revision;const e={id:this.nextId++,kind:'building',type,owner,x,z,r:d.r,hp:1,maxHp:1,progress:complete?1:0,queue:[],rally:null,cooldown:0};e.maxHp=this.maxHP(e);e.hp=complete?e.maxHp:e.maxHp*.12;this.entities.push(e);if(layout?.angle!==undefined)e.wallAngle=layout.angle;if(layout?.links)e.wallLinks=layout.links;else connectWall(e,this.entities);this.revision++;recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   addUnit(type,owner,x,z){const previousRevision=this.revision,d=UNITS[type],e={id:this.nextId++,kind:'unit',type,owner,x,z,r:d.radius??(type==='ram'||type==='trebuchet'?1.35:type==='catapult'?1.1:d.hero?.85:.65),hp:1,maxHp:1,order:null,orders:[],path:[],cooldown:0,carry:0,carryType:null,repath:0,stance:type==='king'?'hold':'aggressive',work:0};if(d.hero){e.displayName=HERO_DEFS[type]?.title||d.name;e.heroLevel=1;e.heroXp=0;e.autoCast=true;e.skillCooldowns=[0,0];}e.maxHp=this.maxHP(e);e.hp=e.maxHp;this.entities.push(e);recordPlacementAppend(this,e,previousRevision);this.emit('spawn',{entity:e});return e;}
   population(owner){return this.count(owner,'unit');}
@@ -536,7 +536,7 @@ export class Simulation {
   }
   attackDamage(e,target){const d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type],p=this.players[e.owner],role=d.role;let n=d.damage||0;if(d.naval)n*=1+(p.tech.seamanship||0)*.2;
     if(e.kind==='building')n*=1+p.tech.fortification*.15;
-    else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;if(role==='siege')n*=1+(p.tech.siegecraft||0)*.15;if(e.heroLevel>1)n*=1+(e.heroLevel-1)*.16;if((e.buffAttackUntil||0)>this.time)n*=1.3;}
+    else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;if(role==='siege')n*=1+(p.tech.siegecraft||0)*.15;if(e.heroLevel>1)n*=1+(e.heroLevel-1)*.16;if(!d.hero&&e.vetRank)n*=1+e.vetRank*.10;if((e.buffAttackUntil||0)>this.time)n*=1.3;}
     const ownerWonder=wonderPowerFor(this,e.owner);
     if(ownerWonder?.faction==='raven'&&e.kind==='unit')n*=1.22;
     if(ownerWonder?.faction==='iron'&&(role==='siege'||target.kind==='building'))n*=1.35;
@@ -566,7 +566,29 @@ export class Simulation {
     return nearHome;
   }
   hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
-    if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type]?.role==='cavalry'&&this.players[attacker.owner]?.tech?.raidingParties)this.players[attacker.owner].resources.gold+=3;awardHeroExperience(this,attacker,target);this.emit('death',{entity:target});for(const q of target.queue||[])if(q.kind==='age')this.players[target.owner].agePending=false;}}
+    if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type]?.role==='cavalry'&&this.players[attacker.owner]?.tech?.raidingParties)this.players[attacker.owner].resources.gold+=3;
+      // Soldier Veterancy: non-hero combat troops earn ★ / ★★ / ★★★ ranks with kills (+10% ATK & HP per rank!)
+      if(attacker?.kind==='unit'&&attacker.hp>0&&attacker.owner!==target.owner&&!UNITS[attacker.type]?.hero&&attacker.type!=='villager'&&(UNITS[attacker.type]?.damage||0)>0){
+        attacker.kills=(attacker.kills||0)+1;
+        const nextRank=attacker.kills>=9?3:attacker.kills>=5?2:attacker.kills>=2?1:0;
+        if(nextRank>(attacker.vetRank||0)){
+          const prevMax=attacker.maxHp;
+          attacker.vetRank=nextRank;
+          attacker.maxHp=this.maxHP(attacker);
+          attacker.hp=Math.min(attacker.maxHp,attacker.hp+Math.max(0,attacker.maxHp-prevMax)+Math.round(attacker.maxHp*.12));
+          this.emit('veteran',{entity:attacker,owner:attacker.owner,rank:nextRank});
+        }
+      }
+      // Spoils of War: razing completed hostile structures yields instant plunder gold & timber!
+      if(target.kind==='building'&&target.progress>=1&&attacker?.owner>=0&&this.hostile(attacker.owner,target.owner)&&this.players[attacker.owner]){
+        const spoils=['towncenter','keep','wonder'].includes(target.type)?{gold:140,wood:100}:['barracks','range','stable','workshop','blacksmith','market','monastery','dock'].includes(target.type)?{gold:65,wood:55}:['tower','gate'].includes(target.type)?{gold:40,wood:35}:['house','mill','camp','mine','farm'].includes(target.type)?{gold:25,wood:25}:null;
+        if(spoils){
+          this.players[attacker.owner].resources.gold+=spoils.gold;
+          this.players[attacker.owner].resources.wood+=spoils.wood;
+          this.emit('spoils',{owner:attacker.owner,target,gold:spoils.gold,wood:spoils.wood});
+        }
+      }
+      awardHeroExperience(this,attacker,target);this.emit('death',{entity:target});for(const q of target.queue||[])if(q.kind==='age')this.players[target.owner].agePending=false;}}
   hit(e,target){if(e.cooldown>0||!this.hostile(e.owner,target.owner))return;e.heading=Math.atan2(target.x-e.x,target.z-e.z);const amount=this.attackDamage(e,target);this.hurt(target,amount,e);let cd=e.kind==='building'?1.6:UNITS[e.type].cooldown||1.2;if(e.kind==='unit'){if((e.buffHasteUntil||0)>this.time)cd/=1.25;const def=UNITS[e.type];if(def.role==='ranged'&&this.faction(e.owner)?.rangedRate)cd/=this.faction(e.owner).rangedRate;if((def.role==='ranged'||def.role==='siege')&&wonderPowerFor(this,e.owner)?.faction==='jade')cd/=1.25;}e.cooldown=cd;
     const splash=e.kind==='unit'?(UNITS[e.type]?.splashRadius||(['catapult','warship'].includes(e.type)?4:0)):0;
     if(splash>0)forEachNearbyUnit(this,target.x,target.z,splash,nearby=>{if(nearby.hp>0&&!nearby.embarked&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&distance(nearby,target)<splash)this.hurt(nearby,amount*(e.type==='trebuchet'?.65:.58),e);});

@@ -589,7 +589,7 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
 .score-val{color:#fff0c4;font-weight:700}
 
 /* Docked Deselect Button on Selection Panel */
-#hud .selection-panel{position:relative;padding:12px 16px;max-height:266px}
+#hud .selection-panel{position:relative;padding:11px 15px;max-height:min(314px,39dvh)}
 .selection-deselect{
   position:absolute;
   top:10px;
@@ -722,10 +722,10 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
 /* Raise bottom-hud cleanly to sit flush near bottom edge now that bottomline is contextual */
 #hud .bottom-hud{bottom:calc(12px + var(--safe-bottom,var(--safe,0px)));left:calc(14px + var(--safe-left,0px));right:calc(14px + var(--safe-right,0px))}
 
-/* Tier 2: Tablets & Unfolded Foldables (coarse touch devices taller than compact phones) */
+/* Tier 2: Tablets & Unfolded Foldables — balanced proportional touch targets */
 @media(pointer:coarse) and (min-height:521px) and (min-width:601px){
-  #hud .game-header button,#hud .camera-controls button,#hud .command-buttons button,.build-tab,.selection-deselect,.sel-card{min-width:44px;min-height:44px}
-  .idle-pill{min-height:40px;padding:4px 11px}
+  #hud .game-header button,#hud .camera-controls button,#hud .command-buttons button,.build-tab,.selection-deselect,.sel-card{min-width:36px;min-height:36px}
+  .idle-pill{min-height:36px;padding:4px 10px}
 }
 
 /* Tier 4: Ultrawide & 4K Displays — keep HUD within natural peripheral vision */
@@ -903,3 +903,88 @@ html,body{overflow:hidden;overflow-x:clip;max-width:100%}
 .wonder-power-badge .ui-icon{width:15px;height:15px;color:var(--wonder-accent,#e8be5a);flex:none}
 .wonder-power-badge strong{display:block;font-size:11px;line-height:1.15;color:#fff2cc}
 .wonder-power-badge small{display:block;font-size:10px;line-height:1.2;color:#d8cca6}
+
+/* Full-color hand-painted medieval icon atlas + warm recessed rarity-rimmed tiles */
+.ui-icon-painted{
+  display:inline-block;
+  background-image:url('./ui-art/medieval-icons-atlas.webp');
+  background-size:800% 800%;
+  background-position:var(--pi-x,0%) var(--pi-y,0%);
+  background-repeat:no-repeat;
+  border-radius:4px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.62));
+}
+.ui-icon-painted>.ui-icon-fallback{display:none}
+
+/* Tactile dark bevelled inventory tile frames on primary gameplay cards, portraits, build & tech icons */
+.selection-portrait .ui-icon-painted,
+#build-panel .build-icon .ui-icon-painted,
+.production-actions>button>span>.ui-icon-painted,
+.production-choice button>span>.ui-icon-painted,
+.training-queue .ui-icon-painted,
+.gq-icon .ui-icon-painted,
+.sel-card-icon .ui-icon-painted,
+.unit-tokens button>.ui-icon-painted,
+.tree-card>div:first-child>.ui-icon-painted,
+.tree-card>div:first-child>span>.ui-icon-painted,
+.hub-mode-icon .ui-icon-painted,
+.hero-btn-icon .ui-icon-painted,
+.crest .ui-icon-painted,
+.empty-crest .ui-icon-painted,
+.result-crest>.ui-icon-painted,
+.chronicle-crest-seal .ui-icon-painted{
+  background-color:#1a1310;
+  border-radius:6px;
+  border:1.5px solid #77634b;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.72),inset 0 -1px 0 rgba(255,224,160,.12),0 1px 3px rgba(0,0,0,.52);
+  padding:1px;
+  filter:none;
+}
+.selection-portrait .ui-icon-painted{width:38px;height:38px;border-radius:7px}
+#build-panel .build-icon .ui-icon-painted{width:30px;height:30px}
+.production-actions>button>span>.ui-icon-painted,.production-choice button>span>.ui-icon-painted{width:28px;height:28px}
+.tree-card>div:first-child>.ui-icon-painted,.tree-card>div:first-child>span>.ui-icon-painted{width:32px;height:32px}
+.sel-card-icon .ui-icon-painted{width:24px;height:24px;border-radius:5px}
+.gq-icon .ui-icon-painted{width:24px;height:24px;border-radius:5px}
+.resource-icon .ui-icon-painted{width:22px;height:22px}
+.command-buttons button>.ui-icon-painted{width:24px;height:24px}
+.time-controls button .ui-icon-painted{width:20px;height:20px}
+.civ-uniques .ui-icon-painted{width:19px;height:19px;border-radius:4px}
+.hub-mode-icon .ui-icon-painted{width:28px;height:28px;border-radius:6px}
+.hero-btn-icon .ui-icon-painted{width:30px;height:30px;border-radius:7px}
+.crest .ui-icon-painted{width:34px;height:34px;border-radius:7px}
+.unit-attributes .ui-icon-painted,.counter-strip .ui-icon-painted,.wonder-callout .ui-icon-painted{width:16px;height:16px;border-radius:3px}
+/* Avoid redundant double boxes when wrapper already holds a framed painted tile */
+.hub-mode-icon:has(.ui-icon-painted),.hero-btn-icon:has(.ui-icon-painted),.crest:has(.ui-icon-painted),.build-icon:has(.ui-icon-painted){background:transparent;border-color:transparent;box-shadow:none;padding:0}
+.landing .intro{text-shadow:0 1px 8px rgba(4,10,8,.92),0 2px 18px rgba(4,10,8,.78)}
+
+/* Rarity / tier rims matching authentic medieval RPG/RTS icon craft */
+.ui-icon-painted.ui-tier-uncommon{border-color:#56965d}
+.ui-icon-painted.ui-tier-rare{border-color:#588ec4}
+.ui-icon-painted.ui-tier-epic{border-color:#a868d4}
+.ui-icon-painted.ui-tier-legendary{
+  border-color:#ebb949;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.64),0 0 8px rgba(235,185,73,.30);
+}
+
+/* Soldier Veterancy rank stars on world health bars & unit inspector */
+.world-health .vet-pips{
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 2px);
+  transform:translateX(-50%);
+  font-size:9px;
+  line-height:1;
+  letter-spacing:-.5px;
+  font-weight:700;
+  white-space:nowrap;
+  pointer-events:none;
+  text-shadow:0 1px 2px #000,0 0 4px rgba(0,0,0,.95);
+}
+.world-health .vet-pips.vet-1{color:#e6a164}
+.world-health .vet-pips.vet-2{color:#e3eefc}
+.world-health .vet-pips.vet-3{color:#ffdf63}
+.stat-veteran{font-weight:700}
+.stat-veteran.vet-tier-1{border-color:rgba(230,161,100,.55);color:#f4bf8c;background:rgba(62,38,18,.76)}
+.stat-veteran.vet-tier-2{border-color:rgba(196,216,245,.55);color:#e4f0ff;background:rgba(28,42,58,.78)}
+.stat-veteran.vet-tier-3{border-color:rgba(255,217,94,.72);color:#ffea8a;background:rgba(68,52,14,.84)}

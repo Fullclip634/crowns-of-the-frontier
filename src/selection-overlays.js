@@ -49,7 +49,7 @@ export function tacticalRangeRadius(sim,e){
     if(!def?.range||e.progress<1)return 0;
     return def.range;
   }
-  if(e.kind==='unit'&&(e.type==='catapult'||e.type==='warship')){
+  if(e.kind==='unit'&&(e.type==='catapult'||e.type==='trebuchet'||e.type==='warship')){
     const def=UNITS[e.type];
     const p=sim?.players?.[e.owner];
     return (def?.range||0)+(def?.role==='ranged'?(p?.tech?.ranged||0):0);

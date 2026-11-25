@@ -20,12 +20,16 @@ async function loadGlb(relPath){
   return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(ab,'');
 }
 
-test('Blender 4.5 LTS frontier-jade-heroes.glb contains all 26 Jade, Hero, Trebuchet & Rubble models',async()=>{
+test('Blender 4.5 LTS frontier-jade-heroes.glb contains all 38 Jade (Feudal/Castle/Imperial), Hero, Trebuchet & Rubble models',async()=>{
   const gltf=await loadGlb('src/assets3d/frontier-jade-heroes.glb');
   const reg=registerJadeHeroesArtwork(gltf.scene);
-  assert.equal(reg.templates.size,26,'Expected all 26 Jade/Hero/Trebuchet/Rubble templates');
+  assert.equal(reg.templates.size,38,'Expected all 38 Jade/Hero/Trebuchet/Rubble templates');
+  assert.equal(jadeBuildingTemplate('towncenter',0),null,'Age 0 uses Dark Age frontier settlement');
+  for(const b of ['towncenter','house','barracks','range','stable','blacksmith','market','mill','camp','mine','tower','dock']){
+    assert.ok(jadeBuildingTemplate(b,1)?.feudal,`Missing Feudal Age Jade building template for ${b}`);
+  }
   for(const b of ['towncenter','house','barracks','range','stable','workshop','blacksmith','market','monastery','mill','camp','mine','tower','keep','wonder','dock']){
-    assert.ok(jadeBuildingTemplate(b,2),`Missing Jade building template for ${b}`);
+    assert.ok(jadeBuildingTemplate(b,2),`Missing Castle Age Jade building template for ${b}`);
   }
   assert.ok(jadeBuildingTemplate('towncenter',3),'Missing Imperial Jade town center');
   for(const u of ['chukonu','firelancer','trebuchet','hero_alder','hero_sun','hero_raven','hero_iron','hero_jade']){

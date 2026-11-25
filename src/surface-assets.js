@@ -83,6 +83,10 @@ export async function loadSurfaceAssets(quality,renderer,options={}){
 export function surfaceAssetState(){const maps=[...cache.textures()];return {source:'Poly Haven CC0',characters:{source:'Original Blender artwork',atlases:Object.keys(surfaces.character||{})},loaded:maps.length,compressed:maps.filter(map=>map.isCompressedTexture).length,compressedMipBytes:maps.reduce((n,map)=>n+(map.isCompressedTexture?map.mipmaps.reduce((sum,mip)=>sum+mip.data.byteLength,0):0),0),...surfaceCodecState()};}
 export function characterSurfaceMaps(){return surfaces.character||{};}
 export function roofSurfaceMaps(){return surfaces.roof||{};}
+export function terrainTurfMaps(mapName='highlands'){
+  const key=isSnowBiome(mapName)?'snow':mapName==='arid'?'sand':'grass';
+  return surfaces[key]||surfaces.grass||{};
+}
 
 function applyCoolAshlarStone(material){
   if(!material||material.userData?.coolAshlarStone)return;
@@ -130,13 +134,16 @@ export function applySurfaceMaterials(view){
   applyCoolAshlarStone(m.stone);applyCoolAshlarStone(m.stoneDark);
   bind(m.plaster,'plaster',0xe8dec3);
   bind(m.wood,'wood',0xe4d7bf);bind(m.darkwood,'wood',0xb09c84);bind(m.timberEdge,'wood',0x9c8770);
+  // Realistic Poly Haven PBR textures for The Jade Empire's glazed celadon roof tiles & weathered cinnabar timber!
+  bind(m.jadeRoof,'roof',0x548b78,{roughness:.76,metalness:.05});
+  bind(m.lacquer,'wood',0x91392d,{roughness:.74,metalness:.03});
   bind(m.rock,'boulder',0xd8ded8);
   // Dark granite-slate host rock contrasts cleanly against inlaid metallic gold
   // veins without crushing boulder albedo into flat charcoal black.
   bind(m.oreRock,'boulder',0x969188,{metalness:.08,roughness:.84});
   const atm=ensureAtmosphereUniforms(view);
   for(const key of ['rock','oreRock','gold','iron'])applyAnalyticIblToMaterial(m[key],atm);
-  // Propagate loaded Poly Haven rock PBR maps to cloned TerrainDetails cliff/mountain meshes
+  // Propagate loaded Poly Haven rock & turf PBR maps to cloned TerrainDetails cliff/mountain/cap meshes
   if(view.terrainDetails&&m.rock){
     for(const mesh of [view.terrainDetails.mesh,view.terrainDetails.cliffWallMesh,view.terrainDetails.mountainMesh]){
       const dm=mesh?.material;if(!dm)continue;
@@ -144,6 +151,17 @@ export function applySurfaceMaterials(view){
       dm.map=m.rock.map;dm.normalMap=m.rock.normalMap;dm.roughnessMap=m.rock.roughnessMap;
       if(dm.normalScale&&m.rock.normalScale)dm.normalScale.copy(m.rock.normalScale);
       if(changed)dm.needsUpdate=true;
+    }
+    const capMat=view.terrainDetails.cliffCapMesh?.material;
+    const mapName=view.landscape?.map||'highlands';
+    const turfSet=terrainTurfMaps(mapName);
+    if(capMat&&turfSet?.color){
+      const nextNormal=quality==='low'?null:turfSet.normal||null;
+      const changed=capMat.map!==turfSet.color||capMat.normalMap!==nextNormal;
+      capMat.map=turfSet.color;capMat.normalMap=nextNormal;
+      capMat.color.setHex(isSnowBiome(mapName)?0xffffff:0xdbe6cc);
+      if(capMat.normalScale)capMat.normalScale.setScalar(.35);
+      if(changed)capMat.needsUpdate=true;
     }
   }
   view.surfaceDiagnostics={...surfaceAssetState(),anisotropy};view.surfaceQuality=quality;
