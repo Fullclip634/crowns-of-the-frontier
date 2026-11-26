@@ -20,7 +20,7 @@ test('Walls progress from Wooden Palisades (Age 1-2) to Stone (Castle Age) to Fo
   assert.equal(BUILDINGS.wall.hp,1400);
   assert.equal(BUILDINGS.wall.age,0,'Palisade walls are buildable from the Frontier Age');
   assert.equal(BUILDINGS.gate.age,0,'Palisade gates are buildable from the Frontier Age');
-  assert.equal(BUILDINGS.wall.time,14);
+  assert.equal(BUILDINGS.wall.time,9);
   assert.deepEqual(BUILDINGS.wall.cost,{stone:22});
   assert.equal(BUILDINGS.gate.hp,1600);
   assert.equal(BUILDINGS.wonder.hp,5000);

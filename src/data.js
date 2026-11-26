@@ -40,7 +40,7 @@ export const UNITS = {
   king:{name:'Sovereign',desc:'Your irreplaceable ruler in Crownfall mode. Protect the sovereign at all costs.',cost:{},hp:360,damage:15,armor:4,range:2,speed:4.2,time:0,age:2,at:[],role:'infantry',vision:20},
 };
 export const BUILDINGS = {
-  towncenter:{name:'Town center',desc:'The heart of your settlement. Trains workers and scouts, advances ages, and receives all resources.',cost:{wood:300,stone:200},hp:2600,r:5,time:65,age:0,cap:15,drop:['food','wood','gold','stone'],damage:13,range:16,volley:2,reload:1.2},
+  towncenter:{name:'Town center',desc:'The heart of your settlement. Trains workers and scouts, advances ages, and receives all resources.',cost:{wood:300,stone:200},hp:2600,r:5,time:90,age:0,cap:15,drop:['food','wood','gold','stone'],damage:13,range:16,volley:2,reload:1.2},
   house:{name:'House',desc:'Adds 10 population capacity.',cost:{wood:55},hp:450,r:2.3,time:18,age:0,cap:10},
   farm:{name:'Farm',desc:'Renewable food source. Assign a villager to harvest.',cost:{wood:65},hp:250,r:3,time:12,age:0,resource:'food'},
   mill:{name:'Mill',desc:'Nearby food drop-off. Reduces walking time for farmers and foragers.',cost:{wood:90},hp:550,r:2.5,time:22,age:0,drop:['food']},
@@ -54,11 +54,11 @@ export const BUILDINGS = {
   market:{name:'Market',desc:'Exchange resources for gold, or buy supplies. Economic research is available here.',cost:{wood:180},hp:900,r:3.4,time:32,age:1},
   tower:{name:'Watchtower',desc:'Automatically fires on enemies. Provides excellent vision.',cost:{wood:90,stone:130},hp:1400,r:2,time:35,age:1,damage:18,range:20,vision:27,volley:3,reload:1.1},
   bombard:{name:'Bombard tower',desc:'Imperial cannon bastion. Fires heavy armor-piercing cannonballs that shatter battering rams, siege engines, and heavy cavalry.',cost:{stone:240,gold:140,wood:80},hp:2400,r:2.3,time:52,age:3,damage:78,penetration:5,siegeBonus:1.6,range:22,vision:29,volley:1,reload:3.2,splashRadius:2.4},
-  keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:80,age:2,damage:35,range:23,cap:20,vision:30,volley:5,reload:1},
-  wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Starts as a wooden palisade in Frontier and Feudal Ages and upgrades to stone in the Castle Age. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:14,age:0},
+  keep:{name:'Castle',desc:'Powerful fortress with heavy fire and 20 population capacity.',cost:{stone:550,wood:160},hp:4000,r:4.8,time:120,age:2,damage:35,range:23,cap:20,vision:30,volley:5,reload:1},
+  wall:{name:'Stone wall',desc:'Blocks ground movement and protects your settlement. Starts as a wooden palisade in Frontier and Feudal Ages and upgrades to stone in the Castle Age. Tap a start and end or drag, then choose Build wall.',cost:{stone:22},hp:1400,r:1.5,time:9,age:0},
   gate:{name:'Gatehouse',desc:'Friendly units can pass through. Blocks enemy movement. Starts as a wooden palisade gate and upgrades to a stone gatehouse in the Castle Age.',cost:{stone:90,wood:30},hp:1600,r:2.5,time:24,age:0},
   monastery:{name:'Monastery',desc:'Trains healers and researches Sanctuary discipline.',cost:{wood:200,gold:80},hp:1100,r:3.4,time:35,age:2},
-  wonder:{name:'Grand monument',desc:'Imperial achievement granting a permanent kingdom-wide Super-Power! In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:120,age:3},
+  wonder:{name:'Grand monument',desc:'Imperial achievement granting a permanent kingdom-wide Super-Power! In Wonder mode, defend it for 4 minutes to win.',cost:{wood:900,gold:900,stone:900},hp:5000,r:5.5,time:270,age:3},
 };
 export const TECHS = {
   economy:{name:'Efficient tools',desc:'+25% gathering speed per level.',at:['towncenter','market','mill','camp','mine'],cost:{food:120,wood:80},max:3,age:0,time:28},

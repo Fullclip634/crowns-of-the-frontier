@@ -8,7 +8,7 @@ export const PALISADE_WALL_HP=400;
 export const PALISADE_GATE_HP=550;
 export const PALISADE_WALL_COST=Object.freeze({wood:8});
 export const PALISADE_GATE_COST=Object.freeze({wood:35});
-export const PALISADE_WALL_TIME=8;
+export const PALISADE_WALL_TIME=5;
 export const PALISADE_GATE_TIME=14;
 
 export const FORTIFIED_WALL_TECH='fortifiedWall';

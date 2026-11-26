@@ -16,7 +16,7 @@ import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {installGarrison} from './garrison.js';
 import {installProjectileCombat} from './projectile-combat.js';
-import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical} from './maintenance.js';
+import {mechanicalUnit,healableUnit,repairableTarget,repairMechanical,peekBuildingWorkFactor,recordBuildingWork} from './maintenance.js';
 import {gatheringRange,gatheringApproach,gatheringPathRange} from './work-ranges.js';
 import {constructionFace,constructionHeading} from './construction-contact.js';
 import {approachConstruction,approachMelee} from './construction-approach.js';
@@ -711,9 +711,9 @@ export class Simulation {
       const face=target.kind==='building'?constructionFace(e,target):-1;
       if(target.kind==='building'){if(face<0){approachConstruction(this,e,target,dt);return;}e.heading=constructionHeading(target,face);}
       else{if(distance(e,target)>target.r+3){this.move(e,target,dt,target.r+2.7);return;}e.heading=Math.atan2(target.x-e.x,target.z-e.z);}
-      if(target.progress<1){const buildRate=this.players[target.owner]?.faction==='jade'?1.15:1;const delta=(dt*buildRate)/wallBuildTime(this,target.owner,target.type);target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
+      if(target.progress<1){const share=recordBuildingWork(this,e,target,'build'),buildRate=this.players[target.owner]?.faction==='jade'?1.15:1;const delta=(dt*buildRate*share)/wallBuildTime(this,target.owner,target.type);target.progress=Math.min(1,target.progress+delta);target.hp=Math.min(target.maxHp,target.hp+target.maxHp*.88*delta);
         if(target.progress>=1){target.hp=target.maxHp;if(target.owner===0){this.stats.built++;this.tutorialFlags[target.type]=true;this.emit('complete',{entity:target});}this.revision++;}}
-      else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','gate'].includes(target.type)?(wallTier(this,target)==='palisade'?'wood':'stone'):['tower','bombard','keep','wonder'].includes(target.type)?'stone':'wood';const cost=dt*.6;if(this.players[e.owner].resources[resource]>=cost){this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23);}else this.finishOrder(e);}}
+      else if(target.hp<target.maxHp){if(mechanicalUnit(target)){if(!repairMechanical(this,e,target,dt))this.finishOrder(e);}else{const resource=['wall','gate'].includes(target.type)?(wallTier(this,target)==='palisade'?'wood':'stone'):['tower','bombard','keep','wonder'].includes(target.type)?'stone':'wood';const share=peekBuildingWorkFactor(this,e,target,'repair'),cost=dt*.6*share;if(this.players[e.owner].resources[resource]>=cost){recordBuildingWork(this,e,target,'repair');this.players[e.owner].resources[resource]-=cost;target.hp=Math.min(target.maxHp,target.hp+dt*23*share);}else this.finishOrder(e);}}
       else{if(order.type==='build'&&target.type==='wall')this.finishWallOrder(e,target);else this.finishOrder(e);if(!e.order&&target.type==='farm')e.order={type:'gather',target:target.id};
       }return;
     }

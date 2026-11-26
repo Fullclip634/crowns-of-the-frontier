@@ -96,7 +96,7 @@ test('a dock builder uses a land-side work face without walking into the sea',()
 test('a crew resumes construction from a save without saved cosmetic approach positions',()=>{
   let sim=fixture();const site=sim.addBuilding('wonder',0,.25,20.75),workers=Array.from({length:8},(_,i)=>{const a=i*Math.PI/4,w=sim.addUnit('villager',0,site.x+Math.sin(a)*14,site.z+Math.cos(a)*14);w.order={type:'build',target:site.id};return w;});
   advance(sim,workers,3);sim=Simulation.restore(JSON.parse(JSON.stringify(sim.serialize())));const restored=workers.map(w=>sim.get(w.id)),strokes=new Set();
-  advance(sim,restored,65,(w,target)=>{strokes.add(w.id);assert.ok(constructionFace(w,target)>=0);});
+  advance(sim,restored,95,(w,target)=>{strokes.add(w.id);assert.ok(constructionFace(w,target)>=0);});
   assert.equal(sim.get(site.id).progress,1);assert.equal(strokes.size,workers.length);assert.equal(sim.events.some(e=>e.type==='order-blocked'),false);
 });
 
