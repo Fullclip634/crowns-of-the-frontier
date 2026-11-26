@@ -8,6 +8,7 @@ import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
 import {applyMapGeography} from './terrain-barriers.js';
 import {spawnHeroGeneral} from './heroes.js';
+import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,spaceStartingBuildings} from './battlefield-start.js';
 
 export const AI_HEALTH_LEVELS=Object.freeze([100,90,80,70,60,50]);
 
@@ -166,6 +167,7 @@ function initializeBattle(sim){
   if(sim.options.map==='coast')kingdoms.forEach(({player,owner})=>{const z=player.start.z,sign=Math.sign(player.start.x),mid=Math.sin(z*.03)*2;
     sim.addBuilding('dock',owner,mid+sign*17.5,z,true);sim.addUnit('fishingboat',owner,mid+sign*8,z+5);if(player.age>=1)sim.addUnit('galley',owner,mid+sign*8,z-6);sim.addUnit('transport',owner,mid+sign*8,z+14);
   });
+  if(sim.battlefieldLayout>=1)spaceStartingBuildings(sim);
   kingdoms.forEach(({player,owner})=>{
     // Each settlement receives the same seeded local deposits, independent of difficulty.
     startingDeposits(sim,player.start,owner);
@@ -188,6 +190,11 @@ function initializeBattle(sim){
     if(sim.players[owner]?.age>=2)spawnHeroGeneral(sim,owner);
   }
   for(const unit of sim.entities.filter(e=>e.type==='fishingboat'))sim.assignWorker(unit);
+  if(sim.battlefieldLayout>=1){
+    clearStartingDeposits(sim);
+    ensureStartingSupplies(sim);
+    clearStartingUnitPositions(sim);
+  }
   sim.updateFog();
 }
 

@@ -33,6 +33,7 @@ import {seedDeerHerds,tickWildlife} from './wildlife.js';
 import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS} from './heroes.js';
 import {closestCandidates} from './closest-candidates.js';
 import {navalPairClearance,separationUnitVector,resolveNavalSpacing,navalDestinationOccupied} from './naval-spacing.js';
+import {BATTLEFIELD_LAYOUT_VERSION,spaceStartingBuildings} from './battlefield-start.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
@@ -76,11 +77,13 @@ function replaceMissingShoreResources(sim,owner){
 }
 
 export class Simulation {
-  constructor(options={}) {
+  constructor(options={},restoring=false) {
     this.options={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026,...options};
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='siege')this.options.map='ironpass';
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
+    this.battlefieldLayout=restoring||this.options.replay?(this.options.battlefieldLayout??0):BATTLEFIELD_LAYOUT_VERSION;
+    if(this.battlefieldLayout>0)this.options.battlefieldLayout=this.battlefieldLayout;
     const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale',...EPIC_FRONTIER_MAPS].includes(this.options.map)?240:WORLD;
     const requestedSize=this.mission?(this.mission.worldSize||WORLD):(Number(this.options.worldSize)||BATTLE_SIZES[this.options.mapSize]?.size||defaultMapSize);
     this.worldSize=this.options.mode==='custom'?this.options.worldSize:requestedSize;this.halfWorld=this.worldSize/2;this.gridSize=this.worldSize/CELL;
@@ -167,7 +170,7 @@ export class Simulation {
       this.addBuilding('house',0,-55+dx0,28+dz0,true);this.addBuilding('house',0,-36+dx0,48+dz0,true);
     }
     if(m==='siege'){
-      this.addBuilding('keep',0,-28+dx0,20+dz0,true);this.addBuilding('range',0,-49+dx0,17+dz0,true);
+      this.addBuilding('keep',0,(this.battlefieldLayout>=1?-35:-28)+dx0,(this.battlefieldLayout>=1?19:20)+dz0,true);this.addBuilding('range',0,-49+dx0,17+dz0,true);
       this.addBuilding('blacksmith',0,-51+dx0,42+dz0,true);this.addBuilding('stable',0,-27+dx0,40+dz0,true);
       const garrison=['spearman','spearman','spearman','spearman','archer','archer','archer','archer','swordsman','swordsman','knight','knight'];
       garrison.forEach((type,i)=>this.addUnit(type,0,-35+dx0+(i%4)*2.2,22+dz0-Math.floor(i/4)*2.2));
@@ -185,7 +188,7 @@ export class Simulation {
         this.addBuilding('house',1,56+dx1,-32+dz1,true);this.addBuilding('house',1,37+dx1,-52+dz1,true);
       }
       if(m==='siege'){
-        this.addBuilding('keep',1,29+dx1,-23+dz1,true);this.addBuilding('workshop',1,24+dx1,-39+dz1,true);
+        this.addBuilding('keep',1,(this.battlefieldLayout>=1?37:29)+dx1,(this.battlefieldLayout>=1?-48:-23)+dz1,true);this.addBuilding('workshop',1,24+dx1,-39+dz1,true);
         this.addBuilding('range',1,51+dx1,-22+dz1,true);this.addBuilding('stable',1,38+dx1,-18+dz1,true);
         this.addBuilding('blacksmith',1,53+dx1,-38+dz1,true);
         this.addBuilding('tower',1,21+dx1,-27+dz1,true);this.addBuilding('tower',1,35+dx1,-12+dz1,true);
@@ -212,6 +215,7 @@ export class Simulation {
       movedStarts.push(owner);
       if(owner===0){dx0+=dx;dz0+=dz;}else{dx1+=dx;dz1+=dz;}
     }
+    if(this.battlefieldLayout>=1)spaceStartingBuildings(this);
     // Mirrored resources give both starting settlements the same opportunities.
     const clusters=[[-57,15,'wood',20,true],[-13,49,'wood',22,true],[-53,51,'food',7,true],[-24,15,'gold',5,true],[-57,30,'stone',5,true],[-58,-32,'wood',25,false],[-25,-40,'gold',7,false],[-16,-16,'stone',6,false],[-14,13,'food',7,false],[-65,64,'wood',18,false]];
     const edgeLimit=this.halfWorld-5;
@@ -860,7 +864,7 @@ export class Simulation {
   serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
-    const s=new Simulation(data.options);
+    const s=new Simulation(data.options,true);
     // Version-one saves store each opening location on the player. Restore
     // the original terrain and roads around that layout, even across map revisions.
     const starts=s.spawnPositions.map((start,owner)=>data.players[owner]?.start??start);

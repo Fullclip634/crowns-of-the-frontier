@@ -105,11 +105,15 @@ function applyClassicChapterArchitecture(sim){
     // A Crown of Stone (320x320): Huge spacious Iron Ridge plateau (~78m x 78m buildable yard!)
     // backed by western/southern highlands with short cliff-to-cliff walls across North & East mountain passes!
     const ridgeKeep=[...testKeep,pad0];
-    addCliffRidge(sim,{x:p0.x-50,z:p0.z-38},{x:p0.x-14,z:p0.z-36},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.6,keepClear:ridgeKeep,seedOffset:301,foothillTrees:true});
-    addCliffRidge(sim,{x:p0.x+14,z:p0.z-36},{x:p0.x+38,z:p0.z-18},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.4,keepClear:ridgeKeep,seedOffset:303,foothillTrees:true});
-    addCliffRidge(sim,{x:p0.x+38,z:p0.z+14},{x:p0.x+56,z:p0.z+54},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.8,keepClear:ridgeKeep,seedOffset:302,foothillTrees:true});
-    connectCliffPassWall(sim,0,{x:p0.x-12,z:p0.z-36},{x:p0.x+12,z:p0.z-36},p0,{complete:true,withGate:true,withTower:true});
-    connectCliffPassWall(sim,0,{x:p0.x+38,z:p0.z-16},{x:p0.x+38,z:p0.z+12},p0,{complete:true,withGate:true,withTower:true});
+    if(sim.battlefieldLayout>=1){
+      buildNaturalFortifiedBase(sim,0,p0,{radius:38,keepClear:[pad0,{x:p1.x,z:p1.z,r:34}],seedOffset:301});
+    }else{
+      addCliffRidge(sim,{x:p0.x-50,z:p0.z-38},{x:p0.x-14,z:p0.z-36},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.6,keepClear:ridgeKeep,seedOffset:301,foothillTrees:true});
+      addCliffRidge(sim,{x:p0.x+14,z:p0.z-36},{x:p0.x+38,z:p0.z-18},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.4,keepClear:ridgeKeep,seedOffset:303,foothillTrees:true});
+      addCliffRidge(sim,{x:p0.x+38,z:p0.z+14},{x:p0.x+56,z:p0.z+54},{step:3.6,width:1,radius:3.2,height:4.8,wobble:1.8,keepClear:ridgeKeep,seedOffset:302,foothillTrees:true});
+      connectCliffPassWall(sim,0,{x:p0.x-12,z:p0.z-36},{x:p0.x+12,z:p0.z-36},p0,{complete:true,withGate:true,withTower:true});
+      connectCliffPassWall(sim,0,{x:p0.x+38,z:p0.z-16},{x:p0.x+38,z:p0.z+12},p0,{complete:true,withGate:true,withTower:true});
+    }
     placeBuilding(sim,'blacksmith',0,p0.x-18,p0.z-2,true);
     scatterBiomeCliffs(sim,{count:6,ridgeLen:28,withMassifs:true,keepClear:[...ridgeKeep,{x:p0.x,z:p0.z,r:52}],seedOffset:308});
   }else if(mode==='campaign4'){

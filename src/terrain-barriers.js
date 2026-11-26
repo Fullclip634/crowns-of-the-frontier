@@ -54,7 +54,7 @@ export function barrierCollision(sim,type,x,z,radius){
   return false;
 }
 
-function isSiteBlockedForBarrier(sim,x,z,r,passes=[],keepClear=[]){
+function isSiteBlockedForBarrier(sim,x,z,r,passes=[],keepClear=[],replaceStartForest=false){
   if(Math.abs(x)>sim.halfWorld-2.5||Math.abs(z)>sim.halfWorld-2.5)return true;
   if(sim.isWater(x,z))return true;
   if(bridgeFootprint(sim.options?.map,x,z,r+3.5))return true;
@@ -66,15 +66,16 @@ function isSiteBlockedForBarrier(sim,x,z,r,passes=[],keepClear=[]){
   }
   for(const e of sim.entities){
     if(e.hp<=0)continue;
-    const pad=e.kind==='building'?e.r+r+1.6:e.kind==='unit'?e.r+r+1.4:e.kind==='shrine'?e.r+r+4.5:(e.kind==='resource'&&(e.startDeposit!==undefined||e.startForest!==undefined))?e.r+r+.45:0;
+    const protectedResource=e.kind==='resource'&&(e.startDeposit!==undefined||!replaceStartForest&&e.startForest!==undefined);
+    const pad=e.kind==='building'?e.r+r+1.6:e.kind==='unit'?e.r+r+1.4:e.kind==='shrine'?e.r+r+4.5:protectedResource?e.r+r+.45:0;
     if(pad>0&&Math.hypot(e.x-x,e.z-z)<pad)return true;
   }
   return false;
 }
 
 /** Adds a single impassable Blender-authored cliffwall escarpment or alpine mountain peak. */
-export function addNaturalBarrier(sim,x,z,{r=3.1,height=4.2,kind='cliffwall',angle=0,seed=0,passes=[],keepClear=[]}={}){
-  if(isSiteBlockedForBarrier(sim,x,z,r,passes,keepClear))return null;
+export function addNaturalBarrier(sim,x,z,{r=3.1,height=4.2,kind='cliffwall',angle=0,seed=0,passes=[],keepClear=[],replaceStartForest=false}={}){
+  if(isSiteBlockedForBarrier(sim,x,z,r,passes,keepClear,replaceStartForest))return null;
   sim.barriers??=[];
   if(sim.barriers.some(b=>Math.hypot(b.x-x,b.z-z)<Math.min(b.r,r)*.48))return null;
   for(const e of sim.entities){
@@ -265,8 +266,19 @@ export function connectCliffPassWall(sim,owner,jawA,jawB,center,{complete=true,w
   if(withTower&&center){
     const inX=center.x-midX,inZ=center.z-midZ,inLen=Math.hypot(inX,inZ)||1;
     const sideX=-dz/len,sideZ=dx/len;
-    const tx=midX+(inX/inLen)*5.5+sideX*4.5,tz=midZ+(inZ/inLen)*5.5+sideZ*4.5;
-    const t=tryPlace('tower',tx,tz,0);
+    let t;
+    if(sim.battlefieldLayout>=1){
+      const inward=Math.sign(inX*sideX+inZ*sideZ)||1;
+      for(const flank of [1,-1]){
+        const x=midX+sideX*inward*6+dx/len*flank*6,z=midZ+sideZ*inward*6+dz/len*flank*6;
+        if(barrierCollision(sim,'tower',x,z,2)||sim.entities.some(e=>e.hp>0&&e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+2.25))continue;
+        t=tryPlace('tower',x,z,0);
+        if(t)break;
+      }
+    }else{
+      const x=midX+inX/inLen*5.5+sideX*4.5,z=midZ+inZ/inLen*5.5+sideZ*4.5;
+      t=tryPlace('tower',x,z,0);
+    }
     if(t)placed.towers.push(t);
   }
   return placed;
@@ -329,6 +341,33 @@ export function seedValleyResources(sim,center,{radius=26,keepOutAngles=[],seedO
 }
 
 const DIR_ANGLES={east:0,south:Math.PI/2,west:Math.PI,north:-Math.PI/2,ne:-Math.PI/4,se:Math.PI/4,sw:Math.PI*3/4,nw:-Math.PI*3/4};
+
+// Decorative spurs and loose woodland do not reliably close the side of a
+// fortress. Interlock visible cliff pieces along its back and shoulders.
+function closeValleyRim(sim,center,radius,front,left,right,keepClear,seedOffset){
+  const edge=sim.halfWorld-4,arc=[right];
+  for(let i=1;i<10;i++){
+    const a=i/10*(2*Math.PI-1.56),angle=front+.78+a,reach=radius+12*Math.sin(a*Math.PI/(2*Math.PI-1.56));
+    arc.push({
+      x:Math.max(-edge,Math.min(edge,center.x+Math.cos(angle)*reach)),
+      z:Math.max(-edge,Math.min(edge,center.z+Math.sin(angle)*reach)),
+    });
+  }
+  arc.push(left);
+  const barriers=[];
+  for(let i=0;i<arc.length-1;i++){
+    const from=arc[i],to=arc[i+1],dx=to.x-from.x,dz=to.z-from.z;
+    const count=Math.max(1,Math.ceil(Math.hypot(dx,dz)/3.4)),angle=Math.atan2(-dz,dx);
+    for(let j=0;j<=count;j++){
+      const x=from.x+dx*j/count,z=from.z+dz*j/count;
+      const barrier=addNaturalBarrier(sim,x,z,{
+        r:3.65,height:3.9,angle,seed:seedOffset*109+i*31+j+1,keepClear,replaceStartForest:true,
+      });
+      if(barrier)barriers.push(barrier);
+    }
+  }
+  return barriers;
+}
 
 /**
  * Authentic Age of Empires IV / II Regional Valley Fortification (ZERO Fake Rock Donuts!).
@@ -405,12 +444,13 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
 
     // 2. Seal ONLY the open valley mouth with proud angled Stone Curtain Walls + 2 Gatehouses!
     if(wallGaps){
+      if(sim.battlefieldLayout>=1)placed.barriers.push(...closeValleyRim(sim,center,radius,towardCenter,lJaw,rJaw,rimKeep,seedOffset));
       // Central rocky knoll / bastion pivot splitting the front into 2 realistic castle curtain walls
       const midFront={
         x:cx+Math.cos(towardCenter)*(radius+3.5),
         z:cz+Math.sin(towardCenter)*(radius+3.5),
       };
-      const midCrag=addNaturalBarrier(sim,midFront.x,midFront.z,{r:3.3,height:5.0,kind:'mountain',angle:towardCenter+Math.PI*.5,seed:seedOffset+53,keepClear:rimKeep});
+      const midCrag=addNaturalBarrier(sim,midFront.x,midFront.z,{r:3.3,height:5.0,kind:'mountain',angle:towardCenter+Math.PI*.5,seed:seedOffset+53,keepClear:rimKeep,replaceStartForest:sim.battlefieldLayout>=1});
       if(midCrag)placed.barriers.push(midCrag);
 
       for(const [aPt,bPt] of [[lJaw,midFront],[midFront,rJaw]]){

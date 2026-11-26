@@ -1,6 +1,7 @@
 import {UNITS} from './data.js';
 import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaign-relics.js';
 import {applyCampaignScenario,triggerWesternReliefArrival,triggerOakholdLiberation} from './campaign-scenarios.js';
+import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies} from './battlefield-start.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
@@ -297,7 +298,18 @@ export function campaignObjective(sim){
 
 export function installCampaigns(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tick=p.tick,end=p.end,emit=p.emit,serialize=p.serialize,restore=Simulation.restore;
-  p.initialize=function(){initialize.call(this);if(this.mission)applyCampaignScenario(this);initializeStory(this);if(this.campaignState)this.campaignCheckpoint=copy({...serialize.call(this),campaignState:this.campaignState,checkpointTag:true});};
+  p.initialize=function(){
+    initialize.call(this);
+    if(this.mission)applyCampaignScenario(this);
+    initializeStory(this);
+    if(this.battlefieldLayout>=1){
+      clearStartingDeposits(this);
+      ensureStartingSupplies(this);
+      clearStartingUnitPositions(this);
+      this.updateFog();
+    }
+    if(this.campaignState)this.campaignCheckpoint=copy({...serialize.call(this),campaignState:this.campaignState,checkpointTag:true});
+  };
   p.emit=function(type,data={}){if(type==='gathered'&&data.owner===0&&data.source==='fishingboat'&&this.campaignState&&!this.campaignState.legacy)this.campaignState.fish+=data.amount;emit.call(this,type,data);};
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
   p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
@@ -371,6 +383,26 @@ export function installCampaigns(Simulation){
     if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,stage.dialogue);return;}
     this.campaignCheckpoint=copy({...serialize.call(this),campaignState:q,checkpointTag:true});this.emit('campaign-checkpoint',{stage:q.stage});
   };
-  p.serialize=function(){return {...serialize.call(this),campaignState:this.campaignState||null,campaignCheckpoint:this.campaignCheckpoint||null};};
-  Simulation.restore=function(data){const sim=restore.call(this,data);sim.campaignState=data.campaignState?copy(data.campaignState):sim.mission?{legacy:true}:null;sim.campaignCheckpoint=data.campaignCheckpoint?copy(data.campaignCheckpoint):data.checkpointTag?copy(data):null;return sim;};
+  p.serialize=function(){
+    const save=serialize.call(this),checkpoint=this.campaignCheckpoint;
+    let campaignCheckpoint=checkpoint||null;
+    // The opening checkpoint and current save usually share the same cliffs.
+    // Keep both copies only when a mission has since changed the terrain.
+    if(checkpoint?.barriers?.length&&checkpoint.barriers.length===save.barriers.length&&
+      JSON.stringify(checkpoint.barriers)===JSON.stringify(save.barriers)){
+      const {barriers,...rest}=checkpoint;
+      campaignCheckpoint={...rest,sharedBarriers:true};
+    }
+    return {...save,campaignState:this.campaignState||null,campaignCheckpoint};
+  };
+  Simulation.restore=function(data){
+    const sim=restore.call(this,data);
+    sim.campaignState=data.campaignState?copy(data.campaignState):sim.mission?{legacy:true}:null;
+    const checkpoint=data.campaignCheckpoint;
+    if(checkpoint?.sharedBarriers){
+      const {sharedBarriers,...rest}=checkpoint;
+      sim.campaignCheckpoint=copy({...rest,barriers:data.barriers||[]});
+    }else sim.campaignCheckpoint=checkpoint?copy(checkpoint):data.checkpointTag?copy(data):null;
+    return sim;
+  };
 }
