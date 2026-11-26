@@ -202,12 +202,29 @@ export function installCustomBattle(Simulation){
   };
   p.initialize=function(){if(this.options.mode==='custom')initializeBattle(this);else initialize.call(this);};
   p.tickAI=function(){if(this.options.mode!=='custom')return tickAI.call(this);for(let owner=1;owner<this.players.length;owner++)if(!this.players[owner].defeated)tickAI.call(this,owner);};
-  p.tickCustomAI=function(dt){for(let owner=0;owner<this.players.length;owner++){
-    const player=this.players[owner];if(player.defeated||player.dormant||player.controller==='human')continue;player.aiClock=(player.aiClock||0)+dt;const interval=3*DIFFICULTIES[player.difficulty||this.options.difficulty||'normal'].ai;if(player.aiClock<interval)continue;player.aiClock-=interval;
-    const tc=this.owned(owner,'building','towncenter')[0];
-    if(!tc){const worker=this.owned(owner,'unit','villager').find(e=>e.order?.type!=='build');if(worker&&!this.owned(owner,'building','towncenter').length)for(let i=0;i<16;i++){const angle=i*2.4,r=12+Math.floor(i/4)*6,x=player.start.x+Math.cos(angle)*r,z=player.start.z+Math.sin(angle)*r;if(this.buildValid('towncenter',x,z,owner)){this.build('towncenter',x,z,[worker.id],owner);break;}}this.assignEconomy(owner);continue;}
-    tickAI.call(this,owner);
-  }};
+  p.tickCustomAI=function(dt){
+    const stagger=dt<=.5;
+    let chosen=-1,mostOverdue=-Infinity;
+    const due=[];
+    for(let owner=0;owner<this.players.length;owner++){
+      const player=this.players[owner];if(player.defeated||player.dormant||player.controller==='human')continue;
+      player.aiClock=(player.aiClock||0)+dt;
+      const interval=3*DIFFICULTIES[player.difficulty||this.options.difficulty||'normal'].ai;
+      const overdue=player.aiClock-interval;
+      if(overdue>=0){
+        if(stagger){if(overdue>mostOverdue){mostOverdue=overdue;chosen=owner;}}
+        else due.push({owner,interval});
+      }
+    }
+    const runList=stagger?(chosen>=0?[{owner:chosen,interval:3*DIFFICULTIES[this.players[chosen].difficulty||this.options.difficulty||'normal'].ai}]:[]):due;
+    for(const {owner,interval} of runList){
+      const player=this.players[owner];
+      player.aiClock-=interval;
+      const tc=this.owned(owner,'building','towncenter')[0];
+      if(!tc){const worker=this.owned(owner,'unit','villager').find(e=>e.order?.type!=='build');if(worker&&!this.owned(owner,'building','towncenter').length)for(let i=0;i<16;i++){const angle=i*2.4,r=12+Math.floor(i/4)*6,x=player.start.x+Math.cos(angle)*r,z=player.start.z+Math.sin(angle)*r;if(this.buildValid('towncenter',x,z,owner)){this.build('towncenter',x,z,[worker.id],owner);break;}}this.assignEconomy(owner);continue;}
+      tickAI.call(this,owner);
+    }
+  };
   p.updateFog=function(){updateFog.call(this);if(this.options.mode==='custom'&&this.options.spectator){this.visible.fill(1);this.explored.fill(1);}};
   p.eliminateKingdom=function(owner,reason){
     const player=this.players[owner];if(!player||player.defeated)return;player.defeated=true;

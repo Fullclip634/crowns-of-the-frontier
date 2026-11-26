@@ -73,7 +73,7 @@ import {registerOfflineGame} from './offline-registration.js';
 import {graphicsSelection,applyGraphicsChoice,rendererStatus} from './graphics-settings.js';
 import {graphicsFailureMessage,graphicsRecoveryMarkup} from './graphics-recovery-ui.js';
 import {graphicsNeedsReload} from './graphics-failure.js';
-import {preferredRenderer,compatibleGraphicsURL,startupCompatibilityURL} from './graphics-compatibility.js';
+import {preferredRenderer,detectRecommendedQuality,compatibleGraphicsURL,startupCompatibilityURL} from './graphics-compatibility.js';
 import {graphicsReport,rememberGraphicsFailure,readGraphicsFailure,graphicsSupportMarkup,copyGraphicsReport} from './graphics-reports.js';
 import {touchUnitAt} from './touch-selection.js';
 import {shelterControls} from './garrison-ui.js';
@@ -90,8 +90,8 @@ import {WORLD,AGES,UNITS,BUILDINGS,TECHS,MAPS,RELEASE,AGE_COSTS,FACTIONS,DIFFICU
 
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}};
-const modestDevice=(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrency||8)<=4;
-const recommendedQuality=modestDevice?'low':matchMedia('(pointer: coarse)').matches?'medium':'high';
+const touchDevice=matchMedia('(pointer: coarse)').matches;
+const recommendedQuality=detectRecommendedQuality({deviceMemory:navigator.deviceMemory,hardwareConcurrency:navigator.hardwareConcurrency,coarsePointer:touchDevice});
 const settings={quality:recommendedQuality,frameRate:'auto',cameraPreset:'balanced',edgeScroll:true,edgeScrollSpeed:1,volume:.65,musicVolume:1,uiVolume:1,music:true,unitVoices:true,warHorns:true,lighting:'day',weather:'auto',weatherSounds:true,lightning:true,fog:true,autoQuality:true,reduceFoliage:false,colorblind:false,healthBarMode:'smart',hudScale:'1',minimapSide:'left',...read('crowns-settings',{})};
 delete settings.gpuTiming;delete settings.menuBackdrop;
 settings.frameRate=normalizeFrameRate(settings.frameRate);
@@ -152,7 +152,6 @@ let view,sim,playing=false,paused=false,speed=1,selection=[],buildType=null,atta
 const wallDraft=new WallPlacement();let wallPlaced=false,wallPlanAt=-Infinity,wallPlanKey='',wallPlan=null,wallControlsKey='';
 const simulationPacer=new SimulationPacer();
 let pointer=null,hover=null,keys=new Set(),touches=new Map(),pinch=null,portraitDismissed=false,setupOptions={faction:'alder',difficulty:'normal',map:'highlands',mapSize:'large',seed:Math.floor(Math.random()*999999)};
-const touchDevice=matchMedia('(pointer: coarse)').matches;
 const chat=new BattleChatPanel($('#hud'),{send:(text,channel,requestId)=>net.chat(text,channel,requestId),onOpen:()=>{keys.clear();pointer=null;touches.clear();pinch=null;edgeScroll.reset();$('#selection-box').style.display='none';}});
 const warComms=new WarCommsController($('#hud'),{audio,settings,onPing:(x,z,kind,label)=>dropTacticalPing(x,z,kind,label)});
 
@@ -164,7 +163,7 @@ let startupSplash=createStartupSplash($('#app'));
 startupSplash.setStatus(startupLabel,startupPercent);
 
 const graphicsSession=(()=>{try{return sessionStorage;}catch{return null;}})();
-const requestedRenderer=preferredRenderer(location.href,graphicsSession);
+const requestedRenderer=preferredRenderer(location.href,graphicsSession,{mobile:touchDevice});
 let lastGraphicsFailure=readGraphicsFailure(graphicsSession);
 function currentGraphicsReport(failure=null,phase=playing?'battle':'landing'){
   const renderer=view?.renderer||startupRenderer;
@@ -232,7 +231,7 @@ async function initializeBattlefield(){
         loadTacticalDepthArtwork().catch(error=>{console.warn('Tactical depth artwork could not load:',error.message);return null;}),
         // Optional: a missing or failed distant catalogue must never prevent
         // the game from starting. It only enables the extra LOD tier.
-        settings.distantUnits===false?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
+        settings.distantUnits===false||requestedQuality==='low'?Promise.resolve(null):preloadDistantAssets().catch(error=>{console.warn('Distant artwork could not load:',error.message);return null;}),
       ]).then(([quality])=>{modelsReady=true;reportStages();return quality;}),
       loadSurfaceAssets(requestedQuality,startupRenderer,{map:setupOptions.map||'highlands'}).catch(error=>console.warn('Detailed surfaces could not load:',error.message)).then(()=>{surfacesReady=true;reportStages();}),
     ]);
@@ -962,7 +961,14 @@ async function retryBattlefield(){
   const applied=await view.quality(view.graphicsRecoveryQuality||view.renderQuality||'low');
   if(!applied){const current=$('#modal-root [data-action="retry-battlefield"]');if(current)current.disabled=false;const status=$('#graphics-recovery-note');if(status)status.textContent='Graphics could not recover. Your match remains in memory. Try again, or save before reloading.';}
 }
-let lastRender=0,frameRequest=0,renderClosed=false,presentingMatch=null;const framePacer=new FramePacer();
+let lastRender=0,frameRequest=0,renderClosed=false,presentingMatch=null,autosaveScheduled=false;const framePacer=new FramePacer();
+function scheduleAutosave(){
+  if(autosaveScheduled)return;
+  autosaveScheduled=true;
+  const run=()=>{autosaveScheduled=false;if(playing&&!activeReplay&&sim&&!sim.ended)saveGame(true);};
+  if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:2000});
+  else setTimeout(run,60);
+}
 function presentBattlefield(){
   const world=$('#world'),match=sim;
   if(!world.classList.contains('world-poster')||presentingMatch===match)return;
@@ -989,9 +995,9 @@ function frame(now){if(renderClosed||syncGraphicsRecovery())return;const elapsed
     if(edgeMoved&&buildType&&buildType!=='wall'&&edgeScroll.point){const point=buildType==='gate'?placementPointerPoint({clientX:edgeScroll.point.x,clientY:edgeScroll.point.y}):view.groundPoint(edgeScroll.point.x,edgeScroll.point.y);const preview=placementPreview(buildType,point);if(preview)view.showGhost(buildType,preview.x,preview.z,preview.valid,preview.angle);else view.hideGhost();}
     if(buildType==='wall')updateWallPlacement();
     if(playing&&!firstFrame&&!document.hidden&&!view.graphicsRebuilding&&!view.graphicsFatal&&(!paused&&!sim.ended||exploringEnd)){const pan=dt*view.zoom*.42;if(heldControl(keys,'panUp',settings.bindings))view.pan(0,-pan);if(heldControl(keys,'panDown',settings.bindings))view.pan(0,pan);if(heldControl(keys,'panLeft',settings.bindings))view.pan(-pan,0);if(heldControl(keys,'panRight',settings.bindings))view.pan(pan,0);if(heldControl(keys,'rotateLeft',settings.bindings)){view.angle+=dt;view.updateCamera();}if(heldControl(keys,'rotateRight',settings.bindings)){view.angle-=dt;view.updateCamera();}
-      if(!paused&&!sim.ended){const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){if(activeReplay){activeReplay.step(sim);if(activeReplay.finished||sim.ended){paused=true;setUIText($('#replay-toggle-btn'),'Finished');$('#replay-toggle-btn').disabled=true;if(activeReplay.failed)toast('A recorded command failed. Playback stopped.','warning');break;}}view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){matchTimeline.sample(sim);if(activeReplay){setUIText($('#replay-status'),`REPLAY · ${formatTime(sim.time)} / ${formatTime(activeReplay.record.duration||0)}`);const rp=$('#replay-progress');if(rp)rp.style.width=`${Math.round(activeReplay.progress*100)}%`;}renderHUD(false);renderSelection();uiTime=0;}if(!activeReplay&&sim.time-lastAutosave>60){saveGame(true);lastAutosave=sim.time;}}
+      if(!paused&&!sim.ended){const steps=simulationPacer.advance(elapsed,speed);for(let i=0;i<steps;i++)if(!net.active){if(activeReplay){activeReplay.step(sim);if(activeReplay.finished||sim.ended){paused=true;setUIText($('#replay-toggle-btn'),'Finished');$('#replay-toggle-btn').disabled=true;if(activeReplay.failed)toast('A recorded command failed. Playback stopped.','warning');break;}}view.localMotion.capture(sim);sim.tick(SIMULATION_STEP);view.localMotion.commit(sim);}accumulator=simulationPacer.accumulator;uiTime+=dt;if(uiTime>.3){matchTimeline.sample(sim);if(activeReplay){setUIText($('#replay-status'),`REPLAY · ${formatTime(sim.time)} / ${formatTime(activeReplay.record.duration||0)}`);const rp=$('#replay-progress');if(rp)rp.style.width=`${Math.round(activeReplay.progress*100)}%`;}renderHUD(false);renderSelection();uiTime=0;}if(!activeReplay&&sim.time-lastAutosave>60){lastAutosave=sim.time;scheduleAutosave();}}
     }
-    if(playing&&!chronicleActive){mapTime+=dt;if(mapTime>=.1){renderMinimap();mapTime=0;}}
+    if(playing&&!chronicleActive){const mapInterval=touchDevice||(view.renderQuality||settings.quality)==='low'?.2:.1;mapTime+=dt;if(mapTime>=mapInterval){renderMinimap();mapTime=0;}}
     view.localBlend=!playing||paused||modal||sim.ended||net.active||document.hidden?1:Math.min(1,accumulator/SIMULATION_STEP);view.combatTime=(sim?.time??0)+(playing&&!paused&&!modal&&!sim.ended&&!document.hidden?(net.active?Math.min(.2,Math.max(0,(performance.now()-(view.networkSnapshotAt||performance.now()))/1000)):Math.min(SIMULATION_STEP,accumulator)):0);
     if(playing&&!firstFrame&&!paused&&!modal&&!document.hidden)view.adapt(dt);else{view.renderPressure=null;view.performanceClock=0;}const renderInterval=document.hidden?1000:modal?100:1000/targetFrameRate(settings);
     // Present one frame for the opaque briefing and avoid queuing extra frames while it is submitted.

@@ -14,6 +14,7 @@ export function shadeBattlefieldFog(material,view){
     shader.uniforms.frontierFogScale=fog.scale;
     shader.uniforms.frontierFogEnabled=fog.enabled;
     shader.uniforms.frontierFogTint=fog.tint;
+    shader.uniforms.frontierFogBlur=fog.blur??{value:1};
     shader.vertexShader='varying vec2 vFrontierFogPosition;\n'+shader.vertexShader.replace('#include <project_vertex>',`
       #include <project_vertex>
       vec4 frontierFogPosition = vec4(transformed, 1.0);
@@ -29,6 +30,7 @@ export function shadeBattlefieldFog(material,view){
       uniform sampler2D frontierFogMask;
       uniform float frontierFogScale;
       uniform float frontierFogEnabled;
+      uniform float frontierFogBlur;
       uniform vec3 frontierFogTint;
       varying vec2 vFrontierFogPosition;
     `+shader.fragmentShader.replace('#include <opaque_fragment>',`
@@ -37,12 +39,16 @@ export function shadeBattlefieldFog(material,view){
       float fogAtBorder = smoothstep(0.5, 0.5 + 4.0 * frontierFogScale, max(abs(fogPosition.x), abs(fogPosition.y)));
       vec2 fogUv = fogPosition + 0.5;
       float fogStep = 1.3 * frontierFogScale;
-      float fogAtSurface = texture2D(frontierFogMask, fogUv).a * 0.40 + (
-        texture2D(frontierFogMask, fogUv + vec2(fogStep, fogStep)).a +
-        texture2D(frontierFogMask, fogUv + vec2(-fogStep, fogStep)).a +
-        texture2D(frontierFogMask, fogUv + vec2(fogStep, -fogStep)).a +
-        texture2D(frontierFogMask, fogUv + vec2(-fogStep, -fogStep)).a
-      ) * 0.15;
+      float fogCenter = texture2D(frontierFogMask, fogUv).a;
+      float fogAtSurface = fogCenter;
+      if (frontierFogBlur > 0.5) {
+        fogAtSurface = fogCenter * 0.40 + (
+          texture2D(frontierFogMask, fogUv + vec2(fogStep, fogStep)).a +
+          texture2D(frontierFogMask, fogUv + vec2(-fogStep, fogStep)).a +
+          texture2D(frontierFogMask, fogUv + vec2(fogStep, -fogStep)).a +
+          texture2D(frontierFogMask, fogUv + vec2(-fogStep, -fogStep)).a
+        ) * 0.15;
+      }
       float fogAmount = mix(fogAtSurface, ${unexploredAlpha}, fogAtBorder) * frontierFogEnabled;
       gl_FragColor.rgb = mix(gl_FragColor.rgb, frontierFogTint, fogAmount);
     `);

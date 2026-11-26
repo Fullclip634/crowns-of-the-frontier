@@ -58,7 +58,7 @@ export function writeUnitPose(view,batch,e,matrix,shown,detail='near'){
   const {parts,renderIds}=poseTarget(batch,detail);
   const index=renderIds.length;
   renderIds.push(e.id);
-  const body=prepareFootPlacement(view,batch,e,matrix);beginJointPose(view,e,body);
+  const body=detail==='far'?matrix:prepareFootPlacement(view,batch,e,matrix);beginJointPose(view,e,body);
   try{for(const part of parts){
     const root=view.materials?.shadow&&part.material===view.materials.shadow?matrix:body;
     if(part.userData.rigidRig)writeRigidPose(part,index,e,root);else part.setMatrixAt(index,animatePart(view,part,e,root));const owner=part.geometry.getAttribute('instanceOwner'),value=e.owner||0;

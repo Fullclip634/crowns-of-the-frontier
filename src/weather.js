@@ -183,7 +183,7 @@ export class WeatherRenderer {
       const baseDapple=v.settings.quality==='low'?0:(.19+this.cloudiness*.24)*(1-this.strength*.48);
       atm.cloudStrength.value=baseDapple*(1-night*.76);
     }
-    this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?240:quality==='medium'?700:1400;
+    this.group.visible=!menu;const quality=v.settings.quality,scale=v.settings.autoQuality===false?1:Math.max(.4,v.dynamicScale),budget=quality==='low'?120:quality==='medium'?700:1400;
     const count=Math.max(0,v.settings.reducedMotion?Math.min(100,Math.floor(budget*this.strength)):Math.floor(budget*this.strength*scale));this.rain.count=snow?0:count;this.snow.count=snow?Math.min(1000,count):0;
     this.rain.material.opacity=clamp(.16+this.strength*.24)*(1-night*.22);
     if(count){
@@ -191,7 +191,7 @@ export class WeatherRenderer {
       for(let i=0;i<mesh.count;i++){const p=this.particles[i],phase=((p.phase-time*speed*p.speed/40)%1+1)%1,flutter=snow?Math.sin(time*1.5+p.phase*6.283)*.95:0,x=v.target.x+((p.x+time*state.wind/180)%1-.5)*span+flutter,z=v.target.z+(p.z-.5)*span;
         const y=this.particleSurface(x,z)+phase*40+.4;this.dummy.position.set(x,y,z);this.dummy.rotation.set(snow?time*.5+p.phase:0,snow?time*.8:p.phase*3.14,snow?Math.sin(time+p.phase)*.35:-state.wind*.055);this.dummy.scale.set(snow?p.scale*1.05:(.8+p.scale*.35),snow?p.scale*1.05:(.9+state.wind*.32)*p.scale,snow?p.scale*1.05:(.8+p.scale*.35));this.dummy.updateMatrix();mesh.setMatrixAt(i,this.dummy.matrix);
       }markInstancePrefix(mesh,mesh.count);
-      this.ripples.count=snow?0:Math.floor((quality==='low'?12:quality==='medium'?28:60)*this.strength);this.ripples.material.opacity=this.strength*.30;
+      this.ripples.count=snow?0:Math.floor((quality==='low'?6:quality==='medium'?28:60)*this.strength);this.ripples.material.opacity=this.strength*.30;
       for(let i=0;i<this.ripples.count;i++){const p=this.particles[i+140],x=v.target.x+(p.x-.5)*span,z=v.target.z+(p.z-.5)*span,t=(time*.9+p.phase)%1,r=.18+t*.82;
         this.dummy.position.set(x,this.surface(x,z)+.05,z);this.dummy.rotation.set(0,p.phase*6.28,0);this.dummy.scale.set(r,1,r);this.dummy.updateMatrix();this.ripples.setMatrixAt(i,this.dummy.matrix);
       }markInstancePrefix(this.ripples,this.ripples.count);

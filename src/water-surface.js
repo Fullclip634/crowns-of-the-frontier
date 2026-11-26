@@ -44,7 +44,7 @@ export function configureWaterSurface(material){
   const sunColor=material.frontierWaterSunColor={value:material.color.clone().setHex(0xffe4bd)};
   if(material.map?.isCanvasTexture){material.map.dispose();material.map=null;}
   configureWaterPalette(material,'river');
-  material.metalness=0;material.roughness=.18;material.alphaTest=.012;
+  material.metalness=0;material.roughness=.18;
   if(material.isNodeMaterial){nodeRuntime().water(material);return;}
   const previous=material.onBeforeCompile;
   material.onBeforeCompile=(shader,renderer)=>{
@@ -109,10 +109,16 @@ export function configureWaterSurface(material){
       float frontierCurrent = sin(vFrontierWaterXZ.x * 1.22 + sin(vFrontierWaterXZ.y * 0.34 + frontierWaterTime * 0.34) * 0.86 + vFrontierWaterXZ.y * 0.13 - frontierWaterTime * 0.55);
       // Organic wind-swept sunlit turquoise surface ripple streaks (domain-warped noise — zero regular polka-dots!)
       vec2 frontierRippleFlow = vec2(frontierWaterTime * 0.22, -frontierWaterTime * 0.14);
-      float frontierFlowWarp = frontierWaterNoise(vFrontierWaterXZ * 0.24 + frontierRippleFlow * 0.35) * 2.4;
-      float frontierStreakA = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 0.42 + frontierFlowWarp, vFrontierWaterXZ.y * 1.85 - frontierWaterTime * 0.32));
-      float frontierStreakB = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 1.15 - frontierFlowWarp * 0.65, vFrontierWaterXZ.y * 3.4 + frontierWaterTime * 0.42));
-      float frontierWaveStreak = smoothstep(0.56, 0.88, frontierStreakA * 0.62 + frontierStreakB * 0.38) * smoothstep(0.22, 1.05, frontierShore);
+      float frontierWaveStreak;
+      if (frontierWaterDetail > 0.5) {
+        float frontierFlowWarp = frontierWaterNoise(vFrontierWaterXZ * 0.24 + frontierRippleFlow * 0.35) * 2.4;
+        float frontierStreakA = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 0.42 + frontierFlowWarp, vFrontierWaterXZ.y * 1.85 - frontierWaterTime * 0.32));
+        float frontierStreakB = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 1.15 - frontierFlowWarp * 0.65, vFrontierWaterXZ.y * 3.4 + frontierWaterTime * 0.42));
+        frontierWaveStreak = smoothstep(0.56, 0.88, frontierStreakA * 0.62 + frontierStreakB * 0.38) * smoothstep(0.22, 1.05, frontierShore);
+      } else {
+        float frontierStreakA = frontierWaterNoise(vec2(vFrontierWaterXZ.x * 0.42 + frontierRippleFlow.x, vFrontierWaterXZ.y * 1.85 - frontierWaterTime * 0.32));
+        frontierWaveStreak = smoothstep(0.56, 0.88, frontierStreakA) * smoothstep(0.22, 1.05, frontierShore);
+      }
       vec3 frontierWaterBase = mix(frontierWaterDeep, frontierWaterShallow, clamp(frontierTransmit * 0.68 + (1.0 - frontierAbsorption) * 0.32, 0.0, 1.0));
       // Subtle submerged sandy/pebble bed glow visible through crystal-clear shallows.
       float frontierShallowVis = (1.0 - smoothstep(0.06, 0.98, frontierDepth)) * smoothstep(0.0, 0.30, frontierShore);

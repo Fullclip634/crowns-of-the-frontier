@@ -91,7 +91,8 @@ export class WorldView {
     this.fogCanvas=document.createElement('canvas');this.fogCanvas.width=this.fogCanvas.height=80;this.fogCtx=this.fogCanvas.getContext('2d');
     this.fogTexture=new THREE.CanvasTexture(this.fogCanvas);this.fogTexture.flipY=false;
     this.fogTint=new THREE.Color(0x13201e);
-    this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint}};
+    this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint},blur:{value:settings.quality==='low'?0:1}};
+    this.disableFootPlacement=settings.quality==='low';
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.canvasRect=null;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.canvasRect=null;this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
@@ -449,12 +450,16 @@ export class WorldView {
   render(dt,menu=false){if(!this.sim)return;this.vfxTimer?.sample(dt);this.clock+=dt;const stepWall=Math.max(dt,this.wallStep??dt);this.ruinClock=(this.ruinClock??0)+stepWall;this.wallStep=undefined;
     if(this.fogRevision!==this.sim.fogRevision)this.updateFog();
     this.battleFog.enabled.value=Number(!menu&&this.settings.fog!==false&&!this.sim.options.spectator);
+    const activeQuality=this.renderQuality||this.settings.quality;
+    if(this.battleFog.blur)this.battleFog.blur.value=activeQuality==='low'?0:1;
+    this.disableFootPlacement=activeQuality==='low';
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
     this.buildingDamage?.beginFrame();
     const wind=this.atmosphereUniforms?.wind?.value;
     const remembered=menu?null:this.sim.resourceMemory;
-    for(const entity of this.sim.entities){const e=remembered?.get(entity.id)??entity;let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
+    const renderEntities=!this.treeIndices?.size&&typeof this.sim.candidatesFor==='function'?this.sim.candidatesFor('nonWood'):this.sim.entities;
+    for(const entity of renderEntities){const e=remembered?.get(entity.id)??entity;let node=this.nodes.get(e.id);if(e.kind==='resource'&&e.type==='wood'){
         if(e.hp<=0&&this.treeIndices.has(e.id)){const i=this.treeIndices.get(e.id),dummy=new THREE.Object3D();dummy.scale.set(0,0,0);dummy.updateMatrix();this.treeTrunks.setMatrixAt(i,dummy.matrix);this.treeLeaves.setMatrixAt(i*2,dummy.matrix);this.treeLeaves.setMatrixAt(i*2+1,dummy.matrix);this.treeTrunks.instanceMatrix.needsUpdate=true;this.treeLeaves.instanceMatrix.needsUpdate=true;this.treeIndices.delete(e.id);}continue;
       }
       const visible=menu||e.owner===0||e.kind==='shrine'||this.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&this.sim.isExplored(e.x,e.z));node=sceneNodeFor(this,e,visible);if(!node)continue;

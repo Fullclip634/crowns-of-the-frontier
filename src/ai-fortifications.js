@@ -33,15 +33,51 @@ export function fortificationReserved(sim,type,x,z,owner){
 
 // Validate a complete, linked layout on private scratch state before paying for
 // its first foundation. Walls stay solid; only allied gates provide passage.
+// Clone only walls/gates and share parent entities + landBase instead of
+// duplicating every resource entity on each fortification candidate.
 function plannedSimulation(sim,plan,owner){
-  const entities=sim.entities.map(entity=>['wall','gate'].includes(entity.type)?{...entity,wallLinks:[...(entity.wallLinks||[])]}:entity),added=[];
+  const liveBuildings=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):sim.entities.filter(e=>e.kind==='building');
+  const clonedWalls=new Map();
+  const buildings=[];
+  for(const entity of liveBuildings){
+    if(entity.type==='wall'||entity.type==='gate'){
+      const copy={...entity,wallLinks:[...(entity.wallLinks||[])]};
+      clonedWalls.set(copy.id,copy);
+      buildings.push(copy);
+    }else buildings.push(entity);
+  }
+  const added=[];
   for(const [index,piece]of plan.pieces.entries())if(!sim.get(piece.id)&&!naturalWallAnchor(sim,piece)){
     const entity={...piece,id:-index-1,owner,kind:'building',hp:1,r:BUILDINGS[piece.type].r,wallAngle:piece.angle??plan.angle,wallLinks:[]};
-    entities.push(entity);added.push(entity);
+    clonedWalls.set(entity.id,entity);
+    buildings.push(entity);
+    added.push(entity);
   }
-  for(const entity of added)connectWall(entity,entities);
+  for(const entity of added)connectWall(entity,buildings);
   const preview=Object.create(sim);
-  Object.assign(preview,{entities,index:new Map(entities.map(entity=>[entity.id,entity])),grids:sim.grids?.landBase?{landBase:{...sim.grids.landBase}}:{},unitEscapeGrids:new Map(),pathScratch:null,regionQueue:null,entityBuckets:null,unitBuckets:null});
+  const units=typeof sim.candidatesFor==='function'?sim.candidatesFor('unit'):sim.entities.filter(e=>e.kind==='unit');
+  const shrines=typeof sim.candidatesFor==='function'?sim.candidatesFor('shrine'):sim.entities.filter(e=>e.kind==='shrine');
+  const previewGrids=sim.grids?.landBase?{landBase:{...sim.grids.landBase}}:{};
+  Object.assign(preview,{
+    grids:previewGrids,
+    ownedCandidates:{entities:sim.entities,length:sim.entities.length,time:sim.time,revision:sim.revision,unit:units,building:buildings,shrine:shrines,nonWood:null},
+    unitEscapeGrids:new Map(),
+    pathScratch:null,
+    regionQueue:null,
+    entityBuckets:null,
+    unitBuckets:null,
+  });
+  preview.get=id=>{
+    const hit=clonedWalls.get(id);
+    if(hit)return hit.hp>0?hit:undefined;
+    return sim.get(id);
+  };
+  preview.candidatesFor=kind=>{
+    if(kind==='building')return buildings;
+    if(kind==='unit')return units;
+    if(kind==='shrine')return shrines;
+    return sim.candidatesFor(kind);
+  };
   return preview;
 }
 
@@ -51,9 +87,9 @@ function routable(sim,unit,target,range=0){
   const probe={...unit,stuckTime:0};findPath(sim,probe,target,range);return probe.pathStatus==='ready';
 }
 
-export function fortificationRoutesSafe(sim,plan,owner,displaced=null,currentPiece=null){
+export function fortificationRoutesSafe(sim,plan,owner,displaced=null,currentPiece=null,sharedPreview=null){
   const base=sim.get(plan.base);if(!base)return false;
-  const preview=plannedSimulation(sim,plan,owner),gate=plan.pieces[0],normal={x:Math.sin(plan.angle),z:Math.cos(plan.angle)};
+  const preview=sharedPreview||plannedSimulation(sim,plan,owner),gate=plan.pieces[0],normal={x:Math.sin(plan.angle),z:Math.cos(plan.angle)};
   const inside={x:gate.x-normal.x*9,z:gate.z-normal.z*9},outside={x:gate.x+normal.x*9,z:gate.z+normal.z*9};
   for(const opening of plan.pieces.filter(piece=>piece.type==='gate')){
     const angle=opening.angle??plan.angle,n={x:Math.sin(angle),z:Math.cos(angle)},crossing=plan.layout==='perimeter'?5:9;
@@ -67,13 +103,15 @@ export function fortificationRoutesSafe(sim,plan,owner,displaced=null,currentPie
   // against the next real piece; keep full-layout gate and production checks.
   const unitPreview=currentPiece?plannedSimulation(sim,{...plan,pieces:[currentPiece]},owner):preview;
   const walls=(currentPiece?[currentPiece]:plan.pieces).filter(piece=>piece.type==='wall'&&!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));
-  for(const unit of sim.entities){
+  const units=typeof sim.candidatesFor==='function'?sim.candidatesFor('unit'):sim.entities;
+  for(const unit of units){
     if(unit.hp<=0||unit.kind!=='unit'||unit.embarked||UNITS[unit.type].naval||!sim.allied(owner,unit.owner)||distance(unit,gate)>48)continue;
     if(walls.some(wall=>distance(unit,wall)<BUILDINGS.wall.r+unit.r+.12)||routable(sim,unit,outside)&&!routable(unitPreview,unit,outside)){
       if(displaced&&unit.owner===owner&&unit.type==='villager')displaced.push(unit.id);return false;
     }
   }
-  for(const building of sim.entities){
+  const buildings=typeof sim.candidatesFor==='function'?sim.candidatesFor('building'):sim.entities;
+  for(const building of buildings){
     if(building.hp<=0||building.kind!=='building'||building.progress<1||!sim.allied(owner,building.owner)||distance(building,gate)>48||!Object.values(UNITS).some(unit=>!unit.naval&&unit.at.includes(building.type)))continue;
     const origin=preview.spawnPoint(building);if(!origin||!routable(preview,{...probe,owner:building.owner,...origin},outside))return false;
   }
@@ -90,12 +128,13 @@ export function planPerimeterUpgrade(sim,plan,owner){
   for(const candidate of candidates()){
     const missing=candidate.pieces.filter(piece=>!sim.get(piece.id)&&!naturalWallAnchor(sim,piece));
     if(!affordable(sim,owner,totalCost(sim,owner,missing))||missing.some(piece=>!sim.canSee(owner,piece)||!sim.buildValid(piece.type,piece.x,piece.z,owner)))continue;
-    if(!fortificationRoutesSafe(sim,candidate,owner))continue;
+    const preview=plannedSimulation(sim,candidate,owner);
+    if(!fortificationRoutesSafe(sim,candidate,owner,null,null,preview))continue;
     const enemy=sim.players.findIndex((_,i)=>sim.hostile(owner,i));if(enemy<0)continue;
     const gate=candidate.pieces[0],normal={x:Math.sin(candidate.angle),z:Math.cos(candidate.angle)},inside={x:gate.x-normal.x*9,z:gate.z-normal.z*9},outside={x:gate.x+normal.x*9,z:gate.z+normal.z*9};
     const probe={type:'spearman',owner:enemy,r:.65,...outside};
     // A rectangle is useful only if enemies cannot walk around its ends.
-    if(!routable(sim,probe,inside)||routable(plannedSimulation(sim,candidate,owner),probe,inside))continue;
+    if(!routable(sim,probe,inside)||routable(preview,probe,inside))continue;
     return candidate;
   }
   return null;

@@ -240,8 +240,10 @@ function indexCover(entries){
 
 export class GroundCover{
   constructor(view){
-    this.view=view;const land=view.landscape,quality=view.settings.quality,low=quality!=='high';
-    const capacity=Math.min(low?1800:4800,Math.floor(land.worldSize**2*(low?.036:.072)));
+    this.view=view;const land=view.landscape,quality=view.settings.quality;
+    const capacity=quality==='low'
+      ? Math.min(720,Math.floor(land.worldSize**2*.026))
+      : Math.min(quality==='high'?4800:1800,Math.floor(land.worldSize**2*(quality==='high'?.072:.036)));
 
     const material=standardMaterial({color:0xffffff,roughness:.96,vertexColors:true});
     this.wind=configureGrassWind(material);

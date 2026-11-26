@@ -152,8 +152,9 @@ export class Landscape {
   }
 }
 
-function groundMap(landscape){
-  const canvas=document.createElement('canvas');canvas.width=canvas.height=1536;
+function groundMap(landscape,quality='high'){
+  const mapSize=quality==='low'?768:1536,pxScale=mapSize/1536;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=mapSize;
   const ctx=canvas.getContext('2d'),rng=seededRandom(landscape.seed+818),size=landscape.renderSize,half=size/2;
   const winter=isSnowBiome(landscape.map),arid=isAridBiome(landscape.map),rocky=isRockyBiome(landscape.map),palette=terrainBiome(landscape.map).ground;
   const field=document.createElement('canvas');field.width=field.height=256;const fieldContext=field.getContext('2d'),pixels=fieldContext.createImageData(256,256),colors=palette.map(hex=>[1,3,5].map(at=>parseInt(hex.slice(at,at+2),16)));
@@ -162,17 +163,18 @@ function groundMap(landscape){
     for(let component=0;component<3;component++)pixels.data[index+component]=a[component]+(b[component]-a[component])*blend;
     pixels.data[index+3]=255;
   }
-  fieldContext.putImageData(pixels,0,0);ctx.drawImage(field,0,0,1536,1536);
+  fieldContext.putImageData(pixels,0,0);ctx.drawImage(field,0,0,mapSize,mapSize);
   // Real elevation-derived shading: ridges catch warm light, lee slopes fall
   // into cool shadow, and steep faces expose bedrock. One merged texture.
   const clarity=terrainClarityPixels(landscape),res=clarity.resolution;
   const overlay=document.createElement('canvas');overlay.width=overlay.height=res;const overlayContext=overlay.getContext('2d');
-  overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
-  overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,1536,1536);
+  overlayContext.putImageData(new ImageData(clarity.relief,res,res),0,0);ctx.drawImage(overlay,0,0,mapSize,mapSize);
+  overlayContext.putImageData(new ImageData(clarity.rock,res,res),0,0);ctx.drawImage(overlay,0,0,mapSize,mapSize);
   // Coherent, restrained grain: the old 38k single-pixel speckles read as mud.
   const volcanicGround=isVolcanicBiome(landscape.map);
   const grain=winter?['#d6cf9310','#2f492210']:arid?['#e8d3a414','#8a6b3a12']:rocky?['#b9b8aa12','#3c3a3410']:['#c3d2a912','#254d2a0e'];
-  for(let i=0;i<9000;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*1536,rng()*1536,1+rng()*2,1+rng()*3);}
+  const grainCount=quality==='low'?3500:9000;
+  for(let i=0;i<grainCount;i++){ctx.fillStyle=grain[i%2];ctx.fillRect(rng()*mapSize,rng()*mapSize,(1+rng()*2)*pxScale,(1+rng()*3)*pxScale);}
   // Natural feathered biome mottling (sunlit clover clearings, mossy woodland glades,
   // warm dune drifts, glacial snowbanks & dark volcanic ash pockets) for organic realism!
   const patchPalette=winter?['rgba(238,246,252,0.16)','rgba(148,176,188,0.14)']
@@ -181,13 +183,13 @@ function groundMap(landscape){
     :rocky?['rgba(154,174,126,0.14)','rgba(92,108,82,0.13)']
     :['rgba(154,202,98,0.13)','rgba(46,94,44,0.12)'];
   for(let i=0;i<44;i++){
-    const px=rng()*1536,py=rng()*1536,rad=48+rng()*128;
+    const px=rng()*mapSize,py=rng()*mapSize,rad=(48+rng()*128)*pxScale;
     const grad=ctx.createRadialGradient(px,py,rad*.08,px,py,rad);
     grad.addColorStop(0,patchPalette[i%2]);
     grad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=grad;ctx.beginPath();ctx.arc(px,py,rad,0,Math.PI*2);ctx.fill();
   }
-  const scale=1536/size;
+  const scale=mapSize/size;
   const shore=landscape.map==='coast'||landscape.map==='archipelago'||landscape.map==='templelagoon';
   const jungle=isJungleBiome(landscape.map);
   for(const channel of landscape.channels()){
@@ -207,13 +209,13 @@ function groundMap(landscape){
       for(let z=-half;z<=half;z+=3){
         const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
         const cove=Math.sin(z*.11+channel.center*.7)*2.0+Math.cos(z*.23-channel.center*.4)*1.0+Math.sin(z*.15+1.3)*.65;
-        const px=(cx+channel.width+extra*.5+cove+half)/size*1536,py=(z+half)/size*1536;
+        const px=(cx+channel.width+extra*.5+cove+half)/size*mapSize,py=(z+half)/size*mapSize;
         if(z===-half)ctx.moveTo(px,py);else ctx.lineTo(px,py);
       }
       for(let z=half;z>=-half;z-=3){
         const cx=channel.center+Math.sin(z*channel.frequency)*channel.bend;
         const cove=Math.sin(z*.11+channel.center*.7)*2.0+Math.cos(z*.23-channel.center*.4)*1.0-Math.sin(z*.15-1.3)*.65;
-        ctx.lineTo((cx-channel.width-extra*.5-cove+half)/size*1536,(z+half)/size*1536);
+        ctx.lineTo((cx-channel.width-extra*.5-cove+half)/size*mapSize,(z+half)/size*mapSize);
       }
       ctx.closePath();ctx.fillStyle=color;ctx.fill();
     }
@@ -236,14 +238,14 @@ function groundMap(landscape){
   const roadTrack=volcanic?[92,80,72]:winter?[198,206,200]:arid?[202,170,118]:rocky?[188,166,124]:[204,168,108];
   for(const road of terrainRoadPaths(landscape)){
     const wheelSpacing=road.local?.57:.79,wheelWidth=road.local?.37:.48;
-    strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:1536,connected:road.connected,layers:[
+    strokeTaperedRoad(ctx,road.points,{half,size,canvasSize:mapSize,connected:road.connected,layers:[
       {width:(road.local?3.2:4.4)*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.34*t).toFixed(3)})`},
       {width:(road.local?2.1:2.8)*scale,rgba:t=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${(.84*t).toFixed(3)})`},
       ...[-wheelSpacing,wheelSpacing].map(offset=>({width:wheelWidth*scale,offset:offset*scale,rgba:t=>`rgba(${roadShoulder[0]},${roadShoulder[1]},${roadShoulder[2]},${(.55*t).toFixed(3)})`})),
     ],gravelColor:a=>`rgba(${roadTrack[0]},${roadTrack[1]},${roadTrack[2]},${a.toFixed(3)})`});
   }
   paintSettlementPaving(ctx,landscape,half,scale);
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;texture.userData.clarity=clarity.diagnostics;return texture;
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=quality==='low'?1:8;texture.userData.clarity=clarity.diagnostics;return texture;
 }
 
 function groundRelief(seed){
@@ -254,7 +256,7 @@ function groundRelief(seed){
 }
 
 function buildGroundMaterial(view){
-  const land=view.landscape,material=standardMaterial({map:groundMap(land),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
+  const land=view.landscape,material=standardMaterial({map:groundMap(land,view.settings.quality),bumpMap:groundRelief(land.seed),bumpScale:.09,roughness:1});
   applyGroundSurface(material,land,view.settings.quality,view.atmosphereUniforms);
   view.battleFog.scale.value=1/land.worldSize;
   shadeBattlefieldFog(material,view);

@@ -18,8 +18,18 @@ export class ModelPortrait {
     this.scene.add(new THREE.HemisphereLight(0xe3ece7,0x415039,1.4));const sun=new THREE.DirectionalLight(0xffe1bd,3);sun.position.set(-3,5,4);this.scene.add(sun);
     const c=document.createElement('canvas');c.width=32;c.height=16;const ctx=c.getContext('2d'),gradient=ctx.createLinearGradient(0,0,0,16);gradient.addColorStop(0,'#a7c6d9');gradient.addColorStop(.5,'#e7e0cf');gradient.addColorStop(1,'#546745');ctx.fillStyle=gradient;ctx.fillRect(0,0,32,16);
     const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;texture.mapping=THREE.EquirectangularReflectionMapping;
-    const prepare=()=>{if(view.renderingReleased){texture.dispose();return;}const generator=environmentGenerator(this.renderer);this.environment=generator.fromEquirectangular(texture);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.35;texture.dispose();generator.dispose();this.ready=true;};
+    const prepare=()=>{if(view.renderingReleased||this.disposed){texture.dispose();return;}const generator=environmentGenerator(this.renderer);this.environment=generator.fromEquirectangular(texture);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.35;texture.dispose();generator.dispose();this.ready=true;};
     if(runtime)this.initializing=this.renderer.init().then(prepare).catch(error=>{texture.dispose();view.portraitDisabled=true;this.renderer.dispose();console.error('3D portrait could not start',error);});else prepare();
+  }
+  dispose(){
+    this.disposed=true;this.ready=false;this.clear();
+    this.environment?.dispose?.();this.environment=null;
+    if(this.renderer&&this.renderer!==this.view?.renderer){
+      this.renderer.domElement?.remove?.();
+      this.renderer.dispose?.();
+      this.renderer.forceContextLoss?.();
+    }
+    this.renderer=null;
   }
   clear(){
     if(!this.model)return;this.model.traverse(mesh=>{if(mesh.isMesh&&!Object.values(this.view.geo).includes(mesh.geometry)&&!this.view.authoredGeometry?.has(mesh.geometry)&&!this.view.sharedModelGeometry?.has(mesh.geometry))mesh.geometry.dispose();});this.scene.remove(this.model);this.model=null;
@@ -56,6 +66,7 @@ export class ModelPortrait {
 }
 
 export function renderModelPortrait(view){
+  if((view.renderQuality||view.settings?.quality)==='low')return;
   const target=document.getElementById('model-portrait');if(!target||document.hidden||view.portraitDisabled||!target.clientWidth||!target.clientHeight)return;
   const id=Number(target.dataset.entity),entity=view.sim.resourceMemory?.get(id)??view.sim.get(id);if(!entity)return;
   try{view.modelPortrait??=new ModelPortrait(view);view.modelPortrait.render(target,entity,view.clock);}catch(error){view.portraitDisabled=true;console.error('3D portrait could not start',error);}

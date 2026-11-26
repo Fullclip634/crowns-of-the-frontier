@@ -4,8 +4,8 @@ import {terrainRoadPaths,strokeTaperedRoad,paintSettlementPaving} from './terrai
 import {terrainBiome,isSnowBiome,isAridBiome,isRockyBiome,isVolcanicBiome} from './terrain-biomes.js';
 import {createAtmosphereUniforms,CLOUD_SHADOW_GLSL} from './atmosphere-uniforms.js';
 
-export function roadMask(land){
-  const paths=terrainRoadPaths(land),size=768,canvas=document.createElement('canvas');canvas.width=canvas.height=size;
+export function roadMask(land,quality='high'){
+  const paths=terrainRoadPaths(land),size=quality==='low'?512:768,canvas=document.createElement('canvas');canvas.width=canvas.height=size;
   const ctx=canvas.getContext('2d'),half=land.half,scale=size/land.worldSize;
   ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.lineCap='round';ctx.lineJoin='round';
   const coastal=land.map==='coast'||land.map==='archipelago'||land.map==='templelagoon';
@@ -61,8 +61,9 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
   const shore=!snow&&!volcanic&&((land.channels?.()?.length||0)>0||land.map==='coast'||land.map==='archipelago');
   const amount=snow?.74:arid?.88:rocky?.92:.86;
   for(const texture of material.frontierOwnedTextures||[])texture.dispose();
-  const roads=roadMask(land);material.frontierOwnedTextures=[roads];
+  const roads=roadMask(land,quality);material.frontierOwnedTextures=[roads];
   const atm=atmosphere||createAtmosphereUniforms();
+  const lowDetail=quality==='low';
   const uniforms={
     grass:{value:grass.color},soil:{value:soil.color||grass.color},rock:{value:rock.color||grass.color},
     paving:{value:paving.color||rock.color||grass.color},
@@ -79,6 +80,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
     cloudMap:atm.cloudMap,cloudOffset:atm.cloudOffset,cloudScale:atm.cloudScale,cloudStrength:atm.cloudStrength,
     wetness:atm.wetness,iblSky:atm.iblSky,
     atmosphere:atm,
+    lowDetail,
   };
   material.frontierTerrainUniforms=uniforms;
   material.defines={...material.defines};delete material.defines.FRONTIER_TERRAIN_ARM;
@@ -135,8 +137,34 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
         finalSoil = mix(finalSoil, beachSand, terrainBeach);
       }` : '';
   const snowRoughGlsl=snow ? 'terrainRoughness = mix(terrainRoughness, 0.44, 0.38);' : '';
+  const terrainSampleGlsl=lowDetail ? `
+      vec3 grassSample = clamp((texture2D(frontierTerraingrass, grassUv * 0.48).rgb - 0.5) * 1.28 + 0.5, 0.05, 1.35);
+      vec3 soilSample = texture2D(frontierTerrainsoil, soilUv * 0.55).rgb;
+      vec3 rockSample = texture2D(frontierTerrainrock, rockUv * 5.5).rgb;`
+    : `
+      const mat2 antiTileRot = mat2(0.836, -0.548, 0.548, 0.836);
+      vec3 grassMicro = texture2D(frontierTerraingrass, grassUv).rgb;
+      vec3 grassMeso = texture2D(frontierTerraingrass, antiTileRot * (grassUv * 0.17) + vec2(0.19, 0.43)).rgb;
+      vec3 grassMacro = texture2D(frontierTerraingrass, grassUv * 0.048 + vec2(0.61, 0.27)).rgb;
+      vec3 grassSample = mix(mix(grassMicro, grassMeso, 0.46), grassMacro, 0.28);
+      grassSample = clamp((grassSample - 0.5) * 1.28 + 0.5, 0.05, 1.35);
+      vec3 soilSample = mix(texture2D(frontierTerrainsoil, soilUv).rgb, texture2D(frontierTerrainsoil, antiTileRot * (soilUv * 0.19) + vec2(0.31, 0.17)).rgb, 0.44);
+      vec3 triW = pow(abs(vTerrainWorldNormal), vec3(4.5));
+      triW /= max(triW.x + triW.y + triW.z, 0.001);
+      vec3 rockTop = mix(texture2D(frontierTerrainrock, rockUv * 5.5).rgb, texture2D(frontierTerrainrock, antiTileRot * (rockUv * 13.5) + vec2(0.23, 0.41)).rgb, 0.44);
+      vec3 rockSideX = texture2D(frontierTerrainrock, vTerrainWorldPos.zy * 0.088).rgb;
+      vec3 rockSideZ = texture2D(frontierTerrainrock, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).rgb;
+      vec3 rockSample = rockSideX * triW.x + rockTop * triW.y + rockSideZ * triW.z;`;
+  const pavingTexGlsl=lowDetail
+    ? 'vec3 pavingTex = texture2D(frontierTerrainpaving, pavingUv).rgb;'
+    : `vec3 pavingBase = texture2D(frontierTerrainpaving, pavingUv).rgb;
+        vec3 pavingVar = texture2D(frontierTerrainpaving, antiTileRot * (pavingUv * 0.31) + vec2(0.41, 0.19)).rgb;
+        vec3 pavingTex = mix(pavingBase, pavingVar, 0.22);`;
+  const cloudLightGlsl=lowDetail
+    ? ''
+    : ' * frontierCloudLight(vTerrainWorldPos.xz, frontierTerraincloudMap, frontierTerraincloudOffset, frontierTerraincloudScale, frontierTerraincloudStrength, frontierTerrainiblSky)';
   material.onBeforeCompile=shader=>{
-    for(const [key,value]of Object.entries(uniforms))if(key!=='atmosphere')shader.uniforms['frontierTerrain'+key]=value;
+    for(const [key,value]of Object.entries(uniforms))if(key!=='atmosphere'&&key!=='lowDetail')shader.uniforms['frontierTerrain'+key]=value;
     shader.vertexShader='attribute vec3 terrainMix;\nvarying vec3 vTerrainMix;\nvarying vec3 vTerrainWorldPos;\nvarying vec3 vTerrainWorldNormal;\nvarying float vTerrainNormalY;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nvTerrainMix = terrainMix;\nvTerrainWorldPos = position;\nvTerrainWorldNormal = normalize(normal);\nvTerrainNormalY = normal.y;');
     shader.fragmentShader=`varying vec3 vTerrainMix;
@@ -204,20 +232,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       terrainBlend = mix(terrainBlend, vec3(0.0, 1.0, 0.0), clamp(terrainRoad * 0.78 + ${shore?'max(terrainShore, terrainBeach)':'terrainShore'} * 0.68, 0.0, 0.94));
       vec2 grassUv = vMapUv * frontierTerrainscale.x;
       vec2 soilUv = vMapUv * frontierTerrainscale.y;
-      vec2 rockUv = vMapUv * frontierTerrainscale.z;
-      const mat2 antiTileRot = mat2(0.836, -0.548, 0.548, 0.836);
-      vec3 grassMicro = texture2D(frontierTerraingrass, grassUv).rgb;
-      vec3 grassMeso = texture2D(frontierTerraingrass, antiTileRot * (grassUv * 0.17) + vec2(0.19, 0.43)).rgb;
-      vec3 grassMacro = texture2D(frontierTerraingrass, grassUv * 0.048 + vec2(0.61, 0.27)).rgb;
-      vec3 grassSample = mix(mix(grassMicro, grassMeso, 0.46), grassMacro, 0.28);
-      grassSample = clamp((grassSample - 0.5) * 1.28 + 0.5, 0.05, 1.35);
-      vec3 soilSample = mix(texture2D(frontierTerrainsoil, soilUv).rgb, texture2D(frontierTerrainsoil, antiTileRot * (soilUv * 0.19) + vec2(0.31, 0.17)).rgb, 0.44);
-      vec3 triW = pow(abs(vTerrainWorldNormal), vec3(4.5));
-      triW /= max(triW.x + triW.y + triW.z, 0.001);
-      vec3 rockTop = mix(texture2D(frontierTerrainrock, rockUv * 5.5).rgb, texture2D(frontierTerrainrock, antiTileRot * (rockUv * 13.5) + vec2(0.23, 0.41)).rgb, 0.44);
-      vec3 rockSideX = texture2D(frontierTerrainrock, vTerrainWorldPos.zy * 0.088).rgb;
-      vec3 rockSideZ = texture2D(frontierTerrainrock, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).rgb;
-      vec3 rockSample = rockSideX * triW.x + rockTop * triW.y + rockSideZ * triW.z;
+      vec2 rockUv = vMapUv * frontierTerrainscale.z;${terrainSampleGlsl}
       vec3 sampleLuma = vec3(dot(grassSample, vec3(0.3, 0.59, 0.11)), dot(soilSample, vec3(0.3, 0.59, 0.11)), dot(rockSample, vec3(0.3, 0.59, 0.11)) + 0.16);
       terrainBlend = frontierHeightBlend(terrainBlend, sampleLuma);
       vec3 terrainMacro = mix(vec3(1.0), clamp(diffuseColor.rgb / frontierTerrainmacroReference, vec3(0.68), vec3(1.26)), frontierTerrainmacroStrength);${grassGlsl}
@@ -231,9 +246,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       float pavingAo = 1.0;
       if (terrainPaving > 0.01) {
         vec2 pavingUv = vTerrainWorldPos.xz * 0.36;
-        vec3 pavingBase = texture2D(frontierTerrainpaving, pavingUv).rgb;
-        vec3 pavingVar = texture2D(frontierTerrainpaving, antiTileRot * (pavingUv * 0.31) + vec2(0.41, 0.19)).rgb;
-        vec3 pavingTex = mix(pavingBase, pavingVar, 0.22);
+        ${pavingTexGlsl}
         pavingLuma = dot(pavingTex, vec3(0.3, 0.59, 0.11));
         pavingAo = mix(0.72, 1.04, smoothstep(0.16, 0.68, pavingLuma));
         // Subtle soil/moss in mortar seams near courtyard perimeter so plazas blend naturally.
@@ -246,7 +259,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       float packedGround = terrainRoad * 0.18 * (1.0 - terrainPaving * 0.85);
       diffuseColor.rgb = mix(diffuseColor.rgb, terrainColor * frontierTerraintint, frontierTerrainamount * (1.0 - packedGround));
       float rainDarken = mix(1.0, 0.78, frontierTerrainwetness * (0.45 + 0.55 * max(terrainRoad, max(terrainPaving, terrainBlend.z))));
-      diffuseColor.rgb *= rainDarken * frontierCloudLight(vTerrainWorldPos.xz, frontierTerraincloudMap, frontierTerraincloudOffset, frontierTerraincloudScale, frontierTerraincloudStrength, frontierTerrainiblSky);`);
+      diffuseColor.rgb *= rainDarken${cloudLightGlsl};`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
       vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.17).xyz, 0.44);

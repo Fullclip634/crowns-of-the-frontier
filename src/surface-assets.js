@@ -118,7 +118,7 @@ function applyCoolAshlarStone(material){
 
 export function applySurfaceMaterials(view){
   const m=view.materials,quality=view.settings.quality;
-  const requested=quality==='high'?16:quality==='medium'?8:4,anisotropy=Math.min(requested,view.renderer?.getMaxAnisotropy?.()||view.renderer?.capabilities?.getMaxAnisotropy?.()||4);
+  const requested=quality==='high'?8:quality==='medium'?4:1,anisotropy=Math.min(requested,view.renderer?.getMaxAnisotropy?.()||view.renderer?.capabilities?.getMaxAnisotropy?.()||4);
   for(const map of new Set([...retainedSurfaceTextures(),...(view.roofMaterials||[]).flatMap(m=>[m.map,m.bumpMap]).filter(Boolean)]))if(map.anisotropy!==anisotropy){map.anisotropy=anisotropy;map.needsUpdate=true;}
   const bind=(material,role,tint,{albedo=true,roughnessMap=true,metalness=0,roughness=.95}={})=>{
     const set=surfaces[role];if(!set?.color||!material)return;

@@ -101,11 +101,14 @@ export class Simulation {
   // The unit/building/shrine shortlist is rebuilt at most once per tick and shared
   // by owned(), count(), visibility, fog, and rendering.
   candidatesFor(kind){
-    if(kind!=='unit'&&kind!=='building'&&kind!=='shrine')return this.entities;
+    if(kind!=='unit'&&kind!=='building'&&kind!=='shrine'&&kind!=='nonWood')return this.entities;
     let cache=this.ownedCandidates;
     if(!cache||cache.entities!==this.entities||cache.length!==this.entities.length||cache.time!==this.time||cache.revision!==this.revision){
-      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[],shrine:[]};
-      for(const e of this.entities)if(e.kind==='unit'||e.kind==='building'||e.kind==='shrine')cache[e.kind].push(e);
+      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[],shrine:[],nonWood:[]};
+      for(const e of this.entities){
+        if(e.kind==='unit'||e.kind==='building'||e.kind==='shrine')cache[e.kind].push(e);
+        if(!(e.kind==='resource'&&e.type==='wood'))cache.nonWood.push(e);
+      }
       this.ownedCandidates=cache;
     }
     return cache[kind];

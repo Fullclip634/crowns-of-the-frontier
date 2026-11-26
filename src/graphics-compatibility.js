@@ -4,11 +4,25 @@ const key='crowns-compatible-graphics';
 
 // A failed native device is remembered only in this tab. Explicit renderer
 // links still let a player try WebGPU again after updating their browser.
-export function preferredRenderer(href,storage){
+// Touch devices default to battle-tested WebGL 2 unless WebGPU is explicitly requested.
+export function preferredRenderer(href,storage,options={}){
   const requested=new URL(href).searchParams.get('renderer');
   if(requested==='webgpu'||requested==='webgl')return requested;
   try{if(storage?.getItem(key)==='webgl')return 'webgl';}catch{}
-  return 'webgpu';
+  return options?.mobile?'webgl':'webgpu';
+}
+
+// iOS Safari and Firefox omit navigator.deviceMemory; defaulting unknown-memory
+// phones and <=6 GB Android devices to Performance ('low') prevents thermal and
+// OOM crashes while leaving High/Medium intact on desktop and flagship tablets.
+export function detectRecommendedQuality({deviceMemory,hardwareConcurrency,coarsePointer}={}){
+  const cores=typeof hardwareConcurrency==='number'&&hardwareConcurrency>0?hardwareConcurrency:8;
+  const hasMemory=typeof deviceMemory==='number'&&deviceMemory>0;
+  if(coarsePointer){
+    if(!hasMemory||deviceMemory<8||cores<=4)return 'low';
+    return 'medium';
+  }
+  return (hasMemory&&deviceMemory<=4)||cores<=4?'low':'high';
 }
 
 export function compatibleGraphicsURL(href,storage){

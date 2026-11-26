@@ -46,13 +46,21 @@ export function battlefieldFog(material,fog,unexploredAlpha){
   const surface=material.outputNode||output,scale=value(fog.scale),position=positionWorld.xz.mul(scale);
   const border=smoothstep(.5,scale.mul(4).add(.5),max(abs(position.x),abs(position.y)));
   const fogUv=position.add(.5),fogStep=scale.mul(1.3),mask=fog.mask.value;
+  const blur=fog.blur?value(fog.blur):float(1);
   // Five diagonal taps reuse the single mask TextureNode binding so WebGPU
-  // compatibility sampler budgets stay unchanged while softening grid edges.
-  const sampled=texture(mask,fogUv).a.mul(.4)
-    .add(texture(mask,fogUv.add(vec2(fogStep,fogStep))).a
-      .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep))).a)
-      .add(texture(mask,fogUv.add(vec2(fogStep,fogStep.negate()))).a)
-      .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep.negate()))).a).mul(.15));
+  // compatibility sampler budgets stay unchanged, while Low skips the 4 blur taps via uniform branch.
+  const sampled=Fn(()=>{
+    const center=texture(mask,fogUv).a;
+    const result=center.toVar();
+    If(blur.greaterThan(.5),()=>{
+      result.assign(center.mul(.4)
+        .add(texture(mask,fogUv.add(vec2(fogStep,fogStep))).a
+          .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep))).a)
+          .add(texture(mask,fogUv.add(vec2(fogStep,fogStep.negate()))).a)
+          .add(texture(mask,fogUv.add(vec2(fogStep.negate(),fogStep.negate()))).a).mul(.15)));
+    });
+    return result;
+  })();
   const amount=mix(sampled,unexploredAlpha,border).mul(value(fog.enabled));
   material.outputNode=vec4(mix(surface.rgb,value(fog.tint,'color'),amount),surface.a);
   material.needsUpdate=true;
@@ -165,15 +173,28 @@ export function terrain(material,u){
   const terrainBeach=isShore?smoothstep(.06,.76,roadSample.g.add(edgeNoise.mul(.55).mul(roadSample.g))).mul(float(1).sub(smoothstep(.32,.80,baseMix.z))).mul(float(1).sub(terrainRoad.mul(.85))):float(0);
   const shoreMix=isShore?max(shore,terrainBeach):shore;
   const mixed=mix(baseMix,vec3(0,1,0),clamp(terrainRoad.mul(.78).add(shoreMix.mul(.68)),0,.94));
-  const grassRaw=mix(sample(u.grass,coords[0]).rgb,sample(u.grass,rotUv(coords[0].mul(.17)).add(vec2(.19,.43))).rgb,.46);
+  const lowDetail=!!u.lowDetail;
+  const grassRaw=lowDetail
+    ? sample(u.grass,coords[0].mul(.48)).rgb
+    : mix(sample(u.grass,coords[0]).rgb,sample(u.grass,rotUv(coords[0].mul(.17)).add(vec2(.19,.43))).rgb,.46);
   const grassSample=clamp(grassRaw.sub(.5).mul(1.28).add(.5),.05,1.35);
-  const soilSample=mix(sample(u.soil,coords[1]).rgb,sample(u.soil,rotUv(coords[1].mul(.19)).add(vec2(.31,.17))).rgb,.44);
-  const triWBase=pow(abs(worldNormal),vec3(4.5));
-  const triW=triWBase.div(max(triWBase.x.add(triWBase.y).add(triWBase.z),.001));
-  const rockTop=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,rotUv(coords[2].mul(2.45)).add(vec2(.23,.41))).rgb,.44);
-  const rockSideX=sample(u.rock,worldPos.zy.mul(.088)).rgb;
-  const rockSideZ=sample(u.rock,worldPos.xy.mul(.088).add(vec2(.37,.19))).rgb;
-  const rockSample=rockSideX.mul(triW.x).add(rockTop.mul(triW.y)).add(rockSideZ.mul(triW.z));
+  const soilSample=lowDetail
+    ? sample(u.soil,coords[1].mul(.55)).rgb
+    : mix(sample(u.soil,coords[1]).rgb,sample(u.soil,rotUv(coords[1].mul(.19)).add(vec2(.31,.17))).rgb,.44);
+  const needTriplanar=!lowDetail||Boolean(u.grassNormal.value);
+  let triW=null;
+  if(needTriplanar){
+    const triWBase=pow(abs(worldNormal),vec3(4.5));
+    triW=triWBase.div(max(triWBase.x.add(triWBase.y).add(triWBase.z),.001));
+  }
+  const rockSample=lowDetail
+    ? sample(u.rock,coords[2]).rgb
+    : (()=>{
+      const rockTop=mix(sample(u.rock,coords[2]).rgb,sample(u.rock,rotUv(coords[2].mul(2.45)).add(vec2(.23,.41))).rgb,.44);
+      const rockSideX=sample(u.rock,worldPos.zy.mul(.088)).rgb;
+      const rockSideZ=sample(u.rock,worldPos.xy.mul(.088).add(vec2(.37,.19))).rgb;
+      return rockSideX.mul(triW.x).add(rockTop.mul(triW.y)).add(rockSideZ.mul(triW.z));
+    })();
   const lumaWeights=vec3(.3,.59,.11);
   const sampleLuma=vec3(dot(grassSample,lumaWeights),dot(soilSample,lumaWeights),dot(rockSample,lumaWeights).add(.16));
   const heightWeighted=mixed.mul(pow(max(sampleLuma,vec3(.06)),vec3(2.35)));
@@ -236,7 +257,9 @@ export function terrain(material,u){
   const baseTerrainColor=grassCol.mul(weights.x).add(soilCol.mul(weights.y)).add(rockCol.mul(weights.z));
   const pavingHolder=u.paving||u.rock;
   const pavingUv=worldPos.xz.mul(.36);
-  const pavingTex=mix(sample(pavingHolder,pavingUv).rgb,sample(pavingHolder,rotUv(pavingUv.mul(.31)).add(vec2(.41,.19))).rgb,.22);
+  const pavingTex=lowDetail
+    ? sample(pavingHolder,pavingUv).rgb
+    : mix(sample(pavingHolder,pavingUv).rgb,sample(pavingHolder,rotUv(pavingUv.mul(.31)).add(vec2(.41,.19))).rgb,.22);
   const pavingLuma=dot(pavingTex,lumaWeights);
   const pavingAo=mix(.72,1.04,smoothstep(.16,.68,pavingLuma));
   const mortar=float(1).sub(smoothstep(.18,.44,pavingLuma));
@@ -248,7 +271,7 @@ export function terrain(material,u){
   const atm=u.atmosphere||fallbackAtmosphere();
   const wetness=value(atm.wetness);
   const rainDarken=mix(1,.78,wetness.mul(float(.45).add(max(terrainRoad,max(terrainPaving,weights.z)).mul(.55))));
-  const cloudMod=cloudLightNode(worldPos.xz,atm,1);
+  const cloudMod=lowDetail?vec3(1):cloudLightNode(worldPos.xz,atm,1);
   material.colorNode=mix(materialColor.rgb,color,value(u.amount).mul(float(1).sub(packedGround))).mul(rainDarken).mul(cloudMod);
   const rockCoordHigh=uv().mul(scale.z.mul(6.5));
   if(u.grassNormal.value){
@@ -484,10 +507,19 @@ export function water(material){
   const shallowCol=value(material.frontierWaterShallow,'color'),deepCol=value(material.frontierWaterDeep,'color');
   const current=sin(xz.x.mul(1.22).add(sin(xz.y.mul(.34).add(time.mul(.34))).mul(.86)).add(xz.y.mul(.13)).sub(time.mul(.55)));
   const rippleFlow=vec2(time.mul(.22),time.mul(-.14));
-  const flowWarp=noise(xz.mul(.24).add(rippleFlow.mul(.35))).mul(2.4);
-  const streakA=noise(vec2(xz.x.mul(.42).add(flowWarp),xz.y.mul(1.85).sub(time.mul(.32))));
-  const streakB=noise(vec2(xz.x.mul(1.15).sub(flowWarp.mul(.65)),xz.y.mul(3.4).add(time.mul(.42))));
-  const waveStreak=smoothstep(.56,.88,streakA.mul(.62).add(streakB.mul(.38))).mul(smoothstep(.22,1.05,bank.y));
+  const waveStreak=Fn(()=>{
+    const streak=float(0).toVar();
+    If(detail.greaterThan(.5),()=>{
+      const flowWarp=noise(xz.mul(.24).add(rippleFlow.mul(.35))).mul(2.4);
+      const streakA=noise(vec2(xz.x.mul(.42).add(flowWarp),xz.y.mul(1.85).sub(time.mul(.32))));
+      const streakB=noise(vec2(xz.x.mul(1.15).sub(flowWarp.mul(.65)),xz.y.mul(3.4).add(time.mul(.42))));
+      streak.assign(smoothstep(.56,.88,streakA.mul(.62).add(streakB.mul(.38))));
+    }).Else(()=>{
+      const streakA=noise(vec2(xz.x.mul(.42).add(rippleFlow.x),xz.y.mul(1.85).sub(time.mul(.32))));
+      streak.assign(smoothstep(.56,.88,streakA));
+    });
+    return streak.mul(smoothstep(.22,1.05,bank.y));
+  })();
   const shallowVis=float(1).sub(smoothstep(.06,.98,depth)).mul(smoothstep(0,.30,bank.y));
   material.colorNode=Fn(()=>{
     const baseCol=mix(deepCol,shallowCol,clamp(transmit.mul(.68).add(float(1).sub(absorption).mul(.32)),0,1)).toVar();
