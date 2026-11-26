@@ -27,10 +27,24 @@ Coordinate convention:
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 import bpy
 import bmesh
 from mathutils import Euler, Matrix, Vector
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parents[1]
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from figure_rig_lib import (
+    add_flowing_cape,
+    add_spoked_wheel,
+    add_unit_part,
+    bake_figure_ao,
+    load_studio_figure,
+)
 
 MAT_SPECS = {
     "stone": ((0.68, 0.66, 0.61, 1.0), 0.90, 0.0),
@@ -45,6 +59,7 @@ MAT_SPECS = {
     "leather": ((0.38, 0.27, 0.19, 1.0), 0.84, 0.0),
     "pants": ((0.30, 0.34, 0.28, 1.0), 0.90, 0.0),
     "skin": ((0.82, 0.64, 0.50, 1.0), 0.82, 0.0),
+    "hair": ((0.20, 0.16, 0.13, 1.0), 0.88, 0.0),
     "team": ((0.22, 0.56, 0.46, 1.0), 0.82, 0.02),
     "teamRoof": ((0.28, 0.42, 0.44, 1.0), 0.82, 0.04),
 }
@@ -68,15 +83,6 @@ def ensure_materials():
             bsdf.inputs["Base Color"].default_value = rgba
             bsdf.inputs["Roughness"].default_value = rough
             bsdf.inputs["Metallic"].default_value = metal
-            vc = mat.node_tree.nodes.new("ShaderNodeVertexColor")
-            vc.layer_name = "Color"
-            mix = mat.node_tree.nodes.new("ShaderNodeMix")
-            mix.data_type = "RGBA"
-            mix.blend_type = "MULTIPLY"
-            mix.inputs["Factor"].default_value = 1.0
-            mix.inputs["A"].default_value = rgba
-            mat.node_tree.links.new(vc.outputs["Color"], mix.inputs["B"])
-            mat.node_tree.links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
         mats[name] = mat
     return mats
 
@@ -322,80 +328,152 @@ def build_bombard_tower(mats):
 
 
 # ---------------------------------------------------------------------------
-# 2. FRONTIER JAVELIN SKIRMISHER (unit:skirmisher)
+# 2. FRONTIER JAVELIN SKIRMISHER (unit:skirmisher) — FULL STUDIO ARTICULATION
 # ---------------------------------------------------------------------------
 def build_unit_skirmisher(mats):
-    root = make_root("unit:skirmisher")
-    body = bpy.data.objects.new("Body", None)
-    body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
-    body.parent = root
+    """
+    Built on top of the studio-sculpted `unit:archer` skeleton from
+    `art/figures/frontier-figures.blend` so walking strides, 2-bone terrain foot
+    IK, idle breathing, cape flutter, and overhand javelin throws are 100% native!
+    """
+    col = bpy.context.scene.collection
+    root, anc, j = load_studio_figure(
+        PROJECT_ROOT,
+        src_unit_type="archer",
+        new_asset_key="unit:skirmisher",
+        mats=mats,
+        col=col,
+        strip_suffixes=("_Figure19", "_Figure20", "_Figure21", "_Figure22", "_Figure6"),
+        replace_horse_legs=False,
+    )
+    hr, hl, hc, fwd, prefix = anc["hr"], anc["hl"], anc["hc"], anc["fwd"], anc["prefix"]
+    back = -fwd
+    created = []
 
-    b = PartBuilder(body, mats, height_ref=2.3)
+    def make_gear(suffix, role, motion_dict, fn, smooth=False):
+        bm = bmesh.new()
+        fn(bm)
+        obj = add_unit_part(root, col, f"{prefix}_{suffix}", bm, role, mats, motion_dict, smooth=smooth)
+        if obj is not None:
+            created.append(obj)
 
-    # Agile grounded boots & greaves (stride pose, grounded at z = 0)
-    b.cyl("leather", (-0.17, -0.05, 0.44), (-0.18, -0.08, 0.0), 0.105, 0.10, segs=7)
-    b.cyl("leather", (0.17, 0.07, 0.44), (0.18, 0.10, 0.0), 0.105, 0.10, segs=7)
-    b.cyl("pants", (-0.17, -0.02, 0.88), (-0.17, -0.05, 0.42), 0.135, 0.105, segs=7)
-    b.cyl("pants", (0.17, 0.04, 0.88), (0.17, 0.07, 0.42), 0.135, 0.105, segs=7)
+    # A. CLASSIC MEDIEVAL STEEL KETTLE-HELM (Head)
+    hz = hc.z + 0.10
+    def build_kettle_steel(bm):
+        # Domed crown skull + broad protective sloping kettle brim!
+        add_sphere(bm, (0.0, hc.y, hz + 0.06), (0.19, 0.20, 0.17), subdiv=2)
+        add_cyl(bm, (0.0, hc.y, hz - 0.03), (0.0, hc.y, hz + 0.07), 0.31, 0.21, segs=14)
+        add_cyl(bm, (0.0, hc.y, hz + 0.05), (0.0, hc.y, hz + 0.14), 0.20, 0.16, segs=12)
+    make_gear("KettleHelm", "steel", j["head"], build_kettle_steel, smooth=True)
 
-    # Padded leather gambeson torso + faction-colored surcoat + brass belt
-    b.box("leather", 0.0, 0.0, 1.18, 0.54, 0.34, 0.66)
-    b.box("team", 0.0, -0.03, 1.12, 0.56, 0.36, 0.52)
-    b.box("leather", 0.0, 0.0, 0.96, 0.59, 0.39, 0.11)
-    b.box("gold", 0.0, -0.21, 0.96, 0.14, 0.06, 0.13)
+    def build_kettle_trim(bm):
+        add_cyl(bm, (0.0, hc.y, hz + 0.05), (0.0, hc.y, hz + 0.085), 0.215, 0.215, segs=14)
+        add_sphere(bm, (0.0, hc.y, hz + 0.235), (0.048, 0.048, 0.056), subdiv=1)
+    make_gear("KettleFinial", "gold", j["head"], build_kettle_trim, smooth=True)
 
-    # Flowing lightweight scout/skirmisher half-cloak trailing behind shoulders (+Y)
-    b.box("team", 0.0, 0.25, 1.06, 0.56, 0.09, 0.92, rot=(0.24, 0, 0))
+    # B. REINFORCED LEATHER GAMBESON SHOULDER GUARDS & CHEST BALDRIC (Arms & Torso)
+    for side, m_arm, tag in ((-1, j["arm_l"], "L"), (1, j["arm_r"], "R")):
+        def build_shoulder(bm, s=side):
+            add_sphere(bm, (s * 0.36, 0.0, 1.94), (0.14, 0.14, 0.11), subdiv=2)
+        make_gear(f"ShoulderGuard{tag}", "leather", m_arm, build_shoulder, smooth=True)
 
-    # Head + Classic Conical Medieval Kettle-Helm (broad protective steel brim!)
-    b.sphere("skin", (0.0, -0.02, 1.74), (0.19, 0.20, 0.22), subdiv=2)
-    b.sphere("steel", (0.0, -0.01, 1.84), (0.22, 0.23, 0.19), subdiv=2)
-    b.cyl("steel", (0.0, -0.01, 1.78), (0.0, -0.01, 1.85), 0.34, 0.24, segs=10)
-    b.sphere("gold", (0.0, -0.01, 2.04), (0.055, 0.055, 0.065), subdiv=1)
+    def build_baldric(bm):
+        # Cross-chest leather quiver strap + brass buckle
+        add_cyl(bm, (-0.20, fwd * 0.19, 1.88), (0.22, fwd * 0.19, 1.38), 0.042, 0.042, segs=6)
+        add_cyl(bm, (-0.20, back * 0.18, 1.88), (0.20, back * 0.18, 1.38), 0.042, 0.042, segs=6)
+    make_gear("QuiverBaldric", "leather", j["torso"], build_baldric)
 
-    # Left Arm raised forward holding the large Round Buckler Shield!
-    b.cyl("leather", (-0.32, 0.0, 1.42), (-0.42, -0.24, 1.24), 0.095, 0.08, segs=7)
-    # Sculpted Round Wooden Buckler Shield (iron-rimmed, team-colored face, brass central boss!)
-    sh_c0 = (-0.48, -0.34, 1.24)
-    sh_c1 = (-0.54, -0.44, 1.24)
-    b.cyl("wood", sh_c0, sh_c1, 0.45, 0.44, segs=14)
-    b.cyl("iron", (-0.49, -0.36, 1.24), (-0.55, -0.45, 1.24), 0.48, 0.47, segs=14)
-    b.cyl("team", (-0.52, -0.41, 1.24), (-0.56, -0.47, 1.24), 0.34, 0.33, segs=12)
-    b.sphere("gold", (-0.57, -0.49, 1.24), (0.11, 0.11, 0.11), subdiv=1)
+    # C. BACK LEATHER JAVELIN QUIVER WITH 3 SPARE THROWING JAVELINS (Torso)
+    def build_quiver(bm):
+        add_cyl(bm, (-0.16, back * 0.23, 1.26), (0.14, back * 0.25, 1.86), 0.10, 0.115, segs=9)
+    make_gear("JavelinQuiver", "leather", j["torso"], build_quiver, smooth=True)
 
-    # Back Leather Javelin Quiver bristling with 3 spare throwing javelins!
-    b.cyl("leather", (-0.18, 0.25, 0.96), (0.14, 0.27, 1.56), 0.12, 0.135, segs=8)
-    for ox, oz in ((-0.05, 0.0), (0.02, 0.04), (0.09, -0.02)):
-        b.cyl("wood", (0.08 + ox, 0.27, 1.48 + oz), (0.24 + ox, 0.30, 2.02 + oz), 0.022, 0.020, segs=5)
-        b.cyl("steel", (0.24 + ox, 0.30, 2.02 + oz), (0.29 + ox, 0.31, 2.22 + oz), 0.042, 0.006, segs=4)
+    def build_spare_shafts(bm):
+        for ox, oz in ((-0.045, 0.0), (0.015, 0.03), (0.075, -0.02)):
+            add_cyl(bm, (0.09 + ox, back * 0.25, 1.78 + oz), (0.24 + ox, back * 0.28, 2.24 + oz), 0.019, 0.017, segs=6)
+    make_gear("SpareJavelinShafts", "wood", j["torso"], build_spare_shafts)
 
-    # Right Arm cocked high & poised to hurl a long steel-tipped Throwing Javelin (-Y)!
-    b.cyl("leather", (0.32, 0.0, 1.44), (0.46, 0.08, 1.70), 0.095, 0.08, segs=7)
-    b.sphere("skin", (0.47, 0.06, 1.72), (0.08, 0.08, 0.08), subdiv=1)
-    # Long slender throwing javelin aimed forward-downward toward enemy archers
-    b.cyl("wood", (0.48, 0.95, 1.82), (0.44, -1.12, 1.60), 0.028, 0.024, segs=6)
-    b.cyl("leather", (0.47, 0.18, 1.73), (0.46, -0.10, 1.70), 0.038, 0.038, segs=6)
-    b.cyl("steel", (0.44, -1.12, 1.60), (0.43, -1.48, 1.56), 0.065, 0.008, segs=4)
+    def build_spare_tips(bm):
+        for ox, oz in ((-0.045, 0.0), (0.015, 0.03), (0.075, -0.02)):
+            add_cyl(bm, (0.24 + ox, back * 0.28, 2.24 + oz), (0.29 + ox, back * 0.29, 2.42 + oz), 0.036, 0.005, segs=4)
+    make_gear("SpareJavelinTips", "steel", j["torso"], build_spare_tips)
 
-    b.finalize(smooth_roles={"skin", "steel", "gold", "iron"})
+    # D. FLOWING WIND-RIPPLED SKIRMISHER HALF-CLOAK (Cape)
+    cape = add_flowing_cape(
+        root, col, f"{prefix}_SkirmisherCape", "team", mats, j["cape"],
+        z_top=1.96, length=0.88, width_top=0.52, width_flare=0.20, fwd_sign=fwd,
+    )
+    if cape is not None:
+        created.append(cape)
+
+    # E. ROUND IRON-RIMMED WOODEN BUCKLER SHIELD ON LEFT FOREARM (side = -1)
+    # Mounted cleanly on the outer-front side of Left Hand `hl` so it swings naturally while running & braces forward in combat!
+    sh_cx = hl.x - 0.08
+    sh_cy = hl.y + fwd * 0.14
+    sh_cz = hl.z + 0.06
+    # Shield normal angled slightly forward-left
+    sh_n = Vector((-0.42, fwd * 0.90, 0.06)).normalized()
+
+    def build_buckler_wood(bm):
+        add_cyl(bm, Vector((sh_cx, sh_cy, sh_cz)) - sh_n * 0.03, Vector((sh_cx, sh_cy, sh_cz)) + sh_n * 0.03, 0.39, 0.38, segs=16)
+    make_gear("BucklerWood", "wood", j["fore_l"], build_buckler_wood)
+
+    def build_buckler_iron(bm):
+        add_cyl(bm, Vector((sh_cx, sh_cy, sh_cz)) - sh_n * 0.02, Vector((sh_cx, sh_cy, sh_cz)) + sh_n * 0.035, 0.425, 0.415, segs=16)
+    make_gear("BucklerRim", "iron", j["fore_l"], build_buckler_iron, smooth=True)
+
+    def build_buckler_team(bm):
+        add_cyl(bm, Vector((sh_cx, sh_cy, sh_cz)) + sh_n * 0.025, Vector((sh_cx, sh_cy, sh_cz)) + sh_n * 0.052, 0.30, 0.29, segs=14)
+    make_gear("BucklerFace", "team", j["fore_l"], build_buckler_team)
+
+    def build_buckler_boss(bm):
+        add_sphere(bm, Vector((sh_cx, sh_cy, sh_cz)) + sh_n * 0.062, (0.095, 0.095, 0.095), subdiv=2)
+    make_gear("BucklerBoss", "gold", j["fore_l"], build_buckler_boss, smooth=True)
+
+    # F. POISED STEEL-TIPPED THROWING JAVELIN IN RIGHT HAND (side = +1)
+    # Bold 2.25m medieval javelin oriented forward-up (+12 deg pitch) through Right Hand `hr`
+    # so both walking trot AND the overhand throw silhouette read unmistakably from RTS height!
+    j_dir = Vector((0.0, fwd * 0.978, 0.208)).normalized()
+    j_hand = Vector((hr.x + 0.02, hr.y, hr.z + 0.01))
+    j_butt = j_hand - j_dir * 0.88
+    j_neck = j_hand + j_dir * 1.18
+    j_tip = j_hand + j_dir * 1.62
+
+    def build_jav_shaft(bm):
+        add_cyl(bm, j_butt, j_neck, 0.032, 0.027, segs=7)
+    make_gear("JavelinShaft", "wood", j["fore_r"], build_jav_shaft)
+
+    def build_jav_grip(bm):
+        add_cyl(bm, j_hand - j_dir * 0.16, j_hand + j_dir * 0.16, 0.042, 0.042, segs=7)
+    make_gear("JavelinGrip", "leather", j["fore_r"], build_jav_grip)
+
+    def build_jav_tip(bm):
+        add_cyl(bm, j_neck, j_tip, 0.068, 0.008, segs=4)
+    make_gear("JavelinHead", "steel", j["fore_r"], build_jav_tip)
+
+    # Bake genuine Blender BVH hemisphere raycast Vertex AO over all custom Skirmisher gear!
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, created)
     return root
 
 
 # ---------------------------------------------------------------------------
-# 3. CASTLE AGE TORSION MANGONEL (unit:catapult)
+# 3. CASTLE AGE TORSION MANGONEL (unit:catapult) — ROTATING WHEELS + THROW ARM
 # ---------------------------------------------------------------------------
 def build_unit_mangonel(mats):
+    col = bpy.context.scene.collection
     root = make_root("unit:catapult")
+    root["model3d"] = {"kind": "unit", "type": "catapult", "articulated": True, "siegeRevision": "mangonel-v2"}
     body = bpy.data.objects.new("Body", None)
     body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
+    col.objects.link(body)
     body.parent = root
 
     b = PartBuilder(body, mats, height_ref=3.2)
+    wheel_objs = []
 
     # Heavy low-slung bolted oak chassis (2.1m wide x 3.1m long)
-    for sx in (-0.96, 0.96):
+    for si, sx in enumerate((-0.96, 0.96)):
         b.box("wood", sx, 0.0, 0.56, 0.28, 3.05, 0.30)
         b.box("iron", sx, -1.32, 0.56, 0.32, 0.16, 0.34)
         b.box("iron", sx, 1.32, 0.56, 0.32, 0.16, 0.34)
@@ -407,14 +485,13 @@ def build_unit_mangonel(mats):
         b.box("team", sx + (0.16 if sx > 0 else -0.16), 0.12, 0.86, 0.07, 1.05, 0.44)
         b.box("gold", sx + (0.19 if sx > 0 else -0.19), 0.12, 0.86, 0.04, 0.24, 0.24)
 
-        # 4 massive iron-rimmed wooden siege wheels grounded at z = 0
-        for wy in (-1.05, 1.05):
+        # 4 massive ROTATING spoked iron-rimmed wooden siege wheels grounded at z = 0!
+        for wi, wy in enumerate((-1.05, 1.05)):
             wx0 = sx + (0.04 if sx > 0 else -0.04)
             wx1 = sx + (0.28 if sx > 0 else -0.28)
-            b.cyl("darkwood", (wx0, wy, 0.48), (wx1, wy, 0.48), 0.48, 0.48, segs=12)
-            b.cyl("iron", (wx0 + (0.02 if sx > 0 else -0.02), wy, 0.48), (wx1 + (0.02 if sx > 0 else -0.02), wy, 0.48), 0.50, 0.50, segs=12)
-            b.cyl("wood", (wx0 - (0.01 if sx > 0 else -0.01), wy, 0.48), (wx1 + (0.03 if sx > 0 else -0.03), wy, 0.48), 0.36, 0.36, segs=10)
-            b.cyl("iron", (wx0, wy, 0.48), (wx1 + (0.08 if sx > 0 else -0.08), wy, 0.48), 0.14, 0.14, segs=8)
+            wheel_objs.extend(
+                add_spoked_wheel(body, col, f"MangonelWheel_{si}_{wi}", mats, wx0, wx1, wy, 0.48, 0.49, spokes=6)
+            )
 
     # Transverse axles, decking & thick heavy padded crossbar stop-beam
     for cy in (-1.05, 0.0, 1.05):
@@ -441,7 +518,7 @@ def build_unit_mangonel(mats):
     # Animated Mangonel Throwing Arm + Iron-Strapped Wooden Spoon Bucket + Granite Boulder!
     arm_grp = bpy.data.objects.new("MangonelArm", None)
     arm_grp.location = (0.0, 0.22, 0.96)
-    bpy.context.scene.collection.objects.link(arm_grp)
+    col.objects.link(arm_grp)
     arm_grp.parent = body
 
     bm_wd, bm_ir, bm_st = bmesh.new(), bmesh.new(), bmesh.new()
@@ -454,10 +531,13 @@ def build_unit_mangonel(mats):
     # Chiseled heavy granite boulder seated right inside the Mangonel spoon cup!
     add_sphere(bm_st, (0, 1.68, 1.74), (0.34, 0.32, 0.30), subdiv=1)
 
-    motion_extra = {"motion": {"type": "siegearm", "pivot": [0, 0.96, -0.22]}}
+    motion_extra = {"motion": {"type": "siegearm", "pivot": [0, 0.96, -0.22], "side": 1}}
     finish_part(arm_grp, "ArmBeam", bm_wd, "wood", mats, height_ref=3.0, extra=motion_extra)
     finish_part(arm_grp, "ArmIron", bm_ir, "iron", mats, height_ref=3.0, extra=motion_extra)
     finish_part(arm_grp, "ArmBoulder", bm_st, "stone", mats, height_ref=3.0, extra=motion_extra)
+
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, wheel_objs)
     return root
 
 
@@ -487,9 +567,10 @@ def main():
         export_format="GLB",
         export_extras=True,
         export_yup=True,
+        export_apply=True,
         export_normals=True,
         export_texcoords=True,
-        export_attributes=True,
+        export_vertex_color="ACTIVE",
         export_materials="EXPORT",
     )
 
@@ -505,5 +586,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
     main()

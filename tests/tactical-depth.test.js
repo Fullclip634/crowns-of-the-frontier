@@ -1,6 +1,137 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {bindFootJoints} from '../src/foot-placement.js';
+import {bindMountedFootRig} from '../src/mounted-footing.js';
+import {animatePart} from '../src/world-polish.js';
+import {combatJointRotation} from '../src/combat-poses.js';
+
+async function loadGlbTemplates(relPath) {
+  await MeshoptDecoder.ready;
+  const bytes = fs.readFileSync(new URL(relPath, import.meta.url));
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    '',
+  );
+  const templates = new Map();
+  gltf.scene.traverse(node => {
+    if (node.userData.assetKey) templates.set(node.userData.assetKey, node);
+  });
+  return templates;
+}
+
+function matrixDiff(a, b) {
+  let max = 0;
+  for (let i = 0; i < 16; i++) max = Math.max(max, Math.abs(a.elements[i] - b.elements[i]));
+  return max;
+}
+
+test('All newly authored Blender 4.5 LTS characters have studio articulated rigs, Terrain Foot/Horse IK, and live walk + combat actions', async () => {
+  const [tactical, jade, ironhold] = await Promise.all([
+    loadGlbTemplates('../src/assets3d/frontier-tactical-depth.glb'),
+    loadGlbTemplates('../src/assets3d/frontier-jade-heroes.glb'),
+    loadGlbTemplates('../src/assets3d/frontier-ironhold.glb'),
+  ]);
+  const all = new Map([...tactical, ...jade, ...ironhold]);
+
+  const footUnits = ['skirmisher', 'chukonu', 'hero_iron', 'ironbreaker'];
+  const mountedUnits = ['firelancer', 'hero_alder', 'hero_sun', 'hero_raven', 'hero_jade'];
+  const siegeUnits = ['catapult', 'trebuchet'];
+  const identity = new THREE.Matrix4();
+
+  for (const type of footUnits) {
+    const template = all.get(`unit:${type}`);
+    assert.ok(template, `Missing unit:${type} template`);
+    const root = template.clone(true);
+    assert.equal(bindFootJoints(root), true, `unit:${type} must bind 2-bone Terrain Foot IK`);
+    const motions = new Set();
+    const parts = [];
+    root.traverse(p => {
+      if (p.isMesh && p.userData.motion) {
+        motions.add(p.userData.motion.type);
+        parts.push(p);
+      }
+    });
+    for (const required of ['torso', 'head', 'arm', 'forearm', 'leg', 'knee', 'ankle']) {
+      assert.ok(motions.has(required), `unit:${type} missing motion joint '${required}'`);
+    }
+    // Verify real movement during walking AND combat!
+    const walkView = {clock: 1.4, locomotion: new Map([[1, {phase: 1.1, blend: 1, wheel: 0}]])};
+    const walkEntity = {id: 1, type, moving: true, cooldown: 0, hp: 100};
+    let walkDelta = 0;
+    for (const part of parts) walkDelta = Math.max(walkDelta, matrixDiff(animatePart(walkView, part, walkEntity, identity), identity));
+    assert.ok(walkDelta > 0.15, `unit:${type} must animate limbs while walking (delta=${walkDelta})`);
+
+    const attackView = {clock: 2.0, sim: {time: 2.0}, combatTime: 2.0, locomotion: new Map([[1, {phase: 0, blend: 0, wheel: 0}]])};
+    const interval = UNITS[type].cooldown || 1.2;
+    const attackEntity = {id: 1, type, moving: false, cooldown: interval * 0.85, order: {type: 'attack'}, hp: 100};
+    let attackDelta = 0;
+    for (const part of parts) attackDelta = Math.max(attackDelta, matrixDiff(animatePart(attackView, part, attackEntity, identity), identity));
+    assert.ok(attackDelta > 0.20, `unit:${type} must animate limbs while attacking (delta=${attackDelta})`);
+  }
+
+  for (const type of mountedUnits) {
+    const template = all.get(`unit:${type}`);
+    assert.ok(template, `Missing unit:${type} template`);
+    const root = template.clone(true);
+    assert.equal(bindMountedFootRig(root), true, `unit:${type} must bind 3-bone articulated-hooves-v1 horse IK`);
+    const motions = new Set();
+    const parts = [];
+    root.traverse(p => {
+      if (p.isMesh && p.userData.motion) {
+        motions.add(p.userData.motion.type);
+        parts.push(p);
+      }
+    });
+    for (const required of ['torso', 'head', 'cape', 'arm', 'forearm', 'leg', 'knee', 'horseleg', 'horseknee', 'horsehoof']) {
+      assert.ok(motions.has(required), `unit:${type} missing mounted motion joint '${required}'`);
+    }
+    const walkView = {clock: 1.4, locomotion: new Map([[2, {phase: 1.2, blend: 1, wheel: 0}]])};
+    const walkEntity = {id: 2, type, moving: true, cooldown: 0, hp: 100};
+    let walkDelta = 0;
+    for (const part of parts) walkDelta = Math.max(walkDelta, matrixDiff(animatePart(walkView, part, walkEntity, identity), identity));
+    assert.ok(walkDelta > 0.15, `unit:${type} must gallop/animate while moving (delta=${walkDelta})`);
+
+    const attackView = {clock: 2.0, sim: {time: 2.0}, combatTime: 2.0, locomotion: new Map([[2, {phase: 0, blend: 0, wheel: 0}]])};
+    const interval = UNITS[type].cooldown || 1.2;
+    const attackEntity = {id: 2, type, moving: false, cooldown: interval * 0.25, order: {type: 'attack'}, hp: 100};
+    let attackDelta = 0;
+    for (const part of parts) attackDelta = Math.max(attackDelta, matrixDiff(animatePart(attackView, part, attackEntity, identity), identity));
+    assert.ok(attackDelta > 0.20, `unit:${type} must animate weapons/torso while attacking (delta=${attackDelta})`);
+  }
+
+  for (const type of siegeUnits) {
+    const template = all.get(`unit:${type}`);
+    assert.ok(template, `Missing unit:${type} template`);
+    const wheelPivots = new Set();
+    let siegeArmCount = 0;
+    const parts = [];
+    template.traverse(p => {
+      if (!p.isMesh || !p.userData.motion) return;
+      parts.push(p);
+      if (p.userData.motion.type === 'wheel') wheelPivots.add(JSON.stringify(p.userData.motion.pivot));
+      if (p.userData.motion.type === 'siegearm') siegeArmCount++;
+    });
+    assert.equal(wheelPivots.size, 4, `unit:${type} must have 4 distinct rotating wheel pivots`);
+    assert.ok(siegeArmCount >= 3, `unit:${type} must have articulated siegearm throwing meshes`);
+    const rollView = {clock: 1.0, locomotion: new Map([[3, {phase: 0, blend: 1, wheel: 1.25}]])};
+    const rollEntity = {id: 3, type, moving: true, cooldown: 0, hp: 100};
+    let wheelDelta = 0;
+    for (const part of parts) if (part.userData.motion.type === 'wheel') wheelDelta = Math.max(wheelDelta, matrixDiff(animatePart(rollView, part, rollEntity, identity), identity));
+    assert.ok(wheelDelta > 0.25, `unit:${type} wheels must spin when rolling (delta=${wheelDelta})`);
+  }
+
+  // Verify Skirmisher overhand javelin throw raises right arm via Z-abduction and twists torso!
+  const skOut = {x: 0, y: 0, z: 0};
+  const skEntity = {id: 9, type: 'skirmisher', moving: false, cooldown: 1.38, order: {type: 'attack'}};
+  assert.equal(combatJointRotation(skEntity, {type: 'arm', side: 1}, 0, skOut), true);
+  assert.ok(skOut.z > 1.2, `Skirmisher javelin cock-back should raise right arm high via Z abduction (z=${skOut.z})`);
+  assert.equal(combatJointRotation(skEntity, {type: 'torso', side: 1}, 0, skOut), true);
+  assert.ok(Math.abs(skOut.y) > 0.2, `Skirmisher javelin cock-back should twist torso (y=${skOut.y})`);
+});
 import {UNITS, BUILDINGS, TECHS} from '../src/data.js';
 import {Simulation} from '../src/simulation.js';
 import {GARRISONS} from '../src/garrison.js';

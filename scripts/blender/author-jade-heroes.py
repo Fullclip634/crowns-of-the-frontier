@@ -44,6 +44,19 @@ import bpy
 import bmesh
 from mathutils import Euler, Matrix, Vector
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parents[1]
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from figure_rig_lib import (
+    add_flowing_cape,
+    add_spoked_wheel,
+    add_unit_part,
+    bake_figure_ao,
+    load_studio_figure,
+)
+
 MAT_SPECS = {
     "stone": ((0.68, 0.66, 0.61, 1.0), 0.90, 0.0),
     "stoneDark": ((0.40, 0.42, 0.43, 1.0), 0.92, 0.0),
@@ -91,15 +104,6 @@ def ensure_materials():
             bsdf.inputs["Base Color"].default_value = rgba
             bsdf.inputs["Roughness"].default_value = rough
             bsdf.inputs["Metallic"].default_value = metal
-            vc = mat.node_tree.nodes.new("ShaderNodeVertexColor")
-            vc.layer_name = "Color"
-            mix = mat.node_tree.nodes.new("ShaderNodeMix")
-            mix.data_type = "RGBA"
-            mix.blend_type = "MULTIPLY"
-            mix.inputs["Factor"].default_value = 1.0
-            mix.inputs["A"].default_value = rgba
-            mat.node_tree.links.new(vc.outputs["Color"], mix.inputs["B"])
-            mat.node_tree.links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
         mats[name] = mat
     return mats
 
@@ -927,142 +931,312 @@ def build_jade_dock(mats):
 
 
 # ---------------------------------------------------------------------------
-# 2. SCULPTED UNITS — REPEATING CROSSBOWMAN, FIRE LANCER, TREBUCHET & 5 HEROES
+# 2. ARTICULATED STUDIO UNITS — CHU-KO-NU, FIRE LANCER, TREBUCHET & 5 HEROES
 # ---------------------------------------------------------------------------
-def add_warhorse(bm_horse, bm_mane, bm_armor, bm_team, armored=True):
-    """Sculpted heroic warhorse facing -Y in Blender (+Z in Three.js)."""
-    # Barrel torso, arched neck, sculpted head & tail
-    add_sphere(bm_horse, (0, 0.05, 1.18), (0.46, 0.94, 0.44), subdiv=2)
-    add_cyl(bm_horse, (0, -0.58, 1.32), (0, -0.96, 1.98), 0.28, 0.20, segs=8)
-    add_sphere(bm_horse, (0, -1.16, 2.02), (0.20, 0.34, 0.22), subdiv=2)
-    # 4 legs grounded at z = 0
-    for sx in (-0.28, 0.28):
-        for sy in (-0.56, 0.58):
-            add_cyl(bm_horse, (sx, sy, 1.12), (sx, sy - 0.04, 0.56), 0.12, 0.085, segs=7)
-            add_cyl(bm_horse, (sx, sy - 0.04, 0.56), (sx, sy, 0.0), 0.08, 0.09, segs=7)
-    # Flowing mane & tail
-    add_cyl(bm_mane, (0, -0.42, 1.48), (0, -0.82, 2.12), 0.10, 0.08, segs=6)
-    add_cyl(bm_mane, (0, 0.92, 1.28), (0, 1.18, 0.55), 0.11, 0.05, segs=6)
-    if armored:
-        # Chamfron & chest/flank barding
-        add_sphere(bm_armor, (0, -0.62, 1.38), (0.47, 0.36, 0.32), subdiv=1)
-        add_box(bm_armor, (0, -1.24, 2.08), (0.18, 0.28, 0.22))
-        add_box(bm_team, (0, 0.08, 1.14), (0.98, 1.42, 0.58))
+def _add_kite_prism(bm, cx, cy, cz, w_top, h_top, h_bot, depth, y_dir=-1.0):
+    """Closed tapered hexagonal heraldic kite-shield prism."""
+    pts = [
+        (-w_top * 0.42, h_top),
+        (w_top * 0.42, h_top),
+        (w_top * 0.50, h_top * 0.52),
+        (w_top * 0.34, -h_bot * 0.35),
+        (0.0, -h_bot),
+        (-w_top * 0.34, -h_bot * 0.35),
+        (-w_top * 0.50, h_top * 0.52),
+    ]
+    hy = depth * 0.5
+    back = [bm.verts.new((cx + px, cy - y_dir * hy, cz + pz)) for px, pz in pts]
+    front = [bm.verts.new((cx + px, cy + y_dir * hy, cz + pz)) for px, pz in pts]
+    bm.faces.new(list(reversed(back)))
+    bm.faces.new(front)
+    n = len(pts)
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((back[i], back[j], front[j], front[i]))
 
 
-def add_rider_body(bm_armor, bm_skin, bm_team, bm_gold, z_off=0.0, scale=1.0):
-    s = scale
-    # Armored cuirass, pauldrons, legs, arms, head & flowing hero cape
-    add_box(bm_armor, (0, 0, z_off + 1.18 * s), (0.58 * s, 0.38 * s, 0.72 * s))
-    add_sphere(bm_armor, (-0.38 * s, 0, z_off + 1.42 * s), (0.20 * s, 0.20 * s, 0.18 * s), subdiv=1)
-    add_sphere(bm_armor, (0.38 * s, 0, z_off + 1.42 * s), (0.20 * s, 0.20 * s, 0.18 * s), subdiv=1)
-    add_box(bm_gold, (0, -0.20 * s, z_off + 1.05 * s), (0.60 * s, 0.08 * s, 0.12 * s))
-    add_sphere(bm_skin, (0, -0.02 * s, z_off + 1.78 * s), (0.21 * s, 0.22 * s, 0.24 * s), subdiv=2)
-    # Legs (either straddling saddle or standing grounded at z=0)
-    if z_off > 0.1:
-        for sx in (-0.34 * s, 0.34 * s):
-            add_cyl(bm_armor, (sx, 0.02, z_off + 0.88 * s), (sx * 1.18, -0.10, z_off + 0.12 * s), 0.13 * s, 0.10 * s, segs=6)
-    else:
-        for sx in (-0.18 * s, 0.18 * s):
-            add_cyl(bm_armor, (sx, 0, 0.86 * s), (sx, 0, 0.0), 0.15 * s, 0.12 * s, segs=7)
-    # Flowing heroic team-colored cloak behind shoulders
-    add_box(bm_team, (0, 0.28 * s, z_off + 0.96 * s), (0.62 * s, 0.10 * s, 1.08 * s), rot=(0.24, 0, 0))
+def _add_horse_barding(root, col, prefix, mats, created, trim_role="gold", armor_role="steel", fwd=-1.0):
+    """Add sculpted heraldic barding skirts & armored chamfron to the studio warhorse body."""
+    def make_b(suffix, role, fn, smooth=False):
+        bm = bmesh.new()
+        fn(bm)
+        obj = add_unit_part(root, col, f"{prefix}_{suffix}", bm, role, mats, motion_dict=None, smooth=smooth)
+        if obj is not None:
+            created.append(obj)
+
+    # Flank heraldic caparison cloth skirts (leaves articulated legs 100% clear to gallop!)
+    def build_caparison(bm):
+        for side in (-1.0, 1.0):
+            add_box(bm, (side * 0.42, 0.06, 1.24), (0.065, 1.26, 0.44), rot=(0.0, side * 0.12, 0.0))
+        # Contoured chest apron skirt hugging horse peytral
+        add_box(bm, (0.0, fwd * 0.68, 1.32), (0.56, 0.10, 0.36), rot=(fwd * 0.34, 0.0, 0.0))
+        # Croup rear cloth skirt
+        add_box(bm, (0.0, -fwd * 0.74, 1.34), (0.60, 0.10, 0.36), rot=(-fwd * 0.24, 0.0, 0.0))
+    make_b("HorseCaparison", "team", build_caparison)
+
+    # Gilded border trim & armored horse chamfron plate on forehead
+    def build_trim(bm):
+        for side in (-1.0, 1.0):
+            add_box(bm, (side * 0.46, 0.06, 1.03), (0.04, 1.26, 0.06), rot=(0.0, side * 0.12, 0.0))
+        add_box(bm, (0.0, fwd * 1.18, 2.02), (0.16, 0.22, 0.18), rot=(fwd * 0.42, 0.0, 0.0))
+    make_b("HorseTrim", trim_role, build_trim)
+
+    def build_peytral(bm):
+        add_sphere(bm, (0.0, fwd * 0.66, 1.44), (0.40, 0.26, 0.24), subdiv=2)
+    make_b("HorsePeytral", armor_role, build_peytral, smooth=True)
 
 
 def build_unit_chukonu(mats):
-    root = make_root("unit:chukonu")
-    body = bpy.data.objects.new("Body", None)
-    body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
-    body.parent = root
-    bm_ar, bm_sk, bm_tm, bm_wd, bm_gd = (bmesh.new() for _ in range(5))
-    add_rider_body(bm_ar, bm_sk, bm_tm, bm_gd, z_off=0.0, scale=0.98)
-    # Conical Imperial Jade lamellar helmet + crimson tassel
-    add_cyl(bm_gd, (0, 0, 1.92), (0, 0, 2.24), 0.34, 0.05, segs=8)
-    # Box-magazine Repeating Crossbow (Chu-Ko-Nu!) held forward (-Y)
-    add_box(bm_wd, (0.16, -0.48, 1.24), (0.14, 0.72, 0.16))
-    add_box(bm_wd, (0.16, -0.44, 1.40), (0.12, 0.38, 0.20))  # Top bolt magazine box!
-    add_box(bm_wd, (0.16, -0.78, 1.24), (0.96, 0.09, 0.08))  # Bow prod
-    finish_part(body, "Lamellar", bm_ar, "jadeRoof", mats, height_ref=2.2, smooth=True)
-    finish_part(body, "Skin", bm_sk, "skin", mats, height_ref=2.0, smooth=True)
-    finish_part(body, "Tabard", bm_tm, "team", mats, height_ref=2.0)
-    finish_part(body, "Crossbow", bm_wd, "wood", mats, height_ref=2.0)
-    finish_part(body, "Helm", bm_gd, "gold", mats, height_ref=2.2)
+    """
+    Jade Empire Repeating Crossbowman built on the studio `unit:archer` articulated
+    skeleton (full 2-bone Terrain Foot IK, upper-body combat aiming, cape flutter,
+    and real BVH Vertex AO).
+    """
+    col = bpy.context.scene.collection
+    root, anc, j = load_studio_figure(
+        PROJECT_ROOT,
+        src_unit_type="archer",
+        new_asset_key="unit:chukonu",
+        mats=mats,
+        col=col,
+        strip_suffixes=("_Figure19", "_Figure20", "_Figure21", "_Figure22", "_Figure6"),
+        replace_horse_legs=False,
+    )
+    hr, hl, hc, fwd, prefix = anc["hr"], anc["hl"], anc["hc"], anc["fwd"], anc["prefix"]
+    back = -fwd
+    created = []
+
+    def make_gear(suffix, role, motion_dict, fn, smooth=False):
+        bm = bmesh.new()
+        fn(bm)
+        obj = add_unit_part(root, col, f"{prefix}_{suffix}", bm, role, mats, motion_dict, smooth=smooth)
+        if obj is not None:
+            created.append(obj)
+
+    # A. IMPERIAL CONICAL JADE LAMELLAR HELMET + CRIMSON PLUME (Head)
+    hz = hc.z + 0.10
+    def build_helm_jade(bm):
+        add_cyl(bm, (0.0, hc.y, hz - 0.02), (0.0, hc.y, hz + 0.24), 0.30, 0.06, segs=10)
+        # Lamellar cheek & neck curtain flaps
+        add_box(bm, (0.0, hc.y + back * 0.14, hz - 0.08), (0.28, 0.06, 0.18))
+    make_gear("HelmLamellar", "jadeRoof", j["head"], build_helm_jade)
+
+    def build_helm_gold(bm):
+        add_cyl(bm, (0.0, hc.y, hz - 0.02), (0.0, hc.y, hz + 0.02), 0.31, 0.29, segs=10)
+        add_cyl(bm, (0.0, hc.y, hz + 0.22), (0.0, hc.y, hz + 0.34), 0.065, 0.025, segs=8)
+    make_gear("HelmGold", "gold", j["head"], build_helm_gold, smooth=True)
+
+    def build_helm_tassel(bm):
+        add_cyl(bm, (0.0, hc.y, hz + 0.33), (0.0, hc.y + back * 0.24, hz + 0.16), 0.045, 0.018, segs=6)
+    make_gear("HelmTassel", "lacquer", j["head"], build_helm_tassel, smooth=True)
+
+    # B. JADE LAMELLAR CHEST ARMOR & LAYERED PAULDRONS (Torso & Arms)
+    def build_cuirass(bm):
+        add_box(bm, (0.0, fwd * 0.12, 1.62), (0.48, 0.24, 0.50))
+        add_box(bm, (0.0, back * 0.12, 1.62), (0.46, 0.20, 0.48))
+        for s in (-1.0, 1.0):
+            add_box(bm, (s * 0.21, fwd * 0.10, 1.24), (0.16, 0.18, 0.24), rot=(0.0, -s * 0.12, 0.0))
+    make_gear("LamellarTorso", "jadeRoof", j["torso"], build_cuirass)
+
+    def build_waist_gold(bm):
+        add_box(bm, (0.0, fwd * 0.22, 1.38), (0.42, 0.06, 0.09))
+    make_gear("WaistGilt", "gold", j["torso"], build_waist_gold)
+
+    for side, m_arm, tag in ((-1, j["arm_l"], "L"), (1, j["arm_r"], "R")):
+        def build_pauldron(bm, s=side):
+            add_box(bm, (s * 0.37, 0.0, 1.94), (0.20, 0.24, 0.12), rot=(0.0, s * 0.36, 0.0))
+            add_box(bm, (s * 0.41, 0.0, 1.84), (0.18, 0.21, 0.10), rot=(0.0, s * 0.46, 0.0))
+        make_gear(f"PauldronJade{tag}", "jadeRoof", m_arm, build_pauldron)
+
+    # C. FLOWING IMPERIAL CLOAK (Cape)
+    cape = add_flowing_cape(
+        root, col, f"{prefix}_ImperialCape", "team", mats, j["cape"],
+        z_top=1.96, length=0.94, width_top=0.54, width_flare=0.20, fwd_sign=fwd,
+    )
+    if cape is not None:
+        created.append(cape)
+
+    # D. BOX-MAGAZINE REPEATING CROSSBOW (CHU-KO-NU!) IN RIGHT HAND (fore_r)
+    # Centered cleanly on Right Hand `hr`, pointing forward (`fwd`) with slight lift so
+    # walking carries it naturally and aiming (`arm.x=-0.92, forearm.x=+0.78`) sights dead level!
+    cx, cy, cz = hr.x - 0.04, hr.y + fwd * 0.28, hr.z + 0.04
+    def build_xbow_wood(bm):
+        # Main carved hardwood tiller stock
+        add_box(bm, (cx, cy, cz), (0.12, 0.78, 0.13))
+        # Signature top upright Chu-Ko-Nu repeating bolt magazine hopper!
+        add_box(bm, (cx, cy - fwd * 0.02, cz + 0.16), (0.10, 0.38, 0.20))
+        # Arched laminated composite bow prod across front tip
+        add_box(bm, (cx, cy + fwd * 0.34, cz), (0.94, 0.08, 0.07))
+        for s in (-1.0, 1.0):
+            add_box(bm, (cx + s * 0.46, cy + fwd * 0.27, cz), (0.24, 0.07, 0.06), rot=(0.0, 0.0, s * fwd * 0.52))
+    make_gear("CrossbowWood", "wood", j["fore_r"], build_xbow_wood)
+
+    def build_xbow_iron(bm):
+        # Cocking lever + bowstring + brass magazine clasp + loaded steel bolt tip!
+        add_cyl(bm, (cx, cy - fwd * 0.26, cz + 0.04), (cx, cy - fwd * 0.38, cz + 0.24), 0.025, 0.022, segs=6)
+        add_cyl(bm, (cx - 0.50, cy + fwd * 0.22, cz + 0.02), (cx, cy + fwd * 0.02, cz + 0.02), 0.012, 0.012, segs=5)
+        add_cyl(bm, (cx + 0.50, cy + fwd * 0.22, cz + 0.02), (cx, cy + fwd * 0.02, cz + 0.02), 0.012, 0.012, segs=5)
+        add_cyl(bm, (cx, cy + fwd * 0.20, cz + 0.06), (cx, cy + fwd * 0.56, cz + 0.06), 0.020, 0.005, segs=5)
+    make_gear("CrossbowSteel", "steel", j["fore_r"], build_xbow_iron)
+
+    def build_xbow_gold(bm):
+        add_box(bm, (cx, cy - fwd * 0.02, cz + 0.26), (0.115, 0.40, 0.04))
+    make_gear("CrossbowTrim", "gold", j["fore_r"], build_xbow_gold)
+
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, created)
     return root
 
 
 def build_unit_firelancer(mats):
-    root = make_root("unit:firelancer")
-    body = bpy.data.objects.new("Body", None)
-    body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
-    body.parent = root
-    bm_ho, bm_mn, bm_ar, bm_sk, bm_tm, bm_gd, bm_gl, bm_la = (bmesh.new() for _ in range(8))
-    add_warhorse(bm_ho, bm_mn, bm_ar, bm_tm, armored=True)
-    add_rider_body(bm_ar, bm_sk, bm_tm, bm_gd, z_off=0.88, scale=0.98)
-    # Imperial helm with crimson plume
-    add_cyl(bm_gd, (0, 0, 2.75), (0, 0, 3.12), 0.28, 0.05, segs=8)
-    add_cyl(bm_la, (0, 0.05, 3.05), (0, 0.35, 3.35), 0.08, 0.03, segs=6)
-    # Long gunpowder Fire-Lance extending forward (-Y) with iron barrel & glowing ignition tip!
-    add_cyl(bm_la, (0.48, 0.55, 2.02), (0.44, -1.95, 2.08), 0.065, 0.06, segs=7)
-    add_cyl(bm_gd, (0.44, -1.55, 2.07), (0.43, -2.35, 2.09), 0.11, 0.10, segs=8)
-    add_sphere(bm_gl, (0.43, -2.45, 2.10), (0.14, 0.22, 0.14), subdiv=1)
-    for nm, bm, rl, sm in [
-        ("Horse", bm_ho, "horse", True), ("Mane", bm_mn, "mane", True),
-        ("Armor", bm_ar, "steel", True), ("Skin", bm_sk, "skin", True),
-        ("Barding", bm_tm, "team", False), ("Gold", bm_gd, "gold", False),
-        ("FireTip", bm_gl, "glow", True), ("Lance", bm_la, "lacquer", False),
-    ]:
-        finish_part(body, nm, bm, rl, mats, height_ref=3.4, smooth=sm)
+    """
+    Jade Empire Fire Lancer built on the studio `unit:knight` mounted skeleton
+    upgraded to `articulated-hooves-v1` 3-bone galloping horse hoof IK + armored
+    barding + Imperial helm + blazing gunpowder fire-lance!
+    """
+    col = bpy.context.scene.collection
+    root, anc, j = load_studio_figure(
+        PROJECT_ROOT,
+        src_unit_type="knight",
+        new_asset_key="unit:firelancer",
+        mats=mats,
+        col=col,
+        strip_suffixes=("_Figure23", "_Figure24", "_Figure7", "_Figure8"),
+        replace_horse_legs=True,
+        horse_coat_role="horse",
+        armor_override="steel",
+    )
+    hr, hl, hc, fwd, prefix = anc["hr"], anc["hl"], anc["hc"], anc["fwd"], anc["prefix"]
+    back = -fwd
+    created = []
+
+    def make_gear(suffix, role, motion_dict, fn, smooth=False):
+        bm = bmesh.new()
+        fn(bm)
+        obj = add_unit_part(root, col, f"{prefix}_{suffix}", bm, role, mats, motion_dict, smooth=smooth)
+        if obj is not None:
+            created.append(obj)
+
+    # Armored Heraldic Warhorse Barding & Chamfron
+    _add_horse_barding(root, col, prefix, mats, created, trim_role="gold", armor_role="jadeRoof", fwd=fwd)
+
+    # A. IMPERIAL CRESTED CAVALRY HELM + CRIMSON PLUME (Head)
+    hz = hc.z + 0.11
+    def build_helm_gold(bm):
+        add_cyl(bm, (0.0, hc.y, hz - 0.02), (0.0, hc.y, hz + 0.26), 0.26, 0.06, segs=10)
+        add_cyl(bm, (0.0, hc.y, hz + 0.24), (0.0, hc.y, hz + 0.36), 0.06, 0.025, segs=8)
+    make_gear("HelmGold", "gold", j["head"], build_helm_gold, smooth=True)
+
+    def build_helm_plume(bm):
+        add_cyl(bm, (0.0, hc.y, hz + 0.34), (0.0, hc.y + back * 0.34, hz + 0.56), 0.065, 0.022, segs=7)
+    make_gear("HelmPlume", "lacquer", j["head"], build_helm_plume, smooth=True)
+
+    # B. JADE LAMELLAR PAULDRONS (Arms) + FLOWING IMPERIAL CAPE (Cape)
+    for side, m_arm, tag in ((-1, j["arm_l"], "L"), (1, j["arm_r"], "R")):
+        def build_pauldron(bm, s=side):
+            add_box(bm, (s * 0.38, 0.0, 2.72), (0.22, 0.26, 0.14), rot=(0.0, s * 0.36, 0.0))
+            add_box(bm, (s * 0.42, 0.0, 2.61), (0.19, 0.23, 0.11), rot=(0.0, s * 0.46, 0.0))
+        make_gear(f"PauldronJade{tag}", "jadeRoof", m_arm, build_pauldron)
+
+    cape = add_flowing_cape(
+        root, col, f"{prefix}_FirelancerCape", "team", mats, j["cape"],
+        z_top=2.75, length=1.10, width_top=0.58, width_flare=0.24, fwd_sign=fwd,
+    )
+    if cape is not None:
+        created.append(cape)
+
+    # C. LONG GUNPOWDER FIRE-LANCE WITH BLAZING IGNITION TIP IN RIGHT HAND (fore_r)
+    l_dir = Vector((0.0, fwd * 0.985, 0.16)).normalized()
+    l_hand = Vector((hr.x + 0.08, hr.y, hr.z + 0.02))
+    l_butt = l_hand - l_dir * 0.88
+    l_barrel0 = l_hand + l_dir * 1.10
+    l_barrel1 = l_hand + l_dir * 1.98
+    l_flame = l_hand + l_dir * 2.12
+
+    def build_lance_shaft(bm):
+        add_cyl(bm, l_butt, l_barrel0, 0.044, 0.042, segs=8)
+    make_gear("FireLanceShaft", "lacquer", j["fore_r"], build_lance_shaft)
+
+    def build_lance_barrel(bm):
+        add_cyl(bm, l_barrel0, l_barrel1, 0.088, 0.078, segs=10)
+    make_gear("FireLanceBarrel", "gold", j["fore_r"], build_lance_barrel, smooth=True)
+
+    def build_lance_rings(bm):
+        for frac in (0.15, 0.55, 0.92):
+            p = l_barrel0.lerp(l_barrel1, frac)
+            add_cyl(bm, p - l_dir * 0.04, p + l_dir * 0.04, 0.102, 0.102, segs=10)
+    make_gear("FireLanceBands", "iron", j["fore_r"], build_lance_rings, smooth=True)
+
+    def build_lance_flame(bm):
+        add_sphere(bm, l_flame, (0.13, 0.20, 0.13), subdiv=2)
+    make_gear("FireLanceGlow", "glow", j["fore_r"], build_lance_flame, smooth=True)
+
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, created)
     return root
 
 
 def build_unit_trebuchet(mats):
-    """Monumental Giant Counterweight Trebuchet with tall A-frame truss, heavy iron-banded counterweight,
-    long throwing arm & glowing blazing fire boulder!"""
+    """Monumental Giant Counterweight Trebuchet with 4 rotating spoked siege wheels,
+    tall A-frame truss, swinging iron-banded counterweight, throwing arm & flaming boulder!"""
+    col = bpy.context.scene.collection
     root = make_root("unit:trebuchet")
+    root["model3d"] = {"kind": "unit", "type": "trebuchet", "articulated": True, "siegeRevision": "trebuchet-v2"}
     body = bpy.data.objects.new("Body", None)
     body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
+    col.objects.link(body)
     body.parent = root
-    bm_wd, bm_dw, bm_ir, bm_st, bm_gl, bm_tm = (bmesh.new() for _ in range(6))
+    bm_wd, bm_dw, bm_ir, bm_tm = (bmesh.new() for _ in range(4))
+    wheel_objs = []
 
     # Heavy timber wheeled siege chassis (3.2m wide x 4.6m long!)
-    for sx in (-1.35, 1.35):
+    for si, sx in enumerate((-1.35, 1.35)):
         add_box(bm_wd, (sx, 0, 0.52), (0.34, 4.45, 0.34))
         # Tall A-frame timber towers supporting axle at z = 3.65m
         add_cyl(bm_wd, (sx, -1.75, 0.55), (sx * 0.72, -0.35, 3.72), 0.18, 0.15, segs=7)
         add_cyl(bm_wd, (sx, 1.85, 0.55), (sx * 0.72, -0.35, 3.72), 0.18, 0.15, segs=7)
         add_cyl(bm_dw, (sx, 0.05, 0.55), (sx * 0.72, -0.35, 3.72), 0.16, 0.14, segs=7)
-        # 4 massive iron-rimmed timber siege wheels grounded at z=0
-        for wy in (-1.55, 1.55):
-            add_cyl(bm_dw, (sx + (0.28 if sx > 0 else -0.28), wy, 0.52), (sx + (0.04 if sx > 0 else -0.04), wy, 0.52), 0.52, 0.52, segs=12)
-            add_cyl(bm_ir, (sx + (0.30 if sx > 0 else -0.30), wy, 0.52), (sx + (0.24 if sx > 0 else -0.24), wy, 0.52), 0.18, 0.18, segs=8)
+        # 4 massive ROTATING spoked iron-rimmed timber siege wheels grounded at z=0!
+        for wi, wy in enumerate((-1.55, 1.55)):
+            wx_in = sx + (0.04 if sx > 0 else -0.04)
+            wx_out = sx + (0.30 if sx > 0 else -0.30)
+            wheel_objs.extend(
+                add_spoked_wheel(body, col, f"TrebWheel_{si}_{wi}", mats, wx_in, wx_out, wy, 0.52, 0.53, spokes=6)
+            )
     # Cross beams & timber firing trough
     for cy in (-1.95, 0.0, 1.95):
         add_box(bm_wd, (0, cy, 0.52), (2.95, 0.32, 0.28))
     add_box(bm_dw, (0, 0.35, 0.74), (0.95, 3.65, 0.16))
-    # Iron main pivot axle + heavy hanging counterweight chest (filled with boulders!)
+    # Iron main pivot axle
     add_cyl(bm_ir, (-1.18, -0.35, 3.65), (1.18, -0.35, 3.65), 0.15, 0.15, segs=8)
-    add_box(bm_dw, (0, -1.35, 2.15), (1.35, 1.25, 1.38))
-    add_box(bm_ir, (0, -1.35, 2.52), (1.42, 1.32, 0.16))
-    add_box(bm_ir, (0, -1.35, 1.78), (1.42, 1.32, 0.16))
-    add_sphere(bm_st, (0, -1.35, 2.88), (0.55, 0.48, 0.34), subdiv=1)
 
-    # Animated throwing arm + sling + blazing fireball boulder!
+    # Animated throwing arm + swinging iron-banded counterweight chest + blazing fireball boulder!
     arm_grp = bpy.data.objects.new("TrebuchetArm", None)
     arm_grp.location = (0.0, -0.35, 3.65)
-    bpy.context.scene.collection.objects.link(arm_grp)
+    col.objects.link(arm_grp)
     arm_grp.parent = body
-    bm_arm = bmesh.new()
-    # Long dramatic arm angled up & back (ready to hurl forward -Y!)
-    add_cyl(bm_arm, (0, -1.15, -0.55), (0, 3.15, 1.75), 0.20, 0.10, segs=8)
-    add_cyl(bm_arm, (-0.38, -1.0, -0.48), (-0.38, -1.0, -1.55), 0.07, 0.07, segs=6)
-    add_cyl(bm_arm, (0.38, -1.0, -0.48), (0.38, -1.0, -1.55), 0.07, 0.07, segs=6)
-    finish_part(arm_grp, "ThrowingBeam", bm_arm, "wood", mats, height_ref=5.5, extra={"motion": {"type": "siegearm", "pivot": [0, 3.65, 0.35]}})
 
-    # Glowing flaming boulder resting in firing trough / sling
-    add_sphere(bm_gl, (0, 1.95, 1.18), (0.44, 0.44, 0.44), subdiv=2)
+    bm_arm_wd, bm_arm_dw, bm_arm_ir, bm_arm_st, bm_arm_gl = (bmesh.new() for _ in range(5))
+    # Long dramatic arm angled up & back (ready to hurl forward -Y!)
+    add_cyl(bm_arm_wd, (0, -1.15, -0.55), (0, 3.15, 1.75), 0.20, 0.10, segs=8)
+    add_cyl(bm_arm_dw, (-0.38, -1.0, -0.48), (-0.38, -1.0, -1.55), 0.07, 0.07, segs=6)
+    add_cyl(bm_arm_dw, (0.38, -1.0, -0.48), (0.38, -1.0, -1.55), 0.07, 0.07, segs=6)
+    # Swinging heavy hanging counterweight chest (filled with boulders!)
+    add_box(bm_arm_dw, (0, -1.0, -1.50), (1.35, 1.25, 1.38))
+    add_box(bm_arm_ir, (0, -1.0, -1.13), (1.42, 1.32, 0.16))
+    add_box(bm_arm_ir, (0, -1.0, -1.87), (1.42, 1.32, 0.16))
+    add_sphere(bm_arm_st, (0, -1.0, -0.77), (0.55, 0.48, 0.34), subdiv=1)
+    # Glowing flaming boulder poised in sling pouch at throwing arm tip
+    add_cyl(bm_arm_dw, (0, 3.10, 1.72), (0, 2.55, 0.62), 0.04, 0.04, segs=5)
+    add_sphere(bm_arm_gl, (0, 2.55, 0.55), (0.44, 0.44, 0.44), subdiv=2)
+
+    arm_extra = {"motion": {"type": "siegearm", "pivot": [0, 3.65, 0.35], "side": 1}}
+    finish_part(arm_grp, "ThrowingBeam", bm_arm_wd, "wood", mats, height_ref=5.5, extra=arm_extra)
+    finish_part(arm_grp, "CounterweightWood", bm_arm_dw, "darkwood", mats, height_ref=4.0, extra=arm_extra)
+    finish_part(arm_grp, "CounterweightIron", bm_arm_ir, "iron", mats, height_ref=4.0, extra=arm_extra)
+    finish_part(arm_grp, "CounterweightStone", bm_arm_st, "stoneDark", mats, height_ref=4.0, extra=arm_extra)
+    finish_part(arm_grp, "FireBoulder", bm_arm_gl, "glow", mats, height_ref=3.0, smooth=True, extra=arm_extra)
+
     # Faction war pennant fluttering atop A-frame
     add_cyl(bm_ir, (0.98, -0.35, 3.70), (0.98, -0.35, 5.15), 0.05, 0.04, segs=6)
     add_box(bm_tm, (0.98, 0.05, 4.78), (0.08, 0.85, 0.46))
@@ -1070,83 +1244,285 @@ def build_unit_trebuchet(mats):
     finish_part(body, "Frame", bm_wd, "wood", mats, height_ref=4.5)
     finish_part(body, "DarkTimber", bm_dw, "darkwood", mats, height_ref=3.5)
     finish_part(body, "Ironwork", bm_ir, "iron", mats, height_ref=4.0)
-    finish_part(body, "CounterweightStone", bm_st, "stoneDark", mats, height_ref=3.5)
-    finish_part(body, "FireBoulder", bm_gl, "glow", mats, height_ref=2.5, smooth=True)
     finish_part(body, "Pennant", bm_tm, "team", mats, height_ref=5.0)
+
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, wheel_objs)
     return root
 
 
 def build_hero_general(mats, civ):
-    """Builds 1 of 5 iconic, larger-than-life Blender 4.5 LTS Hero Champions with glowing aura crest & banner!"""
-    root = make_root(f"unit:hero_{civ}")
-    body = bpy.data.objects.new("Body", None)
-    body["assetBody"] = True
-    bpy.context.scene.collection.objects.link(body)
-    body.parent = root
-    bm_ho, bm_mn, bm_ar, bm_sk, bm_tm, bm_gd, bm_gl, bm_wp = (bmesh.new() for _ in range(8))
-
-    if civ == "iron":
-        # Forgemaster Borin — colossal heavily armored Rune-Plate Champion on foot with molten warhammer & tower shield!
-        add_rider_body(bm_ar, bm_sk, bm_tm, bm_gd, z_off=0.0, scale=1.34)
-        # Horned Ironhold furnace crown
-        add_cyl(bm_gd, (0, 0, 2.52), (0, 0, 2.88), 0.34, 0.28, segs=8)
-        for sx in (-1, 1):
-            add_cyl(bm_gd, (sx * 0.28, 0, 2.75), (sx * 0.62, -0.12, 3.12), 0.09, 0.03, segs=6)
-        # Colossal glowing Rune Warhammer (right hand) + Fortified Tower Shield (left hand)
-        add_cyl(bm_wp, (0.62, -0.25, 0.95), (0.68, -0.82, 2.72), 0.08, 0.08, segs=7)
-        add_box(bm_ar, (0.68, -0.88, 2.68), (0.46, 0.84, 0.50))
-        add_box(bm_gl, (0.68, -0.88, 2.68), (0.50, 0.42, 0.20))
-        add_box(bm_gd, (-0.64, -0.32, 1.48), (0.16, 0.72, 1.38))
-        add_box(bm_tm, (-0.70, -0.32, 1.48), (0.08, 0.56, 1.08))
-    else:
-        # Mounted Hero Generals (scale 1.18x bigger & more majestic than ordinary knights!)
-        add_warhorse(bm_ho, bm_mn, bm_ar, bm_tm, armored=True)
-        add_rider_body(bm_ar, bm_sk, bm_tm, bm_gd, z_off=0.92, scale=1.14)
-        # Back-mounted tall Royal Hero War Standard so you spot your Hero instantly in 200-soldier battles!
-        add_cyl(bm_gd, (-0.36, 0.32, 1.65), (-0.36, 0.42, 4.35), 0.055, 0.045, segs=6)
-        add_box(bm_tm, (-0.36, 0.82, 3.72), (0.08, 0.85, 1.12))
-        add_sphere(bm_gd, (-0.36, 0.42, 4.42), (0.14, 0.14, 0.14), subdiv=1)
-
-        if civ == "alder":
-            # Marshal Rowan — plumed royal greathelm, radiant greatsword & kite shield
-            add_cyl(bm_gd, (0, 0, 2.95), (0, 0, 3.38), 0.28, 0.25, segs=8)
-            add_cyl(bm_tm, (0, 0.06, 3.35), (0, 0.48, 3.68), 0.10, 0.04, segs=6)
-            add_box(bm_wp, (0.58, -0.78, 2.55), (0.09, 0.20, 1.68), rot=(-0.48, 0, 0))
-            add_box(bm_gd, (0.58, -0.45, 2.02), (0.48, 0.12, 0.12))
-            add_box(bm_gd, (-0.52, -0.35, 2.15), (0.12, 0.55, 0.88))
-        elif civ == "sun":
-            # Sun Sovereign — golden sunburst turban crown + glowing curved solar scimitar
-            add_sphere(bm_gd, (0, 0, 3.18), (0.34, 0.34, 0.28), subdiv=2)
-            add_sphere(bm_gl, (0, -0.26, 3.24), (0.12, 0.10, 0.12), subdiv=1)
-            add_cyl(bm_gd, (0.56, -0.38, 2.02), (0.64, -1.25, 3.05), 0.09, 0.04, segs=7)
-            add_sphere(bm_gl, (0.64, -1.25, 3.05), (0.13, 0.13, 0.13), subdiv=1)
-        elif civ == "raven":
-            # Shadow Khan — horned iron war-helm + twin brutal war-axes
-            add_cyl(bm_ar, (0, 0, 2.95), (0, 0, 3.36), 0.29, 0.22, segs=8)
-            for sx in (-1, 1):
-                add_cyl(bm_gd, (sx * 0.24, 0, 3.22), (sx * 0.55, -0.12, 3.56), 0.08, 0.025, segs=6)
-                add_cyl(bm_wp, (sx * 0.56, -0.35, 2.05), (sx * 0.62, -0.95, 2.75), 0.06, 0.06, segs=6)
-                add_box(bm_ar, (sx * 0.62, -0.98, 2.68), (0.10, 0.45, 0.36))
-        else:  # jade — Dragon Marshal!
-            # Imperial Dragon Crest with twin long golden pheasant feathers + sweeping Guandao crescent polearm!
-            add_cyl(bm_gd, (0, 0, 2.95), (0, 0, 3.42), 0.32, 0.10, segs=8)
-            for sx in (-1, 1):
-                add_cyl(bm_gl, (sx * 0.16, 0.05, 3.32), (sx * 0.58, 0.62, 4.18), 0.045, 0.02, segs=5)
-            add_cyl(bm_gd, (0.56, 0.42, 1.65), (0.54, -1.55, 3.12), 0.06, 0.055, segs=7)
-            add_box(bm_wp, (0.54, -1.68, 3.22), (0.08, 0.55, 0.32), rot=(-0.5, 0, 0))
-
+    """
+    Builds 1 of 5 iconic, studio-articulated Hero Champions on top of
+    `art/figures/frontier-figures.blend` (`unit:swordsman` + 2-bone Terrain Foot IK
+    for Forgemaster Borin; `unit:knight` + 3-bone `articulated-hooves-v1` Horse IK
+    for the 4 mounted Hero Generals) with billowing capes, tall Hero War Standards,
+    bespoke crowns/weapons, and real Blender BVH Vertex AO!
+    """
+    col = bpy.context.scene.collection
+    is_foot = (civ == "iron")
     horse_mat = "stone" if civ == "sun" else "mane" if civ == "raven" else "horse"
     armor_mat = "jadeRoof" if civ == "jade" else "iron" if civ in ("iron", "raven") else "steel"
-    for nm, bm, rl, sm in [
-        ("Horse", bm_ho, horse_mat, True), ("Mane", bm_mn, "mane", True),
-        ("Armor", bm_ar, armor_mat, True), ("Skin", bm_sk, "skin", True),
-        ("BannerCape", bm_tm, "team", False), ("GoldCrest", bm_gd, "gold", True),
-        ("AuraGlow", bm_gl, "glow", True), ("Weapon", bm_wp, "steel", False),
-    ]:
-        if len(bm.verts):
-            finish_part(body, nm, bm, rl, mats, height_ref=4.4, smooth=sm)
-        else:
-            bm.free()
+
+    root, anc, j = load_studio_figure(
+        PROJECT_ROOT,
+        src_unit_type="swordsman" if is_foot else "knight",
+        new_asset_key=f"unit:hero_{civ}",
+        mats=mats,
+        col=col,
+        strip_suffixes=(
+            ("_Figure23", "_Figure24", "_Figure25", "_Figure26", "_Figure7", "_Figure8", "_Figure3", "_Figure4")
+            if is_foot
+            else ("_Figure23", "_Figure24", "_Figure7", "_Figure8")
+        ),
+        replace_horse_legs=not is_foot,
+        horse_coat_role=None if is_foot else horse_mat,
+        armor_override=armor_mat,
+    )
+    hr, hl, hc, fwd, prefix = anc["hr"], anc["hl"], anc["hc"], anc["fwd"], anc["prefix"]
+    back = -fwd
+    created = []
+
+    def make_gear(suffix, role, motion_dict, fn, smooth=False):
+        bm = bmesh.new()
+        fn(bm)
+        obj = add_unit_part(root, col, f"{prefix}_{suffix}", bm, role, mats, motion_dict, smooth=smooth)
+        if obj is not None:
+            created.append(obj)
+
+    if is_foot:
+        # ------------------------------------------------------------------
+        # FORGEMASTER BORIN (unit:hero_iron) — Heavy Rune-Plate Foot Champion
+        # ------------------------------------------------------------------
+        hz = hc.z + 0.12
+        # Horned Ironhold Furnace Crown + Glowing Rune Brow Gem (Head)
+        def build_crown(bm):
+            add_cyl(bm, (0.0, hc.y, hz - 0.06), (0.0, hc.y, hz + 0.24), 0.21, 0.19, segs=10)
+            for s in (-1.0, 1.0):
+                add_cyl(bm, (s * 0.19, hc.y, hz + 0.14), (s * 0.46, hc.y + fwd * 0.10, hz + 0.44), 0.068, 0.018, segs=7)
+        make_gear("FurnaceCrownGold", "gold", j["head"], build_crown, smooth=True)
+
+        def build_crown_glow(bm):
+            add_sphere(bm, (0.0, hc.y + fwd * 0.20, hz + 0.10), (0.065, 0.05, 0.075), subdiv=1)
+        make_gear("FurnaceCrownGlow", "glow", j["head"], build_crown_glow, smooth=True)
+
+        # Colossal Layered Furnace Pauldrons + Gold Trim (Arms)
+        for side, m_arm, tag in ((-1, j["arm_l"], "L"), (1, j["arm_r"], "R")):
+            def build_p_iron(bm, s=side):
+                add_sphere(bm, (s * 0.40, 0.0, 1.98), (0.20, 0.21, 0.17), subdiv=2)
+                add_box(bm, (s * 0.46, 0.0, 1.85), (0.18, 0.24, 0.14), rot=(0.0, s * 0.45, 0.0))
+            make_gear(f"PauldronIron{tag}", "iron", m_arm, build_p_iron, smooth=True)
+
+            def build_p_gold(bm, s=side):
+                add_box(bm, (s * 0.40, 0.0, 2.08), (0.14, 0.25, 0.06), rot=(0.0, s * 0.30, 0.0))
+            make_gear(f"PauldronGold{tag}", "gold", m_arm, build_p_gold)
+
+        # Heavy Forged Hero Tabard + Gilded War-Belt + Back Forge Standard (Torso)
+        def build_tabard(bm):
+            _add_kite_prism(bm, 0.0, fwd * 0.20, 1.18, 0.34, 0.22, 0.38, 0.036, y_dir=fwd)
+            _add_kite_prism(bm, 0.0, fwd * 0.22, 1.62, 0.30, 0.20, 0.26, 0.028, y_dir=fwd)
+        make_gear("HeroTabard", "team", j["torso"], build_tabard)
+
+        def build_belt(bm):
+            add_box(bm, (0.0, fwd * 0.21, 1.35), (0.48, 0.08, 0.11))
+            # Tall dwarf-forge back crest pole so Forgemaster Borin stands out in giant battles!
+            add_cyl(bm, (-0.28, back * 0.22, 1.40), (-0.28, back * 0.28, 3.28), 0.042, 0.035, segs=6)
+            add_sphere(bm, (-0.28, back * 0.28, 3.34), (0.11, 0.11, 0.11), subdiv=1)
+        make_gear("HeroBeltPole", "gold", j["torso"], build_belt, smooth=True)
+
+        # Billowing Heroic Cape + Fluttering Back Banner Cloth (Cape)
+        cape = add_flowing_cape(
+            root, col, f"{prefix}_HeroCape", "team", mats, j["cape"],
+            z_top=1.98, length=1.18, width_top=0.62, width_flare=0.26, fwd_sign=fwd,
+        )
+        if cape is not None:
+            created.append(cape)
+
+        def build_back_banner(bm):
+            add_box(bm, (-0.28, back * 0.62, 2.86), (0.06, 0.64, 0.82))
+        make_gear("HeroBanner", "team", j["cape"], build_back_banner)
+
+        # Colossal Glowing Molten Rune Warhammer in Right Hand `hr` (fore_r)
+        wx, wy, wz = hr.x + 0.02, hr.y, hr.z
+        def build_maul_haft(bm):
+            add_cyl(bm, (wx, wy, wz - 0.35), (wx, wy + fwd * 0.24, wz + 1.18), 0.045, 0.050, segs=8)
+        make_gear("RuneHammerHaft", "darkwood", j["fore_r"], build_maul_haft)
+
+        def build_maul_head(bm):
+            add_box(bm, (wx, wy + fwd * 0.24, wz + 1.12), (0.34, 0.62, 0.36))
+            add_cyl(bm, (wx, wy + fwd * 0.24, wz + 1.28), (wx, wy + fwd * 0.24, wz + 1.46), 0.08, 0.014, segs=6)
+        make_gear("RuneHammerHead", "iron", j["fore_r"], build_maul_head)
+
+        def build_maul_glow(bm):
+            add_box(bm, (wx, wy + fwd * 0.24, wz + 1.12), (0.38, 0.30, 0.16))
+        make_gear("RuneHammerGlow", "glow", j["fore_r"], build_maul_glow, smooth=True)
+
+        # Fortified Gold-Rimmed Tower Shield on Left Forearm `hl` (fore_l)
+        sx, sy, sz = hl.x - 0.06, hl.y + fwd * 0.18, hl.z + 0.04
+        def build_shield_gold(bm):
+            add_box(bm, (sx, sy, sz), (0.10, 0.56, 1.06))
+        make_gear("TowerShieldFrame", "gold", j["fore_l"], build_shield_gold)
+
+        def build_shield_team(bm):
+            add_box(bm, (sx - 0.04, sy + fwd * 0.02, sz), (0.06, 0.44, 0.88))
+        make_gear("TowerShieldFace", "team", j["fore_l"], build_shield_team)
+
+        def build_shield_glow(bm):
+            add_box(bm, (sx - 0.07, sy + fwd * 0.03, sz + 0.06), (0.04, 0.14, 0.28))
+        make_gear("TowerShieldRune", "glow", j["fore_l"], build_shield_glow, smooth=True)
+    else:
+        # ------------------------------------------------------------------
+        # 4 MOUNTED HERO GENERALS (alder, sun, raven, jade) — HORSE IK + RIDER
+        # ------------------------------------------------------------------
+        _add_horse_barding(root, col, prefix, mats, created, trim_role="gold", armor_role=armor_mat, fwd=fwd)
+
+        # Tall Back-Mounted Royal Hero War Standard (Pole on torso, Banner Cloth + Cape on cape!)
+        def build_std_pole(bm):
+            add_cyl(bm, (-0.34, back * 0.24, 2.05), (-0.34, back * 0.34, 4.32), 0.046, 0.038, segs=6)
+            add_sphere(bm, (-0.34, back * 0.34, 4.40), (0.12, 0.12, 0.12), subdiv=1)
+        make_gear("HeroStandardPole", "gold", j["torso"], build_std_pole, smooth=True)
+
+        def build_std_cloth(bm):
+            add_box(bm, (-0.34, back * 0.74, 3.74), (0.065, 0.80, 1.06))
+        make_gear("HeroStandardCloth", "team", j["cape"], build_std_cloth)
+
+        cape = add_flowing_cape(
+            root, col, f"{prefix}_HeroCape", "team", mats, j["cape"],
+            z_top=2.76, length=1.18, width_top=0.62, width_flare=0.26, fwd_sign=fwd,
+        )
+        if cape is not None:
+            created.append(cape)
+
+        # Heroic Layered Pauldrons on both shoulders (Arms)
+        for side, m_arm, tag in ((-1, j["arm_l"], "L"), (1, j["arm_r"], "R")):
+            def build_p(bm, s=side):
+                add_sphere(bm, (s * 0.39, 0.0, 2.74), (0.18, 0.19, 0.15), subdiv=2)
+                add_box(bm, (s * 0.43, 0.0, 2.62), (0.16, 0.22, 0.11), rot=(0.0, s * 0.44, 0.0))
+            make_gear(f"HeroPauldron{tag}", "gold" if civ == "sun" else armor_mat, m_arm, build_p, smooth=True)
+
+        hz = hc.z + 0.11
+
+        if civ == "alder":
+            # Marshal Rowan — Plumed Royal Greathelm, Radiant Greatsword & Gilded Kite Shield
+            def build_helm(bm):
+                add_cyl(bm, (0.0, hc.y, hz - 0.05), (0.0, hc.y, hz + 0.26), 0.21, 0.19, segs=10)
+            make_gear("RoyalHelmGold", "gold", j["head"], build_helm, smooth=True)
+
+            def build_plume(bm):
+                add_cyl(bm, (0.0, hc.y + back * 0.02, hz + 0.24), (0.0, hc.y + back * 0.40, hz + 0.52), 0.08, 0.025, segs=7)
+            make_gear("RoyalPlume", "team", j["head"], build_plume, smooth=True)
+
+            # Radiant Greatsword in Right Hand `hr` (fore_r)
+            s_dir = Vector((0.0, fwd * 0.56, 0.83)).normalized()
+            s_hand = Vector((hr.x + 0.02, hr.y, hr.z))
+            def build_sword_blade(bm):
+                add_cyl(bm, s_hand + s_dir * 0.12, s_hand + s_dir * 1.48, 0.068, 0.012, segs=4)
+            make_gear("GreatswordBlade", "steel", j["fore_r"], build_sword_blade)
+
+            def build_sword_hilt(bm):
+                add_cyl(bm, s_hand - s_dir * 0.26, s_hand + s_dir * 0.12, 0.036, 0.036, segs=6)
+                add_box(bm, tuple(s_hand + s_dir * 0.12), (0.42, 0.09, 0.09))
+            make_gear("GreatswordHilt", "gold", j["fore_r"], build_sword_hilt)
+
+            # Gilded Royal Kite Shield on Left Forearm `hl` (fore_l)
+            sx, sy, sz = hl.x - 0.04, hl.y + fwd * 0.16, hl.z + 0.04
+            def build_sh_gold(bm):
+                _add_kite_prism(bm, sx, sy, sz, 0.54, 0.36, 0.54, 0.06, y_dir=fwd)
+            make_gear("RoyalShieldFrame", "gold", j["fore_l"], build_sh_gold)
+
+            def build_sh_team(bm):
+                _add_kite_prism(bm, sx, sy + fwd * 0.025, sz, 0.42, 0.28, 0.44, 0.04, y_dir=fwd)
+            make_gear("RoyalShieldFace", "team", j["fore_l"], build_sh_team)
+
+        elif civ == "sun":
+            # Sun Sovereign — Golden Sunburst Turban Crown + Glowing Solar Scimitar + Sun Buckler
+            def build_turban(bm):
+                add_sphere(bm, (0.0, hc.y, hz + 0.10), (0.28, 0.28, 0.22), subdiv=2)
+                add_cyl(bm, (0.0, hc.y, hz + 0.22), (0.0, hc.y, hz + 0.36), 0.14, 0.04, segs=8)
+            make_gear("SunCrownGold", "gold", j["head"], build_turban, smooth=True)
+
+            def build_jewel(bm):
+                add_sphere(bm, (0.0, hc.y + fwd * 0.24, hz + 0.14), (0.08, 0.07, 0.09), subdiv=1)
+            make_gear("SunJewelGlow", "glow", j["head"], build_jewel, smooth=True)
+
+            # Curved Glowing Solar Scimitar in Right Hand `hr` (fore_r)
+            s_hand = Vector((hr.x + 0.02, hr.y, hr.z))
+            def build_scim_gold(bm):
+                add_cyl(bm, s_hand, s_hand + Vector((0.0, fwd * 0.52, 0.52)), 0.055, 0.048, segs=6)
+                add_cyl(bm, s_hand + Vector((0.0, fwd * 0.52, 0.52)), s_hand + Vector((0.0, fwd * 0.92, 1.12)), 0.068, 0.016, segs=5)
+                add_box(bm, tuple(s_hand + Vector((0.0, fwd * 0.08, 0.08))), (0.30, 0.08, 0.08))
+            make_gear("SolarScimitar", "gold", j["fore_r"], build_scim_gold)
+
+            def build_scim_glow(bm):
+                add_sphere(bm, tuple(s_hand + Vector((0.0, fwd * 0.88, 1.08))), (0.11, 0.11, 0.11), subdiv=1)
+            make_gear("SolarTipGlow", "glow", j["fore_r"], build_scim_glow, smooth=True)
+
+            # Gilded Round Sunburst Shield on Left Forearm `hl` (fore_l)
+            sh_c = Vector((hl.x - 0.07, hl.y + fwd * 0.14, hl.z + 0.05))
+            sh_n = Vector((-0.42, fwd * 0.90, 0.06)).normalized()
+            def build_sun_buckler(bm):
+                add_cyl(bm, sh_c - sh_n * 0.03, sh_c + sh_n * 0.03, 0.36, 0.35, segs=14)
+            make_gear("SunShieldGold", "gold", j["fore_l"], build_sun_buckler, smooth=True)
+
+            def build_sun_boss(bm):
+                add_sphere(bm, sh_c + sh_n * 0.05, (0.10, 0.10, 0.10), subdiv=1)
+            make_gear("SunShieldGlow", "glow", j["fore_l"], build_sun_boss, smooth=True)
+
+        elif civ == "raven":
+            # Shadow Khan — Horned Iron War-Helm + TWIN Brutal War-Axes (Right AND Left Forearm!)
+            def build_helm_iron(bm):
+                add_cyl(bm, (0.0, hc.y, hz - 0.05), (0.0, hc.y, hz + 0.24), 0.22, 0.16, segs=10)
+            make_gear("KhanHelmIron", "iron", j["head"], build_helm_iron, smooth=True)
+
+            def build_horns(bm):
+                for s in (-1.0, 1.0):
+                    add_cyl(bm, (s * 0.19, hc.y, hz + 0.14), (s * 0.48, hc.y + fwd * 0.12, hz + 0.44), 0.068, 0.018, segs=7)
+            make_gear("KhanHornsGold", "gold", j["head"], build_horns, smooth=True)
+
+            # Twin Brutal War-Axes in BOTH hands!
+            for tag, h_pos, m_fore in (("R", hr, j["fore_r"]), ("L", hl, j["fore_l"])):
+                a_dir = Vector((0.0, fwd * 0.62, 0.78)).normalized()
+                a_hand = Vector((h_pos.x, h_pos.y, h_pos.z))
+                def build_haft(bm, p=a_hand, d=a_dir):
+                    add_cyl(bm, p - d * 0.28, p + d * 0.88, 0.038, 0.038, segs=6)
+                make_gear(f"WarAxeHaft{tag}", "darkwood", m_fore, build_haft)
+
+                def build_blade(bm, p=a_hand, d=a_dir):
+                    head_c = p + d * 0.74
+                    add_box(bm, tuple(head_c + Vector((0.0, fwd * 0.12, 0.04))), (0.075, 0.34, 0.32), rot=(fwd * 0.35, 0.0, 0.0))
+                make_gear(f"WarAxeBlade{tag}", "steel", m_fore, build_blade)
+
+        else:  # jade — Dragon Marshal!
+            # Imperial Dragon Crest Helm + Twin Golden Pheasant Feathers + Sweeping Guandao Polearm!
+            def build_dragon_helm(bm):
+                add_cyl(bm, (0.0, hc.y, hz - 0.02), (0.0, hc.y, hz + 0.28), 0.27, 0.07, segs=10)
+            make_gear("DragonHelmGold", "gold", j["head"], build_dragon_helm, smooth=True)
+
+            def build_feathers(bm):
+                for s in (-1.0, 1.0):
+                    add_cyl(bm, (s * 0.14, hc.y + back * 0.04, hz + 0.22), (s * 0.56, hc.y + back * 0.56, hz + 1.02), 0.038, 0.015, segs=5)
+            make_gear("DragonFeathersGlow", "glow", j["head"], build_feathers, smooth=True)
+
+            # Sweeping Imperial Crescent Guandao Polearm in Right Hand `hr` (fore_r)
+            g_dir = Vector((0.0, fwd * 0.76, 0.65)).normalized()
+            g_hand = Vector((hr.x + 0.02, hr.y, hr.z))
+            def build_g_shaft(bm):
+                add_cyl(bm, g_hand - g_dir * 0.85, g_hand + g_dir * 1.45, 0.042, 0.040, segs=7)
+            make_gear("GuandaoShaft", "gold", j["fore_r"], build_g_shaft)
+
+            def build_g_blade(bm):
+                bc = g_hand + g_dir * 1.62
+                add_box(bm, tuple(bc), (0.07, 0.54, 0.26), rot=(fwd * 0.68, 0.0, 0.0))
+                add_cyl(bm, bc + g_dir * 0.20, bc + g_dir * 0.48, 0.08, 0.012, segs=4)
+            make_gear("GuandaoBlade", "steel", j["fore_r"], build_g_blade)
+
+            def build_g_tassel(bm):
+                tc = g_hand + g_dir * 1.32
+                add_cyl(bm, tc, tc + Vector((0.0, 0.0, -0.32)), 0.048, 0.020, segs=6)
+            make_gear("GuandaoTassel", "lacquer", j["fore_r"], build_g_tassel, smooth=True)
+
+    bpy.context.view_layer.update()
+    bake_figure_ao(root, created)
     return root
 
 
@@ -1226,9 +1602,10 @@ def main():
         export_format="GLB",
         export_extras=True,
         export_yup=True,
+        export_apply=True,
         export_normals=True,
         export_texcoords=True,
-        export_attributes=True,
+        export_vertex_color="ACTIVE",
         export_materials="EXPORT",
     )
 
