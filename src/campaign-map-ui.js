@@ -1,6 +1,6 @@
 import {DIFFICULTIES,FACTIONS,formatTime} from './data.js';
 import {difficultyLabel} from './ui-format.js';
-import {uiIcon} from './ui-icons.js';
+import {uiIcon,uiVectorIcon} from './ui-icons.js';
 import {ATLAS_LANDMARKS,CAMPAIGN_ACTS,campaignAtlasState} from './campaign-map-data.js';
 import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,unlockedCampaignRelics} from './campaign-relics.js';
 import {commanderPortraitSvg,commanderProfile} from './commander-portraits.js';
@@ -156,14 +156,14 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
   const relics=unlockedCampaignRelics(progress,freeSelect);
   const selectedRelic=relics.some(r=>r.id===setupOptions.relic&&r.unlocked)?setupOptions.relic:'frontier-charter';
   const activeRelicObj=relics.find(r=>r.id===selectedRelic)||relics[0];
-  const bossHtml=boss?`<div class="brief-boss">${uiIcon('swords')}<div><span>RIVAL COMMANDER · ${esc(boss.fortress)}</span><strong>${esc(boss.name)}</strong><small>${esc(boss.title)}</small></div></div>`:'';
-  const sideQuestHtml=sideQuest?`<div class="brief-sidequest">${uiIcon('flag-triangle-right')}<div><strong>Side Quest · ${esc(sideQuest.title)}</strong><p>${esc(sideQuest.text)}</p><small>Reward: ${esc(sideQuest.rewardText)}</small></div></div>`:'';
+  const bossHtml=boss?`<div class="brief-boss">${uiVectorIcon('swords')}<div><span>RIVAL COMMANDER · ${esc(boss.fortress)}</span><strong>${esc(boss.name)}</strong><small>${esc(boss.title)}</small></div></div>`:'';
+  const sideQuestHtml=sideQuest?`<div class="brief-sidequest">${uiVectorIcon('flag-triangle-right')}<div><strong>Side Quest · ${esc(sideQuest.title)}</strong><p>${esc(sideQuest.text)}</p><small>Reward: ${esc(sideQuest.rewardText)}</small></div></div>`:'';
   const speakerProfile=commanderProfile(selected.speaker);
 
   return `<div class="atlas-shell" role="dialog" aria-modal="true" aria-labelledby="atlas-heading">
     <header class="atlas-topbar">
       <div class="atlas-brand">
-        <span class="atlas-crest">${uiIcon('crown')}</span>
+        <span class="atlas-crest">${uiVectorIcon('crown')}</span>
         <div>
           <span class="eyebrow">THE FRONTIER CHRONICLES</span>
           <h2 id="atlas-heading">Campaign World Map</h2>
@@ -171,11 +171,11 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
       </div>
       <nav class="atlas-acts" role="tablist" aria-label="Campaign acts">${actTabs}</nav>
       <div class="atlas-top-actions">
-        <span class="atlas-progress-pill" title="Completed campaign chapters">${uiIcon('trophy')} <strong>${atlas.completedCount}/${atlas.total}</strong></span>
-        <button type="button" class="atlas-chip ${freeSelect?'active':''}" data-action="atlas-free-select" aria-pressed="${freeSelect}" title="Unlock all chapters immediately for testing or replay">${uiIcon('map')}<span>Free Select</span></button>
-        <button type="button" class="atlas-chip" data-mode="tutorial" title="Play the First Light interactive tutorial">${uiIcon('graduation-cap')}<span>Tutorial</span></button>
-        <button type="button" class="atlas-chip" data-action="custom-battle" title="Create a custom multi-kingdom battle">${uiIcon('custom')}<span>Custom</span></button>
-        <button type="button" class="atlas-close" data-action="close" aria-label="Close campaign map">${uiIcon('x')}</button>
+        <span class="atlas-progress-pill" title="Completed campaign chapters">${uiVectorIcon('trophy')} <strong>${atlas.completedCount}/${atlas.total}</strong></span>
+        <button type="button" class="atlas-chip ${freeSelect?'active':''}" data-action="atlas-free-select" aria-pressed="${freeSelect}" title="Unlock all chapters immediately for testing or replay">${uiVectorIcon('map')}<span>Free Select</span></button>
+        <button type="button" class="atlas-chip" data-mode="tutorial" title="Play the First Light interactive tutorial">${uiVectorIcon('graduation-cap')}<span>Tutorial</span></button>
+        <button type="button" class="atlas-chip" data-action="custom-battle" title="Create a custom multi-kingdom battle">${uiVectorIcon('users-round')}<span>Custom</span></button>
+        <button type="button" class="atlas-close" data-action="close" aria-label="Close campaign map">${uiVectorIcon('x')}</button>
       </div>
     </header>
 
@@ -201,7 +201,7 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
             <span class="brief-badge age">${esc(selected.ageName)}</span>
           </div>
           <h3>${esc(selected.name)}</h3>
-          <p class="brief-region">${uiIcon('map')} ${esc(selected.region)} · ${esc(selected.mapName)}</p>
+          <p class="brief-region">${uiVectorIcon('map')} ${esc(selected.region)} · ${esc(selected.mapName)}</p>
         </div>
 
         ${medalHtml}
@@ -219,7 +219,7 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
           <h4>MISSION OBJECTIVES</h4>
           <ol class="brief-objectives">${stagesHtml||`<li><span class="brief-step">1</span><div><strong>Victory</strong><p>${esc(selected.objective)}</p></div></li>`}</ol>
           ${sideQuestHtml}
-          ${selected.optionalText?`<div class="brief-bonus">${uiIcon('trophy')}<div><strong>Bonus Crown Objective</strong><p>${esc(selected.optionalText)}</p></div></div>`:''}
+          ${selected.optionalText?`<div class="brief-bonus">${uiVectorIcon('trophy')}<div><strong>Bonus Crown Objective</strong><p>${esc(selected.optionalText)}</p></div></div>`:''}
         </div>
 
         <div class="brief-relic-box">

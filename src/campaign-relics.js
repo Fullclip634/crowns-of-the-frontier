@@ -4,6 +4,7 @@
  * and Named Act Boss Citadel profiles.
  * Zero extra per-frame overhead (relics apply once on init; side quests check inside the 0.5s campaign loop).
  */
+import {UNITS} from './data.js';
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 
 export const CAMPAIGN_RELICS=Object.freeze([
@@ -57,7 +58,7 @@ export const CAMPAIGN_RELICS=Object.freeze([
     apply(sim){
       const res=sim.players?.[0]?.resources;if(res)res.gold=(res.gold||0)+120;
       sim.campaignRelicVisionBonus=1.2;
-      for(const u of sim.owned(0,'unit','scout'))u.vision=Math.round((u.vision||20)*1.2);
+      for(const u of sim.owned(0,'unit','scout'))u.vision=Math.round((u.vision||UNITS.scout.vision)*1.2);
     },
   },
   {
@@ -108,6 +109,7 @@ export function applyCampaignRelic(sim,relicId){
   const relic=CAMPAIGN_RELICS.find(r=>r.id===relicId);
   if(!relic)return false;
   relic.apply(sim);
+  sim.updateFog?.();
   return true;
 }
 
@@ -123,6 +125,11 @@ export const CAMPAIGN_BOSSES=Object.freeze({
   campaign12:{name:'Iron-Marshal Garen',title:'Warden of the Sundered Pass',fortress:'Central Mountain Fortress'},
   campaign13:{name:'High Warlord Malrik',title:'Scourge of the Deepwood',fortress:'Northwood Timber Citadel'},
   campaign14:{name:'The Usurper Coalition',title:'Sunward & Raven High Lords',fortress:'Twin Imperial Citadels'},
+  campaign15:{name:'Overlord Draven & the Four Warlords',title:'Coalition of Ironfall Pass',fortress:'Four Outer War-Camps'},
+  campaign16:{name:'Lord Korr & General Syra',title:'Commanders of the Gorge Crossings',fortress:'Twin River Strongholds'},
+  campaign17:{name:'Jarl Skald',title:'Warlord of the Glacial Siege',fortress:'Frostfall Cliff Citadel'},
+  campaign18:{name:'Temple Warden Arak & Warlord Kael',title:'Lords of the Coral Lagoon',fortress:'Stepped Jungle Temples'},
+  campaign19:{name:'Overlord Malrik, Khan Varek & Sultan Zafar',title:'The Three Imperial Warlords',fortress:'Deepwood Ravine Imperial Citadels'},
 });
 
 /** Mid-mission optional Side Quests with instant battlefield rewards. */
@@ -195,7 +202,7 @@ export const CAMPAIGN_SIDE_QUESTS=Object.freeze({
     text:'Complete a Siege Workshop to shatter the Usurper’s keep.',
     rewardText:'+1 Trebuchet arrives',
     done:s=>completed(s,'workshop').length>0,
-    reward(s,spawn){spawn(s,{owner:0,type:'catapult',count:1});},
+    reward(s,spawn){spawn(s,{owner:0,type:'trebuchet',count:1});},
   },
   campaign11:{
     id:'sq-c11-bastion',title:'Citadel Siegeworks',
@@ -222,7 +229,42 @@ export const CAMPAIGN_SIDE_QUESTS=Object.freeze({
     id:'sq-c14-trebuchet',title:'Coalition Artillery',
     text:'Field two Trebuchets to shatter the rival Imperial citadels.',
     rewardText:'+400 Gold · +300 Stone',
-    done:s=>s.owned(0,'unit','catapult').length>=2,
+    done:s=>s.owned(0,'unit').filter(e=>e.type==='trebuchet'||e.type==='catapult').length>=2,
     reward(s){s.players[0].resources.gold+=400;s.players[0].resources.stone+=300;},
+  },
+  campaign15:{
+    id:'sq-c15-citadel',title:'Ironfall Artillery',
+    text:'Complete a Siege Workshop to crack the four surrounding enemy war-camps.',
+    rewardText:'+350 Gold · +250 Stone',
+    done:s=>completed(s,'workshop').length>0,
+    reward(s){s.players[0].resources.gold+=350;s.players[0].resources.stone+=250;},
+  },
+  campaign16:{
+    id:'sq-c16-ford',title:'Gorge Watchpost',
+    text:'Complete a Watchtower near the contested waterfall crossings.',
+    rewardText:'+2 Knights reinforce',
+    done:s=>completed(s,'tower').length>0,
+    reward(s,spawn){spawn(s,{owner:0,type:'knight',count:2});},
+  },
+  campaign17:{
+    id:'sq-c17-forge',title:'Glacial Armories',
+    text:'Research any weapon, armor, or fortification upgrade to endure the winter siege.',
+    rewardText:'+300 Wood · +250 Stone',
+    done:s=>(s.players[0].tech?.attack||0)+(s.players[0].tech?.armor||0)+(s.players[0].tech?.ranged||0)+(s.players[0].tech?.fortification||0)>0,
+    reward(s){s.players[0].resources.wood+=300;s.players[0].resources.stone+=250;},
+  },
+  campaign18:{
+    id:'sq-c18-lagoon',title:'Lagoon Stronghold',
+    text:'Complete a Castle Keep or Bombard Tower overlooking the coral delta.',
+    rewardText:'+350 Gold · +3 Archers reinforce',
+    done:s=>completed(s,'keep').length>0||completed(s,'bombard').length>0,
+    reward(s,spawn){s.players[0].resources.gold+=350;spawn(s,{owner:0,type:'archer',count:3});},
+  },
+  campaign19:{
+    id:'sq-c19-imperial',title:'Grand Siege Train',
+    text:'Field two Trebuchets or Battering Rams to shatter the rival Imperial coalition.',
+    rewardText:'+500 Gold · +400 Stone',
+    done:s=>s.owned(0,'unit').filter(e=>['trebuchet','ram','catapult'].includes(e.type)).length>=2,
+    reward(s){s.players[0].resources.gold+=500;s.players[0].resources.stone+=400;},
   },
 });

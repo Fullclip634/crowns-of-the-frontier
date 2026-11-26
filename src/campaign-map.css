@@ -22,32 +22,32 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
-  padding:10px 14px;
+  gap:8px;
+  padding:8px 12px;
   border-bottom:1px solid rgba(226,194,122,.28);
   background:linear-gradient(180deg,rgba(22,36,30,.98),rgba(13,22,18,.98));
   flex-shrink:0;
 }
-.atlas-brand{display:flex;align-items:center;gap:11px;min-width:0}
+.atlas-brand{display:flex;align-items:center;gap:9px;min-width:0;flex-shrink:0}
 .atlas-crest{
-  display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;
   border-radius:4px;border:1px solid rgba(228,196,124,.58);
   background:radial-gradient(circle at 50% 30%,rgba(228,196,124,.24),rgba(16,26,22,.96));
   color:#f4d88c;
 }
-.atlas-crest .ui-icon{width:20px;height:20px;margin:0}
-.atlas-brand .eyebrow{font-size:8px;letter-spacing:2px;color:#d9bc7a;display:block}
-.atlas-brand h2{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1.05;margin:1px 0 0;color:#f5edd8;white-space:nowrap}
+.atlas-crest .ui-icon{width:19px;height:19px;margin:0}
+.atlas-brand .eyebrow{font-size:7.5px;letter-spacing:1.8px;color:#d9bc7a;display:block}
+.atlas-brand h2{font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.05;margin:1px 0 0;color:#f5edd8;white-space:nowrap}
 
-.atlas-acts{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
+.atlas-acts{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;justify-content:center;min-width:0;overflow-x:auto;scrollbar-width:none}
 .atlas-act-tab{
-  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
-  padding:5px 11px;min-height:38px;border-radius:4px;
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;flex:0 0 auto;
+  padding:4px 8px;min-height:36px;border-radius:4px;
   border:1px solid rgba(224,185,110,.22);background:rgba(12,20,16,.78);
-  color:#c2cfb7;text-align:left;cursor:pointer;
+  color:#c2cfb7;text-align:left;cursor:pointer;white-space:nowrap;
 }
-.atlas-act-tab strong{font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1.1}
-.atlas-act-tab small{font-size:9px;color:#93a78e;line-height:1.1}
+.atlas-act-tab strong{font-size:10.5px;font-weight:700;letter-spacing:.03em;line-height:1.1}
+.atlas-act-tab small{font-size:8.5px;color:#93a78e;line-height:1.1}
 .atlas-act-tab:hover{border-color:rgba(226,194,122,.5);color:#fff}
 .atlas-act-tab.active{
   border-color:#ebc978;
@@ -56,18 +56,18 @@
 }
 .atlas-act-tab.active small{color:#e9d193}
 
-.atlas-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.atlas-top-actions{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .atlas-progress-pill{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 10px;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 9px;
   border-radius:4px;border:1px solid rgba(228,196,124,.36);background:rgba(26,38,28,.86);
   color:#f2d896;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none;line-height:1;
 }
 .atlas-progress-pill .ui-icon{width:15px;height:15px;flex:none;margin:0}
 .atlas-progress-pill strong{line-height:1}
 .atlas-chip{
-  display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 10px;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 8px;
   border-radius:4px;border:1px solid rgba(224,185,110,.26);background:rgba(16,28,22,.88);
-  color:#d7e0cb;font-size:11px;font-weight:600;cursor:pointer;line-height:1;
+  color:#d7e0cb;font-size:10.5px;font-weight:600;cursor:pointer;line-height:1;white-space:nowrap;
 }
 .atlas-chip .ui-icon{width:15px;height:15px;color:#dec17a;flex:none;margin:0}
 .atlas-chip:hover{border-color:#e9c779;color:#fff}
@@ -115,12 +115,22 @@
   font-family:var(--serif);
   font-size:13px;
   font-weight:700;
-  letter-spacing:3px;
-  fill:#463520;
-  fill-opacity:.72;
+  letter-spacing:2.8px;
+  fill:#2c2012;
+  fill-opacity:.9;
+  stroke:rgba(232,216,178,.72);
+  stroke-width:3px;
+  stroke-linejoin:round;
+  paint-order:stroke fill;
   pointer-events:none;
 }
-.atlas-landmark.sea{fill:#8ec2ca;fill-opacity:.42;font-style:italic}
+.atlas-landmark.sea{
+  fill:#bfe6ee;
+  fill-opacity:.78;
+  stroke:rgba(12,26,32,.78);
+  stroke-width:3px;
+  font-style:italic;
+}
 
 /* March Routes */
 .atlas-route{stroke-width:3;stroke-linecap:round;transition:opacity .25s}
@@ -191,14 +201,14 @@
 
 .atlas-legend{
   display:flex;align-items:center;gap:14px;width:100%;max-width:1000px;
-  margin-top:8px;padding:0 4px;font-size:10px;color:#b2c2a8;flex-wrap:wrap;
+  margin-top:8px;padding:0 4px;font-size:10px;color:#b2c2a8;flex-wrap:nowrap;min-width:0;
 }
-.atlas-legend>span{display:inline-flex;align-items:center;gap:5px}
+.atlas-legend>span{display:inline-flex;align-items:center;gap:5px;flex-shrink:0}
 .leg-dot{display:inline-block;width:9px;height:9px;border-radius:50%;border:1px solid rgba(255,238,186,.6)}
 .leg-dot.completed{background:#7e251e}
 .leg-dot.current{background:#d9a73d}
 .leg-dot.locked{background:#34403b}
-.atlas-lore-note{margin-left:auto;color:#d6caa9;font-style:italic;max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atlas-legend>.atlas-lore-note{display:block;flex:1 1 200px;min-width:0;margin-left:auto;text-align:right;color:#d6caa9;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Illuminated Mission Briefing Side Drawer */
 .atlas-briefing{

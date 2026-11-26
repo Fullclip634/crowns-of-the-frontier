@@ -203,7 +203,7 @@ function initializeBattle(sim){
 export function installCustomBattle(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tickAI=p.tickAI,checkVictory=p.checkVictory,updateFog=p.updateFog,serialize=p.serialize,restore=Simulation.restore,hurt=p.hurt,emit=p.emit;
   p.donateResources=function(from,to,type,amount){
-    if((this.options.mode!=='custom'&&!this.mission?.actFour)||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
+    if((this.options.mode!=='custom'&&!this.mission?.actFour&&!this.mission?.actFive)||this.ended||!Number.isInteger(from)||!Number.isInteger(to)||from===to||!['food','wood','gold','stone'].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000)return false;
     const sender=this.players[from],recipient=this.players[to];
     if(!sender||!recipient||sender.defeated||recipient.defeated||!this.allied(from,to)||!Number.isFinite(sender.resources[type])||sender.resources[type]<amount||!Number.isFinite(recipient.resources[type]))return false;
     sender.resources[type]-=amount;recipient.resources[type]+=amount;
@@ -272,11 +272,12 @@ export function visibilityFor(sim,owner,explored,observer=false){
   if(observer){visible.fill(1);explored.fill(1);return visible;}
   const reveal=(e,r)=>{const c=sim.cell(e.x,e.z),rc=Math.ceil(r/2);revealVisionCircle(visible,explored,size,c.x,c.z,rc);};
   const shared=sim.options.mode==='custom'&&sim.options.shareVision;
+  const unitSight=e=>typeof sim.unitVision==='function'?sim.unitVision(e):(Number.isFinite(e.vision)?e.vision:UNITS[e.type].vision);
   if(typeof sim.candidatesFor==='function'){
-    for(const e of sim.candidatesFor('unit'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,UNITS[e.type].vision);
+    for(const e of sim.candidatesFor('unit'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,unitSight(e));
     for(const e of sim.candidatesFor('building'))if(e.hp>0&&!e.embarked&&e.progress>0&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,BUILDINGS[e.type].vision||18);
     for(const e of sim.candidatesFor('shrine'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner)))reveal(e,18);
-  }else for(const e of sim.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner))){if(e.kind==='unit')reveal(e,UNITS[e.type].vision);else if(e.kind==='building'&&e.progress>0)reveal(e,BUILDINGS[e.type].vision||18);else if(e.kind==='shrine')reveal(e,18);}
+  }else for(const e of sim.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&sim.allied(owner,e.owner))){if(e.kind==='unit')reveal(e,unitSight(e));else if(e.kind==='building'&&e.progress>0)reveal(e,BUILDINGS[e.type].vision||18);else if(e.kind==='shrine')reveal(e,18);}
   for(const side of sim.revealedOwners||[])for(const e of sim.owned(side,'building'))reveal(e,e.r+4);
   return visible;
 }

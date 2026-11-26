@@ -18,6 +18,7 @@ import {entityPerspective} from '../server/entity-perspective.js';
 import {projectileVisualEvents} from './projectile-combat.js';
 import {combatPerspective} from '../server/combat-perspective.js';
 import {createVisibilityDelta} from './network-visibility.js';
+import {kingdomScore} from './hud-macro.js';
 
 // Web Crypto is available in Node 19+ and every browser that can run the game.
 export function randomHex(bytes){const values=new Uint8Array(bytes);globalThis.crypto.getRandomValues(values);return Array.from(values,value=>value.toString(16).padStart(2,'0')).join('');}
@@ -98,11 +99,11 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     const shownIds=new Set(entities.map(entity=>entity.id));
     for(const [id,e]of known){if(shown(e)){if(!sim.get(id))known.delete(id);continue;}if(!shownIds.has(id))entities.push({...e,owner:mapOwner(e.owner)});}
     data.entities=entities;
-    data.players=order.map(owner=>{const p=sim.players[owner];return owner===side?{...p}:{...p,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
+    data.players=order.map(owner=>{const p=sim.players[owner],publicScore=p.defeated?0:kingdomScore(sim,owner);return owner===side?{...p,publicScore}:{...p,publicScore,resources:custom(room)&&sim.allied(side,owner)?{...p.resources}:{food:0,wood:0,gold:0,stone:0},tech:Object.fromEntries(Object.keys(p.tech).map(key=>[key,0])),battleStats:sim.ended?p.battleStats:emptyStats()};});
     data.aiStates=null;data.commanderAI=null;data.teamAlarms={};data.intel={};data.stats=spectator?emptyStats():custom(room)?sim.players[side].battleStats:room.stats[side];data.revealedOwners=(sim.revealedOwners||[]).map(mapOwner);
     data.ended=sim.ended?{...sim.ended,won:spectator?false:custom(room)?sim.ended.winningTeam===sim.players[side].team:side?!sim.ended.won:sim.ended.won,...(spectator?{spectator:true}:{})}:null;
     if(!custom(room)&&side){[data.hold,data.enemyHold]=[data.enemyHold,data.hold];data.wonderTime=[...data.wonderTime].reverse();}
-    if(data.ended&&!spectator)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race',koth:'king of the hill',deathmatch:'grand war'}[room.options.mode]||room.options.mode} match.`;
+    if(data.ended&&!spectator)data.ended.reason=custom(room)?(data.ended.won?'Your alliance controls the battlefield.':'Another alliance won the battle.'):`${data.ended.won?'Your kingdom won':'Your rival won'} the ${{skirmish:'conquest',tides:'naval conquest',regicide:'regicide',dominion:'dominion',wonder:'wonder race',koth:'king of the hill',deathmatch:'grand war',siege:'castle siege'}[room.options.mode]||room.options.mode} match.`;
     const resourceChanges=[];
     if(compact){data.compactResources=true;data.resourceUpdates=[];const cache=room.resources[side];for(const e of sim.entities){if(e.kind!=='resource'||!observer&&!shown(e))continue;const amount=Math.ceil(e.amount),value=`${amount}:${e.hp}`;if(forceVisibility||cache.get(e.id)!==value){resourceChanges.push([e.id,value]);data.resourceUpdates.push({id:e.id,amount,hp:e.hp});}}}
     const previous=compact&&deltaVisibility&&!forceVisibility?room.visibility[side]:null,sequence=previous?previous.sequence+1:0;
@@ -122,7 +123,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
     room.sim=new Simulation({...room.options,multiplayer:true,faction:room.players[0].faction});
     if(!custom(room)){
       room.sim.players[1].faction=room.players[1].faction;
-      for(const type of ['towncenter','house','mill','barracks','range','stable','workshop','blacksmith','dock']){const a=room.sim.owned(0,'building',type),b=room.sim.owned(1,'building',type);for(let i=0;i<Math.min(a.length,b.length);i++){b[i].x=-a[i].x;b[i].z=-a[i].z;}}
+      for(const type of ['towncenter','house','mill','barracks','range','stable','workshop','blacksmith','dock','keep']){const a=room.sim.owned(0,'building',type),b=room.sim.owned(1,'building',type);for(let i=0;i<Math.min(a.length,b.length);i++){b[i].x=-a[i].x;b[i].z=-a[i].z;}}
       for(const unit of room.sim.owned(1,'unit'))unit.hp=0;for(const unit of room.sim.owned(0,'unit')){const mirror=room.sim.addUnit(unit.type,1,-unit.x,-unit.z);if(unit.type==='fishingboat')room.sim.assignWorker(mirror);}room.sim.assignEconomy(1);room.sim.revision++;
       for(const e of room.sim.owned(1).filter(e=>e.kind==='unit'||e.kind==='building')){e.maxHp=room.sim.maxHP(e);e.hp=e.maxHp;}
     }
@@ -135,7 +136,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       if(event.type==='notice')send(room.players.find(p=>p.side===event.owner)?.ws,{type:'error',message:event.message});
       if(event.type==='donation')for(const side of [event.from,event.to])send(room.players.find(p=>p.side===side)?.ws,{type:'donation',from:room.sim.players[event.from].name,to:room.sim.players[event.to].name,resource:event.resource,amount:event.amount});
       if(event.type==='death'&&event.entity.owner>=0&&!event.entity.demolished){room.stats[event.entity.owner].lost++;if(event.entity.lastAttacker>=0&&event.entity.lastAttacker!==event.entity.owner)room.stats[event.entity.lastAttacker].kills++;}
-      if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support'].includes(event.type))room.effects.push(event);
+      if(['attack','projectile-impact','death','heal','research','complete','trained','capture','unload','kingdom-defeated','remnants-revealed','ally-support','hero-skill','hero-levelup','wonder-started','wonder-completed','boiling-oil','veteran','spoils'].includes(event.type))room.effects.push(event);
     });
     for(const player of room.players){const state=perspective(room,player.side,false,custom(room)&&player.protocol>=2);if(send(player.ws,{type:'begin',state,code:room.code,waiting:waiting(room),chat:watching(room,player.side)?null:room.chat.session(room,player)}))commitSnapshot(room,player.side,state);}
   }
@@ -165,6 +166,8 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       case 'donateResources':if(custom(room)&&Number.isInteger(args[1])&&args[1]>=0&&args[1]<s.players.length){const recipient=orderFor(room,owner)[args[1]];if(!s.donateResources(owner,recipient,args[2],args[3]))send(player.ws,{type:'error',message:'Resource gift could not be sent. Check your balance and ally.'});}break;
       case 'demolish':if(owns(args[0]))s.demolish(args[0],owner);break;
       case 'cancelQueue':if(owns(args[0])&&Number.isInteger(args[1])&&args[1]>=0&&args[1]<s.get(args[0]).queue.length)s.cancelQueue(args[0],args[1],owner);break;
+      case 'toggleHeroAutoCast':if(owns(args[0]))s.toggleHeroAutoCast(args[0],owner);break;
+      case 'castHeroSkill':if(owns(args[0])&&(args[1]===0||args[1]===1))s.castHeroSkill(args[0],args[1],owner);break;
       case 'resign':if(custom(room)){s.resign(owner);player.conceded=true;}break;
     }
   }
@@ -183,7 +186,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
         if(rooms.size>=maxRooms)return send(ws,{type:'error',message:'All match slots are busy. Try again after a match finishes.'});
         const input=message.options||{},base={map:MAPS[input.map]?input.map:'highlands',seed:Number.isFinite(input.seed)?input.seed:2026};let options;
         if(input.mode==='custom'){options=normalizeBattle({...input,...base,multiplayer:true});if(options.slots.filter(slot=>slot.controller==='human').length<(options.hostSpectator?1:2))return send(ws,{type:'error',message:options.hostSpectator?'Open at least one Human slot for a friend.':'Choose at least two human slots for a multiplayer room.'});}
-        else options={...base,mode:['skirmish','regicide','dominion','wonder','tides','koth','deathmatch'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
+        else options={...base,mode:['skirmish','regicide','dominion','wonder','tides','koth','deathmatch','siege'].includes(input.mode)?input.mode:'skirmish',difficulty:'normal'};
         room={code:code(),options,players:[],created:now,slotDefaults:options.mode==='custom'?options.slots.map(({name,faction})=>({name,faction})):null};while(rooms.has(room.code))room.code=code();rooms.set(room.code,room);
         player={side:options.hostSpectator?options.slots.length:0,host:true,ready:true,protocol:Number(message.protocol)>=2?2:1,name:String(message.name||'Commander').slice(0,24),faction:FACTIONS[message.faction]?message.faction:'alder',token:randomHex(16),ws};room.players.push(player);
         if(custom(room)&&!options.hostSpectator){options.slots[0].name=player.name;options.slots[0].faction=player.faction;}
@@ -254,7 +257,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       // resource, effect and fog-delta packets for this connection.
       if(!canSend(player.ws,'state')){observeHeldState(room,player.side,visible,observer,memoryCache);continue;}
       const map=orderFor(room,player.side),mapOwner=owner=>owner<0?owner:map.indexOf(owner);
-      const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?(watching(room,player.side)||room.sim.allied(player.side,e.ally)):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||e.entity&&room.sim.canSee(player.side,e.entity)).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
+      const effects=room.effects.map(e=>combatPerspective(room.sim,player.side,e,{observer})).filter(Boolean).filter(e=>!e.entity?.embarked||e.entity.owner===player.side||observer).filter(e=>e.type==='ally-support'?(watching(room,player.side)||room.sim.allied(player.side,e.ally)):['hero-levelup','veteran','spoils'].includes(e.type)?(observer||e.owner===player.side):observer||e.owner===player.side||['kingdom-defeated','remnants-revealed','wonder-started','wonder-completed'].includes(e.type)||e.entity?.owner===player.side||e.target?.owner===player.side||(e.entity&&room.sim.canSee(player.side,e.entity))||(Number.isFinite(e.x)&&Number.isFinite(e.z)&&room.sim.canSee(player.side,{x:e.x,z:e.z,r:2}))).slice(-60).map(e=>JSON.parse(JSON.stringify(e,(key,value)=>key==='path'||key==='orders'?undefined:value))).map(e=>{if(e.owner>=0)e.owner=mapOwner(e.owner);if(e.ally>=0)e.ally=mapOwner(e.ally);for(const key of ['entity','target'])if(e[key]){e[key]=entityPerspective(room.sim,player.side,e[key]);if(e[key].owner>=0)e[key].owner=mapOwner(e[key].owner);}return e;});
       const state=perspective(room,player.side,custom(room),custom(room)&&player.protocol>=2,player.visibilityResync,visible,memoryCache);
       if(send(player.ws,{type:'state',state,effects,waiting:waiting(room)})){commitSnapshot(room,player.side,state);player.visibilityResync=false;}
     }room.effects=[];}

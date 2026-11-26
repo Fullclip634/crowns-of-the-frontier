@@ -94,16 +94,16 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign5:{speaker:'Marshal Elian',intro:'The enemy capital stands behind gates and stone. Bring siege engines, protect their crews, and open a route for the army.',
     stages:[
-      {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
+      {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult','trebuchet'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
       {title:'Breach the defenses',text:'Destroy the enemy gatehouse or a section of its starting wall.',marker:{x:102,z:-61},done:(s,q)=>q.defenses.some(id=>!s.get(id)),dialogue:'There is a breach in the line. Reinforce it before sending the siege engines toward the capital.'},
       {title:'End the frontier war',text:'Destroy the rival town center and defend your own settlement.',marker:{x:106,z:-90},done:conquered,dialogue:'The capital has fallen. The frontier war is over, but the work of rebuilding begins.'},
-    ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult'].includes(e.type))},
+    ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult','trebuchet'].includes(e.type))},
     events:[
       {at:70,id:'c5-crews',text:'Siege crews and their escorts arrive from the capital workshops.',reinforce:{type:'spearman',count:3}},
       {at:140,id:'c5-labour',text:'A labour company arrives to repair engines between assaults.',reinforce:{type:'villager',count:2}},
       {at:120,id:'c5-sally',minDifficulty:'hard',text:'The garrison sallies out to break the siege train.',reinforce:{owner:1,type:'knight',count:2}},
-      {at:160,id:'c5-engine-intact',when:s=>army(s).some(e=>['ram','catapult'].includes(e.type)),text:'Your surviving engine crew trains a second company of guards.',reinforce:{type:'spearman',count:2}},
-      {at:160,id:'c5-engine-lost',when:s=>!army(s).some(e=>['ram','catapult'].includes(e.type)),minDifficulty:'hard',text:'With the siege train broken, the garrison counterattacks in force.',reinforce:{owner:1,type:'knight',count:2}},
+      {at:160,id:'c5-engine-intact',when:s=>army(s).some(e=>['ram','catapult','trebuchet'].includes(e.type)),text:'Your surviving engine crew trains a second company of guards.',reinforce:{type:'spearman',count:2}},
+      {at:160,id:'c5-engine-lost',when:s=>!army(s).some(e=>['ram','catapult','trebuchet'].includes(e.type)),minDifficulty:'hard',text:'With the siege train broken, the garrison counterattacks in force.',reinforce:{owner:1,type:'knight',count:2}},
     ]},
   campaign6:{speaker:'Admiral Iven',intro:'The final frontier lies beyond the water. Secure a fishing economy, prepare the fleet, then choose a landing force or long-range naval siege.',
     stages:[
@@ -198,7 +198,7 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign14:{speaker:'Queen Maren',intro:'Here ends the War of Three Crowns. My Imperial fortress holds the northern crossing beside your citadel. Coordinate across the Twin Rivers, break the rival coalition, and claim the realm forever!',
     stages:[
-      {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:132,z:92},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'catapult',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
+      {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:132,z:92},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'trebuchet',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
       {title:'Imperial Supremacy',text:'Advance to the Imperial Age (or tear down the remaining rival Castle Keep).',marker:{x:132,z:-96},done:s=>s.players[0].age>=3||(!s.count(1,'building','keep')&&!s.count(2,'building','keep')),dialogue:'The Imperial standard rises over Twin Rivers! Press the final assault on the last enemy capital.'},
       {title:'Unite the Three Crowns',text:'Destroy both rival Imperial town centers to end the coalition war.',marker:{x:132,z:-96},done:allHostileCapitalsFallen,dialogue:'Both rival capitals have fallen! From Iron Ridge to Twin Rivers, the entire Frontier unites beneath one Crown!'},
     ],optional:{text:'Finish with Queen Maren’s allied capital still standing.',done:s=>s.count(3,'building','towncenter')>0},
@@ -256,7 +256,7 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign19:{speaker:'Queen Maren',intro:'Every banner in the realm meets here at Deepwood Ravine! You hold the center alongside Forgemaster Borin and my Royal Guard. Three Imperial warlords stand across the timber ravine bridge—coordinate our coalition and wipe every single enemy empire off the map!',
     stages:[
-      {title:'Wipe Out the First Enemy Empire',text:'Cross Deepwood Ravine with Queen Maren and Forgemaster Borin and wipe out every structure of any rival Imperial base.',marker:{x:124,z:0},targetOwners:[1,2,3],done:s=>[1,2,3].some(o=>baseWiped(s,o)),onDone:s=>{spawnReinforcements(s,{owner:4,type:'knight',count:4});spawnReinforcements(s,{owner:5,type:'catapult',count:1});},dialogue:'An entire enemy empire has been wiped out! Borin brings up fresh Trebuchets and my Royal Knights charge through the ravine!'},
+      {title:'Wipe Out the First Enemy Empire',text:'Cross Deepwood Ravine with Queen Maren and Forgemaster Borin and wipe out every structure of any rival Imperial base.',marker:{x:124,z:0},targetOwners:[1,2,3],done:s=>[1,2,3].some(o=>baseWiped(s,o)),onDone:s=>{spawnReinforcements(s,{owner:4,type:'knight',count:4});spawnReinforcements(s,{owner:5,type:'trebuchet',count:1});},dialogue:'An entire enemy empire has been wiped out! Borin brings up fresh Trebuchets and my Royal Knights charge through the ravine!'},
       {title:'Collapse the Coalition',text:'Completely wipe out at least two of the three rival Imperial bases.',marker:{x:118,z:-108},targetOwners:[1,2,3],done:s=>[1,2,3].filter(o=>baseWiped(s,o)).length>=2,dialogue:'Two rival empires lie in total ruins! Only one hostile stronghold remains—leave nothing standing!'},
       {title:'The Grand Clash of Crowns',text:'Wipe out all remaining base structures of all three rival Imperial empires across Deepwood Ravine.',marker:{x:118,z:108},done:allHostileBasesWiped,dialogue:'Every rival empire has been completely wiped from the frontier! The Great Frontier War is won forever!'},
     ],optional:{text:'Finish with both Queen Maren’s and Forgemaster Borin’s capitals still standing.',done:s=>s.count(4,'building','towncenter')>0&&s.count(5,'building','towncenter')>0},
@@ -264,7 +264,7 @@ export const CAMPAIGN_SCRIPTS={
       {at:20,id:'c19-malrik-taunt',speaker:'Overlord Malrik',role:'enemy',text:'Three empires against your fragile alliance! Burn the timber bridge and crush them all!'},
       {at:65,id:'c19-borin-aid',speaker:'Forgemaster Borin',role:'ally',text:'Ironhold hammers are ready, Commander! Point the way with War-Comms and we shatter their gates!',reinforce:{owner:5,type:'ironbreaker',count:4}},
       {at:115,id:'c19-varek-charge',speaker:'Khan Varek',role:'enemy',text:'Raven cavalry, ride through the northern pass! Leave nothing standing!',reinforce:{owner:2,type:'knight',count:5}},
-      {at:165,id:'c19-zafar-siege',minDifficulty:'hard',speaker:'Sultan Zafar',role:'enemy',text:'Unleash the trebuchets! Break the central bastion!',reinforce:{owner:3,type:'catapult',count:2}},
+      {at:165,id:'c19-zafar-siege',minDifficulty:'hard',speaker:'Sultan Zafar',role:'enemy',text:'Unleash the trebuchets! Break the central bastion!',reinforce:{owner:3,type:'trebuchet',count:2}},
     ]},
 };
 

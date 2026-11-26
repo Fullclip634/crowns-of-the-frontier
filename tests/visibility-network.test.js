@@ -103,9 +103,13 @@ test('server-side skipped snapshots retain both fog and resource baselines until
   const {room,host,receiver}=await fixture(t),sim=room.sim;
   await applyNext(host,receiver);const player=room.players[0],socket=player.ws;
   Object.defineProperty(socket,'bufferedAmount',{configurable:true,get:()=>1500000});
+  // Drain and apply any frame already queued on the loopback socket before congestion started.
+  await pause(40);
+  while(host.inbox.items.some(packet=>packet.type==='state'))await applyNext(host,receiver);
   const baseline=room.visibility[0],resource=sim.entities.find(e=>e.kind==='resource'&&receiver.visible[sim.cell(e.x,e.z).z*sim.gridSize+sim.cell(e.x,e.z).x]);assert.ok(resource);
   const resourceBaseline=room.resources[0].get(resource.id),scout=sim.owned(0,'unit','scout')[0];scout.x=0;scout.z=0;resource.amount-=71;sim.revision++;sim.updateFog();
-  await pause(550);host.inbox.clear();
+  await pause(550);
+  assert.equal(host.inbox.items.some(packet=>packet.type==='state'),false,'no state frames are sent while outgoing link is congested');
   assert.equal(room.visibility[0],baseline,'skipped snapshots cannot advance the sequence or visibility baseline');
   assert.equal(room.resources[0].get(resource.id),resourceBaseline,'skipped snapshots cannot consume resource updates');
   delete socket.bufferedAmount;

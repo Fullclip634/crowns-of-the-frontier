@@ -30,7 +30,7 @@ import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,build
 import {channelAt,fordAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {biomeProfile,EPIC_FRONTIER_MAPS} from './terrain-biomes.js';
 import {seedDeerHerds,tickWildlife} from './wildlife.js';
-import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS} from './heroes.js';
+import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS,isHeroUnit,triggerHeroSkill} from './heroes.js';
 import {closestCandidates} from './closest-candidates.js';
 import {navalPairClearance,separationUnitVector,resolveNavalSpacing,navalDestinationOccupied} from './naval-spacing.js';
 import {BATTLEFIELD_LAYOUT_VERSION,spaceStartingBuildings} from './battlefield-start.js';
@@ -188,12 +188,17 @@ export class Simulation {
         this.addBuilding('house',1,56+dx1,-32+dz1,true);this.addBuilding('house',1,37+dx1,-52+dz1,true);
       }
       if(m==='siege'){
-        this.addBuilding('keep',1,(this.battlefieldLayout>=1?37:29)+dx1,(this.battlefieldLayout>=1?-48:-23)+dz1,true);this.addBuilding('workshop',1,24+dx1,-39+dz1,true);
-        this.addBuilding('range',1,51+dx1,-22+dz1,true);this.addBuilding('stable',1,38+dx1,-18+dz1,true);
-        this.addBuilding('blacksmith',1,53+dx1,-38+dz1,true);
-        this.addBuilding('tower',1,21+dx1,-27+dz1,true);this.addBuilding('tower',1,35+dx1,-12+dz1,true);
-        const vanguard=['ram','ram','catapult','knight','knight','knight','knight','swordsman','swordsman','swordsman','swordsman','archer','archer','archer','archer'];
-        vanguard.forEach((type,i)=>this.addUnit(type,1,19+dx1+(i%5)*2.4,-22+dz1+Math.floor(i/5)*2.4));
+        if(this.options.multiplayer){
+          this.addBuilding('keep',1,(this.battlefieldLayout>=1?35:28)+dx1,(this.battlefieldLayout>=1?-19:-20)+dz1,true);this.addBuilding('range',1,49+dx1,-17+dz1,true);
+          this.addBuilding('blacksmith',1,51+dx1,-42+dz1,true);this.addBuilding('stable',1,27+dx1,-40+dz1,true);
+        }else{
+          this.addBuilding('keep',1,(this.battlefieldLayout>=1?37:29)+dx1,(this.battlefieldLayout>=1?-48:-23)+dz1,true);this.addBuilding('workshop',1,24+dx1,-39+dz1,true);
+          this.addBuilding('range',1,51+dx1,-22+dz1,true);this.addBuilding('stable',1,38+dx1,-18+dz1,true);
+          this.addBuilding('blacksmith',1,53+dx1,-38+dz1,true);
+          this.addBuilding('tower',1,21+dx1,-27+dz1,true);this.addBuilding('tower',1,35+dx1,-12+dz1,true);
+          const vanguard=['ram','ram','catapult','knight','knight','knight','knight','swordsman','swordsman','swordsman','swordsman','archer','archer','archer','archer'];
+          vanguard.forEach((type,i)=>this.addUnit(type,1,19+dx1+(i%5)*2.4,-22+dz1+Math.floor(i/5)*2.4));
+        }
       }
       if(mission?.age>=1)this.addBuilding('range',1,52+dx1,-12+dz1,true);
       if(mission?.age>=2){this.addBuilding('stable',1,37+dx1,-13+dz1,true);this.addBuilding('blacksmith',1,58+dx1,-38+dz1,true);}
@@ -279,6 +284,7 @@ export class Simulation {
     if(m==='siege'){
       const tc0=this.spawnPositions[0],tc1=this.spawnPositions[1];
       buildNaturalFortifiedBase(this,0,tc0,{radius:27,gates:['north','east'],towers:true,complete:true,wallGaps:true,includeResources:false,keepClear:[{x:tc1.x,z:tc1.z,r:34},{x:0,z:0,r:16}],seedOffset:51,backToBorder:true});
+      if(this.options.multiplayer)buildNaturalFortifiedBase(this,1,tc1,{radius:27,gates:['south','west'],towers:true,complete:true,wallGaps:true,includeResources:false,keepClear:[{x:tc0.x,z:tc0.z,r:34},{x:0,z:0,r:16}],seedOffset:73,backToBorder:true});
       this.revision++;
     }
     for(const owner of movedStarts)replaceMissingShoreResources(this,owner);
@@ -807,11 +813,29 @@ export class Simulation {
     const isKoth=this.options.mode==='koth';
     this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,isKoth?'The central monument belongs to your crown.':'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,isKoth?'The rival kingdom held the central monument.':'The rival kingdom united the sacred valley.');
   }
+  unitVision(e){
+    if(!e)return 15;
+    if(Number.isFinite(e.vision))return e.vision;
+    const base=UNITS[e.type]?.vision||15;
+    const mult=e.owner===0&&e.type==='scout'&&Number.isFinite(this.campaignRelicVisionBonus)&&this.campaignRelicVisionBonus>1?this.campaignRelicVisionBonus:1;
+    return Math.round(base*mult);
+  }
+  toggleHeroAutoCast(heroId,owner=0){
+    const h=this.get(heroId);
+    if(!h||h.hp<=0||h.owner!==owner||!isHeroUnit(h))return null;
+    h.autoCast=h.autoCast===false;
+    return h.autoCast;
+  }
+  castHeroSkill(heroId,slot,owner=0){
+    const h=this.get(heroId);
+    if(!h||h.hp<=0||h.owner!==owner||!isHeroUnit(h))return false;
+    return triggerHeroSkill(this,h,Number(slot)||0);
+  }
   isVisible(x,z){const c=this.cell(x,z);return !!this.visible[c.z*this.gridSize+c.x];}
   isExplored(x,z){const c=this.cell(x,z);return !!this.explored[c.z*this.gridSize+c.x];}
   updateFog(){this.visible.fill(0);for(const owner of this.revealedOwners||[])for(const e of this.owned(owner,'building')){const c=this.cell(e.x,e.z),r=Math.ceil(e.r/2)+2;for(let z=Math.max(0,c.z-r);z<=Math.min(this.gridSize-1,c.z+r);z++)for(let x=Math.max(0,c.x-r);x<=Math.min(this.gridSize-1,c.x+r);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
     const shared=(this.options.mode==='custom'&&this.options.shareVision)||(this.mission&&this.players.length>2),tactical=this.tacticalEnabled(),phase=tactical?this.tacticalPhase():0,originHeight=tactical?tacticalHeight(this.options.map,this.options.seed,0,0,phase):0,biomeBonus=tactical?biomeVisionModifier(this.options.map):0;
-    for(const e of this.candidatesFor('unit')){if(e.hp<=0||e.embarked||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;let r=UNITS[e.type].vision;if(tactical)r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),originHeight)+biomeBonus);const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil(r/2));}
+    for(const e of this.candidatesFor('unit')){if(e.hp<=0||e.embarked||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;let r=this.unitVision(e);if(tactical)r=Math.max(6,r+elevationVisionBonus(tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),originHeight)+biomeBonus);const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil(r/2));}
     for(const e of this.candidatesFor('building')){if(e.hp<=0||e.embarked||e.progress<=0||!(e.owner===0||shared&&this.allied(0,e.owner)))continue;const c=this.cell(e.x,e.z);revealVisionCircle(this.visible,this.explored,this.gridSize,c.x,c.z,Math.ceil((BUILDINGS[e.type].vision||18)/2));}
     for(const s of this.candidatesFor('shrine')){if(s.owner!==0)continue;const c=this.cell(s.x,s.z);for(let z=Math.max(0,c.z-9);z<=Math.min(this.gridSize-1,c.z+9);z++)for(let x=Math.max(0,c.x-9);x<=Math.min(this.gridSize-1,c.x+9);x++){this.visible[z*this.gridSize+x]=1;this.explored[z*this.gridSize+x]=1;}}
     revealResourceChanges(this);
@@ -827,6 +851,7 @@ export class Simulation {
   end(won,reason){if(this.ended)return;this.ended={won,reason};this.emit('end',this.ended);}
   checkVictory(){if(this.options.mode==='sandbox')return;
     if(this.options.mode==='regicide'){if(!this.owned(0,'unit','king').length)this.end(false,'Your sovereign has fallen.');else if(!this.owned(1,'unit','king').length)this.end(true,'The rival sovereign is defeated. Your crown endures.');return;}
+    if(this.options.mode==='siege'){if(!this.owned(0,'building','keep').length)return this.end(false,'Your castle has fallen to the siege.');if(!this.owned(0,'building','towncenter').length)return this.end(false,'Your last town center has fallen.');if(!this.owned(1,'building','keep').length)return this.end(true,'The rival stronghold has fallen. Iron Pass is yours.');return;}
     if(this.options.mode==='campaign13'&&this.campaignState&&this.campaignState.stage===0){
       if(!this.owned(0,'unit','king').length&&!this.owned(0,'unit').length)return this.end(false,'Your royal vanguard fell before Oakhold could be rescued.');
       return;
@@ -863,7 +888,7 @@ export class Simulation {
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,campaignRelicVisionBonus:this.campaignRelicVisionBonus||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options,true);
@@ -877,6 +902,7 @@ export class Simulation {
     }
     s.spawnPositions=starts;
     for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
+    if(Number.isFinite(data.campaignRelicVisionBonus))s.campaignRelicVisionBonus=data.campaignRelicVisionBonus;
     for(const pl of s.players){if(pl)pl.tech={...Object.fromEntries(Object.keys(TECHS).map(type=>[type,0])),...(pl.tech||{})};}
     s.commanderAI=data.commanderAI||null;
     s.barriers=Array.isArray(data.barriers)?data.barriers.map(b=>({...b})):[];

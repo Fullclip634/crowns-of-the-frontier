@@ -197,7 +197,7 @@ export class WarCommsController{
 
   refresh(sim){
     const toggleBtn=this.root?.querySelector('#comms-toggle');
-    const canShow=Boolean(sim&&!sim.ended&&!sim.options?.spectator&&sim.options?.mode!=='tutorial'&&sim.options?.mode!=='sandbox');
+    const canShow=Boolean(sim&&!sim.ended&&!sim.options?.spectator&&!sim.options?.multiplayer&&sim.options?.mode!=='tutorial'&&sim.options?.mode!=='sandbox');
     if(toggleBtn){
       toggleBtn.classList.toggle('hidden',!canShow);
       toggleBtn.setAttribute('aria-expanded',String(this.open));
@@ -436,6 +436,7 @@ export class WarCommsController{
 
   /** Interactive Player -> Allied Commander tactical orders (actually steers Allied AI armies & tributes!). */
   issueAllyOrder(sim,view,kind){
+    if(sim?.options?.multiplayer)return {ok:false,message:'Use Battle Chat to coordinate with commanders in multiplayer.'};
     const allies=this.activeAllies(sim);
     if(!allies.length)return {ok:false,message:'No active AI ally is in this battle.'};
     const lead=allies[0];
@@ -495,6 +496,7 @@ export class WarCommsController{
 
   /** Interactive Player -> Enemy Warlord Taunts (provokes real voiced AI replies & aggressive counter-attacks!). */
   sendEnemyTaunt(sim,kind){
+    if(sim?.options?.multiplayer)return {ok:false,message:'Use Battle Chat in multiplayer matches.'};
     const enemies=this.activeEnemies(sim);
     if(!enemies.length)return {ok:false,message:'No rival warlords remain on the field.'};
     const lead=enemies[Math.floor((sim.time||0)/3)%enemies.length];

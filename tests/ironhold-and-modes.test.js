@@ -247,9 +247,21 @@ test('Castle Siege (siege): fixes Iron Pass 240x240, fortifies Player 0 castle, 
   }
   advance(s,8);
   assert.equal(s.ended,null);
+  // Destroying only the rival Town Center does NOT win while the rival Castle stands
   s.owned(1,'building','towncenter')[0].hp=0;
   s.checkVictory();
+  assert.equal(s.ended,null,'rival castle still stands');
+  // Destroying the rival Castle wins Castle Siege
+  s.owned(1,'building','keep')[0].hp=0;
+  s.checkVictory();
   assert.equal(s.ended?.won,true);
+
+  // Losing player Castle causes defeat even while player Town Center still stands
+  const loss=new Simulation({mode:'siege',faction:'iron',map:'highlands',seed:708});
+  loss.owned(0,'building','keep')[0].hp=0;
+  loss.checkVictory();
+  assert.equal(loss.ended?.won,false);
+  assert.match(loss.ended.reason,/castle/i);
 });
 
 test('UI briefings, hub markup, and Ironhold voice synthesis work cleanly across all new modes',()=>{

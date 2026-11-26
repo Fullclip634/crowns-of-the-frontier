@@ -95,6 +95,7 @@ export function globalQueueMarkup(items){
 export function kingdomScore(sim,owner){
   const player=sim?.players?.[owner];
   if(!player)return 0;
+  if(sim?.options?.multiplayer&&Number.isFinite(player.publicScore))return player.publicScore;
   const res=player.resources||{};
   const econ=Math.floor(((res.food||0)+(res.wood||0)+(res.gold||0)+(res.stone||0))*.1)+(player.battleStats?.gathered||0)*.08;
   const tech=(player.age||0)*280+Object.values(player.tech||{}).reduce((s,v)=>s+(v||0)*95,0);

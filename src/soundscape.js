@@ -223,7 +223,7 @@ export function installSoundscape(AudioEngine){
     this.isStormy=(view?.weatherState?.amount??view?.atmosphereUniforms?.wetness?.value??0)>.30;
     // Tune ambient wind filter color to the current biome.
     if(this.windFilter){
-      const targetFreq=map==='volcanic'?165:map==='tundra'||map==='winter'?490:map==='arid'||map==='canyon'?360:map==='coast'||map==='archipelago'?310:250;
+      const targetFreq=['volcanic','emberroad'].includes(map)?165:['tundra','winter','frostvale','frostfallsiege'].includes(map)?490:['arid','canyon','desert'].includes(map)?360:['coast','archipelago','templelagoon'].includes(map)?310:250;
       setParamSmooth(this.windFilter.frequency,targetFreq,this.context.currentTime||0,.6);
     }
     if(!active||this.context.state!=='running'||this.settings.volume<=0){
@@ -248,9 +248,9 @@ export function installSoundscape(AudioEngine){
           if(target?.type==='wood')kind='chop';
           else if(target?.type==='gold'||target?.type==='stone')kind='mine';
         }else if(e.order?.type==='build'||e.order?.type==='repair')kind='hammer';
-      }else if(e.kind==='unit'&&['knight','scout','outrider'].includes(e.type)&&e.moving){
+      }else if(e.kind==='unit'&&['knight','scout','outrider','firelancer','hero_raven','hero_sun'].includes(e.type)&&e.moving){
         kind='hoof';weight=.18;
-      }else if(e.kind==='unit'&&['spearman','swordsman','archer','sentinel','marksman','ironbreaker'].includes(e.type)&&e.moving){
+      }else if(e.kind==='unit'&&['spearman','swordsman','archer','skirmisher','sentinel','marksman','ironbreaker','chukonu','king','hero_alder','hero_iron','hero_jade'].includes(e.type)&&e.moving){
         kind='march';weight=.13;
       }else if(e.kind==='building'&&e.progress>=1&&e.hp<e.maxHp*.5){
         kind='fire';weight=.22;
@@ -279,7 +279,7 @@ export function installSoundscape(AudioEngine){
       const mv=this.settings.musicVolume??1;
       setParamSmooth(this.musicBus.gain,this.settings.music?mv:0,now,.35);
     }
-    if(this.windGain&&!this.sampleLoops?.size)this.windGain.gain.value=this.settings.music?.024:0;
+    if(this.windGain&&!this.sampleLoops?.size)this.windGain.gain.value=(this.settings.weatherSounds!==false&&this.settings.volume>0)?.024:0;
     if(!this.settings.music||this.settings.volume<=0)return;
     // When real recorded CC0 medieval music stems are decoded and crossfading,
     // skip the procedural D-Dorian oscillator synth so keys never clash.
@@ -323,7 +323,7 @@ export function installSoundscape(AudioEngine){
 
     // Natural daylight meadow songbirds (never in volcanic, tundra, arid, storms, or midnight).
     const map=this.currentMap||'highlands';
-    const meadow=!['volcanic','tundra','winter','arid','canyon'].includes(map);
+    const meadow=!['volcanic','emberroad','tundra','winter','frostvale','frostfallsiege','arid','canyon','desert'].includes(map);
     this.birdTimer-=dt;
     if(this.birdTimer<0){
       this.birdTimer=12+Math.random()*11;

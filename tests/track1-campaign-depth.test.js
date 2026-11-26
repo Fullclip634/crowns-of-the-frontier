@@ -43,8 +43,8 @@ describe('Track 1: Heraldic Commander Portraits, Crown Relics, Bosses & Side Que
   });
 
   it('completes mid-mission Side Quests once, grants instant rewards, and survives save/restore',()=>{
-    assert.equal(Object.keys(CAMPAIGN_SIDE_QUESTS).length,14,'every chapter 1..14 has a side quest');
-    assert.ok(Object.keys(CAMPAIGN_BOSSES).length>=6,'key chapters have named rival warlords');
+    assert.equal(Object.keys(CAMPAIGN_SIDE_QUESTS).length,19,'every chapter 1..19 has a side quest');
+    assert.ok(Object.keys(CAMPAIGN_BOSSES).length>=15,'key chapters including all Act V chapters have named rival warlords');
 
     const sim=new Simulation({mode:'campaign1',difficulty:'story',seed:4301});
     sim.tickAI=()=>{};

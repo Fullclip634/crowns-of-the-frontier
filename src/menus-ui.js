@@ -5,7 +5,7 @@ import {LIGHTING_MODES} from './day-night.js';
 import {FRAME_RATES} from './frame-pacing.js';
 import {CAMERA_PRESETS} from './world.js';
 import {difficultyLabel} from './ui-format.js';
-import {UI_ICONS as ICONS,uiIcon} from './ui-icons.js';
+import {UI_ICONS as ICONS,uiIcon,uiVectorIcon} from './ui-icons.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {mapPreviewSvg} from './map-preview.js';
 import {AI_PERSONALITIES} from './ai-personalities.js';
@@ -24,9 +24,9 @@ export const FACTION_SIGNATURES=Object.freeze({
 export const SETTINGS_TABS=Object.freeze([
   {id:'graphics',label:'Graphics',icon:'sun'},
   {id:'gameplay',label:'Gameplay & HUD',icon:'columns-3'},
-  {id:'audio',label:'Audio',icon:'play'},
+  {id:'audio',label:'Audio',icon:'volume-2'},
   {id:'controls',label:'Controls',icon:'settings'},
-  {id:'accessibility',label:'Accessibility',icon:'shield-check'},
+  {id:'accessibility',label:'Accessibility',icon:'eye'},
 ]);
 
 /** Hero AoE4/AoE2:DE vertical banner Main Menu replacing the 12-button sprawl. */
@@ -46,11 +46,11 @@ export function landingMarkup(latestSave=null){
 
   return `
     <header class="landing-header">
-      <a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiIcon('castle')}</span><span class="brand-wordmark">CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a>
+      <a class="brand" href="#" aria-label="Crowns of the Frontier"><span class="crest">${uiVectorIcon('castle')}</span><span class="brand-wordmark">CROWNS<span class="brand-sub">OF THE FRONTIER</span></span></a>
       <div class="header-links">
-        <button data-action="tech-tree" aria-label="Open technology tree">${uiIcon('book-open')}<span>Tech tree</span></button>
-        <button data-action="saves" aria-label="Saved kingdoms">${uiIcon('folder-open')}<span>Saves</span></button>
-        <button data-action="settings" aria-label="Settings">${uiIcon('settings')}<span>Settings</span></button>
+        <button data-action="tech-tree" aria-label="Open technology tree">${uiVectorIcon('columns-3')}<span>Tech tree</span></button>
+        <button data-action="saves" aria-label="Saved kingdoms">${uiVectorIcon('folder-open')}<span>Saves</span></button>
+        <button data-action="settings" aria-label="Settings">${uiVectorIcon('settings')}<span>Settings</span></button>
       </div>
     </header>
     <main class="landing-main hero-layout">
@@ -81,10 +81,10 @@ export function landingMarkup(latestSave=null){
             ${uiIcon('chevron-right')}
           </button>
           <div class="hero-subrow">
-            <button class="hero-mini" data-mode="tutorial">${uiIcon('graduation-cap')}<span>Tutorial</span></button>
-            <button class="hero-mini" data-action="codex">${uiIcon('book-open')}<span>Field guide</span></button>
-            <button class="hero-mini" data-action="saves">${uiIcon('folder-open')}<span>Load game</span></button>
-            <button id="install" class="hero-mini hidden" data-action="install">${uiIcon('castle')}<span>Install</span></button>
+            <button class="hero-mini" data-mode="tutorial">${uiVectorIcon('graduation-cap')}<span>Tutorial</span></button>
+            <button class="hero-mini" data-action="codex">${uiVectorIcon('book-open')}<span>Field guide</span></button>
+            <button class="hero-mini" data-action="saves">${uiVectorIcon('folder-open')}<span>Load game</span></button>
+            <button id="install" class="hero-mini hidden" data-action="install">${uiVectorIcon('castle')}<span>Install</span></button>
           </div>
         </nav>
       </div>
@@ -183,7 +183,7 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
 
 /** 5-Tab Organized Settings Modal (all inputs stay mounted in DOM so Apply Settings reads every tab seamlessly!). */
 export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,graphicsSupportHtml,activeTab='graphics'}={}){
-  const tabsHtml=SETTINGS_TABS.map(t=>`<button type="button" class="settings-tab ${t.id===activeTab?'active':''}" data-settings-tab="${t.id}" aria-pressed="${t.id===activeTab}">${uiIcon(t.icon)}<span>${t.label}</span></button>`).join('');
+  const tabsHtml=SETTINGS_TABS.map(t=>`<button type="button" class="settings-tab ${t.id===activeTab?'active':''}" data-settings-tab="${t.id}" aria-pressed="${t.id===activeTab}">${uiVectorIcon(t.icon)}<span>${t.label}</span></button>`).join('');
   const pane=id=>`settings-pane ${id===activeTab?'active':''}`;
   const volPct=v=>`${Math.round((v??1)*100)}%`;
 

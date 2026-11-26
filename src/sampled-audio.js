@@ -8,15 +8,15 @@ import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit} from './voice-system.js';
 
 const HORN_FUNDAMENTAL=174.61;
 const BIOME_AMBIENCE={
-  coast:'amb-coast',archipelago:'amb-coast',
-  rivers:'amb-river',riverland:'amb-river',valley:'amb-river',
-  tundra:'amb-tundra',winter:'amb-tundra',
+  coast:'amb-coast',archipelago:'amb-coast',templelagoon:'amb-coast',
+  rivers:'amb-river',riverland:'amb-river',valley:'amb-river',threecrowns:'amb-river',waterfallgorge:'amb-river',ironfall:'amb-river',
+  tundra:'amb-tundra',winter:'amb-tundra',frostvale:'amb-tundra',frostfallsiege:'amb-tundra',
   arid:'amb-arid',canyon:'amb-arid',desert:'amb-arid',
-  volcanic:'amb-volcanic',
-  highlands:'amb-meadow',meadow:'amb-meadow',steppe:'amb-meadow',frontier:'amb-meadow',
+  volcanic:'amb-volcanic',emberroad:'amb-volcanic',
+  highlands:'amb-meadow',highland:'amb-meadow',woodland:'amb-meadow',ironpass:'amb-meadow',blackwood:'amb-meadow',timbervale:'amb-meadow',bastion:'amb-meadow',ironring:'amb-meadow',sunderedpass:'amb-meadow',oakhold:'amb-meadow',deepwoodravine:'amb-meadow',meadow:'amb-meadow',steppe:'amb-meadow',frontier:'amb-meadow',
 };
 const VOICE_MAP={select:'voice-select',order:'voice-order',attack:'voice-attack',work:'voice-work'};
-const FACTION_VOICE_RATE={alder:1.0,sun:1.05,raven:.93,iron:.90};
+const FACTION_VOICE_RATE={alder:1.0,sun:1.05,raven:.93,iron:.90,jade:1.04};
 const STAGE_STEM={peace:'music-peace',tension:'music-tension',battle:'music-battle',climax:'music-climax'};
 
 function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){
@@ -24,7 +24,8 @@ function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){
   if(!ctx||!buffer||ctx.state!=='running'||engine.settings.volume<=0)return false;
   const source=ctx.createBufferSource(),level=ctx.createGain();
   source.buffer=buffer;if(source.playbackRate)source.playbackRate.value=rate;
-  level.gain.value=gain*(engine.settings.volume||.65);
+  // Submix buses already feed engine.master (volume * 0.24); avoid squaring master volume.
+  level.gain.value=gain;
   source.connect(level);
   const outBus=bus||engine.master;
   let panner=null;
@@ -110,9 +111,14 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.play=function(name,...rest){
-    if(UI_SAMPLE_CUES.includes(name)&&this.sampleBank?.has(name)&&playCue(this,name,{gain:name==='alarm'?.68:.55,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
-      if(name==='alarm')this.duckMusic?.(1.6,.58);
-      return;
+    const uiGain=this.settings.uiVolume??1;
+    if(UI_SAMPLE_CUES.includes(name)){
+      if(uiGain<=0&&['select','order','coin','complete'].includes(name))return;
+      if(uiGain<=0)return;
+      if(this.sampleBank?.has(name)&&playCue(this,name,{gain:(name==='alarm'?.68:.55)*uiGain,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
+        if(name==='alarm')this.duckMusic?.(1.6,.58);
+        return;
+      }
     }
     return play.call(this,name,...rest);
   };

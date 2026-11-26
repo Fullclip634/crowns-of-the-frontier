@@ -169,7 +169,7 @@ export function inspectorStatsMarkup(sim,e){
     add('shield','ARM',arm,'Armor rating');
     if(rng>0)add('target','RNG',`${rng}m`,'Action range');
     add('wind','SPD',unitSpeedValue(sim,e),'Movement speed');
-    add('spyglass','VIS',`${d.vision||15}m`,'Line of sight');
+    add('spyglass','VIS',`${typeof sim?.unitVision==='function'?sim.unitVision(e):(d.vision||15)}m`,'Line of sight');
     if(e.owner===0&&e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='cart'){
       add(e.stance==='hold'?'shield-check':'swords','STANCE',e.stance==='hold'?'Hold':'Engage','Current combat stance','stat-stance');
     }

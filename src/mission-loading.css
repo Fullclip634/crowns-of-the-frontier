@@ -184,7 +184,8 @@
   cursor:pointer;
 }
 .chronicle-begin-btn .ui-icon{width:17px;height:17px}
-.chronicle-begin-btn:hover{background:linear-gradient(180deg,#f7e2a8,#d8b158);color:#0e1b15}
+button.chronicle-begin-btn:hover:not(:disabled),
+button.chronicle-begin-btn:focus-visible:not(:disabled){background:linear-gradient(180deg,#f7e2a8,#d8b158);color:#0e1b15}
 
 @media(max-width:860px){
   .chronicle-body{grid-template-columns:1fr;padding:12px 14px;gap:11px}

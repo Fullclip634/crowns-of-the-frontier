@@ -23,7 +23,8 @@ const FACTION_CADENCE = {
   alder: { basePitch: 120, formants: ['eh', 'ah', 'oh'], inflection: 1.05, speed: 1.0 },
   sun: { basePitch: 135, formants: ['ah', 'oh', 'uh'], inflection: 1.12, speed: 1.1 },
   raven: { basePitch: 95, formants: ['oh', 'uh', 'ah'], inflection: 0.98, speed: 0.92 },
-  iron: { basePitch: 88, formants: ['uh', 'oh', 'ah'], inflection: 0.96, speed: 0.90 }
+  iron: { basePitch: 88, formants: ['uh', 'oh', 'ah'], inflection: 0.96, speed: 0.90 },
+  jade: { basePitch: 128, formants: ['ee', 'eh', 'ah'], inflection: 1.08, speed: 1.06 }
 };
 
 export const VOICE_COOLDOWN = 0.75;
@@ -221,7 +222,7 @@ export function installVoiceSystem(AudioEngine) {
     if (!env) return false;
 
     const voiceGain = this.context.createGain();
-    voiceGain.gain.value = (this.settings.volume || 0.65) * 0.36;
+    voiceGain.gain.value = 0.36;
     const outBus = this.voiceBus || this.master;
 
     if (this.context.createStereoPanner) {
@@ -251,7 +252,7 @@ export function installVoiceSystem(AudioEngine) {
 
     const horn = synthesizeWarHorn(this.context, fundamental);
     const hornGain = this.context.createGain();
-    hornGain.gain.value = (this.settings.volume || 0.65) * 0.24;
+    hornGain.gain.value = 0.24;
     const outBus = this.voiceBus || this.master;
 
     horn.output.connect(hornGain);

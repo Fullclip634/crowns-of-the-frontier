@@ -78,6 +78,24 @@ export const COMMANDER_PROFILES=Object.freeze({
     silhouette:'M16 11.6a3.9 3.9 0 1 0 0 7.8a3.9 3.9 0 1 0 0-7.8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
     crest:'M10 11l3-5 3 3 3-3 3 5z',
   },
+  'Marshal Rowan':{
+    title:'Warden of Ironfall Sanctuary',bg1:'#213c47',bg2:'#0d1c22',rim:'#f0cf7b',accent:'#7bc4d6',
+    emblem:'M10 8h12v11l-6 5-6-5z M16 10v9',
+    silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.2 4.9-7.4 9-7.4s7.4 2.2 9 7.4z',
+    crest:'M10 9l6-4 6 4v3H10z',
+  },
+  'Lady Vaelen':{
+    title:'Sunward Gorge Commander',bg1:'#4a361d',bg2:'#20160a',rim:'#f4cf74',accent:'#ffd980',
+    emblem:'M16 5l2.5 5.5L24 12l-5.5 2.5L16 20l-2.5-5.5L8 12l5.5-1.5z',
+    silhouette:'M16 11.6a3.9 3.9 0 1 0 0 7.8a3.9 3.9 0 1 0 0-7.8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
+    crest:'M9.5 10.5l3-4.5 3.5 3 3.5-3 3 4.5z',
+  },
+  'Jarl Torin':{
+    title:'Lord of Frostfall Bastion',bg1:'#243a4c',bg2:'#0f1a24',rim:'#dcebf4',accent:'#9cd2f0',
+    emblem:'M16 6l6 4v8l-6 4-6-4v-8z M12 12h8',
+    silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.2 4.8-7.4 9-7.4s7.4 2.2 9 7.4z',
+    crest:'M9 11l3-6 4 3 4-3 3 6z',
+  },
 });
 
 const DEFAULT_PROFILE=Object.freeze({

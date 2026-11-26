@@ -85,9 +85,12 @@ export const PAINTED_ICONS=Object.freeze({
   map:[63,'uncommon'],sandbox:[63,'uncommon'],custom:[63,'rare'],'flag-triangle-right':[63,'uncommon'],
 });
 
-export function uiIcon(name){
+export function uiVectorIcon(name){
   const requested=ICON_MAP[name]||name,id=available.has(requested)?requested:'circle-help';
-  const svg=`<svg class="ui-icon" width="20" height="20" viewBox="0 0 ${id==='siege-ram'||id==='trebuchet'?'512 512':'24 24'}" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="${sprite}#icon-${id}"></use></svg>`;
+  return `<svg class="ui-icon" width="20" height="20" viewBox="0 0 ${id==='siege-ram'||id==='trebuchet'?'512 512':'24 24'}" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="${sprite}#icon-${id}"></use></svg>`;
+}
+export function uiIcon(name){
+  const svg=uiVectorIcon(name);
   const painted=PAINTED_ICONS[name];
   if(!painted)return svg;
   const [idx,tier]=painted;

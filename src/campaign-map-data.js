@@ -26,110 +26,110 @@ const DIFFICULTY_RANK={story:1,normal:2,hard:3,brutal:4};
 
 export const CAMPAIGN_NODES=Object.freeze([
   {
-    id:'campaign1',act:'act1',x:138,y:428,region:'Alder Meadows',archetype:'Settlement & Skirmish',
+    id:'campaign1',act:'act1',x:138,y:462,region:'Alder Meadows',archetype:'Settlement & Skirmish',
     lore:'Rolling timberlands south of the old border stone where the first frontier steadings take root.',
     unlockAfter:null,
   },
   {
-    id:'campaign2',act:'act1',x:258,y:346,region:'Old Stone Crossing',archetype:'Bridgehead Escort',
+    id:'campaign2',act:'act1',x:166,y:378,region:'Old Stone Crossing',archetype:'Bridgehead Escort',
     lore:'A single arched bridge spanning the green gorge; whoever commands its banks feeds the war.',
     unlockAfter:'campaign1',
   },
   {
-    id:'campaign3',act:'act1',x:382,y:406,region:'Iron Ridge',archetype:'Fortress Survival',
+    id:'campaign3',act:'act1',x:344,y:448,region:'Iron Ridge',archetype:'Fortress Survival',
     lore:'High escarpments overlooking the eastern approaches where Raven warbands test every wall.',
     unlockAfter:'campaign2',
   },
   {
-    id:'campaign4',act:'act1',x:476,y:284,region:'Valley of Shrines',archetype:'Sacred Dominion',
+    id:'campaign4',act:'act1',x:384,y:364,region:'Valley of Shrines',archetype:'Sacred Dominion',
     lore:'Three moss-covered monoliths ringing a sunlit basin whose gold tides turn entire campaigns.',
     unlockAfter:'campaign3',
   },
   {
-    id:'campaign5',act:'act2',x:608,y:358,region:'The Walled Capital',archetype:'Siege Warfare',
+    id:'campaign5',act:'act2',x:586,y:368,region:'The Walled Capital',archetype:'Siege Warfare',
     lore:'Double masonry ramparts and iron portcullises guarding the rival warlord’s seat of power.',
     unlockAfter:'campaign4',
   },
   {
-    id:'campaign6',act:'act2',x:768,y:434,region:'The Divided Coast',archetype:'Naval Invasion',
+    id:'campaign6',act:'act2',x:804,y:466,region:'The Divided Coast',archetype:'Naval Invasion',
     lore:'A wide sapphire channel rich with fishing banks where galleys and transports rule the crossing.',
     unlockAfter:'campaign5',
   },
   {
-    id:'campaign7',act:'act2',x:786,y:262,region:'The Cinder Reach',archetype:'Volcanic Pass',
+    id:'campaign7',act:'act2',x:824,y:266,region:'The Cinder Reach',archetype:'Volcanic Pass',
     lore:'Obsidian ridges and smoldering ash roads cutting straight toward the mountain citadel.',
     unlockAfter:'campaign6',
   },
   {
-    id:'campaign8',act:'act3',x:606,y:176,region:'The Deepwood',archetype:'Forest Ambush',
+    id:'campaign8',act:'act3',x:572,y:194,region:'The Deepwood',archetype:'Forest Ambush',
     lore:'Ancient canopy trails swallowing old supply roads; scouts earn every league in timber and blood.',
     unlockAfter:'campaign7',
   },
   {
-    id:'campaign9',act:'act3',x:412,y:134,region:'Frostmarch',archetype:'Winter Siege Defense',
+    id:'campaign9',act:'act3',x:412,y:118,region:'Frostmarch',archetype:'Winter Siege Defense',
     lore:'Wind-scoured snowfields where besieged palisades hold out until the relief banner breaks the horizon.',
     unlockAfter:'campaign8',
   },
   {
-    id:'campaign10',act:'act3',x:228,y:152,region:'The Shattered Crown',archetype:'Imperial Finale',
+    id:'campaign10',act:'act3',x:206,y:128,region:'The Shattered Crown',archetype:'Imperial Finale',
     lore:'The high summit ridge where the old realm fractured—and where one banner will claim the frontier.',
     unlockAfter:'campaign9',
   },
   {
-    id:'campaign11',act:'act4',x:316,y:246,region:'Iron Ring Basin',archetype:'Surrounded Citadel & Relief',
+    id:'campaign11',act:'act4',x:364,y:200,region:'Iron Ring Basin',archetype:'Surrounded Citadel & Relief',
     lore:'A grand walled stone fortress encircled by three rival warlords until the Western Allied Relief Kingdom smashes the pass.',
     unlockAfter:'campaign10',
   },
   {
-    id:'campaign12',act:'act4',x:548,y:252,region:'The Sundered Pass',archetype:'Mountain Chokepoints & Ally',
+    id:'campaign12',act:'act4',x:436,y:278,region:'The Sundered Pass',archetype:'Mountain Chokepoints & Ally',
     lore:'Towering granite ranges carve three razor-thin passes held alongside an active Allied Northern Garrison.',
     unlockAfter:'campaign11',
   },
   {
-    id:'campaign13',act:'act4',x:706,y:198,region:'Oakhold Deepwood',archetype:'Hero Rescue & Expand',
+    id:'campaign13',act:'act4',x:756,y:186,region:'Oakhold Deepwood',archetype:'Hero Rescue & Expand',
     lore:'Cut off without a town, an elite vanguard fights through forest ambushes to liberate walled Oakhold and take command of the realm.',
     unlockAfter:'campaign12',
   },
   {
-    id:'campaign14',act:'act4',x:516,y:448,region:'Three Crowns Reach',archetype:'Grand 2v2 Coalition War',
+    id:'campaign14',act:'act4',x:550,y:456,region:'Three Crowns Reach',archetype:'Grand 2v2 Coalition War',
     lore:'Two allied Imperial citadels march across twin rivers and cliff ridges against rival warlord capitals for the fate of the realm.',
     unlockAfter:'campaign13',
   },
   {
-    id:'campaign15',act:'act5',x:192,y:252,region:'Ironfall Sanctuary',archetype:'2v4 Narrow Pass War',
+    id:'campaign15',act:'act5',x:160,y:218,region:'Ironfall Sanctuary',archetype:'2v4 Narrow Pass War',
     lore:'Two united walled fortresses hold a cliff-locked valley behind a single narrow waterfall bridgehead against four surrounding enemy bases.',
     unlockAfter:null,
   },
   {
-    id:'campaign16',act:'act5',x:360,y:322,region:'Waterfall Gorge',archetype:'2v2 Canyon River War',
+    id:'campaign16',act:'act5',x:232,y:294,region:'Waterfall Gorge',archetype:'2v2 Canyon River War',
     lore:'Roaring two-tier waterfalls plunge into a contested gorge crossed by stone bridges, timber trestles, and a shallow northern ford.',
     unlockAfter:'campaign15',
   },
   {
-    id:'campaign17',act:'act5',x:526,y:126,region:'Frostfall Cliff',archetype:'2v3 Frozen Siege War',
+    id:'campaign17',act:'act5',x:614,y:116,region:'Frostfall Cliff',archetype:'2v3 Frozen Siege War',
     lore:'Glacial cliffs and drifting river ice floes guard an alpine stronghold battered by three outer wooden palisade war-camps.',
     unlockAfter:'campaign16',
   },
   {
-    id:'campaign18',act:'act5',x:792,y:358,region:'Emerald Temple Lagoon',archetype:'2v2 Jungle Temple War',
+    id:'campaign18',act:'act5',x:788,y:362,region:'Emerald Temple Lagoon',archetype:'2v2 Jungle Temple War',
     lore:'Ancient stepped mossy stone temples rise above turquoise coral beaches, giant banyan groves, and contested delta bridges.',
     unlockAfter:'campaign17',
   },
   {
-    id:'campaign19',act:'act5',x:676,y:284,region:'Deepwood Ravine',archetype:'3v3 Grand Coalition Finale',
-    lore:'All four civilizations clash across forested cliff canyons and timber ravine bridges in a thunderous six-kingdom Imperial war.',
+    id:'campaign19',act:'act5',x:630,y:286,region:'Deepwood Ravine',archetype:'3v3 Grand Coalition Finale',
+    lore:'All five civilizations clash across forested cliff canyons and timber ravine bridges in a thunderous six-kingdom Imperial war.',
     unlockAfter:'campaign18',
   },
 ]);
 
 export const ATLAS_LANDMARKS=Object.freeze([
-  {x:162,y:492,label:'ALDER HEARTLAND',kind:'region'},
-  {x:476,y:236,label:'SHRINE BASIN',kind:'region'},
-  {x:836,y:494,label:'DIVIDED SEA',kind:'sea'},
-  {x:848,y:212,label:'CINDER PEAKS',kind:'region'},
-  {x:614,y:116,label:'DEEPWOOD',kind:'region'},
-  {x:412,y:82,label:'FROSTMARCH',kind:'region'},
-  {x:184,y:96,label:'SHATTERED CROWN',kind:'region'},
+  {x:164,y:514,label:'ALDER HEARTLAND',kind:'region'},
+  {x:476,y:328,label:'SHRINE BASIN',kind:'region'},
+  {x:684,y:534,label:'DIVIDED SEA',kind:'sea'},
+  {x:724,y:236,label:'CINDER PEAKS',kind:'region'},
+  {x:726,y:140,label:'DEEPWOOD',kind:'region'},
+  {x:412,y:76,label:'FROSTMARCH',kind:'region'},
+  {x:208,y:82,label:'SHATTERED CROWN',kind:'region'},
 ]);
 
 export function difficultyMedalFor(record){

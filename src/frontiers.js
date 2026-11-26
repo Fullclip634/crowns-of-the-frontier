@@ -164,13 +164,15 @@ export function installFrontiers(Simulation){
     if(this.sightCache?.time!==this.time||this.sightCache?.revision!==this.revision)this.sightCache={time:this.time,revision:this.revision,teams:new Map()};
     let sight=this.sightCache.teams.get(key);if(!sight){sight={buckets:new Map(),range:0};
       const addSource=(e,vision)=>{const cell=sightCell(e.x,e.z);let list=sight.buckets.get(cell);if(!list){list=[];sight.buckets.set(cell,list);}list.push(e);if(vision>sight.range)sight.range=vision;};
+      const unitSight=e=>typeof this.unitVision==='function'?this.unitVision(e):(Number.isFinite(e.vision)?e.vision:UNITS[e.type].vision);
       if(typeof this.candidatesFor==='function'){
-        for(const e of this.candidatesFor('unit'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&this.allied(owner,e.owner)))addSource(e,UNITS[e.type].vision);
+        for(const e of this.candidatesFor('unit'))if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&this.allied(owner,e.owner)))addSource(e,unitSight(e));
         for(const e of this.candidatesFor('building'))if(e.hp>0&&!e.embarked&&e.progress>0&&(e.owner===owner||shared&&this.allied(owner,e.owner)))addSource(e,BUILDINGS[e.type].vision||18);
-      }else for(const e of this.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&this.allied(owner,e.owner))&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))addSource(e,e.kind==='unit'?UNITS[e.type].vision:BUILDINGS[e.type].vision||18);
+      }else for(const e of this.entities)if(e.hp>0&&!e.embarked&&(e.owner===owner||shared&&this.allied(owner,e.owner))&&(e.kind==='unit'||e.kind==='building'&&e.progress>0))addSource(e,e.kind==='unit'?unitSight(e):BUILDINGS[e.type].vision||18);
       this.sightCache.teams.set(key,sight);}
     const range=sight.range+(entity.r||0)+2;
-    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++){const sources=sight.buckets.get(sightCellIndex(x,z));if(!sources)continue;for(const source of sources)if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?UNITS[source.type].vision:BUILDINGS[source.type].vision||18)+(entity.r||0))return true;}return false;
+    const unitSight=e=>typeof this.unitVision==='function'?this.unitVision(e):(Number.isFinite(e.vision)?e.vision:UNITS[e.type].vision);
+    for(let x=Math.floor((entity.x-range)/16);x<=Math.floor((entity.x+range)/16);x++)for(let z=Math.floor((entity.z-range)/16);z<=Math.floor((entity.z+range)/16);z++){const sources=sight.buckets.get(sightCellIndex(x,z));if(!sources)continue;for(const source of sources)if(source.hp>0&&!source.embarked&&distance(source,entity)<(source.kind==='unit'?unitSight(source):BUILDINGS[source.type].vision||18)+(entity.r||0))return true;}return false;
   };
   p.tickAI=function(){if(this.options.multiplayer)return;original.tickAI.call(this);if(['sandbox','tutorial','survival'].includes(this.options.mode)||this.mission?.survival)return;
     const player=this.players[1],tc=this.owned(1,'building','towncenter')[0];if(!tc)return;
