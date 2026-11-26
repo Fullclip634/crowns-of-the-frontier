@@ -1,4 +1,4 @@
-import {BufferGeometry, Float32BufferAttribute, Mesh} from 'three';
+import {BufferGeometry, Float32BufferAttribute, Matrix4, Mesh, Vector3} from 'three';
 import pieces from './assets3d/characters/dress.json' with {type:'json'};
 
 // Fitted at the neutral infantry pose. Riders use the same upper body and
@@ -66,15 +66,87 @@ export function fitCharacterDress(root, type, detail) {
   for (const [name, role] of Object.entries(outfit)) {
     attach(name, role, name === 'beard' ? head : torso);
   }
-  if (detail === 'far') return;
-  for (const [name, role] of [['cheek','skin'], ['chin','skin'], ['brow','skin'], ['eyes','plaster']]) {
-    attach(name, role, head);
+  if (type === 'knight') {
+    fitWarhorse(root, detail);
+    attach('visorBrow', 'steel', head);
+    attach('bevor', 'iron', head);
+    attach('helmCrest', 'gold', head);
   }
+  if (detail !== 'far') {
+    for (const [name, role] of [['cheek','skin'], ['chin','skin'], ['brow','skin'], ['eyes','plaster']]) {
+      attach(name, role, head);
+    }
+    for (const side of [-1,1]) {
+      const knee = joints.get('knee'+side);
+      if (!knee) continue;
+      const [x,y,z] = knee.pivot;
+      const armored = outfit.mailStandard || outfit.courtMantle;
+      attach(armored ? 'greave' : 'bindings', armored ? 'steel' : 'leather', knee, x+(knee.riding ? side*.025 : 0), y, z);
+      if (type === 'knight') attach('poleyn', 'steel', knee, x+side*.018, y, z);
+    }
+  }
+  if (type === 'knight') seatKnight(root, joints);
+}
+
+function seatKnight(root, joints) {
   for (const side of [-1,1]) {
     const knee = joints.get('knee'+side);
-    if (!knee) continue;
-    const [x,y,z] = knee.pivot;
-    const armored = outfit.mailStandard || outfit.courtMantle;
-    attach(armored ? 'greave' : 'bindings', armored ? 'steel' : 'leather', knee, x+(knee.riding ? side*.025 : 0), y, z);
+    if (!knee?.riding || !knee.parent) continue;
+    const [x,y,z] = knee.parent.pivot;
+    const thigh = new Matrix4().makeTranslation(x,y,z)
+      .multiply(new Matrix4().makeRotationX(-.36))
+      .multiply(new Matrix4().makeTranslation(-x,-y,-z));
+    const rest = new Vector3(...knee.pivot);
+    const bent = rest.clone().applyMatrix4(thigh);
+    const calf = new Matrix4().makeTranslation(bent.x,bent.y,bent.z)
+      .multiply(new Matrix4().makeRotationX(.14))
+      .multiply(new Matrix4().makeTranslation(-rest.x,-rest.y,-rest.z));
+    for (const part of root.children) {
+      const motion = part.userData.motion;
+      if (!motion?.riding || motion.side !== side) continue;
+      if (motion.type === 'leg') part.applyMatrix4(thigh);
+      if (motion.type === 'knee') {
+        part.applyMatrix4(calf);
+        part.userData.motion = {...motion,pivot:bent.toArray()};
+      }
+    }
+  }
+}
+
+function fitWarhorse(root, detail) {
+  if (!root.userData.model3d?.mountedFormRevision) return;
+  const suffix = detail === 'high' ? 'High' : 'Field';
+  for (const part of [...root.children]) {
+    const {mountedForm, motion, assetMaterial} = part.userData;
+    if (!motion) {
+      // The original static leather saddle and steel chest guard were fitted to
+      // the narrower horse. All rider equipment has its own motion joint.
+      if (mountedForm || assetMaterial === 'leather' || assetMaterial === 'steel') part.removeFromParent();
+      continue;
+    }
+    const index = motion.legIndex;
+    if (!Number.isInteger(index)) continue;
+    const fore = index % 2 === 1;
+    const end = {horseleg:'Upper', horseknee:'Lower'}[motion.type];
+    const piece = motion.type === 'horsehoof' ? 'hoofWall' : end && (fore ? 'fore' : 'hind') + end;
+    if (!piece) continue;
+    // Store vertices around the original leg axis. The palette bakes this
+    // offset before animation, leaving the authored IK pivots in model space.
+    part.geometry = dressGeometry(piece + suffix);
+    part.position.set(index < 2 ? -.3 : .3, 0, fore ? .59 : -.58);
+    part.quaternion.identity();
+    part.scale.setScalar(1);
+  }
+  const materials = {
+    destrier:'horse', crestAndTail:'mane', horseFeatures:'hair',
+    peytral:'steel', peytralTrim:'gold', chamfron:'steel', chamfronTrim:'gold',
+    saddleTree:'leather', saddleTrim:'gold', horseTack:'leather', bridleHardware:'gold',
+    saddleCloth:'team', clothBinding:'gold', stirrupIron:'iron',
+  };
+  for (const [name,role] of Object.entries(materials)) {
+    const part = new Mesh(dressGeometry(name + suffix), null);
+    part.name = name;
+    part.userData = {assetMaterial:role, mountedForm:true};
+    root.add(part);
   }
 }

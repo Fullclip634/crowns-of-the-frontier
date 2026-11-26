@@ -5,6 +5,7 @@ Run with Blender LTS in background mode. Work in game coordinates (+Y up,
 """
 import json
 import math
+import sys
 from pathlib import Path
 
 import bmesh
@@ -12,6 +13,9 @@ import bpy
 
 
 project = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from knight_mount import author_knight
+
 pieces = {}
 
 
@@ -127,5 +131,25 @@ for y, w in [(-.12,.106),(-.32,.089)]:
                        for dy in (-.013,.013)])
 
 output = project / "src/assets3d/characters/dress.json"
+panel("visorBrow", [(0,2.453,.145,.105),(0,2.421,.171,.137),
+                    (0,2.393,.193,.124),(0,2.384,.191,.095)])
+panel("bevor", [(0,2.332,.187,.116),(0,2.304,.193,.122),
+                (0,2.255,.17,.095),(0,2.219,.14,.046)])
+# Subtle sculpted royal helm comb seated flush on the sallet crown, and a
+# full wrap-around steel poleyn (knee cop) sealing the seated knee joint cleanly.
+panel("helmCrest", [(0,2.558,.024,.018),(0,2.586,-.020,.022),
+                    (0,2.568,-.082,.020),(0,2.502,-.132,.015)])
+solid("poleyn", [
+    [(w * math.cos(math.tau * i / 12), y, z + d * math.sin(math.tau * i / 12))
+     for i in range(12)]
+    for y, z, w, d in [
+        (-.085, .012, .096, .094),
+        (-.035, .026, .112, .114),
+        (.018, .030, .114, .116),
+        (.072, .014, .098, .096),
+    ]
+])
+for sides, suffix in [(12,"High"),(7,"Field")]:
+    author_knight(solid, sides, suffix)
 output.write_text(json.dumps(pieces, separators=(",", ":")) + "\n", encoding="utf8")
 print(f"Wrote {len(pieces)} fitted pieces to {output}")

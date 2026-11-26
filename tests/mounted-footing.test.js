@@ -13,6 +13,7 @@ import {writeUnitPose} from '../src/render-batches.js';
 import {Landscape} from '../src/landscape.js';
 import {Simulation} from '../src/simulation.js';
 import {canonicalGeometry} from '../src/authored-assets.js';
+import {fitCharacterDress} from '../src/character-dress.js';
 import {createRigidUnitPart,writeRigidPose,finishRigidFrame,disposeRigidPart} from '../src/rig-batches.js';
 
 const batch={model3d:{terrainHorse:true}},catalogues=new Map(),positions=[[-.3,-.58],[-.3,.59],[.3,-.58],[.3,.59]],tau=Math.PI*2;
@@ -30,14 +31,28 @@ function environment(gait,sx=0,sz=0){
 function rootAt(view,x,z,heading=0,bob=0){return new THREE.Matrix4().makeRotationY(heading).setPosition(x,view.groundHeight(x,z)+bob,z);}
 function hooves(root){
   const result=[];root.updateMatrixWorld(true);root.traverse(mesh=>{if(!mesh.isMesh||mesh.userData.motion?.type!=='horsehoof')return;
-    const p=mesh.geometry.attributes.position,points=[];let low=Infinity;for(let i=0;i<p.count;i++)low=Math.min(low,p.getY(i));for(let i=0;i<p.count;i++)if(p.getY(i)<low+.001)points.push(new THREE.Vector3().fromBufferAttribute(p,i));result.push({mesh,points,index:mesh.userData.motion.legIndex});
+    const p=mesh.geometry.attributes.position,points=[];let low=Infinity;for(let i=0;i<p.count;i++)low=Math.min(low,p.getY(i));for(let i=0;i<p.count;i++)if(p.getY(i)<low+.001)points.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld));result.push({mesh,points,index:mesh.userData.motion.legIndex});
   });return result.sort((a,b)=>a.index-b.index);
 }
 
 test('all released mounted hooves meet sloped ground while their legs bend and clear it through the stride',async()=>{
   let models=0,contacts=0;
   for(const tier of ['low','balanced','near'])for(const type of ['scout','knight','outrider']){
-    const root=(await catalogue(tier)).get('unit:'+type).clone(true),geometries=[];root.traverse(part=>{if(part.isMesh)geometries.push(part.geometry);});
+    const root=(await catalogue(tier)).get('unit:'+type).clone(true),geometries=[];
+    if(type==='knight'){
+      fitCharacterDress(root,type,tier==='near'?'high':tier);
+      for(const part of ['destrier','peytral','peytralTrim','chamfron','chamfronTrim','saddleTree','saddleTrim','saddleCloth','clothBinding','horseTack','bridleHardware','stirrupIron','visorBrow','bevor','helmCrest','poleyn']){
+        assert.ok(root.getObjectByName(part),`${tier} knight includes ${part}`);
+      }
+      const saddle=new THREE.Box3().setFromObject(root.getObjectByName('saddleTree'));
+      const seat=root.children.find(p=>p.userData.motion?.type==='torso'&&p.userData.assetMaterial==='pants');
+      assert.ok(saddle.max.y>=new THREE.Box3().setFromObject(seat).min.y,'saddle reaches the rider');
+      const stirrup=new THREE.Box3().setFromObject(root.getObjectByName('stirrupIron'));
+      const boot=root.children.find(p=>p.userData.motion?.type==='knee'&&p.userData.assetMaterial==='leather');
+      const bootBox=new THREE.Box3().setFromObject(boot);
+      assert.ok(bootBox.min.y>=stirrup.min.y-.03&&bootBox.min.y<=stirrup.max.y,'seated knight boot rests cleanly in the stirrup');
+    }
+    root.traverse(part=>{if(part.isMesh)geometries.push(part.geometry);});
     assert.equal(bindMountedFootRig(root),true);assert.equal(bindMountedFootRig(root),true,'binding is idempotent');let i=0;root.traverse(part=>{if(part.isMesh)assert.equal(part.geometry,geometries[i++],'binding retains the shared source buffers');});
     const feet=hooves(root);assert.equal(feet.length,4);assert.deepEqual(feet.map(foot=>foot.index),[0,1,2,3]);models++;
     for(const [sx,sz]of [[0,0],[.2,-.15],[.35,.12]])for(const heading of [0,.7,Math.PI/2]){
