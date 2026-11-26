@@ -1,7 +1,7 @@
 import {UNITS} from './data.js';
 import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaign-relics.js';
 import {applyCampaignScenario,triggerWesternReliefArrival,triggerOakholdLiberation} from './campaign-scenarios.js';
-import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies} from './battlefield-start.js';
+import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,openStartingGateLanes} from './battlefield-start.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
@@ -281,6 +281,10 @@ export function campaignObjective(sim){
   const boss=CAMPAIGN_BOSSES[sim.options.mode]||null;
   const stage=script.stages[Math.min(q.stage,script.stages.length-1)];
   let marker=stage.marker||null;
+  if(sim.battlefieldLayout>=2&&sim.options.mode==='campaign5'&&q.stage===1){
+    const gate=q.defenses.map(id=>sim.get(id)).find(entity=>entity?.type==='gate');
+    if(gate)marker={x:gate.x,z:gate.z};
+  }
   let progressText='';
   if(sim.mission?.actFive){
     const targetOwners=stage.targetOwners||sim.players.map((p,i)=>i).filter(i=>i>0&&sim.hostile(0,i));
@@ -303,6 +307,7 @@ export function installCampaigns(Simulation){
     if(this.mission)applyCampaignScenario(this);
     initializeStory(this);
     if(this.battlefieldLayout>=1){
+      openStartingGateLanes(this);
       clearStartingDeposits(this);
       ensureStartingSupplies(this);
       clearStartingUnitPositions(this);

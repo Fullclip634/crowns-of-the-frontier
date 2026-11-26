@@ -4,7 +4,7 @@ import {navigationRegions} from './navigation.js';
 import {bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 import {gatheringPathRange} from './work-ranges.js';
 
-export const BATTLEFIELD_LAYOUT_VERSION=1;
+export const BATTLEFIELD_LAYOUT_VERSION=2;
 
 const near=(a,b,radius)=>(a.x-b.x)**2+(a.z-b.z)**2<radius**2;
 const solidBuilding=e=>e.kind==='building'&&e.type!=='farm';
@@ -71,6 +71,30 @@ function gateApproach(gate,point,pad){
   return Math.abs(dx*c-dz*s)<2.65+pad&&Math.abs(dx*s+dz*c)<9+pad;
 }
 
+// A gate's floor may be open while a nearby workshop or keep covers the
+// road. Give that building a nearby site on the same side of the wall.
+export function openStartingGateLanes(sim){
+  if(sim.battlefieldLayout<2)return;
+  const gates=sim.entities.filter(e=>e.hp>0&&e.type==='gate');
+  if(!gates.length)return;
+  const obstacles=sim.entities.filter(e=>e.hp>0&&(e.kind==='building'||solidResource(e))).concat(sim.barriers);
+  let moved=false;
+  for(const building of obstacles){
+    if(!solidBuilding(building)||['towncenter','wall','gate','dock'].includes(building.type))continue;
+    const gate=gates.find(e=>e.owner===building.owner&&gateApproach(e,building,building.r+.6));
+    if(!gate)continue;
+    const angle=gate.wallAngle||0,s=Math.sin(angle),c=Math.cos(angle);
+    const side=point=>Math.sign((point.x-gate.x)*s+(point.z-gate.z)*c);
+    const originalSide=side(building);
+    const point=nearbyPoint(building,16,1,candidate=>
+      side(candidate)===originalSide&&dryFootprint(sim,candidate,building.r)&&
+      gates.every(e=>!gateApproach(e,candidate,building.r+.6))&&
+      obstacles.every(e=>e===building||!near(candidate,e,building.r+e.r+.65)));
+    if(point){Object.assign(building,point);moved=true;}
+  }
+  if(moved){sim.revision++;sim.grids={};sim.sightCache=null;}
+}
+
 // Relocate veins covered by a starting building or a gate approach.
 // Deposits near a gate stay on their original side.
 export function clearStartingDeposits(sim){
@@ -116,6 +140,9 @@ export function ensureStartingSupplies(sim){
   const obstacles=sim.entities.filter(e=>e.hp>0&&!e.water).concat(sim.barriers);
   const capitals=obstacles.filter(e=>e.type==='towncenter');
   const gates=obstacles.filter(e=>e.type==='gate');
+  const positionIndex=owner=>sim.battlefieldLayout>=2&&sim.options.mode==='custom'
+    ? sim.options.slots[owner].slotNumber-1 : owner;
+  if(sim.battlefieldLayout>=2)capitals.sort((a,b)=>positionIndex(a.owner)-positionIndex(b.owner));
   for(const capital of capitals){
     // The hostile grid keeps the gates shut. Reserves for a fortified
     // settlement must be accessible from the protected side.
@@ -129,12 +156,13 @@ export function ensureStartingSupplies(sim){
         supplied.add(e.type);
       }
     }
+    const radii=sim.battlefieldLayout>=2?[24,21,27,18,30,15,34,38,12,10,8]:[24,21,27,18,30,15,34,38];
     for(const [type,standardAmount,customAmount,r] of startingSupply){
       if(supplied.has(type))continue;
       let location=null;
-      for(const radius of [24,21,27,18,30,15,34,38]){
+      for(const radius of radii){
         for(let i=0;i<32;i++){
-          const angle=(i+capital.owner*.5)*Math.PI/16;
+          const angle=(i+positionIndex(capital.owner)*.5)*Math.PI/16;
           const point={kind:'resource',type,r,x:capital.x+Math.cos(angle)*radius,z:capital.z+Math.sin(angle)*radius};
           // Keep open beaches for transports and ship-to-shore troops.
           const shoreRoom=r+5;
@@ -174,16 +202,17 @@ export function clearStartingUnitPositions(sim){
     const clear=point=>Math.abs(point.x)<=half-3&&Math.abs(point.z)<=half-3&&
       !sim.isWater(point.x,point.z)&&!grid[cellIndex(sim,point)]&&bridgePointClear(sim.options.map,point.x,point.z,radius)&&
       !obstacles.some(e=>!(e.type==='gate'&&sim.allied(e.owner,unit.owner))&&near(e,point,e.r+unit.r*.6));
-    if(clear(unit)&&!units.some(other=>other.id<unit.id&&near(unit,other,(unit.r+other.r)*.68)))continue;
-
     // Prefer the opening army's side when the unit was authored on an
     // obstacle near its capital. Remote escorts and garrisons stay local.
     const start=sim.players[unit.owner]?.start;
+    const space=clear(unit)&&!units.some(other=>other.id<unit.id&&near(unit,other,(unit.r+other.r)*.68));
+    if(space&&sim.battlefieldLayout<2)continue;
     let region=0;
     if(start&&near(unit,start,28)){
       if(!regionByOwner.has(unit.owner))regionByOwner.set(unit.owner,settlementRegion(sim,grid,start));
       region=regionByOwner.get(unit.owner);
     }
+    if(space&&(!region||region===grid.pathRegions[cellIndex(sim,unit)]))continue;
     const available=point=>clear(point)&&!units.some(other=>other!==unit&&near(point,other,(unit.r+other.r)*.85));
     const sameRegion=point=>grid.pathRegions[cellIndex(sim,point)]===region&&available(point);
     const point=(region&&nearbyPoint(unit,16,1,sameRegion))||nearbyPoint(unit,24,1,available);

@@ -1,5 +1,6 @@
 import {seededRandom} from './data.js';
 import {bridgeFootprint} from './bridge-layout.js';
+import {WALL_SPACING,linkPlannedWalls} from './walls.js';
 
 /**
  * Authoritative Continent-Wide Natural Terrain & Tactical Fortification System.
@@ -369,6 +370,54 @@ function closeValleyRim(sim,center,radius,front,left,right,keepClear,seedOffset)
   return barriers;
 }
 
+// Eight settlements on the compact map share the same amount of buildable
+// ground. Keep the rocks and walls inside each settlement's allotted circle.
+function buildCompactBastion(sim,base,neighborDistance){
+  const radius=Math.min(30,neighborDistance*.5-1.3),front=Math.atan2(-base.z,-base.x);
+  const count=Math.ceil(2*Math.PI*radius/WALL_SPACING),step=2*Math.PI/count;
+  const angleAt=index=>front+index*step;
+  const site=(angle,reach=radius)=>({x:base.x+Math.cos(angle)*reach,z:base.z+Math.sin(angle)*reach});
+  const buildings=sim.owned(base.owner,'building');
+  const gateClear=index=>{
+    const angle=angleAt(index),inner=site(angle,radius-9),gate=site(angle);
+    return buildings.every(e=>distanceToSegment(e,inner,gate)>e.r+2.8);
+  };
+  const preferred=Math.round(.56/step);
+  const gateIndices=[-1,1].map(side=>{
+    const index=[preferred,preferred+1,preferred-1,preferred+2,preferred-2].find(n=>gateClear(n*side))??preferred;
+    return (count+index*side)%count;
+  });
+  const gates=new Set(gateIndices);
+  const omitted=new Set(gateIndices.flatMap(index=>[(index+count-1)%count,(index+1)%count]));
+  const slot=sim.options.slots?.[base.owner]?.slotNumber??base.owner+1;
+  const rng=seededRandom(sim.options.seed+1109*slot);
+  const perimeter=Array(count).fill(null);
+  for(let index=0;index<count;index++){
+    if(omitted.has(index))continue;
+    const angle=angleAt(index),point=site(angle),rotation=-angle-Math.PI/2;
+    if(Math.cos(index*step)<-.45){
+      const cliff=addNaturalBarrier(sim,point.x,point.z,{
+        r:3.65,height:3.4+rng()*1.7,angle:rotation+(rng()-.5)*.45,seed:slot*100+index,replaceStartForest:true,
+      });
+      if(cliff)continue;
+    }
+    const type=gates.has(index)?'gate':'wall',room=type==='gate'?3.4:2;
+    for(const e of sim.entities){
+      if(e.hp>0&&e.kind==='resource'&&!e.water&&Math.hypot(e.x-point.x,e.z-point.z)<e.r+room)e.hp=0;
+    }
+    perimeter[index]=sim.addBuilding(type,base.owner,point.x,point.z,true,{angle:rotation});
+  }
+  // Only gate entrances skip one wall position. A cliff stays a break in
+  // the wall's link list because it already closes that length of the rim.
+  linkPlannedWalls(sim.entities,perimeter.filter((_,index)=>!omitted.has(index)));
+}
+
+function distanceToSegment(point,from,to){
+  const dx=to.x-from.x,dz=to.z-from.z;
+  const t=Math.max(0,Math.min(1,((point.x-from.x)*dx+(point.z-from.z)*dz)/(dx*dx+dz*dz)));
+  return Math.hypot(point.x-from.x-t*dx,point.z-from.z-t*dz);
+}
+
 /**
  * Authentic Age of Empires IV / II Regional Valley Fortification (ZERO Fake Rock Donuts!).
  *
@@ -670,7 +719,8 @@ export function buildWoodlandGladePocket(sim,center,{
 export function applyMapGeography(sim){
   const map=sim.options?.map;
   if(!map)return;
-  const bases=(sim.players||[]).map((p,owner)=>p?.start?{x:p.start.x,z:p.start.z,owner}:null).filter(Boolean);
+  const singleSettlement=sim.battlefieldLayout>=2&&['tutorial','sandbox','survival'].includes(sim.options.mode);
+  const bases=(sim.players||[]).map((p,owner)=>p?.start&&(!singleSettlement||owner===0)?{x:p.start.x,z:p.start.z,owner}:null).filter(Boolean);
   // Generous clearance around every starting TC, tutorial build pad, shrines & center bridges
   const keepClear=[
     ...bases.map(b=>({x:b.x,z:b.z,r:24})),
@@ -741,7 +791,9 @@ export function applyMapGeography(sim){
     // Continent-wide mountain ranges, forested coves (36m radius = 72m wide!), and central contested ridges —
     // each kingdom sits backed naturally against a real mountain massif with straight curtain walls sealing ONLY its valley mouth!
     const bastionR=sim.worldSize>=240?Math.min(36,adaptiveGladeR):Math.min(29,adaptiveGladeR);
+    const compact=sim.battlefieldLayout>=2&&bases.length>=6&&minBaseDist<74;
     for(const base of bases){
+      if(compact){buildCompactBastion(sim,base,minBaseDist);continue;}
       buildNaturalFortifiedBase(sim,base.owner,base,{
         radius:bastionR,
         towers:true,
@@ -881,7 +933,9 @@ export function applyMapGeography(sim){
   }else if(map==='frostfallsiege'){
     // Epic Frontier — Frostfall Siege (Image 7):
     // Snow-capped waterfall cliffs, frozen gorge river with drifting ice floes, twin crossings & war-camps!
-    const frostKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),{x:-6,z:0,r:20},{x:-1,z:46,r:18},{x:-6,z:-48,r:18}];
+    const frostKeep=[...bases.map(b=>({
+      x:b.x,z:b.z,r:sim.battlefieldLayout>=2&&sim.options.mode==='campaign17'&&b.owner===3?46:Math.min(34,adaptiveGladeR),
+    })),{x:-6,z:0,r:20},{x:-1,z:46,r:18},{x:-6,z:-48,r:18}];
     const passes=[{x:-6,z:0,r:18},{x:-1,z:46,r:16},{x:-6,z:-48,r:17}];
     addCurvedCliffChain(sim,[{x:-h*.76,z:-h*.84},{x:-34,z:-h*.74},{x:-20,z:-h*.60}],{step:3.4,width:2,radius:3.3,height:5.5,wobble:1.9,passes,keepClear:frostKeep,seedOffset:931,foothillTrees:true});
     addCurvedCliffChain(sim,[{x:12,z:-h*.60},{x:28,z:-h*.74},{x:h*.72,z:-h*.84}],{step:3.4,width:2,radius:3.3,height:5.5,wobble:1.9,passes,keepClear:frostKeep,seedOffset:933,foothillTrees:true});

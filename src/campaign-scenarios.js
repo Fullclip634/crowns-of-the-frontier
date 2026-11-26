@@ -7,6 +7,7 @@ import {seedDeerHerds} from './wildlife.js';
 import {waterChannels,waterFords} from './map-water.js';
 import {bridgeSpans,spanZ} from './bridge-layout.js';
 import {spawnHeroGeneral} from './heroes.js';
+import {WALL_SPACING,linkPlannedWalls} from './walls.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
@@ -135,12 +136,17 @@ function applyClassicChapterArchitecture(sim){
     placeBuilding(sim,'stable',0,p0.x-18,p0.z-4,true);
     placeBuilding(sim,'blacksmith',0,p0.x-16,p0.z-16,true);
     placeBuilding(sim,'monastery',0,p0.x+20,p0.z+12,true);
-    // Natural granite cliff shoulders extending out from Draven's distant capital curtain wall
-    addCliffRidge(sim,{x:gate.x-54,z:gate.z-4},{x:gate.x-24,z:gate.z-2},{step:3.5,width:1,radius:3.1,height:4.9,wobble:1.4,keepClear:siegeKeep,seedOffset:501,foothillTrees:true});
-    placeBuilding(sim,'tower',1,gate.x-9,gate.z-4,true);
-    placeBuilding(sim,'tower',1,gate.x+9,gate.z-4,true);
-    placeBuilding(sim,'workshop',1,p1.x+18,p1.z+12,true);
-    for(let z=p1.z-4;z<=gate.z-4;z+=3)placeBuilding(sim,'wall',1,gate.x-21,z,true,{angle:Math.PI/2});
+    if(sim.battlefieldLayout>=2){
+      placeBuilding(sim,'workshop',1,p1.x+18,p1.z+12,true);
+      buildNaturalFortifiedBase(sim,1,p1,{radius:38,keepClear:[{x:p0.x,z:p0.z,r:46}],seedOffset:501});
+      siegeKeep.push({x:p1.x,z:p1.z,r:49});
+    }else{
+      addCliffRidge(sim,{x:gate.x-54,z:gate.z-4},{x:gate.x-24,z:gate.z-2},{step:3.5,width:1,radius:3.1,height:4.9,wobble:1.4,keepClear:siegeKeep,seedOffset:501,foothillTrees:true});
+      placeBuilding(sim,'tower',1,gate.x-9,gate.z-4,true);
+      placeBuilding(sim,'tower',1,gate.x+9,gate.z-4,true);
+      placeBuilding(sim,'workshop',1,p1.x+18,p1.z+12,true);
+      for(let z=p1.z-4;z<=gate.z-4;z+=3)placeBuilding(sim,'wall',1,gate.x-21,z,true,{angle:Math.PI/2});
+    }
     scatterBiomeCliffs(sim,{count:6,ridgeLen:28,withMassifs:true,keepClear:siegeKeep,seedOffset:509});
   }else if(mode==='campaign6'){
     // Beyond the Horizon (320x320, ~261m apart): Wide coastal plains & harbor headlands across the sea
@@ -168,8 +174,12 @@ function applyClassicChapterArchitecture(sim){
     buildWoodlandGladePocket(sim,p0,{gladeRadius:36,passes:3,keepClear:[pad0,{x:p1.x,z:p1.z,r:36}],seedOffset:803,includeResources:false});
     addDenseForestBelt(sim,{x:-146,z:-126},{x:146,z:126},{step:2.5,thickness:4,passes,keepClear:woodKeep,seedOffset:801});
     scatterBiomeCliffs(sim,{count:6,ridgeLen:26,withMassifs:true,keepClear:woodKeep,passes,seedOffset:805});
-    placeBuilding(sim,'tower',1,p1.x-22,p1.z+18,true);
-    connectCliffPassWall(sim,1,{x:p1.x-16,z:p1.z+20},{x:p1.x+14,z:p1.z+20},p1,{complete:true,withGate:true,withTower:false});
+    if(sim.battlefieldLayout>=2){
+      buildNaturalFortifiedBase(sim,1,p1,{radius:35,towers:false,keepClear:[{x:p0.x,z:p0.z,r:42}],seedOffset:809});
+    }else{
+      placeBuilding(sim,'tower',1,p1.x-22,p1.z+18,true);
+      connectCliffPassWall(sim,1,{x:p1.x-16,z:p1.z+20},{x:p1.x+14,z:p1.z+20},p1,{complete:true,withGate:true,withTower:false});
+    }
   }else if(mode==='campaign9'){
     // The Long Night (320x320, ~274m apart): Grand spacious snow-mountain valley cove (radius 38m!) with massive buildable interior!
     buildNaturalFortifiedBase(sim,0,{x:p0.x,z:p0.z},{radius:38,gates:['north','east'],towers:true,complete:true,includeResources:true,keepClear:[pad0,{x:p1.x,z:p1.z,r:36}],seedOffset:901,backToBorder:true});
@@ -543,28 +553,47 @@ export function triggerOakholdLiberation(sim){
 
 /** Builds a circular outer wooden/stone war-camp with tents, campfire, stakes & towers (Images 7, 8, 10, 11). */
 function buildCircularWarCamp(sim,owner,center,{radius=22,gateAngle=Math.PI,armyTypes=[],villagers=8,production=['barracks','stable']}={}){
+  if(sim.battlefieldLayout>=2)radius+=4;
   placeBuilding(sim,'towncenter',owner,center.x,center.z,true);
-  if(production[0])placeBuilding(sim,production[0],owner,center.x-10,center.z-8,true);
-  if(production[1])placeBuilding(sim,production[1],owner,center.x+10,center.z+8,true);
-  placeBuilding(sim,'house',owner,center.x+10,center.z-9,true);
-  placeBuilding(sim,'house',owner,center.x-10,center.z+9,true);
-  placeBuilding(sim,'mill',owner,center.x,center.z-12,true);
-  const segs=24;
-  const angDiff=(a,b)=>Math.abs(((a-b+Math.PI*3)%(Math.PI*2))-Math.PI);
-  for(let i=0;i<segs;i++){
-    const a=(i/segs)*Math.PI*2-Math.PI;
-    const wx=center.x+Math.cos(a)*radius,wz=center.z+Math.sin(a)*radius;
-    const tangent=a+Math.PI*.5;
-    if(angDiff(a,gateAngle)<.24){
-      if(i===Math.round(((gateAngle+Math.PI)/(Math.PI*2))*segs)%segs){
-        placeBuilding(sim,'gate',owner,wx,wz,true,{angle:tangent});
-      }
-      continue;
+  if(sim.battlefieldLayout>=2){
+    const count=Math.ceil(2*Math.PI*radius/WALL_SPACING),step=2*Math.PI/count;
+    const placeOnRing=(type,angle,reach)=>placeBuilding(sim,type,owner,
+      center.x+Math.cos(angle)*reach,center.z+Math.sin(angle)*reach,true,{angle:-angle-Math.PI/2});
+    // The production halls frame the approach, with a walkable circuit
+    // between the town center and the outer wall.
+    for(const [type,offset,reach] of [[production[0],1.2,12.5],[production[1],-1.2,12.5],
+      ['house',2.18,12.5],['house',-2.18,12.5],['mill',Math.PI,12.5]]){
+      if(type)placeOnRing(type,gateAngle+offset,reach);
     }
-    if(i%6===0){
-      placeBuilding(sim,'tower',owner,wx,wz,true);
-    }else{
-      placeBuilding(sim,'wall',owner,wx,wz,true,{angle:tangent});
+    const perimeter=[placeOnRing('gate',gateAngle,radius)];
+    for(let i=2;i<=count-2;i++)perimeter.push(placeOnRing('wall',gateAngle+i*step,radius));
+    linkPlannedWalls(sim.entities,perimeter);
+    for(const offset of [-2.68,-.55,.55,2.68]){
+      placeOnRing('tower',gateAngle+offset,radius-5);
+    }
+  }else{
+    if(production[0])placeBuilding(sim,production[0],owner,center.x-10,center.z-8,true);
+    if(production[1])placeBuilding(sim,production[1],owner,center.x+10,center.z+8,true);
+    placeBuilding(sim,'house',owner,center.x+10,center.z-9,true);
+    placeBuilding(sim,'house',owner,center.x-10,center.z+9,true);
+    placeBuilding(sim,'mill',owner,center.x,center.z-12,true);
+    const segs=24;
+    const angDiff=(a,b)=>Math.abs(((a-b+Math.PI*3)%(Math.PI*2))-Math.PI);
+    for(let i=0;i<segs;i++){
+      const a=(i/segs)*Math.PI*2-Math.PI;
+      const wx=center.x+Math.cos(a)*radius,wz=center.z+Math.sin(a)*radius;
+      const tangent=a+Math.PI*.5;
+      if(angDiff(a,gateAngle)<.24){
+        if(i===Math.round(((gateAngle+Math.PI)/(Math.PI*2))*segs)%segs){
+          placeBuilding(sim,'gate',owner,wx,wz,true,{angle:tangent});
+        }
+        continue;
+      }
+      if(i%6===0){
+        placeBuilding(sim,'tower',owner,wx,wz,true);
+      }else{
+        placeBuilding(sim,'wall',owner,wx,wz,true,{angle:tangent});
+      }
     }
   }
   sim.battlefieldProps.push(
@@ -581,6 +610,7 @@ function buildCircularWarCamp(sim,owner,center,{radius=22,gateAngle=Math.PI,army
 
 /** Builds a full, battle-ready walled stronghold with castle keep, all military halls, farms & sheltered resources. */
 function buildReadyCitadel(sim,owner,center,{gates=['east'],keepClear=[],seedOffset=1,armyTypes=[],villagers=14,radius=36,backToBorder=true,richDeposits=true,compactForest=false}={}){
+  if(sim.battlefieldLayout>=2&&sim.options.mode==='campaign19')radius=Math.max(radius,36);
   const dir=center.x<0?1:-1;
   placeBuilding(sim,'towncenter',owner,center.x,center.z,true);
   placeBuilding(sim,'keep',owner,center.x+dir*14,center.z+(center.z<0?11:-11),true);

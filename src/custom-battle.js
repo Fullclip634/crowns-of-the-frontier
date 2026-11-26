@@ -8,7 +8,7 @@ import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
 import {applyMapGeography} from './terrain-barriers.js';
 import {spawnHeroGeneral} from './heroes.js';
-import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,spaceStartingBuildings} from './battlefield-start.js';
+import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,openStartingGateLanes,spaceStartingBuildings} from './battlefield-start.js';
 
 export const AI_HEALTH_LEVELS=Object.freeze([100,90,80,70,60,50]);
 
@@ -191,6 +191,7 @@ function initializeBattle(sim){
   }
   for(const unit of sim.entities.filter(e=>e.type==='fishingboat'))sim.assignWorker(unit);
   if(sim.battlefieldLayout>=1){
+    openStartingGateLanes(sim);
     clearStartingDeposits(sim);
     ensureStartingSupplies(sim);
     clearStartingUnitPositions(sim);

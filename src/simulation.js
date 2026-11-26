@@ -199,8 +199,10 @@ export class Simulation {
       if(mission?.age>=2){this.addBuilding('stable',1,37+dx1,-13+dz1,true);this.addBuilding('blacksmith',1,58+dx1,-38+dz1,true);}
       if(mission?.fortress){
         this.addBuilding('keep',1,35+dx1,-49+dz1,true);this.addBuilding('tower',1,18+dx1,-20+dz1,true);this.addBuilding('tower',1,53+dx1,-4+dz1,true);
-        for(let x=15;x<=62;x+=3)if(Math.abs(x-36)>4)this.addBuilding('wall',1,x+dx1,-5+dz1,true);
-        this.addBuilding('gate',1,36+dx1,-5+dz1,true);
+        if(this.battlefieldLayout<2){
+          for(let x=15;x<=62;x+=3)if(Math.abs(x-36)>4)this.addBuilding('wall',1,x+dx1,-5+dz1,true);
+          this.addBuilding('gate',1,36+dx1,-5+dz1,true);
+        }
       }
     }
     const movedStarts=[];

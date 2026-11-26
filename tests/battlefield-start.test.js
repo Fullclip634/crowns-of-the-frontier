@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/simulation.js';
 import {BATTLE_SIZES,battlePreset} from '../src/custom-battle.js';
-import {clearSegment} from '../src/navigation.js';
+import {clearSegment,navigationRegions} from '../src/navigation.js';
 import {gatheringPathRange} from '../src/work-ranges.js';
 
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -61,6 +61,75 @@ test('Bastion and the survival campaign connect their gatehouses to continuous v
   testGateRoutes(new Simulation({mode:'campaign3',seed:4303}),0,1);
 });
 
+function testEnclosure(sim,owner,gates){
+  const enemy=sim.players.findIndex((_,i)=>sim.hostile(owner,i));
+  const friendlyGrid=sim.grid(owner),hostileGrid=sim.grid(enemy);
+  const open=(point,grid)=>{
+    const cell=sim.cell(point.x,point.z);
+    return !sim.isWater(point.x,point.z)&&!grid[cell.z*sim.gridSize+cell.x];
+  };
+  const center=sim.players[owner].start;
+  for(const gate of gates){
+    assert.equal(gate.wallLinks.length,2);
+    const x=Math.sin(gate.wallAngle),z=Math.cos(gate.wallAngle);
+    const inward=(center.x-gate.x)*x+(center.z-gate.z)*z>0?1:-1;
+    const approach=side=>[7,8,9,10,6,5,11,12].map(d=>({x:gate.x+x*d*side,z:gate.z+z*d*side}))
+      .find(point=>open(point,friendlyGrid)&&open(point,hostileGrid));
+    const from=approach(-inward),to=approach(inward);
+    assert.ok(from&&to,`${sim.options.mode}/${owner} keeps both sides of the gate open`);
+    const scout={...from,type:'scout',owner,r:.65};
+    assert.deepEqual(sim.pathTo(scout,to).at(-1),to);
+    assert.equal(scout.pathStatus,'ready');
+    const hostile={...scout,owner:enemy};
+    sim.pathTo(hostile,to);
+    assert.equal(hostile.pathStatus,'blocked',`${sim.options.mode}/${owner} keeps enemies outside the fort`);
+  }
+}
+
+test('compact Bastion still has independent fortified starts for all eight kingdoms',()=>{
+  for(const startAge of [0,3]){
+    const sim=new Simulation({mode:'custom',map:'bastion',mapSize:'spacious',seed:2026,startAge,slots:battlePreset('4v4')});
+    assertDryStart(sim);
+    for(const owner of sim.players.keys()){
+      const gates=sim.owned(owner,'building','gate');
+      assert.equal(gates.length,2);
+      testEnclosure(sim,owner,gates);
+    }
+  }
+});
+
+test('peaceful and wave-defense modes only fortify their starting settlement',()=>{
+  for(const mode of ['tutorial','sandbox','survival']){
+    const sim=new Simulation({mode,map:'bastion',mapSize:'spacious'});
+    assert.equal(sim.owned(0,'building','gate').length,2);
+    assert.equal(sim.owned(1,'building').length,0,`${mode} should not add a rival base`);
+  }
+});
+
+test('scripted fort and war-camp routes and protected supplies agree with their walls',()=>{
+  for(const [number,owners] of [[5,[1]],[8,[1]],[15,[1,2]],[17,[1,2,3]],[19,[2,3,4,5]]]){
+    const sim=new Simulation({mode:'campaign'+number,seed:4300+number,difficulty:'story'});
+    for(const owner of owners){
+      const gates=sim.owned(owner,'building','gate');
+      assert.equal(gates.length,number===15||number===17&&owner!==3?1:2);
+      testEnclosure(sim,owner,gates);
+      if(![15,17].includes(number)||owner>2)continue;
+      const worker=sim.owned(owner,'unit','villager')[0];
+      const enemy=sim.players.findIndex((_,i)=>sim.hostile(owner,i)),grid=sim.grid(enemy);
+      const labels=navigationRegions(sim,grid),from=sim.cell(worker.x,worker.z),inside=labels[from.z*sim.gridSize+from.x];
+      assert.ok(inside);
+      for(const type of ['wood','food','gold','stone']){
+        const reserves=sim.entities.filter(e=>e.hp>0&&e.kind==='resource'&&!e.water&&e.type===type&&distance(e,sim.players[owner].start)<42);
+        assert.ok(reserves.some(e=>{
+          const range=gatheringPathRange(worker,e),path=sim.pathTo(worker,e,range),end=path.at(-1)||worker;
+          const cell=sim.cell(end.x,end.z);
+          return worker.pathStatus==='ready'&&distance(end,e)<=range+1e-6&&labels[cell.z*sim.gridSize+cell.x]===inside;
+        }),`${sim.options.mode}/${owner} worker can gather ${type} inside the wall`);
+      }
+    }
+  }
+});
+
 test('advanced starts on compact rivers keep troops dry and all four supplies accessible',()=>{
   for(const map of ['riverland','threecrowns','templelagoon']){
     const sim=new Simulation({mode:'custom',map,mapSize:'spacious',startAge:3,slots:battlePreset('4v4'),seed:2026});
@@ -90,6 +159,10 @@ test('saved matches and new replays keep their opening layout and older replays 
   const center=previous.owned(0,'building','towncenter')[0],keep=previous.owned(0,'building','keep')[0];
   assert.equal(keep.x-center.x,11);
   assert.equal(keep.z-center.z,-10);
+  const earlierFort=new Simulation({mode:'campaign5',seed:4305,replay:true,battlefieldLayout:1});
+  const gate=earlierFort.owned(1,'building','gate')[0];
+  assert.equal(earlierFort.owned(1,'building','gate').length,1);
+  assert.deepEqual([gate.x,gate.z],[102,-61]);
 });
 
 test('campaigns store shared cliffs once while preserving the actual checkpoint terrain',()=>{
