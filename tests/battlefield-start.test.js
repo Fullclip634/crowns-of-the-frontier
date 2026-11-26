@@ -106,6 +106,32 @@ test('peaceful and wave-defense modes only fortify their starting settlement',()
   }
 });
 
+test('crowded coastal settlements keep their land buildings clear of fixed docks',()=>{
+  for(const [count,seed,startAge] of [[8,512,2],[7,818,3]]){
+    const slots=battlePreset('ffa8').map((slot,index)=>({...slot,enabled:index<count}));
+    const sim=new Simulation({mode:'custom',map:'coast',mapSize:'spacious',seed,startAge,slots});
+    assertDryStart(sim);
+    for(const dock of sim.entities.filter(e=>e.hp>0&&e.type==='dock')){
+      for(const e of sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e!==dock)){
+        assert.ok(distance(e,dock)>=e.r+dock.r,`${count} kingdoms: ${e.type} overlaps a dock`);
+      }
+    }
+  }
+});
+
+test('compact Bastion keeps the direct gate approaches clear of scenic cliffs',()=>{
+  const slots=battlePreset('ffa8').map((slot,index)=>({...slot,enabled:index<7}));
+  const sim=new Simulation({mode:'custom',map:'bastion',mapSize:'spacious',seed:818,startAge:3,slots});
+  for(const owner of sim.players.keys()){
+    const gates=sim.owned(owner,'building','gate'),grid=sim.grid(owner);
+    testEnclosure(sim,owner,gates);
+    for(const gate of gates)for(const distance of [-7,7]){
+      const cell=sim.cell(gate.x+Math.sin(gate.wallAngle)*distance,gate.z+Math.cos(gate.wallAngle)*distance);
+      assert.equal(grid[cell.z*sim.gridSize+cell.x],0);
+    }
+  }
+});
+
 test('scripted fort and war-camp routes and protected supplies agree with their walls',()=>{
   for(const [number,owners] of [[5,[1]],[8,[1]],[15,[1,2]],[17,[1,2,3]],[19,[2,3,4,5]]]){
     const sim=new Simulation({mode:'campaign'+number,seed:4300+number,difficulty:'story'});

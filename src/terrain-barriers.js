@@ -808,6 +808,12 @@ export function applyMapGeography(sim){
     // Sweeping mid-continent mountain ridges & natural contested canyons across the open center!
     const centerKeep=[...bases.map(b=>({x:b.x,z:b.z,r:bastionR+8})),{x:0,z:0,r:13}];
     const centerPasses=[{x:0,z:0,r:13}];
+    if(sim.battlefieldLayout>=3){
+      for(const gate of sim.entities.filter(e=>e.hp>0&&e.type==='gate')){
+        const x=Math.sin(gate.wallAngle),z=Math.cos(gate.wallAngle);
+        for(const distance of [-11,-6,6,11])centerPasses.push({x:gate.x+x*distance,z:gate.z+z*distance,r:3.5});
+      }
+    }
     addCurvedCliffChain(sim,[{x:-h*.84,z:-h*.80},{x:-h*.46,z:-h*.52},{x:-h*.18,z:-h*.34}],{step:3.5,width:1,radius:3.1,height:4.8,wobble:2.4,passes:centerPasses,keepClear:centerKeep,seedOffset:61,foothillTrees:true});
     addCurvedCliffChain(sim,[{x:h*.18,z:h*.34},{x:h*.46,z:h*.52},{x:h*.84,z:h*.80}],{step:3.5,width:1,radius:3.1,height:4.8,wobble:2.4,passes:centerPasses,keepClear:centerKeep,seedOffset:67,foothillTrees:true});
     addMountainMassif(sim,-h*.76,h*.14,{radius:12,peaks:3,passes:centerPasses,keepClear:centerKeep,seedOffset:71});

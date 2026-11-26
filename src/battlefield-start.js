@@ -4,7 +4,7 @@ import {navigationRegions} from './navigation.js';
 import {bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 import {gatheringPathRange} from './work-ranges.js';
 
-export const BATTLEFIELD_LAYOUT_VERSION=2;
+export const BATTLEFIELD_LAYOUT_VERSION=3;
 
 const near=(a,b,radius)=>(a.x-b.x)**2+(a.z-b.z)**2<radius**2;
 const solidBuilding=e=>e.kind==='building'&&e.type!=='farm';
@@ -52,9 +52,13 @@ function nearbyPoint(origin,maxRadius,step,accept){
 // overlapping additions before resources and cliffs are planted around them.
 export function spaceStartingBuildings(sim){
   const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building');
-  const placed=[];
+  const fixed=e=>['towncenter','wall','gate','dock'].includes(e.type);
+  const reserveFixed=sim.battlefieldLayout>=3;
+  // Shore buildings and capitals have authored sites. Reserve them before
+  // fitting the rest of a settlement, even if they were added later.
+  const placed=reserveFixed?buildings.filter(fixed):[];
   for(const building of buildings){
-    if(!['towncenter','wall','gate','dock'].includes(building.type)){
+    if(!fixed(building)){
       const clearOf=(point,obstacle)=>obstacle===building||!near(point,obstacle,building.r+obstacle.r+.55);
       if(!dryFootprint(sim,building,building.r)||placed.some(e=>!clearOf(building,e))){
         const point=nearbyPoint(building,22,1,candidate=>
@@ -62,7 +66,7 @@ export function spaceStartingBuildings(sim){
         if(point)Object.assign(building,point);
       }
     }
-    placed.push(building);
+    if(!reserveFixed||!fixed(building))placed.push(building);
   }
 }
 
