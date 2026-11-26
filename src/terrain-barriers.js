@@ -1,5 +1,6 @@
 import {seededRandom} from './data.js';
 import {bridgeFootprint} from './bridge-layout.js';
+import {MinHeap} from './navigation.js';
 import {WALL_SPACING,linkPlannedWalls} from './walls.js';
 
 /**
@@ -343,6 +344,103 @@ export function seedValleyResources(sim,center,{radius=26,keepOutAngles=[],seedO
 
 const DIR_ANGLES={east:0,south:Math.PI/2,west:Math.PI,north:-Math.PI/2,ne:-Math.PI/4,se:Math.PI/4,sw:Math.PI*3/4,nw:-Math.PI*3/4};
 
+const WOODLAND_STEPS=[[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+
+// Connect existing woodland and rock cover with live trees. Cost favors
+// terrain that already blocks movement and keeps new trunks off the courtyard.
+function defensiveWoodline(sim,owner,points,keepClear,gates,seedOffset){
+  sim.grid(owner);
+  const cover=sim.grids.landBase.data.slice(),size=sim.gridSize;
+  const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='wall');
+  const pointAt=id=>({x:id%size*2-sim.halfWorld+1,z:Math.floor(id/size)*2-sim.halfWorld+1});
+  const cellAt=point=>{const c=sim.cell(point.x,point.z);return c.z*size+c.x;};
+  const blocked=(p,pad)=>keepClear.some(e=>Math.hypot(e.x-p.x,e.z-p.z)<e.r)||
+    buildings.some(e=>Math.hypot(e.x-p.x,e.z-p.z)<e.r+pad)||
+    gates.some(gate=>{
+      const x=p.x-gate.x,z=p.z-gate.z,s=Math.sin(gate.wallAngle),c=Math.cos(gate.wallAngle);
+      return Math.abs(x*c-z*s)<3.9&&Math.abs(x*s+z*c)<12;
+    })||bridgeFootprint(sim.options.map,p.x,p.z,2);
+  const route=(from,to,band,pad)=>{
+    const start=cellAt(from),end=cellAt(to),open=new MinHeap(),costs=new Map([[start,0]]),parents=new Map();
+    const a=pointAt(start),b=pointAt(end);
+    open.push(start,0);
+    while(open.size){
+      const id=open.pop();
+      if(id===end){
+        const path=[end];
+        while(path.at(-1)!==start)path.push(parents.get(path.at(-1)));
+        return path;
+      }
+      const x=id%size,z=Math.floor(id/size),cost=costs.get(id);
+      for(const [dx,dz] of WOODLAND_STEPS){
+        const nx=x+dx,nz=z+dz;
+        if(nx<0||nz<0||nx>=size||nz>=size)continue;
+        const next=nz*size+nx,p=pointAt(next),deviation=distanceToSegment(p,a,b);
+        if(next!==end&&(nx===0||nz===0||nx===size-1||nz===size-1))continue;
+        if(deviation>band||(!cover[next]&&blocked(p,pad)))continue;
+        const distance=dx&&dz?Math.SQRT2:1,newCost=cost+(cover[next]?.5:2)*distance+deviation*.08;
+        if(newCost>=(costs.get(next)??Infinity))continue;
+        costs.set(next,newCost);parents.set(next,id);
+        open.push(next,newCost+Math.hypot(p.x-b.x,p.z-b.z)*.25);
+      }
+    }
+    return null;
+  };
+  const connect=(a,b)=>route(a,b,5,1.55)||route(a,b,9,1.05);
+  const edge=sim.halfWorld-1;
+  const edgeSites=points.slice(1,-1).map((point,index)=>{
+    const dx=edge-Math.abs(point.x),dz=edge-Math.abs(point.z);
+    const xEdge=dx<=dz,sign=Math.sign(xEdge?point.x:point.z);
+    return {index:index+1,gap:Math.min(dx,dz),axis:xEdge?'x':'z',sign,
+      end:xEdge?{x:sign*edge,z:point.z}:{x:point.x,z:sign*edge}};
+  }).filter(site=>site.gap<=8);
+  const first=edgeSites[0],last=edgeSites.at(-1);
+  // The map boundary can carry the back of a fort when both shoulders
+  // already reach it. Keep the central stretch open in this case.
+  const useEdge=first&&last.index>first.index&&
+    (first.axis!==last.axis||first.sign===last.sign)&&
+    connect(points[first.index],first.end)&&connect(points[last.index],last.end);
+  const parts=useEdge
+    ? [[...points.slice(0,first.index+1),first.end],[last.end,...points.slice(last.index)]]
+    : [points];
+  const rng=seededRandom((sim.options.seed||2026)+seedOffset*43+2841);
+  for(const part of parts)for(let i=1;i<part.length;i++){
+    // Keep a boundary anchor as the destination of the search so it is
+    // the only step allowed on the outermost row or column.
+    const a=part[i-1],b=part[i],from=Math.abs(a.x)===edge||Math.abs(a.z)===edge?b:a,to=from===a?b:a;
+    if(cellAt(from)===cellAt(to))continue;
+    const path=connect(from,to);
+    if(!path)continue;
+    // Plant in a stable order and keep each trunk in the cell it closes.
+    for(const id of path.reverse()){
+      if(cover[id])continue;
+      const p=pointAt(id);
+      if(blocked(p,1.05)||sim.isWater(p.x,p.z))continue;
+      const tree=sim.addNaturalResource('wood',p.x+(rng()-.5)*.46,p.z+(rng()-.5)*.46,260);
+      tree.startForest=owner;
+      cover[id]=1;
+    }
+  }
+}
+
+function woodlandShoulders(sim,owner,center,front,radius,left,right,keepClear,gates,seedOffset,compact=false){
+  const edge=sim.halfWorld-3,c=Math.cos(front),s=Math.sin(front);
+  const site=(f,side)=>{
+    const x=center.x+radius*(f*c-side*s),z=center.z+radius*(f*s+side*c);
+    return {x:Math.max(-edge,Math.min(edge,x)),z:Math.max(-edge,Math.min(edge,z))};
+  };
+  const rear=compact
+    ? [site(.14,1.09),site(-.58,.94),site(-1.08,.26),site(-1.04,-.36),site(-.45,-1.01),site(.18,-1.08)]
+    : [site(.20,1.13),site(-.55,1.13),site(-1.19,.68),site(-1.30,-.21),site(-.70,-1.17),site(.04,-1.09)];
+  (sim.startingWoodlines??=[]).push({owner,points:[right,...rear,left],keepClear,gates,seedOffset});
+}
+
+export function finishStartingWoodlines(sim){
+  if(!sim.startingWoodlines)return;
+  for(const plan of sim.startingWoodlines)defensiveWoodline(sim,plan.owner,plan.points,plan.keepClear,plan.gates,plan.seedOffset);
+  delete sim.startingWoodlines;
+}
+
 // Decorative spurs and loose woodland do not reliably close the side of a
 // fortress. Interlock visible cliff pieces along its back and shoulders.
 function closeValleyRim(sim,center,radius,front,left,right,keepClear,seedOffset){
@@ -412,6 +510,54 @@ function buildCompactBastion(sim,base,neighborDistance){
   linkPlannedWalls(sim.entities,perimeter.filter((_,index)=>!omitted.has(index)));
 }
 
+function buildCompactValley(sim,base,neighborDistance){
+  const radius=Math.min(30,neighborDistance*.5-1.3),front=Math.atan2(-base.z,-base.x);
+  const point=(offset,reach=radius)=>({x:base.x+Math.cos(front+offset)*reach,z:base.z+Math.sin(front+offset)*reach});
+  const left=point(-.69),right=point(.69),nose=point(0,radius+1.8);
+  const slot=sim.options.slots?.[base.owner]?.slotNumber??base.owner+1;
+  const rimKeep=[{...base,r:radius*.77}];
+  for(const [index,site] of [left,nose,right].entries()){
+    addNaturalBarrier(sim,site.x,site.z,{r:3.55,height:3.5+index*.35,kind:'mountain',angle:front,seed:slot*103+index,keepClear:rimKeep,replaceStartForest:true});
+  }
+  // A small rear outcrop backs the two woodland shoulders. Its uneven
+  // outline uses fewer trunks without putting a ridge around the valley.
+  const back=point(Math.PI-.19,radius*1.1);
+  const rearOffsets=sim.halfWorld-Math.max(Math.abs(back.x),Math.abs(back.z))>10?[-2.8,0,2.2]:[];
+  for(const [index,offset] of rearOffsets.entries()){
+    const x=back.x-Math.sin(front)*offset+Math.cos(front)*(index===1?-1.1:.5);
+    const z=back.z+Math.cos(front)*offset+Math.sin(front)*(index===1?-1.1:.5);
+    addNaturalBarrier(sim,x,z,{r:index===1?4.0:2.8,height:2.7+index*.4,kind:'mountain',angle:front+index*.83,seed:slot*137+index,keepClear:rimKeep,replaceStartForest:true});
+  }
+  const gates=[];
+  for(const [a,b] of [[left,nose],[nose,right]]){
+    const dx=b.x-a.x,dz=b.z-a.z,trim=2.2/Math.hypot(dx,dz);
+    const defenses=connectCliffPassWall(sim,base.owner,{x:a.x+dx*trim,z:a.z+dz*trim},{x:b.x-dx*trim,z:b.z-dz*trim},base,{withTower:false});
+    gates.push(...defenses.gates);
+  }
+  woodlandShoulders(sim,base.owner,base,front,radius,left,right,[{...base,r:radius*.93}],gates,slot*37,true);
+}
+
+export function buildWoodlandCampPerimeter(sim,owner,center,radius,front){
+  const c=Math.cos(front),s=Math.sin(front),reach=radius-.5;
+  const point=(forward,side)=>({x:center.x+c*forward-s*side,z:center.z+s*forward+c*side});
+  const width=radius*.45,seed=1205+owner*19;
+  const near=point(reach,-width),far=point(reach,width);
+  const keepClear=[{...center,r:radius*.74}];
+  for(const [index,site] of [near,far].entries()){
+    addNaturalBarrier(sim,site.x,site.z,{r:3.35,height:3.2-index*.5,kind:'mountain',angle:front,seed:seed+index,keepClear});
+  }
+  const defenses=connectCliffPassWall(sim,owner,point(reach,-width+1.5),point(reach,width-1.5),center,{withTower:false});
+  // Follow a rocky shoulder on one side and spread the rear woodland out
+  // toward the field. Mirror the approach for camps on the other bank road.
+  const side=center.z<0?1:-1;
+  const site=(f,s)=>point(f*radius,s*side*radius);
+  const shelfStart=site(.02,1.22),shelfEnd=site(-.49,1.48),back=site(-1.38,.77);
+  addCliffRidge(sim,shelfStart,shelfEnd,{height:3.6,step:4.6,keepClear,seedOffset:seed+7});
+  addDenseForestBelt(sim,back,site(-1.62,1.53),{step:3.7,thickness:1,keepClear,seedOffset:seed+11});
+  const points=[point(reach,side*width),shelfStart,shelfEnd,back,site(-1.45,-.36),site(-.69,-1.10),site(.18,-1.03),point(reach,-side*width)];
+  (sim.startingWoodlines??=[]).push({owner,points,keepClear,gates:defenses.gates,seedOffset:seed});
+}
+
 function distanceToSegment(point,from,to){
   const dx=to.x-from.x,dz=to.z-from.z;
   const t=Math.max(0,Math.min(1,((point.x-from.x)*dx+(point.z-from.z)*dz)/(dx*dx+dz*dz)));
@@ -479,21 +625,22 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
       radius:10,peaks:3,keepClear:rimKeep,seedOffset:seedOffset+13,withTrees:!compactForest,
     }));
     // Dense sprawling ancient forests weaving naturally behind the cove & out into the wilderness
-    const beltStep=compactForest?4.6:2.4,beltThick=compactForest?1:3,flankThick=compactForest?1:2;
+    const woodedRim=sim.battlefieldLayout>=4&&wallGaps;
+    const beltStep=compactForest?4.6:woodedRim?3.3:2.4,beltThick=compactForest||woodedRim?1:3,flankThick=compactForest||woodedRim?1:2;
     addDenseForestBelt(sim,lBack,backPeak,{step:beltStep,thickness:beltThick,keepClear:rimKeep,seedOffset:seedOffset+17});
     addDenseForestBelt(sim,backPeak,rBack,{step:beltStep,thickness:beltThick,keepClear:rimKeep,seedOffset:seedOffset+23});
     addDenseForestBelt(sim,lBack,lOuter,{step:beltStep+.2,thickness:flankThick,keepClear:rimKeep,seedOffset:seedOffset+29});
     addDenseForestBelt(sim,rBack,rOuter,{step:beltStep+.2,thickness:flankThick,keepClear:rimKeep,seedOffset:seedOffset+31});
 
     // Anchor twin mountain promontories at the valley mouth shoulders
-    const mL=addNaturalBarrier(sim,lJaw.x,lJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+41,keepClear:rimKeep});
-    const mR=addNaturalBarrier(sim,rJaw.x,rJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+43,keepClear:rimKeep});
+    const mL=addNaturalBarrier(sim,lJaw.x,lJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+41,keepClear:rimKeep,replaceStartForest:woodedRim});
+    const mR=addNaturalBarrier(sim,rJaw.x,rJaw.z,{r:3.9,height:6.2,kind:'mountain',angle:towardCenter,seed:seedOffset+43,keepClear:rimKeep,replaceStartForest:woodedRim});
     if(mL)placed.barriers.push(mL);
     if(mR)placed.barriers.push(mR);
 
     // 2. Seal ONLY the open valley mouth with proud angled Stone Curtain Walls + 2 Gatehouses!
     if(wallGaps){
-      if(sim.battlefieldLayout>=1)placed.barriers.push(...closeValleyRim(sim,center,radius,towardCenter,lJaw,rJaw,rimKeep,seedOffset));
+      if(sim.battlefieldLayout>=1&&!woodedRim)placed.barriers.push(...closeValleyRim(sim,center,radius,towardCenter,lJaw,rJaw,rimKeep,seedOffset));
       // Central rocky knoll / bastion pivot splitting the front into 2 realistic castle curtain walls
       const midFront={
         x:cx+Math.cos(towardCenter)*(radius+3.5),
@@ -515,6 +662,7 @@ export function buildNaturalFortifiedBase(sim,owner,center,{
         placed.gates.push(...seg.gates);
         placed.towers.push(...seg.towers);
       }
+      if(woodedRim)woodlandShoulders(sim,owner,center,towardCenter,radius,lJaw,rJaw,rimKeep,placed.gates,seedOffset);
     }
     // Clear stray random field trees from the inner building courtyard so players have a HUGE open
     // uncompressed buildable town plaza while sheltered outer groves & mines sit cleanly along the rim!
@@ -793,7 +941,11 @@ export function applyMapGeography(sim){
     const bastionR=sim.worldSize>=240?Math.min(36,adaptiveGladeR):Math.min(29,adaptiveGladeR);
     const compact=sim.battlefieldLayout>=2&&bases.length>=6&&minBaseDist<74;
     for(const base of bases){
-      if(compact){buildCompactBastion(sim,base,minBaseDist);continue;}
+      if(compact){
+        if(sim.battlefieldLayout>=4)buildCompactValley(sim,base,minBaseDist);
+        else buildCompactBastion(sim,base,minBaseDist);
+        continue;
+      }
       buildNaturalFortifiedBase(sim,base.owner,base,{
         radius:bastionR,
         towers:true,

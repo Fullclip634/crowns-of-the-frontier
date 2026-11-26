@@ -93,8 +93,14 @@ test('compact Bastion still has independent fortified starts for all eight kingd
     for(const owner of sim.players.keys()){
       const gates=sim.owned(owner,'building','gate');
       assert.equal(gates.length,2);
+      const {x,z}=sim.players[owner].start;
+      const walls=sim.owned(owner,'building','wall');
+      assert.ok(walls.length>0&&walls.every(wall=>
+        (wall.x-x)*x+(wall.z-z)*z<0),'walls close the approaches facing the battlefield');
       testEnclosure(sim,owner,gates);
     }
+    const edgeTrees=sim.entities.filter(e=>e.type==='wood'&&e.startForest===1&&e.x<-sim.halfWorld+2);
+    assert.ok(edgeTrees.some(e=>e.z<0)&&edgeTrees.some(e=>e.z>0),'both woodland shoulders reach the map edge');
   }
 });
 

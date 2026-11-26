@@ -1,6 +1,6 @@
 import {BUILDINGS,seededRandom} from './data.js';
 import {PLAYER_COLORS} from './custom-battle.js';
-import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,addDenseForestBelt,buildNaturalFortifiedBase,buildWoodlandGladePocket,connectCliffPassWall,scatterBiomeCliffs,applyMapGeography} from './terrain-barriers.js';
+import {addNaturalBarrier,addCliffRidge,addCurvedCliffChain,addMountainMassif,addDenseForestBelt,buildNaturalFortifiedBase,buildWoodlandCampPerimeter,buildWoodlandGladePocket,connectCliffPassWall,scatterBiomeCliffs,applyMapGeography} from './terrain-barriers.js';
 import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {seedDeerHerds} from './wildlife.js';
@@ -565,9 +565,13 @@ function buildCircularWarCamp(sim,owner,center,{radius=22,gateAngle=Math.PI,army
       ['house',2.18,12.5],['house',-2.18,12.5],['mill',Math.PI,12.5]]){
       if(type)placeOnRing(type,gateAngle+offset,reach);
     }
-    const perimeter=[placeOnRing('gate',gateAngle,radius)];
-    for(let i=2;i<=count-2;i++)perimeter.push(placeOnRing('wall',gateAngle+i*step,radius));
-    linkPlannedWalls(sim.entities,perimeter);
+    if(sim.battlefieldLayout>=4){
+      buildWoodlandCampPerimeter(sim,owner,center,radius,gateAngle);
+    }else{
+      const perimeter=[placeOnRing('gate',gateAngle,radius)];
+      for(let i=2;i<=count-2;i++)perimeter.push(placeOnRing('wall',gateAngle+i*step,radius));
+      linkPlannedWalls(sim.entities,perimeter);
+    }
     for(const offset of [-2.68,-.55,.55,2.68]){
       placeOnRing('tower',gateAngle+offset,radius-5);
     }

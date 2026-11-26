@@ -2,6 +2,7 @@ import {UNITS} from './data.js';
 import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaign-relics.js';
 import {applyCampaignScenario,triggerWesternReliefArrival,triggerOakholdLiberation} from './campaign-scenarios.js';
 import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,openStartingGateLanes} from './battlefield-start.js';
+import {finishStartingWoodlines} from './terrain-barriers.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
@@ -309,6 +310,7 @@ export function installCampaigns(Simulation){
     if(this.battlefieldLayout>=1){
       openStartingGateLanes(this);
       clearStartingDeposits(this);
+      finishStartingWoodlines(this);
       ensureStartingSupplies(this);
       clearStartingUnitPositions(this);
       this.updateFog();

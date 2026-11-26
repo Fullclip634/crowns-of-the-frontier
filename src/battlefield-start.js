@@ -4,7 +4,7 @@ import {navigationRegions} from './navigation.js';
 import {bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 import {gatheringPathRange} from './work-ranges.js';
 
-export const BATTLEFIELD_LAYOUT_VERSION=3;
+export const BATTLEFIELD_LAYOUT_VERSION=4;
 
 const near=(a,b,radius)=>(a.x-b.x)**2+(a.z-b.z)**2<radius**2;
 const solidBuilding=e=>e.kind==='building'&&e.type!=='farm';
@@ -117,7 +117,7 @@ export function clearStartingDeposits(sim){
     const angle=gate?.wallAngle||0,s=Math.sin(angle),c=Math.cos(angle);
     const side=point=>gate?Math.sign((point.x-gate.x)*s+(point.z-gate.z)*c):0;
     const from=side(resource);
-    const point=nearbyPoint(resource,12,1,point=>
+    const point=nearbyPoint(resource,sim.battlefieldLayout>=4?18:12,1,point=>
       side(point)===from&&dryFootprint(sim,point,resource.r)&&
       gates.every(e=>!gateApproach(e,point,resource.r+.7))&&
       obstacles.every(e=>e===resource||e.hp===0||!near(e,point,e.r+resource.r+.45)));

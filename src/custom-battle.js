@@ -6,7 +6,7 @@ import {plantStartingForests,reservedStartingLand} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {bridgeFootprint} from './bridge-layout.js';
 import {seedArchipelagoFish} from './ai-waterways.js';
-import {applyMapGeography} from './terrain-barriers.js';
+import {applyMapGeography,finishStartingWoodlines} from './terrain-barriers.js';
 import {spawnHeroGeneral} from './heroes.js';
 import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,openStartingGateLanes,spaceStartingBuildings} from './battlefield-start.js';
 
@@ -193,6 +193,7 @@ function initializeBattle(sim){
   if(sim.battlefieldLayout>=1){
     openStartingGateLanes(sim);
     clearStartingDeposits(sim);
+    finishStartingWoodlines(sim);
     ensureStartingSupplies(sim);
     clearStartingUnitPositions(sim);
   }
