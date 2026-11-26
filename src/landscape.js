@@ -281,7 +281,7 @@ export function buildLandscape(view){
   const land=view.landscape,segments=view.settings.quality==='low'?112:160,material=buildGroundMaterial(view);
   const geometry=land.geometry(land.renderSize,segments),details=prepareTerrainGeometry(geometry,land);
   geometry.setAttribute('terrainMix',new THREE.BufferAttribute(details.weights,3));view.terrainDiagnostics=details.diagnostics;
-  const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;
+  const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;ground.renderOrder=-1;ground.userData.landscape=true;view.terrain.add(ground);view.groundSurface=ground;
   view.waterMeshes=[];
   if(!view.materials.water.frontierWaveTime){configureWaterSurface(view.materials.water);shadeBattlefieldFog(view.materials.water,view);}
   configureWaterPalette(view.materials.water,land.map);

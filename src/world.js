@@ -89,7 +89,7 @@ export class WorldView {
     this.teamMaterials=[mat(0x397f8c),mat(0x9a687d)];
     this.terrain=new THREE.Group();this.scene.add(this.terrain);this.objects=new THREE.Group();this.scene.add(this.objects);
     this.fogCanvas=document.createElement('canvas');this.fogCanvas.width=this.fogCanvas.height=80;this.fogCtx=this.fogCanvas.getContext('2d');
-    this.fogTexture=new THREE.CanvasTexture(this.fogCanvas);this.fogTexture.flipY=false;
+    this.fogTexture=new THREE.CanvasTexture(this.fogCanvas);this.fogTexture.flipY=false;this.fogTexture.generateMipmaps=false;this.fogTexture.minFilter=THREE.LinearFilter;this.fogTexture.magFilter=THREE.LinearFilter;this.fogUploadedVersion=-1;
     this.fogTint=new THREE.Color(0x13201e);
     this.battleFog={mask:{value:this.fogTexture},scale:{value:1/WORLD},enabled:{value:0},tint:{value:this.fogTint},blur:{value:settings.quality==='low'?0:1}};
     this.disableFootPlacement=settings.quality==='low';
@@ -519,6 +519,18 @@ export class WorldView {
         try{this.bloomPipeline.render();}
         catch(error){this.bloomFailed=true;try{this.bloomPipeline.dispose?.();}catch{}this.bloomPipeline=null;this.renderer.render(this.scene,this.camera);}
       }else{
+        // Pre-upload dirty dynamic textures before WebGL 2 opens its MSAA render
+        // pass so mobile tile GPUs never split/resolve the pass mid-frame.
+        if(!this.renderer.isWebGPURenderer&&typeof this.renderer.initTexture==='function'){
+          if(this.fogTexture&&this.fogUploadedVersion!==this.fogTexture.version){
+            this.renderer.initTexture(this.fogTexture);
+            this.fogUploadedVersion=this.fogTexture.version;
+          }
+          for(const batch of this.unitBatches.values()){
+            for(const part of batch.parts){const rig=part.userData?.rigidRig;if(rig?.texture&&part.visible&&(rig.fullUpload||rig.dirtyRows?.size))this.renderer.initTexture(rig.texture);}
+            if(batch.farParts)for(const part of batch.farParts){const rig=part.userData?.rigidRig;if(rig?.texture&&part.visible&&(rig.fullUpload||rig.dirtyRows?.size))this.renderer.initTexture(rig.texture);}
+          }
+        }
         this.renderer.render(this.scene,this.camera);
       }
     }
