@@ -17,6 +17,7 @@ import {tacticalDepthUnitTemplate,tacticalDepthBuildingTemplate,tacticalDepthGeo
 import {readAssetResponse} from './load-progress.js';
 import {loadStartupGraphics} from './offline-registration.js';
 import {UNITS} from './data.js';
+import {fitCharacterDress} from './character-dress.js';
 
 const sources={
   low:new URL('./assets3d/frontier-low.glb',import.meta.url).href,
@@ -178,6 +179,7 @@ function bindAuthoredTemplate(view,template,key,owner=0,detail='high'){
   if(key.startsWith('unit:villager'))bindWorkerToolJoints(root);
   const terrainFeet=key.startsWith('unit:')&&bindFootJoints(root);
   const terrainHorse=key.startsWith('unit:')&&bindMountedFootRig(root);
+  if(key.startsWith('unit:'))fitCharacterDress(root,key.split(':')[1],detail);
   view.authoredGeometry??=new Set();
   root.traverse(part=>{
     if(part.userData.assetBody)root.userData.body=part;
