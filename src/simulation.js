@@ -534,17 +534,17 @@ export class Simulation {
     const phase=this.tacticalPhase(),a=tacticalHeight(this.options.map,this.options.seed,e.x,e.z,phase),b=tacticalHeight(this.options.map,this.options.seed,target.x,target.z,phase);
     return highGroundMultiplier(a,b,{siege:role==='siege'||target.kind==='building'});
   }
-  attackDamage(e,target){const d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type],p=this.players[e.owner],role=d.role;let n=d.damage||0;if(d.naval)n*=1+(p.tech.seamanship||0)*.2;
+  attackDamage(e,target){const d=e.kind==='unit'?UNITS[e.type]:BUILDINGS[e.type],p=this.players[e.owner],role=d.role,rangedLand=role==='ranged'&&!d.naval,meleeLand=!d.naval&&role!=='ranged'&&role!=='siege';let n=d.damage||0;if(d.naval)n*=1+(p.tech.seamanship||0)*.2;
     if(e.kind==='building')n*=1+p.tech.fortification*.15;
-    else{n*=1+p.age*.12;n*=1+(role==='ranged'?p.tech.ranged:p.tech.attack)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;if(role==='siege')n*=1+(p.tech.siegecraft||0)*.15;if(e.heroLevel>1)n*=1+(e.heroLevel-1)*.16;if(!d.hero&&e.vetRank)n*=1+e.vetRank*.10;if((e.buffAttackUntil||0)>this.time)n*=1.3;}
+    else{n*=1+p.age*.12;if(rangedLand)n*=1+(p.tech.ranged||0)*.2;else if(meleeLand)n*=1+(p.tech.attack||0)*.2;if(role==='cavalry')n*=this.faction(e.owner).cavalry;if(role==='siege')n*=1+(p.tech.siegecraft||0)*.15;if(e.heroLevel>1)n*=1+(e.heroLevel-1)*.16;if(!d.hero&&e.vetRank)n*=1+e.vetRank*.10;if((e.buffAttackUntil||0)>this.time)n*=1.3;}
     const ownerWonder=wonderPowerFor(this,e.owner);
     if(ownerWonder?.faction==='raven'&&e.kind==='unit')n*=1.22;
     if(ownerWonder?.faction==='iron'&&(role==='siege'||target.kind==='building'))n*=1.35;
-    const other=target.kind==='unit'?UNITS[target.type]:null;if(role==='spear'&&other?.role==='cavalry')n*=3;if(role==='ranged'&&other?.role==='spear')n*=1.5;if(d.antiRanged&&other?.role==='ranged')n*=d.antiRanged;if(d.siegeBonus&&other?.role==='siege')n*=d.siegeBonus;if(role==='cavalry'&&other?.role==='ranged')n*=1.7;if(role==='siege')n*=target.kind==='building'?3: e.type==='ram'?.22:1;
+    const other=target.kind==='unit'?UNITS[target.type]:null;if(role==='spear'&&other?.role==='cavalry')n*=3;if(role==='ranged'&&other?.role==='spear')n*=1.5;if(d.antiRanged&&other?.role==='ranged')n*=d.antiRanged;if(d.siegeBonus&&other?.role==='siege')n*=d.siegeBonus;if(role==='cavalry'&&other?.role==='ranged')n*=1.7;if(role==='siege')n*=target.kind==='building'?3*(d.buildingBonus||1):e.type==='ram'?.22:1;
     if(target.kind==='building'&&role!=='siege')n*=d.buildingBonus||.65;
     if(other?.role==='worker')n*=d.workerBonus||1;
     if((p.tech?.fireArrows||0)>0&&(e.kind==='building'||role==='ranged')&&(target.kind==='building'||other?.role==='siege'))n*=1.3;
-    if((p.tech?.imperialGunpowder||0)>0&&['firelancer','chukonu','trebuchet'].includes(e.type))n*=1.25;
+    if((p.tech?.imperialGunpowder||0)>0&&['firelancer','chukonu','trebuchet'].includes(e.type))n*=1.2;
     n*=this.terrainCombatMultiplier(e,target,role);
     const alderWallBonus=target.kind==='building'&&['wall','gate','tower','bombard','keep'].includes(target.type)&&wonderPowerFor(this,target.owner)?.faction==='alder'?4:0;
     const armor=target.kind==='unit'?this.unitArmor(target):(role==='ranged'?5:1)+wallArmorBonus(this,target)+alderWallBonus;return Math.max(1,n-Math.max(0,armor-(d.penetration||0)));
@@ -623,7 +623,7 @@ export class Simulation {
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
     else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type))){
       const guard=order?.type==='guard'?(this.get(order.target)||e):null;
-      const range=e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0),d.role==='siege'?27:13);
+      const range=e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'&&!d.naval?(this.players[e.owner].tech.ranged||0):0),d.role==='siege'?27:13);
       const ownerMask=this.combatTargetOwners?.[e.owner];
       // Priority 1: Active threats — enemy units & defensive towers/keeps/town centers.
       combat=this.nearest(e,t=>canEngage(t,guard)&&(t.kind==='unit'||(t.kind==='building'&&BUILDINGS[t.type]?.damage>0)),range,true,ownerMask);
@@ -653,7 +653,7 @@ export class Simulation {
       }
       else{e.heading=meleeHeading(e,combat);this.hit(e,combat);}return;
     }
-    if(combat){const range=Math.max(d.range+(d.role==='ranged'?this.players[e.owner].tech.ranged:0)+combat.r,combat.kind==='building'?combat.r+3:0);
+    if(combat){const range=Math.max(d.range+(d.role==='ranged'&&!d.naval?(this.players[e.owner].tech.ranged||0):0)+combat.r,combat.kind==='building'?combat.r+3:0);
       if(distance(e,combat)>range){
         if(e.stance!=='hold'||order?.type==='attack'){
           this.move(e,combat,dt,range);

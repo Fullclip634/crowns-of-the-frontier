@@ -34,7 +34,7 @@ test('real room snapshots keep pending damage private, remap cosmetic owners and
  await resumed.inbox.state(()=>true);assert.equal(resumed.inbox.items.some(m=>m.effects?.some(e=>e.type==='projectile-impact'&&e.projectile===shot.id)),false,'hidden impact is not sent to the observer');
  // A different shot lands on this commander's troop while its siege shooter
  // stays beyond that troop's vision. Only the visible impact is transmitted.
- observer.hp=0;const siege=sim.addUnit('catapult',0,-24,20),own=sim.addUnit('knight',2,0,20);sim.sightCache=null;assert.equal(sim.canSee(2,siege),false);
+ observer.hp=0;const siege=sim.addUnit('catapult',0,-19,20),own=sim.addUnit('swordsman',2,0,20);sim.sightCache=null;assert.equal(sim.canSee(2,siege),false);
  resumed.inbox.items=[];sim.hit(siege,own);sim.time+=.4;sim.tickProjectiles();const second=sim.projectiles[0];assert.equal(second.stage,'flight');
  const hidden=await resumed.inbox.state(()=>true);assert.equal(hidden.state.visualProjectiles.some(e=>e.projectile===second.id),false);assert.equal(hidden.effects.some(e=>e.projectile===second.id),false);
  resumed.inbox.items=[];const ownHP=own.hp;sim.time+=1;sim.tickProjectiles();

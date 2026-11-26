@@ -24,7 +24,7 @@ const ROLE_CALLOUTS=Object.freeze({
   marksman:'2 Armor Piercing',
   outrider:'2× vs Villagers',
   ironbreaker:'3 Armor Piercing · 1.5× vs Buildings',
-  chukonu:'3-Bolt Armor-Piercing Volley',
+  chukonu:'Short-Range 3-Bolt Volley',
   firelancer:'Explosive Gunpowder Cone Splash',
   hero_alder:'Auto-Cast Hero · War Horn & Aegis',
   hero_sun:'Auto-Cast Hero · Solar Heal & Volley',
@@ -121,13 +121,16 @@ export function unitAttackValue(sim,e){
   const p=sim?.players?.[e.owner]||{age:0,faction:'alder',tech:{}};
   const tech=p.tech||{};
   const faction=FACTIONS[p.faction]||FACTIONS.alder;
+  const rangedLand=d.role==='ranged'&&!d.naval;
+  const meleeLand=!d.naval&&d.role!=='ranged'&&d.role!=='siege';
   return Math.round(
     d.damage
     *(1+(p.age||0)*.12)
-    *(1+(d.role==='ranged'?(tech.ranged||0):(tech.attack||0))*.2)
+    *(rangedLand?1+(tech.ranged||0)*.2:meleeLand?1+(tech.attack||0)*.2:1)
     *(d.naval?1+(tech.seamanship||0)*.2:1)
     *(d.role==='cavalry'?(faction.cavalry||1):1)
     *(d.role==='siege'?(1+(tech.siegecraft||0)*.15):1)
+    *((tech.imperialGunpowder||0)>0&&['firelancer','chukonu','trebuchet'].includes(e.type)?1.2:1)
     *(e.heroLevel>1?1+(e.heroLevel-1)*.16:1)
     *(!d.hero&&e.vetRank?1+e.vetRank*.10:1)
   );
@@ -159,7 +162,7 @@ export function inspectorStatsMarkup(sim,e){
     const p=sim?.players?.[e.owner]||{age:0,tech:{}};
     const atk=unitAttackValue(sim,e);
     const arm=typeof sim?.unitArmor==='function'?sim.unitArmor(e):(d.armor||0);
-    const rng=d.range?(d.range+(d.role==='ranged'?(p.tech?.ranged||0):0)):0;
+    const rng=d.range?(d.range+(d.role==='ranged'&&!d.naval?(p.tech?.ranged||0):0)):0;
     if(atk>0)add('swords','ATK',atk,'Attack damage');
     else if(e.type==='monk')add('church','HEAL',`${Math.round(12*(1+(p.tech?.sanctuary||0)*.4))}/s`,'Healing rate');
     else if(e.type==='transport')add('anchor','LOAD',`${e.passengers?.length||0}/${d.capacity||8}`,'Embarked troops');

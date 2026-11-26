@@ -30,7 +30,7 @@ function release(sim,shot){
   const pl=sim.players?.[source.owner];
   const def=source.kind==='building'?BUILDINGS[source.type]:UNITS[source.type];
   const buildingRangeBonus=source.kind==='building'&&['tower','keep','bombard'].includes(source.type)?(pl?.tech?.arrowslits||0)*2:0;
-  const range=source.kind==='building'?def.range+buildingRangeBonus+target.r:Math.max(def.range+(def.role==='ranged'?(pl?.tech?.ranged||0):0)+target.r,target.kind==='building'?target.r+3:0);
+  const range=source.kind==='building'?def.range+buildingRangeBonus+target.r:Math.max(def.range+(def.role==='ranged'&&!def.naval?(pl?.tech?.ranged||0):0)+target.r,target.kind==='building'?target.r+3:0);
   if(distance(source,target)>range+.15)return false;
   source.heading=Math.atan2(target.x-source.x,target.z-source.z);
   shot.stage='flight';shot.entity=actor(source);shot.victim=actor(target);shot.aim={x:target.x,z:target.z};
@@ -63,7 +63,8 @@ function impact(sim,shot){
   }else{
     const radius=shot.splashRadius||4;
     if(targetAllowed(sim,shot,target)&&distance(target,shot.aim)<=target.r+.8){struck=target;const before=target.hp;sim.hurt(target,shot.damage,source);damage=before-target.hp;}
-    forEachNearbyUnit(sim,shot.aim.x,shot.aim.z,radius,nearby=>{if(nearby!==struck&&targetAllowed(sim,shot,nearby)&&distance(nearby,shot.aim)<radius)sim.hurt(nearby,shot.damage*.6,source);});
+    const unitSplash=shot.victim?.kind==='building'&&shot.entity?.kind==='unit'&&UNITS[shot.entity.type]?.role==='siege'?shot.damage/(3*(UNITS[shot.entity.type]?.buildingBonus||1)):shot.damage;
+    forEachNearbyUnit(sim,shot.aim.x,shot.aim.z,radius,nearby=>{if(nearby!==struck&&targetAllowed(sim,shot,nearby)&&distance(nearby,shot.aim)<radius)sim.hurt(nearby,unitSplash*.6,source);});
     if(shot.fireball){
       for(const b of sim.candidatesFor('building')){
         if(b!==struck&&b.hp>0&&targetAllowed(sim,shot,b)&&distance(b,shot.aim)<radius+b.r*.6)sim.hurt(b,shot.damage*.45,source);

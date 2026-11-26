@@ -14,6 +14,11 @@ test('both commanders expand to distant resources instead of stalling at home',(
   // measured whichever villager happened to be walking back at t=300, which sat
   // about one unit either side of the threshold and flipped on unrelated AI
   // tuning. Track the furthest node each commander ever worked instead.
+  const origins={};
+  for(const owner of [0,1]){
+    const home=sim.owned(owner,'building','towncenter')[0];
+    origins[owner]={x:home.x,z:home.z};
+  }
   const furthest={0:0,1:0};
   let tickCount=0;
   while(sim.time<420&&!sim.ended){
@@ -21,6 +26,11 @@ test('both commanders expand to distant resources instead of stalling at home',(
     if(tickCount%20)continue;
     for(const owner of [0,1]){
       const homes=sim.owned(owner,'building','towncenter');if(!homes.length)continue;
+      // A commander that founds a forward town centre has expanded to distant ground.
+      for(const home of homes){
+        const shift=Math.hypot(home.x-origins[owner].x,home.z-origins[owner].z);
+        furthest[owner]=Math.max(furthest[owner],shift);
+      }
       for(const villager of sim.owned(owner,'unit','villager')){
         if(villager.order?.type!=='gather')continue;
         const target=villager.order.target?sim.get(villager.order.target):null;

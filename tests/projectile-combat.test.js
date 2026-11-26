@@ -4,7 +4,7 @@ import {Simulation} from '../src/simulation.js';
 import {projectileVisualEvents} from '../src/projectile-combat.js';
 function fixture(type='archer'){
  const sim=new Simulation({mode:'sandbox',seed:512});for(const e of sim.entities)if(e.kind!=='resource')e.hp=0;sim.index=null;sim.revision++;sim.tickAI=()=>{};sim.visible.fill(1);
- const source=sim.addUnit(type,0,-20,20),target=sim.addUnit('knight',1,-20,type==='catapult'?42:29);target.stance='hold';source.stance='hold';sim.tickUnit=()=>{};sim.tickBuilding=()=>{};return {sim,source,target};
+ const source=sim.addUnit(type,0,-20,20),target=sim.addUnit('knight',1,-20,type==='catapult'?38:29);target.stance='hold';source.stance='hold';sim.tickUnit=()=>{};sim.tickBuilding=()=>{};return {sim,source,target};
 }
 function advance(sim,seconds){for(let t=0;t<seconds-1e-6;t+=.05)sim.tick(.05);}
 test('ranged damage waits for release and travel, and a released arrow survives its shooter',()=>{
