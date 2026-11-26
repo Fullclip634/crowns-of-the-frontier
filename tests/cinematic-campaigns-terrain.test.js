@@ -316,11 +316,11 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.equal(sim.worldSize,360);
     assert.ok(sim.owned(0,'building','keep').length===1&&sim.owned(0,'building','gate').length>=2);
     assert.ok(sim.owned(3,'building','keep').length===1&&sim.allied(0,3));
-    const beforeCats=sim.owned(0,'unit','catapult').length;
+    const beforeTrebs=sim.owned(0,'unit','trebuchet').length;
     const tc1=sim.owned(1,'building','towncenter')[0];
     sim.hurt(tc1,tc1.hp+10,sim.owned(0,'unit','knight')[0]);
     advance(sim,2);
     assert.equal(sim.campaignState.stage,1);
-    assert.ok(sim.owned(0,'unit','catapult').length>beforeCats);
+    assert.ok(sim.owned(0,'unit','trebuchet').length>beforeTrebs);
   });
 });
