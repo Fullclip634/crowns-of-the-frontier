@@ -28,6 +28,7 @@ import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCos
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
 import {channelAt,fordAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
+import {ravineRoadAt} from './terrain-layout.js';
 import {biomeProfile,EPIC_FRONTIER_MAPS} from './terrain-biomes.js';
 import {seedDeerHerds,tickWildlife} from './wildlife.js';
 import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS,isHeroUnit,triggerHeroSkill} from './heroes.js';
@@ -132,7 +133,7 @@ export class Simulation {
   hostile(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&!this.allied(a,b)&&!this.players[b].defeated;}
   difficulty(owner=1){return this.players[owner]?.difficulty||this.options.difficulty;}
   startClearing(x,z){
-    if(bridgeFootprint(this.options.map,x,z,8))return true;
+    if(bridgeFootprint(this.options.map,x,z,8)||ravineRoadAt(this.options.map,x,z))return true;
     const custom=this.options.mode==='custom',bases=this.spawnPositions;
     if(custom?this.players.some(player=>player.start&&Math.hypot(x-player.start.x,z-player.start.z-16)<11):Math.min(Math.hypot(x+36,z-49),Math.hypot(x-36,z+49),...(bases?[Math.hypot(x-(bases[0].x+3),z-(bases[0].z+19)),Math.hypot(x-(bases[1].x-4),z-(bases[1].z-15))]:[]))<12)return true;
     if(this.options.map!=='coast')return false;

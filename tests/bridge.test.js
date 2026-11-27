@@ -5,8 +5,13 @@ import * as THREE from 'three';
 import {Landscape} from '../src/landscape.js';
 import {WorldView} from '../src/world.js';
 import {loadBridgeArtwork,buildBridges,updateBridgeVisibility} from '../src/bridge-art.js';
-import {bridgeSpans,bridgeFootprint,bridgeArtwork,bridgeWidthScale,bridgeRoadHalfWidth} from '../src/bridge-layout.js';
+import {bridgeSpans,bridgeFootprint,bridgeArtwork,bridgeWidthScale,bridgeRoadHalfWidth,spanZ,spanRoadHalfWidth} from '../src/bridge-layout.js';
+import {channelAt} from '../src/map-water.js';
+import {MAPS} from '../src/data.js';
+import {terrainRoadPaths} from '../src/terrain-layout.js';
 import {Simulation} from '../src/simulation.js';
+import {battlePreset} from '../src/custom-battle.js';
+import {clearSegment} from '../src/navigation.js';
 
 async function fixture(map,size=160,segments=112){
   const previous=globalThis.fetch;globalThis.fetch=async url=>new Response(fs.readFileSync(new URL(url)));
@@ -15,6 +20,35 @@ async function fixture(map,size=160,segments=112){
   const view={landscape,groundSurface,terrain:new THREE.Group(),materials:Object.fromEntries(bridgeArtwork.materialRoles.map(role=>[role,new THREE.MeshStandardMaterial({vertexColors:true})])),mergeModel:WorldView.prototype.mergeModel};
   view.terrain.add(groundSurface);buildBridges(view);view.terrain.updateMatrixWorld(true);return view;
 }
+
+test('every authored bridge crosses actual water and reaches dry banks',()=>{
+  for(const map of Object.keys(MAPS))for(const span of bridgeSpans(map)){
+    const width=spanRoadHalfWidth(span);
+    for(const z of [spanZ(span)-width,spanZ(span),spanZ(span)+width]){
+      assert.equal(channelAt(map,span.center,z),true,`${map} bridge deck crosses water at z=${z}`);
+      for(const side of [-1,1]){
+        assert.equal(channelAt(map,span.center+side*span.halfLength,z),false,`${map} deck reaches the bank`);
+      }
+    }
+  }
+});
+
+test('Deepwood Ravine has a dry central road that troops can cross',async()=>{
+  const map='deepwoodravine',view=await fixture(map);
+  assert.equal(view.bridgeMeshes.length,0);
+  assert.equal(bridgeFootprint(map,0,0),false);
+  assert.equal(view.landscape.walkableHeightAt(0,0),view.landscape.surfaceHeightAt(0,0));
+  const setups=[{mode:'custom',seed:512},{mode:'campaign19',seed:4319},
+    {mode:'custom',seed:2026,mapSize:'vast',startAge:3,slots:battlePreset('4v4')}];
+  for(const options of setups){
+    const sim=new Simulation({...options,map}),scout={x:-23,z:0,r:.65,type:'scout',owner:0},destination={x:23,z:0};
+    assert.equal(clearSegment(sim,sim.grid(0),scout,destination),true);
+    assert.deepEqual(sim.pathTo(scout,destination).at(-1),destination);
+    assert.equal(scout.pathStatus,'ready');
+    const land=new Landscape(options.seed,map,sim.worldSize,sim.spawnPositions,sim.startingSites);
+    assert.ok(terrainRoadPaths(land).some(road=>road.end.x===0&&road.end.z===0));
+  }
+});
 
 test('the actual Blender bridge and approach ramps match walking and command heights on both river maps',async()=>{
   for(const [map,size,segments]of [['valley',160,112],['valley',400,112],['rivers',160,160],['rivers',640,112],['rivers',640,160]]){

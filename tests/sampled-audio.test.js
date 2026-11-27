@@ -32,7 +32,7 @@ test('the shipped sample pack is a complete, valid, real recorded CC0 Ogg Vorbis
   assert.equal(manifest.proceduralFallback,true);
   assert.match(license,/CC0 1\.0/);
   const names=Object.keys(manifest.cues);
-  assert.equal(names.length,85);
+  assert.equal(names.length,90);
   const diskAudio=fs.readdirSync(audioDir).filter(f=>/\.(ogg|mp3|wav)$/i.test(f));
   assert.equal(diskAudio.filter(f=>f.endsWith('.wav')).length,0,'no stale synthetic WAVs left behind');
   assert.equal(diskAudio.filter(f=>f.endsWith('.ogg')).length,names.length,'no unreferenced or stale OGGs');
@@ -144,7 +144,7 @@ test('a missing manifest or a corrupt sample degrades to the procedural fallback
 
 function fakeContext(){
   const nodes=[];
-  const node=extra=>({connect(){},disconnect(){},start(){},stop(){},...extra});
+  const node=extra=>({connections:[],connect(out){this.connections.push(out);},disconnect(){},start(){},stop(time){this.stoppedAt=time;},...extra});
   return {state:'running',currentTime:10,sampleRate:22050,destination:{},nodes,
     createGain(){const g=node({gain:{value:0,setTargetAtTime(v){this.value=v;}}});nodes.push(g);return g;},
     createBufferSource(){const s=node({buffer:null,loop:false,playbackRate:{value:1},onended:null});nodes.push(s);return s;},
@@ -217,10 +217,43 @@ test('decoded samples take over UI, horn, weather and music cues while procedura
   assert.equal(engine.voice('order',{kind:'unit',type:'warship'},'alder',0),false,'ships never trigger sampled human voice');
   assert.equal(engine.voice('order',{type:'knight'},'alder',.2),true,'real CC0 human voice plays');
   assert.ok(!engine.procedural.includes('voice:order'),'sampled voice does not double with synth');
+  assert.equal(engine.grunt(.1,.22),false,'combat grunts yield to unit speech');
+  engine.context.currentTime+=1;
   assert.equal(engine.grunt(.1,.22),true,'real CC0 combat grunt plays');
 
   engine.settings.volume=0;engine.play('coin');
   assert.ok(engine.procedural.includes('coin'),'muted settings fall back safely');
+});
+
+test('unit commands use dry spoken cues and give commander dialogue priority',async()=>{
+  const Engine=engineClass({fetchData:localFetch,base:'https://game.test/app/'});
+  const engine=new Engine();engine.unlock();await ready(engine);
+  engine.reverbSend={};
+  const expectCue=(action,type,cue)=>{
+    engine.context.currentTime+=1;
+    assert.equal(engine.voice(action,{type},'iron'),true);
+    const {source,level}=engine.activeUnitVoice;
+    assert.equal(source.buffer,engine.sampleBank.get(cue));
+    assert.equal(source.playbackRate.value,1);
+    assert.deepEqual(level.connections,[engine.master]);
+  };
+  expectCue('select','archer','voice-select');
+  expectCue('order','knight','voice-order');
+  expectCue('attack','archer','voice-attack');
+  expectCue('work','villager','voice-work');
+  expectCue('hold','villager','voice-worker-hold');
+  const unit=engine.activeUnitVoice;
+  const comms=engine.playCommsVoice('comms-female-hold');
+  assert.equal(comms.played,true);
+  assert.equal(unit.level.gain.value,0);
+  assert.ok(unit.source.stoppedAt>engine.context.currentTime);
+  assert.equal(engine.voice('order',{type:'knight'}),false);
+  assert.deepEqual(engine.activeCommsSource.level.connections,[engine.master]);
+
+  engine.settings.unitVoices=false;
+  assert.equal(engine.playCommsVoice('comms-ally').played,true,'commander speech has its own toggle');
+  engine.settings.voiceComms=false;
+  assert.equal(engine.playCommsVoice('comms-ally'),null);
 });
 
 test('a failed or unavailable pack leaves every procedural path untouched',async()=>{
@@ -228,6 +261,7 @@ test('a failed or unavailable pack leaves every procedural path untouched',async
   const engine=new Engine();engine.unlock();await ready(engine);
   assert.equal(engine.sampleDiagnostics().loaded,0);
   engine.play('select');engine.play('attack');engine.warHorn();engine.weather({amount:.5},true);engine.tick(.016);
+  assert.equal(engine.voice('order',{type:'knight'}),false,'an unavailable recording does not trigger synthetic speech');
   assert.deepEqual(engine.procedural,['select','attack','horn']);
   assert.equal(engine.weatherCalls,1);
   assert.equal(engine.tickCalls,1);

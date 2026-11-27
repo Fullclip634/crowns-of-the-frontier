@@ -53,6 +53,5 @@ installSoundscape(AudioEngine);
 installCombatAudio(AudioEngine);
 installWeatherAudio(AudioEngine);
 installVoiceSystem(AudioEngine);
-// Installed last: sampled cues take over only when decoded successfully, and
-// every procedural layer remains the guaranteed fallback.
+// Install the recorded cues last. The procedural effects cover unavailable samples.
 installSampledAudio(AudioEngine);

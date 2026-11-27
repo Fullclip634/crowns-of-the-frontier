@@ -12,8 +12,7 @@ const HERALD_SPEAKERS=/herald|architect|command/i;
 const TTS_FEMALE_VOICES=/female|google us english\b|zira|hazel|susan|sonia|aria|ava|emma|jenny|libby|samantha|victoria|karen|moira|tessa|fiona|kate|serena|claire|natasha|clara|michelle|ana\b|amy\b|joanna|salli|kimberly|kendra/i;
 const TTS_MALE_VOICES=/\bmale\b|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan|arthur|chris|christopher|eric|roger|tony|davis|jason|brandon|oliver|thomas|william|liam|connor|mitchell|alex|fred|matthew|joey|justin/i;
 
-export function selectCommsCue(item={}){
-  if(FEMALE_SPEAKERS.test(item.speaker||''))return 'comms-female';
+function commsCueForMessage(item){
   if(item.cue)return item.cue;
   const text=(item.text||'').toLowerCase();
   if(item.role==='herald'){
@@ -30,6 +29,17 @@ export function selectCommsCue(item={}){
   if(/charge|attack|strike|march|assault/.test(text))return 'comms-ally-attack';
   if(/objective|complete|liberated|secured/.test(text))return 'comms-objective';
   return 'comms-ally';
+}
+
+const FEMALE_COMMS_CUES=Object.freeze({
+  'comms-ally-attack':'comms-female-attack',
+  'comms-ally-hold':'comms-female-hold',
+  'comms-ally-help':'comms-female-help',
+});
+
+export function selectCommsCue(item={}){
+  const cue=commsCueForMessage(item);
+  return FEMALE_SPEAKERS.test(item.speaker||'')?(FEMALE_COMMS_CUES[cue]||'comms-female'):cue;
 }
 
 const ENEMY_LINES={
@@ -386,7 +396,7 @@ export class WarCommsController{
 
     const voiceVol=this.settings.voiceVolume??1;
     const vol=Math.max(0,Math.min(1,(this.settings.volume??0.7)*voiceVol));
-    const voiceEnabled=!this.muted&&this.settings.voiceComms!==false&&this.settings.unitVoices!==false&&vol>0.02;
+    const voiceEnabled=!this.muted&&this.settings.voiceComms!==false&&vol>0.02;
     const useBrowserTts=voiceEnabled&&this.settings.ttsNarration===true&&typeof window!=='undefined'&&typeof SpeechSynthesisUtterance==='function'&&window.speechSynthesis;
 
     const advance=(delayMs=280)=>{
@@ -402,16 +412,11 @@ export class WarCommsController{
       }
     };
 
-    // Default path: real studio-recorded CC0 human voice audio (zero robotic browser AI voices!).
+    // Play a recorded response while the banner carries the full message.
     if(voiceEnabled&&!useBrowserTts){
       const cue=selectCommsCue(item);
-      const female=FEMALE_SPEAKERS.test(item.speaker||'');
-      const heavy=HEAVY_SPEAKERS.test(item.speaker||'')||item.faction==='iron';
-      const rate=female?1.0:heavy?0.94:item.role==='enemy'?0.96:1.0;
       const delaySec=item.role==='herald'?0.34:item.horn?0.24:0.03;
       const played=this.audio?.playCommsVoice?.(cue,{
-        faction:item.faction,
-        rate,
         delaySec,
         onEnded:()=>{
           this._setBannerSpeaking(false);

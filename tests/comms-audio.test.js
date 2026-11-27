@@ -272,8 +272,8 @@ test('WarComms uses real CC0 recorded human voices by default (never browser AI 
   // 1. Cue selection routes male warlords, herald alerts, allied commands, objectives, and female commanders accurately.
   assert.equal(selectCommsCue({speaker:'Royal Herald',role:'herald',text:'Your town center is under attack!'}),'comms-alert');
   assert.equal(selectCommsCue({speaker:'Overlord Draven',role:'enemy',text:'Your fortress will burn!'}),'comms-enemy');
-  assert.equal(selectCommsCue({speaker:'Queen Maren',role:'ally',text:'Holding the pass beside you!'}),'comms-female');
-  assert.equal(selectCommsCue({speaker:'Lady Vaelen',role:'ally',text:'Attack now!'}),'comms-female');
+  assert.equal(selectCommsCue({speaker:'Queen Maren',role:'ally',text:'Holding the pass beside you!'}),'comms-female-hold');
+  assert.equal(selectCommsCue({speaker:'Lady Vaelen',role:'ally',text:'Attack now!'}),'comms-female-attack');
   assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-attack',text:'Charge!'}),'comms-ally-attack');
   assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-hold',text:'Hold the pass!'}),'comms-ally-hold');
   assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-help',text:'Help!'}),'comms-ally-help');

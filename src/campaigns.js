@@ -254,14 +254,14 @@ export const CAMPAIGN_SCRIPTS={
       {at:80,id:'c18-kael-flank',speaker:'Warlord Kael',role:'enemy',text:'Outriders! Sweep through the shallow coral ford and raid their workers!',reinforce:{owner:1,type:'outrider',count:4}},
       {at:135,id:'c18-iven-aid',speaker:'Admiral Iven',role:'ally',text:'Fresh Sunward lancers landing to reinforce your temple push!',reinforce:{owner:3,type:'knight',count:3}},
     ]},
-  campaign19:{speaker:'Queen Maren',intro:'Every banner in the realm meets here at Deepwood Ravine! You hold the center alongside Forgemaster Borin and my Royal Guard. Three Imperial warlords stand across the timber ravine bridge—coordinate our coalition and wipe every single enemy empire off the map!',
+  campaign19:{speaker:'Queen Maren',intro:'Every banner in the realm meets here at Deepwood Ravine! You hold the center alongside Forgemaster Borin and my Royal Guard. Three Imperial warlords stand beyond the central pass. Lead our coalition through the ravine and defeat them!',
     stages:[
       {title:'Wipe Out the First Enemy Empire',text:'Cross Deepwood Ravine with Queen Maren and Forgemaster Borin and wipe out every structure of any rival Imperial base.',marker:{x:124,z:0},targetOwners:[1,2,3],done:s=>[1,2,3].some(o=>baseWiped(s,o)),onDone:s=>{spawnReinforcements(s,{owner:4,type:'knight',count:4});spawnReinforcements(s,{owner:5,type:'trebuchet',count:1});},dialogue:'An entire enemy empire has been wiped out! Borin brings up fresh Trebuchets and my Royal Knights charge through the ravine!'},
       {title:'Collapse the Coalition',text:'Completely wipe out at least two of the three rival Imperial bases.',marker:{x:118,z:-108},targetOwners:[1,2,3],done:s=>[1,2,3].filter(o=>baseWiped(s,o)).length>=2,dialogue:'Two rival empires lie in total ruins! Only one hostile stronghold remains—leave nothing standing!'},
       {title:'The Grand Clash of Crowns',text:'Wipe out all remaining base structures of all three rival Imperial empires across Deepwood Ravine.',marker:{x:118,z:108},done:allHostileBasesWiped,dialogue:'Every rival empire has been completely wiped from the frontier! The Great Frontier War is won forever!'},
     ],optional:{text:'Finish with both Queen Maren’s and Forgemaster Borin’s capitals still standing.',done:s=>s.count(4,'building','towncenter')>0&&s.count(5,'building','towncenter')>0},
     events:[
-      {at:20,id:'c19-malrik-taunt',speaker:'Overlord Malrik',role:'enemy',text:'Three empires against your fragile alliance! Burn the timber bridge and crush them all!'},
+      {at:20,id:'c19-malrik-taunt',speaker:'Overlord Malrik',role:'enemy',text:'Three empires against your fragile alliance! Close the central pass and crush them all!'},
       {at:65,id:'c19-borin-aid',speaker:'Forgemaster Borin',role:'ally',text:'Ironhold hammers are ready, Commander! Point the way with War-Comms and we shatter their gates!',reinforce:{owner:5,type:'ironbreaker',count:4}},
       {at:115,id:'c19-varek-charge',speaker:'Khan Varek',role:'enemy',text:'Raven cavalry, ride through the northern pass! Leave nothing standing!',reinforce:{owner:2,type:'knight',count:5}},
       {at:165,id:'c19-zafar-siege',minDifficulty:'hard',speaker:'Sultan Zafar',role:'enemy',text:'Unleash the trebuchets! Break the central bastion!',reinforce:{owner:3,type:'trebuchet',count:2}},

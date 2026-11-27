@@ -20,11 +20,12 @@ export const FOLEY_SAMPLE_CUES=Object.freeze([
 export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-meadow','amb-coast','amb-river','amb-tundra','amb-arid','amb-volcanic']);
 export const VOICE_SAMPLE_CUES=Object.freeze([
   'voice-select','voice-order','voice-attack','voice-work',
-  'unit-cavalry','unit-archer','unit-healer','unit-hero','unit-hold',
+  'voice-worker-select','voice-worker-hold','unit-hero','unit-hold',
 ]);
 export const COMMS_SAMPLE_CUES=Object.freeze([
   'comms-alert','comms-begin','comms-enemy','comms-ally',
   'comms-ally-attack','comms-ally-hold','comms-ally-help','comms-objective','comms-female',
+  'comms-female-attack','comms-female-hold','comms-female-help',
 ]);
 export const GRUNT_SAMPLE_CUES=Object.freeze(['grunt-0','grunt-1','grunt-2']);
 export const MUSIC_STEM_CUES=Object.freeze(['music-peace','music-tension','music-battle','music-climax']);

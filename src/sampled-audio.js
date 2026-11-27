@@ -1,9 +1,5 @@
-// Browser wiring for the real recorded CC0 sample pack. Installed last so it
-// wraps the procedural layers: when a sample is decoded it takes over that cue
-// (UI, alerts, comms chimes, distinct war horns, combat, economy Foley, archetype
-// unit acknowledgments, battle grunts, seamless biome ambience loops, and 4-stage
-// adaptive medieval music), and when the pack is unavailable every call falls
-// straight through to the Web Audio synthesis.
+// Recorded speech and sound effects. Procedural effects cover missing samples,
+// and unit orders still have their UI response while speech is loading.
 import {createSampleBank,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES,COMMS_SAMPLE_CUES} from './sample-bank.js';
 import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit,unitVoiceArchetype} from './voice-system.js';
 
@@ -16,7 +12,6 @@ const BIOME_AMBIENCE={
   volcanic:'amb-volcanic',emberroad:'amb-volcanic',
   highlands:'amb-meadow',highland:'amb-meadow',woodland:'amb-meadow',ironpass:'amb-meadow',blackwood:'amb-meadow',timbervale:'amb-meadow',bastion:'amb-meadow',ironring:'amb-meadow',sunderedpass:'amb-meadow',oakhold:'amb-meadow',deepwoodravine:'amb-meadow',meadow:'amb-meadow',steppe:'amb-meadow',frontier:'amb-meadow',
 };
-const FACTION_VOICE_RATE={alder:1.0,sun:1.04,raven:.94,iron:.91,jade:1.03};
 const STAGE_STEM={peace:'music-peace',tension:'music-tension',battle:'music-battle',climax:'music-climax'};
 
 const UI_CUE_MIX=Object.freeze({
@@ -70,30 +65,19 @@ export function buildingSelectCue(entity){
   return BUILDING_SELECT_CUE[entity?.type]||null;
 }
 
-function resolveUnitVoiceCue(kind,unit,bank){
-  const arch=unitVoiceArchetype(unit);
-  if(kind==='hold'&&bank.has('unit-hold'))return 'unit-hold';
-  if(kind==='work'&&bank.has('voice-work'))return 'voice-work';
-  if(kind==='attack'){
-    if(arch==='hero'&&bank.has('unit-hero'))return 'unit-hero';
-    if(arch==='archer'&&bank.has('unit-archer'))return 'unit-archer';
-    if(bank.has('voice-attack'))return 'voice-attack';
-  }
-  if(arch==='hero'&&bank.has('unit-hero'))return 'unit-hero';
-  if(arch==='healer'&&bank.has('unit-healer'))return 'unit-healer';
-  if(arch==='cavalry'&&bank.has('unit-cavalry'))return 'unit-cavalry';
-  if(arch==='archer'&&bank.has('unit-archer'))return 'unit-archer';
-  if(arch==='worker'){
-    if(kind==='select'&&bank.has('voice-select'))return 'voice-select';
-    if(bank.has('voice-work'))return 'voice-work';
-  }
-  const fallback=kind==='select'?'voice-select':kind==='attack'?'voice-attack':kind==='work'?'voice-work':'voice-order';
-  return bank.has(fallback)?fallback:null;
+const UNIT_RESPONSES=Object.freeze({select:'voice-select',order:'voice-order',attack:'voice-attack',hold:'unit-hold',work:'voice-order'});
+const WORKER_RESPONSES=Object.freeze({select:'voice-worker-select',hold:'voice-worker-hold'});
+
+function resolveUnitVoiceCue(kind,unit){
+  const archetype=unitVoiceArchetype(unit);
+  if(archetype==='worker')return WORKER_RESPONSES[kind]||'voice-work';
+  if(archetype==='hero'&&kind==='attack')return 'unit-hero';
+  return UNIT_RESPONSES[kind]||UNIT_RESPONSES.order;
 }
 
-function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){
+function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false,delay=0,onEnded=null}={}){
   const ctx=engine.context,buffer=engine.sampleBank?.get(name);
-  if(!ctx||!buffer||ctx.state!=='running'||engine.settings.volume<=0)return false;
+  if(!ctx||!buffer||ctx.state!=='running'||engine.settings.volume<=0)return null;
   const source=ctx.createBufferSource(),level=ctx.createGain();
   source.buffer=buffer;if(source.playbackRate)source.playbackRate.value=rate;
   // Submix buses already feed engine.master (volume * 0.24); avoid squaring master volume.
@@ -103,9 +87,18 @@ function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){
   let panner=null;
   if(pan&&ctx.createStereoPanner){panner=ctx.createStereoPanner();panner.pan.value=Math.max(-.8,Math.min(.8,pan));level.connect(panner);panner.connect(outBus);if(reverb&&engine.reverbSend)panner.connect(engine.reverbSend);}
   else{level.connect(outBus);if(reverb&&engine.reverbSend)level.connect(engine.reverbSend);}
-  source.start();
-  source.onended=()=>{source.disconnect();level.disconnect();panner?.disconnect();};
-  return true;
+  const startsAt=ctx.currentTime+delay,endsAt=startsAt+(buffer.duration||.75)/rate;
+  const handle={source,level,endsAt};
+  source.onended=()=>{source.disconnect();level.disconnect();panner?.disconnect();onEnded?.(handle);};
+  source.start(startsAt);
+  return handle;
+}
+
+function fadeSpeech(engine,handle){
+  if(!handle)return;
+  const now=engine.context.currentTime;
+  handle.level.gain.setTargetAtTime(0,now,.008);
+  handle.source.stop(now+.035);
 }
 
 // Loop beds are created once and faded by gain; stopping/restarting a buffer
@@ -128,7 +121,7 @@ function loopBed(engine,name,level,bus=null){
 // `options` exists for deterministic tests; the game uses the real fetch and
 // document.baseURI defaults.
 export function installSampledAudio(AudioEngine,options={}){
-  const p=AudioEngine.prototype,unlock=p.unlock,play=p.play,voice=p.voice,warHorn=p.warHorn,weather=p.weather,tick=p.tick,updateScene=p.updateScene,origStinger=p.triggerSiegeStinger;
+  const p=AudioEngine.prototype,unlock=p.unlock,play=p.play,warHorn=p.warHorn,weather=p.weather,tick=p.tick,updateScene=p.updateScene,origStinger=p.triggerSiegeStinger,setCommsSpeaking=p.setCommsSpeaking;
 
   p.sampleDiagnostics=function(){return this.sampleBank?.diagnostics()||{ready:false,coreReady:false,loaded:0,failed:0,total:0,bytes:0,errors:['audio not unlocked'],samples:[]};};
 
@@ -156,68 +149,72 @@ export function installSampledAudio(AudioEngine,options={}){
   p.grunt=function(pan=0,gain=.22){
     if(!this.context||this.context.state!=='running'||this.settings.volume<=0||this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return false;
     const now=this.context.currentTime;
-    if(now-(this.lastGruntAt??-Infinity)<.42)return false;
+    if(this.commsSpeaking||now<(this.activeUnitVoice?.endsAt??0)||now-(this.lastGruntAt??-Infinity)<1.1)return false;
     const cue=GRUNT_SAMPLE_CUES[(this.gruntSequence=(this.gruntSequence||0)+1)%GRUNT_SAMPLE_CUES.length];
-    if(!this.sampleBank?.has(cue))return false;
+    const handle=playCue(this,cue,{gain,pan,bus:this.voiceBus||this.master,
+      onEnded:voice=>{if(this.activeGrunt===voice)this.activeGrunt=null;},
+    });
+    if(!handle)return false;
+    this.activeGrunt=handle;
     this.lastGruntAt=now;
-    const rate=.90+Math.random()*.20;
-    return playCue(this,cue,{gain:this.commsSpeaking?gain*.55:gain,rate,pan,bus:this.voiceBus||this.master,reverb:true});
+    return true;
   };
 
-  p.voice=function(kind='order',unit=null,faction='alder',pan=0){
-    if(!isHumanVoiceUnit(unit))return false;
+  p.voice=function(kind='order',unit=null,_faction='alder',pan=0){
+    if(!isHumanVoiceUnit(unit)||this.context?.state!=='running'||this.settings.volume<=0||this.commsSpeaking||this.activeCommsSource)return false;
     if(this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return false;
-    const cue=this.sampleBank?resolveUnitVoiceCue(kind,unit,this.sampleBank):null;
-    if(cue&&this.context?.state==='running'&&this.settings.volume>0){
-      const now=this.context.currentTime;
-      if(now-(this.lastVoiceAt??-Infinity)>=VOICE_COOLDOWN){
-        this.lastVoiceAt=now;
-        const arch=unitVoiceArchetype(unit);
-        const unitRate=arch==='hero'?.96:arch==='worker'?1.03:1.0;
-        const rate=unitRate*(FACTION_VOICE_RATE[faction]||1.0)*(.97+Math.random()*.06);
-        const baseGain=this.commsSpeaking?.26:.46;
-        if(playCue(this,cue,{gain:baseGain,rate,pan,bus:this.voiceBus||this.master,reverb:true})){
-          this.duckMusic?.(.85,.72);
-          return true;
-        }
-      }else return false;
-    }
-    return voice?voice.call(this,kind,unit,faction,pan):false;
+    const now=this.context.currentTime;
+    if(now<(this.activeUnitVoice?.endsAt??0)||now-(this.lastVoiceAt??-Infinity)<VOICE_COOLDOWN)return false;
+    const handle=playCue(this,resolveUnitVoiceCue(kind,unit),{
+      gain:.7,pan,bus:this.voiceBus||this.master,
+      onEnded:voice=>{if(this.activeUnitVoice===voice)this.activeUnitVoice=null;},
+    });
+    if(!handle)return false;
+    fadeSpeech(this,this.activeGrunt);
+    this.activeGrunt=null;
+    this.activeUnitVoice=handle;
+    this.lastVoiceAt=now;
+    this.duckMusic?.(handle.endsAt-now+.12,.78);
+    return true;
+  };
+
+  p.stopUnitVoice=function(){
+    const {activeUnitVoice,activeGrunt}=this;
+    this.activeUnitVoice=null;
+    this.activeGrunt=null;
+    fadeSpeech(this,activeUnitVoice);
+    fadeSpeech(this,activeGrunt);
+  };
+
+  p.setCommsSpeaking=function(active){
+    if(active)this.stopUnitVoice();
+    if(setCommsSpeaking)setCommsSpeaking.call(this,active);
+    else this.commsSpeaking=Boolean(active);
   };
 
   p.stopCommsVoice=function(){
     const active=this.activeCommsSource;
     this.activeCommsSource=null;
-    if(!active)return;
-    try{active.source.onended=null;active.source.stop();}catch{}
-    try{active.source.disconnect();active.level.disconnect();}catch{}
+    fadeSpeech(this,active);
   };
 
-  p.playCommsVoice=function(cueName='comms-ally',{faction='alder',rate=1,gain=.76,delaySec=0,onEnded=null}={}){
+  p.playCommsVoice=function(cueName='comms-ally',{gain=.93,delaySec=0,onEnded=null}={}){
     if(!COMMS_SAMPLE_CUES.includes(cueName))return null;
-    const ctx=this.context,buffer=this.sampleBank?.get(cueName);
-    if(!ctx||!buffer||ctx.state!=='running'||this.settings.volume<=0)return null;
-    if(this.settings.voiceComms===false||this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return null;
+    const ctx=this.context;
+    if(ctx?.state!=='running'||this.settings.volume<=0||!this.sampleBank?.has(cueName))return null;
+    if(this.settings.voiceComms===false||(this.settings.voiceVolume??1)<=0)return null;
     this.stopCommsVoice();
-    const source=ctx.createBufferSource(),level=ctx.createGain();
-    const pitchRate=Math.max(.82,Math.min(1.18,rate*(FACTION_VOICE_RATE[faction]||1.0)));
-    source.buffer=buffer;
-    if(source.playbackRate)source.playbackRate.value=pitchRate;
-    level.gain.value=gain;
-    source.connect(level);
-    const outBus=this.voiceBus||this.master;
-    level.connect(outBus);
-    if(this.reverbSend)level.connect(this.reverbSend);
-    const startAt=ctx.currentTime+Math.max(0,delaySec);
-    const durSec=((buffer.duration||1.0)/pitchRate)+Math.max(0,delaySec);
-    const handle={source,level};
+    this.stopUnitVoice();
+    const handle=playCue(this,cueName,{gain,delay:Math.max(.035,delaySec),bus:this.voiceBus||this.master,
+      onEnded:voice=>{
+        if(this.activeCommsSource!==voice)return;
+        this.activeCommsSource=null;
+        onEnded?.();
+      },
+    });
+    if(!handle)return null;
     this.activeCommsSource=handle;
-    source.onended=()=>{
-      if(this.activeCommsSource===handle)this.activeCommsSource=null;
-      try{source.disconnect();level.disconnect();}catch{}
-      onEnded?.();
-    };
-    source.start(startAt);
+    const durSec=handle.endsAt-ctx.currentTime;
     this.duckMusic?.(Math.max(1.2,durSec+.4),.56);
     return {played:true,cue:cueName,durationMs:Math.round(durSec*1000)};
   };

@@ -1,5 +1,6 @@
 import {Vector3} from 'three';
 import {UNITS} from './data.js';
+import {isHumanVoiceUnit} from './voice-system.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 export const MAX_COMBAT_VOICES=12;
@@ -125,8 +126,8 @@ export function installCombatAudio(AudioEngine){
     const voice={source,gain,pan,filter,kind,level:spatial.gain,point:{x:entity.x,z:entity.z,owner:entity.owner,kind:entity.kind,type:entity.type},retiring:false};
     this.combatVoices.add(voice);this.lastCombatAt=ctx.currentTime;
     this.noteCombatActivity?.(kind==='siege'?.30:.12);
-    if(target?.kind==='unit'&&(kind==='metal'||kind==='arrow')&&this.combatSequence%3===0){
-      this.grunt?.(spatial.pan,spatial.gain*.20);
+    if(target?.kind==='unit'&&(kind==='metal'||kind==='arrow')&&this.combatSequence%3===0&&isHumanVoiceUnit(target)){
+      this.grunt?.(spatial.pan,spatial.gain*.14);
     }
     source.onended=()=>{this.combatVoices.delete(voice);source.disconnect();filter?.disconnect();gain.disconnect();pan?.disconnect();};
     source.start();return true;

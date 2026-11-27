@@ -246,40 +246,6 @@ export function installVoiceSystem(AudioEngine) {
     this.speechDirector = director || null;
   };
 
-  p.voice = function(kind = 'order', unit = null, faction = 'alder', pan = 0) {
-    if (!isHumanVoiceUnit(unit)) return false;
-    if (!this.context || this.context.state !== 'running' || this.settings.volume <= 0) return false;
-    if (this.settings.unitVoices === false || (this.settings.voiceVolume ?? 1) <= 0) return false;
-
-    const now = this.context.currentTime;
-    if (now - (this.lastVoiceAt ?? -Infinity) < VOICE_COOLDOWN) return false;
-    this.lastVoiceAt = now;
-
-    const pitchMod = unit?.type === 'king' ? 0.82 : unit?.type === 'villager' ? 1.08 : 1.0;
-    const env = synthesizeVocalBark(this.context, faction, kind, pitchMod);
-    if (!env) return false;
-
-    const voiceGain = this.context.createGain();
-    voiceGain.gain.value = this.commsSpeaking ? 0.20 : 0.36;
-    const outBus = this.voiceBus || this.master;
-
-    if (this.context.createStereoPanner) {
-      const panner = this.context.createStereoPanner();
-      panner.pan.value = Math.max(-0.8, Math.min(0.8, pan));
-      env.connect(voiceGain);
-      voiceGain.connect(panner);
-      panner.connect(outBus);
-      if (this.reverbSend) panner.connect(this.reverbSend);
-    } else {
-      env.connect(voiceGain);
-      voiceGain.connect(outBus);
-      if (this.reverbSend) voiceGain.connect(this.reverbSend);
-    }
-    this.duckMusic?.(0.85, 0.70);
-
-    return true;
-  };
-
   p.warHorn = function(fundamental = 174.61) {
     if (!this.context || this.context.state !== 'running' || this.settings.volume <= 0) return false;
     if (this.settings.warHorns === false) return false;
@@ -327,7 +293,7 @@ export function installVoiceSystem(AudioEngine) {
 
     // 2. Coordinate spoken Royal Herald line cleanly through the unified Speech Director so it
     //    never cancels or collides with WarComms enemy/ally speech!
-    const voiceAllowed = this.settings.unitVoices !== false && this.settings.voiceComms !== false && (this.settings.voiceVolume ?? 1) > 0;
+    const voiceAllowed = this.settings.voiceComms !== false && (this.settings.voiceVolume ?? 1) > 0;
     if (!voiceAllowed) return true;
 
     if (this.speechDirector && typeof this.speechDirector.speak === 'function') {
@@ -347,13 +313,14 @@ export function installVoiceSystem(AudioEngine) {
 
     // Prefer real recorded CC0 male herald voice when the sample bank is decoded (no robotic browser TTS!).
     if (this.settings.ttsNarration !== true && this.sampleBank?.has('comms-alert') && typeof this.playCommsVoice === 'function') {
-      this.playCommsVoice('comms-alert', { faction: opts.faction || 'alder', delaySec: 0.35 });
+      this.playCommsVoice('comms-alert', { delaySec: 0.35 });
       return true;
     }
 
-    // Standalone fallback when no sample bank or WarComms director is attached (e.g. isolated unit tests).
-    const vol = (this.settings.volume ?? 0.65) * (this.settings.voiceVolume ?? 1);
-    speakKingdomAlert(text, vol, null);
+    if (this.settings.ttsNarration === true) {
+      const vol = (this.settings.volume ?? 0.65) * (this.settings.voiceVolume ?? 1);
+      speakKingdomAlert(text, vol, null);
+    }
     return true;
   };
 }

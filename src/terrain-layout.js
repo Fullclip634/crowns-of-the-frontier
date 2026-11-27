@@ -6,6 +6,10 @@ import {seededRandom} from './data.js';
 
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 
+export function ravineRoadAt(map,x,z){
+  return map==='deepwoodravine'&&Math.abs(x)<26&&Math.abs(z)<6;
+}
+
 function cartRoad(land,town,end,local=false,connected=false){
   const start={x:town.x,z:town.z},finish={x:end.x,z:end.z},dx=end.x-town.x,dz=end.z-town.z,length=Math.hypot(dx,dz);
   if(length<1)return null;
@@ -24,7 +28,10 @@ function cartRoad(land,town,end,local=false,connected=false){
   return {start,end:finish,points,segments,local,connected};
 }
 
-const defaultRoadEnd=(land,town)=>land.map==='coast'?{x:Math.sign(town.x)*20,z:town.z}:{x:town.x*.2,z:0};
+function defaultRoadEnd(land,town){
+  if(land.map==='coast')return {x:Math.sign(town.x)*20,z:town.z};
+  return {x:land.map==='deepwoodravine'?0:town.x*.2,z:0};
+}
 
 function dryRoad(land,road){
   if(!road)return false;

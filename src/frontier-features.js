@@ -287,7 +287,7 @@ export function buildFrontierFeatures(view){
   // Authoritative props can be placed explicitly by scenarios (`sim.battlefieldProps`) AND
   // automatically around contested bridges, camps, and military outposts!
   const propSpecs=[...(sim.battlefieldProps||[])];
-  const autoBridgeBattle=hasWaterfallBiome(map)||map==='deepwoodravine'||map==='ironpass'||map==='sunderedpass'||map==='threecrowns';
+  const autoBridgeBattle=hasWaterfallBiome(map)||map==='threecrowns';
   if(autoBridgeBattle){
     for(const span of bridgeSpans(map)){
       const cz=spanZ(span);

@@ -13,9 +13,6 @@ const spans={
     {center:-6,z:0,halfLength:13,style:'stone'},
     {center:-1,z:46,halfLength:11,style:'timber'},
   ],
-  deepwoodravine:[
-    {center:0,z:0,halfLength:11,style:'timber'},
-  ],
   templelagoon:[
     {center:-42,z:4,halfLength:13.5,style:'stone'},
     {center:24,z:0,halfLength:12.5,style:'stone'},

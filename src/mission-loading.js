@@ -232,12 +232,12 @@ export const MISSION_CHRONICLES=Object.freeze({
     act:'ACT V · THE GREAT FRONTIER WAR',
     date:'The Reckoning of Deepwood Ravine',
     chronicle:[
-      'Every surviving empire converges upon Deepwood Ravine—a sheer wooded canyon spanned by a timber trestle bridge and flanked by narrow forest passes. All four civilizations stand in full Imperial Age battle array.',
+      'Every surviving empire converges upon Deepwood Ravine, where a central road and narrow forest passes cut through the cliffs. The armies arrive in full Imperial Age battle array.',
       'Queen Maren commands your northern wing while Forgemaster Borin brings Ironhold trebuchets to your south. Lead the three-kingdom alliance across the ravine and break all three hostile empires!',
     ],
     startingBase:'3v3 Full Imperial Age Coalition Citadels (You + Queen Maren + Forgemaster Borin)',
     enemyIntel:'Overlord Malrik (Ironhold), Khan Varek (Raven) & Sultan Zafar (Sunward) Imperial Armies',
-    terrainIntel:'Deepwood Ravine (380×380) · Steep Forest Canyon, Timber Ravine Bridge & Walled Woodland Passes',
+    terrainIntel:'Deepwood Ravine (360×360) · Central Ravine Road & Walled Woodland Passes',
     tip:'Use War Comms → Attack! (Alt+1) to concentrate all three allied armies on one enemy empire at a time.',
   },
 });

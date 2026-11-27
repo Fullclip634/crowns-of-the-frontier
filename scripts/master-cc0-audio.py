@@ -81,29 +81,34 @@ CUES = [
     ('horn', 'voice', 'horn_war.ogg', False, False, 0.0, 2.0, 0.66, 'OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)'),
     ('horn-enemy', 'voice', 'recipe:horn-enemy', False, False, 0.0, 2.15, 0.82, 'OpenGameArt - Deep Siege War Horn (horn_war3.ogg) + Dark War Drum mastering (CC0 1.0)'),
     ('horn-ally', 'voice', 'recipe:horn-ally', False, False, 0.0, 1.40, 0.78, 'OpenGameArt - War Horn (horn_war.ogg) + Noble Allied Rising Brass Call mastering (CC0 1.0)'),
-    ('voice-select', 'voice', 'recipe:voice-select', False, False, 0.0, 0.76, 0.82, 'Kenney Voiceover Pack (Male/ready.ogg, baritone armored mastering) + RPG Sound Pack chainmail1.wav (CC0 1.0)'),
-    ('voice-order', 'voice', 'recipe:voice-order', False, False, 0.0, 0.66, 0.82, 'Kenney Voiceover Pack (Male/go.ogg, baritone armored mastering) + RPG Sound Pack armor-light.wav (CC0 1.0)'),
-    ('voice-attack', 'voice', 'recipe:voice-attack', False, False, 0.0, 0.90, 0.85, 'HaelDB Male Grunt/Yelling (1yell4.wav, armored baritone battle cry) + sword-unsheathe.wav + War Drum mastering (CC0 1.0)'),
-    ('voice-work', 'voice', 'recipe:voice-work', False, False, 0.0, 0.44, 0.78, 'Kenney - 50 RPG sound effects (beltHandle2.ogg, chop.ogg, craftsman mastering, CC0 1.0)'),
-    ('unit-cavalry', 'voice', 'recipe:unit-cavalry', False, False, 0.0, 0.52, 0.80, 'KobatoGames horse_trot.ogg + Kenney beltHandle1.ogg (Cavalry acknowledgment mastering, CC0 1.0)'),
-    ('unit-archer', 'voice', 'recipe:unit-archer', False, False, 0.0, 0.45, 0.80, 'remaxim Bow.wav + Kenney cloth1.ogg (Archer draw acknowledgment mastering, CC0 1.0)'),
-    ('unit-healer', 'voice', 'recipe:unit-healer', False, False, 0.0, 0.76, 0.76, 'Crowns of the Frontier Studio Mastering - Monastery Sanctuary Bell Chord (CC0 1.0)'),
-    ('unit-hero', 'voice', 'recipe:unit-hero', False, False, 0.0, 0.96, 0.85, 'Kenney Fighter Voiceover (fight.ogg, deep heroic baritone) + sword-unsheathe2.wav + Royal Brass mastering (CC0 1.0)'),
-    ('unit-hold', 'voice', 'recipe:unit-hold', False, False, 0.0, 0.64, 0.82, 'Kenney Voiceover Pack (Male/hold.ogg, baritone armored mastering) + RPG Sound Pack interface1.wav (CC0 1.0)'),
+    ('voice-select', 'voice', 'spoken:voiceover_kenney/Male/ready.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/ready.ogg, CC0 1.0)'),
+    ('voice-order', 'voice', 'spoken:voiceover_kenney/Male/go.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/go.ogg, CC0 1.0)'),
+    ('voice-attack', 'voice', 'spoken:voiceover_kenney/Male/war_go_go_go.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/war_go_go_go.ogg, CC0 1.0)'),
+    ('voice-work', 'voice', 'spoken:voiceover_kenney/Female/go.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/go.ogg, CC0 1.0)'),
+    ('voice-worker-select', 'voice', 'spoken:voiceover_kenney/Female/ready.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/ready.ogg, CC0 1.0)'),
+    ('voice-worker-hold', 'voice', 'spoken:voiceover_kenney/Female/war_hold.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/war_hold.ogg, CC0 1.0)'),
+    ('unit-cavalry', 'foley', 'recipe:unit-cavalry', False, False, 0.0, 0.52, 0.80, 'KobatoGames horse_trot.ogg + Kenney beltHandle1.ogg (Cavalry acknowledgment mastering, CC0 1.0)'),
+    ('unit-archer', 'foley', 'recipe:unit-archer', False, False, 0.0, 0.45, 0.80, 'remaxim Bow.wav + Kenney cloth1.ogg (Archer draw acknowledgment mastering, CC0 1.0)'),
+    ('unit-healer', 'foley', 'recipe:unit-healer', False, False, 0.0, 0.76, 0.76, 'Crowns of the Frontier Studio Mastering - Monastery Sanctuary Bell Chord (CC0 1.0)'),
+    ('unit-hero', 'voice', 'spoken:voiceover_fighter/Audio/fight.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Fighter Voiceover (fight.ogg, CC0 1.0)'),
+    ('unit-hold', 'voice', 'spoken:voiceover_kenney/Male/hold.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/hold.ogg, CC0 1.0)'),
 
-    # Real Human Recorded CC0 Commander, Herald & Battle Alert Voices (replaces robotic browser TTS!)
-    ('comms-alert', 'voice', 'recipe:comms-alert', False, False, 0.0, 0.78, 0.85, 'Kenney Voiceover Pack (Male/war_look_out.ogg, urgent watchtower herald baritone, CC0 1.0)'),
-    ('comms-begin', 'voice', 'recipe:comms-begin', False, False, 0.0, 1.18, 0.84, 'Kenney Fighter Voiceover (begin.ogg, deep royal herald baritone mastering, CC0 1.0)'),
-    ('comms-enemy', 'voice', 'recipe:comms-enemy', False, False, 0.0, 1.72, 0.85, 'Kenney Fighter Voiceover (prepare_yourself.ogg, gravelly deep male warlord mastering, CC0 1.0)'),
-    ('comms-ally', 'voice', 'recipe:comms-ally', False, False, 0.0, 0.98, 0.84, 'Kenney Fighter Voiceover (ready.ogg, noble allied commander baritone mastering, CC0 1.0)'),
-    ('comms-ally-attack', 'voice', 'recipe:comms-ally-attack', False, False, 0.0, 1.05, 0.85, 'Kenney Voiceover Pack (Male/war_go_go_go.ogg, baritone battle commander) + sword-unsheathe.wav (CC0 1.0)'),
-    ('comms-ally-hold', 'voice', 'recipe:comms-ally-hold', False, False, 0.0, 0.72, 0.84, 'Kenney Voiceover Pack (Male/hold.ogg, commanding shield-wall baritone mastering, CC0 1.0)'),
-    ('comms-ally-help', 'voice', 'recipe:comms-ally-help', False, False, 0.0, 1.12, 0.85, 'Kenney Voiceover Pack (Male/war_call_for_backup.ogg, urgent baritone allied SOS mastering, CC0 1.0)'),
-    ('comms-objective', 'voice', 'recipe:comms-objective', False, False, 0.0, 1.50, 0.84, 'Kenney Voiceover Pack (Male/objective_achieved.ogg, noble herald baritone) + Bell Chime mastering (CC0 1.0)'),
-    ('comms-female', 'voice', 'recipe:comms-female', False, False, 0.0, 0.64, 0.82, 'Kenney Voiceover Pack (Female/ready.ogg by Giselle, warm regal commander mastering, CC0 1.0)'),
+    # Recorded commander, herald and battle alert responses.
+    ('comms-alert', 'voice', 'spoken:voiceover_kenney/Male/war_look_out.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)'),
+    ('comms-begin', 'voice', 'spoken:voiceover_fighter/Audio/begin.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Fighter Voiceover (begin.ogg, CC0 1.0)'),
+    ('comms-enemy', 'voice', 'spoken:voiceover_fighter/Audio/prepare_yourself.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Fighter Voiceover (prepare_yourself.ogg, CC0 1.0)'),
+    ('comms-ally', 'voice', 'spoken:voiceover_fighter/Audio/ready.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Fighter Voiceover (ready.ogg, CC0 1.0)'),
+    ('comms-ally-attack', 'voice', 'spoken:voiceover_kenney/Male/war_go_go_go.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/war_go_go_go.ogg, CC0 1.0)'),
+    ('comms-ally-hold', 'voice', 'spoken:voiceover_kenney/Male/hold.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/hold.ogg, CC0 1.0)'),
+    ('comms-ally-help', 'voice', 'spoken:voiceover_kenney/Male/war_call_for_backup.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/war_call_for_backup.ogg, CC0 1.0)'),
+    ('comms-objective', 'voice', 'spoken:voiceover_kenney/Male/objective_achieved.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Male/objective_achieved.ogg, CC0 1.0)'),
+    ('comms-female', 'voice', 'spoken:voiceover_kenney/Female/ready.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/ready.ogg, CC0 1.0)'),
+    ('comms-female-attack', 'voice', 'spoken:voiceover_kenney/Female/war_go_go_go.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/war_go_go_go.ogg, CC0 1.0)'),
+    ('comms-female-hold', 'voice', 'spoken:voiceover_kenney/Female/war_hold.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/war_hold.ogg, CC0 1.0)'),
+    ('comms-female-help', 'voice', 'spoken:voiceover_kenney/Female/war_call_for_backup.ogg', False, False, 0.0, 3.2, 0.8, 'Kenney Voiceover Pack (Female/war_call_for_backup.ogg, CC0 1.0)'),
     ('grunt-0', 'voice', 'hit_dying/ogg/hit1.ogg', False, False, 0.0, 0.70, 0.80, 'alket - 5 Hit Sounds + Dying (hit1.ogg, CC0 1.0)'),
     ('grunt-1', 'voice', 'hit_dying/ogg/hit3.ogg', False, False, 0.0, 0.70, 0.80, 'alket - 5 Hit Sounds + Dying (hit3.ogg, CC0 1.0)'),
-    ('grunt-2', 'voice', 'hit_dying/ogg/die1.ogg', False, False, 0.0, 0.90, 0.80, 'alket - 5 Hit Sounds + Dying (die1.ogg, CC0 1.0)'),
+    ('grunt-2', 'voice', 'spoken:hit_dying/ogg/hit2.ogg', False, False, 0.0, 3.2, 0.8, 'alket - 5 Hit Sounds + Dying (hit2.ogg, CC0 1.0)'),
 
     # Seamless Crossfaded Weather & Biome Ambience Field Recordings
     ('rain', 'weather', 'rain_ogg/1.ogg', True, False, 0.5, 10.0, 0.70, 'Snabisch - Rain loopable (1.ogg, CC0 1.0)'),
@@ -232,6 +237,25 @@ def fade_edges(sig: np.ndarray, fi_sec: float = 0.004, fo_sec: float = 0.035) ->
 def peak_unit(sig: np.ndarray) -> np.ndarray:
     p = float(np.max(np.abs(sig)))
     return sig / p if p > 1e-6 else sig
+
+
+def master_spoken_cue(rel_path: str, max_duration: float, peak_limit: float) -> np.ndarray:
+    # Keep the original cadence and word endings. Match the level across
+    # active speech frames after gently rolling off rumble.
+    sig = fft_eq(load_mono(rel_path), hp=75.0, bands=[(260, -1.2, 1.7), (2600, 1.0, 1.4)])
+    sig = trim_silence_1d(sig, thresh=max(0.002, float(np.max(np.abs(sig))) * 0.012))
+    if len(sig) > int(max_duration * RATE):
+        raise RuntimeError(f'Spoken cue exceeds its duration budget: {rel_path}')
+    sig = fade_edges(sig, 0.003, 0.012)
+    frame_size = RATE // 50
+    frames = np.pad(sig, (0, -len(sig) % frame_size)).reshape(-1, frame_size)
+    level = np.sqrt(np.mean(frames ** 2, axis=1))
+    active = level[level > level.max() * 0.12]
+    if not len(active):
+        raise RuntimeError(f'Spoken cue is silent: {rel_path}')
+    rms = float(np.sqrt(np.mean(active ** 2)))
+    gain = min(peak_limit / float(np.max(np.abs(sig))), 0.12 / rms)
+    return (sig * gain).astype(np.float32)[:, None]
 
 
 def cast_iron_bell(base_freq: float, dur: float) -> np.ndarray:
@@ -484,51 +508,6 @@ def build_recipe(name: str) -> np.ndarray:
         mix_into(out, resample_pitch(warm, 0.88), 0.095, 0.54)
         return fade_edges(out, 0.003, 0.04)
 
-    if name == 'voice-select':
-        out = np.zeros(int(0.74 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/ready.ogg')))
-        vox = resample_pitch(vox, 0.93)
-        vox = fft_eq(vox, hp=95.0, lp=5800.0, bands=[(210, 3.2, 1.1), (1800, 1.5, 1.2), (4400, -4.5, 1.6)])
-        mail = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/chainmail1.wav')))
-        mail = fft_eq(mail[:int(0.32 * RATE)], hp=400.0, lp=5200.0)
-        mix_into(out, mail, 0.00, 0.24)
-        mix_into(out, fade_edges(vox, 0.004, 0.04), 0.03, 0.82)
-        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.30, tail_extra=0.02), 0.003, 0.05)
-
-    if name == 'voice-order':
-        out = np.zeros(int(0.64 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/go.ogg')))
-        vox = resample_pitch(vox, 0.92)
-        vox = fft_eq(vox, hp=95.0, lp=5400.0, bands=[(200, 3.4, 1.1), (1850, 1.6, 1.2), (4300, -4.5, 1.6)])
-        armor = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/armor-light.wav')))
-        step1 = peak_unit(war_drum(94.0, 0.14, seed=81))
-        mix_into(out, fft_eq(armor[:int(0.24 * RATE)], hp=180.0, lp=4400.0), 0.00, 0.34)
-        mix_into(out, step1, 0.01, 0.24)
-        mix_into(out, fade_edges(vox, 0.004, 0.045), 0.025, 0.86)
-        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.28, tail_extra=0.02), 0.003, 0.05)
-
-    if name == 'voice-attack':
-        out = np.zeros(int(0.88 * RATE), dtype=np.float32)
-        yell = peak_unit(trim_silence_1d(load_mono('male_yells_cc0/yelling sounds/1yell4.wav')))
-        yell = resample_pitch(yell, 0.92)
-        yell = fft_eq(yell, hp=105.0, lp=5000.0, bands=[(210, 3.2, 1.1), (1600, 1.8, 1.2), (4200, -4.0, 1.6)])
-        steel = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/battle/sword-unsheathe.wav')))
-        steel = fft_eq(steel[:int(0.38 * RATE)], hp=360.0, lp=7400.0)
-        drum = peak_unit(war_drum(78.0, 0.28, seed=91))
-        mix_into(out, steel, 0.00, 0.56)
-        mix_into(out, drum, 0.02, 0.42)
-        mix_into(out, fade_edges(yell, 0.006, 0.06), 0.045, 0.82)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.38, tail_extra=0.02), 1.10), 0.002, 0.07)
-
-    if name == 'voice-work':
-        out = np.zeros(int(0.42 * RATE), dtype=np.float32)
-        belt = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/beltHandle2.ogg')))
-        wood = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/chop.ogg')))
-        wood = fft_eq(wood[:int(0.18 * RATE)], hp=120.0, lp=2400.0)
-        mix_into(out, fft_eq(belt[:int(0.28 * RATE)], hp=160.0, lp=4600.0), 0.00, 0.62)
-        mix_into(out, wood, 0.09, 0.46)
-        return fade_edges(courtyard_reverb(out, wet=0.10, decay_sec=0.22, tail_extra=0.02), 0.003, 0.05)
-
     if name == 'unit-cavalry':
         out = np.zeros(int(0.50 * RATE), dtype=np.float32)
         trot = peak_unit(trim_silence_1d(load_mono('horse_trot.ogg')))
@@ -555,111 +534,6 @@ def build_recipe(name: str) -> np.ndarray:
             chord += (0.65 * np.sin(TAU * f * t) + 0.35 * np.sin(TAU * (f + 1.4) * t)) * amp
         out += (chord * env).astype(np.float32)
         return fade_edges(courtyard_reverb(out, wet=0.24, decay_sec=0.48, tail_extra=0.02), 0.005, 0.09)
-
-    if name == 'unit-hero':
-        out = np.zeros(int(0.94 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_fighter/Audio/fight.ogg')))
-        vox = resample_pitch(vox, 0.90)
-        vox = fft_eq(vox, hp=95.0, lp=4400.0, bands=[(185, 4.2, 1.1), (1500, 1.4, 1.2), (3800, -5.0, 1.4)])
-        steel = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/battle/sword-unsheathe2.wav')))
-        brass = peak_unit(medieval_brass([146.83, 220.00, 293.66], 0.72, attack_sec=0.09, release_sec=0.28))
-        mix_into(out, fft_eq(steel[:int(0.38 * RATE)], hp=320.0, lp=7200.0), 0.00, 0.48)
-        mix_into(out, brass, 0.05, 0.38)
-        mix_into(out, fade_edges(vox, 0.005, 0.05), 0.04, 0.84)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.20, decay_sec=0.40, tail_extra=0.02), 1.08), 0.003, 0.07)
-
-    if name == 'unit-hold':
-        out = np.zeros(int(0.62 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/hold.ogg')))
-        vox = resample_pitch(vox, 0.92)
-        vox = fft_eq(vox, hp=95.0, lp=5600.0, bands=[(200, 3.4, 1.1), (4200, -4.5, 1.6)])
-        shield = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/interface/interface1.wav')))
-        shield = fft_eq(shield[:int(0.24 * RATE)], hp=90.0, lp=2600.0)
-        mix_into(out, shield, 0.00, 0.42)
-        mix_into(out, fade_edges(vox, 0.004, 0.04), 0.03, 0.80)
-        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.30, tail_extra=0.02), 0.003, 0.05)
-
-    if name == 'comms-alert':
-        out = np.zeros(int(0.76 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/war_look_out.ogg')))
-        vox = resample_pitch(vox, 0.90)
-        vox = fft_eq(vox, hp=95.0, lp=5400.0, bands=[(195, 3.6, 1.1), (1900, 1.8, 1.2), (4400, -4.5, 1.5)])
-        bell = peak_unit(fft_eq(cast_iron_bell(587.33, 0.42), hp=280.0, lp=4200.0))
-        mix_into(out, bell, 0.00, 0.24)
-        mix_into(out, fade_edges(vox, 0.004, 0.05), 0.035, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.34, tail_extra=0.02), 1.06), 0.003, 0.06)
-
-    if name == 'comms-begin':
-        out = np.zeros(int(1.16 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_fighter/Audio/begin.ogg')))
-        vox = resample_pitch(vox, 0.90)
-        vox = fft_eq(vox, hp=85.0, lp=4400.0, bands=[(180, 4.4, 1.1), (1450, 1.2, 1.2), (3800, -5.5, 1.4)])
-        mix_into(out, fade_edges(vox, 0.005, 0.06), 0.02, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.22, decay_sec=0.44, tail_extra=0.02), 1.06), 0.003, 0.07)
-
-    if name == 'comms-enemy':
-        out = np.zeros(int(1.70 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_fighter/Audio/prepare_yourself.ogg')))
-        vox = resample_pitch(vox, 0.87)
-        vox = fft_eq(vox, hp=80.0, lp=4100.0, bands=[(165, 4.8, 1.1), (1350, 1.2, 1.2), (3500, -6.0, 1.4)])
-        drum = peak_unit(war_drum(68.0, 0.36, seed=711))
-        mix_into(out, drum, 0.00, 0.30)
-        mix_into(out, fade_edges(vox, 0.005, 0.07), 0.03, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.24, decay_sec=0.48, tail_extra=0.02), 1.08), 0.003, 0.08)
-
-    if name == 'comms-ally':
-        out = np.zeros(int(0.96 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_fighter/Audio/ready.ogg')))
-        vox = resample_pitch(vox, 0.92)
-        vox = fft_eq(vox, hp=90.0, lp=4500.0, bands=[(190, 4.0, 1.1), (1600, 1.4, 1.2), (3900, -5.0, 1.4)])
-        mix_into(out, fade_edges(vox, 0.005, 0.05), 0.02, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.36, tail_extra=0.02), 1.06), 0.003, 0.06)
-
-    if name == 'comms-ally-attack':
-        out = np.zeros(int(1.04 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/war_go_go_go.ogg')))
-        vox = resample_pitch(vox, 0.91)
-        vox = fft_eq(vox, hp=95.0, lp=5400.0, bands=[(200, 3.6, 1.1), (1850, 1.6, 1.2), (4400, -4.5, 1.5)])
-        steel = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/battle/sword-unsheathe.wav')))
-        mix_into(out, fft_eq(steel[:int(0.32 * RATE)], hp=350.0, lp=6800.0), 0.00, 0.34)
-        mix_into(out, fade_edges(vox, 0.005, 0.05), 0.03, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.36, tail_extra=0.02), 1.06), 0.003, 0.06)
-
-    if name == 'comms-ally-hold':
-        out = np.zeros(int(0.70 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/hold.ogg')))
-        vox = resample_pitch(vox, 0.88)
-        vox = fft_eq(vox, hp=88.0, lp=5200.0, bands=[(185, 3.8, 1.1), (1700, 1.5, 1.2), (4200, -4.5, 1.5)])
-        shield = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/interface/interface1.wav')))
-        mix_into(out, fft_eq(shield[:int(0.24 * RATE)], hp=90.0, lp=2600.0), 0.00, 0.38)
-        mix_into(out, fade_edges(vox, 0.004, 0.05), 0.03, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.36, tail_extra=0.02), 1.06), 0.003, 0.06)
-
-    if name == 'comms-ally-help':
-        out = np.zeros(int(1.10 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/war_call_for_backup.ogg')))
-        vox = resample_pitch(vox, 0.91)
-        vox = fft_eq(vox, hp=95.0, lp=5400.0, bands=[(195, 3.6, 1.1), (1900, 1.6, 1.2), (4400, -4.5, 1.5)])
-        mix_into(out, fade_edges(vox, 0.005, 0.05), 0.02, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.36, tail_extra=0.02), 1.06), 0.003, 0.06)
-
-    if name == 'comms-objective':
-        out = np.zeros(int(1.48 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/objective_achieved.ogg')))
-        vox = resample_pitch(vox, 0.91)
-        vox = fft_eq(vox, hp=95.0, lp=4900.0, bands=[(195, 3.8, 1.1), (1700, 1.4, 1.2), (4200, -5.0, 1.5)])
-        chime = peak_unit(fft_eq(cast_iron_bell(587.33, 0.65), hp=300.0, lp=4800.0))
-        mix_into(out, chime, 0.00, 0.22)
-        mix_into(out, fade_edges(vox, 0.005, 0.06), 0.04, 0.88)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.20, decay_sec=0.40, tail_extra=0.02), 1.06), 0.003, 0.07)
-
-    if name == 'comms-female':
-        out = np.zeros(int(0.62 * RATE), dtype=np.float32)
-        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Female/ready.ogg')))
-        vox = resample_pitch(vox, 0.97)
-        vox = fft_eq(vox, hp=130.0, lp=5200.0, bands=[(280, 2.2, 1.1), (2200, 1.0, 1.2), (4400, -4.5, 1.5)])
-        mix_into(out, fade_edges(vox, 0.004, 0.05), 0.02, 0.84)
-        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.34, tail_extra=0.02), 1.05), 0.003, 0.06)
 
     if name == 'place':
         out = np.zeros(int(0.40 * RATE), dtype=np.float32)
@@ -1037,8 +911,8 @@ def main():
         '44.1 kHz Ogg Vorbis with universal MP3 fallback for Safari/iOS). All files are',
         'bundled locally for 100% offline playback with zero runtime network dependencies.',
         '',
-        'The runtime retains a procedural Web Audio fallback so the game remains',
-        'playable even if audio assets cannot be fetched or decoded.',
+        'The runtime retains procedural sound effects and readable dialogue',
+        'if audio assets cannot be fetched or decoded.',
         '',
         'Verified CC0 1.0 Source Provenance (per cue):',
     ]
@@ -1057,12 +931,16 @@ def main():
         mp3_path = OUT_DIR / mp3_name
         if only_names and name not in only_names and name in existing_manifest and ogg_path.is_file() and mp3_path.is_file():
             cue_entry = existing_manifest[name]
+            cue_entry['group'] = group
             manifest_cues[name] = cue_entry
             total_ogg += cue_entry['bytes']
             total_mp3 += cue_entry['fallbackBytes']
             license_lines.append(f'- {name} ({ogg_name} / {mp3_name}): {credit}')
             continue
-        if rel_src.startswith('recipe:'):
+        spoken = rel_src.startswith('spoken:')
+        if spoken:
+            pcm = master_spoken_cue(rel_src.split(':', 1)[1], max_dur, target_peak)
+        elif rel_src.startswith('recipe:'):
             sig = build_recipe(rel_src.split(':', 1)[1])
             pcm = sig if sig.ndim == 2 else sig[:, None]
             if stereo and pcm.shape[1] == 1:
@@ -1078,7 +956,8 @@ def main():
                 pcm = make_seamless_loop(pcm, start_sec, max_dur)
             else:
                 pcm = process_oneshot(pcm, start_sec, max_dur)
-        pcm = normalize(pcm, target_peak)
+        if not spoken:
+            pcm = normalize(pcm, target_peak)
 
         dur = round(len(pcm) / RATE, 3)
         rms = float(np.sqrt(np.mean(pcm * pcm)))

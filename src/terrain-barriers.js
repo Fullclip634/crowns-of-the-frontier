@@ -1110,7 +1110,7 @@ export function applyMapGeography(sim){
     );
   }else if(map==='deepwoodravine'){
     // Epic Frontier — Deepwood Ravine (Images 8 & 11):
-    // Sheer rocky canyon carving through dense ancient forest, spanned by a contested timber trestle bridge!
+    // Two lines of cliffs leave a central road and two woodland passes.
     const ravPasses=[{x:0,z:0,r:14},{x:-4,z:-h*.56,r:12},{x:4,z:h*.56,r:12}];
     const ravKeep=[...bases.map(b=>({x:b.x,z:b.z,r:Math.min(34,adaptiveGladeR)})),...ravPasses];
     addCurvedCliffChain(sim,[{x:-16,z:-h*.86},{x:-11,z:-h*.34},{x:-11,z:h*.34},{x:-16,z:h*.86}],{step:3.4,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:951,foothillTrees:true});

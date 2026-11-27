@@ -63,6 +63,13 @@ function mockContext() {
       gains.push(g);
       return g;
     },
+    createBufferSource() {
+      const source = new MockNode();
+      source.playbackRate = new MockParam(1);
+      source.start = () => {};
+      source.stop = () => {};
+      return source;
+    },
     createStereoPanner() {
       const p = new MockNode();
       p.pan = new MockParam(0);
@@ -102,6 +109,7 @@ test('AudioEngine voice and warHorn methods handle cooldowns, mute, and settings
   const ctx = mockContext();
   audio.context = ctx;
   audio.master = ctx.createGain();
+  audio.sampleBank = {get: () => ({duration: .5}), has: () => false};
 
   // Initial trigger succeeds
   assert.equal(audio.voice('order', { type: 'swordsman' }, 'alder'), true);
@@ -140,6 +148,7 @@ test('only human units speak; buildings, siege engines, and naval ships stay sil
   const ctx = mockContext();
   audio.context = ctx;
   audio.master = ctx.createGain();
+  audio.sampleBank = {get: () => ({duration: .5})};
 
   for (const silent of [
     null,

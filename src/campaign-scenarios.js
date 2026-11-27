@@ -5,6 +5,7 @@ import {plantStartingForests} from './starting-forests.js';
 import {groupFieldForests} from './field-forests.js';
 import {seedDeerHerds} from './wildlife.js';
 import {waterChannels,waterFords} from './map-water.js';
+import {ravineRoadAt} from './terrain-layout.js';
 import {bridgeSpans,spanZ} from './bridge-layout.js';
 import {spawnHeroGeneral} from './heroes.js';
 import {WALL_SPACING,linkPlannedWalls} from './walls.js';
@@ -778,7 +779,7 @@ function buildActFiveScenario(sim){
       makeScenarioPlayer(sim,{name:'Forgemaster Borin (Ally)',faction:'iron',team:1,age:3,difficulty:diff,aiPersonality:'aggressive',colorIndex:5,start:c5,resources:{food:2000,wood:2000,gold:1400,stone:1300}}),
     ];
     sim.spawnPositions=[c0,c1,c2,c3,c4,c5];
-    // Iconic Deepwood Ravine cliff canyon flanking the central timber trestle bridge (without redundant glade rings over walled citadels!)
+    // The cliffs break at the central road and the two woodland passes.
     const ravPasses=[{x:0,z:0,r:16},{x:-4,z:-half*.54,r:14},{x:4,z:half*.54,r:14}];
     const ravKeep=[c0,c1,c2,c3,c4,c5].map(c=>({x:c.x,z:c.z,r:36})).concat(ravPasses);
     addCurvedCliffChain(sim,[{x:-16,z:-half*.86},{x:-11,z:-half*.34},{x:-11,z:half*.34},{x:-16,z:half*.86}],{step:3.8,width:1,radius:3.2,height:5.1,wobble:2.0,passes:ravPasses,keepClear:ravKeep,seedOffset:1951,foothillTrees:false});
@@ -801,7 +802,7 @@ function buildActFiveScenario(sim){
   const rng=seededRandom((sim.options.seed||2026)+9973);
   for(let i=0;i<(sim.players.length>4?40:65);i++){
     const x=(rng()-.5)*(sim.worldSize-18),z=(rng()-.5)*(sim.worldSize-18);
-    if(sim.isWater(x,z)||sim.barriers.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+3))continue;
+    if(sim.isWater(x,z)||ravineRoadAt(sim.options.map,x,z)||sim.barriers.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+3))continue;
     if(sim.entities.some(e=>e.hp>0&&(e.kind==='building'&&Math.hypot(e.x-x,e.z-z)<e.r+6||e.kind==='resource'&&Math.hypot(e.x-x,e.z-z)<2.4)))continue;
     const type=i%10===0?'gold':i%13===0?'stone':i%9===0?'food':'wood';
     sim.addNaturalResource(type,x,z,type==='wood'?280:type==='food'?380:2400);
@@ -834,6 +835,7 @@ function buildActFiveScenario(sim){
   }
   for(const span of bridgeSpans(map))markExplored(span.center,spanZ(span),16);
   for(const ford of waterFords(map))markExplored(ford.center,ford.z,14);
+  if(mode==='campaign19')markExplored(0,0,16);
   for(const sh of sim.entities)if(sh.kind==='shrine')markExplored(sh.x,sh.z,16);
   sim.updateFog();
 }
