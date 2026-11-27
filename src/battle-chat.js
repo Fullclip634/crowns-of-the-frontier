@@ -1,6 +1,5 @@
 import {CHAT_LENGTH,CHAT_HISTORY,cleanChatText} from './chat-protocol.js';
 import {uiIcon} from './ui-icons.js';
-import './battle-chat.css';
 
 export function battleChatMarkup(){return `<button id="chat-toggle" type="button" hidden aria-label="Open battle chat" aria-controls="battle-chat" aria-expanded="false">${uiIcon('message-square')}<span>Chat</span><span id="chat-unread" hidden></span></button>
   <section id="battle-chat" hidden aria-label="Battle chat"><header><strong>Battle chat</strong><button id="chat-close" type="button" aria-label="Close battle chat">${uiIcon('x')}</button></header>
@@ -9,8 +8,8 @@ export function battleChatMarkup(){return `<button id="chat-toggle" type="button
   <p id="chat-status" role="status">All: everyone in this battle.</p></section>`;}
 
 export class BattleChatPanel {
-  constructor(root,{send,onOpen=()=>{}}){
-    this.root=root;this.send=send;this.onOpen=onOpen;this.panel=root.querySelector('#battle-chat');this.toggle=root.querySelector('#chat-toggle');this.input=root.querySelector('#chat-input');this.channel=root.querySelector('#chat-channel');this.log=root.querySelector('#chat-messages');this.status=root.querySelector('#chat-status');this.submit=root.querySelector('#chat-send');this.ids=new Set();this.unread=0;this.connected=false;this.room=null;this.pending=null;
+  constructor(root,{send,onOpen=()=>{},onMessage=()=>{}}){
+    this.root=root;this.send=send;this.onOpen=onOpen;this.onMessage=onMessage;this.panel=root.querySelector('#battle-chat');this.toggle=root.querySelector('#chat-toggle');this.input=root.querySelector('#chat-input');this.channel=root.querySelector('#chat-channel');this.log=root.querySelector('#chat-messages');this.status=root.querySelector('#chat-status');this.submit=root.querySelector('#chat-send');this.ids=new Set();this.unread=0;this.connected=false;this.room=null;this.pending=null;
     this.toggle.addEventListener('click',()=>this.open());root.querySelector('#chat-close').addEventListener('click',()=>this.close());
     root.querySelector('#chat-form').addEventListener('submit',event=>{event.preventDefault();this.post();});
     this.channel.addEventListener('change',()=>this.hint());
@@ -48,5 +47,6 @@ export class BattleChatPanel {
     meta.className='chat-meta';meta.textContent=`${message.channel==='team'?'[Team] ':''}${message.senderName}${message.senderSide===this.selfSide?' (you)':''} · ${new Date(message.sentAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;body.textContent=message.text;row.append(meta,body);this.log.append(row);
     while(this.log.children.length>CHAT_HISTORY){this.ids.delete(Number(this.log.firstChild.dataset.messageId));this.log.firstChild.remove();}
     if(this.opened&&nearBottom)this.log.scrollTop=this.log.scrollHeight;else if(!history&&!this.opened&&message.senderSide!==this.selfSide){this.unread++;this.refresh();}
+    if(!history&&message.senderSide!==this.selfSide)this.onMessage(message);
   }
 }

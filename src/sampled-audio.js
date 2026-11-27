@@ -1,10 +1,11 @@
 // Browser wiring for the real recorded CC0 sample pack. Installed last so it
 // wraps the procedural layers: when a sample is decoded it takes over that cue
-// (UI, combat, economy Foley, human voices, battle grunts, seamless biome
-// ambience loops, and 4-stage adaptive medieval music), and when the pack is
-// unavailable every call falls straight through to the Web Audio synthesis.
+// (UI, alerts, comms chimes, distinct war horns, combat, economy Foley, archetype
+// unit acknowledgments, battle grunts, seamless biome ambience loops, and 4-stage
+// adaptive medieval music), and when the pack is unavailable every call falls
+// straight through to the Web Audio synthesis.
 import {createSampleBank,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES} from './sample-bank.js';
-import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit} from './voice-system.js';
+import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit,unitVoiceArchetype} from './voice-system.js';
 
 const HORN_FUNDAMENTAL=174.61;
 const BIOME_AMBIENCE={
@@ -15,9 +16,45 @@ const BIOME_AMBIENCE={
   volcanic:'amb-volcanic',emberroad:'amb-volcanic',
   highlands:'amb-meadow',highland:'amb-meadow',woodland:'amb-meadow',ironpass:'amb-meadow',blackwood:'amb-meadow',timbervale:'amb-meadow',bastion:'amb-meadow',ironring:'amb-meadow',sunderedpass:'amb-meadow',oakhold:'amb-meadow',deepwoodravine:'amb-meadow',meadow:'amb-meadow',steppe:'amb-meadow',frontier:'amb-meadow',
 };
-const VOICE_MAP={select:'voice-select',order:'voice-order',attack:'voice-attack',work:'voice-work'};
-const FACTION_VOICE_RATE={alder:1.0,sun:1.05,raven:.93,iron:.90,jade:1.04};
+const FACTION_VOICE_RATE={alder:1.0,sun:1.04,raven:.94,iron:.91,jade:1.03};
 const STAGE_STEM={peace:'music-peace',tension:'music-tension',battle:'music-battle',climax:'music-climax'};
+
+const UI_CUE_MIX=Object.freeze({
+  select:{gain:.52,bus:'sfx',reverb:false},
+  order:{gain:.50,bus:'sfx',reverb:false},
+  coin:{gain:.54,bus:'sfx',reverb:false},
+  complete:{gain:.58,bus:'sfx',reverb:true},
+  alarm:{gain:.76,bus:'voice',reverb:true,duck:[2.2,.52]},
+  victory:{gain:.78,bus:'voice',reverb:true,duck:[3.0,.42]},
+  defeat:{gain:.76,bus:'voice',reverb:true,duck:[2.8,.42]},
+  'age-up':{gain:.76,bus:'voice',reverb:true,duck:[2.4,.50]},
+  'chat-all':{gain:.52,bus:'sfx',reverb:false},
+  'chat-team':{gain:.60,bus:'sfx',reverb:true},
+  flare:{gain:.64,bus:'sfx',reverb:true},
+  tribute:{gain:.60,bus:'sfx',reverb:true},
+  'notice-warn':{gain:.44,bus:'sfx',reverb:false},
+});
+
+function resolveUnitVoiceCue(kind,unit,bank){
+  const arch=unitVoiceArchetype(unit);
+  if(kind==='hold'&&bank.has('unit-hold'))return 'unit-hold';
+  if(kind==='work'&&bank.has('voice-work'))return 'voice-work';
+  if(kind==='attack'){
+    if(arch==='hero'&&bank.has('unit-hero'))return 'unit-hero';
+    if(arch==='archer'&&bank.has('unit-archer'))return 'unit-archer';
+    if(bank.has('voice-attack'))return 'voice-attack';
+  }
+  if(arch==='hero'&&bank.has('unit-hero'))return 'unit-hero';
+  if(arch==='healer'&&bank.has('unit-healer'))return 'unit-healer';
+  if(arch==='cavalry'&&bank.has('unit-cavalry'))return 'unit-cavalry';
+  if(arch==='archer'&&bank.has('unit-archer'))return 'unit-archer';
+  if(arch==='worker'){
+    if(kind==='select'&&bank.has('voice-select'))return 'voice-select';
+    if(bank.has('voice-work'))return 'voice-work';
+  }
+  const fallback=kind==='select'?'voice-select':kind==='attack'?'voice-attack':kind==='work'?'voice-work':'voice-order';
+  return bank.has(fallback)?fallback:null;
+}
 
 function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false}={}){
   const ctx=engine.context,buffer=engine.sampleBank?.get(name);
@@ -58,7 +95,7 @@ function loopBed(engine,name,level,bus=null){
 export function installSampledAudio(AudioEngine,options={}){
   const p=AudioEngine.prototype,unlock=p.unlock,play=p.play,voice=p.voice,warHorn=p.warHorn,weather=p.weather,tick=p.tick,updateScene=p.updateScene;
 
-  p.sampleDiagnostics=function(){return this.sampleBank?.diagnostics()||{ready:false,loaded:0,failed:0,total:0,bytes:0,errors:['audio not unlocked'],samples:[]};};
+  p.sampleDiagnostics=function(){return this.sampleBank?.diagnostics()||{ready:false,coreReady:false,loaded:0,failed:0,total:0,bytes:0,errors:['audio not unlocked'],samples:[]};};
 
   p.unlock=function(){
     unlock.call(this);
@@ -82,27 +119,30 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.grunt=function(pan=0,gain=.22){
-    if(!this.context||this.context.state!=='running'||this.settings.volume<=0||this.settings.unitVoices===false)return false;
+    if(!this.context||this.context.state!=='running'||this.settings.volume<=0||this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return false;
     const now=this.context.currentTime;
     if(now-(this.lastGruntAt??-Infinity)<.42)return false;
     const cue=GRUNT_SAMPLE_CUES[(this.gruntSequence=(this.gruntSequence||0)+1)%GRUNT_SAMPLE_CUES.length];
     if(!this.sampleBank?.has(cue))return false;
     this.lastGruntAt=now;
     const rate=.90+Math.random()*.20;
-    return playCue(this,cue,{gain,rate,pan,bus:this.voiceBus||this.master,reverb:true});
+    return playCue(this,cue,{gain:this.commsSpeaking?gain*.55:gain,rate,pan,bus:this.voiceBus||this.master,reverb:true});
   };
 
   p.voice=function(kind='order',unit=null,faction='alder',pan=0){
     if(!isHumanVoiceUnit(unit))return false;
-    const cue=VOICE_MAP[kind]||VOICE_MAP.order;
-    if(this.sampleBank?.has(cue)&&this.context?.state==='running'&&this.settings.volume>0&&this.settings.unitVoices!==false){
+    if(this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return false;
+    const cue=this.sampleBank?resolveUnitVoiceCue(kind,unit,this.sampleBank):null;
+    if(cue&&this.context?.state==='running'&&this.settings.volume>0){
       const now=this.context.currentTime;
       if(now-(this.lastVoiceAt??-Infinity)>=VOICE_COOLDOWN){
         this.lastVoiceAt=now;
-        const unitRate=unit?.type==='king'?.86:unit?.type==='villager'?1.06:1.0;
+        const arch=unitVoiceArchetype(unit);
+        const unitRate=arch==='hero'?.96:arch==='worker'?1.03:1.0;
         const rate=unitRate*(FACTION_VOICE_RATE[faction]||1.0)*(.97+Math.random()*.06);
-        if(playCue(this,cue,{gain:.42,rate,pan,bus:this.voiceBus||this.master,reverb:true})){
-          this.duckMusic?.(.90,.68);
+        const baseGain=this.commsSpeaking?.26:.46;
+        if(playCue(this,cue,{gain:baseGain,rate,pan,bus:this.voiceBus||this.master,reverb:true})){
+          this.duckMusic?.(.85,.72);
           return true;
         }
       }else return false;
@@ -113,10 +153,11 @@ export function installSampledAudio(AudioEngine,options={}){
   p.play=function(name,...rest){
     const uiGain=this.settings.uiVolume??1;
     if(UI_SAMPLE_CUES.includes(name)){
-      if(uiGain<=0&&['select','order','coin','complete'].includes(name))return;
       if(uiGain<=0)return;
-      if(this.sampleBank?.has(name)&&playCue(this,name,{gain:(name==='alarm'?.68:.55)*uiGain,bus:name==='alarm'?(this.voiceBus||this.master):(this.sfxBus||this.master),reverb:name==='complete'||name==='victory'||name==='alarm'})){
-        if(name==='alarm')this.duckMusic?.(1.6,.58);
+      const spec=UI_CUE_MIX[name]||{gain:.55,bus:'sfx',reverb:false};
+      const bus=spec.bus==='voice'?(this.voiceBus||this.master):(this.sfxBus||this.master);
+      if(this.sampleBank?.has(name)&&playCue(this,name,{gain:spec.gain*uiGain,bus,reverb:spec.reverb})){
+        if(spec.duck)this.duckMusic?.(spec.duck[0],spec.duck[1]);
         return;
       }
     }
@@ -124,12 +165,22 @@ export function installSampledAudio(AudioEngine,options={}){
   };
 
   p.warHorn=function(fundamental=HORN_FUNDAMENTAL){
-    if(this.sampleBank?.has('horn')&&this.context?.state==='running'&&this.settings.volume>0&&this.settings.warHorns!==false){
+    const channel=typeof fundamental==='string'?fundamental:'royal';
+    const cueName=channel==='enemy'&&this.sampleBank?.has('horn-enemy')?'horn-enemy'
+      :channel==='ally'&&this.sampleBank?.has('horn-ally')?'horn-ally'
+      :'horn';
+    if(this.sampleBank?.has(cueName)&&this.context?.state==='running'&&this.settings.volume>0&&this.settings.warHorns!==false){
       const now=this.context.currentTime;
-      if(now-(this.lastHornAt??-Infinity)>=HORN_COOLDOWN){
-        this.lastHornAt=now;
-        if(playCue(this,'horn',{gain:.24,rate:fundamental/HORN_FUNDAMENTAL,bus:this.voiceBus||this.master,reverb:true})){
-          this.duckMusic?.(1.6,.64);
+      this.lastHornByChannel??={};
+      const last=channel==='royal'?(this.lastHornAt??-Infinity):(this.lastHornByChannel[channel]??-Infinity);
+      const cd=channel==='royal'?HORN_COOLDOWN:6.0;
+      if(now-last>=cd){
+        if(channel==='royal')this.lastHornAt=now;
+        this.lastHornByChannel[channel]=now;
+        const rate=typeof fundamental==='number'?fundamental/HORN_FUNDAMENTAL:1.0;
+        const gain=cueName==='horn-enemy'?.36:cueName==='horn-ally'?.34:.28;
+        if(playCue(this,cueName,{gain,rate,bus:this.voiceBus||this.master,reverb:true})){
+          this.duckMusic?.(1.8,.58);
           return true;
         }
       }else return false;
@@ -142,7 +193,6 @@ export function installSampledAudio(AudioEngine,options={}){
     if(!this.sampleBank?.has('rain')||!this.context)return;
     const enabled=active&&this.settings.weatherSounds!==false&&this.settings.volume>0;
     const amount=enabled?(state?.amount||0):0;
-    // Replace the procedural noise bed rather than doubling its loudness.
     if(this.rainGain)this.rainGain.gain.setTargetAtTime(0,this.context.currentTime,.2);
     loopBed(this,'rain',amount*(state?.type==='snow'?.014:.085),this.ambienceBus||this.master);
   };
@@ -153,7 +203,6 @@ export function installSampledAudio(AudioEngine,options={}){
     const active=info.active!==false&&this.settings.weatherSounds!==false&&this.settings.volume>0;
     const map=info.sim?.options?.map||this.currentMap||'highlands';
     let want=active?(BIOME_AMBIENCE[map]||'amb-meadow'):null;
-    // Silence daytime woodland songbirds during night or heavy rain storms.
     if(want==='amb-meadow'&&(this.isNight||this.isStormy))want=null;
     let playingRealAmbience=false;
     for(const cue of AMBIENCE_SAMPLE_CUES){
@@ -177,7 +226,6 @@ export function installSampledAudio(AudioEngine,options={}){
     const stage=typeof this.scoreStage==='function'?this.scoreStage():'peace';
     const hasStems=MUSIC_STEM_CUES.some(cue=>this.sampleBank.has(cue));
     if(hasStems)this.hasSampledMusic=true;
-    // Smoothly crossfade across the 4 real recorded CC0 medieval music stems.
     if(hasStems){
       const activeStem=STAGE_STEM[stage]||'music-peace';
       for(const cue of MUSIC_STEM_CUES){

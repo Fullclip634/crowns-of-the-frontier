@@ -12,17 +12,26 @@ PROJECT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT / '.tools' / 'cc0-audio-src'
 OUT_DIR = PROJECT / 'public' / 'audio'
 RATE = 44100
+TAU = math.pi * 2.0
 
-# Every source below is verified CC0 1.0 Universal (Public Domain) from OpenGameArt.org.
-# Tuple: (cue_name, group, rel_src_path, loop, stereo, start_sec, max_dur_sec, target_peak, source_credit)
+# Every source below is verified CC0 1.0 Universal (Public Domain) from OpenGameArt.org
+# or original studio acoustic synthesis dedicated to CC0 1.0 by this project.
+# Tuple: (cue_name, group, rel_src_path_or_recipe, loop, stereo, start_sec, max_dur_sec, target_peak, source_credit)
 CUES = [
-    # UI cues (Kenney CC0 RPG Audio + Kenney CC0 Short Music Jingles + CC0 Horn)
+    # UI, Heraldic Alerts, Diplomacy & Battle Chat Cues
     ('select', 'ui', 'kenney_rpg/OGG/metalClick.ogg', False, False, 0.0, 0.45, 0.78, 'Kenney - 50 RPG sound effects (metalClick.ogg, CC0 1.0)'),
     ('order', 'ui', 'kenney_rpg/OGG/beltHandle1.ogg', False, False, 0.0, 0.45, 0.80, 'Kenney - 50 RPG sound effects (beltHandle1.ogg, CC0 1.0)'),
     ('coin', 'ui', 'kenney_rpg/OGG/handleCoins.ogg', False, False, 0.0, 0.65, 0.82, 'Kenney - 50 RPG sound effects (handleCoins.ogg, CC0 1.0)'),
-    ('complete', 'ui', 'kenney_jingles/OGG/jingles_STEEL/jingles_STEEL02.ogg', False, False, 0.0, 1.8, 0.82, 'Kenney - 85 Short music jingles (jingles_STEEL02.ogg, CC0 1.0)'),
-    ('alarm', 'ui', 'voiceover_kenney/Male/war_look_out.ogg', False, False, 0.0, 1.6, 0.72, 'Kenney - Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)'),
-    ('victory', 'ui', 'kenney_jingles/OGG/jingles_STEEL/jingles_STEEL00.ogg', False, False, 0.0, 2.4, 0.85, 'Kenney - 85 Short music jingles (jingles_STEEL00.ogg, CC0 1.0)'),
+    ('complete', 'ui', 'recipe:complete', False, False, 0.0, 1.25, 0.82, 'Crowns of the Frontier Studio Mastering + Kenney metalClick.ogg (CC0 1.0)'),
+    ('alarm', 'ui', 'recipe:alarm', False, False, 0.0, 1.85, 0.86, 'OpenGameArt war horn (horn_war3.ogg) + RPG Sound Pack metal-ringing.wav + Watchtower Bell mastering (CC0 1.0)'),
+    ('victory', 'ui', 'recipe:victory', False, False, 0.0, 2.85, 0.86, 'Snabisch - Fantasy Choir 1 (music_climax_choir.mp3) + Royal Brass Fanfare mastering (CC0 1.0)'),
+    ('defeat', 'ui', 'recipe:defeat', False, False, 0.0, 2.65, 0.82, 'RandomMind / Snabisch - Lament for a Warriors Soul (music_tension_lament.mp3) + Low Horn mastering (CC0 1.0)'),
+    ('age-up', 'ui', 'recipe:age-up', False, False, 0.0, 2.25, 0.86, 'Snabisch - Fantasy Choir 1 (music_climax_choir.mp3) + Royal Herald Brass mastering (CC0 1.0)'),
+    ('chat-all', 'ui', 'recipe:chat-all', False, False, 0.0, 0.42, 0.76, 'Kenney - 50 RPG sound effects (bookFlip1.ogg) + Bronze Chime mastering (CC0 1.0)'),
+    ('chat-team', 'ui', 'recipe:chat-team', False, False, 0.0, 0.52, 0.80, 'Kenney - 50 RPG sound effects (bookFlip1.ogg) + Allied Double-Bell Chime mastering (CC0 1.0)'),
+    ('flare', 'ui', 'recipe:flare', False, False, 0.0, 0.72, 0.84, 'Artisticdude/HaelDB - RPG Sound Pack (metal-ringing.wav) + Tactical Bronze Beacon mastering (CC0 1.0)'),
+    ('tribute', 'ui', 'recipe:tribute', False, False, 0.0, 0.82, 0.84, 'Kenney handleCoins2.ogg + RPG Sound Pack coin.wav + Medieval Harp Chord mastering (CC0 1.0)'),
+    ('notice-warn', 'ui', 'recipe:notice-warn', False, False, 0.0, 0.28, 0.72, 'Artisticdude/HaelDB - RPG Sound Pack (interface6.wav, warmed muted knock, CC0 1.0)'),
 
     # Living Economy Foley (Real recorded CC0 Foley)
     ('chop', 'foley', 'kenney_rpg/OGG/chop.ogg', False, False, 0.0, 0.55, 0.84, 'Kenney - 50 RPG sound effects (chop.ogg, CC0 1.0)'),
@@ -59,12 +68,19 @@ CUES = [
     ('earth-2', 'combat', 'breaking_falling/bfh1_hit_05.ogg', False, False, 0.0, 0.60, 0.84, 'OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_05.ogg, CC0 1.0)'),
     ('earth-3', 'combat', 'breaking_falling/bfh1_hit_08.ogg', False, False, 0.0, 0.60, 0.84, 'OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_08.ogg, CC0 1.0)'),
 
-    # War Horn & Real Human Unit Voice / Battle Grunt Cues
-    ('horn', 'voice', 'horn_war.ogg', False, False, 0.0, 2.0, 0.62, 'OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)'),
-    ('voice-select', 'voice', 'voiceover_kenney/Male/ready.ogg', False, False, 0.0, 1.1, 0.82, 'Kenney - Voiceover Pack (Male/ready.ogg, CC0 1.0)'),
-    ('voice-order', 'voice', 'voiceover_kenney/Male/go.ogg', False, False, 0.0, 1.0, 0.82, 'Kenney - Voiceover Pack (Male/go.ogg, CC0 1.0)'),
-    ('voice-attack', 'voice', 'voiceover_kenney/Male/war_target_engaged.ogg', False, False, 0.0, 1.5, 0.82, 'Kenney - Voiceover Pack (Male/war_target_engaged.ogg, CC0 1.0)'),
-    ('voice-work', 'voice', 'voiceover_kenney/Male/set.ogg', False, False, 0.0, 1.0, 0.82, 'Kenney - Voiceover Pack (Male/set.ogg, CC0 1.0)'),
+    # Distinct War Horns (Royal / Enemy Warlord / Allied Commander) & Medieval Unit Acknowledgments
+    ('horn', 'voice', 'horn_war.ogg', False, False, 0.0, 2.0, 0.66, 'OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)'),
+    ('horn-enemy', 'voice', 'recipe:horn-enemy', False, False, 0.0, 2.15, 0.82, 'OpenGameArt - Deep Siege War Horn (horn_war3.ogg) + Dark War Drum mastering (CC0 1.0)'),
+    ('horn-ally', 'voice', 'recipe:horn-ally', False, False, 0.0, 1.40, 0.78, 'OpenGameArt - War Horn (horn_war.ogg) + Noble Allied Rising Brass Call mastering (CC0 1.0)'),
+    ('voice-select', 'voice', 'recipe:voice-select', False, False, 0.0, 0.76, 0.82, 'Kenney Voiceover Pack (Male/ready.ogg, baritone armored mastering) + RPG Sound Pack chainmail1.wav (CC0 1.0)'),
+    ('voice-order', 'voice', 'recipe:voice-order', False, False, 0.0, 0.52, 0.80, 'Artisticdude/HaelDB - RPG Sound Pack (armor-light.wav, chainmail1.wav) + March Cadence mastering (CC0 1.0)'),
+    ('voice-attack', 'voice', 'recipe:voice-attack', False, False, 0.0, 0.90, 0.84, 'Artisticdude/HaelDB sword-unsheathe.wav + OpenGameArt horn_war.ogg + Charge Drum mastering (CC0 1.0)'),
+    ('voice-work', 'voice', 'recipe:voice-work', False, False, 0.0, 0.44, 0.78, 'Kenney - 50 RPG sound effects (beltHandle2.ogg, chop.ogg, craftsman mastering, CC0 1.0)'),
+    ('unit-cavalry', 'voice', 'recipe:unit-cavalry', False, False, 0.0, 0.52, 0.80, 'KobatoGames horse_trot.ogg + Kenney beltHandle1.ogg (Cavalry acknowledgment mastering, CC0 1.0)'),
+    ('unit-archer', 'voice', 'recipe:unit-archer', False, False, 0.0, 0.45, 0.80, 'remaxim Bow.wav + Kenney cloth1.ogg (Archer draw acknowledgment mastering, CC0 1.0)'),
+    ('unit-healer', 'voice', 'recipe:unit-healer', False, False, 0.0, 0.76, 0.76, 'Crowns of the Frontier Studio Mastering - Monastery Sanctuary Bell Chord (CC0 1.0)'),
+    ('unit-hero', 'voice', 'recipe:unit-hero', False, False, 0.0, 0.86, 0.84, 'Artisticdude/HaelDB sword-unsheathe2.wav + Royal Vanguard Brass Chord mastering (CC0 1.0)'),
+    ('unit-hold', 'voice', 'recipe:unit-hold', False, False, 0.0, 0.64, 0.82, 'Kenney Voiceover Pack (Male/hold.ogg, baritone armored mastering) + RPG Sound Pack interface1.wav (CC0 1.0)'),
     ('grunt-0', 'voice', 'hit_dying/ogg/hit1.ogg', False, False, 0.0, 0.70, 0.80, 'alket - 5 Hit Sounds + Dying (hit1.ogg, CC0 1.0)'),
     ('grunt-1', 'voice', 'hit_dying/ogg/hit3.ogg', False, False, 0.0, 0.70, 0.80, 'alket - 5 Hit Sounds + Dying (hit3.ogg, CC0 1.0)'),
     ('grunt-2', 'voice', 'hit_dying/ogg/die1.ogg', False, False, 0.0, 0.90, 0.80, 'alket - 5 Hit Sounds + Dying (die1.ogg, CC0 1.0)'),
@@ -73,7 +89,7 @@ CUES = [
     ('rain', 'weather', 'rain_ogg/1.ogg', True, False, 0.5, 10.0, 0.70, 'Snabisch - Rain loopable (1.ogg, CC0 1.0)'),
     ('amb-meadow', 'weather', 'birds_meadow.ogg', True, False, 0.5, 11.0, 0.72, 'Isaiah658 - Ambient Bird Sounds (birds-isaiah658.ogg, CC0 1.0)'),
     ('amb-coast', 'weather', 'ocean_wave_prev.ogg', True, False, 0.4, 10.0, 0.72, 'Jasinski - Beach Ocean Waves (CC0 1.0)'),
-    ('amb-river', 'weather', 'water_wave_prev.ogg', True, False, 0.4, 10.0, 0.70, 'Transitking - Water Waves / River (CC0 1.0)'),
+    ('amb-river', 'weather', 'water_wave_prev.ogg', True, False, 0.4, 7.536, 0.70, 'Transitking - Water Waves / River (CC0 1.0)'),
     ('amb-tundra', 'weather', 'wind_loop.ogg', True, False, 0.2, 9.5, 0.72, 'WolfTech - Wind (Wind.ogg, CC0 1.0)'),
     ('amb-arid', 'weather', 'wind1.wav', True, False, 0.5, 9.5, 0.68, 'qubodup - Wind field recording (wind1.wav, CC0 1.0)'),
     ('amb-volcanic', 'weather', 'dungeon_rumble.ogg', True, False, 0.5, 10.5, 0.72, 'IgnasD - Loopable Dungeon Ambience rumble (dungeon_ambient_1.ogg, CC0 1.0)'),
@@ -87,7 +103,7 @@ CUES = [
 ]
 
 
-def load_pcm(src_path: Path, stereo: bool) -> np.ndarray:
+def load_pcm(src_path: Path, stereo: bool = False) -> np.ndarray:
     s = aud.Sound(str(src_path))
     s = s.resample(RATE, False)
     s = s.rechannel(2 if stereo else 1)
@@ -95,6 +111,450 @@ def load_pcm(src_path: Path, stereo: bool) -> np.ndarray:
     if data.ndim == 1:
         data = data[:, None]
     return data
+
+
+def load_mono(rel_path: str) -> np.ndarray:
+    src = SRC_DIR / rel_path
+    if not src.is_file():
+        raise FileNotFoundError(f'Missing CC0 source: {src}')
+    return load_pcm(src, False)[:, 0]
+
+
+def trim_silence_1d(sig: np.ndarray, thresh: float = 0.008) -> np.ndarray:
+    active = np.flatnonzero(np.abs(sig) > thresh)
+    if len(active) < 64:
+        return sig
+    lead = max(0, int(active[0]) - int(0.005 * RATE))
+    tail = min(len(sig), int(active[-1]) + int(0.045 * RATE))
+    return sig[lead:tail]
+
+
+def resample_pitch(sig: np.ndarray, factor: float) -> np.ndarray:
+    """Clean linear pitch shift: factor < 1 deepens pitch, factor > 1 raises pitch."""
+    if abs(factor - 1.0) < 1e-4:
+        return sig.copy()
+    n_out = max(16, int(round(len(sig) / factor)))
+    x_old = np.arange(len(sig), dtype=np.float64)
+    x_new = np.linspace(0.0, len(sig) - 1.0, n_out, dtype=np.float64)
+    return np.interp(x_new, x_old, sig.astype(np.float64)).astype(np.float32)
+
+
+def fft_eq(sig: np.ndarray, hp=None, lp=None, bands=()) -> np.ndarray:
+    """Zero-phase studio FFT equalizer with smooth Butterworth-like slopes and bell bands."""
+    n = len(sig)
+    nfft = 1 << int(math.ceil(math.log2(max(256, n + 2048))))
+    spec = np.fft.rfft(sig.astype(np.float64), n=nfft)
+    freqs = np.fft.rfftfreq(nfft, d=1.0 / RATE)
+    gain = np.ones_like(freqs)
+    if hp is not None and hp > 1.0:
+        gain *= 1.0 / np.sqrt(1.0 + (hp / np.maximum(freqs, 1e-3)) ** 4)
+    if lp is not None and lp > 1.0:
+        gain *= 1.0 / np.sqrt(1.0 + (freqs / lp) ** 4)
+    for center, db, q in bands:
+        lin = 10.0 ** (db / 20.0)
+        bw = max(25.0, center / max(0.3, q))
+        bell = np.exp(-0.5 * ((freqs - center) / bw) ** 2)
+        gain *= 1.0 + (lin - 1.0) * bell
+    out = np.fft.irfft(spec * gain, n=nfft)[:n]
+    return out.astype(np.float32)
+
+
+def courtyard_reverb(sig: np.ndarray, wet: float = 0.20, decay_sec: float = 0.45, tail_extra: float = 0.32) -> np.ndarray:
+    """Open-air stone courtyard / castle hall convolution reverb with warm early reflections."""
+    ir_len = max(512, int(decay_sec * RATE))
+    rng = np.random.default_rng(202605)
+    t = np.linspace(0.0, 1.0, ir_len, dtype=np.float64)
+    noise = rng.standard_normal(ir_len)
+    tail = fft_eq(noise.astype(np.float32), hp=120.0, lp=2600.0).astype(np.float64)
+    ir = tail * np.exp(-t * 4.8) * 0.24
+    for ms, amp in [(11, 0.48), (23, -0.34), (39, 0.25), (61, -0.17), (89, 0.11)]:
+        idx = int((ms / 1000.0) * RATE)
+        if idx < ir_len:
+            ir[idx] += amp
+    ir[0] = 0.0
+    out_len = len(sig) + int(tail_extra * RATE)
+    nfft = 1 << int(math.ceil(math.log2(out_len + ir_len)))
+    wet_sig = np.fft.irfft(np.fft.rfft(sig.astype(np.float64), n=nfft) * np.fft.rfft(ir, n=nfft), n=nfft)[:out_len]
+    dry = np.zeros(out_len, dtype=np.float64)
+    dry[:len(sig)] = sig
+    return (dry * (1.0 - wet * 0.22) + wet_sig * wet).astype(np.float32)
+
+
+def soft_saturate(sig: np.ndarray, drive: float = 1.18) -> np.ndarray:
+    if drive <= 1.0:
+        return sig
+    return (np.tanh(sig * drive) / math.tanh(drive)).astype(np.float32)
+
+
+def mix_into(dest: np.ndarray, src: np.ndarray, start_sec: float, gain: float = 1.0) -> None:
+    s = int(round(start_sec * RATE))
+    if s >= len(dest):
+        return
+    if s < 0:
+        src = src[-s:]
+        s = 0
+    n = min(len(src), len(dest) - s)
+    if n > 0:
+        dest[s:s + n] += src[:n] * gain
+
+
+def fade_edges(sig: np.ndarray, fi_sec: float = 0.004, fo_sec: float = 0.035) -> np.ndarray:
+    out = sig.copy()
+    fi = min(int(fi_sec * RATE), len(out) // 3)
+    fo = min(int(fo_sec * RATE), len(out) // 2)
+    if fi > 1:
+        out[:fi] *= np.linspace(0.0, 1.0, fi, dtype=np.float32)
+    if fo > 1:
+        out[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=np.float32)
+    return out
+
+
+def peak_unit(sig: np.ndarray) -> np.ndarray:
+    p = float(np.max(np.abs(sig)))
+    return sig / p if p > 1e-6 else sig
+
+
+def cast_iron_bell(base_freq: float, dur: float) -> np.ndarray:
+    """Physically modeled medieval cast-iron/bronze watchtower bell using true campanology partials."""
+    n = int(dur * RATE)
+    t = np.arange(n, dtype=np.float64) / RATE
+    out = np.zeros(n, dtype=np.float64)
+    partials = [
+        (0.500, 0.34, 0.92, 0.45),
+        (1.000, 0.56, 0.70, 0.90),
+        (1.183, 0.42, 0.52, 1.35),
+        (1.506, 0.28, 0.38, 1.70),
+        (2.000, 0.48, 0.34, 1.15),
+        (2.514, 0.18, 0.20, 2.20),
+        (2.996, 0.22, 0.18, 2.60),
+        (4.020, 0.12, 0.11, 3.10),
+    ]
+    attack = np.minimum(1.0, t / 0.004)
+    for ratio, amp, decay, beat_hz in partials:
+        f = base_freq * ratio
+        if f >= RATE * 0.44:
+            continue
+        env = np.exp(-t / decay) * attack
+        wave = 0.62 * np.sin(TAU * f * t) + 0.38 * np.sin(TAU * (f + beat_hz) * t + 0.4)
+        out += wave * amp * env
+    rng = np.random.default_rng(int(base_freq * 10))
+    clapper = fft_eq(rng.standard_normal(n).astype(np.float32), hp=1600.0, lp=6200.0)
+    out += clapper * np.exp(-t / 0.012) * 0.42
+    return fade_edges(out.astype(np.float32), 0.002, 0.08)
+
+
+def medieval_brass(freqs, dur: float, attack_sec: float = 0.11, release_sec: float = 0.28) -> np.ndarray:
+    """Warm orchestral French horn / herald brass chord with lip-swell onset & 3-player chorus."""
+    n = int(dur * RATE)
+    t = np.arange(n, dtype=np.float64) / RATE
+    out = np.zeros(n, dtype=np.float64)
+    att = np.minimum(1.0, t / max(0.015, attack_sec))
+    rel = np.minimum(1.0, np.maximum(0.0, (dur - t) / max(0.04, release_sec)))
+    env = (att ** 0.85) * (rel ** 1.15)
+    bend = 1.0 - 0.018 * np.exp(-t / 0.075)
+    for idx, f0 in enumerate(freqs):
+        for detune, weight in [(-0.0032, 0.30), (0.0, 0.46), (0.0035, 0.30)]:
+            phase = TAU * f0 * (1.0 + detune) * np.cumsum(bend) / RATE
+            vib = 0.0035 * np.sin(TAU * (4.6 + idx * 0.2) * t) * np.minimum(1.0, t / 0.35)
+            voice = np.zeros(n, dtype=np.float64)
+            for h, hamp in [(1, 0.46), (2, 0.36), (3, 0.24), (4, 0.14), (5, 0.08), (6, 0.04)]:
+                if f0 * h < RATE * 0.42:
+                    voice += np.sin(phase * h + vib * h) * hamp
+            out += voice * weight / max(1, len(freqs))
+    out *= env
+    return fft_eq(soft_saturate(out.astype(np.float32), 1.25), hp=75.0, lp=2900.0, bands=[(420, 2.5, 1.1)])
+
+
+def war_drum(base_freq: float = 70.0, dur: float = 0.42, seed: int = 77) -> np.ndarray:
+    """Deep medieval timpani / siege frame drum with authentic pitch-drop skin transient."""
+    n = int(dur * RATE)
+    t = np.arange(n, dtype=np.float64) / RATE
+    freq = base_freq * (1.0 + 0.42 * np.exp(-t / 0.032))
+    phase = TAU * np.cumsum(freq) / RATE
+    body = np.sin(phase) * np.exp(-t / 0.13) + 0.35 * np.sin(phase * 1.54) * np.exp(-t / 0.065)
+    rng = np.random.default_rng(seed)
+    beater = fft_eq(rng.standard_normal(n).astype(np.float32), hp=90.0, lp=950.0)
+    skin = beater * np.exp(-t / 0.018) * 0.45
+    return fade_edges((body * 0.85 + skin).astype(np.float32), 0.002, 0.04)
+
+
+def plucked_harp(freq: float, dur: float, seed: int = 101, damping: float = 0.9955) -> np.ndarray:
+    """Warm Karplus-Strong medieval harp/lute string with wooden body resonance."""
+    n = int(dur * RATE)
+    period = max(8, int(round(RATE / freq)))
+    rng = np.random.default_rng(seed)
+    ring = (rng.uniform(-1.0, 1.0, period) * 0.52 + np.sin(TAU * np.arange(period) / period) * 0.48).astype(np.float64)
+    out = np.zeros(n, dtype=np.float64)
+    prev = float(ring[-1])
+    idx = 0
+    for i in range(n):
+        cur = ring[idx]
+        nxt = 0.5 * (cur + prev) * damping
+        prev = cur
+        ring[idx] = nxt
+        out[i] = cur
+        idx += 1
+        if idx == period:
+            idx = 0
+    return fft_eq(fade_edges(out.astype(np.float32), 0.002, 0.06), hp=110.0, lp=4800.0, bands=[(340, 2.5, 1.0)])
+
+
+def peak_window(sig: np.ndarray, dur: float, start_frac: float = 0.45, end_frac: float = 0.96) -> np.ndarray:
+    """Extract the most dramatic high-energy musical window from a longer CC0 orchestral recording."""
+    want = min(len(sig), int(dur * RATE))
+    lo = int(len(sig) * start_frac)
+    hi = max(lo + 1, int(len(sig) * end_frac) - want)
+    best_i, best_rms = lo, -1.0
+    step = int(0.35 * RATE)
+    for i in range(lo, hi, step):
+        seg = sig[i:i + want]
+        rms = float(np.sqrt(np.mean(seg * seg)))
+        if rms > best_rms:
+            best_rms = rms
+            best_i = i
+    return sig[best_i:best_i + want].copy()
+
+
+def build_recipe(name: str) -> np.ndarray:
+    if name == 'alarm':
+        out = np.zeros(int(1.80 * RATE), dtype=np.float32)
+        bell1 = peak_unit(cast_iron_bell(293.66, 1.15))
+        bell2 = peak_unit(cast_iron_bell(293.66, 1.25))
+        ring = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/metal-ringing.wav')))
+        ring = fft_eq(ring[:int(0.45 * RATE)], hp=600.0, lp=4200.0)
+        horn_raw = peak_unit(trim_silence_1d(load_mono('horn_war3.ogg')))
+        horn_seg = fade_edges(fft_eq(horn_raw[:int(1.25 * RATE)], hp=85.0, lp=2200.0, bands=[(210, 3.0, 1.0)]), 0.06, 0.24)
+        drum = peak_unit(war_drum(68.0, 0.36, seed=19))
+        mix_into(out, bell1, 0.00, 0.68)
+        mix_into(out, ring, 0.00, 0.24)
+        mix_into(out, drum, 0.00, 0.42)
+        mix_into(out, horn_seg, 0.14, 0.56)
+        mix_into(out, bell2, 0.44, 0.72)
+        mix_into(out, ring, 0.44, 0.20)
+        mix_into(out, drum, 0.44, 0.38)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.22, decay_sec=0.50, tail_extra=0.05), 1.14), 0.003, 0.09)
+
+    if name == 'complete':
+        out = np.zeros(int(1.20 * RATE), dtype=np.float32)
+        for i, freq in enumerate([293.66, 369.99, 440.00, 587.33]):
+            h = peak_unit(plucked_harp(freq, 0.85, seed=210 + i))
+            mix_into(out, h, i * 0.085, 0.52 - i * 0.04)
+        brass = peak_unit(medieval_brass([293.66, 440.00], 0.88, attack_sec=0.14, release_sec=0.35))
+        mix_into(out, brass, 0.06, 0.26)
+        click = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/metalClick.ogg')))
+        mix_into(out, click[:int(0.18 * RATE)], 0.25, 0.14)
+        return fade_edges(courtyard_reverb(out, wet=0.20, decay_sec=0.45, tail_extra=0.05), 0.003, 0.08)
+
+    if name == 'victory':
+        out = np.zeros(int(2.80 * RATE), dtype=np.float32)
+        choir = load_mono('music_climax_choir.mp3')
+        climax = peak_unit(fade_edges(peak_window(choir, 2.55, 0.55, 0.98), 0.12, 0.55))
+        fanfare1 = peak_unit(medieval_brass([293.66, 440.00], 0.42, attack_sec=0.05, release_sec=0.12))
+        fanfare2 = peak_unit(medieval_brass([369.99, 440.00, 587.33], 1.75, attack_sec=0.12, release_sec=0.55))
+        drum1 = peak_unit(war_drum(73.42, 0.45, seed=31))
+        drum2 = peak_unit(war_drum(73.42, 0.55, seed=33))
+        mix_into(out, drum1, 0.00, 0.40)
+        mix_into(out, fanfare1, 0.02, 0.46)
+        mix_into(out, drum2, 0.32, 0.48)
+        mix_into(out, fanfare2, 0.34, 0.54)
+        mix_into(out, climax, 0.14, 0.72)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.22, decay_sec=0.60, tail_extra=0.05), 1.15), 0.006, 0.18)
+
+    if name == 'defeat':
+        out = np.zeros(int(2.60 * RATE), dtype=np.float32)
+        lament = load_mono('music_tension_lament.mp3')
+        seg = peak_unit(fade_edges(lament[int(0.4 * RATE):int(2.85 * RATE)], 0.10, 0.65))
+        low_horn1 = peak_unit(medieval_brass([174.61, 220.00], 0.95, attack_sec=0.16, release_sec=0.35))
+        low_horn2 = peak_unit(medieval_brass([146.83, 174.61], 1.35, attack_sec=0.20, release_sec=0.60))
+        drum = peak_unit(war_drum(58.27, 0.55, seed=41))
+        mix_into(out, drum, 0.00, 0.44)
+        mix_into(out, seg, 0.04, 0.72)
+        mix_into(out, low_horn1, 0.18, 0.34)
+        mix_into(out, low_horn2, 1.05, 0.38)
+        return fade_edges(fft_eq(courtyard_reverb(out, wet=0.26, decay_sec=0.65, tail_extra=0.05), hp=55.0, lp=4200.0), 0.008, 0.22)
+
+    if name == 'age-up':
+        out = np.zeros(int(2.20 * RATE), dtype=np.float32)
+        choir = load_mono('music_climax_choir.mp3')
+        swell = peak_unit(fade_edges(peak_window(choir, 1.85, 0.50, 0.95), 0.16, 0.48))
+        call1 = peak_unit(medieval_brass([293.66, 440.00], 0.32, attack_sec=0.04, release_sec=0.08))
+        call2 = peak_unit(medieval_brass([440.00, 587.33], 0.32, attack_sec=0.04, release_sec=0.08))
+        chord = peak_unit(medieval_brass([293.66, 369.99, 440.00, 587.33], 1.45, attack_sec=0.10, release_sec=0.50))
+        drum = peak_unit(war_drum(73.42, 0.44, seed=51))
+        mix_into(out, drum, 0.00, 0.34)
+        mix_into(out, call1, 0.00, 0.44)
+        mix_into(out, call2, 0.26, 0.46)
+        mix_into(out, drum, 0.52, 0.44)
+        mix_into(out, chord, 0.52, 0.58)
+        mix_into(out, swell, 0.30, 0.56)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.22, decay_sec=0.55, tail_extra=0.05), 1.14), 0.004, 0.14)
+
+    if name == 'horn-enemy':
+        out = np.zeros(int(2.10 * RATE), dtype=np.float32)
+        raw = peak_unit(trim_silence_1d(load_mono('horn_war3.ogg')))
+        deep = fft_eq(resample_pitch(raw, 0.94)[:int(1.95 * RATE)], hp=60.0, lp=2100.0, bands=[(135, 3.5, 0.9), (900, -2.5, 1.2)])
+        drum = peak_unit(war_drum(58.0, 0.48, seed=61))
+        mix_into(out, drum, 0.00, 0.48)
+        mix_into(out, fade_edges(deep, 0.04, 0.25), 0.03, 0.88)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.24, decay_sec=0.55, tail_extra=0.05), 1.18), 0.005, 0.12)
+
+    if name == 'horn-ally':
+        out = np.zeros(int(1.36 * RATE), dtype=np.float32)
+        raw = peak_unit(trim_silence_1d(load_mono('horn_war.ogg')))
+        tex1 = fade_edges(fft_eq(resample_pitch(raw[:int(0.55 * RATE)], 1.12), hp=140.0, lp=2200.0), 0.04, 0.14)
+        tex2 = fade_edges(fft_eq(resample_pitch(raw[:int(0.85 * RATE)], 1.335), hp=160.0, lp=2400.0), 0.06, 0.22)
+        b1 = peak_unit(medieval_brass([220.00, 329.63], 0.36, attack_sec=0.06, release_sec=0.10))
+        b2 = peak_unit(medieval_brass([293.66, 440.00], 0.95, attack_sec=0.08, release_sec=0.36))
+        mix_into(out, tex1, 0.00, 0.34)
+        mix_into(out, b1, 0.00, 0.56)
+        mix_into(out, tex2, 0.30, 0.38)
+        mix_into(out, b2, 0.30, 0.68)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.22, decay_sec=0.45, tail_extra=0.04), 1.12), 0.004, 0.10)
+
+    if name == 'chat-all':
+        out = np.zeros(int(0.40 * RATE), dtype=np.float32)
+        page = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/bookFlip1.ogg')))
+        page = fft_eq(page[:int(0.22 * RATE)], hp=300.0, lp=4800.0)
+        chime = peak_unit(fft_eq(cast_iron_bell(880.0, 0.36), hp=350.0, lp=5200.0))
+        mix_into(out, page, 0.00, 0.52)
+        mix_into(out, chime, 0.03, 0.42)
+        return fade_edges(out, 0.003, 0.06)
+
+    if name == 'chat-team':
+        out = np.zeros(int(0.50 * RATE), dtype=np.float32)
+        page = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/bookFlip1.ogg')))
+        page = fft_eq(page[:int(0.18 * RATE)], hp=350.0, lp=4600.0)
+        c1 = peak_unit(fft_eq(cast_iron_bell(659.25, 0.28), hp=320.0, lp=5200.0))
+        c2 = peak_unit(fft_eq(cast_iron_bell(987.77, 0.36), hp=380.0, lp=5800.0))
+        mix_into(out, page, 0.00, 0.36)
+        mix_into(out, c1, 0.02, 0.52)
+        mix_into(out, c2, 0.12, 0.60)
+        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.30, tail_extra=0.02), 0.003, 0.06)
+
+    if name == 'flare':
+        out = np.zeros(int(0.70 * RATE), dtype=np.float32)
+        ring = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/metal-ringing.wav')))
+        ring = fft_eq(ring[:int(0.32 * RATE)], hp=900.0, lp=6000.0)
+        p1 = peak_unit(fft_eq(cast_iron_bell(783.99, 0.36), hp=420.0, lp=6200.0))
+        p2 = peak_unit(fft_eq(cast_iron_bell(1174.66, 0.52), hp=520.0, lp=6800.0))
+        mix_into(out, ring, 0.00, 0.26)
+        mix_into(out, p1, 0.00, 0.54)
+        mix_into(out, p2, 0.13, 0.66)
+        return fade_edges(courtyard_reverb(out, wet=0.18, decay_sec=0.38, tail_extra=0.02), 0.002, 0.08)
+
+    if name == 'tribute':
+        out = np.zeros(int(0.80 * RATE), dtype=np.float32)
+        coins1 = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/handleCoins2.ogg')))
+        coins2 = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/coin.wav')))
+        h1 = peak_unit(plucked_harp(293.66, 0.62, seed=401))
+        h2 = peak_unit(plucked_harp(440.00, 0.62, seed=402))
+        h3 = peak_unit(plucked_harp(587.33, 0.62, seed=403))
+        mix_into(out, coins1[:int(0.55 * RATE)], 0.00, 0.52)
+        mix_into(out, coins2[:int(0.45 * RATE)], 0.08, 0.44)
+        mix_into(out, h1, 0.06, 0.34)
+        mix_into(out, h2, 0.13, 0.34)
+        mix_into(out, h3, 0.20, 0.32)
+        return fade_edges(courtyard_reverb(out, wet=0.18, decay_sec=0.38, tail_extra=0.02), 0.003, 0.08)
+
+    if name == 'notice-warn':
+        out = np.zeros(int(0.26 * RATE), dtype=np.float32)
+        thud = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/interface/interface6.wav')))
+        warm = fft_eq(thud[:int(0.14 * RATE)], hp=65.0, lp=1250.0, bands=[(180, 3.0, 1.0)])
+        mix_into(out, warm, 0.00, 0.62)
+        mix_into(out, resample_pitch(warm, 0.88), 0.095, 0.54)
+        return fade_edges(out, 0.003, 0.04)
+
+    if name == 'voice-select':
+        out = np.zeros(int(0.74 * RATE), dtype=np.float32)
+        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/ready.ogg')))
+        vox = resample_pitch(vox, 0.93)
+        vox = fft_eq(vox, hp=95.0, lp=5800.0, bands=[(210, 3.2, 1.1), (1800, 1.5, 1.2), (4400, -4.5, 1.6)])
+        mail = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/chainmail1.wav')))
+        mail = fft_eq(mail[:int(0.32 * RATE)], hp=400.0, lp=5200.0)
+        mix_into(out, mail, 0.00, 0.24)
+        mix_into(out, fade_edges(vox, 0.004, 0.04), 0.03, 0.82)
+        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.30, tail_extra=0.02), 0.003, 0.05)
+
+    if name == 'voice-order':
+        out = np.zeros(int(0.50 * RATE), dtype=np.float32)
+        armor = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/armor-light.wav')))
+        mail = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/inventory/chainmail1.wav')))
+        step1 = peak_unit(war_drum(96.0, 0.16, seed=81))
+        step2 = peak_unit(war_drum(88.0, 0.18, seed=82))
+        mix_into(out, fft_eq(armor[:int(0.28 * RATE)], hp=140.0, lp=4400.0), 0.00, 0.56)
+        mix_into(out, fft_eq(mail[:int(0.26 * RATE)], hp=350.0, lp=4800.0), 0.06, 0.32)
+        mix_into(out, step1, 0.02, 0.42)
+        mix_into(out, step2, 0.17, 0.36)
+        return fade_edges(courtyard_reverb(out, wet=0.12, decay_sec=0.25, tail_extra=0.02), 0.003, 0.05)
+
+    if name == 'voice-attack':
+        out = np.zeros(int(0.88 * RATE), dtype=np.float32)
+        steel = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/battle/sword-unsheathe.wav')))
+        steel = fft_eq(steel[:int(0.42 * RATE)], hp=320.0, lp=7800.0)
+        horn_raw = peak_unit(trim_silence_1d(load_mono('horn_war.ogg')))
+        stab = fade_edges(fft_eq(resample_pitch(horn_raw[:int(0.58 * RATE)], 1.06), hp=120.0, lp=2300.0), 0.04, 0.18)
+        drum = peak_unit(war_drum(78.0, 0.30, seed=91))
+        mix_into(out, steel, 0.00, 0.72)
+        mix_into(out, drum, 0.03, 0.46)
+        mix_into(out, stab, 0.08, 0.46)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.18, decay_sec=0.38, tail_extra=0.02), 1.12), 0.002, 0.07)
+
+    if name == 'voice-work':
+        out = np.zeros(int(0.42 * RATE), dtype=np.float32)
+        belt = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/beltHandle2.ogg')))
+        wood = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/chop.ogg')))
+        wood = fft_eq(wood[:int(0.18 * RATE)], hp=120.0, lp=2400.0)
+        mix_into(out, fft_eq(belt[:int(0.28 * RATE)], hp=160.0, lp=4600.0), 0.00, 0.62)
+        mix_into(out, wood, 0.09, 0.46)
+        return fade_edges(courtyard_reverb(out, wet=0.10, decay_sec=0.22, tail_extra=0.02), 0.003, 0.05)
+
+    if name == 'unit-cavalry':
+        out = np.zeros(int(0.50 * RATE), dtype=np.float32)
+        trot = peak_unit(trim_silence_1d(load_mono('horse_trot.ogg')))
+        bridle = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/beltHandle1.ogg')))
+        mix_into(out, fade_edges(fft_eq(trot[:int(0.44 * RATE)], hp=90.0, lp=3600.0), 0.005, 0.08), 0.00, 0.74)
+        mix_into(out, fft_eq(bridle[:int(0.24 * RATE)], hp=280.0, lp=5200.0), 0.03, 0.42)
+        return fade_edges(courtyard_reverb(out, wet=0.12, decay_sec=0.25, tail_extra=0.02), 0.003, 0.05)
+
+    if name == 'unit-archer':
+        out = np.zeros(int(0.44 * RATE), dtype=np.float32)
+        bow = peak_unit(trim_silence_1d(load_mono('battle_sfx/battle_sound_effects/Bow.wav')))
+        cloth = peak_unit(trim_silence_1d(load_mono('kenney_rpg/OGG/cloth1.ogg')))
+        mix_into(out, fft_eq(cloth[:int(0.22 * RATE)], hp=400.0, lp=4800.0), 0.00, 0.36)
+        mix_into(out, fft_eq(bow[:int(0.36 * RATE)], hp=140.0, lp=5400.0), 0.03, 0.78)
+        return fade_edges(courtyard_reverb(out, wet=0.12, decay_sec=0.24, tail_extra=0.02), 0.003, 0.05)
+
+    if name == 'unit-healer':
+        out = np.zeros(int(0.74 * RATE), dtype=np.float32)
+        n = len(out)
+        t = np.arange(n, dtype=np.float64) / RATE
+        env = np.minimum(1.0, t / 0.035) * np.exp(-t / 0.28)
+        chord = np.zeros(n, dtype=np.float64)
+        for f, amp in [(587.33, 0.46), (880.00, 0.34), (1174.66, 0.22), (1479.98, 0.14)]:
+            chord += (0.65 * np.sin(TAU * f * t) + 0.35 * np.sin(TAU * (f + 1.4) * t)) * amp
+        out += (chord * env).astype(np.float32)
+        return fade_edges(courtyard_reverb(out, wet=0.24, decay_sec=0.48, tail_extra=0.02), 0.005, 0.09)
+
+    if name == 'unit-hero':
+        out = np.zeros(int(0.84 * RATE), dtype=np.float32)
+        steel = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/battle/sword-unsheathe2.wav')))
+        brass = peak_unit(medieval_brass([146.83, 220.00, 293.66], 0.72, attack_sec=0.09, release_sec=0.28))
+        mix_into(out, fft_eq(steel[:int(0.42 * RATE)], hp=280.0, lp=7600.0), 0.00, 0.64)
+        mix_into(out, brass, 0.05, 0.62)
+        return fade_edges(soft_saturate(courtyard_reverb(out, wet=0.20, decay_sec=0.42, tail_extra=0.02), 1.12), 0.003, 0.08)
+
+    if name == 'unit-hold':
+        out = np.zeros(int(0.62 * RATE), dtype=np.float32)
+        vox = peak_unit(trim_silence_1d(load_mono('voiceover_kenney/Male/hold.ogg')))
+        vox = resample_pitch(vox, 0.92)
+        vox = fft_eq(vox, hp=95.0, lp=5600.0, bands=[(200, 3.4, 1.1), (4200, -4.5, 1.6)])
+        shield = peak_unit(trim_silence_1d(load_mono('rpg_sound_pack/RPG Sound Pack/interface/interface1.wav')))
+        shield = fft_eq(shield[:int(0.24 * RATE)], hp=90.0, lp=2600.0)
+        mix_into(out, shield, 0.00, 0.42)
+        mix_into(out, fade_edges(vox, 0.004, 0.04), 0.03, 0.80)
+        return fade_edges(courtyard_reverb(out, wet=0.14, decay_sec=0.30, tail_extra=0.02), 0.003, 0.05)
+
+    raise ValueError(f'Unknown mastering recipe: {name}')
 
 
 def trim_silence(pcm: np.ndarray, thresh: float = 0.008) -> np.ndarray:
@@ -113,11 +573,9 @@ def make_seamless_loop(pcm: np.ndarray, start_sec: float, target_dur: float) -> 
     if start >= n - RATE:
         start = 0
     avail = n - start
-    # Reserve crossfade overlap at tail to wrap smoothly onto head
     xfade = min(int(1.6 * RATE), max(int(0.25 * RATE), int(avail * 0.16)))
     want = int(target_dur * RATE)
     if avail <= want + xfade:
-        # Use maximum available segment cleanly
         seg_len = max(int(0.8 * RATE), avail - xfade)
     else:
         seg_len = want
@@ -126,7 +584,6 @@ def make_seamless_loop(pcm: np.ndarray, start_sec: float, target_dur: float) -> 
         seg_len = avail - xfade
     body = pcm[start : start + seg_len].copy()
     tail = pcm[start + seg_len : start + seg_len + xfade]
-    # Equal-power cosine crossfade from tail back into head for zero-click seamless loop
     t = np.linspace(0.0, math.pi * 0.5, xfade, dtype=np.float32)[:, None]
     body[:xfade] = body[:xfade] * np.sin(t) + tail * np.cos(t)
     return body
@@ -140,7 +597,6 @@ def process_oneshot(pcm: np.ndarray, start_sec: float, max_dur: float) -> np.nda
     max_frames = int(max_dur * RATE)
     if len(pcm) > max_frames:
         pcm = pcm[:max_frames].copy()
-    # Micro fade-in (3 ms) and clean fade-out (22 ms) to guarantee zero pops
     fi = min(int(0.003 * RATE), len(pcm) // 4)
     fo = min(int(0.028 * RATE), len(pcm) // 3)
     if fi > 1:
@@ -151,7 +607,6 @@ def process_oneshot(pcm: np.ndarray, start_sec: float, max_dur: float) -> np.nda
 
 
 def normalize(pcm: np.ndarray, target_peak: float) -> np.ndarray:
-    # Remove DC offset first
     pcm = pcm - np.mean(pcm, axis=0, keepdims=True)
     peak = float(np.max(np.abs(pcm)))
     if peak < 1e-5:
@@ -171,7 +626,6 @@ def main():
         idx = sys.argv.index('--only')
         if idx + 1 < len(sys.argv):
             only_names = set(sys.argv[idx + 1].split(','))
-    # Remove legacy synthetic .wav files and stale outputs before writing real CC0 pack
     if not only_names:
         for old in OUT_DIR.iterdir():
             if old.suffix.lower() in {'.wav', '.ogg', '.mp3'}:
@@ -183,10 +637,10 @@ def main():
         'https://creativecommons.org/publicdomain/zero/1.0/',
         '',
         'All audio assets in /audio/ are real recorded studio and field-recorded CC0 1.0',
-        'Public Domain audio files mastered offline for Crowns of the Frontier by',
-        'scripts/master-cc0-audio.py (encoded to gapless 44.1 kHz Ogg Vorbis with',
-        'universal MP3 fallback for Safari/iOS). All files are bundled locally for',
-        '100% offline playback with zero runtime network dependencies.',
+        'Public Domain audio files and original acoustic mastering dedicated to CC0 1.0',
+        'for Crowns of the Frontier by scripts/master-cc0-audio.py (encoded to gapless',
+        '44.1 kHz Ogg Vorbis with universal MP3 fallback for Safari/iOS). All files are',
+        'bundled locally for 100% offline playback with zero runtime network dependencies.',
         '',
         'The runtime retains a procedural Web Audio fallback so the game remains',
         'playable even if audio assets cannot be fetched or decoded.',
@@ -213,14 +667,20 @@ def main():
             total_mp3 += cue_entry['fallbackBytes']
             license_lines.append(f'- {name} ({ogg_name} / {mp3_name}): {credit}')
             continue
-        src = SRC_DIR / rel_src
-        if not src.is_file():
-            raise FileNotFoundError(f'Missing CC0 source for {name}: {src}')
-        pcm = load_pcm(src, stereo)
-        if loop:
-            pcm = make_seamless_loop(pcm, start_sec, max_dur)
+        if rel_src.startswith('recipe:'):
+            sig = build_recipe(rel_src.split(':', 1)[1])
+            pcm = sig[:, None]
+            if len(pcm) > int(max_dur * RATE):
+                pcm = pcm[:int(max_dur * RATE)].copy()
         else:
-            pcm = process_oneshot(pcm, start_sec, max_dur)
+            src = SRC_DIR / rel_src
+            if not src.is_file():
+                raise FileNotFoundError(f'Missing CC0 source for {name}: {src}')
+            pcm = load_pcm(src, stereo)
+            if loop:
+                pcm = make_seamless_loop(pcm, start_sec, max_dur)
+            else:
+                pcm = process_oneshot(pcm, start_sec, max_dur)
         pcm = normalize(pcm, target_peak)
 
         dur = round(len(pcm) / RATE, 3)
@@ -231,7 +691,6 @@ def main():
 
         snd = aud.Sound.buffer(pcm, RATE)
 
-        # Compact bitrates: 64 kbps mono SFX/ambience, 72 kbps stereo music stems
         ogg_br = 72000 if stereo else 64000
         mp3_br = 72000 if stereo else 64000
         ch = aud.CHANNELS_STEREO if stereo else aud.CHANNELS_MONO

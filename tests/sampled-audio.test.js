@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
-import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,VOICE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
+import {createSampleBank,sampleURL,combatCue,UI_SAMPLE_CUES,HORN_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,VOICE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES,COMBAT_KINDS,COMBAT_VARIANTS,MAX_PARALLEL_SAMPLE_LOADS} from '../src/sample-bank.js';
 import {installSampledAudio} from '../src/sampled-audio.js';
 
 const audioDir=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/audio');
@@ -32,12 +32,13 @@ test('the shipped sample pack is a complete, valid, real recorded CC0 Ogg Vorbis
   assert.equal(manifest.proceduralFallback,true);
   assert.match(license,/CC0 1\.0/);
   const names=Object.keys(manifest.cues);
-  assert.equal(names.length,53);
+  assert.equal(names.length,67);
   const diskAudio=fs.readdirSync(audioDir).filter(f=>/\.(ogg|mp3|wav)$/i.test(f));
   assert.equal(diskAudio.filter(f=>f.endsWith('.wav')).length,0,'no stale synthetic WAVs left behind');
   assert.equal(diskAudio.filter(f=>f.endsWith('.ogg')).length,names.length,'no unreferenced or stale OGGs');
   assert.equal(diskAudio.filter(f=>f.endsWith('.mp3')).length,names.length,'every cue ships a matching Safari MP3 fallback');
   for(const cue of UI_SAMPLE_CUES)assert.ok(manifest.cues[cue],`UI cue ${cue} exists`);
+  for(const cue of HORN_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Horn cue ${cue} exists`);
   for(const cue of FOLEY_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Foley cue ${cue} exists`);
   for(const cue of AMBIENCE_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Ambience cue ${cue} exists`);
   for(const cue of VOICE_SAMPLE_CUES)assert.ok(manifest.cues[cue],`Voice cue ${cue} exists`);

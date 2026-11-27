@@ -53,7 +53,7 @@ export function installSoundscape(AudioEngine){
     // Pro 4-bus submix architecture: music, sfx, voice, ambience -> master -> compressor.
     this.musicBus=ctx.createGain();this.musicBus.gain.value=1;
     this.sfxBus=ctx.createGain();this.sfxBus.gain.value=1;
-    this.voiceBus=ctx.createGain();this.voiceBus.gain.value=1;
+    this.voiceBus=ctx.createGain();this.voiceBus.gain.value=this.settings.voiceVolume??1;
     this.ambienceBus=ctx.createGain();this.ambienceBus.gain.value=1;
     this.musicBus.connect(this.master);
     this.sfxBus.connect(this.master);
@@ -104,6 +104,20 @@ export function installSoundscape(AudioEngine){
     const mv=this.settings.musicVolume??1;
     this.musicDuckUntil=Math.max(this.musicDuckUntil||0,now+duration);
     setParamSmooth(this.musicBus.gain,clamp(level,.35,1)*mv,now,.045);
+  };
+
+  p.setCommsSpeaking=function(active=false){
+    this.commsSpeaking=Boolean(active);
+    if(!this.context||!this.musicBus)return;
+    const now=this.context.currentTime||0;
+    const mv=this.settings.musicVolume??1;
+    if(this.commsSpeaking){
+      this.musicDuckUntil=Math.max(this.musicDuckUntil||0,now+14);
+      setParamSmooth(this.musicBus.gain,(this.settings.music?mv:0)*.52,now,.06);
+    }else{
+      this.musicDuckUntil=now+.15;
+      setParamSmooth(this.musicBus.gain,this.settings.music?mv:0,now,.28);
+    }
   };
 
   p.setCameraZoom=function(zoom=48){
@@ -273,9 +287,13 @@ export function installSoundscape(AudioEngine){
     this.master.gain.value=this.settings.volume*.24;
     // Relax combat intensity smoothly back to peace over ~11 seconds after fighting stops.
     this.combatIntensity=Math.max(0,(this.combatIntensity||0)-dt*.085);
-    // Restore music bus smoothly once ducking window ends.
+    // Restore music bus smoothly once ducking window ends, and keep voiceBus synced with voiceVolume.
     const now=this.context.currentTime||0;
-    if(this.musicBus&&now>=(this.musicDuckUntil||0)){
+    if(this.voiceBus){
+      const vv=clamp(this.settings.voiceVolume??1,0,1);
+      setParamSmooth(this.voiceBus.gain,vv,now,.08);
+    }
+    if(this.musicBus&&!this.commsSpeaking&&now>=(this.musicDuckUntil||0)){
       const mv=this.settings.musicVolume??1;
       setParamSmooth(this.musicBus.gain,this.settings.music?mv:0,now,.35);
     }

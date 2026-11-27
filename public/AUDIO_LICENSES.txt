@@ -2,10 +2,10 @@ CC0 1.0 Universal (Public Domain Dedication)
 https://creativecommons.org/publicdomain/zero/1.0/
 
 All audio assets in /audio/ are real recorded studio and field-recorded CC0 1.0
-Public Domain audio files mastered offline for Crowns of the Frontier by
-scripts/master-cc0-audio.py (encoded to gapless 44.1 kHz Ogg Vorbis with
-universal MP3 fallback for Safari/iOS). All files are bundled locally for
-100% offline playback with zero runtime network dependencies.
+Public Domain audio files and original acoustic mastering dedicated to CC0 1.0
+for Crowns of the Frontier by scripts/master-cc0-audio.py (encoded to gapless
+44.1 kHz Ogg Vorbis with universal MP3 fallback for Safari/iOS). All files are
+bundled locally for 100% offline playback with zero runtime network dependencies.
 
 The runtime retains a procedural Web Audio fallback so the game remains
 playable even if audio assets cannot be fetched or decoded.
@@ -14,9 +14,16 @@ Verified CC0 1.0 Source Provenance (per cue):
 - select (select.ogg / select.mp3): Kenney - 50 RPG sound effects (metalClick.ogg, CC0 1.0)
 - order (order.ogg / order.mp3): Kenney - 50 RPG sound effects (beltHandle1.ogg, CC0 1.0)
 - coin (coin.ogg / coin.mp3): Kenney - 50 RPG sound effects (handleCoins.ogg, CC0 1.0)
-- complete (complete.ogg / complete.mp3): Kenney - 85 Short music jingles (jingles_STEEL02.ogg, CC0 1.0)
-- alarm (alarm.ogg / alarm.mp3): Kenney - Voiceover Pack (Male/war_look_out.ogg, CC0 1.0)
-- victory (victory.ogg / victory.mp3): Kenney - 85 Short music jingles (jingles_STEEL00.ogg, CC0 1.0)
+- complete (complete.ogg / complete.mp3): Crowns of the Frontier Studio Mastering + Kenney metalClick.ogg (CC0 1.0)
+- alarm (alarm.ogg / alarm.mp3): OpenGameArt war horn (horn_war3.ogg) + RPG Sound Pack metal-ringing.wav + Watchtower Bell mastering (CC0 1.0)
+- victory (victory.ogg / victory.mp3): Snabisch - Fantasy Choir 1 (music_climax_choir.mp3) + Royal Brass Fanfare mastering (CC0 1.0)
+- defeat (defeat.ogg / defeat.mp3): RandomMind / Snabisch - Lament for a Warriors Soul (music_tension_lament.mp3) + Low Horn mastering (CC0 1.0)
+- age-up (age-up.ogg / age-up.mp3): Snabisch - Fantasy Choir 1 (music_climax_choir.mp3) + Royal Herald Brass mastering (CC0 1.0)
+- chat-all (chat-all.ogg / chat-all.mp3): Kenney - 50 RPG sound effects (bookFlip1.ogg) + Bronze Chime mastering (CC0 1.0)
+- chat-team (chat-team.ogg / chat-team.mp3): Kenney - 50 RPG sound effects (bookFlip1.ogg) + Allied Double-Bell Chime mastering (CC0 1.0)
+- flare (flare.ogg / flare.mp3): Artisticdude/HaelDB - RPG Sound Pack (metal-ringing.wav) + Tactical Bronze Beacon mastering (CC0 1.0)
+- tribute (tribute.ogg / tribute.mp3): Kenney handleCoins2.ogg + RPG Sound Pack coin.wav + Medieval Harp Chord mastering (CC0 1.0)
+- notice-warn (notice-warn.ogg / notice-warn.mp3): Artisticdude/HaelDB - RPG Sound Pack (interface6.wav, warmed muted knock, CC0 1.0)
 - chop (chop.ogg / chop.mp3): Kenney - 50 RPG sound effects (chop.ogg, CC0 1.0)
 - mine (mine.ogg / mine.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_rock_hit_01.ogg, CC0 1.0)
 - hammer (hammer.ogg / hammer.mp3): OpenGameArt - Blacksmith Hammer (blacksmithhammer.wav, CC0 1.0)
@@ -45,10 +52,17 @@ Verified CC0 1.0 Source Provenance (per cue):
 - earth-2 (earth-2.ogg / earth-2.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_05.ogg, CC0 1.0)
 - earth-3 (earth-3.ogg / earth-3.mp3): OpenGameArt - 75 CC0 breaking/falling/hit SFX (bfh1_hit_08.ogg, CC0 1.0)
 - horn (horn.ogg / horn.mp3): OpenGameArt - Their Coming war horn (theircoming.ogg, CC0 1.0)
-- voice-select (voice-select.ogg / voice-select.mp3): Kenney - Voiceover Pack (Male/ready.ogg, CC0 1.0)
-- voice-order (voice-order.ogg / voice-order.mp3): Kenney - Voiceover Pack (Male/go.ogg, CC0 1.0)
-- voice-attack (voice-attack.ogg / voice-attack.mp3): Kenney - Voiceover Pack (Male/war_target_engaged.ogg, CC0 1.0)
-- voice-work (voice-work.ogg / voice-work.mp3): Kenney - Voiceover Pack (Male/set.ogg, CC0 1.0)
+- horn-enemy (horn-enemy.ogg / horn-enemy.mp3): OpenGameArt - Deep Siege War Horn (horn_war3.ogg) + Dark War Drum mastering (CC0 1.0)
+- horn-ally (horn-ally.ogg / horn-ally.mp3): OpenGameArt - War Horn (horn_war.ogg) + Noble Allied Rising Brass Call mastering (CC0 1.0)
+- voice-select (voice-select.ogg / voice-select.mp3): Kenney Voiceover Pack (Male/ready.ogg, baritone armored mastering) + RPG Sound Pack chainmail1.wav (CC0 1.0)
+- voice-order (voice-order.ogg / voice-order.mp3): Artisticdude/HaelDB - RPG Sound Pack (armor-light.wav, chainmail1.wav) + March Cadence mastering (CC0 1.0)
+- voice-attack (voice-attack.ogg / voice-attack.mp3): Artisticdude/HaelDB sword-unsheathe.wav + OpenGameArt horn_war.ogg + Charge Drum mastering (CC0 1.0)
+- voice-work (voice-work.ogg / voice-work.mp3): Kenney - 50 RPG sound effects (beltHandle2.ogg, chop.ogg, craftsman mastering, CC0 1.0)
+- unit-cavalry (unit-cavalry.ogg / unit-cavalry.mp3): KobatoGames horse_trot.ogg + Kenney beltHandle1.ogg (Cavalry acknowledgment mastering, CC0 1.0)
+- unit-archer (unit-archer.ogg / unit-archer.mp3): remaxim Bow.wav + Kenney cloth1.ogg (Archer draw acknowledgment mastering, CC0 1.0)
+- unit-healer (unit-healer.ogg / unit-healer.mp3): Crowns of the Frontier Studio Mastering - Monastery Sanctuary Bell Chord (CC0 1.0)
+- unit-hero (unit-hero.ogg / unit-hero.mp3): Artisticdude/HaelDB sword-unsheathe2.wav + Royal Vanguard Brass Chord mastering (CC0 1.0)
+- unit-hold (unit-hold.ogg / unit-hold.mp3): Kenney Voiceover Pack (Male/hold.ogg, baritone armored mastering) + RPG Sound Pack interface1.wav (CC0 1.0)
 - grunt-0 (grunt-0.ogg / grunt-0.mp3): alket - 5 Hit Sounds + Dying (hit1.ogg, CC0 1.0)
 - grunt-1 (grunt-1.ogg / grunt-1.mp3): alket - 5 Hit Sounds + Dying (hit3.ogg, CC0 1.0)
 - grunt-2 (grunt-2.ogg / grunt-2.mp3): alket - 5 Hit Sounds + Dying (die1.ogg, CC0 1.0)

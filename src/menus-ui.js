@@ -241,11 +241,14 @@ export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,gr
       <input type="range" id="volume" min="0" max="1" step=".05" value="${settings.volume}">
       <label class="field-label" for="music-volume">MUSIC VOLUME <span data-vol-label="music-volume">${volPct(settings.musicVolume??1)}</span></label>
       <input type="range" id="music-volume" min="0" max="1" step=".05" value="${settings.musicVolume??1}">
-      <label class="field-label" for="ui-volume">UI & ALERT CUES <span data-vol-label="ui-volume">${volPct(settings.uiVolume??1)}</span></label>
+      <label class="field-label" for="voice-volume">VOICES &amp; COMMS <span data-vol-label="voice-volume">${volPct(settings.voiceVolume??1)}</span></label>
+      <input type="range" id="voice-volume" min="0" max="1" step=".05" value="${settings.voiceVolume??1}">
+      <label class="field-label" for="ui-volume">UI &amp; ALERT CUES <span data-vol-label="ui-volume">${volPct(settings.uiVolume??1)}</span></label>
       <input type="range" id="ui-volume" min="0" max="1" step=".05" value="${settings.uiVolume??1}">
       <label class="toggle"><input id="music" type="checkbox" ${settings.music?'checked':''}> Ambient music</label>
-      <label class="toggle"><input id="unit-voices" type="checkbox" ${settings.unitVoices!==false?'checked':''}> Unit voice responses</label>
-      <label class="toggle"><input id="war-horns" type="checkbox" ${settings.warHorns!==false?'checked':''}> Brass war horn alerts</label>
+      <label class="toggle"><input id="voice-comms" type="checkbox" ${settings.voiceComms!==false?'checked':''}> Commander &amp; warlord speech</label>
+      <label class="toggle"><input id="unit-voices" type="checkbox" ${settings.unitVoices!==false?'checked':''}> Unit responses &amp; acknowledgments</label>
+      <label class="toggle"><input id="war-horns" type="checkbox" ${settings.warHorns!==false?'checked':''}> Brass war horn &amp; rally alerts</label>
       <label class="toggle"><input id="weather-sounds" type="checkbox" ${settings.weatherSounds?'checked':''}> Rain, wind, and thunder sounds</label>
     </div>
 

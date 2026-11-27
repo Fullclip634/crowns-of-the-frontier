@@ -96,6 +96,45 @@ export const COMMANDER_PROFILES=Object.freeze({
     silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.2 4.8-7.4 9-7.4s7.4 2.2 9 7.4z',
     crest:'M9 11l3-6 4 3 4-3 3 6z',
   },
+  'Forgemaster Borin':{
+    title:'Lord of the Anvil',bg1:'#4c2a1a',bg2:'#201009',rim:'#f0b068',accent:'#ff9854',
+    emblem:'M10 9h12v5h-4v8h-4v-8h-4z',
+    silhouette:'M16 11.2a4.2 4.2 0 1 0 0 8.4a4.2 4.2 0 1 0 0-8.4z M6.8 28c1.7-5.3 5-7.6 9.2-7.6s7.5 2.3 9.2 7.6z',
+    crest:'M9 10h14v2.5H9z M12 6h8v4h-8z',
+  },
+  'Royal Herald':{
+    title:'Voice of the Realm',bg1:'#3b3119',bg2:'#1a1408',rim:'#f6d97c',accent:'#ffe699',
+    emblem:'M10 11l3-5 3 3 3-3 3 5v3H10z',
+    silhouette:'M16 11.4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
+    crest:'M10 10l2.5-4.5L16 8l3.5-2.5L22 10v2H10z',
+  },
+});
+
+const ROLE_PROFILES=Object.freeze({
+  enemy:{
+    title:'Hostile Warlord',bg1:'#4a1e1b',bg2:'#1e0b0a',rim:'#e57869',accent:'#ff9e90',
+    emblem:'M9 8l14 14 M23 8L9 22',
+    silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.2 4.9-7.4 9-7.4s7.4 2.2 9 7.4z',
+    crest:'M9 11l2.5-5.5L16 9l4.5-3.5L23 11l-2 1.5H11z',
+  },
+  ally:{
+    title:'Allied Commander',bg1:'#1a3e3a',bg2:'#0b1d1b',rim:'#79d9cb',accent:'#9df5e8',
+    emblem:'M10 8h12v10l-6 5-6-5z',
+    silhouette:'M16 11.4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
+    crest:'M10 10l6-4.5L22 10v2H10z',
+  },
+  herald:{
+    title:'Royal Herald',bg1:'#3f331a',bg2:'#1a1409',rim:'#f4d378',accent:'#ffe291',
+    emblem:'M10 11l3-5 3 3 3-3 3 5v3H10z',
+    silhouette:'M16 11.4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M7.4 28c1.5-5 4.6-7.2 8.6-7.2s7.1 2.2 8.6 7.2z',
+    crest:'M10 10l2.5-4.5L16 8l3.5-2.5L22 10v2H10z',
+  },
+  player:{
+    title:'Royal Vanguard',bg1:'#2a3c42',bg2:'#111b1e',rim:'#f2cf78',accent:'#8cd6e6',
+    emblem:'M16 5l4 6-4 10-4-10z',
+    silhouette:'M16 11.2a4.1 4.1 0 1 0 0 8.2a4.1 4.1 0 1 0 0-8.2z M7 28c1.6-5.2 4.8-7.4 9-7.4s7.4 2.2 9 7.4z',
+    crest:'M10 10l6-5 6 5v2H10z',
+  },
 });
 
 const DEFAULT_PROFILE=Object.freeze({
@@ -105,13 +144,13 @@ const DEFAULT_PROFILE=Object.freeze({
   crest:'M11 10l5-4 5 4z',
 });
 
-export function commanderProfile(speaker=''){
-  return COMMANDER_PROFILES[speaker]||DEFAULT_PROFILE;
+export function commanderProfile(speaker='',role=''){
+  return COMMANDER_PROFILES[speaker]||ROLE_PROFILES[role]||DEFAULT_PROFILE;
 }
 
-export function commanderPortraitSvg(speaker='',size=42){
-  const p=commanderProfile(speaker);
-  const gid=`cp-${String(speaker||'default').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`;
+export function commanderPortraitSvg(speaker='',size=42,role=''){
+  const p=commanderProfile(speaker,role);
+  const gid=`cp-${String(speaker||role||'default').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`;
   return `<svg class="commander-portrait-svg" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="${esc(speaker||'Commander')} heraldic portrait">
     <defs>
       <radialGradient id="${gid}" cx="38%" cy="28%" r="72%">

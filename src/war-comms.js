@@ -1,12 +1,14 @@
 import {FACTIONS} from './data.js';
 import {bridgeSpans,spanZ} from './bridge-layout.js';
 import {uiIcon} from './ui-icons.js';
+import {commanderPortraitSvg} from './commander-portraits.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const FEMALE_SPEAKERS=/queen|lady|syra|maera|sera|sela|ilya|isolde|vaelen/i;
 const HEAVY_SPEAKERS=/draven|krag|korr|malrik|borin|arak|skald|overlord|siege|forge/i;
 const FIERCE_SPEAKERS=/vex|varek|kael|raider|khan/i;
+const HERALD_SPEAKERS=/herald|architect|command/i;
 
 const ENEMY_LINES={
   opening:[
@@ -85,6 +87,14 @@ function pick(list,seed=0){
   return list[Math.abs(Math.floor(seed))%list.length];
 }
 
+function resolveHornKind(horn,role){
+  if(!horn)return null;
+  if(typeof horn==='string')return horn;
+  if(role==='enemy')return 'enemy';
+  if(role==='ally')return 'ally';
+  return 'royal';
+}
+
 export function warCommsMarkup(){
   return `<aside id="war-comms-banner" class="war-comms-banner hidden" role="status" aria-live="polite"></aside>
   <section id="war-comms-panel" class="war-comms-panel hidden" aria-label="War communications">
@@ -130,15 +140,21 @@ export class WarCommsController{
     this.open=false;
     this.muted=this.settings.voiceComms===false;
     this.voices=[];
+    this.voiceCache=new Map();
     this.queue=[];
+    this.activeItem=null;
     this.speaking=false;
     this.bannerTimer=0;
+    this.playTimer=0;
+    this.nextTimer=0;
+    this.watchdogTimer=0;
     this.cooldowns={};
     this.history=[];
     this._loadVoices();
     if(typeof window!=='undefined'&&window.speechSynthesis){
-      window.speechSynthesis.addEventListener?.('voiceschanged',()=>this._loadVoices());
+      window.speechSynthesis.addEventListener?.('voiceschanged',()=>{this.voiceCache.clear();this._loadVoices();});
     }
+    this.audio?.setSpeechDirector?.(this);
     this.syncMuteUI();
   }
 
@@ -148,29 +164,37 @@ export class WarCommsController{
     this.voices=all.filter(v=>/^en\b/i.test(v.lang||'')||!v.lang);
   }
 
-  _selectVoice(speaker,faction='alder'){
+  _selectVoice(speaker,faction='alder',role='ally'){
+    const cacheKey=`${speaker||''}|${faction}|${role}`;
+    if(this.voiceCache.has(cacheKey))return this.voiceCache.get(cacheKey);
     if(!this.voices.length)this._loadVoices();
     const female=FEMALE_SPEAKERS.test(speaker||'');
     const heavy=HEAVY_SPEAKERS.test(speaker||'')||faction==='iron';
     const fierce=FIERCE_SPEAKERS.test(speaker||'')||faction==='raven';
+    const herald=role==='herald'||HERALD_SPEAKERS.test(speaker||'');
     const score=v=>{
       let s=0;
       const name=(v.name||'').toLowerCase();
-      if(/natural|neural|online/.test(name))s+=40;
-      if(/google uk|google us|microsoft (ryan|brian|andrew|george|sonia|aria|ava|emma|guy|david|zira)/.test(name))s+=25;
-      if(/en-gb/i.test(v.lang))s+=10;
+      if(/natural|neural|online/.test(name))s+=42;
+      if(/google uk|google us|microsoft (ryan|brian|andrew|george|sonia|aria|ava|emma|guy|david|zira|daniel|arthur|libby)/.test(name))s+=26;
+      if(/en-gb/i.test(v.lang))s+=14;
       const looksFemale=/female|zira|hazel|susan|sonia|aria|ava|emma|jenny|libby|samantha|victoria|karen|moira/.test(name);
-      const looksMale=/male|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan/.test(name);
-      if(female&&looksFemale)s+=35;
-      else if(!female&&looksMale)s+=35;
-      else if(female&&looksMale)s-=20;
+      const looksMale=/male|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan|arthur/.test(name);
+      if(female&&looksFemale)s+=36;
+      else if(!female&&looksMale)s+=36;
+      else if(female&&looksMale)s-=22;
       return s;
     };
     const ranked=[...this.voices].sort((a,b)=>score(b)-score(a));
-    const voice=ranked[0]||null;
-    const pitch=female?1.08:heavy?0.74:fierce?0.86:faction==='sun'?0.98:0.90;
-    const rate=heavy?0.91:fierce?1.04:0.97;
-    return {voice,pitch,rate};
+    // Give distinct characters slightly different ranked voices when multiple quality voices exist.
+    const hash=[...(speaker||'')].reduce((n,c)=>((n*31)+c.charCodeAt(0))>>>0,0);
+    const topPool=ranked.slice(0,Math.min(3,ranked.length));
+    const voice=herald?(ranked[0]||null):(topPool.length?topPool[hash%topPool.length]:null);
+    const pitch=female?1.06:herald?0.88:heavy?0.74:fierce?0.85:faction==='sun'?0.98:0.90;
+    const rate=herald?0.95:heavy?0.90:fierce?1.03:0.96;
+    const cast={voice,pitch,rate};
+    if(this.voices.length)this.voiceCache.set(cacheKey,cast);
+    return cast;
   }
 
   syncMuteUI(){
@@ -178,6 +202,12 @@ export class WarCommsController{
     this.muteBtn.setAttribute('aria-pressed',String(this.muted));
     this.muteBtn.classList.toggle('muted',this.muted);
     this.muteBtn.innerHTML=`${uiIcon('volume-2')}<span>${this.muted?'Muted':'Voice On'}</span>`;
+  }
+
+  syncFromSettings(){
+    this.muted=this.settings.voiceComms===false;
+    if(this.muted)this.cancelSpeech();
+    this.syncMuteUI();
   }
 
   toggleMute(){
@@ -232,70 +262,163 @@ export class WarCommsController{
   }
 
   cancelSpeech(){
+    clearTimeout(this.playTimer);
+    clearTimeout(this.nextTimer);
+    clearTimeout(this.watchdogTimer);
+    this.playTimer=0;this.nextTimer=0;this.watchdogTimer=0;
     this.speaking=false;
+    this.activeItem=null;
     this.queue.length=0;
+    this._setBannerSpeaking(false);
+    this.audio?.setCommsSpeaking?.(false);
     try{window.speechSynthesis?.cancel?.();}catch{}
   }
 
   hideBanner(){
     clearTimeout(this.bannerTimer);
+    this._setBannerSpeaking(false);
     this.banner?.classList.add('hidden');
   }
 
-  /** Speaks a warlord or allied commander line aloud with faction war-horn intro + live subtitle banner. */
-  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',urgent=false,horn=false,showBanner=true}){
+  _setBannerSpeaking(active){
+    if(!this.banner)return;
+    this.banner.dataset.speaking=active?'true':'false';
+  }
+
+  /**
+   * Priority-arbitrated voice & communication director:
+   * priority 0 = Critical (Victory/Defeat/Wonder)
+   * priority 1 = Urgent Alert (Under Attack Herald, Kingdom Defeated)
+   * priority 2 = Interactive Tactical Comms (Ally Orders, Enemy Taunts, Ally SOS)
+   * priority 3 = Narrative / Ambient Comms (Campaign Events, Hero Cries, Opening)
+   */
+  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',urgent=false,priority=null,horn=false,showBanner=true}){
     if(!text)return;
-    const item={speaker,role,faction,color,text,horn,showBanner};
-    if(urgent){
+    const prio=Number.isFinite(priority)?priority:(urgent?1:3);
+    const item={speaker,role,faction,color,text,priority:prio,horn:resolveHornKind(horn,role),showBanner};
+
+    // Deduplicate identical consecutive lines already active or queued.
+    if(this.activeItem&&this.activeItem.text===text&&this.activeItem.role===role)return;
+    if(this.queue.some(q=>q.text===text&&q.role===role))return;
+
+    // Preempt ONLY when an urgent item has equal-or-higher priority than current speech!
+    // This prevents ambient enemy taunts (priority 3) or interactive orders (priority 2) from
+    // ever canceling an active Royal Herald "Under Attack" alert (priority 1), while allowing
+    // consecutive player-triggered War Comms orders/taunts (priority 2) to respond crisply.
+    const shouldPreempt=urgent&&this.speaking&&this.activeItem&&prio<=this.activeItem.priority;
+    if(shouldPreempt){
+      clearTimeout(this.playTimer);
+      clearTimeout(this.nextTimer);
+      clearTimeout(this.watchdogTimer);
       try{window.speechSynthesis?.cancel?.();}catch{}
-      this.queue=[item];
+      this.audio?.setCommsSpeaking?.(false);
+      // Keep higher-priority queued items, drop stale low-priority clutter.
+      this.queue=this.queue.filter(q=>q.priority<=2);
+      this.queue.unshift(item);
       this.speaking=false;
+      this.activeItem=null;
       this._playNext();
       return;
     }
-    if(this.queue.length>=3)this.queue.shift();
-    this.queue.push(item);
+
+    // Priority-ordered insertion so urgent alerts always play next without clobbering active speech.
+    let insertAt=this.queue.length;
+    for(let i=0;i<this.queue.length;i++){
+      if(prio<this.queue[i].priority){insertAt=i;break;}
+    }
+    this.queue.splice(insertAt,0,item);
+    while(this.queue.length>4)this.queue.pop();
+
     if(!this.speaking)this._playNext();
   }
 
   _playNext(){
+    clearTimeout(this.playTimer);
+    clearTimeout(this.nextTimer);
+    clearTimeout(this.watchdogTimer);
     const item=this.queue.shift();
-    if(!item){this.speaking=false;return;}
+    if(!item){
+      this.speaking=false;
+      this.activeItem=null;
+      this._setBannerSpeaking(false);
+      this.audio?.setCommsSpeaking?.(false);
+      return;
+    }
     this.speaking=true;
+    this.activeItem=item;
     this._recordLog(item);
     if(item.showBanner!==false)this._showBanner(item);
     if(item.horn&&this.settings.warHorns!==false){
-      this.audio?.warHorn?.();
+      this.audio?.warHorn?.(item.horn);
     }
-    const vol=Math.max(0,Math.min(1,(this.settings.volume??0.7)*(this.settings.uiVolume??1)));
-    const canSpeak=!this.muted&&this.settings.unitVoices!==false&&vol>0.02&&typeof window!=='undefined'&&typeof SpeechSynthesisUtterance==='function'&&window.speechSynthesis;
+
+    const voiceVol=this.settings.voiceVolume??1;
+    const vol=Math.max(0,Math.min(1,(this.settings.volume??0.7)*voiceVol));
+    const canSpeak=!this.muted&&this.settings.voiceComms!==false&&this.settings.unitVoices!==false&&vol>0.02&&typeof window!=='undefined'&&typeof SpeechSynthesisUtterance==='function'&&window.speechSynthesis;
+
+    const advance=(delayMs=280)=>{
+      clearTimeout(this.playTimer);
+      clearTimeout(this.watchdogTimer);
+      this._setBannerSpeaking(false);
+      this.audio?.setCommsSpeaking?.(false);
+      this.speaking=false;
+      this.activeItem=null;
+      if(this.queue.length){
+        this.nextTimer=setTimeout(()=>this._playNext(),delayMs);
+        this.nextTimer?.unref?.();
+      }
+    };
+
     if(canSpeak){
       try{
         const utt=new SpeechSynthesisUtterance(item.text);
-        const cast=this._selectVoice(item.speaker,item.faction);
+        const cast=this._selectVoice(item.speaker,item.faction,item.role);
         if(cast.voice)utt.voice=cast.voice;
+        utt.lang=cast.voice?.lang||'en-US';
         utt.pitch=cast.pitch;
         utt.rate=cast.rate;
         utt.volume=vol;
-        const done=()=>{
-          clearTimeout(fallbackTimer);
-          this.speaking=false;
-          if(this.queue.length)setTimeout(()=>this._playNext(),260);
+        let finished=false;
+        let started=false;
+        const finish=(gap=280)=>{
+          if(finished)return;
+          finished=true;
+          advance(gap);
         };
-        const estMs=Math.max(2600,Math.min(12000,item.text.length*72+1200));
-        const fallbackTimer=setTimeout(done,estMs+1800);
-        utt.onend=done;
-        utt.onerror=done;
+        const estMs=Math.max(2400,Math.min(11500,item.text.length*68+1100));
+        this.playTimer=setTimeout(()=>finish(220),estMs+1600);
+        this.playTimer?.unref?.();
+        // Watchdog: if Chrome blocks speechSynthesis outside a click gesture, never leave
+        // the speaking waveform faking audio or freeze the queue for 13 seconds.
+        this.watchdogTimer=setTimeout(()=>{
+          if(started||finished)return;
+          try{window.speechSynthesis?.cancel?.();}catch{}
+          this._setBannerSpeaking(false);
+          this.audio?.setCommsSpeaking?.(false);
+          clearTimeout(this.playTimer);
+          const readHold=Math.max(2200,Math.min(5400,item.text.length*44+900));
+          this.playTimer=setTimeout(()=>finish(220),readHold);
+          this.playTimer?.unref?.();
+        },260);
+        this.watchdogTimer?.unref?.();
+        utt.onstart=()=>{
+          started=true;
+          clearTimeout(this.watchdogTimer);
+          this._setBannerSpeaking(true);
+          this.audio?.setCommsSpeaking?.(true);
+        };
+        utt.onend=()=>finish(280);
+        utt.onerror=()=>finish(200);
+        this.audio?.setCommsSpeaking?.(true);
         window.speechSynthesis.speak(utt);
         return;
       }catch{}
     }
-    const holdMs=Math.max(3000,Math.min(7500,item.text.length*55+1200));
-    const timer=setTimeout(()=>{
-      this.speaking=false;
-      if(this.queue.length)this._playNext();
-    },holdMs);
-    timer?.unref?.();
+
+    this._setBannerSpeaking(false);
+    const holdMs=Math.max(2400,Math.min(6200,item.text.length*48+1000));
+    this.playTimer=setTimeout(()=>advance(220),holdMs);
+    this.playTimer?.unref?.();
   }
 
   _showBanner(item){
@@ -303,17 +426,20 @@ export class WarCommsController{
     clearTimeout(this.bannerTimer);
     // Never overlap the campaign commander dialogue box with a second banner!
     this.root?.querySelector('#commander-dialogue')?.classList.add('hidden');
-    const hex=item.color!=null?`#${Number(item.color).toString(16).padStart(6,'0')}`:(item.role==='enemy'?'#e07566':item.role==='player'?'#e6c064':'#66cec0');
-    const tag=item.role==='enemy'?'ENEMY WARLORD':item.role==='player'?'YOUR COMMAND':'ALLIED COMMAND';
+    const hex=item.color!=null?`#${Number(item.color).toString(16).padStart(6,'0')}`:(item.role==='enemy'?'#e07566':item.role==='herald'||item.role==='player'?'#e6c064':'#66cec0');
+    const tag=item.role==='enemy'?'ENEMY WARLORD':item.role==='herald'?'ROYAL HERALD':item.role==='player'?'YOUR COMMAND':'ALLIED COMMAND';
     this.banner.dataset.role=item.role;
+    this.banner.dataset.speaking='false';
     this.banner.innerHTML=`<span class="wc-pip" style="background:${hex}"></span>
+      <span class="wc-portrait" aria-hidden="true">${commanderPortraitSvg(item.speaker,40,item.role)}</span>
       <div class="wc-body">
-        <div class="wc-meta"><strong>${esc(item.speaker)}</strong><span class="wc-tag">${tag}</span><span class="wc-wave" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <div class="wc-meta"><strong>${esc(item.speaker)}</strong><span class="wc-tag">${tag}</span><span class="wc-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
         <p>“${esc(item.text)}”</p>
       </div>`;
     this.banner.classList.remove('hidden');
     const dur=Math.max(4600,Math.min(10500,item.text.length*68+1800));
-    this.bannerTimer=setTimeout(()=>this.banner?.classList.add('hidden'),dur);
+    this.bannerTimer=setTimeout(()=>{this._setBannerSpeaking(false);this.banner?.classList.add('hidden');},dur);
+    this.bannerTimer?.unref?.();
   }
 
   _recordLog(item){
@@ -334,7 +460,7 @@ export class WarCommsController{
     return true;
   }
 
-  /** Dynamic reactive warlord & ally voice lines fired directly from live simulation events! */
+  /** Dynamic reactive warlord, ally & herald voice lines fired from live simulation events. */
   onSimEvent(sim,event){
     if(!sim||sim.options?.mode==='tutorial'||sim.options?.mode==='sandbox')return;
     const t=sim.time||0;
@@ -352,24 +478,24 @@ export class WarCommsController{
         fireworkbarrage:'Light the black powder! Rain imperial fire upon them!',
       };
       const line=cries[event.skillId]||`${event.skillName}! Forward!`;
-      this.speak({speaker:event.heroTitle||'Hero General',role:'player',faction:sim.players?.[0]?.faction||'alder',color:sim.players?.[0]?.color,text:line,horn:true});
+      this.speak({speaker:event.heroTitle||'Hero General',role:'player',faction:sim.players?.[0]?.faction||'alder',color:sim.players?.[0]?.color,text:line,priority:2,horn:'royal'});
       return;
     }
     if(event.type==='wonder-started'){
       const pl=sim.players?.[event.owner];
       if(event.owner===0){
-        this.speak({speaker:pl?.name||'Royal Architect',role:'player',faction:pl?.faction||'alder',color:pl?.color,text:`Our builders have laid the foundations of the ${event.wonderName}! Defend it until completion!`,urgent:true,horn:true});
+        this.speak({speaker:pl?.name||'Royal Architect',role:'player',faction:pl?.faction||'alder',color:pl?.color,text:`Our builders have laid the foundations of the ${event.wonderName}! Defend it until completion!`,priority:1,urgent:true,horn:'ally'});
       }else if(sim.hostile(0,event.owner)){
-        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`Behold! We are raising the ${event.wonderName}! Try to stop us before its power awakens!`,urgent:true,horn:true});
+        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`Behold! We are raising the ${event.wonderName}! Try to stop us before its power awakens!`,priority:1,urgent:true,horn:'enemy'});
       }
       return;
     }
     if(event.type==='wonder-completed'){
       const pl=sim.players?.[event.owner];
       if(event.owner===0){
-        this.speak({speaker:pl?.name||'High Herald',role:'player',faction:pl?.faction||'alder',color:pl?.color,text:`The ${event.wonderName} stands complete! Its eternal blessing now empowers our entire kingdom!`,urgent:true,horn:true});
+        this.speak({speaker:pl?.name||'Royal Herald',role:'herald',faction:pl?.faction||'alder',color:pl?.color,text:`The ${event.wonderName} stands complete! Its eternal blessing now empowers our entire kingdom!`,priority:0,urgent:true,horn:false});
       }else if(sim.hostile(0,event.owner)){
-        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`The ${event.wonderName} is complete! Feel the wrath of our golden age!`,urgent:true,horn:true});
+        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`The ${event.wonderName} is complete! Feel the wrath of our golden age!`,priority:0,urgent:true,horn:'enemy'});
       }
       return;
     }
@@ -377,28 +503,34 @@ export class WarCommsController{
       const speaker=event.speaker||'Frontier Command';
       const role=event.role||(event.enemy?'enemy':'ally');
       const matched=sim.players?.find(p=>p.name&&speaker.toLowerCase().includes(p.name.split(' ')[0].toLowerCase()));
-      this.speak({speaker,role,faction:matched?.faction||'alder',color:matched?.color,text:event.text,horn:role==='enemy',showBanner:false});
+      this.speak({speaker,role,faction:matched?.faction||'alder',color:matched?.color,text:event.text,priority:2,horn:role==='enemy'?'enemy':'ally',showBanner:false});
       return;
     }
     if(event.type==='campaign-stage'&&event.text){
-      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text,showBanner:false});
+      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text,priority:2,horn:false,showBanner:false});
+      return;
+    }
+    if(event.type==='campaign-sidequest'&&event.title){
+      this.speak({speaker:event.speaker||'Frontier Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:`Side objective complete: ${event.title}. ${event.rewardText||''}`.trim(),priority:3,horn:'ally',showBanner:false});
       return;
     }
     if(event.type==='ally-support'&&sim.allied(0,event.ally)&&this._ready('ally-support',t,35)){
       const ally=sim.players[event.owner];
-      if(ally)this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:pick(ALLY_LINES.reinforcing,t+event.owner)});
+      if(ally)this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:pick(ALLY_LINES.reinforcing,t+event.owner),priority:2,horn:'ally'});
       return;
     }
     if(event.type==='kingdom-defeated'&&event.owner>0&&sim.hostile(0,event.owner)){
       const defeated=sim.players[event.owner];
-      this.speak({speaker:event.name||defeated?.name||'Rival Warlord',role:'enemy',faction:defeated?.faction||'raven',color:defeated?.color,text:pick(ENEMY_LINES.defeated,t+event.owner),urgent:true,horn:true});
+      this.speak({speaker:event.name||defeated?.name||'Rival Warlord',role:'enemy',faction:defeated?.faction||'raven',color:defeated?.color,text:pick(ENEMY_LINES.defeated,t+event.owner),priority:1,urgent:true,horn:'enemy'});
       return;
     }
     if(event.type==='alarm'&&this._ready('enemy-taunt-alarm',t,42)){
       const enemies=this.activeEnemies(sim);
       if(enemies.length){
         const lead=enemies[Math.floor(t)%enemies.length];
-        this.speak({speaker:lead.player.name||FACTIONS[lead.player.faction]?.name||'Rival Warlord',role:'enemy',faction:lead.player.faction,color:lead.player.color,text:pick(ENEMY_LINES.attackingPlayer,t+lead.owner)});
+        // Priority 3 with horn:false so this taunt queues cleanly AFTER the Royal Herald alarm
+        // instead of overlapping or canceling "Your kingdom is under attack!".
+        this.speak({speaker:lead.player.name||FACTIONS[lead.player.faction]?.name||'Rival Warlord',role:'enemy',faction:lead.player.faction,color:lead.player.color,text:pick(ENEMY_LINES.attackingPlayer,t+lead.owner),priority:3,horn:false});
       }
       return;
     }
@@ -407,12 +539,12 @@ export class WarCommsController{
       if(owner>0&&sim.hostile(0,owner)&&this._ready(`enemy-loss:${owner}`,t,28)){
         const foe=sim.players[owner];
         if(foe&&!foe.defeated){
-          this.speak({speaker:foe.name||FACTIONS[foe.faction]?.name||'Rival Warlord',role:'enemy',faction:foe.faction,color:foe.color,text:pick(ENEMY_LINES.losingStructure,t+event.entity.id)});
+          this.speak({speaker:foe.name||FACTIONS[foe.faction]?.name||'Rival Warlord',role:'enemy',faction:foe.faction,color:foe.color,text:pick(ENEMY_LINES.losingStructure,t+event.entity.id),priority:3,horn:'enemy'});
         }
       }else if(owner>0&&sim.allied(0,owner)&&this._ready(`ally-fire:${owner}`,t,40)){
         const ally=sim.players[owner];
         if(ally&&!ally.defeated){
-          this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:ALLY_LINES.allyUnderFire[0],horn:true});
+          this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:ALLY_LINES.allyUnderFire[0],priority:2,horn:'ally'});
         }
       }
     }
@@ -425,12 +557,12 @@ export class WarCommsController{
     if(enemies.length){
       const lead=enemies[0];
       const name=lead.player.name||`${FACTIONS[lead.player.faction]?.name||'Rival'} Warlord`;
-      this.speak({speaker:name,role:'enemy',faction:lead.player.faction,color:lead.player.color,text:pick(ENEMY_LINES.opening,sim.options?.seed||1),horn:true});
+      this.speak({speaker:name,role:'enemy',faction:lead.player.faction,color:lead.player.color,text:pick(ENEMY_LINES.opening,sim.options?.seed||1),priority:3,horn:'enemy'});
     }
     const allies=this.activeAllies(sim);
     if(allies.length){
       const a=allies[0];
-      this.speak({speaker:a.player.name||'Allied Commander',role:'ally',faction:a.player.faction,color:a.player.color,text:pick(ALLY_LINES.opening,sim.options?.seed||2)});
+      this.speak({speaker:a.player.name||'Allied Commander',role:'ally',faction:a.player.faction,color:a.player.color,text:pick(ALLY_LINES.opening,sim.options?.seed||2),priority:3,horn:'ally'});
     }
   }
 
@@ -457,11 +589,12 @@ export class WarCommsController{
           }
         }
         if(sent){
-          this.speak({speaker:player.name||'Allied Commander',role:'ally',faction:player.faction,color:player.color,text:pick(ALLY_LINES.suppliesSent,sim.time||0),urgent:true});
+          this.audio?.play?.('tribute');
+          this.speak({speaker:player.name||'Allied Commander',role:'ally',faction:player.faction,color:player.color,text:pick(ALLY_LINES.suppliesSent,sim.time||0),priority:2,urgent:true,horn:'ally'});
           return {ok:true,message:`${player.name||'Your ally'} sent war supplies to your treasury!`};
         }
       }
-      this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:ALLY_LINES.suppliesLow[0],urgent:true});
+      this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:ALLY_LINES.suppliesLow[0],priority:2,urgent:true,horn:false});
       return {ok:false,message:'Your ally does not have spare resources to send yet.'};
     }
 
@@ -480,7 +613,6 @@ export class WarCommsController{
     }
 
     sim.allyDirective={type:kind,x:target.x,z:target.z,until:(sim.time||0)+75};
-    // Immediately command idle/ready allied fighters so the player sees instant responsive teamwork!
     for(const {owner} of allies){
       const fighters=sim.owned(owner,'unit').filter(u=>u.hp>0&&!u.embarked&&!['villager','fishingboat','cart','king','scout','monk'].includes(u.type));
       if(fighters.length){
@@ -490,7 +622,7 @@ export class WarCommsController{
     }
     this.onPing(target.x,target.z,kind==='attack'?'danger':'info',kind==='attack'?'Allied assault target':kind==='defend'?'Hold the pass':'Allied relief point');
     const lines=ALLY_LINES[kind]||ALLY_LINES.attack;
-    this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:pick(lines,sim.time||0),urgent:true,horn:kind==='attack'});
+    this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:pick(lines,sim.time||0),priority:2,urgent:true,horn:'ally'});
     return {ok:true,target};
   }
 
@@ -511,7 +643,7 @@ export class WarCommsController{
     }else{
       reply=pick(losing?ENEMY_LINES.tauntSurrenderWeak:ENEMY_LINES.tauntSurrenderStrong,sim.time||0);
     }
-    this.speak({speaker:name,role:'enemy',faction:lead.player.faction,color:lead.player.color,text:reply,urgent:true,horn:kind==='bringit'});
+    this.speak({speaker:name,role:'enemy',faction:lead.player.faction,color:lead.player.color,text:reply,priority:2,urgent:true,horn:'enemy'});
     return {ok:true,speaker:name,reply};
   }
 }

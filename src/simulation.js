@@ -580,7 +580,7 @@ export class Simulation {
     }
     return nearHome;
   }
-  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z});}
+  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z,targetKind:target.kind,targetType:target.type});}
     if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type]?.role==='cavalry'&&this.players[attacker.owner]?.tech?.raidingParties)this.players[attacker.owner].resources.gold+=3;
       // Soldier Veterancy: non-hero combat troops earn ★ / ★★ / ★★★ ranks with kills (+10% ATK & HP per rank!)
       if(attacker?.kind==='unit'&&attacker.hp>0&&attacker.owner!==target.owner&&!UNITS[attacker.type]?.hero&&attacker.type!=='villager'&&(UNITS[attacker.type]?.damage||0)>0){

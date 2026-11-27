@@ -7,15 +7,24 @@ export const SAMPLE_MANIFEST='audio/manifest.json';
 export const MAX_PARALLEL_SAMPLE_LOADS=4;
 export const MAX_SAMPLE_BYTES=1_500_000;
 
-export const UI_SAMPLE_CUES=Object.freeze(['select','order','coin','complete','alarm','victory']);
+export const UI_SAMPLE_CUES=Object.freeze([
+  'select','order','coin','complete','alarm','victory',
+  'defeat','age-up','chat-all','chat-team','flare','tribute','notice-warn',
+]);
+export const HORN_SAMPLE_CUES=Object.freeze(['horn','horn-enemy','horn-ally']);
 export const FOLEY_SAMPLE_CUES=Object.freeze(['chop','mine','hammer','anvil','hoof','march','fire']);
 export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-meadow','amb-coast','amb-river','amb-tundra','amb-arid','amb-volcanic']);
-export const VOICE_SAMPLE_CUES=Object.freeze(['voice-select','voice-order','voice-attack','voice-work']);
+export const VOICE_SAMPLE_CUES=Object.freeze([
+  'voice-select','voice-order','voice-attack','voice-work',
+  'unit-cavalry','unit-archer','unit-healer','unit-hero','unit-hold',
+]);
 export const GRUNT_SAMPLE_CUES=Object.freeze(['grunt-0','grunt-1','grunt-2']);
 export const MUSIC_STEM_CUES=Object.freeze(['music-peace','music-tension','music-battle','music-climax']);
 export const COMBAT_KINDS=Object.freeze(['metal','arrow','wood','siege','earth']);
 export const COMBAT_VARIANTS=4;
 export function combatCue(kind,variant=0){return `${kind}-${((variant%COMBAT_VARIANTS)+COMBAT_VARIANTS)%COMBAT_VARIANTS}`;}
+
+const GROUP_PRIORITY=Object.freeze({ui:0,voice:1,combat:2,foley:3,weather:4,music:5});
 
 export function sampleURL(file,base='http://localhost/',directory=SAMPLE_DIRECTORY){
   return new URL(directory+file,base).toString();
@@ -29,20 +38,29 @@ function preferFallbackCodec(){
   }catch{return false;}
 }
 
-// Loading is best-effort and bounded. Any missing, corrupt or unsupported
-// sample simply leaves the procedural Web Audio layer in charge.
+// Micro-yield between browser decode batches so audio startup never steals a render frame.
+function yieldBatch(){
+  if(typeof globalThis.requestAnimationFrame==='function'){
+    return new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return Promise.resolve();
+}
+
+// Loading is best-effort, priority-tiered (instant comms/alerts/voices first,
+// heavy music/weather stems second), and bounded so gameplay FPS never hitches.
 export function createSampleBank({context,fetchData=globalThis.fetch,base=globalThis.document?.baseURI||'http://localhost/',concurrency=MAX_PARALLEL_SAMPLE_LOADS,manifestURL=SAMPLE_MANIFEST}={}){
   const buffers=new Map(),cues=new Map(),status=new Map(),errors=[];
-  let ready=false,loading=null,totalBytes=0;
+  let ready=false,coreReady=false,loading=null,totalBytes=0;
   const bank={
     get ready(){return ready;},
+    get coreReady(){return coreReady;},
     get buffers(){return buffers;},
     has(name){return buffers.has(name);},
     get(name){return buffers.get(name)?.buffer||null;},
     cue(name){return cues.get(name)||null;},
     isLoop(name){return !!cues.get(name)?.loop;},
     status(name){return status.get(name)||'pending';},
-    diagnostics(){return {ready,loaded:buffers.size,failed:errors.length,total:cues.size,bytes:totalBytes,errors:errors.slice(),samples:[...status.entries()].map(([name,state])=>({name,state}))};},
+    diagnostics(){return {ready,coreReady,loaded:buffers.size,failed:errors.length,total:cues.size,bytes:totalBytes,errors:errors.slice(),samples:[...status.entries()].map(([name,state])=>({name,state}))};},
     load(){
       if(loading)return loading;
       loading=(async()=>{
@@ -52,11 +70,15 @@ export function createSampleBank({context,fetchData=globalThis.fetch,base=global
           const response=await fetchData(new URL(manifestURL,base).toString());
           if(!response?.ok)throw new Error('Sample manifest unavailable');
           const manifest=await response.json();
-          const entries=Object.entries(manifest.cues||{});
+          const rawEntries=Object.entries(manifest.cues||{});
+          // Priority-tier ordering: UI, alerts, horns, voices & combat decode before long loops.
+          const entries=rawEntries.slice().sort(([,a],[,b])=>(GROUP_PRIORITY[a?.group]??9)-(GROUP_PRIORITY[b?.group]??9));
           for(const [name,cue]of entries){cues.set(name,cue);status.set(name,'pending');}
           const useFallbackFirst=preferFallbackCodec();
-          for(let i=0;i<entries.length;i+=Math.max(1,concurrency)){
-            const batch=entries.slice(i,i+Math.max(1,concurrency));
+          const step=Math.max(1,concurrency);
+          for(let i=0;i<entries.length;i+=step){
+            const batch=entries.slice(i,i+step);
+            if(!coreReady&&batch.every(([,c])=>(GROUP_PRIORITY[c?.group]??9)>=4))coreReady=true;
             await Promise.allSettled(batch.map(async([name,cue])=>{
               try{
                 const candidates=useFallbackFirst&&cue.fallbackFile
@@ -82,8 +104,10 @@ export function createSampleBank({context,fetchData=globalThis.fetch,base=global
                 buffers.set(name,{buffer,cue});status.set(name,'loaded');totalBytes+=loadedBytes;
               }catch(error){status.set(name,'failed');errors.push(`${name}: ${error.message}`);}
             }));
+            if(i+step<entries.length)await yieldBatch();
           }
         }catch(error){errors.push(error.message);}
+        coreReady=true;
         ready=true;
         return bank.diagnostics();
       })();
