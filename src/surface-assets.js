@@ -96,23 +96,27 @@ function applyCoolAshlarStone(material){
     return;
   }
   const previousCompile=material.onBeforeCompile;
-  material.onBeforeCompile=(shader,renderer)=>{
-    if(previousCompile)previousCompile(shader,renderer);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+  material.onBeforeCompile=function(shader,renderer){
+    if(previousCompile)previousCompile.call(this,shader,renderer);
+    // Three.js WebGLProgram defines USE_INSTANCING_COLOR only in the vertex stage
+    // (folding it into USE_COLOR in the fragment stage), so derive the fortified
+    // silver mask from raw instanceColor in the vertex shader and pass via varying.
+    shader.vertexShader='varying float vFrontierSilver;\n'+shader.vertexShader.replace('#include <color_vertex>',`#include <color_vertex>
+      #ifdef USE_INSTANCING_COLOR
+        vFrontierSilver = smoothstep(0.02, 0.07, instanceColor.b - instanceColor.r);
+      #else
+        vFrontierSilver = 0.0;
+      #endif`);
+    shader.fragmentShader='varying float vFrontierSilver;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       {
-        #ifdef USE_INSTANCING_COLOR
-          float frontierSilver = smoothstep(0.02, 0.07, vColor.b - vColor.r);
-        #else
-          float frontierSilver = 0.0;
-        #endif
         float frontierStoneLuma = dot(diffuseColor.rgb, vec3(0.30, 0.59, 0.11));
         vec3 frontierWarmStone = diffuseColor.rgb * vec3(1.06, 0.96, 0.84);
         vec3 frontierSilverStone = mix(diffuseColor.rgb, vec3(frontierStoneLuma * 1.28, frontierStoneLuma * 1.30, frontierStoneLuma * 1.34), 0.76) * vec3(0.96, 0.98, 1.02);
-        diffuseColor.rgb = mix(frontierWarmStone, frontierSilverStone, frontierSilver);
+        diffuseColor.rgb = mix(frontierWarmStone, frontierSilverStone, vFrontierSilver);
       }`);
   };
   const previousKey=material.customProgramCacheKey;
-  material.customProgramCacheKey=()=>`${previousKey?previousKey.call(material):'standard'}-cool-ashlar-v2`;
+  material.customProgramCacheKey=function(){return `${previousKey?previousKey.call(this||material):'standard'}-cool-ashlar-v3`;};
   material.needsUpdate=true;
 }
 

@@ -140,7 +140,14 @@ test('WebGPU structurePalette and coolAshlarStone match WebGL2 brown-to-silver s
     assert.equal(glStone.color.getHex(),0xe5e0d4,'m.stone base color stays intact for structurePalette baking');
     const shader={fragmentShader:THREE.ShaderLib.standard.fragmentShader,vertexShader:THREE.ShaderLib.standard.vertexShader,uniforms:{}};
     glStone.onBeforeCompile(shader);
-    assert.match(shader.fragmentShader,/frontierWarmStone[\s\S]*frontierSilverStone/,'WebGL2 standalone stone material applies brown-to-silver stone transition');
+    assert.match(shader.vertexShader,/varying float vFrontierSilver;/,'WebGL2 stone vertex shader declares silver varying');
+    assert.match(shader.vertexShader,/#ifdef USE_INSTANCING_COLOR[\s\S]*vFrontierSilver\s*=\s*smoothstep\(0\.02,\s*0\.07,\s*instanceColor\.b\s*-\s*instanceColor\.r\);[\s\S]*#else[\s\S]*vFrontierSilver\s*=\s*0\.0;[\s\S]*#endif/,'WebGL2 computes fortified silver mask in vertex stage where Three.js defines USE_INSTANCING_COLOR');
+    assert.match(shader.fragmentShader,/varying float vFrontierSilver;[\s\S]*frontierWarmStone[\s\S]*frontierSilverStone[\s\S]*mix\(frontierWarmStone,\s*frontierSilverStone,\s*vFrontierSilver\)/,'WebGL2 standalone stone fragment shader mixes warm-to-silver using vFrontierSilver');
+    assert.doesNotMatch(shader.fragmentShader,/USE_INSTANCING_COLOR/,'WebGL2 fragment shader never guards on vertex-only USE_INSTANCING_COLOR');
+    const darkShader={fragmentShader:THREE.ShaderLib.standard.fragmentShader,vertexShader:THREE.ShaderLib.standard.vertexShader,uniforms:{}};
+    glStoneDark.onBeforeCompile(darkShader);
+    assert.match(darkShader.vertexShader,/vFrontierSilver\s*=\s*smoothstep\(0\.02,\s*0\.07,\s*instanceColor\.b\s*-\s*instanceColor\.r\)/,'WebGL2 stoneDark foundation also receives fortified silver mask');
+    assert.doesNotMatch(darkShader.fragmentShader,/USE_INSTANCING_COLOR/,'WebGL2 stoneDark fragment shader never guards on vertex-only USE_INSTANCING_COLOR');
     for(const m of Object.values(fakeView.materials))m.dispose();
   }finally{installNodeRuntime(null);}
 });
