@@ -165,69 +165,214 @@ export function crossedPlumeGeometry(width=1.2,height=1.8,yOffset=.75){
   for(const p of parts)p.dispose();
   return merged;
 }
+export function billboardPlaneGeometry(width=1.4,height=1.9,yOffset=.82){
+  const plane=new THREE.PlaneGeometry(width,height);
+  if(yOffset)plane.translate(0,yOffset,0);
+  return plane;
+}
+
+const smoothstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function hash2(ix,iy){
+  const n=Math.sin(ix*127.1+iy*311.7)*43758.5453123;
+  return n-Math.floor(n);
+}
+function noise2(x,y){
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+  const ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+  const a=hash2(ix,iy),b=hash2(ix+1,iy),c=hash2(ix,iy+1),d=hash2(ix+1,iy+1);
+  return a+(b-a)*ux+(c-a)*uy+(a-b-c+d)*ux*uy;
+}
+function fbm2(x,y,octaves=4){
+  let sum=0,amp=.5,freq=1,norm=0;
+  for(let o=0;o<octaves;o++){
+    sum+=noise2(x*freq,y*freq)*amp;
+    norm+=amp;amp*=.5;freq*=2.04;
+  }
+  return sum/norm;
+}
+function blackbodyFireRGB(temp){
+  const t=clamp(temp,0,1);
+  if(t<.34){
+    const k=t/.34;
+    return [lerp(226,255,k),lerp(30,86,k),lerp(4,8,k)];
+  }
+  if(t<.66){
+    const k=(t-.34)/.32;
+    return [255,lerp(86,172,k),lerp(8,26,k)];
+  }
+  if(t<.88){
+    const k=(t-.66)/.22;
+    return [255,lerp(172,228,k),lerp(26,96,k)];
+  }
+  const k=(t-.88)/.12;
+  return [255,lerp(228,252,k),lerp(96,214,k)];
+}
+
 export function fireTongueTexture(size=128){
   const data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++){
     const v=y/(size-1); // 0=bottom base, 1=flame tip
     for(let x=0;x<size;x++){
       const u=(x/(size-1))*2-1;
-      // Wide roaring multi-tongue medieval fire: central blaze + 3 curling flanking tongues.
-      const sway=Math.sin(v*5.6+Math.cos(v*2.7))*.11*v;
-      const tMain=Math.abs(u-sway)/Math.max(.08,(1-Math.pow(v,.92))*(.66+.14*Math.sin(v*9.5+u*2.8)));
-      const tLeft=Math.abs(u+.36*(1-v*.58)-sway*.65)/Math.max(.07,(1-Math.pow(clamp(v/.84,0,1),.86))*.46);
-      const tRight=Math.abs(u-.38*(1-v*.55)+sway*.55)/Math.max(.07,(1-Math.pow(clamp(v/.88,0,1),.84))*.48);
-      const tLow=Math.abs(u+.16*Math.sin(v*6.2))/Math.max(.08,(1-Math.pow(clamp(v/.62,0,1),.95))*.78);
-      const shape=Math.max(
-        clamp(1-tMain,0,1),
-        clamp(1-tLeft,0,1)*.92,
-        clamp(1-tRight,0,1)*.94,
-        clamp(1-tLow,0,1)*.88,
-      );
-      const turbulence=.82+.18*Math.sin(u*9.8-v*11.4)*Math.cos(v*6.7+u*5.1);
-      const baseFade=clamp(v/.11,0,1);
-      const tipFade=clamp((1-v)/.18,0,1);
-      const sideFade=clamp((1-Math.abs(u))/.11,0,1);
-      const mask=baseFade*tipFade*sideFade;
-      const body=Math.pow(shape,.78)*turbulence*mask;
-      // Rich heat gradient (NormalBlending): deep crimson-red outer tongues -> vivid orange -> golden inner heart -> hot yellow base.
-      const midHeat=Math.pow(clamp(shape*1.12-v*.42,0,1),1.25)*mask;
-      const core=Math.pow(clamp(1-Math.hypot((u-sway)*.92,(v-.24)*1.65),0,1),1.65)*mask;
-      // Detached glowing ember flecks rising above the curling tips.
-      const e1=Math.pow(clamp(1-Math.hypot((u-.22)*10.5,(v-.82)*10.5),0,1),1.5);
-      const e2=Math.pow(clamp(1-Math.hypot((u+.26)*11.0,(v-.76)*11.0),0,1),1.5);
-      const e3=Math.pow(clamp(1-Math.hypot((u-.03)*11.5,(v-.89)*11.5),0,1),1.5);
-      const ember=(e1+e2*.92+e3*.88)*mask;
+      // Organic multi-octave fBM turbulence carving a full, roaring, billowing blaze.
+      const n1=fbm2(u*2.4+3.1,v*3.2-1.7,4)*2-1;
+      const n2=fbm2(u*5.4-4.2,v*6.0+2.3,3)*2-1;
+      const warp=(n1*.24+n2*.09)*Math.pow(v,.68);
+      const su=u+warp;
+      const spine=Math.sin(v*4.1-.5)*.085*v;
 
-      const r=clamp(212*body+55*midHeat+40*core+255*ember,0,255);
-      const g=clamp(42*body+148*midHeat+102*core+152*ember,0,255);
-      const b=clamp(6*body+22*midHeat+118*core+28*ember,0,255);
-      const a=clamp((body*1.12+midHeat*.35+ember*.95)*255,0,255);
+      // Wide roaring furnace cauldron base tapering gracefully to curling tongues.
+      const baseBulb=Math.pow(clamp((v-.02)/.20,0,1),.48);
+      const taper=Math.pow(clamp(1-(v-.18)/.78,0,1),1.05);
+      const halfW=(v<.18?.74*baseBulb:.74*taper)*(.92+.20*n1);
+      const dMain=Math.abs(su-spine)/Math.max(.05,halfW);
+
+      // Broad billowing shoulder flames curling organically off both flanks.
+      const leftEnv=Math.sin(clamp((v-.05)/.70,0,1)*Math.PI);
+      const leftCenter=-.36*(1-v*.36)-Math.sin(v*6.2+.3)*.075;
+      const dLeft=leftEnv>.03?Math.abs(su-leftCenter)/(.33*leftEnv):9;
+
+      const rightEnv=Math.sin(clamp((v-.07)/.76,0,1)*Math.PI);
+      const rightCenter=.35*(1-v*.34)+Math.sin(v*5.4+.95)*.08;
+      const dRight=rightEnv>.03?Math.abs(su-rightCenter)/(.34*rightEnv):9;
+
+      // Upper curling secondary wisp peeling smoothly off the main body for fluid silhouette break-up.
+      const wispEnv=Math.sin(clamp((v-.36)/.58,0,1)*Math.PI);
+      const wispCenter=.20*Math.sin(v*7.2)+.14*(1-v*.3);
+      const dWisp=wispEnv>.03?Math.abs(su-wispCenter)/(.22*wispEnv):9;
+
+      // Full lower hearth body linking base tongues smoothly (no gaps or spindly stems).
+      const lowEnv=Math.sin(clamp((v-.03)/.46,0,1)*Math.PI);
+      const dLow=lowEnv>.03?Math.abs(su+Math.sin(v*6.2)*.05)/(.68*lowEnv):9;
+
+      const sMain=clamp(1-dMain,0,1);
+      const sLeft=clamp(1-dLeft,0,1)*.90;
+      const sRight=clamp(1-dRight,0,1)*.92;
+      const sWisp=clamp(1-dWisp,0,1)*.78;
+      const sLow=clamp(1-dLow,0,1)*.88;
+      const shape=clamp(1-(1-sMain)*(1-sLeft*.76)*(1-sRight*.76)*(1-sWisp*.62)*(1-sLow*.70),0,1);
+
+      const upperCarve=lerp(.34,.52,smoothstep(.35,.85,v));
+      const edgeDetail=(1-upperCarve*.55)+upperCarve*fbm2(u*4.6+7.1,v*5.6-2.8,4);
+      const density=clamp(shape*edgeDetail,0,1);
+
+      // Strict border feathering guarantees alpha === 0 on all edges for zero card seams.
+      const borderMask=smoothstep(.02,.13,v)*smoothstep(.98,.84,v)*smoothstep(.98,.78,Math.abs(u));
+      // Fuller opacity ramp keeps outer crimson-orange flame shoulders vivid even on bright snow.
+      const alpha=smoothstep(.06,.38,density)*borderMask;
+
+      // Rich blackbody temperature: vivid fiery crimson & tangerine across the outer blaze, molten gold inner, incandescent heart strictly at lower core.
+      const heart=Math.pow(clamp(1-Math.hypot((su-spine*.45)*2.05,(v-.22)*2.65),0,1),1.80);
+      const temp=clamp(Math.pow(density,1.38)*.56+heart*.54-v*.36+n2*.10,0,1);
+      const [r,g,b]=blackbodyFireRGB(temp);
       const i=(y*size+x)*4;
-      data[i]=r;data[i+1]=g;data[i+2]=b;data[i+3]=a;
+      data[i]=Math.round(r);data[i+1]=Math.round(g);data[i+2]=Math.round(b);
+      data[i+3]=Math.round(clamp(alpha*.97,0,1)*255);
     }
   }
   const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
   tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
   return tex;
 }
-export function smokePlumeTexture(size=64){
+
+export function fireLickTexture(size=128){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=y/(size-1);
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1;
+      // Full curling rising flame tongue for dynamic upward fiery motion.
+      const n1=fbm2(u*2.9+9.4,v*3.9+1.9,4)*2-1;
+      const n2=fbm2(u*6.0-2.1,v*6.8-3.4,3)*2-1;
+      const curl=Math.sin(v*5.0+.4)*.24*Math.pow(v,.82)+n1*.19*v;
+      const su=u-curl;
+      const env=Math.sin(clamp((v-.03)/.90,0,1)*Math.PI);
+      const width=(.18+.44*Math.pow(env,.68))*(1-v*.32)*(.88+.22*n2);
+      const d=Math.abs(su)/Math.max(.045,width);
+      const body=clamp(1-d,0,1);
+      const borderMask=smoothstep(.02,.16,v)*smoothstep(.98,.80,v)*smoothstep(.98,.74,Math.abs(u));
+      const intensity=Math.pow(body,1.22)*(.80+.30*fbm2(u*4.6-5.3,v*5.6+4.1,3))*borderMask;
+      const temp=clamp(intensity*.62+(1-v)*.24,0,1);
+      const [r,g,b]=blackbodyFireRGB(temp);
+      // Additive-ready premultiplied fiery emission fades cleanly to pure black at border.
+      const i=(y*size+x)*4;
+      data[i]=Math.round(clamp(r*intensity,0,255));
+      data[i+1]=Math.round(clamp(g*intensity,0,255));
+      data[i+2]=Math.round(clamp(b*intensity,0,255));
+      data[i+3]=Math.round(clamp(intensity,0,1)*255);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+
+export function fireGlowTexture(size=64){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=(y/(size-1))*2-1;
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1,r=Math.hypot(u,v);
+      const falloff=Math.pow(clamp(1-r/.96,0,1),2.35);
+      const i=(y*size+x)*4;
+      data[i]=Math.round(255*falloff);
+      data[i+1]=Math.round(142*Math.pow(falloff,1.32));
+      data[i+2]=Math.round(36*Math.pow(falloff,2.1));
+      data[i+3]=Math.round(255*falloff);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+
+export function emberSparkTexture(size=32){
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    const v=(y/(size-1))*2-1;
+    for(let x=0;x<size;x++){
+      const u=(x/(size-1))*2-1,r=Math.hypot(u*1.12,v*.90);
+      const glow=Math.pow(clamp(1-r/.94,0,1),2.1);
+      const core=Math.pow(clamp(1-r/.42,0,1),1.8);
+      const i=(y*size+x)*4;
+      data[i]=Math.round(clamp(255*glow+40*core,0,255));
+      data[i+1]=Math.round(clamp(158*glow+97*core,0,255));
+      data[i+2]=Math.round(clamp(32*glow+185*core,0,255));
+      data[i+3]=Math.round(clamp(glow,0,1)*255);
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.LinearFilter;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.generateMipmaps=true;tex.needsUpdate=true;
+  return tex;
+}
+
+export function smokePlumeTexture(size=128){
   const data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++){
     const v=(y/(size-1))*2-1;
     for(let x=0;x<size;x++){
       const u=(x/(size-1))*2-1;
-      // Multi-lobe billowing charcoal smoke silhouette with feathered edges.
-      const l1=Math.hypot(u,v)*.92;
-      const l2=Math.hypot(u-.28,v+.16)*1.08;
-      const l3=Math.hypot(u+.26,v-.14)*1.10;
-      const l4=Math.hypot(u+.08,v+.24)*1.14;
-      const d=Math.min(l1,l2,l3,l4);
-      const wisp=.88+.12*Math.sin(u*7.4+v*5.6)*Math.cos(v*8.1-u*4.8);
-      const borderFade=clamp((1-Math.max(Math.abs(u),Math.abs(v)))/.14,0,1);
-      const edge=Math.pow(clamp(1-d/.94,0,1),1.25)*wisp*borderFade;
-      const shade=42+Math.round(clamp((v+1)*.5,0,1)*54);
+      // Multi-lobe turbulent cumulus cloud silhouette warped with 4-octave fBM.
+      const n=fbm2(u*2.8+5.2,v*2.8-3.7,4);
+      const nFine=fbm2(u*6.1-1.9,v*6.1+4.4,3);
+      const wx=u+(n-.5)*.28,wy=v+(nFine-.5)*.24;
+      const l1=Math.hypot(wx,wy)*.94;
+      const l2=Math.hypot(wx-.27,wy+.17)*1.08;
+      const l3=Math.hypot(wx+.26,wy-.15)*1.08;
+      const l4=Math.hypot(wx+.07,wy+.26)*1.12;
+      const l5=Math.hypot(wx-.16,wy-.24)*1.14;
+      const d=Math.min(l1,l2,l3,l4,l5);
+      const borderFade=smoothstep(.98,.74,Math.max(Math.abs(u),Math.abs(v)));
+      const puff=Math.pow(clamp(1-d/.92,0,1),1.28)*(.76+.36*nFine)*borderFade;
+      // Gentle volumetric self-shading: warm charcoal base transitioning to softer grey upper folds.
+      const lit=clamp((v+1)*.42+(n-.35)*.45,0,1);
+      const shade=56+lit*66;
       const i=(y*size+x)*4;
-      data[i]=shade+10;data[i+1]=shade+5;data[i+2]=shade;data[i+3]=Math.round(clamp(edge*1.18,0,1)*242);
+      data[i]=Math.round(clamp(shade+6,0,255));
+      data[i+1]=Math.round(clamp(shade+3,0,255));
+      data[i+2]=Math.round(clamp(shade,0,255));
+      data[i+3]=Math.round(clamp(puff*1.15,0,1)*232);
     }
   }
   const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
@@ -246,31 +391,31 @@ export function buildingFireLevel(building,hpRatio){
 const GRAND_BUILDINGS=new Set(['towncenter','keep','wonder']);
 const FIRE_TEMPLATES={
   palisade:[
-    {rx:.12,rz:.06,hy:.74,scale:.88,threshold:0,tint:0xffe4b8},
+    {rx:.10,rz:.06,hy:.70,scale:.84,threshold:0,tint:0xfff2dc},
   ],
   small:[
-    {rx:.22,rz:.16,hy:.80,scale:.96,threshold:0,tint:0xfff0cc},
-    {rx:-.46,rz:-.30,hy:.62,scale:.84,threshold:.20,tint:0xffbf7c},
-    {rx:-.22,rz:.46,hy:.66,scale:.76,threshold:.42,tint:0xffd89e},
+    {rx:.18,rz:.14,hy:.76,scale:.94,threshold:0,tint:0xffffff},
+    {rx:-.40,rz:-.28,hy:.58,scale:.82,threshold:.20,tint:0xffebd2},
+    {rx:-.20,rz:.40,hy:.62,scale:.74,threshold:.42,tint:0xfff4e0},
   ],
   medium:[
-    {rx:.22,rz:.16,hy:.82,scale:1.02,threshold:0,tint:0xfff0cc},
-    {rx:-.48,rz:-.34,hy:.64,scale:.90,threshold:.16,tint:0xffba74},
-    {rx:-.30,rz:.48,hy:.68,scale:.84,threshold:.32,tint:0xffd698},
-    {rx:.48,rz:-.34,hy:.58,scale:.80,threshold:.48,tint:0xffaa62},
+    {rx:.18,rz:.14,hy:.78,scale:.98,threshold:0,tint:0xffffff},
+    {rx:-.42,rz:-.30,hy:.60,scale:.86,threshold:.16,tint:0xffe6ca},
+    {rx:-.26,rz:.42,hy:.64,scale:.80,threshold:.32,tint:0xfff2da},
+    {rx:.42,rz:-.30,hy:.54,scale:.76,threshold:.48,tint:0xffdfbe},
   ],
   gate:[
-    {rx:.46,rz:.12,hy:.76,scale:.94,threshold:0,tint:0xffecc2},
-    {rx:-.46,rz:-.12,hy:.74,scale:.90,threshold:.18,tint:0xffc27e},
-    {rx:.40,rz:-.30,hy:.60,scale:.78,threshold:.36,tint:0xffd89e},
-    {rx:-.40,rz:.30,hy:.58,scale:.76,threshold:.50,tint:0xffb26a},
+    {rx:.44,rz:.10,hy:.74,scale:.92,threshold:0,tint:0xffffff},
+    {rx:-.44,rz:-.10,hy:.72,scale:.88,threshold:.18,tint:0xffead0},
+    {rx:.38,rz:-.28,hy:.58,scale:.76,threshold:.36,tint:0xfff3de},
+    {rx:-.38,rz:.28,hy:.56,scale:.74,threshold:.50,tint:0xffe2c2},
   ],
   grand:[
-    {rx:.16,rz:.12,hy:.84,scale:1.14,threshold:0,tint:0xfff2d2},
-    {rx:-.48,rz:-.38,hy:.72,scale:1.02,threshold:.14,tint:0xffc07a},
-    {rx:.48,rz:-.32,hy:.66,scale:.94,threshold:.26,tint:0xffda9e},
-    {rx:-.36,rz:.48,hy:.60,scale:.90,threshold:.38,tint:0xffb068},
-    {rx:.38,rz:.44,hy:.54,scale:.84,threshold:.52,tint:0xffe2ae},
+    {rx:.12,rz:.08,hy:.74,scale:1.06,threshold:0,tint:0xffffff},
+    {rx:-.34,rz:-.28,hy:.58,scale:.92,threshold:.14,tint:0xffe8cc},
+    {rx:.35,rz:-.24,hy:.54,scale:.86,threshold:.26,tint:0xfff3dd},
+    {rx:-.28,rz:.34,hy:.52,scale:.82,threshold:.38,tint:0xffe0c0},
+    {rx:.30,rz:.32,hy:.46,scale:.78,threshold:.52,tint:0xfff5e2},
   ],
 };
 
@@ -296,18 +441,116 @@ export class BuildingDamageEffects {
     this.dummy=new THREE.Object3D();
     this.bounds=new THREE.Box3();
     this.color=new THREE.Color();
+    this.fullBillboardQuat=new THREE.Quaternion();
+    this.flameBillboardQuat=new THREE.Quaternion();
+    this.rollQuat=new THREE.Quaternion();
+    this.camDir=new THREE.Vector3();
+    this.camRight=new THREE.Vector3(1,0,0);
+    this.axisY=new THREE.Vector3(0,1,0);
+    this.axisZ=new THREE.Vector3(0,0,1);
+    this.hasCamera=false;
+
     const transparent={transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true};
-    this.flames=plumeBatch(crossedPlumeGeometry(2.2,2.4,1.08),new THREE.MeshBasicMaterial({
-      ...transparent,map:fireTongueTexture(),color:0xffffff,opacity:.94,blending:THREE.NormalBlending,
+    const smokeTex=smokePlumeTexture();
+    const fireTex=fireTongueTexture();
+    const lickTex=fireLickTexture();
+    const glowTex=fireGlowTexture();
+    const emberTex=emberSparkTexture();
+
+    // 1. Radiant roof firelight bloom hugging each active blaze base (AdditiveBlending).
+    this.glow=plumeBatch(billboardPlaneGeometry(2.85,2.45,.52),new THREE.MeshBasicMaterial({
+      ...transparent,map:glowTex,color:0xffffff,opacity:.56,blending:THREE.AdditiveBlending,
+    }),2,240);
+    this.glow.setColorAt(0,this.color.setRGB(1,.50,.14));
+
+    // 2. Primary roof smoke anchor + billowing rising dark battle smoke column (shared texture).
+    this.smoke=plumeBatch(billboardPlaneGeometry(2.65,2.65,.62),new THREE.MeshBasicMaterial({
+      ...transparent,map:smokeTex,color:0xffffff,opacity:.64,blending:THREE.NormalBlending,
+    }),2,140);
+    this.smoke.setColorAt(0,this.color.setRGB(.34,.33,.36));
+
+    this.smokeWisps=plumeBatch(billboardPlaneGeometry(2.55,2.55,.32),new THREE.MeshBasicMaterial({
+      ...transparent,map:smokeTex,color:0xffffff,opacity:.54,blending:THREE.NormalBlending,
+    }),2,420);
+    this.smokeWisps.setColorAt(0,this.color.setRGB(.32,.31,.34));
+
+    // 3. Camera-facing roaring primary flames (straight-alpha NormalBlending — vivid fiery crimson/orange even on bright snow!).
+    this.flames=plumeBatch(billboardPlaneGeometry(2.05,2.25,1.02),new THREE.MeshBasicMaterial({
+      ...transparent,map:fireTex,color:0xffffff,opacity:.98,blending:THREE.NormalBlending,
     }),3,240);
     // Pre-allocate instanceColor so WebGPU/WebGL never recompile shaders mid-match.
-    this.flames.setColorAt(0,this.color.setHex(0xffa448));
-    this.smoke=plumeBatch(crossedPlumeGeometry(2.8,2.7,.92),new THREE.MeshBasicMaterial({
-      ...transparent,map:smokePlumeTexture(),opacity:.58,
-    }),2,140);
-    scene.add(this.flames,this.smoke);
+    this.flames.setColorAt(0,this.color.setHex(0xffffff));
+
+    // 4. Continuously ascending sinuous flame licks adding live upward fiery motion (AdditiveBlending).
+    this.flameLicks=plumeBatch(billboardPlaneGeometry(1.52,2.02,.94),new THREE.MeshBasicMaterial({
+      ...transparent,map:lickTex,color:0xffffff,opacity:.76,blending:THREE.AdditiveBlending,
+    }),4,480);
+    this.flameLicks.setColorAt(0,this.color.setRGB(1,.54,.14));
+
+    // 5. Rising incandescent embers floating up through the smoke column (AdditiveBlending).
+    this.embers=plumeBatch(billboardPlaneGeometry(.28,.34,0),new THREE.MeshBasicMaterial({
+      ...transparent,map:emberTex,color:0xffffff,opacity:.98,blending:THREE.AdditiveBlending,
+    }),5,360);
+    this.embers.setColorAt(0,this.color.setRGB(1,.66,.18));
+
+    this.textures=[smokeTex,fireTex,lickTex,glowTex,emberTex];
+    this.batches=[this.glow,this.smoke,this.smokeWisps,this.flames,this.flameLicks,this.embers];
+    scene.add(this.glow,this.smoke,this.smokeWisps,this.flames,this.flameLicks,this.embers);
   }
-  beginFrame(){this.flames.count=0;this.smoke.count=0;}
+  beginFrame(camera=null){
+    for(const batch of this.batches)batch.count=0;
+    this.hasCamera=Boolean(camera?.quaternion);
+    if(this.hasCamera){
+      if(typeof camera.getWorldQuaternion==='function')camera.getWorldQuaternion(this.fullBillboardQuat);
+      else this.fullBillboardQuat.copy(camera.quaternion);
+      this.camDir.set(0,0,1).applyQuaternion(this.fullBillboardQuat);
+      this.camRight.set(1,0,0).applyQuaternion(this.fullBillboardQuat);
+      const yaw=Math.atan2(this.camDir.x,this.camDir.z);
+      this.flameBillboardQuat.setFromAxisAngle(this.axisY,yaw);
+      // Blend 38% toward full spherical camera orientation so flames look tall and volumetric from overhead RTS angles without X-seams.
+      this.flameBillboardQuat.slerp(this.fullBillboardQuat,.38);
+      this.camDir.y=0;
+      if(this.camDir.lengthSq()>1e-6)this.camDir.normalize();
+      else this.camDir.set(0,0,1);
+    }else{
+      this.fullBillboardQuat.identity();
+      this.flameBillboardQuat.identity();
+      this.camDir.set(0,0,0);
+      this.camRight.set(1,0,0);
+    }
+  }
+  addSmokeColumn(bx,by,bz,smokeLevel,grows,baseScale,wx,wz,time,seed,reducedMotion){
+    const wisps=this.smokeWisps,maxWisps=wisps.instanceMatrix.count;
+    const puffs=grows>.25?3:2;
+    const dummy=this.dummy;
+    for(let k=0;k<puffs&&wisps.count<maxWisps;k++){
+      const cycle=reducedMotion?((k+.5)/puffs):(((time*.22+seed*.17+k/puffs)%1)+1)%1;
+      const life=Math.sin(cycle*Math.PI);
+      const rise=.42+cycle*(3.4+smokeLevel*2.1);
+      const drift=cycle*cycle*(2.6+smokeLevel*1.4);
+      const swirlX=reducedMotion?0:Math.sin(time*1.15+seed+k*2.1)*.32*cycle;
+      const swirlZ=reducedMotion?0:Math.cos(time*.95+seed+k*1.7)*.32*cycle;
+      const puffScale=baseScale*Math.pow(life,.48)*(.64+cycle*1.05);
+      dummy.position.set(bx+wx*drift+swirlX,by+rise,bz+wz*drift+swirlZ);
+      dummy.quaternion.copy(this.fullBillboardQuat);
+      const roll=seed*.9+k*2.09+(reducedMotion?0:cycle*1.15);
+      this.rollQuat.setFromAxisAngle(this.axisZ,roll);
+      dummy.quaternion.multiply(this.rollQuat);
+      dummy.scale.set(puffScale,puffScale*.94,1);
+      dummy.updateMatrix();
+      const idx=wisps.count++;
+      wisps.setMatrixAt(idx,dummy.matrix);
+      // Warm fire-lit soot near the base when burning, rising into dramatic dark charcoal battle smoke.
+      const fireUnderlight=grows>0?clamp((1-cycle*3.0)*grows,0,1):0;
+      const soot=lerp(.54,.24,clamp(grows*.88+smokeLevel*.35,0,1));
+      this.color.setRGB(
+        clamp(soot+fireUnderlight*.46,0,1),
+        clamp(soot*.98+fireUnderlight*.17,0,1),
+        clamp(soot*1.03+fireUnderlight*.03,0,1),
+      );
+      wisps.setColorAt(idx,this.color);
+    }
+  }
   add(e,node,time,dt,wind,reducedMotion){
     if(e.hp<=0||e.progress<1)return;
     const data=node.userData,hpRatio=e.hp/e.maxHp,smokeLevel=buildingSmokeLevel(hpRatio);
@@ -337,14 +580,26 @@ export class BuildingDamageEffects {
     const halfX=(data.fireSpanX??Math.max(1.2,(e.r||2)*1.3))*.5;
     const halfZ=(data.fireSpanZ??Math.max(1.2,(e.r||2)*1.3))*.5;
     const ox=Math.min(1.1,(e.r||2)*.22),oz=ox*.7;
+    const wx=wind?.x??.4,wz=wind?.z??.2;
     const sway=reducedMotion?0:Math.sin(time*1.7+e.id*.71);
-    const smokeSize=Math.sqrt(smokeLevel)*(.76+.45*smokeLevel);
+    const smokeSize=Math.sqrt(smokeLevel)*(.74+.42*smokeLevel);
     const drift=(.29+sway*.07)*smokeLevel;
-    dummy.position.set(x+ox+(wind?.x??.4)*drift,y+height*.96,z+oz+(wind?.z??.2)*drift);
-    dummy.rotation.set(0,e.id*.7,0);
-    dummy.scale.set(smokeSize*(1+sway*.10),smokeSize*(1.15+sway*.13),smokeSize*(1+sway*.10));
+    const sx=x+ox+wx*drift,sy=y+height*.96,sz=z+oz+wz*drift;
+
+    dummy.position.set(sx,sy,sz);
+    dummy.quaternion.copy(this.fullBillboardQuat);
+    this.rollQuat.setFromAxisAngle(this.axisZ,e.id*.7+(reducedMotion?0:time*.18));
+    dummy.quaternion.multiply(this.rollQuat);
+    dummy.scale.set(smokeSize*(1+sway*.08),smokeSize*(1.08+sway*.10),smokeSize*(1+sway*.08));
     dummy.updateMatrix();
-    smoke.setMatrixAt(smoke.count++,dummy.matrix);
+    const sIdx=smoke.count++;
+    smoke.setMatrixAt(sIdx,dummy.matrix);
+    const baseSoot=lerp(.60,.26,clamp(grows*.85+smokeLevel*.3,0,1));
+    this.color.setRGB(baseSoot+grows*.14,baseSoot+grows*.03,baseSoot);
+    smoke.setColorAt(sIdx,this.color);
+
+    // Emit continuously billowing dark battle smoke rising downwind from the primary breach.
+    this.addSmokeColumn(sx,sy,sz,smokeLevel,grows,smokeSize,wx,wz,time,e.id*1.73,reducedMotion);
 
     if(grows<=0)return;
     const points=buildingFirePoints(e,{palisadeWall});
@@ -353,9 +608,13 @@ export class BuildingDamageEffects {
     // Deterministic orientation per building (skip rotation for gatehouses so flames hug both flanking towers).
     const rotAngle=e.type==='gate'||palisadeWall?0:((e.id*5)%8)*(Math.PI/4);
     const cosR=Math.cos(rotAngle),sinR=Math.sin(rotAngle);
-    const footprintScale=clamp(Math.sqrt(halfX*halfZ*4)/3.4,.74,1.34);
-    const wx=wind?.x??.4,wz=wind?.z??.2;
+    const footprintScale=clamp(Math.sqrt(halfX*halfZ*4)/3.8,.68,1.16);
+    const windSide=wx*this.camRight.x+wz*this.camRight.z;
+    const camBias=this.hasCamera?.24:0;
     const maxFlames=flames.instanceMatrix.count;
+    const glow=this.glow,maxGlow=glow.instanceMatrix.count;
+    const licks=this.flameLicks,maxLicks=licks.instanceMatrix.count;
+    const embers=this.embers,maxEmbers=embers.instanceMatrix.count;
 
     for(let i=0;i<points.length&&flames.count<maxFlames;i++){
       const pt=points[i];
@@ -363,51 +622,129 @@ export class BuildingDamageEffects {
       const local=clamp((grows-pt.threshold)/Math.max(.22,1-pt.threshold),0,1);
       const localGrowth=i===0?grows:Math.pow(local,.74)*grows;
       const phase=e.id*2.13+i*1.97;
-      const flicker=reducedMotion?1:1+Math.sin(time*(7.2+i*.85)+phase)*.10+Math.cos(time*(11.4-i*.6)+phase*.7)*.05;
+      const flicker=reducedMotion?1:1+Math.sin(time*(6.8+i*.85)+phase)*.08+Math.cos(time*(10.6-i*.55)+phase*.7)*.04;
+      const breathX=reducedMotion?1:1+Math.sin(time*(5.1+i*.6)+phase*1.3)*.07;
       const flameSize=localGrowth*pt.scale*footprintScale*flicker;
       const lx=pt.rx*halfX,lz=pt.rz*halfZ;
-      const fx=x+lx*cosR-lz*sinR,fz=z+lx*sinR+lz*cosR;
+      const fx=x+lx*cosR-lz*sinR+this.camDir.x*camBias*flameSize;
+      const fz=z+lx*sinR+lz*cosR+this.camDir.z*camBias*flameSize;
       const fy=y+height*pt.hy;
-      const leanX=reducedMotion?0:wz*.08*grows+Math.sin(time*4.8+phase)*.04;
-      const leanZ=reducedMotion?0:-wx*.08*grows+Math.cos(time*4.3+phase)*.04;
+      const mirror=i%2?-1:1;
 
+      // 1. Subtle radiant roof firelight halo at the base of the flame.
+      if(glow.count<maxGlow){
+        const glowPulse=reducedMotion?1:.92+.14*Math.sin(time*8.4+phase);
+        const gScale=flameSize*(1.02+.18*grows)*glowPulse;
+        dummy.position.set(fx,fy+.08,fz);
+        dummy.quaternion.copy(this.fullBillboardQuat);
+        dummy.scale.set(gScale,gScale*.84,1);
+        dummy.updateMatrix();
+        const gIdx=glow.count++;
+        glow.setMatrixAt(gIdx,dummy.matrix);
+        const gi=.68+.32*grows;
+        this.color.setRGB(gi,gi*.48,gi*.14);
+        glow.setColorAt(gIdx,this.color);
+      }
+
+      // 2. Primary camera-facing roaring blaze (zero X-cardboard creases!).
+      const leanAngle=reducedMotion?0:clamp(-windSide*.14*grows-Math.sin(time*4.5+phase)*.05,-.24,.24);
       dummy.position.set(fx,fy,fz);
-      dummy.rotation.set(leanX,e.id*.7+i*1.37,leanZ);
-      dummy.scale.set(flameSize*1.26,flameSize*1.12,flameSize*1.26);
+      dummy.quaternion.copy(this.flameBillboardQuat);
+      if(leanAngle){
+        this.rollQuat.setFromAxisAngle(this.axisZ,leanAngle);
+        dummy.quaternion.multiply(this.rollQuat);
+      }
+      dummy.scale.set(flameSize*1.08*breathX*mirror,flameSize*1.08,flameSize);
       dummy.updateMatrix();
       const idx=flames.count++;
       flames.setMatrixAt(idx,dummy.matrix);
-      const heatGlow=reducedMotion?1:.92+.16*Math.sin(time*9.2+phase);
+      const heatGlow=reducedMotion?1:.95+.08*Math.sin(time*8.8+phase);
       this.color.setHex(pt.tint).multiplyScalar(heatGlow);
       flames.setColorAt(idx,this.color);
+
+      // 3. Two staggered rising sinuous flame licks curling upward & downwind!
+      const lickCount=localGrowth>.24?2:1;
+      for(let k=0;k<lickCount&&licks.count<maxLicks;k++){
+        const cycle=reducedMotion?(k*.45+.22):(((time*(1.35+i*.11)+phase*.23+k*.5)%1)+1)%1;
+        const life=Math.sin(cycle*Math.PI);
+        const rise=cycle*(1.12*flameSize);
+        const drift=cycle*cycle*(.46*flameSize);
+        const lickSign=(i+k)%2?-1:1;
+        const wScale=flameSize*(1.02-cycle*.44)*lickSign;
+        const hScale=flameSize*(.82+cycle*.52);
+        dummy.position.set(fx+wx*drift+this.camDir.x*.05,fy+rise,fz+wz*drift+this.camDir.z*.05);
+        dummy.quaternion.copy(this.flameBillboardQuat);
+        this.rollQuat.setFromAxisAngle(this.axisZ,leanAngle*1.35+(reducedMotion?0:Math.sin(time*6.2+phase+k*2.4)*.08));
+        dummy.quaternion.multiply(this.rollQuat);
+        dummy.scale.set(wScale,hScale,1);
+        dummy.updateMatrix();
+        const lIdx=licks.count++;
+        licks.setMatrixAt(lIdx,dummy.matrix);
+        const lBright=Math.pow(life,.84)*(.72+.22*grows);
+        // Deep fiery orange-amber licks cooling to crimson-orange at pinch-off (stays vibrant on bright snow!).
+        this.color.setRGB(lBright,lBright*(.54-cycle*.32),lBright*(.14-cycle*.12));
+        licks.setColorAt(lIdx,this.color);
+      }
+
+      // 4. Rising glowing sparks & embers swirling up through the smoke plume!
+      const emberCount=localGrowth>.35?2:1;
+      for(let k=0;k<emberCount&&embers.count<maxEmbers;k++){
+        const cycle=reducedMotion?(k*.4+.25):(((time*(.52+i*.06)+phase*.37+k*.5)%1)+1)%1;
+        const life=Math.sin(cycle*Math.PI);
+        const rise=.35+cycle*(2.6+flameSize*1.6);
+        const drift=cycle*cycle*(1.4+grows*.9);
+        const swirlX=reducedMotion?0:Math.sin(time*3.6+phase+k*3.1)*(.28*cycle);
+        const swirlZ=reducedMotion?0:Math.cos(time*3.1+phase+k*2.7)*(.28*cycle);
+        const eSize=(.65+life*.75)*clamp(flameSize,.65,1.25);
+        dummy.position.set(fx+wx*drift+swirlX,fy+rise,fz+wz*drift+swirlZ);
+        dummy.quaternion.copy(this.fullBillboardQuat);
+        dummy.scale.set(eSize,eSize*1.15,1);
+        dummy.updateMatrix();
+        const eIdx=embers.count++;
+        embers.setMatrixAt(eIdx,dummy.matrix);
+        const twinkle=reducedMotion?1:.78+.22*Math.sin(time*17+phase+k*4.3);
+        const eBright=life*twinkle;
+        this.color.setRGB(eBright,eBright*(.80-cycle*.45),eBright*(.28-cycle*.24));
+        embers.setColorAt(eIdx,this.color);
+      }
     }
 
-    // Large heavily burning structures also vent a secondary smoke plume from their second blaze point.
+    // Large heavily burning structures also vent a secondary billowing smoke plume from their second blaze point.
     if(points.length>=4&&grows>=.45&&smoke.count<smoke.instanceMatrix.count){
       const p2=points[1];
       const lx=p2.rx*halfX,lz=p2.rz*halfZ;
       const s2=smokeSize*.82;
       const sway2=reducedMotion?0:Math.sin(time*1.5+e.id*1.3+2.1);
-      dummy.position.set(x+lx*cosR-lz*sinR+wx*drift*.9,y+height*(p2.hy+.24),z+lx*sinR+lz*cosR+wz*drift*.9);
-      dummy.rotation.set(0,e.id*1.1+1.6,0);
-      dummy.scale.set(s2*(1+sway2*.10),s2*(1.12+sway2*.12),s2*(1+sway2*.10));
+      const sx2=x+lx*cosR-lz*sinR+wx*drift*.9,sy2=y+height*(p2.hy+.24),sz2=z+lx*sinR+lz*cosR+wz*drift*.9;
+      dummy.position.set(sx2,sy2,sz2);
+      dummy.quaternion.copy(this.fullBillboardQuat);
+      this.rollQuat.setFromAxisAngle(this.axisZ,e.id*1.1+1.6+(reducedMotion?0:-time*.16));
+      dummy.quaternion.multiply(this.rollQuat);
+      dummy.scale.set(s2*(1+sway2*.08),s2*(1.06+sway2*.10),s2*(1+sway2*.08));
       dummy.updateMatrix();
-      smoke.setMatrixAt(smoke.count++,dummy.matrix);
+      const s2Idx=smoke.count++;
+      smoke.setMatrixAt(s2Idx,dummy.matrix);
+      this.color.setRGB(baseSoot+grows*.10,baseSoot+grows*.02,baseSoot);
+      smoke.setColorAt(s2Idx,this.color);
+      this.addSmokeColumn(sx2,sy2,sz2,smokeLevel,grows,s2*.92,wx,wz,time,e.id*2.91+3.7,reducedMotion);
     }
   }
   endFrame(){
-    markInstancePrefix(this.flames);
-    if(this.flames.instanceColor&&this.flames.count>0){
-      this.flames.instanceColor.clearUpdateRanges();
-      this.flames.instanceColor.addUpdateRange(0,this.flames.count*3);
-      this.flames.instanceColor.needsUpdate=true;
+    for(const batch of this.batches){
+      batch.visible=batch.count>0;
+      markInstancePrefix(batch);
+      if(batch.instanceColor&&batch.count>0){
+        batch.instanceColor.clearUpdateRanges();
+        batch.instanceColor.addUpdateRange(0,batch.count*3);
+        batch.instanceColor.needsUpdate=true;
+      }
     }
-    markInstancePrefix(this.smoke);
   }
   dispose(){
-    for(const batch of [this.flames,this.smoke]){
-      batch.removeFromParent();batch.geometry.dispose();batch.material.map.dispose();batch.material.dispose();batch.dispose();
+    for(const batch of this.batches){
+      batch.removeFromParent();batch.geometry.dispose();batch.material.dispose();batch.dispose();
     }
+    for(const tex of this.textures)tex.dispose();
   }
 }
 

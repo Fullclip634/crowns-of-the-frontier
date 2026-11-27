@@ -6,7 +6,7 @@ import {bridgeSpans,spanZ} from './bridge-layout.js';
 import {isSnowBiome,isJungleBiome,hasWaterfallBiome} from './terrain-biomes.js';
 import {shadeBattlefieldFog} from './fog-surface.js';
 import {cloneEpicProp,epicPropRoot} from './epic-props-art.js';
-import {crossedPlumeGeometry,fireTongueTexture,smokePlumeTexture} from './battle-effects.js';
+import {billboardPlaneGeometry,crossedPlumeGeometry,fireTongueTexture,smokePlumeTexture} from './battle-effects.js';
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
@@ -129,16 +129,17 @@ export function buildFrontierFeatures(view){
     map:mistTex,color:0xeaf6ff,transparent:true,opacity:.56,depthWrite:false,side:THREE.DoubleSide,
   }),view);
   const fireMat=shadeBattlefieldFog(new THREE.MeshBasicMaterial({
-    map:fireTex,color:0xff8e2c,transparent:true,opacity:.88,depthWrite:false,side:THREE.DoubleSide,
+    map:fireTex,color:0xffffff,transparent:true,opacity:.95,depthWrite:false,side:THREE.DoubleSide,
   }),view);
   const smokeMat=shadeBattlefieldFog(new THREE.MeshBasicMaterial({
-    map:smokeTex,color:0x4b4642,transparent:true,opacity:.52,depthWrite:false,side:THREE.DoubleSide,
+    map:smokeTex,color:0x4b4642,transparent:true,opacity:.50,depthWrite:false,side:THREE.DoubleSide,
   }),view);
   const campSmokeMat=shadeBattlefieldFog(new THREE.MeshBasicMaterial({
-    map:smokeTex,color:0xc8cac6,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide,
+    map:smokeTex,color:0xc8cac6,transparent:true,opacity:.36,depthWrite:false,side:THREE.DoubleSide,
   }),view);
 
-  const plumeGeo=view.epicPlumeGeo??=crossedPlumeGeometry(1.1,1.6,.75);
+  const plumeGeo=view.epicPlumeGeo??=billboardPlaneGeometry(1.32,1.58,.68);
+  const smokeGeo=view.epicSmokeGeo??=billboardPlaneGeometry(1.45,1.45,.26);
   const mistGeo=view.epicMistGeo??=crossedPlumeGeometry(2.6,1.9,.85);
 
   const state={
@@ -340,9 +341,9 @@ export function buildFrontierFeatures(view){
       const heavy=Boolean(spec.burning);
       // Animated crackling fire plume
       const flame=new THREE.Mesh(plumeGeo,fireMat);
-      flame.position.set(spec.x,y+(heavy?.28:.14),spec.z);
-      const fs=heavy?1.08:.62;
-      flame.scale.set(fs,fs*1.18,fs);
+      flame.position.set(spec.x,y+(heavy?.28:.18),spec.z);
+      const fs=heavy?1.26:.84;
+      flame.scale.set(fs,fs*1.12,fs);
       flame.renderOrder=3;
       flame.userData={baseScale:fs,phase:rng()*10,heavy};
       group.add(flame);
@@ -351,7 +352,7 @@ export function buildFrontierFeatures(view){
       // Rising smoke wisps (dark battle smoke for burning barricades, pale cozy woodsmoke for campfires!)
       const puffs=low?1:(heavy?3:2);
       for(let p=0;p<puffs;p++){
-        const smoke=new THREE.Mesh(plumeGeo,heavy?smokeMat:campSmokeMat);
+        const smoke=new THREE.Mesh(smokeGeo,heavy?smokeMat:campSmokeMat);
         smoke.position.set(spec.x,y+.8,spec.z);
         smoke.userData={
           baseX:spec.x,baseY:y+.75,baseZ:spec.z,
@@ -409,12 +410,21 @@ export function updateFrontierFeatures(view){
     }
   }
 
-  // Flicker campfire & barricade flames!
+  const camQuat=view.camera?.quaternion??null;
+  let flameQuat=null;
+  if(camQuat){
+    const dir=(state._camDir??=new THREE.Vector3()).set(0,0,1).applyQuaternion(camQuat);
+    const up=(state._axisY??=new THREE.Vector3(0,1,0));
+    flameQuat=(state._flameQuat??=new THREE.Quaternion()).setFromAxisAngle(up,Math.atan2(dir.x,dir.z)).slerp(camQuat,.35);
+  }
+
+  // Flicker campfire & barricade flames as clean camera-facing volumetric wisps!
   for(const flame of state.flames){
     const d=flame.userData;
-    const flicker=.88+Math.sin(t*13.5+d.phase)*.14+Math.cos(t*21.3+d.phase*1.7)*.09;
-    flame.scale.set(d.baseScale*flicker,d.baseScale*(1.05+flicker*.22),d.baseScale*flicker);
-    flame.rotation.y=t*(d.heavy?1.2:.8)+d.phase;
+    const flicker=reduced?1:.90+Math.sin(t*11.5+d.phase)*.11+Math.cos(t*17.3+d.phase*1.7)*.06;
+    const sway=reduced?1:1+Math.sin(t*6.4+d.phase)*.07;
+    flame.scale.set(d.baseScale*flicker*sway,d.baseScale*(1.02+flicker*.16),d.baseScale);
+    if(flameQuat)flame.quaternion.copy(flameQuat);
   }
 
   // Drift rising campfire & dark battle smoke plumes smoothly upward with the breeze!
@@ -424,8 +434,9 @@ export function updateFrontierFeatures(view){
     const driftX=cycle*(d.heavy?2.4:1.3)+Math.sin(t*1.3+d.phase)*.28;
     const driftZ=cycle*(d.heavy?1.4:.8);
     smoke.position.set(d.baseX+driftX,d.baseY+cycle*d.rise,d.baseZ+driftZ);
-    const sc=d.baseScale*(.65+cycle*1.35);
-    smoke.scale.set(sc,sc*.95,sc);
-    smoke.rotation.y=d.phase+t*.42;
+    const life=Math.sin(cycle*Math.PI);
+    const sc=d.baseScale*Math.pow(life,.45)*(.58+cycle*1.25);
+    smoke.scale.set(sc,sc*.95,1);
+    if(camQuat)smoke.quaternion.copy(camQuat);
   }
 }

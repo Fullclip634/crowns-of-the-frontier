@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {BuildingDamageEffects,buildingFirePoints} from '../src/battle-effects.js';
+import {BuildingDamageEffects,buildingFirePoints,fireTongueTexture,fireLickTexture,fireGlowTexture,emberSparkTexture} from '../src/battle-effects.js';
 
 const building=(ratio,extra={})=>({id:1,kind:'building',type:'house',hp:ratio*100,maxHp:100,progress:1,r:2,...extra});
 
@@ -101,4 +101,74 @@ test('a damaged town uses capped batches and uploads only their active instances
   assert.deepEqual(effects.flames.instanceMatrix.updateRanges,[{start:0,count:240*16}]);
   assert.deepEqual(effects.flames.instanceColor.updateRanges,[{start:0,count:240*3}]);
   assert.deepEqual(effects.smoke.instanceMatrix.updateRanges,[{start:0,count:140*16}]);
+});
+
+test('volumetric building fire uses seamless camera-facing billboards, multi-layer glow/licks/embers/smoke, and clean straight-alpha flame colors',t=>{
+  const {effects,node}=setup(t,{w:7,h:8,d:7});
+  // Single billboard quad per flame & smoke (2 triangles) — eliminates ugly 3-plane star X-creases.
+  const triCount=geo=>(geo.index?geo.index.count:geo.attributes.position.count)/3;
+  assert.equal(triCount(effects.flames.geometry),2,'primary flames use a single billboard quad (no crossed X-card seams)');
+  assert.equal(triCount(effects.smoke.geometry),2,'smoke puffs use a single billboard quad');
+  assert.equal(effects.glow.material.blending,THREE.AdditiveBlending,'roof firelight bloom uses AdditiveBlending');
+  assert.equal(effects.flameLicks.material.blending,THREE.AdditiveBlending,'rising flame licks use AdditiveBlending');
+  assert.equal(effects.embers.material.blending,THREE.AdditiveBlending,'rising embers use AdditiveBlending');
+
+  // Verify camera-facing billboard alignment when camera is passed to beginFrame(camera).
+  const camera=new THREE.PerspectiveCamera(45,1.6,1,200);
+  camera.position.set(22,26,22);
+  camera.lookAt(6,9,-3);
+  camera.updateMatrixWorld(true);
+
+  const tc=building(.12,{id:11,type:'towncenter',r:3.6});
+  effects.beginFrame(camera);
+  effects.add(tc,node,3.4,1.0,{x:.5,z:.25},false);
+  effects.endFrame();
+
+  assert.equal(effects.flames.count,5,'critical Town Center ignites 5 primary flame anchors');
+  assert.equal(effects.glow.count,5,'each flame anchor casts warm roof firelight bloom');
+  assert.ok(effects.flameLicks.count>=5,'rising animated flame licks layer above active blaze anchors');
+  assert.ok(effects.embers.count>=5,'rising incandescent embers float above active blaze anchors');
+  assert.ok(effects.smokeWisps.count>=4,'rising billowing battle smoke column emits above damaged roof');
+
+  // Confirm primary flame billboard normal faces toward the camera horizontally (dot > 0.75).
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),pos=new THREE.Vector3(),sc=new THREE.Vector3();
+  effects.flames.getMatrixAt(0,m);
+  m.decompose(pos,q,sc);
+  const normal=new THREE.Vector3(0,0,1).applyQuaternion(q);
+  const toCam=new THREE.Vector3().subVectors(camera.position,pos).normalize();
+  assert.ok(normal.dot(toCam)>.75,`flame billboard faces camera smoothly (dot=${normal.dot(toCam).toFixed(3)})`);
+
+  // Repaired building clears all 6 instanced batches cleanly and hides empty draws.
+  effects.beginFrame(camera);
+  effects.add(building(1,{id:11,type:'towncenter',r:3.6}),node,3.5,.05,{x:.5,z:.25},false);
+  effects.endFrame();
+  for(const batch of [effects.glow,effects.smoke,effects.smokeWisps,effects.flames,effects.flameLicks,effects.embers]){
+    assert.equal(batch.count,0);
+    assert.equal(batch.visible,false);
+  }
+
+  // Straight-alpha flame texture must never contain muddy dark-brown semi-transparent border pixels.
+  const fireTex=fireTongueTexture(128);
+  const data=fireTex.image.data;
+  let visiblePixels=0,muddyPixels=0;
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]>=12){
+      visiblePixels++;
+      if(data[i]<215)muddyPixels++;
+    }
+  }
+  assert.ok(visiblePixels>1000,'fire texture has rich flame silhouette');
+  assert.equal(muddyPixels,0,'straight-alpha fire texture has zero muddy dark-brown halo pixels');
+  fireTex.dispose();
+
+  for(const tex of [fireLickTexture(64),fireGlowTexture(64),emberSparkTexture(32)]){
+    const {data:td,width:w,height:h}=tex.image;
+    let maxBorderA=0,peakA=0;
+    for(let x=0;x<w;x++)maxBorderA=Math.max(maxBorderA,td[x*4+3],td[((h-1)*w+x)*4+3]);
+    for(let y=0;y<h;y++)maxBorderA=Math.max(maxBorderA,td[(y*w)*4+3],td[(y*w+w-1)*4+3]);
+    for(let i=3;i<td.length;i+=4)peakA=Math.max(peakA,td[i]);
+    assert.ok(maxBorderA<=4,`volumetric fire map borders fade cleanly (max=${maxBorderA})`);
+    assert.ok(peakA>=160,`volumetric fire map has crisp incandescent core (peak=${peakA})`);
+    tex.dispose();
+  }
 });

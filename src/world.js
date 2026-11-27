@@ -455,7 +455,7 @@ export class WorldView {
     this.disableFootPlacement=activeQuality==='low';
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
-    this.buildingDamage?.beginFrame();
+    this.buildingDamage?.beginFrame(this.camera);
     const wind=this.atmosphereUniforms?.wind?.value;
     const remembered=menu?null:this.sim.resourceMemory;
     const renderEntities=!this.treeIndices?.size&&typeof this.sim.candidatesFor==='function'?this.sim.candidatesFor('nonWood'):this.sim.entities;
