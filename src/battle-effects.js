@@ -436,8 +436,14 @@ function plumeBatch(geometry,material,renderOrder,capacity=80){
   return mesh;
 }
 
+const BUILDING_DAMAGE_BUDGETS=Object.freeze({
+  low:Object.freeze({glow:96,smoke:64,smokeWisps:120,flames:96,flameLicks:120,embers:80,maxPoints:3,wispsPerPoint:2,licksPerPoint:1,embersPerPoint:1}),
+  medium:Object.freeze({glow:160,smoke:100,smokeWisps:240,flames:160,flameLicks:260,embers:180,maxPoints:4,wispsPerPoint:2,licksPerPoint:2,embersPerPoint:1}),
+  high:Object.freeze({glow:240,smoke:140,smokeWisps:420,flames:240,flameLicks:480,embers:360,maxPoints:5,wispsPerPoint:3,licksPerPoint:2,embersPerPoint:2}),
+});
+
 export class BuildingDamageEffects {
-  constructor(scene){
+  constructor(scene,quality='high'){
     this.dummy=new THREE.Object3D();
     this.bounds=new THREE.Box3();
     this.color=new THREE.Color();
@@ -449,6 +455,7 @@ export class BuildingDamageEffects {
     this.axisY=new THREE.Vector3(0,1,0);
     this.axisZ=new THREE.Vector3(0,0,1);
     this.hasCamera=false;
+    this.budget=BUILDING_DAMAGE_BUDGETS[quality]||BUILDING_DAMAGE_BUDGETS.high;
 
     const transparent={transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true};
     const smokeTex=smokePlumeTexture();
@@ -519,9 +526,12 @@ export class BuildingDamageEffects {
       this.camRight.set(1,0,0);
     }
   }
+  setQuality(quality='high'){
+    this.budget=BUILDING_DAMAGE_BUDGETS[quality]||BUILDING_DAMAGE_BUDGETS.high;
+  }
   addSmokeColumn(bx,by,bz,smokeLevel,grows,baseScale,wx,wz,time,seed,reducedMotion){
-    const wisps=this.smokeWisps,maxWisps=wisps.instanceMatrix.count;
-    const puffs=grows>.25?3:2;
+    const wisps=this.smokeWisps,maxWisps=Math.min(wisps.instanceMatrix.count,this.budget.smokeWisps);
+    const puffs=Math.min(this.budget.wispsPerPoint,grows>.25?3:2);
     const dummy=this.dummy;
     for(let k=0;k<puffs&&wisps.count<maxWisps;k++){
       const cycle=reducedMotion?((k+.5)/puffs):(((time*.22+seed*.17+k/puffs)%1)+1)%1;
@@ -557,8 +567,8 @@ export class BuildingDamageEffects {
     const palisadeWall=e.type==='wall'&&data.model3d?.wallTier==='palisade';
     const target=palisadeWall?clamp(1-hpRatio/.50,0,1):buildingFireLevel(e,hpRatio);
     if(target<=0)data.fireGrowth=0;
-    const smoke=this.smoke,flames=this.flames;
-    if(smokeLevel<=0||smoke.count>=smoke.instanceMatrix.count)return;
+    const smoke=this.smoke,flames=this.flames,maxSmoke=Math.min(smoke.instanceMatrix.count,this.budget.smoke);
+    if(smokeLevel<=0||smoke.count>=maxSmoke)return;
 
     if(data.fireHeight===undefined){
       this.bounds.setFromObject(node);
@@ -611,12 +621,13 @@ export class BuildingDamageEffects {
     const footprintScale=clamp(Math.sqrt(halfX*halfZ*4)/3.8,.68,1.16);
     const windSide=wx*this.camRight.x+wz*this.camRight.z;
     const camBias=this.hasCamera?.24:0;
-    const maxFlames=flames.instanceMatrix.count;
-    const glow=this.glow,maxGlow=glow.instanceMatrix.count;
-    const licks=this.flameLicks,maxLicks=licks.instanceMatrix.count;
-    const embers=this.embers,maxEmbers=embers.instanceMatrix.count;
+    const maxFlames=Math.min(flames.instanceMatrix.count,this.budget.flames);
+    const glow=this.glow,maxGlow=Math.min(glow.instanceMatrix.count,this.budget.glow);
+    const licks=this.flameLicks,maxLicks=Math.min(licks.instanceMatrix.count,this.budget.flameLicks);
+    const embers=this.embers,maxEmbers=Math.min(embers.instanceMatrix.count,this.budget.embers);
+    const pointLimit=Math.min(points.length,this.budget.maxPoints);
 
-    for(let i=0;i<points.length&&flames.count<maxFlames;i++){
+    for(let i=0;i<pointLimit&&flames.count<maxFlames;i++){
       const pt=points[i];
       if(grows<=pt.threshold)continue;
       const local=clamp((grows-pt.threshold)/Math.max(.22,1-pt.threshold),0,1);
@@ -663,7 +674,7 @@ export class BuildingDamageEffects {
       flames.setColorAt(idx,this.color);
 
       // 3. Two staggered rising sinuous flame licks curling upward & downwind!
-      const lickCount=localGrowth>.24?2:1;
+      const lickCount=Math.min(this.budget.licksPerPoint,localGrowth>.24?2:1);
       for(let k=0;k<lickCount&&licks.count<maxLicks;k++){
         const cycle=reducedMotion?(k*.45+.22):(((time*(1.35+i*.11)+phase*.23+k*.5)%1)+1)%1;
         const life=Math.sin(cycle*Math.PI);
@@ -687,7 +698,7 @@ export class BuildingDamageEffects {
       }
 
       // 4. Rising glowing sparks & embers swirling up through the smoke plume!
-      const emberCount=localGrowth>.35?2:1;
+      const emberCount=Math.min(this.budget.embersPerPoint,localGrowth>.35?2:1);
       for(let k=0;k<emberCount&&embers.count<maxEmbers;k++){
         const cycle=reducedMotion?(k*.4+.25):(((time*(.52+i*.06)+phase*.37+k*.5)%1)+1)%1;
         const life=Math.sin(cycle*Math.PI);
@@ -710,7 +721,7 @@ export class BuildingDamageEffects {
     }
 
     // Large heavily burning structures also vent a secondary billowing smoke plume from their second blaze point.
-    if(points.length>=4&&grows>=.45&&smoke.count<smoke.instanceMatrix.count){
+    if(points.length>=4&&grows>=.45&&smoke.count<maxSmoke){
       const p2=points[1];
       const lx=p2.rx*halfX,lz=p2.rz*halfZ;
       const s2=smokeSize*.82;

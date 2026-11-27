@@ -106,30 +106,56 @@ export class Simulation {
   on(fn){this.listeners.push(fn);}
   emit(type,data={}){const event={type,...data};this.events.push(event);for(const fn of this.listeners)fn(event);}
   get(id){return this.entities.find(e=>e.id===id&&e.hp>0);}
-  // The unit/building/shrine shortlist is rebuilt at most once per tick and shared
-  // by owned(), count(), visibility, fog, and rendering.
-  candidatesFor(kind){
-    if(kind!=='unit'&&kind!=='building'&&kind!=='shrine'&&kind!=='nonWood')return this.entities;
+  // The unit/building/shrine shortlist (plus per-owner unit/building buckets)
+  // is rebuilt at most once per tick and shared by owned(), count(), visibility,
+  // fog, and rendering without altering entity order or determinism.
+  ensureCandidateCache(){
     let cache=this.ownedCandidates;
     if(!cache||cache.entities!==this.entities||cache.length!==this.entities.length||cache.time!==this.time||cache.revision!==this.revision){
-      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[],shrine:[],nonWood:[]};
+      cache={entities:this.entities,length:this.entities.length,time:this.time,revision:this.revision,unit:[],building:[],shrine:[],nonWood:[],unitByOwner:new Map(),buildingByOwner:new Map()};
       for(const e of this.entities){
-        if(e.kind==='unit'||e.kind==='building'||e.kind==='shrine')cache[e.kind].push(e);
+        if(e.kind==='unit'){
+          cache.unit.push(e);
+          let list=cache.unitByOwner.get(e.owner);
+          if(!list){list=[];cache.unitByOwner.set(e.owner,list);}
+          list.push(e);
+        }else if(e.kind==='building'){
+          cache.building.push(e);
+          let list=cache.buildingByOwner.get(e.owner);
+          if(!list){list=[];cache.buildingByOwner.set(e.owner,list);}
+          list.push(e);
+        }else if(e.kind==='shrine'){
+          cache.shrine.push(e);
+        }
         if(!(e.kind==='resource'&&e.type==='wood'))cache.nonWood.push(e);
       }
       this.ownedCandidates=cache;
     }
-    return cache[kind];
+    return cache;
+  }
+  candidatesFor(kind){
+    if(kind!=='unit'&&kind!=='building'&&kind!=='shrine'&&kind!=='nonWood')return this.entities;
+    return this.ensureCandidateCache()[kind];
+  }
+  ownedCandidatesFor(owner,kind){
+    // Per-owner buckets are used during tick() where entity ownership is controlled
+    // by the simulation (and Oakhold liberation clears ownedCandidates). Outside tick(),
+    // fall back to the live kind shortlist so direct owner mutations stay immediately visible.
+    if(this.ownerIndexActive){
+      if(kind==='unit')return this.ensureCandidateCache().unitByOwner.get(owner)||[];
+      if(kind==='building')return this.ensureCandidateCache().buildingByOwner.get(owner)||[];
+    }
+    return this.candidatesFor(kind);
   }
   owned(owner,kind,type){
-    const candidates=this.candidatesFor(kind);
+    const candidates=this.ownedCandidatesFor(owner,kind);
     // Keep life, ownership and type live; callers receive their own array.
     const result=[];for(const e of candidates)if(e.hp>0&&e.owner===owner&&(!kind||e.kind===kind)&&(!type||e.type===type))result.push(e);return result;
   }
   // Counting is the common case and must not allocate a result array; the AI
   // asks for population and capacity many times per decision.
   count(owner,kind,type){
-    let total=0;for(const e of this.candidatesFor(kind))if(e.hp>0&&e.owner===owner&&(!kind||e.kind===kind)&&(!type||e.type===type))total++;return total;
+    let total=0;for(const e of this.ownedCandidatesFor(owner,kind))if(e.hp>0&&e.owner===owner&&(!kind||e.kind===kind)&&(!type||e.type===type))total++;return total;
   }
   faction(owner){return FACTIONS[this.players[owner].faction];}
   allied(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&(this.players[a].team??a)===(this.players[b].team??b);}
@@ -912,6 +938,8 @@ export class Simulation {
     if(!this.owned(1,'building','towncenter').length){if(this.options.mode==='campaign1'&&(!this.owned(0,'building','barracks').length||this.owned(0,'unit').filter(e=>e.type!=='villager'&&e.type!=='scout').length<6))return;if(this.options.mode==='campaign2'&&this.players[0].age<2)return;this.end(true,'The rival capital has fallen. The frontier is yours.');}
   }
   tick(dt){if(this.ended)return;this.time+=dt;
+    this.ownerIndexActive=true;
+    try{
     const entities=this.entitySpatial??=new SpatialBuckets(8),units=this.unitSpatial??=new SpatialBuckets(4);entities.reset();units.reset();this.entityBuckets=entities.columns;this.unitBuckets=units.columns;this.maxEntityRadius=0;
     for(const e of this.entities)if(e.hp>0){entities.add(e,e.kind==='unit'||e.kind==='building');this.maxEntityRadius=Math.max(this.maxEntityRadius,e.r||0);if(e.kind==='unit'&&!e.embarked)units.add(e);}
     // Reuse the team lookup for all unit and tower searches during this tick.
@@ -940,6 +968,7 @@ export class Simulation {
     retireDeadUnits(this);
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
+    }finally{this.ownerIndexActive=false;}
   }
   serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,campaignRelicVisionBonus:this.campaignRelicVisionBonus||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,...(this.wonderTargets?{wonderTargets:this.wonderTargets}:{}),stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){

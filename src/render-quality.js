@@ -47,6 +47,7 @@ export function applyRendererQuality(view,quality){
   view.renderer.setPixelRatio(pixelLimit(quality));
   view.disableFootPlacement=quality==='low';
   if(view.battleFog?.blur)view.battleFog.blur.value=quality==='low'?0:1;
+  view.buildingDamage?.setQuality?.(quality);
   if(quality==='low'&&view.modelPortrait?.dispose){view.modelPortrait.dispose();view.modelPortrait=null;}
   view.performanceClock=0;view.frameAverage=.016;view.renderQuality=quality;view.updateCamera?.();
 }

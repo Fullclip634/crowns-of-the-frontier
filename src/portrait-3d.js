@@ -65,8 +65,12 @@ export class ModelPortrait {
   }
 }
 
+function isTouchViewport(){
+  try{return Boolean(globalThis.matchMedia?.('(pointer: coarse)')?.matches);}catch{return false;}
+}
+
 export function renderModelPortrait(view){
-  if((view.renderQuality||view.settings?.quality)==='low')return;
+  if((view.renderQuality||view.settings?.quality)==='low'||view.disableModelPortrait||isTouchViewport())return;
   const target=document.getElementById('model-portrait');if(!target||document.hidden||view.portraitDisabled||!target.clientWidth||!target.clientHeight)return;
   const id=Number(target.dataset.entity),entity=view.sim.resourceMemory?.get(id)??view.sim.get(id);if(!entity)return;
   try{view.modelPortrait??=new ModelPortrait(view);view.modelPortrait.render(target,entity,view.clock);}catch(error){view.portraitDisabled=true;console.error('3D portrait could not start',error);}

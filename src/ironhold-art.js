@@ -48,6 +48,10 @@ export function ironholdArtworkState(){
   return loaded?{models:loaded.templates.size,geometries:loaded.geometries.size}:null;
 }
 
+export function hasIronholdArtwork(){
+  return Boolean(loaded?.templates?.size);
+}
+
 export function ironholdGeometries(){
   return loaded?.geometries||null;
 }

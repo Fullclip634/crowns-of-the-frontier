@@ -75,6 +75,22 @@ function resolveUnitVoiceCue(kind,unit){
   return UNIT_RESPONSES[kind]||UNIT_RESPONSES.order;
 }
 
+// Tiny 1-sample scratch buffer per AudioContext to release native WebKit/iOS
+// AVAudioEngine references on stopped AudioBufferSourceNodes without throwing.
+const scratchBuffers=new WeakMap();
+function releaseAudioSource(ctx,source){
+  if(!source)return;
+  try{source.onended=null;}catch{}
+  try{source.disconnect();}catch{}
+  if(ctx&&typeof ctx.createBuffer==='function'){
+    let scratch=scratchBuffers.get(ctx);
+    if(!scratch){
+      try{scratch=ctx.createBuffer(1,1,ctx.sampleRate||22050);scratchBuffers.set(ctx,scratch);}catch{scratch=null;}
+    }
+    if(scratch){try{source.buffer=scratch;}catch{}}
+  }
+}
+
 function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false,delay=0,onEnded=null}={}){
   const ctx=engine.context,buffer=engine.sampleBank?.get(name);
   if(!ctx||!buffer||ctx.state!=='running'||engine.settings.volume<=0)return null;
@@ -89,7 +105,7 @@ function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false,delay=0
   else{level.connect(outBus);if(reverb&&engine.reverbSend)level.connect(engine.reverbSend);}
   const startsAt=ctx.currentTime+delay,endsAt=startsAt+(buffer.duration||.75)/rate;
   const handle={source,level,endsAt};
-  source.onended=()=>{source.disconnect();level.disconnect();panner?.disconnect();onEnded?.(handle);};
+  source.onended=()=>{releaseAudioSource(ctx,source);level.disconnect();panner?.disconnect();onEnded?.(handle);};
   source.start(startsAt);
   return handle;
 }
@@ -98,24 +114,40 @@ function fadeSpeech(engine,handle){
   if(!handle)return;
   const now=engine.context.currentTime;
   handle.level.gain.setTargetAtTime(0,now,.008);
-  handle.source.stop(now+.035);
+  try{handle.source.stop(now+.035);}catch{}
 }
 
 // Loop beds are created once and faded by gain; stopping/restarting a buffer
-// source on every weather tick would click and churn graph nodes.
+// source on every weather tick would click and churn graph nodes. In lazy-loop
+// mobile mode, beds that stay silent past the fade window are stopped and their
+// decoded PCM buffers evicted to keep mobile RAM low.
+const SILENT_EVICT_SECONDS=3.0;
+function stopLoopBed(engine,name,{evict=false}={}){
+  const bed=engine.sampleLoops?.get(name);
+  if(bed){
+    engine.sampleLoops.delete(name);
+    try{bed.source.stop();}catch{}
+    releaseAudioSource(engine.context,bed.source);
+    try{bed.gain.disconnect();}catch{}
+  }
+  if(evict)engine.sampleBank?.evict?.(name);
+}
 function loopBed(engine,name,level,bus=null){
   const ctx=engine.context;if(!ctx)return;
   engine.sampleLoops??=new Map();
   let bed=engine.sampleLoops.get(name);
   if(!bed){
+    if(level<=0)return;
     const buffer=engine.sampleBank.get(name);if(!buffer)return;
     const source=ctx.createBufferSource(),gain=ctx.createGain();
     source.buffer=buffer;source.loop=engine.sampleBank.isLoop(name);
     gain.gain.value=0;source.connect(gain);gain.connect(bus||engine.master);source.start();
-    source.onended=()=>{if(engine.sampleLoops?.get(name)===bed)engine.sampleLoops.delete(name);source.disconnect();gain.disconnect();};
-    bed={source,gain};engine.sampleLoops.set(name,bed);
+    source.onended=()=>{if(engine.sampleLoops?.get(name)===bed)engine.sampleLoops.delete(name);releaseAudioSource(ctx,source);try{gain.disconnect();}catch{};};
+    bed={source,gain,silentSince:null};engine.sampleLoops.set(name,bed);
   }
   bed.gain.gain.setTargetAtTime(level,ctx.currentTime,.35);
+  if(level>0)bed.silentSince=null;
+  else if(bed.silentSince===null)bed.silentSince=ctx.currentTime;
 }
 
 // `options` exists for deterministic tests; the game uses the real fetch and
@@ -128,7 +160,8 @@ export function installSampledAudio(AudioEngine,options={}){
   p.unlock=function(){
     unlock.call(this);
     if(!this.context||this.sampleBank)return;
-    this.sampleBank=createSampleBank({context:this.context,...options});
+    const lazyLoops=options.lazyLoops??Boolean(this.lazySampleLoops);
+    this.sampleBank=createSampleBank({context:this.context,...options,lazyLoops});
     this.sampleBank.load().then(report=>{
       this.sampleLoadReport=report;
       // The combat synthesiser reuses its ${kind}:${variant} cache, so seeding
@@ -329,9 +362,23 @@ export function installSampledAudio(AudioEngine,options={}){
 
   p.weather=function(state,active=true){
     weather.call(this,state,active);
-    if(!this.sampleBank?.has('rain')||!this.context)return;
+    if(!this.sampleBank||!this.context)return;
     const enabled=active&&this.settings.weatherSounds!==false&&this.settings.volume>0;
     const amount=enabled?(state?.amount||0):0;
+    if(this.sampleBank.lazyLoops){
+      if(amount>0&&!this.sampleBank.has('rain')){void this.sampleBank.ensure('rain');return;}
+      if(amount<=0){
+        const bed=this.sampleLoops?.get('rain');
+        if(bed){
+          loopBed(this,'rain',0,this.ambienceBus||this.master);
+          if(bed.silentSince!==null&&this.context.currentTime-bed.silentSince>=SILENT_EVICT_SECONDS){
+            stopLoopBed(this,'rain',{evict:true});
+          }
+        }else if(this.sampleBank.has('rain'))this.sampleBank.evict('rain');
+        return;
+      }
+    }
+    if(!this.sampleBank.has('rain'))return;
     if(this.rainGain)this.rainGain.gain.setTargetAtTime(0,this.context.currentTime,.2);
     loopBed(this,'rain',amount*(state?.type==='snow'?.014:.085),this.ambienceBus||this.master);
   };
@@ -343,14 +390,22 @@ export function installSampledAudio(AudioEngine,options={}){
     const map=info.sim?.options?.map||this.currentMap||'highlands';
     let want=active?(BIOME_AMBIENCE[map]||'amb-meadow'):null;
     if(want==='amb-meadow'&&(this.isNight||this.isStormy))want=null;
+    const lazy=this.sampleBank.lazyLoops,now=this.context.currentTime;
+    if(lazy&&want&&!this.sampleBank.has(want))void this.sampleBank.ensure(want);
     let playingRealAmbience=false;
     for(const cue of AMBIENCE_SAMPLE_CUES){
-      if(!this.sampleBank.has(cue))continue;
       if(cue===want){
+        if(!this.sampleBank.has(cue))continue;
         playingRealAmbience=true;
         loopBed(this,cue,cue==='amb-volcanic'?.044:.038,this.ambienceBus||this.master);
       }else if(this.sampleLoops?.has(cue)){
         loopBed(this,cue,0,this.ambienceBus||this.master);
+        const bed=this.sampleLoops.get(cue);
+        if(lazy&&bed&&bed.silentSince!==null&&now-bed.silentSince>=SILENT_EVICT_SECONDS){
+          stopLoopBed(this,cue,{evict:true});
+        }
+      }else if(lazy&&this.sampleBank.has(cue)){
+        this.sampleBank.evict(cue);
       }
     }
     if(playingRealAmbience&&this.windGain){
@@ -361,12 +416,37 @@ export function installSampledAudio(AudioEngine,options={}){
   p.tick=function(dt){
     tick.call(this,dt);
     if(!this.sampleBank||!this.context)return;
-    const enabled=this.settings.music&&this.settings.volume>0;
+    const enabled=Boolean(this.settings.music&&this.settings.volume>0&&(this.settings.musicVolume??1)>0);
     const stage=typeof this.scoreStage==='function'?this.scoreStage():'peace';
+    const activeStem=STAGE_STEM[stage]||'music-peace';
+    const lazy=this.sampleBank.lazyLoops,now=this.context.currentTime;
+    if(lazy){
+      if(enabled&&!this.sampleBank.has(activeStem))void this.sampleBank.ensure(activeStem);
+      const activeReady=enabled&&this.sampleBank.has(activeStem);
+      const hasStems=MUSIC_STEM_CUES.some(cue=>this.sampleBank.has(cue));
+      this.hasSampledMusic=hasStems;
+      for(const cue of MUSIC_STEM_CUES){
+        const bed=this.sampleLoops?.get(cue);
+        if(cue===activeStem&&activeReady){
+          loopBed(this,cue,.18,this.musicBus||this.master);
+        }else if(bed){
+          // Hold the outgoing stem smoothly until the incoming stem finishes decoding.
+          if(!enabled||activeReady){
+            loopBed(this,cue,0,this.musicBus||this.master);
+            if(bed.silentSince!==null&&now-bed.silentSince>=SILENT_EVICT_SECONDS){
+              stopLoopBed(this,cue,{evict:true});
+            }
+          }
+        }else if((!enabled||activeReady)&&this.sampleBank.has(cue)){
+          this.sampleBank.evict(cue);
+        }
+      }
+      if(!enabled&&this.sampleBank.has('pad'))stopLoopBed(this,'pad',{evict:true});
+      return;
+    }
     const hasStems=MUSIC_STEM_CUES.some(cue=>this.sampleBank.has(cue));
     if(hasStems)this.hasSampledMusic=true;
     if(hasStems){
-      const activeStem=STAGE_STEM[stage]||'music-peace';
       for(const cue of MUSIC_STEM_CUES){
         if(!this.sampleBank.has(cue))continue;
         const target=enabled?(cue===activeStem?.18:0):0;
@@ -375,7 +455,7 @@ export function installSampledAudio(AudioEngine,options={}){
     }
     if(this.sampleBank.has('pad')){
       const padLevel=enabled?(hasStems?(stage==='peace'?.024:0):(.032+(this.combatIntensity||0)*.016)):0;
-      loopBed(this,'pad',padLevel,this.musicBus||this.master);
+      if(padLevel>0||this.sampleLoops?.has('pad'))loopBed(this,'pad',padLevel,this.musicBus||this.master);
     }
   };
 }

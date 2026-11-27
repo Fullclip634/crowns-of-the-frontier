@@ -96,7 +96,7 @@ export class WorldView {
     this.marker=new THREE.Group();for(let i=0;i<4;i++){const m=new THREE.Mesh(this.geo.box,new THREE.MeshBasicMaterial({color:0xf5d991}));m.scale.set(.13,.06,1.4);m.position.set(Math.sin(i*Math.PI/2)*1.8,.45,Math.cos(i*Math.PI/2)*1.8);m.rotation.y=i*Math.PI/2;this.marker.add(m);}this.scene.add(this.marker);this.marker.visible=false;
     this.canvasRect=null;
     this.ghost=new THREE.Group();this.scene.add(this.ghost);this.resize=()=>{const width=this.container.clientWidth||innerWidth,height=this.container.clientHeight||innerHeight;this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.canvasRect=null;this.updateCamera();};window.addEventListener('resize',this.resize);this.resize();
-    this.buildingDamage=new BuildingDamageEffects(this.scene);
+    this.buildingDamage=new BuildingDamageEffects(this.scene,settings.quality);
     this.selectionOverlays=new SelectionOverlays(this);
     this.hoverEntityId=null;
   }

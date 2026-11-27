@@ -137,6 +137,12 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
         finalSoil = mix(finalSoil, beachSand, terrainBeach);
       }` : '';
   const snowRoughGlsl=snow ? 'terrainRoughness = mix(terrainRoughness, 0.44, 0.38);' : '';
+  const soilSampleGlsl=volcanic
+    ? 'vec3 soilSample = mix(texture2D(frontierTerrainsoil, soilUv).rgb, texture2D(frontierTerrainsoil, antiTileRot * (soilUv * 0.19) + vec2(0.31, 0.17)).rgb, 0.44);'
+    : `vec3 soilSample = vec3(0.5);
+      if (terrainBlend.y > 0.005${shore?' || terrainBeach > 0.01':''}) {
+        soilSample = mix(texture2D(frontierTerrainsoil, soilUv).rgb, texture2D(frontierTerrainsoil, antiTileRot * (soilUv * 0.19) + vec2(0.31, 0.17)).rgb, 0.44);
+      }`;
   const terrainSampleGlsl=lowDetail ? `
       vec3 grassSample = clamp((texture2D(frontierTerraingrass, grassUv * 0.48).rgb - 0.5) * 1.28 + 0.5, 0.05, 1.35);
       vec3 soilSample = texture2D(frontierTerrainsoil, soilUv * 0.55).rgb;
@@ -148,13 +154,17 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       vec3 grassMacro = texture2D(frontierTerraingrass, grassUv * 0.048 + vec2(0.61, 0.27)).rgb;
       vec3 grassSample = mix(mix(grassMicro, grassMeso, 0.46), grassMacro, 0.28);
       grassSample = clamp((grassSample - 0.5) * 1.28 + 0.5, 0.05, 1.35);
-      vec3 soilSample = mix(texture2D(frontierTerrainsoil, soilUv).rgb, texture2D(frontierTerrainsoil, antiTileRot * (soilUv * 0.19) + vec2(0.31, 0.17)).rgb, 0.44);
-      vec3 triW = pow(abs(vTerrainWorldNormal), vec3(4.5));
-      triW /= max(triW.x + triW.y + triW.z, 0.001);
-      vec3 rockTop = mix(texture2D(frontierTerrainrock, rockUv * 5.5).rgb, texture2D(frontierTerrainrock, antiTileRot * (rockUv * 13.5) + vec2(0.23, 0.41)).rgb, 0.44);
-      vec3 rockSideX = texture2D(frontierTerrainrock, vTerrainWorldPos.zy * 0.088).rgb;
-      vec3 rockSideZ = texture2D(frontierTerrainrock, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).rgb;
-      vec3 rockSample = rockSideX * triW.x + rockTop * triW.y + rockSideZ * triW.z;`;
+      ${soilSampleGlsl}
+      vec3 triW = vec3(0.0, 1.0, 0.0);
+      vec3 rockSample = vec3(0.5);
+      if (terrainBlend.z > 0.005) {
+        triW = pow(abs(vTerrainWorldNormal), vec3(4.5));
+        triW /= max(triW.x + triW.y + triW.z, 0.001);
+        vec3 rockTop = mix(texture2D(frontierTerrainrock, rockUv * 5.5).rgb, texture2D(frontierTerrainrock, antiTileRot * (rockUv * 13.5) + vec2(0.23, 0.41)).rgb, 0.44);
+        vec3 rockSideX = texture2D(frontierTerrainrock, vTerrainWorldPos.zy * 0.088).rgb;
+        vec3 rockSideZ = texture2D(frontierTerrainrock, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).rgb;
+        rockSample = rockSideX * triW.x + rockTop * triW.y + rockSideZ * triW.z;
+      }`;
   const pavingTexGlsl=lowDetail
     ? 'vec3 pavingTex = texture2D(frontierTerrainpaving, pavingUv).rgb;'
     : `vec3 pavingBase = texture2D(frontierTerrainpaving, pavingUv).rgb;
@@ -262,13 +272,27 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       diffuseColor.rgb *= rainDarken${cloudLightGlsl};`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       #ifdef USE_NORMALMAP_TANGENTSPACE
-      vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.17).xyz, 0.44);
-      vec3 soilNorm = mix(texture2D(frontierTerrainsoilNormal, vMapUv * frontierTerrainscale.y).xyz, texture2D(frontierTerrainsoilNormal, vMapUv * frontierTerrainscale.y * 0.19).xyz, 0.40);
-      vec3 rockNormTop = texture2D(frontierTerrainrockNormal, vMapUv * frontierTerrainscale.z * 6.5).xyz;
-      vec3 rockNormX = texture2D(frontierTerrainrockNormal, vTerrainWorldPos.zy * 0.088).xyz;
-      vec3 rockNormZ = texture2D(frontierTerrainrockNormal, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).xyz;
-      vec3 rockNorm = rockNormX * triW.x + rockNormTop * triW.y + rockNormZ * triW.z;
-      vec3 terrainNormal = grassNorm * terrainBlend.x + soilNorm * terrainBlend.y + rockNorm * terrainBlend.z;
+      vec3 accumNormal = vec3(0.0);
+      float normalWeightSum = 0.0;
+      if (terrainBlend.x > 0.005) {
+        vec3 grassNorm = mix(texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x).xyz, texture2D(frontierTerraingrassNormal, vMapUv * frontierTerrainscale.x * 0.17).xyz, 0.44);
+        accumNormal += grassNorm * terrainBlend.x;
+        normalWeightSum += terrainBlend.x;
+      }
+      if (terrainBlend.y > 0.005) {
+        vec3 soilNorm = mix(texture2D(frontierTerrainsoilNormal, vMapUv * frontierTerrainscale.y).xyz, texture2D(frontierTerrainsoilNormal, vMapUv * frontierTerrainscale.y * 0.19).xyz, 0.40);
+        accumNormal += soilNorm * terrainBlend.y;
+        normalWeightSum += terrainBlend.y;
+      }
+      if (terrainBlend.z > 0.005) {
+        vec3 rockNormTop = texture2D(frontierTerrainrockNormal, vMapUv * frontierTerrainscale.z * 6.5).xyz;
+        vec3 rockNormX = texture2D(frontierTerrainrockNormal, vTerrainWorldPos.zy * 0.088).xyz;
+        vec3 rockNormZ = texture2D(frontierTerrainrockNormal, vTerrainWorldPos.xy * 0.088 + vec2(0.37, 0.19)).xyz;
+        vec3 rockNorm = rockNormX * triW.x + rockNormTop * triW.y + rockNormZ * triW.z;
+        accumNormal += rockNorm * terrainBlend.z;
+        normalWeightSum += terrainBlend.z;
+      }
+      vec3 terrainNormal = normalWeightSum > 0.001 ? accumNormal / normalWeightSum : vec3(0.5, 0.5, 1.0);
       terrainNormal = terrainNormal * 2.0 - 1.0;
       terrainNormal.xy *= mix(0.52, 0.96, terrainBlend.z) * (1.0 - terrainPaving * 0.55);
       vec2 pavingBump = vec2(dFdx(pavingLuma), dFdy(pavingLuma)) * 10.0;
@@ -278,10 +302,21 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
       float terrainAo = 1.0;
       #ifdef FRONTIER_TERRAIN_ARM
-      vec2 grassArmSample = texture2D(frontierTerraingrassArm, vMapUv * frontierTerrainscale.x * 0.17).rg;
-      vec2 soilArmSample = texture2D(frontierTerrainsoilArm, vMapUv * frontierTerrainscale.y * 0.19).rg;
-      vec2 rockArmSample = texture2D(frontierTerrainrockArm, vMapUv * frontierTerrainscale.z * 6.5).rg;
-      vec2 terrainArm = grassArmSample * terrainBlend.x + soilArmSample * terrainBlend.y + rockArmSample * terrainBlend.z;
+      vec2 accumArm = vec2(0.0);
+      float armWeightSum = 0.0;
+      if (terrainBlend.x > 0.005) {
+        accumArm += texture2D(frontierTerraingrassArm, vMapUv * frontierTerrainscale.x * 0.17).rg * terrainBlend.x;
+        armWeightSum += terrainBlend.x;
+      }
+      if (terrainBlend.y > 0.005) {
+        accumArm += texture2D(frontierTerrainsoilArm, vMapUv * frontierTerrainscale.y * 0.19).rg * terrainBlend.y;
+        armWeightSum += terrainBlend.y;
+      }
+      if (terrainBlend.z > 0.005) {
+        accumArm += texture2D(frontierTerrainrockArm, vMapUv * frontierTerrainscale.z * 6.5).rg * terrainBlend.z;
+        armWeightSum += terrainBlend.z;
+      }
+      vec2 terrainArm = armWeightSum > 0.001 ? accumArm / armWeightSum : vec2(1.0, 0.85);
       terrainAo = mix(1.0, terrainArm.r, 0.65);
       float terrainRoughness = terrainArm.g;
       terrainRoughness = mix(terrainRoughness, 0.30, terrainShore * 0.62);
@@ -294,7 +329,7 @@ export function applyTerrainShading(material,land,quality,surfaces,dimensions,at
       roughnessFactor = clamp(mix(roughnessFactor, 0.22, wetSurface * 0.74), 0.16, 1.0);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse *= terrainAo;');
   };
-  material.customProgramCacheKey=()=>`frontier-terrain-v12:${land.map}:${land.renderSize}:${quality}`;
+  material.customProgramCacheKey=()=>`frontier-terrain-v13:${land.map}:${land.renderSize}:${quality}`;
   material.userData.surface='Locally bundled biome-authentic PBR grass, snow, sand, basalt, cobblestone and rocky terrain';
   material.needsUpdate=true;
 }

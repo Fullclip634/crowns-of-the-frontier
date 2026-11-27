@@ -41,6 +41,7 @@ function bridgeAprons(view,span){
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();return new THREE.Mesh(geometry,view.materials.stone||view.materials.rock);
 }
+export function hasBridgeArtwork(){return Boolean(template);}
 export async function loadBridgeArtwork(){
   if(!pending)pending=(async()=>{const response=await fetch(source);if(!response.ok)throw new Error('Bridge artwork request failed ('+response.status+').');const buffer=await readAssetResponse(response,'bridge','Bridge'),gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'');let root;gltf.scene.traverse(node=>{if(node.userData.assetKey==='terrain:bridge:stone')root=node;if(node.isMesh)canonicalGeometry(node.geometry);});if(!root||root.userData.bridgeRevision!==bridgeArtwork.revision)throw new Error('Bridge artwork is incomplete or out of date.');bytes=buffer.byteLength;template=root;return root;})();
   try{return await pending;}catch(error){pending=null;throw error;}

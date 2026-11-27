@@ -540,6 +540,7 @@ export function triggerOakholdLiberation(sim){
       if(e.kind==='unit'&&e.type==='villager')sim.assignWorker(e);
     }
   }
+  sim.ownedCandidates=null;
   const tc=sim.owned(0,'building','towncenter')[0];
   if(tc){
     for(let i=0;i<4;i++)placeUnit(sim,'spearman',0,tc.x+8+i*2.2,tc.z-8);

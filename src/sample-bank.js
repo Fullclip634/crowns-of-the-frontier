@@ -57,21 +57,81 @@ function yieldBatch(){
 
 // Loading is best-effort, priority-tiered (instant comms/alerts/voices first,
 // heavy music/weather stems second), and bounded so gameplay FPS never hitches.
-export function createSampleBank({context,fetchData=globalThis.fetch,base=globalThis.document?.baseURI||'http://localhost/',concurrency=MAX_PARALLEL_SAMPLE_LOADS,manifestURL=SAMPLE_MANIFEST}={}){
-  const buffers=new Map(),cues=new Map(),status=new Map(),errors=[];
-  let ready=false,coreReady=false,loading=null,totalBytes=0;
+// When `lazyLoops` is enabled (touch/mobile devices), long looping weather and
+// music beds stay unloaded until `ensure(name)` is requested and can be evicted
+// with `evict(name)` to save ~35-45 MB of uncompressed Float32 PCM RAM.
+export function createSampleBank({context,fetchData=globalThis.fetch,base=globalThis.document?.baseURI||'http://localhost/',concurrency=MAX_PARALLEL_SAMPLE_LOADS,manifestURL=SAMPLE_MANIFEST,lazyLoops=false}={}){
+  const buffers=new Map(),cues=new Map(),status=new Map(),pendingCues=new Map(),errors=[];
+  const lazyGroups=lazyLoops?new Set(['weather','music']):null;
+  let ready=false,coreReady=false,loading=null,manifestReady=null,totalBytes=0;
+  let useFallbackFirst=false;
+
+  async function decodeCue(name,cue){
+    if(buffers.has(name))return buffers.get(name).buffer;
+    if(pendingCues.has(name))return pendingCues.get(name);
+    const task=(async()=>{
+      try{
+        if(!fetchData)throw new Error('No fetch implementation');
+        if(!context?.decodeAudioData)throw new Error('No audio decoder');
+        const candidates=useFallbackFirst&&cue.fallbackFile
+          ?[[cue.fallbackFile,cue.fallbackBytes??cue.bytes],[cue.file,cue.bytes]]
+          :cue.fallbackFile
+            ?[[cue.file,cue.bytes],[cue.fallbackFile,cue.fallbackBytes??cue.bytes]]
+            :[[cue.file,cue.bytes]];
+        let buffer=null,loadedBytes=0,lastError='Sample request failed';
+        for(const [file,expectedBytes]of candidates){
+          if(!file)continue;
+          if((expectedBytes||0)>MAX_SAMPLE_BYTES){lastError='Sample exceeds the size budget';continue;}
+          const asset=await fetchData(sampleURL(file,base));
+          if(!asset?.ok){lastError='Sample request failed';continue;}
+          const data=await asset.arrayBuffer();
+          const decode=context.decodeAudioData.bind(context);
+          try{
+            buffer=await decode(data);
+            if(buffer){loadedBytes=expectedBytes||data.byteLength||0;break;}
+            lastError='Decoder returned no buffer';
+          }catch(decodeErr){lastError=decodeErr?.message||'Decode failed';}
+        }
+        if(!buffer)throw new Error(lastError);
+        buffers.set(name,{buffer,cue,bytes:loadedBytes});status.set(name,'loaded');totalBytes+=loadedBytes;
+        return buffer;
+      }catch(error){status.set(name,'failed');errors.push(`${name}: ${error.message}`);return null;}
+      finally{pendingCues.delete(name);}
+    })();
+    pendingCues.set(name,task);
+    return task;
+  }
+
   const bank={
     get ready(){return ready;},
     get coreReady(){return coreReady;},
+    get lazyLoops(){return Boolean(lazyGroups);},
     get buffers(){return buffers;},
     has(name){return buffers.has(name);},
     get(name){return buffers.get(name)?.buffer||null;},
     cue(name){return cues.get(name)||null;},
     isLoop(name){return !!cues.get(name)?.loop;},
     status(name){return status.get(name)||'pending';},
-    diagnostics(){return {ready,coreReady,loaded:buffers.size,failed:errors.length,total:cues.size,bytes:totalBytes,errors:errors.slice(),samples:[...status.entries()].map(([name,state])=>({name,state}))};},
+    diagnostics(){return {ready,coreReady,lazyLoops:Boolean(lazyGroups),loaded:buffers.size,failed:errors.length,total:cues.size,bytes:totalBytes,errors:errors.slice(),samples:[...status.entries()].map(([name,state])=>({name,state}))};},
+    async ensure(name){
+      if(buffers.has(name))return buffers.get(name).buffer;
+      if(manifestReady)await manifestReady;
+      const cue=cues.get(name);
+      if(!cue||status.get(name)==='failed')return null;
+      return decodeCue(name,cue);
+    },
+    evict(name){
+      const entry=buffers.get(name);
+      if(!entry)return false;
+      buffers.delete(name);
+      totalBytes=Math.max(0,totalBytes-(entry.bytes||0));
+      status.set(name,'pending');
+      return true;
+    },
     load(){
       if(loading)return loading;
+      let resolveManifest;
+      manifestReady=new Promise(resolve=>{resolveManifest=resolve;});
       loading=(async()=>{
         try{
           if(!fetchData)throw new Error('No fetch implementation');
@@ -83,39 +143,17 @@ export function createSampleBank({context,fetchData=globalThis.fetch,base=global
           // Priority-tier ordering: UI, alerts, horns, voices & combat decode before long loops.
           const entries=rawEntries.slice().sort(([,a],[,b])=>(GROUP_PRIORITY[a?.group]??9)-(GROUP_PRIORITY[b?.group]??9));
           for(const [name,cue]of entries){cues.set(name,cue);status.set(name,'pending');}
-          const useFallbackFirst=preferFallbackCodec();
+          useFallbackFirst=preferFallbackCodec();
+          resolveManifest();
+          const eagerEntries=lazyGroups?entries.filter(([,cue])=>!lazyGroups.has(cue?.group)):entries;
           const step=Math.max(1,concurrency);
-          for(let i=0;i<entries.length;i+=step){
-            const batch=entries.slice(i,i+step);
+          for(let i=0;i<eagerEntries.length;i+=step){
+            const batch=eagerEntries.slice(i,i+step);
             if(!coreReady&&batch.every(([,c])=>(GROUP_PRIORITY[c?.group]??9)>=4))coreReady=true;
-            await Promise.allSettled(batch.map(async([name,cue])=>{
-              try{
-                const candidates=useFallbackFirst&&cue.fallbackFile
-                  ?[[cue.fallbackFile,cue.fallbackBytes??cue.bytes],[cue.file,cue.bytes]]
-                  :cue.fallbackFile
-                    ?[[cue.file,cue.bytes],[cue.fallbackFile,cue.fallbackBytes??cue.bytes]]
-                    :[[cue.file,cue.bytes]];
-                let buffer=null,loadedBytes=0,lastError='Sample request failed';
-                for(const [file,expectedBytes]of candidates){
-                  if(!file)continue;
-                  if((expectedBytes||0)>MAX_SAMPLE_BYTES){lastError='Sample exceeds the size budget';continue;}
-                  const asset=await fetchData(sampleURL(file,base));
-                  if(!asset?.ok){lastError='Sample request failed';continue;}
-                  const data=await asset.arrayBuffer();
-                  const decode=context.decodeAudioData.bind(context);
-                  try{
-                    buffer=await decode(data);
-                    if(buffer){loadedBytes=expectedBytes||data.byteLength||0;break;}
-                    lastError='Decoder returned no buffer';
-                  }catch(decodeErr){lastError=decodeErr?.message||'Decode failed';}
-                }
-                if(!buffer)throw new Error(lastError);
-                buffers.set(name,{buffer,cue});status.set(name,'loaded');totalBytes+=loadedBytes;
-              }catch(error){status.set(name,'failed');errors.push(`${name}: ${error.message}`);}
-            }));
-            if(i+step<entries.length)await yieldBatch();
+            await Promise.allSettled(batch.map(([name,cue])=>decodeCue(name,cue)));
+            if(i+step<eagerEntries.length)await yieldBatch();
           }
-        }catch(error){errors.push(error.message);}
+        }catch(error){errors.push(error.message);resolveManifest();}
         coreReady=true;
         ready=true;
         return bank.diagnostics();
