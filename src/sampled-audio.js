@@ -20,7 +20,7 @@ const FACTION_VOICE_RATE={alder:1.0,sun:1.04,raven:.94,iron:.91,jade:1.03};
 const STAGE_STEM={peace:'music-peace',tension:'music-tension',battle:'music-battle',climax:'music-climax'};
 
 const UI_CUE_MIX=Object.freeze({
-  select:{gain:.52,bus:'sfx',reverb:false},
+  select:{gain:.55,bus:'sfx',reverb:false},
   order:{gain:.50,bus:'sfx',reverb:false},
   coin:{gain:.54,bus:'sfx',reverb:false},
   complete:{gain:.58,bus:'sfx',reverb:true},
