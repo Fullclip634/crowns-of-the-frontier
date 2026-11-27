@@ -1,7 +1,7 @@
 import {AGES,BUILDINGS,FACTIONS,RESOURCE,UNITS} from './data.js';
 import {GARRISONS,garrisonArrows,garrisonCount} from './garrison.js';
 import {wallArmorBonus,wallDisplayName,wallTier} from './fortified-walls.js';
-import {uiIcon} from './ui-icons.js';
+import {uiVectorIcon} from './ui-icons.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -154,7 +154,7 @@ export function unitSpeedValue(sim,e){
 export function inspectorStatsMarkup(sim,e){
   if(!e)return '';
   const chips=[];
-  const add=(icon,label,val,title,cls='')=>chips.push(`<span class="${cls}" title="${esc(title)}">${uiIcon(icon)}${label}<b>${esc(val)}</b></span>`);
+  const add=(icon,label,val,title,cls='')=>chips.push(`<span class="${cls}" title="${esc(title)}">${uiVectorIcon(icon)}${label}<b>${esc(val)}</b></span>`);
 
   if(e.kind==='unit'){
     const d=UNITS[e.type];

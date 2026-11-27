@@ -1,6 +1,6 @@
 import {FACTIONS} from './data.js';
 import {bridgeSpans,spanZ} from './bridge-layout.js';
-import {uiIcon} from './ui-icons.js';
+import {uiVectorIcon} from './ui-icons.js';
 import {commanderPortraitSvg} from './commander-portraits.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -131,19 +131,19 @@ export function warCommsMarkup(){
   return `<aside id="war-comms-banner" class="war-comms-banner hidden" role="status" aria-live="polite"></aside>
   <section id="war-comms-panel" class="war-comms-panel hidden" aria-label="War communications">
     <header class="war-comms-head">
-      <div class="war-comms-title">${uiIcon('message-square')}<strong>War Comms</strong></div>
+      <div class="war-comms-title">${uiVectorIcon('message-square')}<strong>War Comms</strong></div>
       <div class="war-comms-head-tools">
-        <button type="button" id="war-comms-mute" class="war-comms-icon-btn" data-action="comms-mute" aria-pressed="false" title="Mute or unmute spoken commander voices">${uiIcon('volume-2')}<span>Voice On</span></button>
-        <button type="button" class="war-comms-icon-btn" data-action="comms-toggle" aria-label="Close war comms">${uiIcon('x')}</button>
+        <button type="button" id="war-comms-mute" class="war-comms-icon-btn" data-action="comms-mute" aria-pressed="false" title="Mute or unmute spoken commander voices">${uiVectorIcon('volume-2')}<span>Voice On</span></button>
+        <button type="button" class="war-comms-icon-btn" data-action="comms-toggle" aria-label="Close war comms">${uiVectorIcon('x')}</button>
       </div>
     </header>
     <div id="war-comms-ally-section" class="war-comms-section">
       <span class="war-comms-label">ALLY ORDERS</span>
       <div class="war-comms-grid">
-        <button type="button" data-comms-ally="attack" title="Order allied armies to march and attack the enemy (Alt+1)">${uiIcon('swords')}<span>Attack!</span></button>
-        <button type="button" data-comms-ally="defend" title="Order allies to hold the narrow pass or bridgehead (Alt+2)">${uiIcon('shield')}<span>Hold Pass</span></button>
-        <button type="button" data-comms-ally="help" title="Call emergency allied relief to your base (Alt+3)">${uiIcon('flag-triangle-right')}<span>Help Me!</span></button>
-        <button type="button" data-comms-ally="supplies" title="Request war supplies from your ally (Alt+4)">${uiIcon('gift')}<span>Supplies</span></button>
+        <button type="button" data-comms-ally="attack" title="Order allied armies to march and attack the enemy (Alt+1)">${uiVectorIcon('swords')}<span>Attack!</span></button>
+        <button type="button" data-comms-ally="defend" title="Order allies to hold the narrow pass or bridgehead (Alt+2)">${uiVectorIcon('shield')}<span>Hold Pass</span></button>
+        <button type="button" data-comms-ally="help" title="Call emergency allied relief to your base (Alt+3)">${uiVectorIcon('flag-triangle-right')}<span>Help Me!</span></button>
+        <button type="button" data-comms-ally="supplies" title="Request war supplies from your ally (Alt+4)">${uiVectorIcon('gift')}<span>Supplies</span></button>
       </div>
     </div>
     <div class="war-comms-section">
@@ -241,7 +241,7 @@ export class WarCommsController{
     if(!this.muteBtn)return;
     this.muteBtn.setAttribute('aria-pressed',String(this.muted));
     this.muteBtn.classList.toggle('muted',this.muted);
-    this.muteBtn.innerHTML=`${uiIcon('volume-2')}<span>${this.muted?'Muted':'Voice On'}</span>`;
+    this.muteBtn.innerHTML=`${uiVectorIcon('volume-2')}<span>${this.muted?'Muted':'Voice On'}</span>`;
   }
 
   syncFromSettings(){

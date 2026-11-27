@@ -26,16 +26,21 @@ test('painted medieval icon atlas covers all resources, units, heroes, buildings
 
   const tiers=new Set(['common','uncommon','rare','epic','legendary']);
   for(const [key,[idx,tier]] of Object.entries(PAINTED_ICONS)){
-    assert.ok(Number.isInteger(idx)&&idx>=0&&idx<64,`${key} index ${idx} in 0..63`);
+    assert.ok(Number.isInteger(idx)&&idx>=0&&idx<72,`${key} index ${idx} in 0..71`);
     assert.ok(tiers.has(tier),`${key} tier ${tier} is valid`);
   }
 
-  for(const key of ['food','wood','gold','stone','pop',...Object.keys(UNITS),...Object.keys(BUILDINGS),...Object.keys(TECHS),...MODES.map(m=>m.id)]){
+  for(const key of ['food','wood','gold','stone','pop',...Object.keys(UNITS),...Object.keys(BUILDINGS),...Object.keys(TECHS),...MODES.map(m=>m.id),'network']){
     assert.ok(PAINTED_ICONS[key],`${key} has painted medieval icon`);
-    assert.match(UI_ICONS[key],/ui-icon-painted/);
-    assert.match(UI_ICONS[key],/<svg\b/);
-    assert.match(UI_ICONS[key],/aria-hidden="true"/);
+    assert.match(uiIcon(key),/ui-icon-painted/);
+    assert.match(uiIcon(key),/<svg\b/);
+    assert.match(uiIcon(key),/aria-hidden="true"/);
   }
+  // Dedicated Row-8 tiles prevent visual collisions for Skirmisher, Bombard Tower, Multiplayer & Wheelbarrow
+  assert.notEqual(PAINTED_ICONS.skirmisher[0],PAINTED_ICONS.spearman[0],'skirmisher has its own dedicated painted icon');
+  assert.notEqual(PAINTED_ICONS.bombard[0],PAINTED_ICONS.fortifiedWall[0],'bombard tower has its own dedicated painted icon');
+  assert.notEqual(PAINTED_ICONS.wheelbarrow[0],PAINTED_ICONS.cart[0],'wheelbarrow has its own dedicated painted icon');
+  assert.ok(PAINTED_ICONS.network,'multiplayer menu card has a painted medieval icon');
   // Pure UI chrome stays crisp vector SVG (not forced into painted inventory tiles)
   assert.doesNotMatch(uiIcon('chevron-right'),/ui-icon-painted/);
   assert.doesNotMatch(uiIcon('x'),/ui-icon-painted/);

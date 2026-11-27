@@ -7,17 +7,17 @@ import {LocalRoomHost,hostTransport,guestTransport} from './local-host.js';
 import {createInvite,answerInvite} from './local-pairing.js';
 import {qrSvg} from './qr-code.js';
 import {startQrScanner,cameraAvailable} from './qr-scan.js';
+import {uiVectorIcon} from './ui-icons.js';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const svg=(body,extra='')=>`<svg class="nearby-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"${extra}>${body}</svg>`;
-export const NEARBY_ICONS={
-  wifi:svg('<path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/>'),
-  globe:svg('<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20"/>'),
-  camera:svg('<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>'),
-  copy:svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
-  share:svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>'),
-  qr:svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/>'),
-};
+export const NEARBY_ICONS=Object.freeze({
+  wifi:uiVectorIcon('wifi','nearby-icon'),
+  globe:uiVectorIcon('globe','nearby-icon'),
+  camera:uiVectorIcon('camera','nearby-icon'),
+  copy:uiVectorIcon('copy','nearby-icon'),
+  share:uiVectorIcon('share-2','nearby-icon'),
+  qr:uiVectorIcon('qr-code','nearby-icon'),
+});
 const spinner='<span class="nearby-spinner" aria-hidden="true"></span>';
 
 export function createNearby({net,showModal,closeModal,toast,getModal,onRoomEnded}){

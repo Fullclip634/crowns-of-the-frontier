@@ -7,11 +7,12 @@ export const ICON_MAP=Object.freeze({
   villager:'user-round',scout:'spyglass',spearman:'spear',archer:'bow-arrow',skirmisher:'spear',swordsman:'sword',knight:'chess-knight',ram:'siege-ram',catapult:'trebuchet',trebuchet:'trebuchet',monk:'church',king:'crown',sentinel:'shield-half',marksman:'crossbow',outrider:'lance',ironbreaker:'hammer',chukonu:'crossbow',firelancer:'lance',hero_alder:'crown',hero_sun:'crown',hero_raven:'crown',hero_iron:'crown',hero_jade:'crown',cart:'shopping-cart',fishingboat:'fish',galley:'sailboat',warship:'ship',transport:'ship-cargo',
   towncenter:'landmark',house:'house',farm:'farm-plot',mill:'wind',camp:'trees',mine:'pickaxe',barracks:'swords',range:'crossbow',stable:'lance',workshop:'hammer',blacksmith:'anvil',market:'store',tower:'watchtower',bombard:'bastion',keep:'castle',wall:'brick-wall',gate:'door-open',monastery:'church',wonder:'monument',dock:'anchor',
   economy:'coins',wheelbarrow:'shopping-cart',attack:'swords',armor:'shield',ranged:'bow-arrow',fortification:'brick-wall',fortifiedWall:'bastion',arrowslits:'watchtower',conscription:'shield-check',husbandry:'horseshoe',sanctuary:'church',shieldDrill:'shield-check',caravanLedger:'book-open',raidingParties:'spear',siegecraft:'anvil',imperialGunpowder:'sun',boilingOil:'bastion',fireArrows:'bow-arrow',seamanship:'ship-wheel',age:'crown',
-  tutorial:'graduation-cap',skirmish:'swords',regicide:'crown',survival:'shield',dominion:'landmark',sandbox:'tent-tree',tides:'sailboat',koth:'crown',deathmatch:'swords',siege:'castle',custom:'users-round',campaign:'book-open',
+  tutorial:'graduation-cap',skirmish:'swords',regicide:'crown',survival:'shield',dominion:'landmark',sandbox:'tent-tree',tides:'sailboat',koth:'crown',deathmatch:'swords',siege:'castle',custom:'users-round',campaign:'book-open',multiplayer:'network',
 });
 
-// 8x8 packed full-color hand-painted medieval icon atlas (src/ui-art/medieval-icons-atlas.webp)
+// 8x9 packed full-color hand-painted medieval icon atlas (src/ui-art/medieval-icons-atlas.webp)
 // Index -> [atlasIndex, rarityTier]
+const ATLAS_COLS=8,ATLAS_ROWS=9;
 export const PAINTED_ICONS=Object.freeze({
   // Resources & Economy
   food:[0,'common'],wheat:[0,'common'],
@@ -22,7 +23,7 @@ export const PAINTED_ICONS=Object.freeze({
   // Core Units & Siege
   villager:[5,'common'],'user-round':[5,'common'],
   scout:[6,'uncommon'],spyglass:[6,'uncommon'],
-  spearman:[7,'uncommon'],spear:[7,'uncommon'],skirmisher:[7,'uncommon'],
+  spearman:[7,'uncommon'],spear:[7,'uncommon'],
   archer:[8,'uncommon'],'bow-arrow':[8,'uncommon'],
   swordsman:[9,'uncommon'],sword:[9,'uncommon'],
   knight:[10,'rare'],'chess-knight':[10,'rare'],
@@ -43,7 +44,7 @@ export const PAINTED_ICONS=Object.freeze({
   hero_raven:[24,'legendary'],
   hero_iron:[25,'legendary'],
   hero_jade:[26,'legendary'],
-  cart:[27,'common'],'shopping-cart':[27,'common'],wheelbarrow:[27,'rare'],
+  cart:[27,'common'],'shopping-cart':[27,'common'],
   fishingboat:[28,'common'],fish:[28,'common'],
   galley:[29,'rare'],sailboat:[29,'rare'],tides:[29,'rare'],
   warship:[30,'rare'],ship:[30,'rare'],
@@ -62,7 +63,6 @@ export const PAINTED_ICONS=Object.freeze({
   blacksmith:[42,'rare'],anvil:[42,'rare'],
   market:[43,'uncommon'],store:[43,'uncommon'],
   tower:[44,'rare'],watchtower:[44,'rare'],arrowslits:[44,'epic'],
-  bombard:[54,'legendary'],
   keep:[45,'epic'],castle:[45,'epic'],siege:[45,'epic'],
   wall:[46,'common'],'brick-wall':[46,'common'],
   gate:[47,'common'],
@@ -83,18 +83,45 @@ export const PAINTED_ICONS=Object.freeze({
   hammer:[61,'uncommon'],siegecraft:[61,'rare'],
   trophy:[62,'legendary'],
   map:[63,'uncommon'],sandbox:[63,'uncommon'],custom:[63,'rare'],'flag-triangle-right':[63,'uncommon'],
+  // Row 8 dedicated upgrades (eliminates Skirmisher/Bombard/Multiplayer/Wheelbarrow collisions)
+  skirmisher:[64,'uncommon'],
+  bombard:[65,'legendary'],
+  network:[66,'rare'],multiplayer:[66,'rare'],
+  wheelbarrow:[67,'rare'],
 });
 
-export function uiVectorIcon(name){
+export const FACTION_CREST_ICONS=Object.freeze({
+  alder:'crest-alder',
+  sun:'crest-sun',
+  raven:'crest-raven',
+  iron:'crest-iron',
+  jade:'crest-jade',
+});
+
+export const HERO_SKILL_ICONS=Object.freeze({
+  rally:'megaphone',
+  shieldwall:'shield-check',
+  solarblessing:'sun',
+  arrowstorm:'bow-arrow',
+  bloodlust:'swords',
+  whirlwind:'axe',
+  earthshaker:'hammer',
+  anvilfortify:'anvil',
+  dragonbanner:'flag-triangle-right',
+  fireworkbarrage:'flame',
+});
+
+export function uiVectorIcon(name,extraClass=''){
   const requested=ICON_MAP[name]||name,id=available.has(requested)?requested:'circle-help';
-  return `<svg class="ui-icon" width="20" height="20" viewBox="0 0 ${id==='siege-ram'||id==='trebuchet'?'512 512':'24 24'}" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="${sprite}#icon-${id}"></use></svg>`;
+  const cls=extraClass?`ui-icon ${extraClass}`:'ui-icon';
+  return `<svg class="${cls}" width="20" height="20" viewBox="0 0 ${id==='siege-ram'||id==='trebuchet'?'512 512':'24 24'}" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="${sprite}#icon-${id}"></use></svg>`;
 }
 export function uiIcon(name){
   const svg=uiVectorIcon(name);
   const painted=PAINTED_ICONS[name];
   if(!painted)return svg;
   const [idx,tier]=painted;
-  const x=((idx%8)/7*100).toFixed(3),y=(Math.floor(idx/8)/7*100).toFixed(3);
+  const x=((idx%ATLAS_COLS)/(ATLAS_COLS-1)*100).toFixed(3),y=(Math.floor(idx/ATLAS_COLS)/(ATLAS_ROWS-1)*100).toFixed(3);
   return `<bdi class="ui-icon ui-icon-painted ui-tier-${tier}" style="--pi-x:${x}%;--pi-y:${y}%" aria-hidden="true">${svg.replace('class="ui-icon"','class="ui-icon-fallback"')}</bdi>`;
 }
 export const UI_ICONS=Object.freeze(Object.fromEntries(Object.keys(ICON_MAP).map(key=>[key,uiIcon(key)])));

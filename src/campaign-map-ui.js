@@ -142,7 +142,7 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
   const nodeButtons=atlas.nodes.map(n=>{
     const active=n.id===selected.id;
     const dimmed=actFilter!=='all'&&n.act!==actFilter;
-    const icon=n.optional?uiIcon('trophy'):n.completed?uiIcon('check'):n.status==='current'?uiIcon('flag-triangle-right'):n.status==='locked'?uiIcon('shield'):uiIcon('swords');
+    const icon=n.optional?uiVectorIcon('trophy'):n.completed?uiVectorIcon('check'):n.status==='current'?uiVectorIcon('flag-triangle-right'):n.status==='locked'?uiVectorIcon('shield'):uiVectorIcon('swords');
     return `<button type="button" class="atlas-node status-${n.status} ${active?'selected':''} ${dimmed?'dimmed':''}" style="left:${(n.x/10).toFixed(2)}%;top:${(n.y/5.8).toFixed(2)}%" data-atlas-node="${n.id}" aria-pressed="${active}" aria-label="Chapter ${n.chapter}: ${esc(n.name)} (${n.status})" title="Chapter ${n.chapter} · ${esc(n.name)} — ${esc(n.region)}">
       <span class="atlas-seal">${icon}</span>
       <span class="atlas-pin-label"><b>${n.chapter}</b><em>${esc(n.name)}</em></span>
@@ -150,7 +150,7 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
   }).join('');
 
   const stagesHtml=selected.stages.map((st,i)=>`<li><span class="brief-step">${i+1}</span><div><strong>${esc(st.title)}</strong><p>${esc(st.text)}</p></div></li>`).join('');
-  const medalHtml=selected.medal?`<div class="brief-medal tier-${selected.medal.tier}">${uiIcon(selected.optional?'trophy':'shield-check')}<span><strong>${esc(selected.medal.label)}</strong>${selected.seconds?` · Best ${formatTime(selected.seconds)}`:''}${selected.optional?' · Bonus Crown':''}</span></div>`:'';
+  const medalHtml=selected.medal?`<div class="brief-medal tier-${selected.medal.tier}">${uiVectorIcon(selected.optional?'trophy':'shield-check')}<span><strong>${esc(selected.medal.label)}</strong>${selected.seconds?` · Best ${formatTime(selected.seconds)}`:''}${selected.optional?' · Bonus Crown':''}</span></div>`:'';
   const boss=CAMPAIGN_BOSSES[selected.id]||null;
   const sideQuest=CAMPAIGN_SIDE_QUESTS[selected.id]||null;
   const relics=unlockedCampaignRelics(progress,freeSelect);

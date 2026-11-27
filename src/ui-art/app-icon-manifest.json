@@ -4,20 +4,37 @@
     {
       "file": "apple-touch-icon.png",
       "size": 180,
-      "bytes": 5041,
-      "sha256": "0dbdc4183d86966892237503c850952c756a873013529bfe49008060b27b8207"
+      "bytes": 3400,
+      "sha256": "5684f7321e0aa61293e2cc59e1b2986aad38bbbb986f929ffc1ecb1b96a6a10e",
+      "maskable": true
     },
     {
       "file": "icon-192.png",
       "size": 192,
-      "bytes": 4752,
-      "sha256": "2ffa7fdd9b5f34e2a8ebfbf7bb4935ec24d939659dede55c653d20dfe593858d"
+      "bytes": 5071,
+      "sha256": "6524b32c0bcf57311b3d96c395ea784090ff4e16c6bdb88c4b83d0437c02db77",
+      "maskable": false
     },
     {
       "file": "icon-512.png",
       "size": 512,
-      "bytes": 15139,
-      "sha256": "50f7dd9ce4d8766964cabbe90d7be05dd85d8b91ed8fb7b4e59990e17f862c13"
+      "bytes": 16405,
+      "sha256": "04b330e9f775e7b973a0d5d67aa7c841d8ed175f2feaba7874a37d35df6f5b53",
+      "maskable": false
+    },
+    {
+      "file": "icon-maskable-192.png",
+      "size": 192,
+      "bytes": 3561,
+      "sha256": "6ea3dfa7bf77eca24a1f5a5bc53bb208207f1ce12e05a14e2efc85f01d79e8f9",
+      "maskable": true
+    },
+    {
+      "file": "icon-maskable-512.png",
+      "size": 512,
+      "bytes": 10835,
+      "sha256": "fab9f5502e3d87b9083db38ba83f21e044acfb83e2b8dd91f5acb87b84b2105a",
+      "maskable": true
     }
   ]
 }

@@ -48,3 +48,5 @@ https://creativecommons.org/licenses/by/3.0/
 Changes: scaled and recolored for the game interface.
 https://game-icons.net/1x1/skoll/siege-ram.html
 https://game-icons.net/1x1/delapouite/trebuchet.html
+
+Custom medieval, formation, and faction heraldry stroke symbols & painted medieval-icons-atlas.webp: Original artwork for Crowns of the Frontier.

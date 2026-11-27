@@ -5,7 +5,7 @@ import {LIGHTING_MODES} from './day-night.js';
 import {FRAME_RATES} from './frame-pacing.js';
 import {CAMERA_PRESETS} from './world.js';
 import {difficultyLabel} from './ui-format.js';
-import {UI_ICONS as ICONS,uiIcon,uiVectorIcon} from './ui-icons.js';
+import {UI_ICONS as ICONS,FACTION_CREST_ICONS,uiIcon,uiVectorIcon} from './ui-icons.js';
 import {terrainBiome} from './terrain-biomes.js';
 import {mapPreviewSvg} from './map-preview.js';
 import {AI_PERSONALITIES} from './ai-personalities.js';
@@ -113,7 +113,7 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
     const sig=FACTION_SIGNATURES[id]||{motto:'',unit:'spearman',tech:'economy',accent:'#d9bc7a'};
     const u=UNITS[sig.unit],t=TECHS[sig.tech];
     return `<button type="button" class="civ-card ${id===faction?'active':''}" data-hub-faction="${id}" aria-pressed="${id===faction}" style="--civ-accent:${sig.accent}">
-      <div class="civ-card-top"><i class="civ-swatch"></i><div><strong>${esc(f.name)}</strong><small>${esc(sig.motto)}</small></div></div>
+      <div class="civ-card-top"><span class="civ-swatch civ-crest" aria-hidden="true">${uiVectorIcon(FACTION_CREST_ICONS[id]||'crown')}</span><div><strong>${esc(f.name)}</strong><small>${esc(sig.motto)}</small></div></div>
       <p>${esc(f.desc)}</p>
       <div class="civ-uniques">
         <span>${ICONS[sig.unit]||uiIcon('swords')} <b>${esc(u?.name||'')}</b></span>
