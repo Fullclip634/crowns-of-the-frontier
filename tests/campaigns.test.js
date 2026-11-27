@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/simulation.js';
 import {campaignObjective,CAMPAIGN_SCRIPTS} from '../src/campaigns.js';
+import {DIFFICULTIES} from '../src/data.js';
 const advance=(s,seconds)=>{for(let i=0;i<seconds*10;i++)s.tick(.1);};
 const quiet=mode=>{const s=new Simulation({mode,difficulty:'story'});s.tickAI=()=>{};return s;};
 
@@ -29,6 +30,48 @@ test('fortress defense requires a completed stronghold and all waves before vict
   const workers=s.owned(0,'unit','villager').slice(0,3);assert.ok(s.build('keep',tc0.x+3,tc0.z+19,workers.map(e=>e.id)));advance(s,110);
   assert.ok(s.campaignState.finished);assert.equal(s.ended.won,true);assert.equal(s.campaignState.stage,3);
 });
+
+test('every Chapter III wave deploys its announced army and attacks an actual defense',()=>{
+  const opening=JSON.stringify(quiet('campaign3').serialize());
+  for(let wave=1;wave<=8;wave++){
+    const s=Simulation.restore(JSON.parse(opening)),waveEvents=[],hits=[];
+    s.wave=wave-1;
+    s.time=s.nextWave-.05;
+    s.on(e=>{
+      if(e.type==='wave')waveEvents.push(e);
+      if(e.type==='attack'&&e.entity.campaignAttack&&e.target.owner===0)hits.push(e);
+    });
+    s.tick(.1);
+    const count=Math.round((5+wave*2.5)*DIFFICULTIES.story.wave),army=s.owned(1,'unit');
+    assert.equal(waveEvents.length,1);
+    assert.equal(waveEvents[0].count,count,`wave ${wave} announces the planned count`);
+    assert.equal(army.length,count,`wave ${wave} deploys the announced count`);
+    for(const unit of army){
+      assert.equal(unit.order?.type,'attack');
+      const cell=s.cell(unit.x,unit.z);
+      assert.equal(s.grid(1)[cell.z*s.gridSize+cell.x],0,'the unit starts on reachable ground');
+    }
+    for(let i=0;i<340&&!hits.length;i++)s.tick(.1);
+    assert.ok(hits.some(e=>['gate','wall','tower','towncenter'].includes(e.target.type)),`wave ${wave} reaches the defense and attacks it`);
+  }
+});
+
+test('restoring a Chapter III save redirects stalled troops without repeating its wave',()=>{
+  const old=new Simulation({mode:'campaign3',difficulty:'story',replay:true,battlefieldLayout:4});
+  old.spawnWave();advance(old,15);
+  assert.ok(old.owned(1,'unit').some(u=>!u.order&&u.pathStatus==='blocked'));
+  const data=JSON.parse(JSON.stringify(old.serialize()));
+  data.options.replay=false;
+  const s=Simulation.restore(data),wave=[],hits=[];
+  s.on(e=>{
+    if(e.type==='wave')wave.push(e);
+    if(e.type==='attack'&&e.entity.campaignAttack&&e.target.owner===0)hits.push(e);
+  });
+  for(let i=0;i<850&&!hits.length;i++)s.tick(.1);
+  assert.equal(s.wave,1);
+  assert.deepEqual(wave,[],'the existing wave was resumed');
+  assert.ok(hits.length,'the restored attackers fight at the fort');
+});
 test('sacred valley supports both continuous shrine control and a recorded conquest alternative',()=>{
   const s=quiet('campaign4'),shrines=s.entities.filter(e=>e.kind==='shrine'),soldiers=s.owned(0,'unit').filter(e=>['spearman','archer'].includes(e.type));
   shrines.forEach((shrine,i)=>s.command(soldiers.slice(i*3,i*3+3).map(e=>e.id),{type:'move',x:shrine.x,z:shrine.z}));advance(s,260);
@@ -39,8 +82,21 @@ test('sacred valley supports both continuous shrine control and a recorded conqu
 test('coastal campaign counts deposited fishing catch and permits a paid naval artillery route',()=>{
   const s=quiet('campaign6');s.emit('gathered',{owner:0,source:'villager',resource:'food',amount:500});assert.equal(s.campaignState.fish,0);advance(s,180);
   assert.ok(s.campaignState.fish>=150);assert.equal(s.campaignState.stage,1);
-  const tc=s.owned(0,'building','towncenter')[0],dock=s.owned(0,'building','dock')[0];assert.ok(s.research(tc.id,'age'));advance(s,100);assert.ok(s.train(dock.id,'warship'));advance(s,50);
-  assert.equal(s.campaignState.stage,2);const enemy= s.owned(1,'building','towncenter')[0];s.hurt(enemy,enemy.hp,s.owned(0,'unit','warship')[0]);advance(s,1);assert.equal(s.ended.won,true);
+  const tc=s.owned(0,'building','towncenter')[0],dock=s.owned(0,'building','dock')[0];
+  const mine=s.nearest(tc,e=>e.kind==='resource'&&e.type==='gold'&&e.x<0);
+  assert.ok(mine);
+  s.command(s.owned(0,'unit','villager').slice(0,5).map(e=>e.id),{type:'gather',target:mine.id});
+  assert.ok(s.research(tc.id,'age'));advance(s,100);
+  assert.ok(s.train(dock.id,'warship'));assert.ok(s.train(dock.id,'warship'));advance(s,100);
+  assert.equal(s.campaignState.stage,2);
+  const fleet=s.owned(0,'unit','warship').map(ship=>ship.id),guard=s.owned(1,'unit','galley')[0];
+  assert.equal(fleet.length,2);
+  s.command(fleet,{type:'attack',target:guard.id});advance(s,45);
+  assert.equal(s.count(1,'unit','galley'),0);
+  s.command(fleet,{type:'move',x:-8,z:-128});advance(s,85);
+  const enemy=s.owned(1,'building','towncenter')[0];
+  s.command(fleet,{type:'attack',target:enemy.id});advance(s,90);
+  assert.equal(s.ended?.won,true,'a paid fleet can sail into range and bombard the capital to complete the chapter');
 });
 test('final siege progresses through paid siege production and an actual gate attack before conquest',()=>{
   const s=quiet('campaign5'),tc0=s.owned(0,'building','towncenter')[0],workers=s.owned(0,'unit','villager').slice(0,2);assert.ok(s.build('workshop',tc0.x+3,tc0.z+19,workers.map(e=>e.id)));advance(s,65);
@@ -135,6 +191,89 @@ test('a timed stage does not jump forward when an older save is loaded',()=>{
   restored.tick(.1);restored.tick(.1);
   assert.equal(restored.campaignState.stage,0,'a save without a stage start begins counting at load');
   assert.ok(campaignObjective(restored).elapsed<1);
+});
+
+function destroy(s,owner,...types){
+  const enemy=s.owned(owner,'building').filter(e=>!types.length||types.includes(e.type));
+  assert.ok(enemy.length,`owner ${owner} has the required structures`);
+  for(const building of enemy)s.hurt(building,building.hp,s.owned(0,'unit')[0]);
+}
+
+function hold(s){
+  const {seconds}=campaignObjective(s);
+  assert.ok(seconds>0);
+  s.time=s.campaignState.stageAt+seconds+.01;
+}
+
+const laterChapters={
+  campaign7:[s=>s.addBuilding('tower',0,10,0,true),s=>destroy(s,1,'barracks'),s=>destroy(s,1,'towncenter')],
+  campaign8:[s=>s.addBuilding('camp',0,-82,96,true),s=>destroy(s,1,'barracks'),s=>destroy(s,1,'towncenter')],
+  campaign9:[hold,s=>destroy(s,1,'barracks'),s=>destroy(s,1,'towncenter')],
+  campaign10:[s=>s.addBuilding('tower',0,10,0,true),s=>{s.players[0].age=3;},s=>{
+    destroy(s,1,'towncenter');
+    advance(s,1);
+    assert.equal(s.ended,null,'the surviving keep still prevents victory');
+    assert.deepEqual(campaignObjective(s).marker,{x:s.owned(1,'building','keep')[0].x,z:s.owned(1,'building','keep')[0].z});
+    destroy(s,1,'keep');
+  }],
+  campaign11:[hold,s=>{
+    assert.equal(s.players[3].dormant,false);
+    assert.equal(s.count(3,'building','towncenter'),1,'western relief establishes its camp');
+    destroy(s,1,'towncenter');
+  },s=>destroy(s,2,'towncenter')],
+  campaign12:[s=>{
+    s.addBuilding('tower',0,-128,95,true);advance(s,1);
+    assert.equal(s.campaignState.stage,0,'a watchtower far from the passes does not advance the objective');
+    s.addBuilding('tower',0,-29,93,true);
+  },s=>destroy(s,1,'towncenter'),s=>destroy(s,2,'towncenter')],
+  campaign13:[s=>{
+    s.time=69;advance(s,1);
+    assert.ok(!s.campaignState.fired.includes('c13-wood-scouts'));
+    destroy(s,1,'barracks','tower');
+  },s=>{
+    assert.ok(s.count(0,'building','towncenter'),'Oakhold transfers to the player after the battle');
+    advance(s,1);
+    assert.ok(s.campaignState.fired.includes('c13-wood-scouts'),'scouts arrive when a slower liberation is completed');
+    const capital=s.owned(0,'building','towncenter')[0];
+    while(s.count(0,'unit','villager')<14)s.addUnit('villager',0,capital.x-10,capital.z-8);
+    s.addBuilding('blacksmith',0,capital.x+18,capital.z+10,true);
+  },s=>destroy(s,2,'towncenter')],
+  campaign14:[s=>destroy(s,1,'towncenter'),s=>{
+    assert.ok(s.count(1,'building','keep'));
+    destroy(s,2,'keep');
+  },s=>destroy(s,2,'towncenter')],
+  campaign15:[hold,s=>{destroy(s,1);destroy(s,2);},s=>{destroy(s,3);destroy(s,4);}],
+  campaign16:[s=>{
+    const tower=s.owned(1,'building','tower')[0];
+    assert.ok(s.count(1,'building','tower')>1);
+    s.hurt(tower,tower.hp,s.owned(0,'unit')[0]);
+  },s=>destroy(s,1),s=>destroy(s,2)],
+  campaign17:[hold,s=>{destroy(s,1);destroy(s,2);},s=>destroy(s,3)],
+  campaign18:[s=>{
+    const shrine=s.entities.find(e=>e.kind==='shrine'),soldier=s.owned(0,'unit','swordsman')[0];
+    assert.deepEqual(campaignObjective(s).marker,{x:shrine.x,z:shrine.z});
+    soldier.x=shrine.x;soldier.z=shrine.z;
+    advance(s,19);
+    assert.equal(shrine.owner,0,'shrine capture advances through the regular sim');
+  },s=>destroy(s,1),s=>destroy(s,2)],
+  campaign19:[s=>destroy(s,1),s=>destroy(s,2),s=>destroy(s,3)],
+};
+
+test('Chapters VII–XIX advance all three objectives, create checkpoints, and award victory',()=>{
+  for(const [mode,completeStages] of Object.entries(laterChapters)){
+    const s=quiet(mode);
+    for(const [i,complete] of completeStages.entries()){
+      assert.equal(campaignObjective(s)?.index,i,`${mode} shows objective ${i+1}`);
+      complete(s);
+      advance(s,1);
+      assert.equal(s.campaignState.stage,i+1,`${mode} completes objective ${i+1}`);
+      if(i<2){
+        assert.equal(s.ended,null,`${mode} remains active`);
+        assert.equal(s.campaignCheckpoint?.campaignState.stage,i+1,`${mode} saves its checkpoint`);
+      }
+    }
+    assert.equal(s.ended?.won,true,`${mode} awards victory after its last objective`);
+  }
 });
 
 test('every chapter survives a real opening without throwing or firing unknown events',()=>{

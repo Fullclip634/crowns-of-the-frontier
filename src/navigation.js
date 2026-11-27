@@ -150,9 +150,12 @@ export function findPath(sim,e,dest,range=0,normalOverride=null){
   const accessible=(x,z,escape)=>naval||bridgePointClear(sim.options?.map,x,z,radius)&&(!escape||bridgeStepClear(sim.options?.map,e.x,e.z,x,z,radius));
   const nearest=(cell,point,labels=null,region=0,escape=false)=>{if(!grid[cell.z*size+cell.x]&&(!labels||labels[cell.z*size+cell.x]===region)&&accessible(cell.x*2-half+1,cell.z*2-half+1,escape))return cell;let best=null,score=Infinity;
     for(let ring=1;ring<12;ring++){for(let z=Math.max(0,cell.z-ring);z<=Math.min(size-1,cell.z+ring);z++)for(let x=Math.max(0,cell.x-ring);x<=Math.min(size-1,cell.x+ring);x++)if(!grid[z*size+x]&&(!labels||labels[z*size+x]===region)){const wx=x*2-half+1,wz=z*2-half+1;if(!accessible(wx,wz,escape))continue;const n=Math.hypot(wx-point.x,wz-point.z)+Math.hypot(wx-e.x,wz-e.z)*.005;if(n<score){score=n;best={x,z};}}if(best&&score<ring*2)return best;}return best;};
-  const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x]&&pointClear(dest),startCell=sim.cell(e.x,e.z),a=nearest(startCell,e,null,0,true);let b=nearest(requested,dest);if(!a||!b){e.pathStatus='blocked';return[];}
+  const requested=sim.cell(dest.x,dest.z),exact=!grid[requested.z*size+requested.x]&&pointClear(dest),startCell=sim.cell(e.x,e.z),a=nearest(startCell,e,null,0,true);
+  const area=range>0&&Number.isFinite(dest.r);
+  let b=nearest(requested,dest);
+  if(!a||!b&&!area){e.pathStatus='blocked';return[];}
   const traffic=crowdCosts(sim,e);
-  const start=a.z*size+a.x,area=range>0&&Number.isFinite(dest.r);let end=b.z*size+b.x;
+  const start=a.z*size+a.x;let end=b?b.z*size+b.x:-1;
   if(!area&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
   if(!traffic&&exact&&clearSegment(sim,grid,e,dest)){e.pathStatus='ready';return[{x:dest.x,z:dest.z}];}
   const labels=navigationRegions(sim,grid);let goals=null;
@@ -164,6 +167,9 @@ export function findPath(sim,e,dest,range=0,normalOverride=null){
       if(!grid[id]&&labels[id]===labels[start]&&Math.abs(wx)<=half-3&&Math.abs(wz)<=half-3&&Math.hypot(wx-dest.x,wz-dest.z)<=range)goals.add(id);
     }if(!goals.size)goals=null;
   }
+  // A long-range attacker may reach a firing cell even if none of the cells
+  // immediately around the target are navigable, as with coastal artillery.
+  if(!goals&&!b){e.pathStatus='blocked';return[];}
   if(!goals&&start===end){e.pathStatus='ready';return finishResourceApproach(sim,grid,e,dest,range,[exact?{x:dest.x,z:dest.z}:{x:b.x*2-half+1,z:b.z*2-half+1}]);}
   if(!goals&&labels[start]!==labels[end]){if(!exact)b=nearest(requested,dest,labels,labels[start]);if(exact||!b){e.pathStatus='blocked';return[];}end=b.z*size+b.x;}
   const scratch=sim.pathScratch?.size===size?sim.pathScratch:(sim.pathScratch={

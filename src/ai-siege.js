@@ -1,6 +1,7 @@
 import {UNITS,BUILDINGS} from './data.js';
 import {unitNavigationGrid,constructionNavigationGrid,navigationRegions,findPath,clearSegment} from './navigation.js';
-import {meleePositions,meleeWorkGrid,meleeWorldSegmentClear} from './melee-contact.js';
+import {meleeBuildingAttack,meleePositions,meleeWorkGrid,meleeWorldSegmentClear} from './melee-contact.js';
+import {unitAttackRange} from './combat-targeting.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 
 // Use the same ground-contact rules as real melee movement. A private probe
@@ -18,11 +19,15 @@ function reachableContact(sim,engine,target){
   return false;
 }
 
-function reachableFiringPosition(sim,engine,site){
-  const range=UNITS[engine.type].range+site.r;
+function reachableFiringPosition(sim,engine,site,range=UNITS[engine.type].range+site.r){
   if(distance(engine,site)<=range)return true;
   const probe={...engine,path:[]},route=findPath(sim,probe,site,range);
   return probe.pathStatus==='ready'&&distance(route.at(-1)||engine,site)<=range;
+}
+
+export function canAttackFrom(sim,unit,target){
+  const range=Math.max(unitAttackRange(sim,unit)+target.r,target.kind==='building'?target.r+3:0);
+  return meleeBuildingAttack(unit,target)?reachableContact(sim,unit,target):reachableFiringPosition(sim,unit,target,range);
 }
 
 // Only current, visible targets may receive explicit attack orders. Infantry

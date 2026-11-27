@@ -413,7 +413,7 @@ export function installCommanderAI(Simulation){
       else if(player.resources.food<120&&player.resources.gold>=130)this.trade('food',true,owner);
       else if(player.resources.gold<150&&player.resources.food>=900)this.trade('food',false,owner);
     }
-    this.assignEconomy(owner);const workers=this.owned(owner,'unit','villager'),buildings=this.owned(owner,'building'),army=this.owned(owner,'unit').filter(military),landArmy=army.filter(e=>!UNITS[e.type].naval),towns=buildings.filter(b=>b.type==='towncenter'),baseThreats=settlementThreats(this,owner,visible,buildings);
+    this.assignEconomy(owner);const workers=this.owned(owner,'unit','villager'),buildings=this.owned(owner,'building'),army=this.owned(owner,'unit').filter(unit=>military(unit)&&!unit.campaignAttack),landArmy=army.filter(e=>!UNITS[e.type].naval),towns=buildings.filter(b=>b.type==='towncenter'),baseThreats=settlementThreats(this,owner,visible,buildings);
     if(this.options.mode==='custom'&&this.time-(state.lastDeposits??-20)>=10){rememberDeposits(this,state,owner);state.lastDeposits=this.time;}
     protectWorkers(this,state,owner,workers,buildings,visible);
     staffSettlements(this,state,owner,workers,buildings);

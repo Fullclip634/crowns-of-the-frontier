@@ -29,6 +29,7 @@ import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,sl
 import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
 import {channelAt,fordAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {ravineRoadAt} from './terrain-layout.js';
+import {deployCampaignTroops,legacyCampaignReplay} from './campaign-attacks.js';
 import {biomeProfile,EPIC_FRONTIER_MAPS} from './terrain-biomes.js';
 import {seedDeerHerds,tickWildlife} from './wildlife.js';
 import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS,isHeroUnit,triggerHeroSkill} from './heroes.js';
@@ -151,6 +152,9 @@ export class Simulation {
     let dz0=expandedMission?(coastalMission?52:56):(shift?Math.round(35*scale)-30:0);
     let dx1=expandedMission?(coastalMission?62:66):(mission?0:Math.round(46*scale)-40);
     let dz1=expandedMission?(coastalMission?-50:-56):(mission?0:Math.round(-39*scale)-(-34));
+    // Put Chapter VI's coastal capital within siege galleon range. The
+    // northern shore keeps it distant from the player's starting harbor.
+    if(m==='campaign6'&&!legacyCampaignReplay(this)){dx1=-1;dz1=-103;}
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
     this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='deathmatch'?3:(m==='regicide'||m==='siege')?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
@@ -797,11 +801,29 @@ export class Simulation {
     if((m==='dominion'||m==='koth'||this.mission?.dominion)&&this.time>65){const free=soldiers.filter(e=>!e.order||e.order.type!=='attack');for(const shrine of this.entities.filter(e=>e.kind==='shrine'&&e.owner!==1)){const group=free.splice(0,3);this.command(group.map(e=>e.id),{type:'attackmove',x:shrine.x,z:shrine.z});}}
     if(m==='wonder'&&p.age===3&&this.time>700&&!this.owned(1,'building','wonder').length&&this.canAfford(BUILDINGS.wonder.cost,1))this.aiBuild('wonder');
   }
-  spawnWave(){this.wave++;const d=DIFFICULTIES[this.options.difficulty],count=Math.round((5+this.wave*2.5)*d.wave),s=this.worldSize/WORLD,sides=[{x:58*s,z:55*s},{x:-58*s,z:-55*s},{x:60*s,z:-50*s}],base=sides[(this.wave-1)%sides.length];
-    this.players[1].age=Math.min(3,Math.floor(this.wave/3));for(let i=0;i<count;i++){
-      let type=i%3===0?'archer':'spearman';if(this.wave>=3&&i%4===0)type='knight';if(this.wave>=5&&i%8===0)type='ram';if(this.wave>=8&&i%10===0)type='catapult';
-      const unit=this.addUnit(type,1,base.x+i%6*1.8,base.z+Math.floor(i/6)*1.8);const tc=this.owned(0,'building','towncenter')[0];if(tc)unit.order={type:'attackmove',x:tc.x,z:tc.z};
-    }this.nextWave=this.time+95;this.emit('wave',{wave:this.wave,count});
+  spawnWave(){
+    const wave=this.wave+1,difficulty=DIFFICULTIES[this.options.difficulty],s=this.worldSize/WORLD;
+    const sides=[{x:58*s,z:55*s},{x:-58*s,z:-55*s},{x:60*s,z:-50*s}],base=sides[(wave-1)%sides.length];
+    const types=Array.from({length:Math.round((5+wave*2.5)*difficulty.wave)},(_,i)=>{
+      if(wave>=8&&i%10===0)return 'catapult';
+      if(wave>=5&&i%8===0)return 'ram';
+      if(wave>=3&&i%4===0)return 'knight';
+      return i%3===0?'archer':'spearman';
+    });
+    const previousAge=this.players[1].age;
+    this.players[1].age=Math.min(3,Math.floor(wave/3));
+    let count=types.length;
+    if(this.mission?.survival&&!legacyCampaignReplay(this)){
+      count=deployCampaignTroops(this,1,types,base,{attack:true,frontline:true}).length;
+      if(!count){this.players[1].age=previousAge;this.nextWave=this.time+5;return;}
+    }else{
+      const tc=this.owned(0,'building','towncenter')[0];
+      for(const [i,type] of types.entries()){
+        const unit=this.addUnit(type,1,base.x+i%6*1.8,base.z+Math.floor(i/6)*1.8);
+        if(tc)unit.order={type:'attackmove',x:tc.x,z:tc.z};
+      }
+    }
+    this.wave=wave;this.nextWave=this.time+95;this.emit('wave',{wave,count});
     // Supply caravans reward surviving a wave without removing the need for an economy.
     if(this.wave>1)for(const key of ['food','wood','gold'])this.players[0].resources[key]+=80+this.wave*15;
   }

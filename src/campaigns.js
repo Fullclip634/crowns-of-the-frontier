@@ -3,11 +3,15 @@ import {CAMPAIGN_BOSSES,CAMPAIGN_SIDE_QUESTS,applyCampaignRelic} from './campaig
 import {applyCampaignScenario,triggerWesternReliefArrival,triggerOakholdLiberation} from './campaign-scenarios.js';
 import {clearStartingDeposits,clearStartingUnitPositions,ensureStartingSupplies,openStartingGateLanes} from './battlefield-start.js';
 import {finishStartingWoodlines} from './terrain-barriers.js';
+import {deployCampaignTroops,legacyCampaignReplay,tickCampaignAttacks} from './campaign-attacks.js';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.count(1,'building','towncenter');
 const allHostileCapitalsFallen=s=>s.players.every((p,owner)=>!s.hostile(0,owner)||!s.count(owner,'building','towncenter'));
+const holdsSummit=s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8;
+const passPositions=[{x:-12,z:96},{x:-12,z:0},{x:-12,z:-104}];
+const nearSunderedPass=e=>passPositions.some(pass=>Math.hypot(e.x-pass.x,e.z-pass.z)<32);
 // Act V total-war wipeout helpers: an enemy base is only defeated when EVERY core/military/economic
 // structure (Town Center, Keep, Barracks, Range, Stable, Workshop, Tower, Blacksmith, Market, Monastery,
 // Mill, House, Dock, Camp) has been razed — not merely sniping the Town Center!
@@ -34,6 +38,11 @@ const meetsDifficulty=(sim,level)=>DIFFICULTY_ORDER.indexOf(sim.options.difficul
 function spawnReinforcements(sim,spec){
   const owner=spec.owner??0,anchor=sim.owned(owner,'building','towncenter')[0]||sim.owned(owner,'unit','king')[0]||sim.owned(owner,'unit')[0]||(sim.players[owner]?.start?{...sim.players[owner].start,r:3}:null);if(!anchor)return 0;
   const count=Math.max(1,Math.round(spec.count||1)),placed=[];
+  if(!legacyCampaignReplay(sim)){
+    if(sim.players[owner]?.defeated||sim.players[owner]?.dormant)return 0;
+    const attack=owner!==0&&sim.hostile(owner,0)&&!!UNITS[spec.type]?.damage;
+    return deployCampaignTroops(sim,owner,Array(count).fill(spec.type),anchor,{attack,frontline:attack}).length;
+  }
   for(let i=0;i<count;i++){
     let point=null;
     for(let attempt=0;attempt<24;attempt++){
@@ -63,18 +72,18 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign2:{speaker:'Quartermaster Sera',intro:'The eastern garrison has cut the supply road. Take the caravan across the central bridge and establish a safe bridgehead. Its loss ends the mission.',cart:{name:'Bridge caravan',x:-74,z:48},
     stages:[
-      {title:'Escort the supplies',text:'Escort the caravan to the marked eastern bridgehead. Keep it alive.',marker:{x:20,z:-8},done:(s,q)=>{const cart=s.get(q.cartId);return cart&&!cart.embarked&&Math.hypot(cart.x-20,cart.z+8)<7;},dialogue:'The supplies have reached the far bank. Establish a position before pushing toward the garrison.'},
+      {title:'Escort the supplies',text:'Escort the caravan to the marked eastern bridgehead. Keep it alive.',marker:{x:20,z:-8},done:(s,q)=>{const cart=s.get(q.cartId);return cart&&!cart.embarked&&Math.hypot(cart.x-20,cart.z+8)<7;},onDone:(s,q)=>{if(!legacyCampaignReplay(s)){const cart=s.get(q.cartId);q.escortIntact=cart.hp>cart.maxHp*.5;}},dialogue:'The supplies have reached the far bank. Establish a position before pushing toward the garrison.'},
       {title:'Secure the bridgehead',text:'Complete a watchtower east of the river, or move five land military units onto the eastern bank.',marker:{x:20,z:-8},done:s=>completed(s,'tower').some(e=>e.x>10)||army(s).filter(e=>e.x>10).length>=5,dialogue:'The bridgehead is secure. The garrison can no longer isolate our settlement.'},
       {title:'Break the garrison',text:'Reach the Castle Age and destroy the rival town center. Protect the caravan throughout.',marker:{x:102,z:-84},done:s=>s.players[0].age>=2&&conquered(s),dialogue:'The supply road is open. The caravan will carry word of your victory.'},
-    ],optional:{text:'Complete the escort with the caravan above half health.',done:(s,q)=>(s.get(q.cartId)?.hp||0)>s.get(q.cartId)?.maxHp*.5},
+    ],optional:{text:'Complete the escort with the caravan above half health.',done:(s,q)=>q.escortIntact??((s.get(q.cartId)?.hp||0)>s.get(q.cartId)?.maxHp*.5)},
     events:[
       {at:70,id:'c2-bridgehead',text:'Villagers from the far bank volunteer to hold the bridgehead.',reinforce:{type:'spearman',count:2}},
-      {at:140,id:'c2-caravan-intact',when:(s,q)=>q.optionalMet,text:'The caravan is intact, and its guards will fight beside you.',reinforce:{type:'archer',count:2}},
-      {at:140,id:'c2-caravan-hurt',when:(s,q)=>!q.optionalMet,minDifficulty:'hard',text:'Word of a mauled caravan has reached the garrison. They press harder.',reinforce:{owner:1,type:'spearman',count:3}},
+      {at:140,id:'c2-caravan-intact',afterStage:1,when:(s,q)=>q.optionalMet,text:'The caravan is intact, and its guards will fight beside you.',reinforce:{type:'archer',count:2}},
+      {at:140,id:'c2-caravan-hurt',afterStage:1,when:(s,q)=>!q.optionalMet,minDifficulty:'hard',text:'Word of a mauled caravan has reached the garrison. They press harder.',reinforce:{owner:1,type:'spearman',count:3}},
     ]},
   campaign3:{speaker:'Castellan Maera',intro:'The warbands are gathering beyond the ridge. Raise a castle, protect your economy, and prepare for eight assaults.',
     stages:[
-      {title:'Raise the stronghold',text:'Complete a castle before the final waves arrive.',done:s=>completed(s,'keep').length>0,dialogue:'Stone is only the beginning. Repair your defenses and keep producing reinforcements.'},
+      {title:'Raise the stronghold',text:'Complete a castle and keep it standing through the final assault.',done:s=>completed(s,'keep').length>0,dialogue:'Stone is only the beginning. Repair your defenses and keep producing reinforcements.'},
       {title:'Hold through the first assaults',text:'Survive until the fourth wave arrives with a castle standing.',done:s=>s.wave>=4&&completed(s,'keep').length>0,dialogue:'The early attacks were a test. Siege engines will follow; meet them outside your walls when you can.'},
       {title:'The last bastion',text:'Survive all eight waves, eliminate the attackers, and keep a castle standing.',done:s=>s.wave>=8&&!s.count(1,'unit')&&completed(s,'keep').length>0,dialogue:'The last warband has broken. Your stronghold has earned its name.'},
     ],optional:{text:'End with ten villagers alive to rebuild the frontier.',done:s=>s.count(0,'unit','villager')>=10},
@@ -94,7 +103,7 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign5:{speaker:'Marshal Elian',intro:'The enemy capital stands behind gates and stone. Bring siege engines, protect their crews, and open a route for the army.',
     stages:[
-      {title:'Assemble the siege train',text:'Field two battering rams or trebuchets.',done:s=>army(s).filter(e=>['ram','catapult','trebuchet'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
+      {title:'Assemble the siege train',text:'Field two siege engines. Rams, catapults, and trebuchets count.',done:s=>army(s).filter(e=>['ram','catapult','trebuchet'].includes(e.type)).length>=2,dialogue:'The siege train is ready. Keep infantry beside it, and use healers to preserve the escort.'},
       {title:'Breach the defenses',text:'Destroy the enemy gatehouse or a section of its starting wall.',marker:{x:102,z:-61},done:(s,q)=>q.defenses.some(id=>!s.get(id)),dialogue:'There is a breach in the line. Reinforce it before sending the siege engines toward the capital.'},
       {title:'End the frontier war',text:'Destroy the rival town center and defend your own settlement.',marker:{x:106,z:-90},done:conquered,dialogue:'The capital has fallen. The frontier war is over, but the work of rebuilding begins.'},
     ],optional:{text:'Finish with at least one siege engine surviving.',done:s=>army(s).some(e=>['ram','catapult','trebuchet'].includes(e.type))},
@@ -153,10 +162,10 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign10:{speaker:'Queen Maren',intro:'The rival claim has been pressed to the last ridge above the shattered crown. Take the high ground, raise the Imperial banner, and end the war on your own terms.',
     stages:[
-      {title:'Claim the high ground',text:'Complete a castle or watchtower on the marked ridge, or hold the summit with eight land units.',marker:{x:0,z:0},done:s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8,dialogue:'The ridge is yours. From here the whole valley is in sight, and so is their keep.'},
+      {title:'Claim the high ground',text:'Complete a castle or watchtower on the marked ridge, or hold the summit with eight land military units.',marker:{x:0,z:0},done:holdsSummit,dialogue:'The ridge is yours. From here the whole valley is in sight, and so is their keep.'},
       {title:'Raise the Imperial banner',text:'Reach the Imperial Age.',done:s=>s.players[0].age>=3,dialogue:'The Imperial banner flies. Your rivals have lost the last advantage they held.'},
-      {title:'Break the last claim',text:'Destroy the rival keep, then their town center.',marker:{x:106,z:-90},done:conquered,dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
-    ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(completed(s,'keep').length>0||completed(s,'tower').length>0)&&s.count(0,'unit','villager')>=12},
+      {title:'Break the last claim',text:'Destroy the rival keep and town center.',marker:{x:106,z:-90},done:s=>conquered(s)&&(legacyCampaignReplay(s)||!s.count(1,'building','keep')),dialogue:'The last claim is broken. The frontier is one kingdom at last.'},
+    ],optional:{text:'Finish with the ridge still held and twelve villagers alive.',done:s=>(legacyCampaignReplay(s)?completed(s,'keep').length>0||completed(s,'tower').length>0:holdsSummit(s))&&s.count(0,'unit','villager')>=12},
     events:[
       {at:70,id:'c10-veterans',text:'Veterans of the border war answer the summons.',reinforce:{type:'swordsman',count:3}},
       {at:110,id:'c10-siege',text:'A siege train arrives from the southern workshops.',reinforce:{type:'ram',count:1}},
@@ -168,7 +177,7 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Hold the Iron Ring',text:'Defend your central walled citadel until Western Allied Relief breaks through the western cliffs.',seconds:105,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=105,onDone:s=>{triggerWesternReliefArrival(s);},dialogue:'Horns from the western cliffs! Our Allied Relief Kingdom has broken through and raised a forward war-camp—strike out together!'},
       {title:'Break the Northern Siege Camp',text:'Coordinate with your Western Ally to destroy Lord Korr’s northern town center.',marker:{x:-14,z:-148},done:s=>!s.count(1,'building','towncenter'),dialogue:'Lord Korr’s siege camp is in ashes! Turn east and shatter General Syra’s raiders.'},
       {title:'Shatter the Encirclement',text:'Destroy every remaining hostile town center across the valley.',marker:{x:148,z:8},done:allHostileCapitalsFallen,dialogue:'The Iron Ring is broken forever! The central citadel stands unbroken and the valley belongs to our alliance.'},
-    ],optional:{text:'Keep your central Castle Keep standing throughout the entire siege.',done:s=>completed(s,'keep').length>0},
+    ],optional:{text:'Keep your original central Castle Keep standing throughout the siege.',done:(s,q)=>q.originalKeep?!!s.get(q.originalKeep):completed(s,'keep').length>0},
     events:[
       {at:32,id:'c11-north-probe',text:'Lord Korr’s northern siege vanguard probes the North Gate!',reinforce:{owner:1,type:'swordsman',count:3}},
       {at:64,id:'c11-east-riders',text:'General Syra’s cavalry sweeps toward the East Gate!',reinforce:{owner:2,type:'knight',count:2}},
@@ -177,7 +186,13 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign12:{speaker:'Marshal Vayne',intro:'Towering stone cliffs divide the Sundered Pass into three narrow valleys. Save your stone—wall only the cliff gaps, hold alongside our Allied Northern Garrison, and break the central pass fortress!',
     stages:[
-      {title:'Lock Down the Cliff Passes',text:'Complete a Watchtower or four wall/gate sections near the passes, or muster twelve military troops.',marker:{x:-12,z:96},done:s=>completed(s,'tower').length>=2||completed(s,'wall').length+completed(s,'gate').length>=4||army(s).length>=12,dialogue:'The mountain chokepoints are sealed! Now prepare your siege engines and storm the central fortress gate.'},
+      {title:'Lock Down the Cliff Passes',text:'Add a Watchtower or four completed wall or gate sections near a pass, or muster twelve land military units.',marker:passPositions[0],done:(s,q)=>{
+        if(army(s).length>=12)return true;
+        const towers=completed(s,'tower'),walls=[...completed(s,'wall'),...completed(s,'gate')];
+        if(legacyCampaignReplay(s))return towers.length>=2||walls.length>=4;
+        const newDefense=e=>!q.originalPassDefenses?.includes(e.id);
+        return towers.some(e=>newDefense(e)&&nearSunderedPass(e))||passPositions.some(pass=>walls.filter(e=>newDefense(e)&&Math.hypot(e.x-pass.x,e.z-pass.z)<32).length>=4);
+      },dialogue:'The mountain chokepoints are sealed! Now prepare your siege engines and storm the central fortress gate.'},
       {title:'Shatter the Central Fortress',text:'Destroy Iron-Marshal Garen’s central mountain fortress town center to collapse the pass defense.',marker:{x:36,z:-6},done:s=>!s.count(1,'building','towncenter'),onDone:s=>{s.players[0].resources.gold+=300;s.players[0].resources.stone+=200;spawnReinforcements(s,{owner:3,type:'knight',count:4});},dialogue:'The central fortress has fallen! War chests seized (+300 Gold, +200 Stone) and our Northern Ally sends Knights through the breach!'},
       {title:'Conquer the Eastern Empire',text:'March through the Sundered Pass and destroy the Eastern Imperial capital.',marker:{x:138,z:-66},done:allHostileCapitalsFallen,dialogue:'The Sundered Pass is open from summit to valley. The Eastern Empire bows before your banners.'},
     ],optional:{text:'Win while your Northern Allied Garrison still controls its fortress.',done:s=>s.count(3,'building','towncenter')>0},
@@ -193,13 +208,13 @@ export const CAMPAIGN_SCRIPTS={
       {title:'Topple Warlord Malrik',text:'Breach the northern Blackwood citadel and destroy Warlord Malrik’s town center.',marker:{x:108,z:-98},done:s=>!s.count(2,'building','towncenter'),dialogue:'Warlord Malrik is cast down! From a lone banner in the woods, you have reclaimed the entire Deepwood realm.'},
     ],optional:{text:'Keep your Sovereign alive through the entire campaign.',done:s=>s.count(0,'unit','king')>0},
     events:[
-      {at:65,id:'c13-wood-scouts',when:s=>s.campaignState?.stage>=1,text:'Oakhold rangers emerge from the deepwood trails to join your army.',reinforce:{owner:0,type:'archer',count:3}},
+      {at:65,id:'c13-wood-scouts',afterStage:1,when:s=>s.campaignState?.stage>=1,text:'Oakhold rangers emerge from the deepwood trails to join your army.',reinforce:{owner:0,type:'archer',count:3}},
       {at:135,id:'c13-malrik-raid',minDifficulty:'hard',text:'Warlord Malrik dispatches raiders down the forest corridor toward Oakhold!',reinforce:{owner:2,type:'knight',count:3}},
     ]},
   campaign14:{speaker:'Queen Maren',intro:'Here ends the War of Three Crowns. My Imperial fortress holds the northern crossing beside your citadel. Coordinate across the Twin Rivers, break the rival coalition, and claim the realm forever!',
     stages:[
       {title:'Break the First Rival Citadel',text:'Cross the rivers and destroy either the Sunward Usurper or Raven Warlord town center.',marker:{x:132,z:92},done:s=>!s.count(1,'building','towncenter')||!s.count(2,'building','towncenter'),onDone:s=>{const survivor=s.count(1,'building','towncenter')?1:2;spawnReinforcements(s,{owner:survivor,type:'knight',count:4});spawnReinforcements(s,{owner:0,type:'knight',count:3});spawnReinforcements(s,{owner:0,type:'trebuchet',count:1});},dialogue:'One rival citadel has fallen! The surviving warlord launches a desperate counter-offensive—my Royal Knights and a Trebuchet ride to your banner!'},
-      {title:'Imperial Supremacy',text:'Advance to the Imperial Age (or tear down the remaining rival Castle Keep).',marker:{x:132,z:-96},done:s=>s.players[0].age>=3||(!s.count(1,'building','keep')&&!s.count(2,'building','keep')),dialogue:'The Imperial standard rises over Twin Rivers! Press the final assault on the last enemy capital.'},
+      {title:'Imperial Supremacy',text:'Advance to the Imperial Age or tear down the surviving rival’s Castle Keep.',marker:{x:132,z:-96},done:s=>s.players[0].age>=3||[1,2].every(owner=>!s.count(owner,'building','keep')||!legacyCampaignReplay(s)&&!s.count(owner,'building','towncenter')),dialogue:'The balance of power shifts over Twin Rivers. Press the final assault on the last enemy capital.'},
       {title:'Unite the Three Crowns',text:'Destroy both rival Imperial town centers to end the coalition war.',marker:{x:132,z:-96},done:allHostileCapitalsFallen,dialogue:'Both rival capitals have fallen! From Iron Ridge to Twin Rivers, the entire Frontier unites beneath one Crown!'},
     ],optional:{text:'Finish with Queen Maren’s allied capital still standing.',done:s=>s.count(3,'building','towncenter')>0},
     events:[
@@ -223,7 +238,7 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign16:{speaker:'Lady Vaelen',intro:'The roaring waterfall splits this valley in two, Commander. Watch the central stone bridge, the timber trestle to the south, and the shallow ford up north! Coordinate with my Sunward garrison and wipe out both rival strongholds completely.',
     stages:[
-      {title:'Command the Gorge Crossings',text:'Hold the waterfall crossings for 90 seconds or destroy an enemy watchtower across the river.',seconds:90,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=90||!s.count(1,'building','tower'),dialogue:'The crossings are contested in blood and fire! Push across the stone bridge or flank through the shallow northern ford.'},
+      {title:'Command the Gorge Crossings',text:'Hold the waterfall crossings for 90 seconds or destroy a starting enemy watchtower across the river.',seconds:90,marker:{x:0,z:0},done:(s,q)=>q.elapsed>=90||(q.originalWatchtowers?q.originalWatchtowers.some(id=>!s.get(id)):!s.count(1,'building','tower')),dialogue:'The crossings are contested in blood and fire! Push across the stone bridge or flank through the shallow northern ford.'},
       {title:'Raze the First River Stronghold',text:'Completely wipe out every base structure of either Lord Korr’s Ironhold citadel or General Syra’s northern hold.',marker:{x:118,z:64},targetOwners:[1,2],done:s=>baseWiped(s,1)||baseWiped(s,2),onDone:s=>{spawnReinforcements(s,{owner:3,type:'marksman',count:4});},dialogue:'One river fortress is completely leveled! My Sunward marksmen march beside you to finish the valley!'},
       {title:'Claim Waterfall Gorge',text:'Wipe out all remaining enemy base structures across the gorge.',marker:{x:118,z:-68},done:allHostileBasesWiped,dialogue:'Not an enemy stone stands across Waterfall Gorge! The fires on the bridge fade into total victory.'},
     ],optional:{text:'Finish with Lady Vaelen’s citadel standing.',done:s=>s.count(3,'building','towncenter')>0},
@@ -270,23 +285,63 @@ export const CAMPAIGN_SCRIPTS={
 
 function initializeStory(sim){
   const script=CAMPAIGN_SCRIPTS[sim.options.mode];if(!script)return;
+  if(!sim.options.replay)sim.options.campaignSimulation=1;
   const q=sim.campaignState={stage:0,stageAt:0,elapsed:0,fish:0,clock:0,finished:false,route:'objectives',history:[{time:0,speaker:script.speaker,text:script.intro}],defenses:sim.owned(1,'building').filter(e=>['wall','gate'].includes(e.type)).map(e=>e.id),optional:false,fired:[],resolved:[],sideQuestDone:false,relic:sim.options.relic||null};
+  if(!legacyCampaignReplay(sim))rememberObjectiveBuildings(sim,q,sim.entities);
   if(script.cart){const cart=sim.addUnit('cart',0,script.cart.x,script.cart.z);cart.displayName=script.cart.name;q.cartId=cart.id;}
   if(sim.options.relic)applyCampaignRelic(sim,sim.options.relic);
   sim.campaignCheckpoint=null;
 }
+
+function rememberObjectiveBuildings(sim,q,entities){
+  const mode=sim.options.mode,buildings=entities.filter(e=>e.hp>0&&e.kind==='building');
+  if(mode==='campaign11')q.originalKeep??=buildings.find(e=>e.owner===0&&e.type==='keep')?.id;
+  if(mode==='campaign12')q.originalPassDefenses??=buildings.filter(e=>e.owner===0&&['tower','wall','gate'].includes(e.type)).map(e=>e.id);
+  if(mode==='campaign16')q.originalWatchtowers??=buildings.filter(e=>e.type==='tower'&&sim.hostile(0,e.owner)).map(e=>e.id);
+}
+
+// Most classic markers predate the rebuilt terrain. Bind combat objectives to
+// the actual building so adjustments to the map or a defended checkpoint
+// cannot leave the player following an old coordinate.
+const campaignBuildingTargets={
+  campaign1:[null,null,['towncenter',1]],campaign2:[null,null,['towncenter',1]],
+  campaign5:[null,null,['towncenter',1]],campaign6:[null,null,['towncenter',1]],
+  campaign7:[null,['barracks',1],['towncenter',1]],campaign8:[null,['barracks',1],['towncenter',1]],
+  campaign9:[null,['barracks',1],['towncenter',1]],campaign10:[null,null,[['keep','towncenter'],1]],
+  campaign11:[null,['towncenter',1],['towncenter',1,2]],campaign12:[null,['towncenter',1],['towncenter',2]],
+  campaign13:[[['barracks','tower'],1],null,['towncenter',2]],campaign14:[['towncenter',1,2],['keep',1,2],['towncenter',1,2]],
+};
+
+function campaignMarker(sim,q,stage){
+  const mode=sim.options.mode;
+  if(mode==='campaign4'&&q.stage<2||mode==='campaign18'&&q.stage===0){
+    const shrine=sim.entities.find(e=>e.kind==='shrine'&&!sim.allied(0,e.owner));
+    if(shrine)return {x:shrine.x,z:shrine.z};
+  }
+  const target=campaignBuildingTargets[mode]?.[q.stage];
+  if(target){
+    const [types,...owners]=target;
+    for(const type of Array.isArray(types)?types:[types])for(const owner of owners){
+      if(mode==='campaign14'&&type==='keep'&&!sim.count(owner,'building','towncenter'))continue;
+      const building=sim.owned(owner,'building',type)[0];
+      if(building)return {x:building.x,z:building.z};
+    }
+  }
+  return stage.marker||null;
+}
+
 export function campaignObjective(sim){
   const q=sim.campaignState,script=CAMPAIGN_SCRIPTS[sim.options.mode];
   if(!q||q.legacy||q.finished||!script)return null;
   const sq=CAMPAIGN_SIDE_QUESTS[sim.options.mode]||null;
   const boss=CAMPAIGN_BOSSES[sim.options.mode]||null;
   const stage=script.stages[Math.min(q.stage,script.stages.length-1)];
-  let marker=stage.marker||null;
+  let marker=campaignMarker(sim,q,stage);
   if(sim.battlefieldLayout>=2&&sim.options.mode==='campaign5'&&q.stage===1){
     const gate=q.defenses.map(id=>sim.get(id)).find(entity=>entity?.type==='gate');
     if(gate)marker={x:gate.x,z:gate.z};
   }
-  let progressText='';
+  let progressText=sim.mission?.survival&&sim.wave>0?`Attackers still alive: ${sim.count(1,'unit')}`:'';
   if(sim.mission?.actFive){
     const targetOwners=stage.targetOwners||sim.players.map((p,i)=>i).filter(i=>i>0&&sim.hostile(0,i));
     const totalHostiles=sim.players.filter((p,i)=>i>0&&!sim.allied(0,i)).length;
@@ -294,7 +349,7 @@ export function campaignObjective(sim){
     const standingStructs=targetOwners.reduce((n,o)=>n+(sim.hostile(0,o)?baseStructures(sim,o).length:0),0);
     if(q.stage>0||!stage.seconds){
       const dyn=nearestHostileStructure(sim,stage.targetOwners||null);
-      if(dyn)marker=dyn;
+      if(dyn&&(sim.options.mode!=='campaign18'||q.stage>0))marker=dyn;
       progressText=`Enemy bases: ${standingHostiles}/${totalHostiles} · ${standingStructs} buildings left`;
     }
   }
@@ -319,14 +374,23 @@ export function installCampaigns(Simulation){
   };
   p.emit=function(type,data={}){if(type==='gathered'&&data.owner===0&&data.source==='fishingboat'&&this.campaignState&&!this.campaignState.legacy)this.campaignState.fish+=data.amount;emit.call(this,type,data);};
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
-  p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||q.legacy||q.finished||this.ended)return;
+  p.tick=function(dt){tick.call(this,dt);const q=this.campaignState,script=CAMPAIGN_SCRIPTS[this.options.mode];if(!q||!script||q.finished||this.ended)return;
+    const revisedRules=!legacyCampaignReplay(this);
+    if(q.legacy){
+      if(revisedRules&&this.mission?.survival&&this.time>=(this.campaignAttackAt??0)){
+        this.campaignAttackAt=this.time+.5;
+        tickCampaignAttacks(this);
+      }
+      return;
+    }
     // Stages that ask the player to hold out need a clock. Older saves have no
     // stage start, so they begin counting from the moment they are loaded
     // rather than instantly completing a timed objective. The elapsed time is
     // updated every tick so the HUD and the objective never show a stale value.
     if(q.stageAt===undefined)q.stageAt=this.time;
     q.elapsed=Math.max(0,this.time-q.stageAt);
-    q.clock+=dt;if(q.clock<.5)return;q.clock=0;
+    q.clock=(q.clock||0)+dt;if(q.clock<.5)return;q.clock=0;
+    if(revisedRules)tickCampaignAttacks(this);
     q.fired??=[];q.resolved??=[];
     // Track the optional objective continuously so later events can branch on
     // how the mission is actually going, not only on the final medal.
@@ -341,13 +405,23 @@ export function installCampaigns(Simulation){
     for(const event of script.events||[]){
       if(q.resolved.includes(event.id)||this.time<event.at)continue;
       if(event.minDifficulty&&!meetsDifficulty(this,event.minDifficulty))continue;
+      if(revisedRules&&event.afterStage&&q.stage<event.afterStage)continue;
       // A resolved event is never re-evaluated; only an executed one is
       // recorded as fired, so tests and the HUD can tell a skipped branch from
       // a branch that actually happened.
+      if(event.when&&!event.when(this,q)){q.resolved.push(event.id);continue;}
+      if(event.reinforce){
+        const owner=event.reinforce.owner??0;
+        if(revisedRules&&this.players[owner]?.defeated){q.resolved.push(event.id);continue;}
+        if(revisedRules&&this.time<(q.reinforceRetry?.[event.id]??0))continue;
+        if(!spawnReinforcements(this,event.reinforce)&&revisedRules){
+          (q.reinforceRetry??={})[event.id]=this.time+5;
+          continue;
+        }
+        if(q.reinforceRetry)delete q.reinforceRetry[event.id];
+      }
       q.resolved.push(event.id);
-      if(event.when&&!event.when(this,q))continue;
       q.fired.push(event.id);
-      if(event.reinforce)spawnReinforcements(this,event.reinforce);
       q.history.push({time:this.time,speaker:event.speaker||script.speaker,text:event.text});
       const isEnemy=event.role==='enemy'||(!!event.reinforce&&(event.reinforce.owner??0)!==0&&!this.allied(0,event.reinforce.owner));
       this.emit('campaign-event',{id:event.id,speaker:event.speaker||script.speaker,role:event.role||(isEnemy?'enemy':'ally'),text:event.text,enemy:isEnemy});
@@ -410,6 +484,11 @@ export function installCampaigns(Simulation){
       const {sharedBarriers,...rest}=checkpoint;
       sim.campaignCheckpoint=copy({...rest,barriers:data.barriers||[]});
     }else sim.campaignCheckpoint=checkpoint?copy(checkpoint):data.checkpointTag?copy(data):null;
+    if(sim.campaignState&&!sim.campaignState.legacy&&!sim.options.replay){
+      sim.options.campaignSimulation=1;
+      const startingCheckpoint=sim.campaignCheckpoint;
+      if(startingCheckpoint?.campaignState?.stage===0)rememberObjectiveBuildings(sim,sim.campaignState,startingCheckpoint.entities);
+    }
     return sim;
   };
 }
