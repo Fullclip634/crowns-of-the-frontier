@@ -101,15 +101,17 @@ test('instanced wall connector footings reach displayed terrain without adding d
 for(const detail of ['low','balanced','near'])test(`${detail} gates ground their closed bars and keep the open passage, housing and shared models intact`,async()=>{
   const {gltf,assets}=await catalogue(detail),quality=detail==='near'?'high':detail==='balanced'?'medium':'low',land=new Landscape(512,'canyon'),ground=land.geometry(land.renderSize,quality==='low'?112:160),view=viewFor(land,gltf,quality),ray=new THREE.Raycaster(),point=new THREE.Vector3();let id=40000;
   try{
-    for(const faction of ['alder','sun','raven'])for(const [x,z]of [[0,40],[-60,-35],[-37,30]]){
-      Object.assign(view.sim.players[0],{faction,age:0});const entity={id:++id,kind:'building',type:'gate',owner:0,x,z,r:BUILDINGS.gate.r,hp:100,progress:1},template=view.makeBuilding(entity),sources=[];template.userData.portcullis.traverse(mesh=>{if(mesh.isMesh)sources.push({geometry:mesh.geometry,positions:mesh.geometry.attributes.position.array.slice()});});
+    const sites=[[0,0,0,40],[0,0,-60,-35],[0,0,-37,30],[2,0,0,40],[3,1,-37,30]];
+    for(const faction of ['alder','sun','raven'])for(const [age,fortifiedWall,x,z]of sites){
+      Object.assign(view.sim.players[0],{faction,age,tech:{fortifiedWall}});const entity={id:++id,kind:'building',type:'gate',owner:0,x,z,r:BUILDINGS.gate.r,hp:100,progress:1},template=view.makeBuilding(entity),sources=[];template.userData.portcullis.traverse(mesh=>{if(mesh.isMesh)sources.push({geometry:mesh.geometry,positions:mesh.geometry.attributes.position.array.slice()});});
       const node=view.createNode(entity),gate=node.userData.portcullis,state=gate.userData.terrainGate;assert.ok(state?.parts.length&&state.openLift>=2.5);assert.equal(node.userData.model3d.artRevision,'gate-footings-v1');
       for(const yaw of [0,Math.PI/4,Math.PI/2,Math.PI*.83]){
         node.rotation.y=yaw;gate.position.y=0;updateGatePortcullis(gate);node.updateMatrixWorld(true);const closed=new THREE.Box3().setFromObject(gate);assert.ok(closed.min.y<=land.surfaceHeightAt(x,z)-.1);
         const direction=new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0),yaw),origin=new THREE.Vector3(0,1,-8).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(node.position);ray.set(origin,direction);ray.far=16;assert.ok(ray.intersectObject(gate,true).length,'the closed bars remain selectable');
         gate.position.y=state.openLift*.5;updateGatePortcullis(gate);node.updateMatrixWorld(true);for(const {mesh}of state.parts){assert.ok(mesh.geometry.attributes.position.array.every(Number.isFinite));assert.ok(mesh.geometry.attributes.normal.array.every(Number.isFinite));}
         gate.position.y=state.openLift;updateGatePortcullis(gate);node.updateMatrixWorld(true);assert.equal(gate.visible,false);
-        for(const {mesh}of state.parts){const positions=mesh.geometry.attributes.position;for(let i=0;i<positions.count;i++){point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);assert.ok(point.y<=node.position.y+3.501,'open bars retract into the authored housing');}}
+        const roof=node.position.y+node.userData.model3d.gateHousingHeight;
+        for(const {mesh}of state.parts){const positions=mesh.geometry.attributes.position;for(let i=0;i<positions.count;i++){point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);assert.ok(point.y<=roof+.001,'open bars retract into the tier-specific housing');}}
         for(const y of [.25,1.2,2.4])for(const lane of [-.6,0,.6]){
           origin.set(lane,y,-8).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(node.position);ray.set(origin,direction);ray.far=16;
           const hits=ray.intersectObject(node,true).filter(hit=>hit.object.userData.structureSurface);assert.equal(hits.length,0,'a raised gate has no slab or invisible pick geometry across its passage: '+JSON.stringify({detail,faction,x,z,yaw,y,lane,hits:hits.map(hit=>({role:hit.object.userData.assetMaterial,point:hit.point.clone().sub(node.position).applyAxisAngle(new THREE.Vector3(0,1,0),-yaw).toArray(),moving:state.parts.some(part=>part.mesh===hit.object)}))}));

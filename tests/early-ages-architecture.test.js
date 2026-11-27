@@ -452,9 +452,12 @@ test('AI adaptive perimeter walls stay strictly orthogonal without 45-degree cor
       const m=buildingModel(v,{id:800,kind:'building',type,owner:0,x:0,z:0,r:BUILDINGS[type].r,progress:1});
       return new THREE.Box3().setFromObject(m).max.y;
     };
-    assert.ok(heightOf(0,{},'gate')>heightOf(0,{},'wall')+2.0,'Palisade gate towers well over palisade wall');
-    assert.ok(heightOf(2,{},'gate')>heightOf(2,{},'wall')+1.2,'Stone gatehouse towers over stone wall');
-    assert.ok(heightOf(3,{fortifiedWall:1},'gate')>heightOf(3,{fortifiedWall:1},'wall')+1.0,'Fortified gatehouse towers over fortified wall');
+    const palisade=heightOf(0,{},'gate'),stone=heightOf(2,{},'gate'),fortified=heightOf(3,{fortifiedWall:1},'gate');
+    assert.equal(heightOf(1,{},'gate'),palisade,'both early ages retain the same palisade gate');
+    assert.equal(heightOf(3,{},'gate'),stone,'Imperial gates stay stone until fortification research');
+    assert.ok(palisade>heightOf(0,{},'wall')+2.0,'palisade gate towers over its wall');
+    assert.ok(stone>palisade+.65&&stone>heightOf(2,{},'wall')+2.0,'stone upgrades to a taller silhouette');
+    assert.ok(fortified>stone+1.0&&fortified>heightOf(3,{fortifiedWall:1},'wall')+2.0,'fortified upgrades to a taller silhouette again');
   }finally{
     clearEarlyAgeArtwork();
     clearAuthoredAssets();

@@ -443,41 +443,33 @@ export function authoredBuilding(view,e){
         if(part.isMesh)part.scale.set(part.scale.x*1.06,part.scale.y*1.19,part.scale.z*1.14);
       });
       if(tier!=='palisade')crenellate(view,root,tier);
-    }else if(tier==='fortified')fortifyGateModel(view,root);
-    else if(tier==='stone')scaleStoneGateModel(root);
+    }else if(tier!=='palisade')sizeMasonryGate(view,root,tier);
   }
   return root;
 }
 
-// Make Stone Gatehouses stand proudly taller and deeper than the adjoining stone
-// walls while keeping the portcullis leaf width and 3.5m retraction housing intact.
-function scaleStoneGateModel(root){
-  for(const part of root.children){
-    if(!part.isMesh)continue;
-    part.scale.set(part.scale.x*1.08,part.scale.y*1.20,part.scale.z*1.30);
-    part.position.y*=1.20;
-  }
-}
-
-// The parapet and piers merge into the existing static masonry batch.
-export function fortifyGateModel(view,root){
+export function sizeMasonryGate(view,root,tier){
+  const fortified=tier==='fortified',rise=fortified?1.70:1.48;
+  const metadata=root.userData.model3d;
+  const width=fortified?1.12:metadata.authored?1.08:1,depth=fortified?1.36:metadata.authored?1.30:1;
   const gate=root.userData.portcullis;
-  const {box}=view.geo,{stone,stoneDark}=view.materials;
-  if(!gate||!box||!stone||!stoneDark)return;
-
-  const rise=1.32,housing=(root.userData.model3d.gateHousingHeight??3.5)*rise;
-  root.userData.model3d.gateHousingHeight=housing;
+  const housing=(metadata.gateHousingHeight??3.5)*rise;
+  metadata.gateHousingHeight=housing;
   for(const part of root.children){
     if(!part.isMesh)continue;
-    part.scale.set(part.scale.x*1.12,part.scale.y*rise,part.scale.z*1.36);
+    part.scale.set(part.scale.x*width,part.scale.y*rise,part.scale.z*depth);
     part.position.y*=rise;
   }
-  // Keep the moving leaf the same width and fit it to the taller arch.
-  gate.traverse(part=>{
+  // Raise the leaf and its housing together while retaining the passage width.
+  gate?.traverse(part=>{
     if(!part.isMesh)return;
     part.position.y*=rise;part.scale.y*=rise;
   });
+  if(!fortified)return;
 
+  // The parapet and piers merge into the existing static masonry batch.
+  const {box}=view.geo,{stone,stoneDark}=view.materials;
+  if(!box||!stone||!stoneDark)return;
   const masonry=(material,x,y,z,width,height,depth)=>{
     const piece=new THREE.Mesh(box,material);
     piece.position.set(x,y,z);
@@ -486,15 +478,16 @@ export function fortifyGateModel(view,root){
   };
   masonry(stoneDark,0,housing+.28,0,4.20,.50,2.08);
   masonry(stone,0,housing+.58,0,4.34,.18,2.22);
+  const pierRise=rise/1.32;
   for(const side of [-1,1]){
     for(const x of [-1.36,0,1.36])masonry(stoneDark,x,housing+.96,side*.88,.76,.74,.46);
     for(const x of [-1.92,1.92]){
-      masonry(stoneDark,x,2.02,side*1.14,.58,3.72,.58);
-      masonry(stone,x,3.92,side*1.14,.70,.26,.68);
+      masonry(stoneDark,x,2.02*pierRise,side*1.14,.58,3.72*pierRise,.58);
+      masonry(stone,x,3.92*pierRise,side*1.14,.70,.26*pierRise,.68);
     }
     for(const x of [-2.70,2.70]){
-      masonry(stoneDark,x,2.38,side*1.22,.84,4.38,.54);
-      masonry(stone,x,4.64,side*1.24,.98,.26,.64);
+      masonry(stoneDark,x,2.38*pierRise,side*1.22,.84,4.38*pierRise,.54);
+      masonry(stone,x,4.64*pierRise,side*1.24,.98,.26*pierRise,.64);
     }
   }
 }

@@ -1,7 +1,7 @@
 import {standardMaterial} from './render-runtime.js';
 import * as THREE from 'three';
 import {UNITS,seededRandom} from './data.js';
-import {authoredUnit,authoredBuilding,authoredResource,authoredTree,fortifyGateModel} from './authored-assets.js';
+import {authoredUnit,authoredBuilding,authoredResource,authoredTree,sizeMasonryGate} from './authored-assets.js';
 import {wallTier} from './fortified-walls.js';
 import {isWallCorner} from './walls.js';
 import {dockWaterAngle} from './naval-spacing.js';
@@ -387,7 +387,7 @@ export function buildingModel(view,e){
     for(const side of [-1,1]){for(let x=-2.9;x<=2.9;x+=1.45)b.rod(m.wood,[x,0,side*2.9],[x,.85,side*2.9],.045);b.rod(m.wood,[-2.9,.55,side*2.9],[2.9,.55,side*2.9],.04);}
   }else throw new Error('Missing 3D building model: '+type);
   g.userData.model3d={kind:'building',type,volumetric:true,architectureAge:age,artRevision:'civic-arcades',wallTier:(type==='wall'||type==='gate')?wallTier(view.sim,e):'stone',...(type==='wall'?{wallCorner:isWallCorner(view.sim,e)}:{})};
-  if(type==='gate'&&g.userData.model3d.wallTier==='fortified')fortifyGateModel(view,g);
+  if(type==='gate'&&!view.exportingOriginalCatalogue&&g.userData.model3d.wallTier!=='palisade')sizeMasonryGate(view,g,g.userData.model3d.wallTier);
   return g;
 }
 
