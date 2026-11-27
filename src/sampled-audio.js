@@ -75,20 +75,11 @@ function resolveUnitVoiceCue(kind,unit){
   return UNIT_RESPONSES[kind]||UNIT_RESPONSES.order;
 }
 
-// Tiny 1-sample scratch buffer per AudioContext to release native WebKit/iOS
-// AVAudioEngine references on stopped AudioBufferSourceNodes without throwing.
-const scratchBuffers=new WeakMap();
-function releaseAudioSource(ctx,source){
+function releaseAudioSource(source){
   if(!source)return;
-  try{source.onended=null;}catch{}
-  try{source.disconnect();}catch{}
-  if(ctx&&typeof ctx.createBuffer==='function'){
-    let scratch=scratchBuffers.get(ctx);
-    if(!scratch){
-      try{scratch=ctx.createBuffer(1,1,ctx.sampleRate||22050);scratchBuffers.set(ctx,scratch);}catch{scratch=null;}
-    }
-    if(scratch){try{source.buffer=scratch;}catch{}}
-  }
+  source.onended=null;
+  source.disconnect();
+  source.buffer=null;
 }
 
 function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false,delay=0,onEnded=null}={}){
@@ -105,7 +96,7 @@ function playCue(engine,name,{gain=.8,rate=1,pan=0,bus=null,reverb=false,delay=0
   else{level.connect(outBus);if(reverb&&engine.reverbSend)level.connect(engine.reverbSend);}
   const startsAt=ctx.currentTime+delay,endsAt=startsAt+(buffer.duration||.75)/rate;
   const handle={source,level,endsAt};
-  source.onended=()=>{releaseAudioSource(ctx,source);level.disconnect();panner?.disconnect();onEnded?.(handle);};
+  source.onended=()=>{releaseAudioSource(source);level.disconnect();panner?.disconnect();onEnded?.(handle);};
   source.start(startsAt);
   return handle;
 }
@@ -127,7 +118,7 @@ function stopLoopBed(engine,name,{evict=false}={}){
   if(bed){
     engine.sampleLoops.delete(name);
     try{bed.source.stop();}catch{}
-    releaseAudioSource(engine.context,bed.source);
+    releaseAudioSource(bed.source);
     try{bed.gain.disconnect();}catch{}
   }
   if(evict)engine.sampleBank?.evict?.(name);
@@ -142,7 +133,7 @@ function loopBed(engine,name,level,bus=null){
     const source=ctx.createBufferSource(),gain=ctx.createGain();
     source.buffer=buffer;source.loop=engine.sampleBank.isLoop(name);
     gain.gain.value=0;source.connect(gain);gain.connect(bus||engine.master);source.start();
-    source.onended=()=>{if(engine.sampleLoops?.get(name)===bed)engine.sampleLoops.delete(name);releaseAudioSource(ctx,source);try{gain.disconnect();}catch{};};
+    source.onended=()=>{if(engine.sampleLoops?.get(name)===bed)engine.sampleLoops.delete(name);releaseAudioSource(source);gain.disconnect();};
     bed={source,gain,silentSince:null};engine.sampleLoops.set(name,bed);
   }
   bed.gain.gain.setTargetAtTime(level,ctx.currentTime,.35);

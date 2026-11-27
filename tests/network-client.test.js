@@ -2,6 +2,58 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LanClient} from '../src/network.js';
 
+test('room preparation resumes from the newest state and leaving cancels a pending launch',async t=>{
+  class TestSocket extends EventTarget{
+    readyState=1;
+    send(){}
+    close(){this.readyState=3;this.dispatchEvent(new Event('close'));}
+    message(packet){this.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(packet)}));}
+  }
+  const sockets=[],beginnings=[],updates=[];
+  let complete,fail,retry;
+  const client=new LanClient({
+    notice(){},
+    prepareMatch:()=>new Promise((resolve,reject)=>{complete=resolve;fail=reject;}),
+    matchPreparationFailed:(_error,tryAgain)=>{retry=tryAgain;},
+    begin:state=>beginnings.push(state),
+    state:(...args)=>updates.push(args),
+  });
+  client.useTransport({open(){const socket=new TestSocket();sockets.push(socket);return socket;}});
+  t.after(()=>client.leave());
+  const start=()=>{
+    client.connect({type:'join',code:'ABCDEF'});
+    const socket=sockets.at(-1);
+    socket.message({type:'begin',code:'ABCDEF',state:{time:0,visible:[1,0],explored:[1,0],visibilitySequence:0}});
+    return socket;
+  };
+  const socket=start();
+  socket.message({type:'state',state:{time:1,visibilityDelta:{sequence:1,visible:[3],explored:[1]},
+    compactResources:true,resourceUpdates:[{id:9,amount:22}]},effects:[]});
+  fail(new Error('Bridge request failed'));
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(client.commandReady,false);
+  assert.equal(beginnings.length,0);
+  assert.equal(updates.length,0);
+  retry();
+  socket.message({type:'state',state:{time:2,visibilityDelta:{sequence:2,visible:[0],explored:[]},
+    compactResources:true,resourceUpdates:[{id:10,amount:0}]},effects:[],waiting:true});
+  complete();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(client.commandReady,true);
+  assert.equal(beginnings.length,1);
+  assert.equal(updates[0][0].time,2);
+  assert.deepEqual(updates[0][0].resourceUpdates,[{id:9,amount:22},{id:10,amount:0}]);
+  assert.deepEqual([...updates[0][0].visible],[0,1]);
+  assert.equal(updates[0][2],true);
+
+  start();
+  client.leave();
+  complete();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(beginnings.length,1);
+  assert.equal(client.commandReady,false);
+});
+
 test('the actual client negotiates fog deltas, requests resync once and delivers only complete ordered snapshots',t=>{
   const sockets=[],priorSocket=globalThis.WebSocket,priorLocation=globalThis.location;
   class Socket extends EventTarget {

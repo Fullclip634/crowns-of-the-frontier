@@ -385,8 +385,9 @@ test('kingdom under attack announcement speaks calmly with human voice and war h
   assert.equal(oscs.length,6);
   assert.ok(oscs.every(o=>o.type!=='sawtooth'),'war horn eliminates harsh sawtooth buzz');
 
-  // Verify announceAttack uses real human speech synthesis when available and respects cooldown.
+  // Recorded speech should take priority even when browser narration is available.
   const spoken=[];
+  const recorded=[];
   const origSynth=globalThis.speechSynthesis,origUtt=globalThis.SpeechSynthesisUtterance;
   globalThis.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
   globalThis.speechSynthesis={
@@ -397,15 +398,18 @@ test('kingdom under attack announcement speaks calmly with human voice and war h
   try{
     const audio=new AudioEngine({volume:.7,music:false,unitVoices:true,warHorns:true});
     audio.context=ctx;audio.master=ctx.createGain();
+    audio.sampleBank={has:cue=>cue==='comms-alert'};
+    audio.playCommsVoice=(cue,options)=>{recorded.push({cue,options});};
     assert.equal(audio.announceAttack('Your kingdom is under attack.'),true);
-    assert.equal(spoken.length,1);
-    assert.equal(spoken[0].text,'Your kingdom is under attack.');
+    assert.deepEqual(recorded,[{cue:'comms-alert',options:{delaySec:.35}}]);
+    assert.equal(spoken.length,0);
     // Cooldown prevents ear-fatiguing repeated spam.
     assert.equal(audio.announceAttack('Your kingdom is under attack.'),false);
-    assert.equal(spoken.length,1);
+    assert.equal(recorded.length,1);
     ctx.currentTime+=ATTACK_ANNOUNCE_COOLDOWN+1;
     assert.equal(audio.announceAttack('Your kingdom is under attack.'),true);
-    assert.equal(spoken.length,2);
+    assert.equal(recorded.length,2);
+    assert.equal(spoken.length,0);
   }finally{
     globalThis.speechSynthesis=origSynth;
     globalThis.SpeechSynthesisUtterance=origUtt;

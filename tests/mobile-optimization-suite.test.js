@@ -31,18 +31,29 @@ function localAudioFetch(url){
 function fakeAudioContext(){
   const nodes=[];
   const node=extra=>({connections:[],connect(out){this.connections.push(out);},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(time){this.stopped=true;this.stoppedAt=time;},...extra});
-  const scratch={scratch:true,length:1};
   return {
-    state:'running',currentTime:10,sampleRate:48000,destination:{},nodes,scratch,
-    createBuffer(){return scratch;},
+    state:'running',currentTime:10,sampleRate:48000,destination:{},nodes,
     createGain(){const g=node({gain:{value:0,setTargetAtTime(v){this.value=v;}}});nodes.push(g);return g;},
-    createBufferSource(){const s=node({buffer:null,loop:false,playbackRate:{value:1},onended:null});nodes.push(s);return s;},
+    createBufferSource(){
+      const source=node({loop:false,playbackRate:{value:1},onended:null});
+      let buffer=null,assigned=false;
+      Object.defineProperty(source,'buffer',{
+        get:()=>buffer,
+        set:value=>{
+          if(value!==null&&assigned)throw new DOMException('Audio buffer has already been set','InvalidStateError');
+          if(value!==null)assigned=true;
+          buffer=value;
+        },
+      });
+      nodes.push(source);
+      return source;
+    },
     createStereoPanner(){const p=node({pan:{value:0,setTargetAtTime(v){this.value=v;}}});nodes.push(p);return p;},
     decodeAudioData:async data=>({decoded:true,bytes:data.byteLength}),
   };
 }
 
-test('lazyLoops sample bank defers long weather & music beds, loads on demand, and evicts cleanly with iOS scratch cleanup',async()=>{
+test('lazyLoops loads audio on demand and releases stopped sources using Web Audio buffer rules',async()=>{
   const ctx=fakeAudioContext();
   const bank=createSampleBank({context:ctx,fetchData:localAudioFetch,base:'https://game.test/',lazyLoops:true});
   const report=await bank.load();
@@ -103,7 +114,9 @@ test('lazyLoops sample bank defers long weather & music beds, loads on demand, a
   engine.tick(.016);
   assert.equal(engine.sampleBank.has('music-peace'),false,'inactive music stem evicted after fade');
   assert.equal(peaceSource.stopped,true);
-  assert.equal(peaceSource.buffer,engine.context.scratch,'stopped source overwrites buffer with 1-sample scratch for iOS Safari');
+  assert.equal(peaceSource.buffer,null,'stopped source no longer holds the decoded buffer');
+  assert.equal(peaceSource.disconnected,true);
+  assert.equal(peaceSource.onended,null);
 
   // Active biome loads only 1 ambience and evicts old biome on map change
   engine.updateScene({sim:{options:{map:'winter'}},active:true});
@@ -145,7 +158,10 @@ test('Medium and High WebGL2 terrain shaders weight-gate rock, soil, normal, and
     const medVolcanic=compile('volcanic','medium');
     assert.match(medVolcanic,/vec3 soilSample = mix\(texture2D\(frontierTerrainsoil/,'Volcanic keeps unconditional soilSample for ash-grass mix');
     const highHighlands=compile('highlands','high');
-    assert.match(highHighlands,/accumArm \+= texture2D\(frontierTerrainrockArm/,'High weight-gates ARM taps');
+    assert.match(highHighlands,/accumArm \+= textureGrad\(frontierTerrainrockArm, rockUv \* 6\.5, rockDx \* 6\.5, rockDy \* 6\.5/);
+    assert.match(medHighlands,/vec2 rockDx = dFdx\(rockUv\), rockDy = dFdy\(rockUv\)[\s\S]*if \(terrainBlend\.z > 0\.005\) \{[\s\S]*textureGrad\(frontierTerrainrock/);
+    assert.match(medHighlands,/textureGrad\(frontierTerrainrockNormal/);
+    assert.match(medHighlands,/textureGrad\(frontierTerrainpaving/);
   }finally{
     if(prevDoc===undefined)delete globalThis.document;else globalThis.document=prevDoc;
     for(const set of Object.values(surfaces))for(const t of Object.values(set))t.dispose();
@@ -225,11 +241,15 @@ test('per-owner tick indexing matches brute-force queries bit-for-bit and handle
 test('match-scoped artwork helper loads optional ironhold and bridge GLBs only when required',async()=>{
   assert.equal(matchNeedsIronhold({faction:'alder',map:'highlands'}),false);
   assert.equal(matchNeedsIronhold({faction:'iron',map:'highlands'}),true);
+  assert.equal(matchNeedsIronhold({faction:'jade',map:'highlands'}),true,'the Jade player faces Ironhold in a classic battle');
+  assert.equal(matchNeedsIronhold({faction:'jade',map:'highlands'},{players:[{faction:'jade'},{faction:'alder'}]}),false,'actual participants override initial faction guesses');
   assert.equal(matchNeedsIronhold({mode:'custom',slots:[{faction:'alder',enabled:true},{faction:'iron',enabled:true}]}),true);
   assert.equal(matchNeedsIronhold({mode:'campaign15',faction:'alder'}),true);
   assert.equal(matchNeedsBridge('highlands'),false);
   assert.equal(matchNeedsBridge('valley'),true);
   assert.equal(matchNeedsBridge({mode:'campaign16'}),true,'campaign16 resolves waterfallgorge bridge map');
+  assert.equal(matchNeedsBridge({mode:'campaign16',map:'highlands'}),true,'the campaign map takes precedence over setup defaults');
+  assert.equal(matchNeedsBridge({mode:'tides',map:'valley'}),false,'the fixed coast map takes precedence over setup defaults');
 
   const calls=[];
   await ensureMatchArtwork({
@@ -245,6 +265,18 @@ test('match-scoped artwork helper loads optional ironhold and bridge GLBs only w
     hasBridge:()=>false,loadBridge:()=>{calls.push('bridge');},
   });
   assert.deepEqual(calls.sort(),['bridge','iron'],'campaign16 loads both required packs on demand');
+});
+
+test('a failed optional Ironhold pack settles once while a missing bridge is reported to the caller',async t=>{
+  let attempts=0;
+  t.mock.method(console,'warn',()=>{});
+  await ensureMatchArtwork({options:{faction:'iron'},hasIronhold:()=>false,loadIronhold:async()=>{
+    attempts++;throw new Error('Ironhold request failed');
+  }});
+  assert.equal(attempts,1);
+  await assert.rejects(ensureMatchArtwork({options:{map:'valley'},hasBridge:()=>false,loadBridge:async()=>{
+    throw new Error('Bridge request failed');
+  }}),/Bridge request failed/);
 });
 
 test('renderSelection batches panel HTML into a single write instead of chained innerHTML +=',()=>{

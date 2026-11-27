@@ -74,6 +74,10 @@ export const TECHS = {
   sanctuary:{name:'Sanctuary',desc:'Healers move 25% faster and restore 40% more health per blessing.',at:['monastery'],cost:{gold:180,food:120},max:1,age:2,time:35},
 };
 export const AGE_COSTS = [{food:350,gold:150},{food:650,gold:350},{food:1000,gold:650}];
+export function classicOpponentFaction(faction){
+  return faction==='raven'?'sun':faction==='iron'?'alder':faction==='jade'?'iron':'raven';
+}
+
 export const FACTIONS = {
   alder:{name:'The Alder Kingdom',motto:'Steadfast. Unbroken.',desc:'A resilient kingdom of stone and steel. Buildings have 20% more health; infantry have 15% more health.',color:0x397f8c,bonus:'Fortified buildings · Hardy infantry',buildingHP:1.2,infantryHP:1.15,gather:1,cavalry:1,cost:1},
   sun:{name:'The Sunward Sultanate',motto:'Prosperity is power.',desc:'Master merchants of the sunlit frontier. Gather 18% faster; buildings cost 10% less.',color:0xd4a24e,bonus:'Swift economy · Efficient construction',buildingHP:1,infantryHP:1,gather:1.18,cavalry:1,cost:.9},

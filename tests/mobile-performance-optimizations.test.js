@@ -109,8 +109,9 @@ test('Low terrain reduces texture taps on both WebGL 2 and WebGPU (WGSL) and shr
     const sMed = { uniforms: {}, vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
     glLow.onBeforeCompile(sLow);
     glMed.onBeforeCompile(sMed);
-    const lowTaps = (sLow.fragmentShader.match(/texture2D\(frontierTerrain(?:grass|soil|rock|paving|roads)\b/g) || []).length;
-    const medTaps = (sMed.fragmentShader.match(/texture2D\(frontierTerrain(?:grass|soil|rock|paving|roads)\b/g) || []).length;
+    const countTerrainTaps = shader => (shader.fragmentShader.match(/(?:texture2D|textureGrad)\(frontierTerrain(?:grass|soil|rock|paving|roads)\b/g) || []).length;
+    const lowTaps = countTerrainTaps(sLow);
+    const medTaps = countTerrainTaps(sMed);
     assert.equal(lowTaps, 5, 'WebGL 2 Low terrain uses 1 tap each for roads/grass/soil/rock/paving');
     assert.ok(medTaps >= 11, `WebGL 2 Medium terrain keeps full multi-tap/triplanar detail (got ${medTaps})`);
     assert.equal(sLow.fragmentShader.includes('rainDarken * frontierCloudLight('), false, 'WebGL 2 Low skips cloud shadow tap');

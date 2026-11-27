@@ -60,7 +60,8 @@ function plannedSimulation(sim,plan,owner){
   const previewGrids=sim.grids?.landBase?{landBase:{...sim.grids.landBase}}:{};
   Object.assign(preview,{
     grids:previewGrids,
-    ownedCandidates:{entities:sim.entities,length:sim.entities.length,time:sim.time,revision:sim.revision,unit:units,building:buildings,shrine:shrines,nonWood:null},
+    // Planned walls use the preview shortlist below, including during a live AI tick.
+    ownerIndexActive:false,
     unitEscapeGrids:new Map(),
     pathScratch:null,
     regionQueue:null,

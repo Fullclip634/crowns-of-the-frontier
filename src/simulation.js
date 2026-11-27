@@ -23,7 +23,7 @@ import {approachConstruction,approachMelee} from './construction-approach.js';
 import {meleeBuildingAttack,meleeReach,meleeSurfaceDistance,meleeHeading,meleeMinClearance,buildingClearanceStep} from './melee-contact.js';
 import {bridgeAt,bridgeFootprint,clearSavedBridgeResources,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {blockBridgeNavigation,bridgeStepClear,bridgeUnitClearance,restoreBridgeOccupants} from './bridge-navigation.js';
-import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo} from './data.js';
+import {WORLD, UNITS, BUILDINGS, TECHS, AGE_COSTS, FACTIONS, DIFFICULTIES, MISSIONS, seededRandom,availableTo,classicOpponentFaction} from './data.js';
 import {wallBaseHP,wallArmorBonus,isFortifiable,FORTIFIED_WALL_TECH,wallBuildCost,wallBuildTime,wallTier} from './fortified-walls.js';
 import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,slopeAt,slopeSpeedFactor,biomeVisionModifier,biomeSpeedFactor,tacticalTerrainEnabled} from './terrain-elevation.js';
 import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
@@ -96,7 +96,7 @@ export class Simulation {
     this.listeners=[];this.events=[];this.ended=null;this.wave=0;this.nextWave=90;this.hold=0;this.enemyHold=0;this.wonderTime=[0,0];
     this.stats={gathered:0,kills:0,lost:0,built:0,trained:0};this.tutorialStep=0;this.tutorialFlags={};this.grids={};
     this.explored=new Uint8Array(this.gridSize*this.gridSize);this.visible=new Uint8Array(this.gridSize*this.gridSize);this.fogClock=0;this.fogRevision=0;this.aiClock=0;this.nextAttack=DIFFICULTIES[this.options.difficulty].attack;
-    this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(this.options.faction==='raven'?'sun':this.options.faction==='iron'?'alder':this.options.faction==='jade'?'iron':'raven')];
+    this.players=this.options.mode==='custom'?this.options.slots.map(slot=>({...this.makePlayer(slot.faction),...slot})):[this.makePlayer(this.options.faction),this.makePlayer(classicOpponentFaction(this.options.faction))];
     this.initialize();
     this.startingSites=this.entities
       .filter(e=>e.kind==='building'&&e.owner>=0&&!['wall','gate','tower','bombard','farm'].includes(e.type))

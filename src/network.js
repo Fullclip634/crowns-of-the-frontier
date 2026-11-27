@@ -27,36 +27,75 @@ export class LanClient {
   }
   reconnectStopped(){this.callbacks.notice(this.active?'Automatic reconnection stopped. Open the pause menu to try reconnecting again.':'Automatic reconnection stopped. Open Play with friends to try reconnecting again.');}
   recovered(){clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;}
-  connect(message,{automatic=false}={}){clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;if(!automatic){this.reconnectUntil=0;this.retry=0;}this.intent=message;this.leaving=false;try{
+  connect(message,{automatic=false}={}){clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;this.pendingMatch=null;if(!automatic){this.reconnectUntil=0;this.retry=0;}this.intent=message;this.leaving=false;try{
       if(this.transport){this.socket?.close();this.socket=this.transport.open();}
       else{const endpoint=multiplayerEndpoint(location,import.meta.env?.VITE_MULTIPLAYER_URL||'',import.meta.env?.VITE_STATIC_HOST==='true');if(!endpoint){this.callbacks.notice('Online multiplayer has not been enabled on this hosted game yet. Choose Nearby to play on the same Wi-Fi or hotspot.');return;}this.socket?.close();this.socket=new WebSocket(endpoint);}
     }catch(error){if(this.transport&&!this.transport.reconnectable){this.callbacks.notice(error.message);return;}if(this.session&&message.type==='resume'){if(!automatic)this.callbacks.notice('Connection interrupted. Trying to reconnect.');this.scheduleReconnect();}else this.callbacks.notice(error.message);return;}const socket=this.socket;
     this.visibility=new VisibilityReceiver();this.visibilityResync=false;
     if(message.type==='resume')this.handshakeTimer=setTimeout(()=>{if(this.socket===socket)socket.close();},RESUME_TIMEOUT);
     socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.send({...message,protocol:2});clearInterval(this.pinger);this.pinger=setInterval(()=>this.send({type:'ping',stamp:Date.now()}),3000);});
-    socket.addEventListener('message',event=>{if(this.socket!==socket)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};if(!this.transport){try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}}
+    socket.addEventListener('message',event=>{if(this.socket!==socket||this.leaving)return;const data=JSON.parse(event.data);if(data.type==='session'){this.session={code:data.code,token:data.token};if(!this.transport){try{sessionStorage.setItem('crowns-lan',JSON.stringify(this.session));}catch{}}}
       if(data.type==='lobby'){this.recovered();this.callbacks.lobby(data);}
-      if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.recovered();this.visibilityResync=false;this.active=true;this.commandReady=!state.options?.spectator;this.waiting=!!data.waiting;this.code=data.code;this.callbacks.begin(state);if(state.options?.spectator)this.callbacks.chatReset?.();else this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});this.callbacks.connection?.(true);}
+      if(data.type==='begin'){const state=this.visibility.read(data.state);if(!state){socket.close();return;}this.beginMatch(socket,data,state);}
       if(data.type==='chat')this.callbacks.chat?.(data.message);
       if(data.type==='chat-error')this.callbacks.chatError?.(data.message);
       if(data.type==='donation')this.callbacks.donation?.(data);
-      if(data.type==='state'){if(data.waiting===true)this.waiting=true;const state=this.visibility.read(data.state);if(state){this.visibilityResync=false;this.waiting=!!data.waiting;this.callbacks.state(state,data.effects,data.waiting);}else if(!this.visibilityResync){this.visibilityResync=this.send({type:'visibility-resync'});}}
+      if(data.type==='state'){if(data.waiting===true)this.waiting=true;const state=this.visibility.read(data.state);if(state){this.visibilityResync=false;this.waiting=!!data.waiting;const pending=this.pendingMatch;if(pending){
+        if(!state.compactResources){
+          pending.resources.clear();
+          for(const entity of state.entities||[])if(entity.kind==='resource')pending.resources.set(entity.id,{id:entity.id,amount:entity.amount,hp:entity.hp});
+        }
+        for(const update of state.resourceUpdates||[])pending.resources.set(update.id,update);
+        pending.latest={state,effects:data.effects,waiting:data.waiting};
+      }else this.callbacks.state(state,data.effects,data.waiting);}else if(!this.visibilityResync){this.visibilityResync=this.send({type:'visibility-resync'});}}
       if(data.type==='error'){if(this.intent?.type==='resume'&&(data.code==='session-ended'||data.message==='That network session has ended.')){this.leave();this.callbacks.closed?.();}this.callbacks.notice(data.message);}
       if(data.type==='closed'){this.leave();this.callbacks.closed?.();this.callbacks.notice(data.message);}
       if(data.type==='pong')this.ping=Date.now()-data.stamp;
     });
-    socket.addEventListener('close',()=>{if(this.socket!==socket)return;clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;this.callbacks.connection?.(false);if(this.leaving)return;
+    socket.addEventListener('close',()=>{if(this.socket!==socket)return;clearTimeout(this.handshakeTimer);clearInterval(this.pinger);this.commandReady=false;this.pendingMatch=null;this.callbacks.connection?.(false);if(this.leaving)return;
       // A data channel cannot be redialled without a fresh QR handshake; keep
       // the session so scanning a new invite resumes the same commander.
       if(this.transport&&!this.transport.reconnectable){this.callbacks.notice(this.transport.lostMessage);this.callbacks.lost?.();return;}
       if(!this.reconnectUntil)this.callbacks.notice(this.transport?(this.active?'The nearby room is reconnecting.':'Could not open the nearby room. Try again.'):this.active?'Connection interrupted. The match waits while you reconnect.':'Could not connect to multiplayer. The server may be waking up; try again shortly.');this.scheduleReconnect();});
     socket.addEventListener('error',()=>{if(this.socket===socket&&!this.reconnectUntil&&!this.transport)this.callbacks.notice('Could not reach the multiplayer server. Please try again shortly.');});
   }
+  beginMatch(socket,data,state){
+    this.recovered();this.visibilityResync=false;this.active=true;this.commandReady=false;
+    this.waiting=!!data.waiting;this.code=data.code;
+    if(state.options?.spectator)this.callbacks.chatReset?.();
+    else this.callbacks.chatSession?.(data.code,data.chat||{selfSide:0,messages:[]});
+    const pending={resources:new Map(),latest:null};
+    this.pendingMatch=pending;
+    const current=()=>this.pendingMatch===pending&&this.socket===socket&&socket.readyState===1&&!this.leaving;
+    const launch=()=>{
+      if(!current())return;
+      this.callbacks.begin(state);
+      this.pendingMatch=null;
+      this.commandReady=!state.options?.spectator;
+      this.callbacks.connection?.(true);
+      if(pending.latest){
+        const latest=pending.latest;
+        this.callbacks.state({...latest.state,visibilityDelta:null,resourceUpdates:[...pending.resources.values()]},latest.effects||[],latest.waiting);
+      }
+    };
+    const prepare=()=>{
+      if(!current())return;
+      const failed=error=>{
+        if(current())this.callbacks.matchPreparationFailed?.(error,prepare);
+      };
+      try{
+        const result=this.callbacks.prepareMatch?.(state);
+        if(result)Promise.resolve(result).then(launch).catch(failed);
+        else launch();
+      }catch(error){failed(error);}
+    };
+    prepare();
+  }
   send(message){if(this.socket?.readyState===1){this.socket.send(JSON.stringify(message));return true;}return false;}
   chat(text,channel,requestId){return this.send({type:'chat',text,channel,requestId});}
   action(method,args){const normalized=args.map(arg=>arg?.id!==undefined?arg.id:arg),sent=this.commandReady&&!this.waiting&&this.send({type:'action',method,args:normalized});if(!sent)this.callbacks.notice(this.commandReady&&this.waiting?'The match is waiting for another commander to reconnect.':'Orders cannot be sent until the room reconnects.');return !!sent;}
   bind(sim){for(const method of ['build','buildWallLine','buildWallDraft','convertWallToGate','train','research','cancelQueue','trade','donateResources','smartCommand','stop','unload','demolish','assignWorker','patrol','guard','setStance','resign','townBell','returnToWork','seekShelter','toggleHeroAutoCast','castHeroSkill'])sim[method]=(...args)=>{const sent=['buildWallLine','buildWallDraft'].includes(method)?this.action(method,[args[0]?.x,args[0]?.z,args[1]?.x,args[1]?.z,args[2]]):this.action(method,args);if(sent&&['smartCommand','patrol','guard'].includes(method))sim.emit('order',{order:{}});return sent;};}
-  leave(){this.leaving=true;this.active=false;this.commandReady=false;this.waiting=false;clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;this.callbacks.chatReset?.();
+  leave(){this.leaving=true;this.active=false;this.commandReady=false;this.pendingMatch=null;this.waiting=false;clearTimeout(this.reconnectTimer);clearTimeout(this.handshakeTimer);this.reconnectUntil=0;this.retry=0;this.send({type:'leave'});this.socket?.close();clearInterval(this.pinger);this.session=null;this.callbacks.chatReset?.();
     // Leaving a nearby room ends its transport (and, for the host, the room).
     if(this.transport){const transport=this.transport;this.transport=null;transport.dispose?.();this.session=readOnlineSession();this.callbacks.nearbyEnded?.();}
     else{try{sessionStorage.removeItem('crowns-lan');}catch{}}}

@@ -1,23 +1,23 @@
-import {MISSIONS} from './data.js';
+import {MISSIONS,MODES,classicOpponentFaction} from './data.js';
 import {bridgeSpans} from './bridge-layout.js';
 
 // Determines whether a match requires optional faction or bridge GLB packs so
 // startup does not unconditionally download and hold unused meshes in RAM.
 export function matchNeedsIronhold(options,sim=null){
-  if(sim?.players?.some(player=>player?.faction==='iron'))return true;
+  if(sim?.players)return sim.players.some(player=>player?.faction==='iron');
   if(!options)return false;
   if(options.faction==='iron'||options.enemyFaction==='iron')return true;
-  if(Array.isArray(options.slots)&&options.slots.some(slot=>slot?.enabled!==false&&slot?.faction==='iron'))return true;
+  if(Array.isArray(options.slots))return options.slots.some(slot=>slot?.enabled!==false&&slot?.faction==='iron');
+  if(!options.multiplayer&&options.mode!=='custom'&&classicOpponentFaction(options.faction)==='iron')return true;
   const mission=MISSIONS.find(m=>m.id===options.mode);
   if(mission&&(mission.actFour||mission.actFive||mission.faction==='iron'||mission.enemyFaction==='iron'))return true;
   return false;
 }
 
 export function matchMapId(options,sim=null){
-  const explicit=sim?.options?.map||options?.map;
-  if(explicit)return explicit;
-  const mode=sim?.options?.mode||options?.mode;
-  return MISSIONS.find(m=>m.id===mode)?.map||null;
+  if(sim?.options?.map)return sim.options.map;
+  const mode=options?.mode;
+  return MISSIONS.find(m=>m.id===mode)?.map||MODES.find(m=>m.id===mode)?.map||options?.map||null;
 }
 
 export function matchNeedsBridge(mapOrOptions,sim=null){
@@ -25,7 +25,7 @@ export function matchNeedsBridge(mapOrOptions,sim=null){
   return Boolean(map&&bridgeSpans(map).length>0);
 }
 
-export async function ensureMatchArtwork({
+export function ensureMatchArtwork({
   options=null,
   sim=null,
   hasIronhold=()=>true,
@@ -44,7 +44,5 @@ export async function ensureMatchArtwork({
       return null;
     }));
   }
-  if(!tasks.length)return false;
-  await Promise.all(tasks);
-  return true;
+  if(tasks.length)return Promise.all(tasks);
 }
