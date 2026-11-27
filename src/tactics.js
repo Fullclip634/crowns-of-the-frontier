@@ -1,4 +1,5 @@
 import {UNITS} from './data.js';
+import {VALID_STANCES} from './combat-targeting.js';
 import {bridgeNavigationGrid,bridgePointClear,bridgeUnitClearance} from './bridge-navigation.js';
 import {bridgeAt,bridgeRoadHalfWidth} from './bridge-layout.js';
 import {shipClearance,navalPairClearance} from './naval-spacing.js';
@@ -119,9 +120,25 @@ export function installTactics(Simulation){
     return units.length>0;
   };
   p.setStance=function(ids,stance,owner=0){
-    if(!['hold','aggressive'].includes(stance))return false;
+    if(!VALID_STANCES.includes(stance))return false;
     const units=ids.map(id=>this.get(id)).filter(e=>e?.owner===owner&&e.kind==='unit');
-    for(const e of units){e.stance=stance;if(stance==='hold'){e.order=null;e.orders=[];e.path=[];e.pathStatus='idle';e.stuckTime=0;}}
+    for(const e of units){
+      e.stance=stance;
+      delete e.helpTargetId;delete e.helpUntil;
+      if(stance==='hold'){
+        e.order=null;e.orders=[];e.path=[];e.pathStatus='idle';e.stuckTime=0;
+        delete e.guardX;delete e.guardZ;
+      }else if(stance==='defensive'){
+        if(e.order&&['move','attackmove'].includes(e.order.type)&&Number.isFinite(e.order.x)&&Number.isFinite(e.order.z)){
+          e.guardX=e.order.x;e.guardZ=e.order.z;
+        }else{
+          e.guardX=e.x;e.guardZ=e.z;
+          if(e.order?.type==='attack'){e.order=null;e.path=[];e.pathStatus='idle';e.stuckTime=0;}
+        }
+      }else{
+        delete e.guardX;delete e.guardZ;
+      }
+    }
     return units.length>0;
   };
 }

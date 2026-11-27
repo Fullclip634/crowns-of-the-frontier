@@ -34,6 +34,7 @@ import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS,isHero
 import {closestCandidates} from './closest-candidates.js';
 import {navalPairClearance,separationUnitVector,resolveNavalSpacing,navalDestinationOccupied} from './naval-spacing.js';
 import {BATTLEFIELD_LAYOUT_VERSION,spaceStartingBuildings} from './battlefield-start.js';
+import {unitAttackRange,ensureGuardPost,applyRallyOrder,alertNearbyDefenders,pickCombatTarget,pickBuildingTarget} from './combat-targeting.js';
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const distance=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.z-b.z)**2);
@@ -415,11 +416,12 @@ export class Simulation {
     const destinations=order.type==='move'||order.type==='attackmove'?formationDestinations(this,units,order,append):null;
     units.forEach(e=>{
       const o={...order,...destinations?.get(e)};if(o.type==='build'&&e.type==='villager'&&this.get(o.target)?.type==='wall')o.wallConstruction=true;if(!append)e.wallConstructionSkipped=[];
-      if(append&&e.order){if(e.orders.length<32)e.orders.push(o);}else{e.order=o;e.orders=[];e.path=[];e.repath=0;e.stuckTime=0;e.pathStatus='pending';if(['attack','attackmove','patrol','guard'].includes(o.type))e.stance='aggressive';}
+      if(append&&e.order){if(e.orders.length<32)e.orders.push(o);}else{e.order=o;e.orders=[];e.path=[];e.repath=0;e.stuckTime=0;e.pathStatus='pending';delete e.helpTargetId;delete e.helpUntil;if(e.stance==='hold'&&['attack','attackmove','patrol','guard'].includes(o.type))e.stance='aggressive';else if(e.stance==='defensive'&&['move','attackmove'].includes(o.type)&&Number.isFinite(o.x)&&Number.isFinite(o.z)){e.guardX=o.x;e.guardZ=o.z;}}
     });if(units.some(e=>e.owner===0)){if(units.some(e=>e.type!=='villager')&&['move','attackmove','attack'].includes(order.type))this.tutorialFlags.command=true;this.emit('order',{order});}
   }
   smartCommand(ids,target,x,z,append=false,attackMove=false,owner=0){const owned=ids.map(id=>this.get(id)).filter(e=>e?.owner===owner);const units=owned.filter(e=>e.kind==='unit');
-    for(const b of owned.filter(e=>e.kind==='building')){b.rally={x,z,target:target?.kind==='resource'?target.id:null};}
+    const rallyTarget=target&&(target.kind==='resource'||(target.kind==='building'&&target.owner===owner&&(target.progress<1||target.type==='farm')))?target.id:null;
+    for(const b of owned.filter(e=>e.kind==='building')){b.rally={x,z,target:rallyTarget};}
     if(!target){if(units.length)this.command(units.map(e=>e.id),{type:attackMove?'attackmove':'move',x,z},append);return;}
     const move={type:attackMove?'attackmove':'move',x,z},moving=[];
     for(const unit of units){let order=move;
@@ -432,7 +434,7 @@ export class Simulation {
     }
     if(moving.length)this.command(moving,move,append);
   }
-  stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;}}}
+  stop(ids){for(const id of ids){const e=this.get(id);if(e?.kind==='unit'){e.order=null;e.orders=[];e.path=[];e.wallConstructionSkipped=[];e.stance='hold';e.pathStatus='idle';e.stuckTime=0;delete e.helpTargetId;delete e.helpUntil;delete e.guardX;delete e.guardZ;delete e.lastCombatTargetId;}}}
   isWater(x,z){const map=this.options.map;if(bridgeAt(map,x,z,-.6))return false;if(fordAt(map,x,z))return false;return channelAt(map,x,z);}
   cell(x,z){return {x:clamp(Math.floor((x+this.halfWorld)/CELL),0,this.gridSize-1),z:clamp(Math.floor((z+this.halfWorld)/CELL),0,this.gridSize-1)};}
   grid(owner){if(this.grids[owner]?.revision===this.revision)return this.grids[owner].data;
@@ -503,16 +505,19 @@ export class Simulation {
   blockedMovement(e,dt){e.stuckTime=(e.stuckTime||0)+dt;if(e.stuckTime>2&&e.pathStatus!=='blocked'){e.path=[];e.repath=0;}
     if(e.stuckTime<6)return;e.pathStatus='blocked';e.blockedAt=this.time;e.stuckTime=0;
     if(e.owner===0&&this.time-(this.lastBlockedNotice??-10)>4){this.lastBlockedNotice=this.time;this.emit('notice',{owner:0,message:'A unit cannot reach its destination. Choose another route or open the obstruction.',tone:'warning'});}
-    this.emit('order-blocked',{entity:e});const target=this.get(e.order?.target);if(e.order?.type==='build'&&e.type==='villager'&&target?.type==='wall')this.finishWallOrder(e,target,true);else this.finishOrder(e);
+    this.emit('order-blocked',{entity:e});if(!e.order&&e.stance==='defensive'){e.guardX=e.x;e.guardZ=e.z;}const target=this.get(e.order?.target);if(e.order?.type==='build'&&e.type==='villager'&&target?.type==='wall')this.finishWallOrder(e,target,true);else this.finishOrder(e);
   }
-  nearest(e,predicate,max=Infinity,combatOnly=false,targetOwners=-1){
+  nearest(e,predicate,max=Infinity,combatOnly=false,targetOwners=-1,visitor=null){
     let best=null,nearest=max;
     const consider=target=>{
       if(target.hp<=0||target===e||combatOnly&&target.kind!=='unit'&&target.kind!=='building')return;
       if(!(targetOwners&(1<<target.owner)))return;
       // Keep the original strict surface-distance test and stable tie order.
-      const dx=e.x-target.x,dz=e.z-target.z,reach=nearest+target.r+1e-9;
-      if(reach<0||dx*dx+dz*dz>reach*reach||!predicate(target))return;
+      const limit=visitor?max:nearest;
+      const dx=e.x-target.x,dz=e.z-target.z,reach=limit+target.r+1e-9;
+      if(reach<0||dx*dx+dz*dz>reach*reach)return;
+      if(visitor){const gap=Math.hypot(dx,dz)-target.r;if(gap<max)visitor(target,gap);return;}
+      if(!predicate(target))return;
       const gap=Math.hypot(dx,dz)-target.r;
       if(gap<nearest){nearest=gap;best=target;}
     };
@@ -580,7 +585,7 @@ export class Simulation {
     }
     return nearHome;
   }
-  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z,targetKind:target.kind,targetType:target.type});}
+  hurt(target,amount,attacker){if(target.hp<=0||attacker?.owner>=0&&target.owner>=0&&!this.hostile(attacker.owner,target.owner))return;target.hp-=amount;if(target.kind==='unit')target.lastDamaged=this.time;if(attacker?.id!=null&&attacker.owner>=0&&target.owner>=0&&this.hostile(attacker.owner,target.owner)){target.lastAttackerId=attacker.id;target.lastAttackedAt=this.time;alertNearbyDefenders(this,target,attacker);}if(target.owner===0&&this.time-(this.lastAlarm||-20)>12&&this.isKingdomThreat(target)){this.lastAlarm=this.time;this.emit('alarm',{x:target.x,z:target.z,targetKind:target.kind,targetType:target.type});}
     if(target.hp<=0){target.hp=0;this.revision++;if(attacker?.owner===0)this.stats.kills++;if(target.owner===0)this.stats.lost++;if(target.kind==='unit'&&attacker?.kind==='unit'&&attacker.owner!==target.owner&&UNITS[attacker.type]?.role==='cavalry'&&this.players[attacker.owner]?.tech?.raidingParties)this.players[attacker.owner].resources.gold+=3;
       // Soldier Veterancy: non-hero combat troops earn ★ / ★★ / ★★★ ranks with kills (+10% ATK & HP per rank!)
       if(attacker?.kind==='unit'&&attacker.hp>0&&attacker.owner!==target.owner&&!UNITS[attacker.type]?.hero&&attacker.type!=='villager'&&(UNITS[attacker.type]?.damage||0)>0){
@@ -609,7 +614,7 @@ export class Simulation {
     if(splash>0)forEachNearbyUnit(this,target.x,target.z,splash,nearby=>{if(nearby.hp>0&&!nearby.embarked&&this.hostile(e.owner,nearby.owner)&&nearby!==target&&distance(nearby,target)<splash)this.hurt(nearby,amount*(e.type==='trebuchet'?.65:.58),e);});
     this.emit('attack',{entity:e,target,damage:amount,explosive:e.type==='firelancer',fireball:e.type==='trebuchet',cannonball:e.type==='bombard',javelin:e.type==='skirmisher'});
   }
-  finishOrder(e){e.order=e.orders.shift()||null;e.path=[];e.repath=0;}
+  finishOrder(e){e.order=e.orders.shift()||null;e.path=[];e.repath=0;if(e.stance==='defensive'&&e.order&&['move','attackmove'].includes(e.order.type)&&Number.isFinite(e.order.x)&&Number.isFinite(e.order.z)){e.guardX=e.order.x;e.guardZ=e.order.z;}}
   finishWallOrder(e,previous,blocked=false){
     if(blocked){e.wallConstructionSkipped??=[];if(!e.wallConstructionSkipped.includes(previous.id))e.wallConstructionSkipped.push(previous.id);}
     this.finishOrder(e);if(e.order)return;
@@ -634,23 +639,13 @@ export class Simulation {
     }
     let combat=null;
     const isWall=t=>t.kind==='building'&&(t.type==='wall'||t.type==='gate');
-    const canEngage=(t,guard)=>this.hostile(e.owner,t.owner)&&!t.embarked&&(d.naval||!UNITS[t.type]?.naval||d.range>=5||distance(e,t)<=d.range+t.r)&&(!guard||distance(t,guard)<18);
     if(order?.type==='attack'){const target=this.get(order.target);if(target&&this.hostile(e.owner,target.owner))combat=target;}
     else if(d.damage&&d.role!=='worker'&&(!order||['attackmove','patrol','guard'].includes(order.type))){
       const guard=order?.type==='guard'?(this.get(order.target)||e):null;
-      const range=e.stance==='hold'?d.range:Math.max(d.range+(d.role==='ranged'&&!d.naval?(this.players[e.owner].tech.ranged||0):0),d.role==='siege'?27:13);
       const ownerMask=this.combatTargetOwners?.[e.owner];
-      // Priority 1: Active threats — enemy units & defensive towers/keeps/town centers.
-      combat=this.nearest(e,t=>canEngage(t,guard)&&(t.kind==='unit'||(t.kind==='building'&&BUILDINGS[t.type]?.damage>0)),range,true,ownerMask);
-      // Priority 2: Real interior buildings (houses, barracks, workshops, mills) — NEVER walls/gates!
-      if(!combat)combat=this.nearest(e,t=>canEngage(t,guard)&&!isWall(t),range,true,ownerMask);
-      // Priority 3: Walls/gates ONLY when genuinely sealed off (blocked route) or literally nothing else exists!
-      if(!combat){
-        const routeBlocked=order?.type==='attackmove'&&e.pathStatus==='blocked';
-        const onlyWallsRemain=!order&&!this.candidatesFor('unit').some(u=>u.hp>0&&!u.embarked&&this.hostile(e.owner,u.owner))&&!this.candidatesFor('building').some(b=>b.hp>0&&!isWall(b)&&this.hostile(e.owner,b.owner));
-        if(routeBlocked||onlyWallsRemain)combat=this.nearest(e,t=>canEngage(t,guard)&&isWall(t),range,true,ownerMask);
-      }
+      combat=pickCombatTarget(this,e,order,guard,ownerMask);
     }
+    e.lastCombatTargetId=combat?combat.id:null;
     if(combat&&meleeBuildingAttack(e,combat)){
       const gap=meleeSurfaceDistance(e,combat);
       if(gap>meleeReach(e)||gap<meleeMinClearance(e)*.65){
@@ -658,7 +653,7 @@ export class Simulation {
           approachMelee(this,e,combat,dt);
           // If an interior building is truly sealed behind walls, switch to breaking the nearest wall/gate!
           if(order?.type!=='attack'&&!isWall(combat)&&e.pathStatus==='blocked'){
-            const blocker=this.nearest(e,t=>canEngage(t,null)&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
+            const blocker=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
             if(blocker){
               if(meleeSurfaceDistance(e,blocker)<=meleeReach(e)){e.heading=meleeHeading(e,blocker);this.hit(e,blocker);}
               else approachMelee(this,e,blocker,dt);
@@ -668,13 +663,13 @@ export class Simulation {
       }
       else{e.heading=meleeHeading(e,combat);this.hit(e,combat);}return;
     }
-    if(combat){const range=Math.max(d.range+(d.role==='ranged'&&!d.naval?(this.players[e.owner].tech.ranged||0):0)+combat.r,combat.kind==='building'?combat.r+3:0);
+    if(combat){const range=Math.max(unitAttackRange(this,e)+combat.r,combat.kind==='building'?combat.r+3:0);
       if(distance(e,combat)>range){
         if(e.stance!=='hold'||order?.type==='attack'){
           this.move(e,combat,dt,range);
           // If a melee unit is sealed out from reaching an interior enemy unit, attack the nearest blocking wall/gate.
           if(order?.type!=='attack'&&d.range<=4&&!isWall(combat)&&e.pathStatus==='blocked'){
-            const blocker=this.nearest(e,t=>canEngage(t,null)&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
+            const blocker=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&isWall(t),14,true,this.combatTargetOwners?.[e.owner]);
             if(blocker){
               if(meleeSurfaceDistance(e,blocker)<=meleeReach(e)){e.heading=meleeHeading(e,blocker);this.hit(e,blocker);}
               else approachMelee(this,e,blocker,dt);
@@ -683,7 +678,13 @@ export class Simulation {
         }
       }else{e.heading=Math.atan2(combat.x-e.x,combat.z-e.z);this.hit(e,combat);}return;
     }
-    if(!order)return;
+    if(!order){
+      if(e.stance==='defensive'&&!['worker','fisher','transport'].includes(d.role)){
+        const post=ensureGuardPost(e);
+        if(distance(e,post)>2.2)this.move(e,post,dt,1.4);
+      }
+      return;
+    }
     if(order.type==='attack'||order.type==='heal'){this.finishOrder(e);return;}
     if(order.type==='move'||order.type==='attackmove'){
       const exact=order.type==='move'&&order.aiFortification===true,formation=order.formation===true;
@@ -752,14 +753,12 @@ export class Simulation {
     if(d.damage&&e.cooldown<=0){
       const mask=this.combatTargetOwners?.[e.owner];
       const fireRange=d.range+(['tower','keep','bombard'].includes(e.type)?(ownerPlayer?.tech?.arrowslits||0)*2:0);
-      const enemy=this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='unit',fireRange,true,mask)
-        ||this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='building'&&t.type!=='wall'&&t.type!=='gate',fireRange,true,mask)
-        ||this.nearest(e,t=>this.hostile(e.owner,t.owner)&&!t.embarked&&t.kind==='building',fireRange,true,mask);
+      const enemy=pickBuildingTarget(this,e,fireRange,mask);
       if(enemy)this.hit(e,enemy);
     }
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;const conscriptionBoost=q.kind==='unit'&&['barracks','range','stable','workshop','keep','monastery','dock'].includes(e.type)&&(ownerPlayer?.tech?.conscription||0)>0?1.25:1;q.remaining-=dt*conscriptionBoost*(q.kind==='unit'&&wonderPowerFor(this,e.owner)?.faction==='sun'?1.25:1);
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
-      if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally){unit.order={type:unit.type==='villager'&&e.rally.target?'gather':'move',...e.rally};}if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
+      if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally)applyRallyOrder(this,unit,e);if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
       else{if(q.kind==='age'){p.age++;p.agePending=false;}else p.tech[q.type]++;
         // Reaching Castle Age upgrades wooden palisades to stone walls, and
         // Fortified Walls reinforces stone masonry. Bump revision so instanced

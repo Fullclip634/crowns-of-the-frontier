@@ -171,7 +171,9 @@ export function inspectorStatsMarkup(sim,e){
     add('wind','SPD',unitSpeedValue(sim,e),'Movement speed');
     add('spyglass','VIS',`${typeof sim?.unitVision==='function'?sim.unitVision(e):(d.vision||15)}m`,'Line of sight');
     if(e.owner===0&&e.type!=='villager'&&e.type!=='fishingboat'&&e.type!=='cart'){
-      add(e.stance==='hold'?'shield-check':'swords','STANCE',e.stance==='hold'?'Hold':'Engage','Current combat stance','stat-stance');
+      const stanceIcon=e.stance==='hold'?'shield-check':e.stance==='defensive'?'shield':'swords';
+      const stanceLabel=e.stance==='hold'?'Hold':e.stance==='defensive'?'Defensive':'Engage';
+      add(stanceIcon,'STANCE',stanceLabel,'Current combat stance','stat-stance');
     }
     if(e.vetRank>0){
       const vetNames=['','★ Veteran','★★ Elite','★★★ Champion'];

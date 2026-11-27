@@ -236,6 +236,12 @@
   color:#fff2cc;
   box-shadow:inset 0 1px 0 rgba(255,240,196,.24);
 }
+.tactics button[data-stance="defensive"].active{
+  border-color:#72c7a4;
+  background:linear-gradient(180deg,rgba(26,74,58,.94),rgba(14,42,34,.97));
+  color:#d9fff0;
+  box-shadow:inset 0 1px 0 rgba(180,255,224,.24);
+}
 
 /* Subgroup Tab Cycling & Unaffordable Resource Cue */
 .subgroup-tab{

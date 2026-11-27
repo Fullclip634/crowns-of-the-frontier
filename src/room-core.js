@@ -161,7 +161,7 @@ export function createRoomCore({maxRooms=8,tickInterval=100}={}){
       case 'seekShelter':s.seekShelter(ids(args[0]),args[1]??null,owner);break;
       case 'assignWorker':if(owns(args[0])){const worker=s.get(args[0]);worker.order=null;s.assignWorker(worker);}break;
       case 'formation':if(['square','line','column'].includes(args[0]))s.players[owner].formation=args[0];break;
-      case 'stance':s.setStance(ids(args[0]),args[1]==='hold'?'hold':'aggressive',owner);break;
+      case 'stance':s.setStance(ids(args[0]),['hold','defensive','aggressive'].includes(args[1])?args[1]:'aggressive',owner);break;
       case 'trade':if(['food','wood','stone'].includes(args[0]))s.trade(args[0],!!args[1],owner);break;
       case 'donateResources':if(custom(room)&&Number.isInteger(args[1])&&args[1]>=0&&args[1]<s.players.length){const recipient=orderFor(room,owner)[args[1]];if(!s.donateResources(owner,recipient,args[2],args[3]))send(player.ws,{type:'error',message:'Resource gift could not be sent. Check your balance and ally.'});}break;
       case 'demolish':if(owns(args[0]))s.demolish(args[0],owner);break;
