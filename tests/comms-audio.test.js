@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
 import {unitVoiceArchetype,formatAttackAlertText,VOICE_COOLDOWN,NOTICE_WARN_COOLDOWN} from '../src/voice-system.js';
 import {createSampleBank} from '../src/sample-bank.js';
+import {buildingSelectCue,installSampledAudio} from '../src/sampled-audio.js';
 import {WarCommsController} from '../src/war-comms.js';
 import {BattleChatPanel} from '../src/battle-chat.js';
 import {settingsModalMarkup} from '../src/menus-ui.js';
@@ -203,4 +204,66 @@ test('Settings modal exposes voiceVolume & voiceComms controls, portraits suppor
 
   const css=fs.readFileSync(new URL('../src/war-comms.css',import.meta.url),'utf8');
   assert.doesNotMatch(css,/backdrop-filter\s*:\s*blur/i,'war-comms.css maintains zero backdrop-filter blur');
+});
+
+test('AoE-style building selection signatures and spatialized siege/hero/collapse stingers use mastered samples with zero offscreen leak',async()=>{
+  assert.equal(buildingSelectCue({type:'towncenter'})?.cue,'bld-town');
+  assert.equal(buildingSelectCue({type:'keep'})?.cue,'bld-castle');
+  assert.equal(buildingSelectCue({type:'dock'})?.cue,'bld-dock');
+  assert.equal(buildingSelectCue({type:'warship'})?.cue,'bld-dock');
+  assert.equal(buildingSelectCue({type:'blacksmith'})?.cue,'anvil');
+  assert.equal(buildingSelectCue({type:'market'})?.cue,'coin');
+  assert.equal(buildingSelectCue({type:'stable'})?.cue,'unit-cavalry');
+  assert.equal(buildingSelectCue({type:'range'})?.cue,'unit-archer');
+  assert.equal(buildingSelectCue({type:'barracks'})?.cue,'march');
+  assert.equal(buildingSelectCue({type:'monastery'})?.cue,'unit-healer');
+
+  const playedBuffers=[];
+  const makeNode=extra=>({connect(){},disconnect(){},start(){if(this.buffer)playedBuffers.push(this.buffer);},stop(){},...extra});
+  class MockEngine{
+    constructor(){this.settings={volume:.8,uiVolume:1,musicVolume:1,voiceVolume:1,music:true};this.procedural=[];this.combatActivity=0;}
+    unlock(){
+      this.context={state:'running',currentTime:10,sampleRate:44100,
+        createGain:()=>makeNode({gain:{value:1,setTargetAtTime(v){this.value=v;}}}),
+        createBufferSource:()=>makeNode({buffer:null,loop:false,playbackRate:{value:1},onended:null}),
+        createStereoPanner:()=>makeNode({pan:{value:0}}),
+        decodeAudioData:async data=>({decoded:true,bytes:data.byteLength}),
+      };
+      this.master=makeNode();this.sfxBus=makeNode();this.voiceBus=makeNode();
+    }
+    play(name){this.procedural.push(name);}
+    noteCombatActivity(w){this.combatActivity+=w;}
+    triggerSiegeStinger(kind){this.procedural.push('osc:'+kind);return true;}
+  }
+  const fetchData=async url=>{
+    const name=decodeURIComponent(new URL(url).pathname.split('/').pop());
+    const file=path.join(audioDir,name);
+    if(!fs.existsSync(file))return {ok:false};
+    const bytes=fs.readFileSync(file);
+    if(name==='manifest.json')return {ok:true,json:async()=>JSON.parse(bytes.toString('utf8'))};
+    return {ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)};
+  };
+  installSampledAudio(MockEngine,{fetchData,base:'https://game.test/'});
+  const eng=new MockEngine();
+  eng.unlock();
+  await eng.sampleBank.load();
+
+  // Building selection plays signature cue and enforces anti-spam cooldown
+  assert.equal(eng.buildingSelect({kind:'building',type:'keep'}),true);
+  assert.equal(eng.buildingSelect({kind:'building',type:'dock'}),false,'rapid double-click within 180ms is throttled');
+  eng.context.currentTime+=0.25;
+  assert.equal(eng.buildingSelect({kind:'building',type:'dock'}),true);
+
+  // Spatialized world SFX: visible entity plays mastered sample; offscreen/fogged entity allocates nothing!
+  eng.combatListener=e=>e.visible?{gain:.8,pan:.25}:{gain:0,pan:0};
+  const before=playedBuffers.length;
+  assert.equal(eng.triggerSiegeStinger('cannon',{visible:false}),false,'offscreen cannon allocates no audio');
+  assert.equal(playedBuffers.length,before);
+  assert.equal(eng.triggerSiegeStinger('cannon',{visible:true}),true,'visible cannon plays mastered cannon sample');
+  assert.equal(eng.triggerSiegeStinger('trebuchet',{visible:true}),true,'visible trebuchet plays mastered trebuchet sample');
+  assert.equal(eng.triggerSiegeStinger('collapse',{visible:true}),true,'visible collapse plays mastered collapse sample');
+  assert.equal(eng.triggerSiegeStinger('oil',{visible:true}),true,'visible boiling oil plays mastered oil sample');
+  assert.equal(eng.triggerSiegeStinger('hero'),true,'hero skill plays mastered hero-skill sample');
+  assert.equal(eng.triggerSiegeStinger('wonder'),true,'wonder skips clashing synth oscillator when age-up sample is ready');
+  assert.equal(eng.procedural.filter(p=>p.startsWith('osc:')).length,0,'zero raw synth oscillators fired when samples are loaded');
 });

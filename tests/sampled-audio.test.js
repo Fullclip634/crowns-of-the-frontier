@@ -32,7 +32,7 @@ test('the shipped sample pack is a complete, valid, real recorded CC0 Ogg Vorbis
   assert.equal(manifest.proceduralFallback,true);
   assert.match(license,/CC0 1\.0/);
   const names=Object.keys(manifest.cues);
-  assert.equal(names.length,67);
+  assert.equal(names.length,76);
   const diskAudio=fs.readdirSync(audioDir).filter(f=>/\.(ogg|mp3|wav)$/i.test(f));
   assert.equal(diskAudio.filter(f=>f.endsWith('.wav')).length,0,'no stale synthetic WAVs left behind');
   assert.equal(diskAudio.filter(f=>f.endsWith('.ogg')).length,names.length,'no unreferenced or stale OGGs');

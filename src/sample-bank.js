@@ -10,9 +10,13 @@ export const MAX_SAMPLE_BYTES=1_500_000;
 export const UI_SAMPLE_CUES=Object.freeze([
   'select','order','coin','complete','alarm','victory',
   'defeat','age-up','chat-all','chat-team','flare','tribute','notice-warn',
+  'place','bld-town','bld-castle','bld-dock',
 ]);
 export const HORN_SAMPLE_CUES=Object.freeze(['horn','horn-enemy','horn-ally']);
-export const FOLEY_SAMPLE_CUES=Object.freeze(['chop','mine','hammer','anvil','hoof','march','fire']);
+export const FOLEY_SAMPLE_CUES=Object.freeze([
+  'chop','mine','hammer','anvil','hoof','march','fire',
+  'cannon','trebuchet','collapse','hero-skill','boiling-oil',
+]);
 export const AMBIENCE_SAMPLE_CUES=Object.freeze(['amb-meadow','amb-coast','amb-river','amb-tundra','amb-arid','amb-volcanic']);
 export const VOICE_SAMPLE_CUES=Object.freeze([
   'voice-select','voice-order','voice-attack','voice-work',

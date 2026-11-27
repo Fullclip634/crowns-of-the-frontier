@@ -7,6 +7,7 @@ import {installSampledAudio} from './sampled-audio.js';
 const UI_CUE_NAMES=new Set([
   'select','order','coin','complete','alarm','victory',
   'defeat','age-up','chat-all','chat-team','flare','tribute','notice-warn',
+  'place','bld-town','bld-castle','bld-dock',
 ]);
 
 export class AudioEngine {
@@ -35,6 +36,15 @@ export class AudioEngine {
     if(name==='flare'){this.tone(783.99,.22,'sine',g(.09),0);this.tone(1174.66,.34,'triangle',g(.095),.12);}
     if(name==='tribute'){this.tone(1174.66,.16,'sine',g(.08),0);this.tone(1479.98,.18,'sine',g(.075),.07);this.tone(587.33,.42,'triangle',g(.07),.14);}
     if(name==='notice-warn'){this.tone(155.56,.09,'triangle',g(.075),0);this.tone(130.81,.12,'triangle',g(.07),.095);}
+    if(name==='place'){this.tone(130.81,.11,'triangle',g(.12),0);this.tone(196,.08,'sine',g(.07),.04);}
+    if(name==='bld-town'){this.tone(293.66,.18,'triangle',g(.085),0);this.tone(440,.22,'sine',g(.07),.06);}
+    if(name==='bld-castle'){this.tone(146.83,.22,'triangle',g(.10),0);this.tone(220,.24,'sine',g(.07),.05);}
+    if(name==='bld-dock'){this.tone(739.99,.24,'sine',g(.08),0);this.tone(220,.16,'triangle',g(.05),.04);}
+    if(name==='cannon'){this.tone(68,.38,'sine',.18,0);this.tone(110,.16,'triangle',.12,.01);}
+    if(name==='trebuchet'){this.tone(155,.18,'triangle',.10,0);this.tone(240,.24,'sine',.08,.12);}
+    if(name==='collapse'){this.tone(58,.46,'sine',.17,0);this.tone(92,.32,'triangle',.11,.08);}
+    if(name==='hero-skill'){this.tone(293.66,.26,'triangle',.11,0);this.tone(440,.34,'triangle',.11,.08);this.tone(587.33,.46,'sine',.10,.18);}
+    if(name==='boiling-oil'){this.tone(120,.28,'sawtooth',.08,0);this.tone(680,.26,'triangle',.06,.05);}
   }
   tick(dt){if(!this.settings.music||!this.context)return;const mg=this.settings.musicVolume??1;if(mg<=0)return;this.musicTimer-=dt;if(this.musicTimer<=0){this.musicTimer=2.8;const notes=[130.81,164.81,196,146.83,130.81,174.61,196,146.83];const f=notes[this.note++%notes.length];this.tone(f,3.5,'sine',.045*mg);this.tone(f*2,2.8,'triangle',.018*mg,.3);}}
 }

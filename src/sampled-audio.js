@@ -33,7 +33,42 @@ const UI_CUE_MIX=Object.freeze({
   flare:{gain:.64,bus:'sfx',reverb:true},
   tribute:{gain:.60,bus:'sfx',reverb:true},
   'notice-warn':{gain:.44,bus:'sfx',reverb:false},
+  place:{gain:.58,bus:'sfx',reverb:true},
+  'bld-town':{gain:.50,bus:'sfx',reverb:true},
+  'bld-castle':{gain:.54,bus:'sfx',reverb:true},
+  'bld-dock':{gain:.52,bus:'sfx',reverb:true},
 });
+
+const BUILDING_SELECT_CUE=Object.freeze({
+  towncenter:{cue:'bld-town',gain:.50,reverb:true},
+  wonder:{cue:'bld-town',gain:.56,reverb:true},
+  house:{cue:'bld-town',gain:.40,reverb:false},
+  mill:{cue:'bld-town',gain:.42,reverb:false},
+  farm:{cue:'bld-town',gain:.38,reverb:false},
+  keep:{cue:'bld-castle',gain:.54,reverb:true},
+  castle:{cue:'bld-castle',gain:.54,reverb:true},
+  tower:{cue:'bld-castle',gain:.48,reverb:true},
+  gate:{cue:'bld-castle',gain:.48,reverb:true},
+  wall:{cue:'bld-castle',gain:.40,reverb:false},
+  bombard:{cue:'bld-castle',gain:.52,reverb:true},
+  dock:{cue:'bld-dock',gain:.52,reverb:true},
+  fishingboat:{cue:'bld-dock',gain:.46,reverb:true},
+  warship:{cue:'bld-dock',gain:.54,reverb:true},
+  transport:{cue:'bld-dock',gain:.48,reverb:true},
+  blacksmith:{cue:'anvil',gain:.42,reverb:true},
+  market:{cue:'coin',gain:.48,reverb:false},
+  stable:{cue:'unit-cavalry',gain:.44,reverb:true},
+  range:{cue:'unit-archer',gain:.44,reverb:true},
+  barracks:{cue:'march',gain:.48,reverb:true},
+  workshop:{cue:'march',gain:.46,reverb:true},
+  monastery:{cue:'unit-healer',gain:.46,reverb:true},
+  camp:{cue:'chop',gain:.42,reverb:true},
+  mine:{cue:'mine',gain:.44,reverb:true},
+});
+
+export function buildingSelectCue(entity){
+  return BUILDING_SELECT_CUE[entity?.type]||null;
+}
 
 function resolveUnitVoiceCue(kind,unit,bank){
   const arch=unitVoiceArchetype(unit);
@@ -93,7 +128,7 @@ function loopBed(engine,name,level,bus=null){
 // `options` exists for deterministic tests; the game uses the real fetch and
 // document.baseURI defaults.
 export function installSampledAudio(AudioEngine,options={}){
-  const p=AudioEngine.prototype,unlock=p.unlock,play=p.play,voice=p.voice,warHorn=p.warHorn,weather=p.weather,tick=p.tick,updateScene=p.updateScene;
+  const p=AudioEngine.prototype,unlock=p.unlock,play=p.play,voice=p.voice,warHorn=p.warHorn,weather=p.weather,tick=p.tick,updateScene=p.updateScene,origStinger=p.triggerSiegeStinger;
 
   p.sampleDiagnostics=function(){return this.sampleBank?.diagnostics()||{ready:false,coreReady:false,loaded:0,failed:0,total:0,bytes:0,errors:['audio not unlocked'],samples:[]};};
 
@@ -148,6 +183,76 @@ export function installSampledAudio(AudioEngine,options={}){
       }else return false;
     }
     return voice?voice.call(this,kind,unit,faction,pan):false;
+  };
+
+  p.buildingSelect=function(entity){
+    const uiGain=this.settings.uiVolume??1;
+    if(uiGain<=0||this.settings.volume<=0||this.context?.state!=='running')return false;
+    const now=this.context.currentTime;
+    if(now-(this.lastBldSelectAt??-Infinity)<.18)return false;
+    const spec=buildingSelectCue(entity);
+    if(spec&&this.sampleBank?.has(spec.cue)){
+      this.lastBldSelectAt=now;
+      const rate=.97+Math.random()*.06;
+      if(playCue(this,spec.cue,{gain:spec.gain*uiGain,rate,bus:this.sfxBus||this.master,reverb:spec.reverb}))return true;
+    }
+    this.lastBldSelectAt=now;
+    this.play('select');
+    return false;
+  };
+
+  p.playWorldSfx=function(cue,entity=null,{gain=.72,rate=1,bus='sfx',reverb=true,duck=null}={}){
+    const ctx=this.context;
+    if(!ctx||ctx.state!=='running'||this.settings.volume<=0||!this.sampleBank?.has(cue))return false;
+    let pan=0,finalGain=gain;
+    if(entity&&typeof this.combatListener==='function'){
+      const spatial=this.combatListener(entity);
+      if(!spatial||spatial.gain<=.005)return false;
+      pan=spatial.pan||0;
+      finalGain=gain*(.35+spatial.gain*.65);
+    }
+    const outBus=bus==='voice'?(this.voiceBus||this.master):(this.sfxBus||this.master);
+    const jitter=.96+Math.random()*.08;
+    if(playCue(this,cue,{gain:finalGain,rate:rate*jitter,pan,bus:outBus,reverb})){
+      if(duck)this.duckMusic?.(duck[0],duck[1]);
+      return true;
+    }
+    return false;
+  };
+
+  p.triggerSiegeStinger=function(kind='hero',entity=null){
+    if(!this.context||this.context.state!=='running'||this.settings.volume<=0)return false;
+    if(kind==='hero'){
+      this.noteCombatActivity?.(.32);
+      if(this.sampleBank?.has('hero-skill')){
+        return this.playWorldSfx('hero-skill',null,{gain:.72,bus:'voice',reverb:true,duck:[1.5,.58]});
+      }
+    }else if(kind==='oil'){
+      this.noteCombatActivity?.(.24);
+      if(this.sampleBank?.has('boiling-oil')){
+        return this.playWorldSfx('boiling-oil',entity,{gain:.70,bus:'sfx',reverb:true});
+      }
+    }else if(kind==='cannon'||kind==='siege'){
+      this.noteCombatActivity?.(.28);
+      if(this.sampleBank?.has('cannon')){
+        return this.playWorldSfx('cannon',entity,{gain:.68,bus:'sfx',reverb:true});
+      }
+    }else if(kind==='trebuchet'){
+      this.noteCombatActivity?.(.20);
+      if(this.sampleBank?.has('trebuchet')){
+        return this.playWorldSfx('trebuchet',entity,{gain:.64,bus:'sfx',reverb:true});
+      }
+    }else if(kind==='collapse'){
+      this.noteCombatActivity?.(.26);
+      if(this.sampleBank?.has('collapse')){
+        return this.playWorldSfx('collapse',entity,{gain:.76,bus:'sfx',reverb:true});
+      }
+    }else if(kind==='wonder'){
+      this.noteCombatActivity?.(.45);
+      // Let the studio-mastered age-up fanfare play cleanly without raw synth oscillators clashing over it.
+      if(this.sampleBank?.has('age-up'))return true;
+    }
+    return origStinger?origStinger.call(this,kind):false;
   };
 
   p.play=function(name,...rest){

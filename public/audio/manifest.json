@@ -6,8 +6,8 @@
   "fallbackEncoding": "mp3",
   "license": "CC0-1.0",
   "proceduralFallback": true,
-  "totalOggBytes": 1928163,
-  "totalMp3Bytes": 1812192,
+  "totalOggBytes": 1985911,
+  "totalMp3Bytes": 1885508,
   "cues": {
     "select": {
       "file": "select.ogg",
@@ -178,6 +178,58 @@
       "fallbackSha256": "f033c4414a35caea600be280a8b68e53b8603e3079d2b230978837e4b42f69ec",
       "source": "Artisticdude/HaelDB - RPG Sound Pack (interface6.wav, warmed muted knock, CC0 1.0)"
     },
+    "place": {
+      "file": "place.ogg",
+      "fallbackFile": "place.mp3",
+      "group": "ui",
+      "channels": 1,
+      "duration": 0.42,
+      "bytes": 6018,
+      "fallbackBytes": 4013,
+      "loop": false,
+      "sha256": "98bd0841bef68dbbc858c81c2d8b538f413a89fde17bfbcead01fdf6448f5ba3",
+      "fallbackSha256": "f73b34b4a21da59d9bbbeb79ebfbed88531971bc14510b6bbc171d100b7dc7ed",
+      "source": "OpenGameArt 75 CC0 SFX (bfh1_wood_hit_02.ogg, bfh1_rock_hit_01.ogg) + Blacksmith Hammer placement mastering (CC0 1.0)"
+    },
+    "bld-town": {
+      "file": "bld-town.ogg",
+      "fallbackFile": "bld-town.mp3",
+      "group": "ui",
+      "channels": 1,
+      "duration": 0.58,
+      "bytes": 7189,
+      "fallbackBytes": 5267,
+      "loop": false,
+      "sha256": "d60c4f922c6ca3203fb281d4e43a313bd0fb84ad702bdd1e6b8842466f56a793",
+      "fallbackSha256": "fdde019d257f6216a67ee80dee29a8b77ce5331e2c150e61c12e6ce01b6a475c",
+      "source": "Kenney - 50 RPG sound effects (doorOpen_1.ogg) + Medieval Harp guildhall mastering (CC0 1.0)"
+    },
+    "bld-castle": {
+      "file": "bld-castle.ogg",
+      "fallbackFile": "bld-castle.mp3",
+      "group": "ui",
+      "channels": 1,
+      "duration": 0.62,
+      "bytes": 7617,
+      "fallbackBytes": 5476,
+      "loop": false,
+      "sha256": "893196e0e69b9f373defdfb37a1e5034d4aeca466e4e15db396854d59301bb55",
+      "fallbackSha256": "7d08b0e911ef21e21678030f16b47573ab96c7d61cb3e5c96407c71252a6ef4a",
+      "source": "Artisticdude/HaelDB door.wav + Kenney metalLatch.ogg + Castle Portcullis mastering (CC0 1.0)"
+    },
+    "bld-dock": {
+      "file": "bld-dock.ogg",
+      "fallbackFile": "bld-dock.mp3",
+      "group": "ui",
+      "channels": 1,
+      "duration": 0.65,
+      "bytes": 7995,
+      "fallbackBytes": 5685,
+      "loop": false,
+      "sha256": "8d3cae37aded09a6d90fdd8766b5fe0f5451a42c3c6f25044fa03e1a042913bb",
+      "fallbackSha256": "957776e877cc75bf5c185e15b7b0f97648510c424c41ccbc610a5c1c34d1106a",
+      "source": "Kenney creak2.ogg + Jasinski ocean_wave_prev.ogg + Ship Bell mastering (CC0 1.0)"
+    },
     "chop": {
       "file": "chop.ogg",
       "fallbackFile": "chop.mp3",
@@ -268,6 +320,71 @@
       "sha256": "7c324610702a801d6d96f7de23a015fca3e26d6a5a16310240c5f5c130c5b52c",
       "fallbackSha256": "504414e093cf63b2c22a074447b8b8a3853cacda3537ba8887a63b6470eb25db",
       "source": "StarNinjas - Fireplace Sound loop (fire.wav, CC0 1.0)"
+    },
+    "cannon": {
+      "file": "cannon.ogg",
+      "fallbackFile": "cannon.mp3",
+      "group": "foley",
+      "channels": 1,
+      "duration": 1.22,
+      "bytes": 11294,
+      "fallbackBytes": 10283,
+      "loop": false,
+      "sha256": "9d2cc0f59763159f3304f10b7fe2e2927652c54ffc10109b24608d99dc29a8b2",
+      "fallbackSha256": "1439e18b181dece826268ad4a185728df862913fa18e22ddf5e6271ca0c8a3a6",
+      "source": "OpenGameArt 75 CC0 SFX (bfh1_breaking_01.ogg, bfh1_rock_breaking_01.ogg) + Black-Powder Bombard mastering (CC0 1.0)"
+    },
+    "trebuchet": {
+      "file": "trebuchet.ogg",
+      "fallbackFile": "trebuchet.mp3",
+      "group": "foley",
+      "channels": 1,
+      "duration": 0.95,
+      "bytes": 8368,
+      "fallbackBytes": 8193,
+      "loop": false,
+      "sha256": "cfe5454677bd2fd3075b96373a962ed32f75dd54a9f175da8dfed05fcea698ba",
+      "fallbackSha256": "21c24d81322b41843e54cd0ba64fc97cd703474e0f937d19c71caedd10bbc283",
+      "source": "Kenney creak1.ogg + remaxim Bow.wav + OpenGameArt swish-1.wav + Trebuchet mastering (CC0 1.0)"
+    },
+    "collapse": {
+      "file": "collapse.ogg",
+      "fallbackFile": "collapse.mp3",
+      "group": "foley",
+      "channels": 1,
+      "duration": 1.45,
+      "bytes": 13329,
+      "fallbackBytes": 12163,
+      "loop": false,
+      "sha256": "1984d598438d1d3a16cfd5ecb12677270a00af70fea115b38fef1ac42aae3546",
+      "fallbackSha256": "2a434179dc8fd209cc1ae59307282da2076121a36e748dc8099a612b8b916f36",
+      "source": "OpenGameArt 75 CC0 SFX (bfh1_breaking_02.ogg, bfh1_rock_breaking_02.ogg, bfh1_wood_breaking_02.ogg, bfh1_rock_falling_02.ogg, CC0 1.0)"
+    },
+    "hero-skill": {
+      "file": "hero-skill.ogg",
+      "fallbackFile": "hero-skill.mp3",
+      "group": "foley",
+      "channels": 1,
+      "duration": 1.35,
+      "bytes": 11536,
+      "fallbackBytes": 11327,
+      "loop": false,
+      "sha256": "5e373e21140f9bc7a301d7357a05229fb9a701afe6281b8ecb5d356b670d1893",
+      "fallbackSha256": "2d0330b0b6f82491b692425b86fb8b7d7cd784fe5c9407142ae19a10c361e4e9",
+      "source": "Artisticdude/HaelDB sword-unsheathe2.wav & magic1.wav + Royal Horn Hero Stinger mastering (CC0 1.0)"
+    },
+    "boiling-oil": {
+      "file": "boiling-oil.ogg",
+      "fallbackFile": "boiling-oil.mp3",
+      "group": "foley",
+      "channels": 1,
+      "duration": 1.3,
+      "bytes": 13404,
+      "fallbackBytes": 10909,
+      "loop": false,
+      "sha256": "ed58ef7a153dc899b0380ad84c4809bfcff1cffba42685f53590735e8345c6b5",
+      "fallbackSha256": "ad769766114482dc0e3bc75166d33f5bd670d758eefdae16428d39a077c3b6ec",
+      "source": "OpenGameArt sfx_loops water_boiling.ogg + StarNinjas fire_loop.wav + Castle Boiling Oil mastering (CC0 1.0)"
     },
     "metal-0": {
       "file": "metal-0.ogg",
@@ -860,12 +977,12 @@
       "group": "music",
       "channels": 2,
       "duration": 24.0,
-      "bytes": 205152,
+      "bytes": 176150,
       "fallbackBytes": 192513,
       "loop": true,
-      "sha256": "fc7f43e861ccca65ecfe39bf5e57a1fed1dd04a4f509174d1910291d524c9b38",
-      "fallbackSha256": "fa6c23c561238faf5200ae44d885ab0456e5d47e19d6ef4fe135cca399281ca4",
-      "source": "CynicMusic / JaidynReiman - Battle Theme A (CC0 1.0)"
+      "sha256": "ae371ccbd0e3d53561df5d78d27ee364fb67b783053e6ec738fd8f4ccb2fb7ec",
+      "fallbackSha256": "12f2d927f0f63829305e99366fcad78a8da1e6a1432de31d4429d5fb74b20d9f",
+      "source": "Crowns of the Frontier Medieval Battle Score + Snabisch Fantasy Choir & OpenGameArt War Horn mastering (CC0 1.0)"
     },
     "music-climax": {
       "file": "music-climax.ogg",
