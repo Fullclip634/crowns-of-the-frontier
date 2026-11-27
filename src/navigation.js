@@ -1,7 +1,6 @@
 import {blockWallConnections} from './walls.js';
 import {BUILDINGS} from './data.js';
 import {blockBridgeNavigation,bridgeNavigationGrid,bridgeStepClear,bridgePointClear,bridgeUnitClearance,BRIDGE_CLEARANCE} from './bridge-navigation.js';
-const NEIGHBORS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 const MAX_BUILDING_RADIUS=Math.max(...Object.values(BUILDINGS).map(definition=>definition.r||0));
 const constructionGrids=new WeakMap();
 
@@ -20,10 +19,11 @@ export function unitNavigationGrid(sim,unit,normalOverride=null){
   if(naval)return source;const normal=bridgeNavigationGrid(sim,unit,source);
   const containing=containingBuildings(sim,unit);
   if(!containing.length)return normal;
-  const buildings=sim.entities.filter(e=>e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
   const key=`escape:${sim.players[unit.owner].team??unit.owner}:${containing.map(e=>e.id).join(',')}`,cache=normalOverride?null:(sim.unitEscapeGrids??=new Map());
   const stored=cache?.get(key);if(stored?.source===normal)return stored.data;
-  const ignored=new Set(containing),others=buildings.filter(e=>!ignored.has(e)),data=normal.slice(),base=sim.grids.landBase.data;
+  const ignored=new Set(containing),buildings=sim.candidatesFor?.('building')??sim.entities;
+  const others=buildings.filter(e=>!ignored.has(e)&&e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,unit.owner)));
+  const data=normal.slice(),base=sim.grids.landBase.data;
   for(const building of containing){
     const a=sim.cell(building.x-building.r-.3,building.z-building.r-.3),b=sim.cell(building.x+building.r+.3,building.z+building.r+.3);
     for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++){
@@ -50,7 +50,14 @@ export function buildingPlacementGrid(sim,type,x,z,owner){
 // is covered only by the target's coarse radius. Every other obstacle remains.
 export function constructionNavigationGrid(sim,target,owner){
   const normal=sim.grid(owner);let cache=constructionGrids.get(target);if(!cache){cache=new WeakMap();constructionGrids.set(target,cache);}const stored=cache.get(normal);if(stored)return stored;
-  const data=normal.slice(),base=sim.grids.landBase.data,size=sim.gridSize,others=sim.entities.filter(e=>e!==target&&e.hp>0&&e.kind==='building'&&e.type!=='farm'&&!(e.type==='gate'&&sim.allied(e.owner,owner)));
+  const data=normal.slice(),base=sim.grids.landBase.data,size=sim.gridSize;
+  const buildings=sim.candidatesFor?.('building')??sim.entities;
+  const others=buildings.filter(e=>{
+    if(e===target||e.hp<=0||e.kind!=='building'||e.type==='farm'||(e.type==='gate'&&sim.allied(e.owner,owner)))return false;
+    // Only overlapping clearance areas can block a cell inside the target.
+    const reach=(target.r+.9)+(e.r+.9);
+    return Math.abs(e.x-target.x)<=reach&&Math.abs(e.z-target.z)<=reach;
+  });
   const a=sim.cell(target.x-target.r-2,target.z-target.r-2),b=sim.cell(target.x+target.r+2,target.z+target.r+2);
   for(let z=a.z;z<=b.z;z++)for(let x=a.x;x<=b.x;x++){
     const wx=x*2-sim.halfWorld+1,wz=z*2-sim.halfWorld+1,id=z*size+x;
@@ -186,10 +193,28 @@ export function findPath(sim,e,dest,range=0,normalOverride=null){
   came[start]=-1;cost[start]=0;marks[start]=search;
   let closest=start,closestH=h(start),found=-1,goalCost=Infinity,iterations=0;
   estimate[start]=closestH;open.push(start,closestH);
+  const visit=(current,id,step)=>{
+    if(marks[id]===settled)return;
+    const nextCost=cost[current]+step+(traffic?.get(id)||0);
+    if(marks[id]===search&&nextCost>=cost[id])return;
+    if(marks[id]!==search)estimate[id]=h(id);
+    marks[id]=search;cost[id]=nextCost;came[id]=current;
+    open.push(id,nextCost+estimate[id]);
+  };
   while(open.size&&iterations++<size*size*2){if(found>=0&&open.lowestScore>=goalCost)break;const current=open.pop();if(marks[current]===settled)continue;const remaining=estimate[current];if(remaining<closestH){closest=current;closestH=remaining;}
     if(goals?goals.has(current):current===end){const score=cost[current]+(goals&&current===start?traffic?.get(start)||0:0);if(score<goalCost){found=current;goalCost=score;}if(current!==start||!traffic?.get(start))break;}
-    marks[current]=settled;const x=current%size,z=Math.floor(current/size);
-    for(const neighbor of NEIGHBORS){const dx=neighbor[0],dz=neighbor[1],nx=x+dx,nz=z+dz,id=nz*size+nx;if(nx<0||nz<0||nx>=size||nz>=size||grid[id]||marks[id]===settled||dx&&dz&&(grid[z*size+nx]||grid[nz*size+x]))continue;const n=cost[current]+(dx&&dz?1.414:1)+(traffic?.get(id)||0);if(marks[id]!==search||n<cost[id]){if(marks[id]!==search)estimate[id]=h(id);marks[id]=search;cost[id]=n;came[id]=current;open.push(id,n+estimate[id]);}}
+    marks[current]=settled;
+    const x=current%size,east=x+1<size&&!grid[current+1],west=x>0&&!grid[current-1];
+    const south=current+size<grid.length&&!grid[current+size],north=current>=size&&!grid[current-size];
+    // Reuse the four side checks at diagonal corners, retaining route tie order.
+    if(east)visit(current,current+1,1);
+    if(west)visit(current,current-1,1);
+    if(south)visit(current,current+size,1);
+    if(north)visit(current,current-size,1);
+    if(east&&south&&!grid[current+size+1])visit(current,current+size+1,1.414);
+    if(east&&north&&!grid[current-size+1])visit(current,current-size+1,1.414);
+    if(west&&south&&!grid[current+size-1])visit(current,current+size-1,1.414);
+    if(west&&north&&!grid[current-size-1])visit(current,current-size-1,1.414);
   }
   e.pathStatus=found<0?'blocked':'ready';const result=[];let id=found<0?closest:found;while(id!==start&&id>=0){result.push({x:id%size*2-half+1,z:Math.floor(id/size)*2-half+1});id=came[id];}result.reverse();if(found===start&&goals)result.push({x:a.x*2-half+1,z:a.z*2-half+1});if(found>=0&&exact&&!goals&&result.length)result[result.length-1]={x:dest.x,z:dest.z};if(a.x!==startCell.x||a.z!==startCell.z)result.unshift({x:a.x*2-half+1,z:a.z*2-half+1});return finishResourceApproach(sim,grid,e,dest,range,result);
 }
