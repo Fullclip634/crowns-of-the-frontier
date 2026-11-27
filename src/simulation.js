@@ -29,7 +29,8 @@ import {tacticalHeight,terrainPhase,highGroundMultiplier,elevationVisionBonus,sl
 import {barrierHash,stampBarriersOnGrid,barrierCollision,applyMapGeography,buildNaturalFortifiedBase} from './terrain-barriers.js';
 import {channelAt,fordAt,dryBankFootprint,drySettlementStart,landBank,waterChannels} from './map-water.js';
 import {ravineRoadAt} from './terrain-layout.js';
-import {deployCampaignTroops,legacyCampaignReplay} from './campaign-attacks.js';
+import {deployCampaignTroops,legacyCampaignReplay,tickCampaignAttacks} from './campaign-attacks.js';
+import {deploySurvivalWave,placeSkirmishShrines,recoverSurvivalAttacker,usesSkirmishRules} from './skirmish-modes.js';
 import {biomeProfile,EPIC_FRONTIER_MAPS} from './terrain-biomes.js';
 import {seedDeerHerds,tickWildlife} from './wildlife.js';
 import {tickHeroesAndWonders,awardHeroExperience,wonderPowerFor,HERO_DEFS,isHeroUnit,triggerHeroSkill} from './heroes.js';
@@ -85,6 +86,7 @@ export class Simulation {
     this.mission=MISSIONS.find(m=>m.id===this.options.mode);if(this.mission?.map)this.options.map=this.mission.map;
     if(this.options.mode==='siege')this.options.map='ironpass';
     if(this.options.mode==='custom')this.options=normalizeBattle(this.options);
+    if(!restoring&&this.options.mode!=='custom'&&usesSkirmishRules(this))this.options.skirmishSimulation=1;
     this.battlefieldLayout=restoring||this.options.replay?(this.options.battlefieldLayout??0):BATTLEFIELD_LAYOUT_VERSION;
     if(this.battlefieldLayout>0)this.options.battlefieldLayout=this.battlefieldLayout;
     const defaultMapSize=['timbervale','bastion','ironpass','blackwood','ironring','sunderedpass','oakhold','threecrowns','emberroad','frostvale',...EPIC_FRONTIER_MAPS].includes(this.options.map)?240:WORLD;
@@ -155,6 +157,7 @@ export class Simulation {
     // Put Chapter VI's coastal capital within siege galleon range. The
     // northern shore keeps it distant from the player's starting harbor.
     if(m==='campaign6'&&!legacyCampaignReplay(this)){dx1=-1;dz1=-103;}
+    if(m==='tides'&&usesSkirmishRules(this)){dx0=0;dx1=-1;}
     this.spawnPositions=[{x:-39+dx0,z:30+dz0},{x:40+dx1,z:-34+dz1}];
     this.players.forEach((p,i)=>{p.start=this.spawnPositions[i]||this.spawnPositions[0];p.age=m==='deathmatch'?3:(m==='regicide'||m==='siege')?2:mission?.age||0;});
     if(m==='regicide')this.players.forEach(p=>p.resources={food:1000,wood:1000,gold:650,stone:650});
@@ -287,6 +290,7 @@ export class Simulation {
       monument.displayName='Crown monument';
       this.revision++;
     }
+    if((m==='dominion'||m==='koth')&&usesSkirmishRules(this))placeSkirmishShrines(this);
     if(m==='siege'){
       const tc0=this.spawnPositions[0],tc1=this.spawnPositions[1];
       buildNaturalFortifiedBase(this,0,tc0,{radius:27,gates:['north','east'],towers:true,complete:true,wallGaps:true,includeResources:false,keepClear:[{x:tc1.x,z:tc1.z,r:34},{x:0,z:0,r:16}],seedOffset:51,backToBorder:true});
@@ -813,8 +817,11 @@ export class Simulation {
     const previousAge=this.players[1].age;
     this.players[1].age=Math.min(3,Math.floor(wave/3));
     let count=types.length;
-    if(this.mission?.survival&&!legacyCampaignReplay(this)){
-      count=deployCampaignTroops(this,1,types,base,{attack:true,frontline:true}).length;
+    const revisedCampaign=this.mission?.survival&&!legacyCampaignReplay(this);
+    const revisedSurvival=this.options.mode==='survival'&&usesSkirmishRules(this);
+    if(revisedCampaign||revisedSurvival){
+      count=revisedCampaign?deployCampaignTroops(this,1,types,base,{attack:true,frontline:true}).length:
+        deploySurvivalWave(this,types,[base,...sides.filter(point=>point!==base)]);
       if(!count){this.players[1].age=previousAge;this.nextWave=this.time+5;return;}
     }else{
       const tc=this.owned(0,'building','towncenter')[0];
@@ -828,12 +835,32 @@ export class Simulation {
     if(this.wave>1)for(const key of ['food','wood','gold'])this.players[0].resources[key]+=80+this.wave*15;
   }
   tickShrines(dt){const shrines=this.candidatesFor('shrine');if(!shrines.length)return;
-    for(const s of shrines){const troops=[0,1].map(owner=>this.owned(owner,'unit').filter(e=>e.type!=='villager'&&distance(s,e)<7).length);const side=troops[0]>0&&troops[1]===0?0:troops[1]>0&&troops[0]===0?1:-1;
+    const revised=(this.options.mode==='dominion'||this.options.mode==='koth')&&usesSkirmishRules(this);
+    const eligible=e=>revised?!e.embarked&&!UNITS[e.type].naval&&UNITS[e.type].damage>0:e.type!=='villager';
+    for(const s of shrines){const troops=[0,1].map(owner=>this.owned(owner,'unit').some(e=>eligible(e)&&distance(s,e)<7));const side=troops[0]&&!troops[1]?0:troops[1]&&!troops[0]?1:-1;
       if(side>=0&&s.owner!==side){if(s.capturer!==side){s.capturer=side;s.progress=0;}s.progress+=dt;if(s.progress>=18){s.owner=side;s.progress=0;this.emit('capture',{owner:side});}}else if(side<0)s.progress=Math.max(0,s.progress-dt*.5);
       if(s.owner>=0)this.players[s.owner].resources.gold+=dt*.55;
     }
     const isKoth=this.options.mode==='koth';
-    this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;if(this.hold>=180)this.end(true,isKoth?'The central monument belongs to your crown.':'The sacred valley is yours.');if(this.enemyHold>=180)this.end(false,isKoth?'The rival kingdom held the central monument.':'The rival kingdom united the sacred valley.');
+    this.hold=shrines.every(e=>e.owner===0)?this.hold+dt:0;this.enemyHold=shrines.every(e=>e.owner===1)?this.enemyHold+dt:0;
+    if(revised&&!this.count(0,'building','towncenter'))return;
+    if(this.hold>=180)this.end(true,isKoth?'The central monument belongs to your crown.':'The sacred valley is yours.');
+    if(this.enemyHold>=180&&(!revised||this.count(1,'building','towncenter')))this.end(false,isKoth?'The rival kingdom held the central monument.':'The rival kingdom united the sacred valley.');
+  }
+  tickWonderRace(dt){
+    const revised=usesSkirmishRules(this);
+    if(revised&&!this.count(0,'building','towncenter'))return;
+    if(revised)this.wonderTargets??=[null,null];
+    for(let owner=0;owner<2;owner++){
+      const complete=this.owned(owner,'building','wonder').filter(e=>e.progress>=1);
+      if(revised){
+        const previous=this.wonderTargets[owner],current=complete.find(e=>e.id===previous)||complete[0];
+        if(previous!=null&&previous!==current?.id)this.wonderTime[owner]=0;
+        this.wonderTargets[owner]=current?.id??null;
+      }
+      this.wonderTime[owner]=complete.length?this.wonderTime[owner]+dt:0;
+      if(this.wonderTime[owner]>=240&&(!revised||this.count(owner,'building','towncenter')))this.end(owner===0,owner===0?'Your monument will stand for a thousand years.':'The rival monument secured their legacy.');
+    }
   }
   unitVision(e){
     if(!e)return 15;
@@ -903,14 +930,18 @@ export class Simulation {
     this.tickProjectiles();
     this.aiClock+=dt;if(this.options.mode==='custom'||this.players.length>2)this.tickCustomAI(dt);else if(this.aiClock>=3*DIFFICULTIES[this.options.difficulty].ai){this.aiClock=0;this.tickAI();}
     const survival=this.options.mode==='survival'||this.mission?.survival;if(survival&&this.time>=this.nextWave&&this.wave<(this.mission?.waves||10))this.spawnWave();
+    if(this.options.mode==='survival'&&this.wave>0&&usesSkirmishRules(this)&&this.time>=(this.nextSurvivalAttackCheck??0)){
+      this.nextSurvivalAttackCheck=this.time+.5;
+      tickCampaignAttacks(this,recoverSurvivalAttacker);
+    }
     this.tickShrines(dt);
-    if(this.options.mode==='wonder'){for(let owner=0;owner<2;owner++){if(this.owned(owner,'building','wonder').some(e=>e.progress>=1))this.wonderTime[owner]+=dt;else this.wonderTime[owner]=0;if(this.wonderTime[owner]>=240)this.end(owner===0,owner===0?'Your monument will stand for a thousand years.':'The rival monument secured their legacy.');}}
+    if(this.options.mode==='wonder')this.tickWonderRace(dt);
     this.fogClock+=dt;if(this.fogClock>.5){this.updateFog();this.fogClock=0;}this.checkVictory();
     retireDeadUnits(this);
     // Bound event history; observers receive events immediately.
     if(this.events.length>200)this.events.splice(0,100);
   }
-  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,campaignRelicVisionBonus:this.campaignRelicVisionBonus||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
+  serialize(){return {version:1,bridgeRoadHalfWidth,rngState:this.rng.state,commanderAI:this.commanderAI||null,campaignRelicVisionBonus:this.campaignRelicVisionBonus||null,options:this.options,entities:this.entities,barriers:this.barriers||[],battlefieldProps:this.battlefieldProps||[],players:this.players,nextId:this.nextId,time:this.time,wave:this.wave,nextWave:this.nextWave,nextAttack:this.nextAttack,hold:this.hold,enemyHold:this.enemyHold,wonderTime:this.wonderTime,...(this.wonderTargets?{wonderTargets:this.wonderTargets}:{}),stats:this.stats,tutorialFlags:this.tutorialFlags,explored:Array.from(this.explored),ended:this.ended,...serializeResourceMemory(this)};}
   static restore(data){
     if(data.version!==1||!Array.isArray(data.entities)||!data.players)throw new Error('Unsupported save file');
     const s=new Simulation(data.options,true);
@@ -924,6 +955,7 @@ export class Simulation {
     }
     s.spawnPositions=starts;
     for(const key of ['entities','players','nextId','time','wave','nextWave','nextAttack','hold','enemyHold','wonderTime','stats','tutorialFlags','ended'])s[key]=data[key];
+    if(Array.isArray(data.wonderTargets))s.wonderTargets=[data.wonderTargets[0]??null,data.wonderTargets[1]??null];
     if(Number.isFinite(data.campaignRelicVisionBonus))s.campaignRelicVisionBonus=data.campaignRelicVisionBonus;
     for(const pl of s.players){if(pl)pl.tech={...Object.fromEntries(Object.keys(TECHS).map(type=>[type,0])),...(pl.tech||{})};}
     s.commanderAI=data.commanderAI||null;
@@ -935,6 +967,7 @@ export class Simulation {
     s.revision++;s.grids={};
     clearSavedBridgeResources(s);
     restoreBridgeOccupants(s,data.bridgeRoadHalfWidth);
+    if(!s.ended&&!s.options.skirmishSimulation&&['dominion','koth'].includes(s.options.mode)&&usesSkirmishRules(s))placeSkirmishShrines(s,{repairOnly:true});
     restoreResourceMemory(s,data.resourceMemory);
     s.updateFog();
     return s;

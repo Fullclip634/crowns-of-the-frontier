@@ -41,7 +41,7 @@ function landSites(sim,origin,reach){
 // Use the same movement grid as the deployed troops, including the clearance
 // that rams need on crossings. Move a raid up its actual route to stage it
 // outside the fort, so a timed attack reaches the fight before the hold ends.
-export function deployCampaignTroops(sim,owner,types,origin,{attack=false,frontline=false}={}){
+export function deployCampaignTroops(sim,owner,types,origin,{attack=false,frontline=false,existingUnit=null}={}){
   const placed=[],terrain=sim.grid(owner),limit=sim.halfWorld-3;
   let preferred=origin,launchSite=null;
   const makeProbe=type=>({kind:'unit',type,owner,r:UNITS[type].radius??(type==='ram'||type==='trebuchet'?1.35:type==='catapult'?1.1:.65)});
@@ -58,7 +58,7 @@ export function deployCampaignTroops(sim,owner,types,origin,{attack=false,frontl
   }
   const nearby=landSites(sim,preferred,18);
   const choices=preferred===origin?nearby:[...nearby,...landSites(sim,origin,18)];
-  const occupied=sim.entities.filter(e=>e.hp>0&&e.kind==='unit'&&!e.embarked&&
+  const occupied=sim.entities.filter(e=>e!==existingUnit&&e.hp>0&&e.kind==='unit'&&!e.embarked&&
     (distance(e,preferred)<=29||distance(e,origin)<=29));
   const home=sim.owned(owner,'building','towncenter')[0],navalPorts=types.some(type=>UNITS[type].naval)?sim.owned(owner,'building','dock'):[];
   const desired=frontline?launchSite:home&&sim.spawnPoint(home);
@@ -86,7 +86,8 @@ export function deployCampaignTroops(sim,owner,types,origin,{attack=false,frontl
       }
     }
     if(!point||Math.abs(point.x)>limit||Math.abs(point.z)>limit)continue;
-    const unit=sim.addUnit(type,owner,point.x,point.z);
+    const unit=existingUnit||sim.addUnit(type,owner,point.x,point.z);
+    if(existingUnit){unit.x=point.x;unit.z=point.z;sim.sightCache=null;}
     occupied.push(unit);
     placed.push(unit);
     if(attack){
@@ -97,12 +98,12 @@ export function deployCampaignTroops(sim,owner,types,origin,{attack=false,frontl
   return placed;
 }
 
-export function tickCampaignAttacks(sim){
-  const continuingWaves=sim.mission?.survival&&sim.wave>0;
+export function tickCampaignAttacks(sim,recoverWaveUnit=null){
+  const continuingWaves=(sim.mission?.survival||sim.options.mode==='survival')&&sim.wave>0;
   for(const unit of sim.entities){
     if(unit.kind!=='unit'||unit.hp<=0||unit.embarked||!(unit.campaignAttack||continuingWaves&&unit.owner===1)||
       !sim.hostile(unit.owner,0)||!UNITS[unit.type].damage||UNITS[unit.type].naval)continue;
-    unit.campaignAttack=true;
+    const fromOlderWave=!unit.campaignAttack;
     if(unit.order?.type==='attack'&&sim.get(unit.order.target)&&unit.pathStatus!=='blocked')continue;
     if(sim.time<(unit.campaignAttackRetry??0))continue;
     unit.campaignAttackRetry=sim.time+3;
@@ -113,6 +114,8 @@ export function tickCampaignAttacks(sim){
         !sim.entities.some(e=>e.kind==='unit'&&e.hp>0&&!e.embarked&&distance(e,point)<(e.r+unit.r)*.9));
       if(point){unit.x=point.x;unit.z=point.z;}
     }
-    giveAttackOrder(sim,unit,attackTarget(sim,unit));
+    const target=attackTarget(sim,unit);
+    if(target){unit.campaignAttack=true;giveAttackOrder(sim,unit,target);}
+    else if(fromOlderWave&&recoverWaveUnit)recoverWaveUnit(sim,unit);
   }
 }

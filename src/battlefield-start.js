@@ -30,14 +30,14 @@ function settlementRegion(sim,grid,center){
   return best;
 }
 
-function dryFootprint(sim,point,radius){
+export function dryFootprint(sim,point,radius){
   if(Math.abs(point.x)+radius>sim.halfWorld-2||Math.abs(point.z)+radius>sim.halfWorld-2||
     bridgeFootprint(sim.options.map,point.x,point.z,radius)||fordAt(sim.options.map,point.x,point.z,radius))return false;
   for(const x of [-radius,0,radius])for(const z of [-radius,0,radius])if(sim.isWater(point.x+x,point.z+z))return false;
   return true;
 }
 
-function nearbyPoint(origin,maxRadius,step,accept){
+export function nearbyPoint(origin,maxRadius,step,accept){
   for(let radius=step;radius<=maxRadius;radius+=step){
     const count=Math.max(8,Math.ceil(2*Math.PI*radius/step));
     for(let i=0;i<count;i++){

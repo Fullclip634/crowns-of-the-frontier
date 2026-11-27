@@ -155,7 +155,7 @@ export function installFrontiers(Simulation){
     const site=e.order?.type==='build'?this.get(e.order.target):null,progress=site?.progress;
     original.tickUnit.call(this,e,dt);
     if(e.owner>0&&site&&progress<1&&site.progress>=1)this.emit('stat-complete',{entity:site});
-    if(this.options.map==='coast'&&!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&(e.passengers||[]).length){const shore={x:-18,z:this.worldSize>=300?58:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:this.worldSize>=300?-56:-24};}
+    if(this.options.map==='coast'&&!this.options.multiplayer&&this.options.mode!=='custom'&&e.type==='transport'&&e.owner===1&&!e.landing&&(e.passengers||[]).length){const shore={x:-18,z:this.worldSize>=300?58:30};if(distance(e,shore)<11&&this.unload(e.id,shore.x,shore.z,1)&&!e.passengers.length)e.order={type:'move',x:10,z:this.worldSize>=300?-56:-24};}
   };
   p.hurt=function(e,amount,attacker){const hp=e.hp;if(attacker?.owner>=0)e.lastAttacker=attacker.owner;original.hurt.call(this,e,amount,attacker);if(hp>0&&e.hp<=0&&e.kind==='unit'){this.revision--;for(const id of e.passengers||[]){const passenger=this.get(id);if(passenger)this.hurt(passenger,passenger.hp,attacker);}}};
   p.canSee=function(owner,entity){

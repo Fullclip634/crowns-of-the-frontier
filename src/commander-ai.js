@@ -11,6 +11,7 @@ import {buildingPlacementGrid,findPath} from './navigation.js';
 import {fortifyKingdomWalls,fortificationReserved} from './ai-fortifications.js';
 import {healableUnit,mechanicalUnit} from './maintenance.js';
 import {applyPersonalityProfile} from './ai-personalities.js';
+import {orderCoastalTransport,usesSkirmishRules} from './skirmish-modes.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const WOUNDED_HP=.28,SIEGE_WOUNDED_HP=.5,RECOVERY_RELEASE_SECONDS=60,RECOVERY_RELEASE_HP=.4;
 const isWounded=unit=>unit.hp<unit.maxHp*(mechanicalUnit(unit)?SIEGE_WOUNDED_HP:WOUNDED_HP);
@@ -551,8 +552,20 @@ export function installCommanderAI(Simulation){
     if(phase==='attack'&&this.time>=nextAttack+55){if(multiKingdom)state.nextAttack=this.time+30;else this.nextAttack=this.time+30;}
     const king=this.owned(owner,'unit','king')[0];if(king&&king.hp<king.maxHp*.8)this.command([king.id],{type:'move',x:tc.x+8,z:tc.z-8});
     if((this.options.mode==='dominion'||this.options.mode==='koth'||this.mission?.dominion)&&phase!=='defend'&&this.time>70){
-      const shrines=this.entities.filter(e=>e.kind==='shrine'&&!this.allied(owner,e.owner));for(let i=0;i<shrines.length;i++){const group=ready.filter(e=>UNITS[e.type].damage>0).slice(i*3,i*3+3);
-        for(const unit of group)if(unit.order?.type!=='attackmove'||distance(unit.order,shrines[i])>6)this.command([unit.id],{type:'attackmove',x:shrines[i].x,z:shrines[i].z});}
+      if(this.options.map==='coast'&&usesSkirmishRules(this)){
+        const available=ready.filter(e=>UNITS[e.type].damage>0&&e.order?.type!=='board');
+        for(const shrine of this.candidatesFor('shrine').filter(e=>!this.allied(owner,e.owner))){
+          const group=available.filter(unit=>Math.sign(unit.x)===Math.sign(shrine.x)&&shouldRetryBlockedOrder(this,unit,shrine.x,shrine.z));
+          group.sort((a,b)=>distance(a,shrine)-distance(b,shrine)||a.id-b.id);
+          for(const unit of group.slice(0,3)){
+            available.splice(available.indexOf(unit),1);
+            if(unit.order?.type!=='attackmove'||distance(unit.order,shrine)>3)this.command([unit.id],{type:'attackmove',x:shrine.x,z:shrine.z});
+          }
+        }
+      }else{
+        const shrines=this.entities.filter(e=>e.kind==='shrine'&&!this.allied(owner,e.owner));for(let i=0;i<shrines.length;i++){const group=ready.filter(e=>UNITS[e.type].damage>0).slice(i*3,i*3+3);
+          for(const unit of group)if(unit.order?.type!=='attackmove'||distance(unit.order,shrines[i])>6)this.command([unit.id],{type:'attackmove',x:shrines[i].x,z:shrines[i].z});}
+      }
     }
     if(this.options.mode==='wonder'&&player.age===3&&this.time>600&&!buildings.some(b=>b.type==='wonder'))this.commanderBuild('wonder',null,owner);
   };
@@ -563,6 +576,12 @@ export function installCommanderAI(Simulation){
     const ships=this.owned(owner,'unit').filter(e=>UNITS[e.type].naval&&UNITS[e.type].damage),target=visible.find(e=>e.kind==='unit'&&UNITS[e.type].naval)||known.find(e=>e.type==='dock');
     for(const ship of ships){if(target){if(ship.order?.type!=='attackmove'||distance(ship.order,target)>6)this.command([ship.id],{type:'attackmove',x:target.x,z:target.z});}
       else if(!ship.order)this.patrol([ship.id],-6,28,false,1);}
+    if(usesSkirmishRules(this)){
+      const shrine=this.candidatesFor('shrine').find(e=>Math.sign(e.x)!==Math.sign(tc.x)&&!this.allied(owner,e.owner));
+      const objective=shrine||this.players[0].start;
+      for(const ship of this.owned(owner,'unit','transport'))orderCoastalTransport(this,ship,landArmy,tc,visible,known,objective);
+      return;
+    }
     for(const ship of this.owned(owner,'unit','transport')){ship.passengers??=[];
       const boarding=landArmy.filter(e=>e.order?.type==='board'&&e.order.target===ship.id);
       if(ship.passengers.length>=4&&(!boarding.length||ship.passengers.length>=8||this.time-(ship.loadingSince||this.time)>18)){
