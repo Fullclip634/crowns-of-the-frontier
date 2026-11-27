@@ -252,7 +252,7 @@
 #modal-root .modal .setup-grid>div{min-width:0}
 #modal-root .modal .faction-description,#modal-root .modal .tree-note{min-height:0;margin:6px 0 2px;font-size:11.5px;line-height:1.45;color:#a4b79d}
 #modal-root .modal select,
-#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]),
+#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]):not([data-keybind]),
 #modal-root #lan-name,
 #modal-root .lan-join input{
   box-sizing:border-box;
@@ -282,11 +282,117 @@
   text-overflow:ellipsis;
 }
 #modal-root .modal select:focus,
-#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]):focus,
+#modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]):not([data-keybind]):focus,
 #modal-root #lan-name:focus,
 #modal-root .lan-join input:focus{
   border-color:#e6c87d;
   box-shadow:0 0 0 2px rgba(230,200,125,.18);
+}
+/* Obsidian & Brass Engraved Keyboard Controls Grid (fixed-width aligned keycaps, zero text caret or double focus ring) */
+#modal-root .modal .keyboard-settings{
+  margin:18px 0 4px;
+  padding:14px 0 0;
+  border-top:1px solid rgba(224,185,110,.22);
+}
+#modal-root .modal .keyboard-settings h3{
+  font-family:var(--serif);
+  font-size:22px;
+  font-weight:600;
+  line-height:1.15;
+  color:#f5edd8;
+  margin:0 0 6px;
+}
+#modal-root .modal .keyboard-settings>p{
+  margin:0 0 12px;
+  font-size:12px;
+  line-height:1.5;
+  color:#b4c5ab;
+}
+#modal-root .modal .keybind-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 12px;
+  margin:12px 0 14px;
+}
+#modal-root .modal .keybind-grid label{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  min-height:44px;
+  padding:6px 8px 6px 12px;
+  border-radius:5px;
+  border:1px solid rgba(224,185,110,.20);
+  background:linear-gradient(180deg,rgba(19,33,27,.86),rgba(12,22,18,.92));
+  color:#dfe6d5;
+  font-size:12.5px;
+  font-weight:500;
+  line-height:1.25;
+  cursor:pointer;
+  transition:border-color .16s ease,background-color .16s ease;
+}
+#modal-root .modal .keybind-grid label:hover{
+  border-color:rgba(232,198,122,.44);
+}
+#modal-root .modal .keybind-grid label:focus-within{
+  border-color:#efd080;
+  background:linear-gradient(180deg,rgba(32,46,34,.94),rgba(16,26,20,.96));
+}
+#modal-root .modal .keybind-grid .keybind-label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#modal-root .modal .keybind-grid input[data-keybind]{
+  box-sizing:border-box;
+  width:96px;
+  min-width:96px;
+  max-width:96px;
+  height:32px;
+  min-height:32px;
+  flex:none;
+  margin:0;
+  padding:0 8px;
+  border-radius:4px;
+  border:1px solid rgba(232,198,122,.42);
+  background:linear-gradient(180deg,#1d352a,#11221a);
+  box-shadow:inset 0 1px 0 rgba(255,244,206,.16),0 2px 0 rgba(4,10,7,.76);
+  color:#f3d78a;
+  font-size:12px!important;
+  font-weight:700;
+  letter-spacing:.03em;
+  line-height:1;
+  text-align:center;
+  cursor:pointer;
+  caret-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:border-color .15s ease,background .15s ease,box-shadow .15s ease,color .15s ease;
+}
+#modal-root .modal .keybind-grid input[data-keybind]:focus,
+#modal-root .modal .keybind-grid input[data-keybind]:focus-visible{
+  outline:none;
+  border-color:#f7de90;
+  background:linear-gradient(180deg,rgba(86,70,26,.96),rgba(46,36,14,.98));
+  color:#fff6d6;
+  box-shadow:0 0 0 2px rgba(247,222,144,.28),inset 0 1px 0 rgba(255,248,220,.26);
+}
+#modal-root .modal .keybind-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px 14px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+#modal-root .modal .keybind-footer .binding-feedback{
+  margin:0;
+  flex:1 1 220px;
+  font-size:11.5px;
+  line-height:1.4;
+  color:#a8bca0;
 }
 #modal-root .battle-slot input,
 #modal-root .battle-slot select{
@@ -403,8 +509,8 @@
   .landing-footer{display:none!important}
   .settings-tab span{font-size:10px}
   /* Phone Landscape: Crisp, tightly proportioned setup & multiplayer modals with pixel-matched fields */
-  #modal-root .modal-backdrop{padding:7px calc(10px + var(--safe-right,0px)) 7px calc(10px + var(--safe-left,0px))}
-  #modal-root .modal{padding:14px 18px;max-height:calc(100dvh - 14px)}
+  #modal-root .modal-backdrop{padding:calc(7px + var(--safe-top,0px)) calc(10px + var(--safe-right,0px)) calc(7px + var(--safe-bottom,0px)) calc(10px + var(--safe-left,0px))}
+  #modal-root .modal{padding:14px 18px;max-height:calc(100dvh - 14px - var(--safe-top,0px) - var(--safe-bottom,0px))}
   #modal-root .modal .modal-close{top:8px;right:10px;width:34px;height:34px;min-height:34px}
   #modal-root .modal h2{font-size:23px;line-height:1.1;margin:4px 0 8px}
   #modal-root .modal .modal-intro{font-size:11.5px;line-height:1.42;margin:0 0 10px}
@@ -413,7 +519,7 @@
   #modal-root .modal .setup-grid{gap:8px 14px}
   #modal-root .modal .field-label{margin:2px 0 5px;font-size:9.5px;letter-spacing:.9px}
   #modal-root .modal select,
-  #modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]),
+  #modal-root .modal input:not([type=checkbox]):not([type=range]):not([type=hidden]):not([data-keybind]),
   #modal-root #lan-name,
   #modal-root .lan-join input{
     height:36px;
@@ -421,6 +527,13 @@
     padding:0 10px;
     font-size:13px!important;
   }
+  #modal-root .modal .keyboard-settings{margin:12px 0 2px;padding:10px 0 0}
+  #modal-root .modal .keyboard-settings h3{font-size:19px;margin:0 0 4px}
+  #modal-root .modal .keyboard-settings>p{font-size:11px;line-height:1.4;margin:0 0 10px}
+  #modal-root .modal .keybind-grid{gap:6px 10px;margin:8px 0 10px}
+  #modal-root .modal .keybind-grid label{min-height:38px;padding:4px 7px 4px 10px;gap:8px;font-size:11.5px}
+  #modal-root .modal .keybind-grid input[data-keybind]{width:88px;min-width:88px;max-width:88px;height:28px;min-height:28px;font-size:11.5px!important}
+  #modal-root .modal .keybind-footer .binding-feedback{font-size:11px}
   #modal-root .modal select{padding-right:30px;background-position:right 9px center}
   #modal-root .battle-slot input,
   #modal-root .battle-slot select{height:34px;min-height:34px;font-size:12px!important}
@@ -450,5 +563,7 @@
   .hero-subrow{grid-template-columns:1fr 1fr}
   .settings-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
   #modal-root .modal{padding:20px 16px}
+  #modal-root .modal .keybind-grid{grid-template-columns:1fr;gap:6px}
+  #modal-root .modal .keybind-grid input[data-keybind]{width:96px;min-width:96px;max-width:96px;height:34px;min-height:34px;font-size:12px!important}
   #modal-root .custom-dialog .custom-launch{bottom:-20px;margin:12px -16px -20px;padding:10px 16px 14px}
 }

@@ -228,6 +228,19 @@ describe('Phase 5: Upgraded Tech Tree, Hero Menu, Skirmish Hub & 5-Tab Settings'
     assert.doesNotMatch(css,/backdrop-filter\s*:\s*blur/i);
     assert.match(css,/backdrop-filter\s*:\s*none/i);
   });
+
+  it('keeps Keyboard controls keycaps fixed-width, caret-free, and aligned on mobile & desktop',()=>{
+    const css=fs.readFileSync(new URL('../src/menus-overhaul.css',import.meta.url),'utf8');
+    const ifaceCss=fs.readFileSync(new URL('../src/interface.css',import.meta.url),'utf8');
+    const js=fs.readFileSync(new URL('../src/keyboard-settings.js',import.meta.url),'utf8');
+    assert.match(js,/inputmode="none"/,'keybind inputs suppress mobile soft keyboard');
+    assert.match(js,/class="keybind-row"/);
+    assert.match(js,/class="keybind-label"/);
+    assert.match(css,/#modal-root \.modal input:not\(\[type=checkbox\]\):not\(\[type=range\]\):not\(\[type=hidden\]\):not\(\[data-keybind\]\)/,'full-width modal input rule must never stretch keybind keycaps');
+    assert.match(css,/#modal-root \.modal \.keybind-grid input\[data-keybind\][\s\S]*width:\s*96px[\s\S]*caret-color:\s*transparent/,'keybind keycaps stay fixed-width and caret-free');
+    assert.match(css,/#modal-root \.modal \.keybind-grid input\[data-keybind\]:focus[\s\S]*outline:\s*none/,'focused keycap removes double outline');
+    assert.match(ifaceCss,/\.modal input:not\(\[data-keybind\]\)/,'coarse-pointer 16px input override excludes keybind keycaps');
+  });
 });
 
 describe('Phase 5: Health Bar Modes & Audio Sub-Sliders',()=>{

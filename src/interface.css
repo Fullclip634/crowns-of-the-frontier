@@ -4,7 +4,7 @@ html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout
 html,body{touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Declare this on scroll containers too: older Safari can stop at that ancestor. */
 #hud,#modal-root,.modal,.selection-panel,button,a,input,select,textarea,summary{touch-action:manipulation}
-@media(any-pointer:coarse){input,select,textarea,.modal select,.modal input,.battle-slot input,.battle-slot select,.modal .keybind-grid input{font-size:16px!important}}
+@media(any-pointer:coarse){input:not([data-keybind]),select,textarea,.modal select,.modal input:not([data-keybind]),.battle-slot input,.battle-slot select{font-size:16px!important}}
 .graphics-support{margin:12px 0;min-width:0;border:1px solid #b6a16b44;padding:10px;border-radius:3px}
 .graphics-support summary{cursor:pointer;min-height:44px;display:list-item;color:var(--gold);font-size:12px}
 .graphics-report-details{margin-top:8px}
