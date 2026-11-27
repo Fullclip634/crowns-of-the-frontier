@@ -4,7 +4,7 @@
 // unit acknowledgments, battle grunts, seamless biome ambience loops, and 4-stage
 // adaptive medieval music), and when the pack is unavailable every call falls
 // straight through to the Web Audio synthesis.
-import {createSampleBank,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES} from './sample-bank.js';
+import {createSampleBank,UI_SAMPLE_CUES,FOLEY_SAMPLE_CUES,AMBIENCE_SAMPLE_CUES,GRUNT_SAMPLE_CUES,MUSIC_STEM_CUES,COMMS_SAMPLE_CUES} from './sample-bank.js';
 import {HORN_COOLDOWN,VOICE_COOLDOWN,isHumanVoiceUnit,unitVoiceArchetype} from './voice-system.js';
 
 const HORN_FUNDAMENTAL=174.61;
@@ -183,6 +183,43 @@ export function installSampledAudio(AudioEngine,options={}){
       }else return false;
     }
     return voice?voice.call(this,kind,unit,faction,pan):false;
+  };
+
+  p.stopCommsVoice=function(){
+    const active=this.activeCommsSource;
+    this.activeCommsSource=null;
+    if(!active)return;
+    try{active.source.onended=null;active.source.stop();}catch{}
+    try{active.source.disconnect();active.level.disconnect();}catch{}
+  };
+
+  p.playCommsVoice=function(cueName='comms-ally',{faction='alder',rate=1,gain=.76,delaySec=0,onEnded=null}={}){
+    if(!COMMS_SAMPLE_CUES.includes(cueName))return null;
+    const ctx=this.context,buffer=this.sampleBank?.get(cueName);
+    if(!ctx||!buffer||ctx.state!=='running'||this.settings.volume<=0)return null;
+    if(this.settings.voiceComms===false||this.settings.unitVoices===false||(this.settings.voiceVolume??1)<=0)return null;
+    this.stopCommsVoice();
+    const source=ctx.createBufferSource(),level=ctx.createGain();
+    const pitchRate=Math.max(.82,Math.min(1.18,rate*(FACTION_VOICE_RATE[faction]||1.0)));
+    source.buffer=buffer;
+    if(source.playbackRate)source.playbackRate.value=pitchRate;
+    level.gain.value=gain;
+    source.connect(level);
+    const outBus=this.voiceBus||this.master;
+    level.connect(outBus);
+    if(this.reverbSend)level.connect(this.reverbSend);
+    const startAt=ctx.currentTime+Math.max(0,delaySec);
+    const durSec=((buffer.duration||1.0)/pitchRate)+Math.max(0,delaySec);
+    const handle={source,level};
+    this.activeCommsSource=handle;
+    source.onended=()=>{
+      if(this.activeCommsSource===handle)this.activeCommsSource=null;
+      try{source.disconnect();level.disconnect();}catch{}
+      onEnded?.();
+    };
+    source.start(startAt);
+    this.duckMusic?.(Math.max(1.2,durSec+.4),.56);
+    return {played:true,cue:cueName,durationMs:Math.round(durSec*1000)};
   };
 
   p.buildingSelect=function(entity){

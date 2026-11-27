@@ -172,13 +172,28 @@ export function synthesizeWarHorn(context, fundamental = 174.61) {
   return { output: bellFilter, duration };
 }
 
-function selectAnnouncerVoice(synth) {
+const TTS_FEMALE_PATTERN = /female|google us english\b|zira|hazel|susan|sonia|aria|ava|emma|jenny|libby|samantha|victoria|karen|moira|tessa|fiona|kate|serena|claire|natasha|clara|michelle|ana\b|amy\b|joanna|salli|kimberly|kendra/i;
+const TTS_MALE_PATTERN = /\bmale\b|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan|arthur|chris|christopher|eric|roger|tony|davis|jason|brandon|oliver|thomas|william|liam|connor|mitchell|alex|fred|matthew|joey|justin/i;
+
+export function selectAnnouncerVoice(synth) {
   try {
     const voices = synth.getVoices?.() || [];
     if (!voices.length) return null;
     const english = voices.filter(v => /^en\b/i.test(v.lang || ''));
     const pool = english.length ? english : voices;
-    return pool.find(v => /natural|neural|google uk|google us|ryan|brian|andrew|george|daniel|arthur|guy|david/i.test(v.name || '')) || pool[0];
+    // Royal Herald is always male — strictly prefer male voices and never let a female voice win by alphabetical order!
+    const score = v => {
+      const name = (v.name || '').toLowerCase();
+      let s = 0;
+      if (/natural|neural|online/.test(name)) s += 38;
+      if (/google uk|microsoft (ryan|brian|andrew|george|guy|david|daniel|arthur|mark|richard|steffan)/.test(name)) s += 26;
+      if (/en-gb/i.test(v.lang || '')) s += 14;
+      if (TTS_MALE_PATTERN.test(name) && !TTS_FEMALE_PATTERN.test(name)) s += 55;
+      else if (TTS_FEMALE_PATTERN.test(name)) s -= 95;
+      return s;
+    };
+    const ranked = [...pool].sort((a, b) => score(b) - score(a));
+    return ranked[0] || pool[0];
   } catch {
     return null;
   }
@@ -321,6 +336,7 @@ export function installVoiceSystem(AudioEngine) {
         role: 'herald',
         faction: opts.faction || 'alder',
         text,
+        cue: 'comms-alert',
         priority: 1,
         urgent: true,
         horn: false,
@@ -329,7 +345,13 @@ export function installVoiceSystem(AudioEngine) {
       return true;
     }
 
-    // Standalone fallback when no WarComms director is attached (e.g. isolated unit tests).
+    // Prefer real recorded CC0 male herald voice when the sample bank is decoded (no robotic browser TTS!).
+    if (this.settings.ttsNarration !== true && this.sampleBank?.has('comms-alert') && typeof this.playCommsVoice === 'function') {
+      this.playCommsVoice('comms-alert', { faction: opts.faction || 'alder', delaySec: 0.35 });
+      return true;
+    }
+
+    // Standalone fallback when no sample bank or WarComms director is attached (e.g. isolated unit tests).
     const vol = (this.settings.volume ?? 0.65) * (this.settings.voiceVolume ?? 1);
     speakKingdomAlert(text, vol, null);
     return true;

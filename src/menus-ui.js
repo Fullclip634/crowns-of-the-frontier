@@ -246,7 +246,8 @@ export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,gr
       <label class="field-label" for="ui-volume">UI &amp; ALERT CUES <span data-vol-label="ui-volume">${volPct(settings.uiVolume??1)}</span></label>
       <input type="range" id="ui-volume" min="0" max="1" step=".05" value="${settings.uiVolume??1}">
       <label class="toggle"><input id="music" type="checkbox" ${settings.music?'checked':''}> Ambient music</label>
-      <label class="toggle"><input id="voice-comms" type="checkbox" ${settings.voiceComms!==false?'checked':''}> Commander &amp; warlord speech</label>
+      <label class="toggle"><input id="voice-comms" type="checkbox" ${settings.voiceComms!==false?'checked':''}> Commander &amp; warlord voices</label>
+      <label class="toggle"><input id="tts-narration" type="checkbox" ${settings.ttsNarration?'checked':''}> Read full lines aloud (Browser TTS) <small>Off by default — uses real recorded human voices instead of computer speech.</small></label>
       <label class="toggle"><input id="unit-voices" type="checkbox" ${settings.unitVoices!==false?'checked':''}> Unit responses &amp; acknowledgments</label>
       <label class="toggle"><input id="war-horns" type="checkbox" ${settings.warHorns!==false?'checked':''}> Brass war horn &amp; rally alerts</label>
       <label class="toggle"><input id="weather-sounds" type="checkbox" ${settings.weatherSounds?'checked':''}> Rain, wind, and thunder sounds</label>

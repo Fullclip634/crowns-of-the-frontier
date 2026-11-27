@@ -22,6 +22,10 @@ export const VOICE_SAMPLE_CUES=Object.freeze([
   'voice-select','voice-order','voice-attack','voice-work',
   'unit-cavalry','unit-archer','unit-healer','unit-hero','unit-hold',
 ]);
+export const COMMS_SAMPLE_CUES=Object.freeze([
+  'comms-alert','comms-begin','comms-enemy','comms-ally',
+  'comms-ally-attack','comms-ally-hold','comms-ally-help','comms-objective','comms-female',
+]);
 export const GRUNT_SAMPLE_CUES=Object.freeze(['grunt-0','grunt-1','grunt-2']);
 export const MUSIC_STEM_CUES=Object.freeze(['music-peace','music-tension','music-battle','music-climax']);
 export const COMBAT_KINDS=Object.freeze(['metal','arrow','wood','siege','earth']);

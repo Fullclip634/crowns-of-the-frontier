@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {AudioEngine} from '../src/audio.js';
-import {unitVoiceArchetype,formatAttackAlertText,VOICE_COOLDOWN,NOTICE_WARN_COOLDOWN} from '../src/voice-system.js';
+import {unitVoiceArchetype,formatAttackAlertText,selectAnnouncerVoice,VOICE_COOLDOWN,NOTICE_WARN_COOLDOWN} from '../src/voice-system.js';
 import {createSampleBank} from '../src/sample-bank.js';
 import {buildingSelectCue,installSampledAudio} from '../src/sampled-audio.js';
-import {WarCommsController} from '../src/war-comms.js';
+import {WarCommsController,selectCommsCue} from '../src/war-comms.js';
 import {BattleChatPanel} from '../src/battle-chat.js';
 import {settingsModalMarkup} from '../src/menus-ui.js';
 import {commanderPortraitSvg} from '../src/commander-portraits.js';
@@ -266,4 +266,64 @@ test('AoE-style building selection signatures and spatialized siege/hero/collaps
   assert.equal(eng.triggerSiegeStinger('hero'),true,'hero skill plays mastered hero-skill sample');
   assert.equal(eng.triggerSiegeStinger('wonder'),true,'wonder skips clashing synth oscillator when age-up sample is ready');
   assert.equal(eng.procedural.filter(p=>p.startsWith('osc:')).length,0,'zero raw synth oscillators fired when samples are loaded');
+});
+
+test('WarComms uses real CC0 recorded human voices by default (never browser AI TTS) and fixes optional TTS gender casting',async()=>{
+  // 1. Cue selection routes male warlords, herald alerts, allied commands, objectives, and female commanders accurately.
+  assert.equal(selectCommsCue({speaker:'Royal Herald',role:'herald',text:'Your town center is under attack!'}),'comms-alert');
+  assert.equal(selectCommsCue({speaker:'Overlord Draven',role:'enemy',text:'Your fortress will burn!'}),'comms-enemy');
+  assert.equal(selectCommsCue({speaker:'Queen Maren',role:'ally',text:'Holding the pass beside you!'}),'comms-female');
+  assert.equal(selectCommsCue({speaker:'Lady Vaelen',role:'ally',text:'Attack now!'}),'comms-female');
+  assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-attack',text:'Charge!'}),'comms-ally-attack');
+  assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-hold',text:'Hold the pass!'}),'comms-ally-hold');
+  assert.equal(selectCommsCue({speaker:'Marshal Rowan',role:'ally',cue:'comms-ally-help',text:'Help!'}),'comms-ally-help');
+  assert.equal(selectCommsCue({speaker:'Frontier Command',role:'ally',cue:'comms-objective',text:'Objective complete'}),'comms-objective');
+
+  // 2. Default mode (ttsNarration false) plays real CC0 voice clips and NEVER invokes browser speechSynthesis!
+  const origWin=globalThis.window,origUtt=globalThis.SpeechSynthesisUtterance;
+  let ttsCalls=0;
+  const mockVoices=[
+    {name:'Microsoft Sonia Online (Natural) - English (United Kingdom)',lang:'en-GB'},
+    {name:'Microsoft Aria Online (Natural) - English (United States)',lang:'en-US'},
+    {name:'Google US English',lang:'en-US'},
+    {name:'Google UK English Female',lang:'en-GB'},
+    {name:'Google UK English Male',lang:'en-GB'},
+    {name:'Microsoft David - English (United States)',lang:'en-US'},
+  ];
+  globalThis.SpeechSynthesisUtterance=class{constructor(t){this.text=t;}};
+  globalThis.window={speechSynthesis:{getVoices:()=>mockVoices,speak(){ttsCalls++;},cancel(){}}};
+  try{
+    const playedCues=[];
+    const {eng}=mockAudio({ttsNarration:false});
+    eng.playCommsVoice=(cue,opts)=>{playedCues.push({cue,...opts});return {played:true,cue,durationMs:800};};
+    eng.stopCommsVoice=()=>{};
+    const comms=new WarCommsController(null,{audio:eng,settings:eng.settings});
+    comms.speak({speaker:'Overlord Draven',role:'enemy',faction:'raven',text:'Prepare for war!',urgent:true});
+    assert.equal(ttsCalls,0,'default mode must NEVER call robotic browser speechSynthesis');
+    assert.equal(playedCues.length,1);
+    assert.equal(playedCues[0].cue,'comms-enemy');
+    comms.cancelSpeech();
+
+    // 3. Optional TTS gender casting: male warlords/marshals & Royal Herald NEVER pick Sonia/Aria/Google US/UK Female!
+    for(const maleSpeaker of ['Overlord Draven','Marshal Rowan','Forgemaster Borin','Warlord Malrik','Royal Herald']){
+      const cast=comms._selectVoice(maleSpeaker,'alder',maleSpeaker==='Royal Herald'?'herald':'enemy');
+      assert.ok(cast.voice,'a voice is selected');
+      assert.doesNotMatch(cast.voice.name,/Sonia|Aria|Google US English|Female/i,`${maleSpeaker} must never pick a female TTS voice (got ${cast.voice.name})`);
+    }
+    const queenCast=comms._selectVoice('Queen Maren','alder','ally');
+    assert.match(queenCast.voice.name,/Sonia|Aria|Female/i,'female commander selects a female TTS voice');
+
+    const heraldVoice=selectAnnouncerVoice(globalThis.window.speechSynthesis);
+    assert.doesNotMatch(heraldVoice.name,/Sonia|Aria|Google US English|Female/i,`Royal Herald announcer must be male (got ${heraldVoice.name})`);
+
+    // 4. Settings modal exposes opt-in #tts-narration unchecked by default.
+    const html=settingsModalMarkup({
+      settings:{volume:.7,musicVolume:.8,voiceVolume:.9,uiVolume:.8,music:true,voiceComms:true,ttsNarration:false,unitVoices:true,warHorns:true,weatherSounds:true,frameRate:'auto',cameraPreset:'balanced',healthBarMode:'smart',hudScale:'1',minimapSide:'left',edgeScroll:true,edgeScrollSpeed:1,weather:'auto',lighting:'day',fog:true},
+      graphicsMode:'auto',rendererStatusText:'WebGL 2',graphicsSupportHtml:'',activeTab:'audio',
+    });
+    assert.match(html,/id="tts-narration"/);
+  }finally{
+    globalThis.window=origWin;
+    globalThis.SpeechSynthesisUtterance=origUtt;
+  }
 });

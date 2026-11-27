@@ -9,6 +9,28 @@ const FEMALE_SPEAKERS=/queen|lady|syra|maera|sera|sela|ilya|isolde|vaelen/i;
 const HEAVY_SPEAKERS=/draven|krag|korr|malrik|borin|arak|skald|overlord|siege|forge/i;
 const FIERCE_SPEAKERS=/vex|varek|kael|raider|khan/i;
 const HERALD_SPEAKERS=/herald|architect|command/i;
+const TTS_FEMALE_VOICES=/female|google us english\b|zira|hazel|susan|sonia|aria|ava|emma|jenny|libby|samantha|victoria|karen|moira|tessa|fiona|kate|serena|claire|natasha|clara|michelle|ana\b|amy\b|joanna|salli|kimberly|kendra/i;
+const TTS_MALE_VOICES=/\bmale\b|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan|arthur|chris|christopher|eric|roger|tony|davis|jason|brandon|oliver|thomas|william|liam|connor|mitchell|alex|fred|matthew|joey|justin/i;
+
+export function selectCommsCue(item={}){
+  if(FEMALE_SPEAKERS.test(item.speaker||''))return 'comms-female';
+  if(item.cue)return item.cue;
+  const text=(item.text||'').toLowerCase();
+  if(item.role==='herald'){
+    if(/complete|victory|achieved|stands complete/.test(text))return 'comms-objective';
+    return 'comms-alert';
+  }
+  if(item.role==='enemy')return 'comms-enemy';
+  if(item.role==='player'){
+    if(/foundations|wonder|builders/.test(text))return 'comms-ally';
+    return 'comms-ally-attack';
+  }
+  if(/under fire|gates|help|backup|relief|hang on/.test(text))return 'comms-ally-help';
+  if(/hold|shield|pass|chokepoint|fortify/.test(text))return 'comms-ally-hold';
+  if(/charge|attack|strike|march|assault/.test(text))return 'comms-ally-attack';
+  if(/objective|complete|liberated|secured/.test(text))return 'comms-objective';
+  return 'comms-ally';
+}
 
 const ENEMY_LINES={
   opening:[
@@ -172,26 +194,34 @@ export class WarCommsController{
     const heavy=HEAVY_SPEAKERS.test(speaker||'')||faction==='iron';
     const fierce=FIERCE_SPEAKERS.test(speaker||'')||faction==='raven';
     const herald=role==='herald'||HERALD_SPEAKERS.test(speaker||'');
+    const isFemaleVoice=v=>TTS_FEMALE_VOICES.test(v?.name||'');
+    const isMaleVoice=v=>TTS_MALE_VOICES.test(v?.name||'')&&!isFemaleVoice(v);
     const score=v=>{
       let s=0;
       const name=(v.name||'').toLowerCase();
-      if(/natural|neural|online/.test(name))s+=42;
-      if(/google uk|google us|microsoft (ryan|brian|andrew|george|sonia|aria|ava|emma|guy|david|zira|daniel|arthur|libby)/.test(name))s+=26;
+      if(/natural|neural|online/.test(name))s+=38;
+      if(/google uk|microsoft (ryan|brian|andrew|george|sonia|aria|ava|emma|guy|david|zira|daniel|arthur|libby|mark|richard|steffan)/.test(name))s+=26;
       if(/en-gb/i.test(v.lang))s+=14;
-      const looksFemale=/female|zira|hazel|susan|sonia|aria|ava|emma|jenny|libby|samantha|victoria|karen|moira/.test(name);
-      const looksMale=/male|david|george|ryan|brian|andrew|guy|daniel|james|mark|richard|steffan|arthur/.test(name);
-      if(female&&looksFemale)s+=36;
-      else if(!female&&looksMale)s+=36;
-      else if(female&&looksMale)s-=22;
+      const looksFemale=isFemaleVoice(v);
+      const looksMale=isMaleVoice(v);
+      if(female){
+        if(looksFemale)s+=55;
+        else if(looksMale)s-=95;
+      }else{
+        if(looksMale)s+=55;
+        else if(looksFemale)s-=95;
+      }
       return s;
     };
     const ranked=[...this.voices].sort((a,b)=>score(b)-score(a));
-    // Give distinct characters slightly different ranked voices when multiple quality voices exist.
+    // Never leak a female voice into a male commander's pool (or vice versa) when matching voices exist.
+    const genderClean=ranked.filter(v=>female?!isMaleVoice(v):!isFemaleVoice(v));
+    const pool=genderClean.length?genderClean:ranked;
     const hash=[...(speaker||'')].reduce((n,c)=>((n*31)+c.charCodeAt(0))>>>0,0);
-    const topPool=ranked.slice(0,Math.min(3,ranked.length));
-    const voice=herald?(ranked[0]||null):(topPool.length?topPool[hash%topPool.length]:null);
-    const pitch=female?1.06:herald?0.88:heavy?0.74:fierce?0.85:faction==='sun'?0.98:0.90;
-    const rate=herald?0.95:heavy?0.90:fierce?1.03:0.96;
+    const topPool=pool.slice(0,Math.min(3,pool.length));
+    const voice=herald?(pool[0]||null):(topPool.length?topPool[hash%topPool.length]:null);
+    const pitch=female?1.04:herald?0.86:heavy?0.74:fierce?0.84:faction==='sun'?0.94:0.88;
+    const rate=herald?0.95:heavy?0.90:fierce?1.02:0.95;
     const cast={voice,pitch,rate};
     if(this.voices.length)this.voiceCache.set(cacheKey,cast);
     return cast;
@@ -270,6 +300,7 @@ export class WarCommsController{
     this.activeItem=null;
     this.queue.length=0;
     this._setBannerSpeaking(false);
+    this.audio?.stopCommsVoice?.();
     this.audio?.setCommsSpeaking?.(false);
     try{window.speechSynthesis?.cancel?.();}catch{}
   }
@@ -292,10 +323,10 @@ export class WarCommsController{
    * priority 2 = Interactive Tactical Comms (Ally Orders, Enemy Taunts, Ally SOS)
    * priority 3 = Narrative / Ambient Comms (Campaign Events, Hero Cries, Opening)
    */
-  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',urgent=false,priority=null,horn=false,showBanner=true}){
+  speak({speaker='Commander',role='ally',faction='alder',color=null,text='',cue=null,urgent=false,priority=null,horn=false,showBanner=true}){
     if(!text)return;
     const prio=Number.isFinite(priority)?priority:(urgent?1:3);
-    const item={speaker,role,faction,color,text,priority:prio,horn:resolveHornKind(horn,role),showBanner};
+    const item={speaker,role,faction,color,text,cue,priority:prio,horn:resolveHornKind(horn,role),showBanner};
 
     // Deduplicate identical consecutive lines already active or queued.
     if(this.activeItem&&this.activeItem.text===text&&this.activeItem.role===role)return;
@@ -310,6 +341,7 @@ export class WarCommsController{
       clearTimeout(this.playTimer);
       clearTimeout(this.nextTimer);
       clearTimeout(this.watchdogTimer);
+      this.audio?.stopCommsVoice?.();
       try{window.speechSynthesis?.cancel?.();}catch{}
       this.audio?.setCommsSpeaking?.(false);
       // Keep higher-priority queued items, drop stale low-priority clutter.
@@ -354,7 +386,8 @@ export class WarCommsController{
 
     const voiceVol=this.settings.voiceVolume??1;
     const vol=Math.max(0,Math.min(1,(this.settings.volume??0.7)*voiceVol));
-    const canSpeak=!this.muted&&this.settings.voiceComms!==false&&this.settings.unitVoices!==false&&vol>0.02&&typeof window!=='undefined'&&typeof SpeechSynthesisUtterance==='function'&&window.speechSynthesis;
+    const voiceEnabled=!this.muted&&this.settings.voiceComms!==false&&this.settings.unitVoices!==false&&vol>0.02;
+    const useBrowserTts=voiceEnabled&&this.settings.ttsNarration===true&&typeof window!=='undefined'&&typeof SpeechSynthesisUtterance==='function'&&window.speechSynthesis;
 
     const advance=(delayMs=280)=>{
       clearTimeout(this.playTimer);
@@ -369,7 +402,38 @@ export class WarCommsController{
       }
     };
 
-    if(canSpeak){
+    // Default path: real studio-recorded CC0 human voice audio (zero robotic browser AI voices!).
+    if(voiceEnabled&&!useBrowserTts){
+      const cue=selectCommsCue(item);
+      const female=FEMALE_SPEAKERS.test(item.speaker||'');
+      const heavy=HEAVY_SPEAKERS.test(item.speaker||'')||item.faction==='iron';
+      const rate=female?1.0:heavy?0.94:item.role==='enemy'?0.96:1.0;
+      const delaySec=item.role==='herald'?0.34:item.horn?0.24:0.03;
+      const played=this.audio?.playCommsVoice?.(cue,{
+        faction:item.faction,
+        rate,
+        delaySec,
+        onEnded:()=>{
+          this._setBannerSpeaking(false);
+          this.audio?.setCommsSpeaking?.(false);
+        },
+      });
+      if(played?.played){
+        this._setBannerSpeaking(true);
+        this.audio?.setCommsSpeaking?.(true);
+        this.watchdogTimer=setTimeout(()=>{
+          this._setBannerSpeaking(false);
+          this.audio?.setCommsSpeaking?.(false);
+        },Math.max(900,(played.durationMs||1200)+120));
+        this.watchdogTimer?.unref?.();
+        const holdMs=Math.max(played.durationMs+400,Math.min(5200,item.text.length*38+1100));
+        this.playTimer=setTimeout(()=>advance(220),holdMs);
+        this.playTimer?.unref?.();
+        return;
+      }
+    }
+
+    if(useBrowserTts){
       try{
         const utt=new SpeechSynthesisUtterance(item.text);
         const cast=this._selectVoice(item.speaker,item.faction,item.role);
@@ -416,7 +480,7 @@ export class WarCommsController{
     }
 
     this._setBannerSpeaking(false);
-    const holdMs=Math.max(2400,Math.min(6200,item.text.length*48+1000));
+    const holdMs=Math.max(2200,Math.min(5200,item.text.length*42+900));
     this.playTimer=setTimeout(()=>advance(220),holdMs);
     this.playTimer?.unref?.();
   }
@@ -493,9 +557,9 @@ export class WarCommsController{
     if(event.type==='wonder-completed'){
       const pl=sim.players?.[event.owner];
       if(event.owner===0){
-        this.speak({speaker:pl?.name||'Royal Herald',role:'herald',faction:pl?.faction||'alder',color:pl?.color,text:`The ${event.wonderName} stands complete! Its eternal blessing now empowers our entire kingdom!`,priority:0,urgent:true,horn:false});
+        this.speak({speaker:pl?.name||'Royal Herald',role:'herald',faction:pl?.faction||'alder',color:pl?.color,text:`The ${event.wonderName} stands complete! Its eternal blessing now empowers our entire kingdom!`,cue:'comms-objective',priority:0,urgent:true,horn:false});
       }else if(sim.hostile(0,event.owner)){
-        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`The ${event.wonderName} is complete! Feel the wrath of our golden age!`,priority:0,urgent:true,horn:'enemy'});
+        this.speak({speaker:pl?.name||'Rival Warlord',role:'enemy',faction:pl?.faction||'raven',color:pl?.color,text:`The ${event.wonderName} is complete! Feel the wrath of our golden age!`,cue:'comms-enemy',priority:0,urgent:true,horn:'enemy'});
       }
       return;
     }
@@ -507,21 +571,21 @@ export class WarCommsController{
       return;
     }
     if(event.type==='campaign-stage'&&event.text){
-      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text,priority:2,horn:false,showBanner:false});
+      this.speak({speaker:event.speaker||'Allied Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:event.text,cue:'comms-objective',priority:2,horn:false,showBanner:false});
       return;
     }
     if(event.type==='campaign-sidequest'&&event.title){
-      this.speak({speaker:event.speaker||'Frontier Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:`Side objective complete: ${event.title}. ${event.rewardText||''}`.trim(),priority:3,horn:'ally',showBanner:false});
+      this.speak({speaker:event.speaker||'Frontier Command',role:'ally',faction:sim.players?.[0]?.faction||'alder',text:`Side objective complete: ${event.title}. ${event.rewardText||''}`.trim(),cue:'comms-objective',priority:3,horn:'ally',showBanner:false});
       return;
     }
     if(event.type==='ally-support'&&sim.allied(0,event.ally)&&this._ready('ally-support',t,35)){
       const ally=sim.players[event.owner];
-      if(ally)this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:pick(ALLY_LINES.reinforcing,t+event.owner),priority:2,horn:'ally'});
+      if(ally)this.speak({speaker:ally.name||'Allied Commander',role:'ally',faction:ally.faction,color:ally.color,text:pick(ALLY_LINES.reinforcing,t+event.owner),cue:'comms-ally',priority:2,horn:'ally'});
       return;
     }
     if(event.type==='kingdom-defeated'&&event.owner>0&&sim.hostile(0,event.owner)){
       const defeated=sim.players[event.owner];
-      this.speak({speaker:event.name||defeated?.name||'Rival Warlord',role:'enemy',faction:defeated?.faction||'raven',color:defeated?.color,text:pick(ENEMY_LINES.defeated,t+event.owner),priority:1,urgent:true,horn:'enemy'});
+      this.speak({speaker:event.name||defeated?.name||'Rival Warlord',role:'enemy',faction:defeated?.faction||'raven',color:defeated?.color,text:pick(ENEMY_LINES.defeated,t+event.owner),cue:'comms-objective',priority:1,urgent:true,horn:'enemy'});
       return;
     }
     if(event.type==='alarm'&&this._ready('enemy-taunt-alarm',t,42)){
@@ -622,7 +686,8 @@ export class WarCommsController{
     }
     this.onPing(target.x,target.z,kind==='attack'?'danger':'info',kind==='attack'?'Allied assault target':kind==='defend'?'Hold the pass':'Allied relief point');
     const lines=ALLY_LINES[kind]||ALLY_LINES.attack;
-    this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:pick(lines,sim.time||0),priority:2,urgent:true,horn:'ally'});
+    const cue=kind==='attack'?'comms-ally-attack':kind==='defend'?'comms-ally-hold':kind==='help'?'comms-ally-help':'comms-ally';
+    this.speak({speaker:lead.player.name||'Allied Commander',role:'ally',faction:lead.player.faction,color:lead.player.color,text:pick(lines,sim.time||0),cue,priority:2,urgent:true,horn:'ally'});
     return {ok:true,target};
   }
 
