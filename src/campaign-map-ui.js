@@ -149,6 +149,15 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
     </button>`;
   }).join('');
 
+  const chapterOptions=atlas.nodes.filter(n=>actFilter==='all'||n.act===actFilter);
+  const chapterPicker=`<label class="atlas-chapter-picker" for="atlas-chapter">
+    <span class="field-label">Chapter</span>
+    <select id="atlas-chapter">
+      ${chapterOptions.some(n=>n.id===selected.id)?'':'<option value="" selected disabled>Choose a chapter</option>'}
+      ${chapterOptions.map(n=>`<option value="${n.id}" ${n.id===selected.id?'selected':''}>${n.chapter} · ${esc(n.name)}${n.unlocked?'':' (Locked)'}</option>`).join('')}
+    </select>
+  </label>`;
+
   const stagesHtml=selected.stages.map((st,i)=>`<li><span class="brief-step">${i+1}</span><div><strong>${esc(st.title)}</strong><p>${esc(st.text)}</p></div></li>`).join('');
   const medalHtml=selected.medal?`<div class="brief-medal tier-${selected.medal.tier}">${uiVectorIcon(selected.optional?'trophy':'shield-check')}<span><strong>${esc(selected.medal.label)}</strong>${selected.seconds?` · Best ${formatTime(selected.seconds)}`:''}${selected.optional?' · Bonus Crown':''}</span></div>`:'';
   const boss=CAMPAIGN_BOSSES[selected.id]||null;
@@ -193,6 +202,7 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
       </div>
 
       <aside class="atlas-briefing" aria-label="Mission briefing">
+        ${chapterPicker}
         <div class="brief-header">
           <div class="brief-tags">
             <span class="brief-chapter">CHAPTER ${selected.chapter}</span>

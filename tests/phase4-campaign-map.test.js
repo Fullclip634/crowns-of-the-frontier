@@ -64,7 +64,7 @@ test('mergeCampaignVictory preserves best completion time, optional crown, and h
   assert.equal(third.optional,true,'never loses previously earned bonus crown');
 });
 
-test('campaignMapMarkup renders vector parchment atlas, all 10 interactive nodes, briefing drawer, and zero backdrop blur',()=>{
+test('campaignMapMarkup renders the atlas, every chapter, briefing drawer, and zero backdrop blur',()=>{
   const html=campaignMapMarkup({
     progress:{campaign1:{won:true,difficulty:'hard',optional:true,seconds:290}},
     selectedId:'campaign2',
@@ -84,6 +84,14 @@ test('campaignMapMarkup renders vector parchment atlas, all 10 interactive nodes
   const lockedHtml=campaignMapMarkup({progress:{},selectedId:'campaign5',freeSelect:false});
   assert.doesNotMatch(lockedHtml,/data-atlas-launch="campaign5"/);
   assert.match(lockedHtml,/data-action="atlas-free-select"/);
+  assert.match(lockedHtml,/<option value="campaign5" selected>V · The final siege \(Locked\)<\/option>/);
+
+  const filtered=campaignMapMarkup({selectedId:'campaign1',actFilter:'act3',freeSelect:true});
+  const picker=filtered.match(/<select id="atlas-chapter">([\s\S]*?)<\/select>/)[1];
+  assert.match(picker,/<option value="" selected disabled>Choose a chapter<\/option>/);
+  for(const node of CAMPAIGN_NODES){
+    assert.equal(picker.includes(`value="${node.id}"`),node.act==='act3');
+  }
 
   const banner=commanderBannerMarkup({speaker:'Marshal Elian',title:'Chapter I',text:'Hold the bridge.'});
   assert.match(banner,/Marshal Elian/);

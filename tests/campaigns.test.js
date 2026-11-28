@@ -205,6 +205,29 @@ function hold(s){
   s.time=s.campaignState.stageAt+seconds+.01;
 }
 
+test('Emerald Temple Lagoon describes the route taken and awards the first-stage gold once',()=>{
+  for(const route of ['shrine','base']){
+    const s=quiet('campaign18');
+    s.campaignState.sideQuestDone=true;
+    const shrine=s.entities.find(e=>e.kind==='shrine');
+    if(route==='shrine')shrine.owner=0;
+    else destroy(s,1);
+    const before=s.players[0].resources.gold;
+    const messages=[];
+    s.on(e=>{if(e.type==='campaign-stage')messages.push(e.text);});
+    advance(s,1);
+    assert.equal(Math.floor(s.players[0].resources.gold-before),400,'ignore fractional shrine income');
+    const message=messages[0];
+    assert.ok(s.campaignState.history.some(entry=>entry.text===message));
+    assert.match(message,route==='shrine'?/We hold the Emerald Temple Shrine/:/The shrine remains outside our control/);
+    assert.equal(shrine.owner,route==='shrine'?0:-1);
+    const restored=Simulation.restore(JSON.parse(JSON.stringify(s.campaignCheckpoint)));
+    const checkpointGold=restored.players[0].resources.gold;
+    advance(restored,1);
+    assert.equal(Math.floor(restored.players[0].resources.gold-checkpointGold),0);
+  }
+});
+
 const laterChapters={
   campaign7:[s=>s.addBuilding('tower',0,10,0,true),s=>destroy(s,1,'barracks'),s=>destroy(s,1,'towncenter')],
   campaign8:[s=>s.addBuilding('camp',0,-82,96,true),s=>destroy(s,1,'barracks'),s=>destroy(s,1,'towncenter')],

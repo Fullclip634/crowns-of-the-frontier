@@ -198,6 +198,14 @@
 .atlas-pin-label b{font-family:var(--serif);font-size:11px;color:#f4d482}
 .atlas-pin-label em{font-style:normal;font-weight:500;max-width:152px;overflow:hidden;text-overflow:ellipsis}
 .atlas-node.selected .atlas-pin-label{border-color:#f6da8a;background:#1e3127;color:#fff}
+.atlas-chapter-picker{display:none}
+
+@media(max-width:960px), (pointer:coarse) and (max-height:520px) and (orientation:landscape){
+  .atlas-node{pointer-events:none}
+  .atlas-node:not(.dimmed) .atlas-seal{pointer-events:auto}
+  .atlas-chapter-picker{display:grid;gap:4px}
+  .atlas-chapter-picker select{width:100%;min-width:0;min-height:44px;font-size:16px}
+}
 
 .atlas-legend{
   display:flex;align-items:center;gap:14px;width:100%;max-width:1000px;

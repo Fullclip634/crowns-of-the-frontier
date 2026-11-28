@@ -499,6 +499,12 @@ function setChronicleReady(ready){
 }
 function showCommanderDialogue(speaker,title,text,duration=9500){const box=$('#commander-dialogue');if(!box||!text)return;clearTimeout(dialogueTimer);warComms?.hideBanner?.();box.innerHTML=commanderBannerMarkup({speaker,title,text});box.classList.remove('hidden');dialogueTimer=setTimeout(clearCommanderDialogue,duration);}
 function showCampaign(focusId=null){chat.close(false);if(!modal)modalOpener=document.activeElement;if(playing)paused=true;edgeScroll.reset();if(focusId)atlasSelectedId=focusId;else if(!atlasSelectedId)atlasSelectedId=nextCampaignMissionId(progress,atlasFreeSelect);modal='campaign';$('#modal-root').innerHTML=`<div class="modal-backdrop atlas-backdrop">${campaignMapMarkup({progress,selectedId:atlasSelectedId,actFilter:atlasActFilter,freeSelect:atlasFreeSelect,setupOptions})}</div>`;$('#modal-root [data-atlas-launch],#modal-root .atlas-close')?.focus({preventScroll:true});}
+function rememberAtlasOptions(){
+  for(const key of ['faction','difficulty','relic']){
+    const input=$('#atlas-'+key);
+    if(input)setupOptions[key]=input.value;
+  }
+}
 const matchArtworkLoaders={hasIronhold:hasIronholdArtwork,loadIronhold:loadIronholdArtwork,hasBridge:hasBridgeArtwork,loadBridge:loadBridgeArtwork};
 let pendingLocalLaunch=null;
 function startGame(options,save=null){
@@ -971,8 +977,8 @@ document.addEventListener('click',event=>{const el=event.target.closest('button,
   if(el.dataset.treeTech){sim.research(Number(el.dataset.building),el.dataset.treeTech);showTechnologyTree(treeFaction);}
   if(el.dataset.mode)showSetup(el.dataset.mode);
   if(el.dataset.start){const seed=Math.abs(Number($('#seed').value))||Math.floor(Math.random()*999999),mapSize=$('#map-size')?.value,aiPersonality=$('#ai-personality')?.value||'balanced';startGame({mode:el.dataset.start,faction:$('#faction').value,difficulty:$('#difficulty').value,aiPersonality,map:$('#map').value,...(mapSize?{mapSize}:{}),seed,showBriefing:true});}
-  if(el.dataset.atlasNode){if($('#atlas-faction'))setupOptions.faction=$('#atlas-faction').value;if($('#atlas-difficulty'))setupOptions.difficulty=$('#atlas-difficulty').value;if($('#atlas-relic'))setupOptions.relic=$('#atlas-relic').value;showCampaign(el.dataset.atlasNode);return;}
-  if(el.dataset.atlasAct){if($('#atlas-faction'))setupOptions.faction=$('#atlas-faction').value;if($('#atlas-difficulty'))setupOptions.difficulty=$('#atlas-difficulty').value;if($('#atlas-relic'))setupOptions.relic=$('#atlas-relic').value;atlasActFilter=el.dataset.atlasAct;showCampaign(atlasSelectedId);return;}
+  if(el.dataset.atlasNode){rememberAtlasOptions();showCampaign(el.dataset.atlasNode);return;}
+  if(el.dataset.atlasAct){rememberAtlasOptions();atlasActFilter=el.dataset.atlasAct;showCampaign(atlasSelectedId);return;}
   if(el.dataset.atlasLaunch){const m=MISSIONS.find(item=>item.id===el.dataset.atlasLaunch);if(m){const faction=$('#atlas-faction')?.value||setupOptions.faction||'alder',difficulty=$('#atlas-difficulty')?.value||setupOptions.difficulty||'normal',relic=$('#atlas-relic')?.value||setupOptions.relic||'frontier-charter';setupOptions={...setupOptions,faction,difficulty,relic};startGame({mode:m.id,faction,difficulty,relic,map:m.map||'highlands',seed:m.seed,showBriefing:true});}return;}
   if(el.dataset.atlasOpen){const chapter=el.dataset.atlasOpen;menuReturn().then(left=>{if(left)showCampaign(chapter);});return;}
   if(el.dataset.hubMode||el.dataset.hubFaction||el.dataset.hubMap){const scroll=$('#modal-root .modal')?.scrollTop||0;hubDraft={...(hubDraft||setupOptions),difficulty:$('#difficulty')?.value||setupOptions.difficulty,aiPersonality:$('#ai-personality')?.value||setupOptions.aiPersonality||'balanced',mapSize:$('#map-size')?.value||setupOptions.mapSize||'large',seed:Math.abs(Number($('#seed')?.value))||setupOptions.seed};if(el.dataset.hubMode)hubDraft.mode=el.dataset.hubMode;if(el.dataset.hubFaction)hubDraft.faction=el.dataset.hubFaction;if(el.dataset.hubMap)hubDraft.map=el.dataset.hubMap;showSkirmishHub();const d=$('#modal-root .modal');if(d)d.scrollTop=scroll;return;}
@@ -1015,7 +1021,14 @@ document.addEventListener('click',event=>{const el=event.target.closest('button,
 $('#control-groups-bar')?.addEventListener('dblclick',event=>{const el=event.target.closest('[data-group]');if(!el)return;const ids=groups[el.dataset.group];if(!ids?.length)return;setSelection(ids);const lead=sim.get(ids[0]);if(lead)view.focus(lead.x,lead.z);});
 $('#control-groups-bar')?.addEventListener('contextmenu',event=>{const el=event.target.closest('[data-group]');if(!el)return;event.preventDefault();delete groups[el.dataset.group];renderControlGroups();});
  document.addEventListener('input',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);const lbl=event.target.id&&document.querySelector(`[data-vol-label="${event.target.id}"]`);if(lbl)lbl.textContent=`${Math.round(Number(event.target.value)*100)}%`;});
- document.addEventListener('change',event=>{if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);});
+ document.addEventListener('change',event=>{
+   if(modal==='campaign'&&event.target.id==='atlas-chapter'&&event.target.value){
+     rememberAtlasOptions();
+     showCampaign(event.target.value);
+     $('#atlas-chapter')?.focus({preventScroll:true});
+   }
+   if(modal==='alliance'&&['donation-amount','donation-resource'].includes(event.target.id))refreshAllianceModal($('#modal-root'),sim,allianceRecipient);
+ });
 document.addEventListener('change',event=>{updateSetupDescriptions();if(modal==='lan-lobby'&&event.target.dataset.aiHealthSlot){net.send({type:'ai-health',slot:Number(event.target.dataset.aiHealthSlot),health:Number(event.target.value)});return;}if(modal==='custom-setup'){if(event.target.id==='custom-player-slot'||event.target.id.startsWith('custom-type-')){const id=event.target.id,scroll=$('#modal-root .modal').scrollTop;customDraft=readBattleSetup($('#modal-root'));showCustomBattle();$('#modal-root .modal').scrollTop=scroll;document.getElementById(id)?.focus({preventScroll:true});}else customDraft=updateBattlePreview($('#modal-root'));try{localStorage.setItem('crowns-custom-setup',JSON.stringify(customDraft));}catch{}}if(event.target.id==='lobby-slot')net.send({type:'slot',slot:Number(event.target.value)});});
 document.addEventListener('keydown',event=>{if(startupSplash||startupAction)return;const key=event.key.toLowerCase();if(chronicleActive){if((key==='enter'||key===' ')&&!$('#chronicle-begin-btn')?.classList.contains('hidden')){event.preventDefault();beginFromChronicle();}return;}if(key==='escape'&&chat.opened){event.preventDefault();chat.close();return;}if(key==='escape'&&modal){event.preventDefault();closeModal();return;}if(['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)||event.target.isContentEditable)return;if(!playing)return;if((key===' '||key==='enter')&&event.target.closest('button,a,summary'))return;if(key==='escape'&&$('#objectives').contains(event.target)&&$('#objectives').classList.contains('objectives-expanded')){event.preventDefault();action('objectives-expand');$('#objectives .objective-toggle').focus({preventScroll:true});return;}if(key==='enter'&&net.active&&!modal&&!event.target.closest('button,a')){event.preventDefault();chat.open(true);return;}if(chat.opened)return;
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(key))event.preventDefault();

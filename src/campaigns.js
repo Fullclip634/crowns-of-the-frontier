@@ -8,6 +8,7 @@ const copy=value=>JSON.parse(JSON.stringify(value));
 const army=s=>s.owned(0,'unit').filter(e=>!e.embarked&&!UNITS[e.type].naval&&!['worker','fisher','quest'].includes(UNITS[e.type].role)&&!['scout','king'].includes(e.type));
 const completed=(s,type)=>s.owned(0,'building',type).filter(e=>e.progress>=1);
 const conquered=s=>!s.count(1,'building','towncenter');
+const templeShrineHeld=s=>s.entities.some(e=>e.kind==='shrine'&&s.allied(0,e.owner));
 const allHostileCapitalsFallen=s=>s.players.every((p,owner)=>!s.hostile(0,owner)||!s.count(owner,'building','towncenter'));
 const holdsSummit=s=>completed(s,'keep').some(e=>Math.hypot(e.x,e.z)<26)||completed(s,'tower').some(e=>Math.hypot(e.x,e.z)<22)||army(s).filter(e=>Math.hypot(e.x,e.z)<14).length>=8;
 const passPositions=[{x:-12,z:96},{x:-12,z:0},{x:-12,z:-104}];
@@ -260,7 +261,12 @@ export const CAMPAIGN_SCRIPTS={
     ]},
   campaign18:{speaker:'Admiral Iven',intro:'Welcome to the Emerald Temple Lagoon! Towering banyans and ancient stone temples hide ruthless jungle warlords. Seize the sacred Emerald Temple Shrine with me, cross the coral delta bridges, and wipe out both rival jungle bases completely!',
     stages:[
-      {title:'Claim the Emerald Temple Shrine',text:'Capture the central Emerald Temple Shrine (or completely wipe out either rival jungle base).',marker:{x:-6,z:-10},done:s=>s.entities.some(e=>e.kind==='shrine'&&s.allied(0,e.owner))||baseWiped(s,1)||baseWiped(s,2),onDone:s=>{s.players[0].resources.gold+=400;},dialogue:'The ancient temple shrine answers our banner (+400 Gold)! Push across the delta bridges and shallow coral ford!'},
+      {title:'Secure a Foothold in the Lagoon',text:'Capture the central Emerald Temple Shrine or completely wipe out either rival jungle base to earn 400 Gold.',marker:{x:-6,z:-10},
+        done:s=>templeShrineHeld(s)||baseWiped(s,1)||baseWiped(s,2),
+        onDone:s=>{s.players[0].resources.gold+=400;},
+        dialogue:s=>templeShrineHeld(s)
+          ?'We hold the Emerald Temple Shrine and gain 400 Gold.'
+          :'The rival base has fallen. We gain 400 Gold. The shrine remains outside our control.'},
       {title:'Raze the First Jungle Stronghold',text:'Completely wipe out every base structure of either Warlord Kael’s or Warden Arak’s jungle stronghold.',marker:{x:114,z:66},targetOwners:[1,2],done:s=>baseWiped(s,1)||baseWiped(s,2),dialogue:'One jungle stronghold is completely wiped out! Finish every building of the remaining warlord!'},
       {title:'Master of Temple Lagoon',text:'Wipe out all enemy base structures across Temple Lagoon.',marker:{x:114,z:-68},done:allHostileBasesWiped,dialogue:'Every rival temple fort has fallen! The Emerald Temple Lagoon flies our colors from waterfall to coral reef!'},
     ],optional:{text:'Finish with Admiral Iven’s coastal citadel standing.',done:s=>s.count(3,'building','towncenter')>0},
@@ -478,9 +484,10 @@ export function installCampaigns(Simulation){
     }
     if(script.alternativeConquest&&conquered(this)){q.route='conquest';q.stage=script.stages.length;q.finished=true;q.optional=false;end.call(this,true,'The rival capital has fallen. The valley is secured by conquest.');return;}
     const stage=script.stages[q.stage];if(!stage?.done(this,q))return;
+    const dialogue=typeof stage.dialogue==='function'?stage.dialogue(this,q):stage.dialogue;
     stage.onDone?.(this,q);
-    q.history.push({time:this.time,speaker:script.speaker,text:stage.dialogue});q.stage++;q.stageAt=this.time;q.elapsed=0;this.emit('campaign-stage',{title:stage.title,text:stage.dialogue,stage:q.stage,total:script.stages.length});
-    if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,stage.dialogue);return;}
+    q.history.push({time:this.time,speaker:script.speaker,text:dialogue});q.stage++;q.stageAt=this.time;q.elapsed=0;this.emit('campaign-stage',{title:stage.title,text:dialogue,stage:q.stage,total:script.stages.length});
+    if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,dialogue);return;}
     this.campaignCheckpoint=captureCheckpoint(this,q);this.emit('campaign-checkpoint',{stage:q.stage});
   };
   p.serialize=function(options){
