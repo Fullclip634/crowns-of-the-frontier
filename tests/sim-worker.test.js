@@ -456,3 +456,60 @@ test('wall link updates and gate conversion preserve neighboring connections',as
   for(const wall of [walls[0],walls[4]])assert.deepEqual(shadow.get(wall.id).wallLinks,[gate.id]);
   client.dispose();
 });
+
+test('worker villager training auto-assigns deterministically on spawn tick and replays identically without drift',()=>{
+  const posted=[];
+  const post=msg=>posted.push(msg);
+  const opts={mode:'skirmish',faction:'alder',difficulty:'normal',map:'highlands',seed:2026};
+  let session=handleWorkerMessage(null,{type:'init',matchId:1,options:opts,recordReplay:true},post);
+  const tc=session.sim.owned(0,'building','towncenter')[0];
+  session=handleWorkerMessage(session,{type:'cmd',matchId:1,method:'train',args:[tc.id,'villager'],reply:true},post);
+
+  let trainedId=null;
+  for(let i=0;i<80&&!trainedId;i++){
+    session=handleWorkerMessage(session,{type:'step',matchId:1,steps:5},post);
+    const trained=posted.at(-1)?.events?.find(e=>e.type==='trained'&&e.entity?.owner===0&&e.entity?.type==='villager');
+    if(trained)trainedId=trained.entity.id;
+  }
+  assert.ok(trainedId,'player villager finished training inside worker');
+  const liveVillagerAtSpawn=session.sim.get(trainedId);
+  assert.equal(liveVillagerAtSpawn.order?.type,'gather','newly trained player villager auto-assigns immediately inside tickBuilding');
+
+  // Step 10 more seconds (100 ticks at 0.1s) so economy and movement unfold
+  for(let j=0;j<20;j++){
+    session=handleWorkerMessage(session,{type:'step',matchId:1,steps:5},post);
+  }
+  const liveVillager=session.sim.get(trainedId);
+  const rec=JSON.parse(JSON.stringify(session.recorder.buildRecord({won:true})));
+
+  // Play back on main thread via ReplayDriver (no worker) and assert bit-for-bit parity
+  const replaySim=new Simulation({...rec.options,replay:true});
+  const driver=new ReplayDriver(rec,{});
+  while(!driver.finished&&!replaySim.ended){
+    driver.step(replaySim);
+    if(driver.finished)break;
+    replaySim.tick(0.1);
+  }
+  const repVillager=replaySim.get(trainedId);
+  assert.ok(repVillager,'replayed villager exists with identical entity id');
+  assert.equal(repVillager.x,liveVillager.x);
+  assert.equal(repVillager.z,liveVillager.z);
+  assert.equal(repVillager.carry,liveVillager.carry);
+  assert.deepEqual(repVillager.order,liveVillager.order);
+  assert.deepEqual(replaySim.players[0].resources,session.sim.players[0].resources);
+  assert.equal(replaySim.rng.state,session.sim.rng.state);
+
+  // Explicit Town Center rally point must still take precedence over auto-assign
+  const rallySim=new Simulation(opts);
+  const rallyTc=rallySim.owned(0,'building','towncenter')[0];
+  rallyTc.rally={x:rallyTc.x+10,z:rallyTc.z+10};
+  const beforeIds=new Set(rallySim.owned(0,'unit','villager').map(u=>u.id));
+  rallySim.train(rallyTc.id,'villager');
+  let rallied=null;
+  for(let i=0;i<260&&!rallied;i++){
+    rallySim.tick(0.1);
+    rallied=rallySim.owned(0,'unit','villager').find(u=>!beforeIds.has(u.id))||null;
+  }
+  assert.ok(rallied,'rallied villager spawned');
+  assert.equal(rallied.order?.type,'move','TC rally order is preserved instead of overwritten by auto-assign');
+});

@@ -293,3 +293,45 @@ test('every chapter survives a real opening without throwing or firing unknown e
     assert.ok(JSON.stringify(s.serialize()).length<1000000,`${mode} still saves compactly`);
   }
 });
+
+test('campaign checkpoints capture and restore full subsystem state including AI, alarms, shelter clock, and projectiles',()=>{
+  const s=quiet('campaign15');
+  // Opening checkpoint must include all outer serializer fields without recursive checkpoint nesting
+  for(const key of ['aiStates','teamAlarms','revealedOwners','shelterClock','projectiles','nextProjectileId']){
+    assert.ok(Object.hasOwn(s.campaignCheckpoint,key),`opening checkpoint includes ${key}`);
+  }
+  assert.equal(Object.hasOwn(s.campaignCheckpoint,'campaignCheckpoint'),false,'checkpoint does not nest itself');
+
+  // Populate live subsystem state right before advancing from stage 0 -> stage 1
+  s.aiStates={1:{openingDone:true,lastAttack:42}};
+  s.teamAlarms={1:{x:-20,z:12,at:120}};
+  s.revealedOwners=[2];
+  s.shelterClock=1.25;
+  const archer=s.owned(0,'unit').find(u=>u.type==='archer'||u.type==='crossbowman')||s.addUnit('archer',0,-50,0);
+  const foe=s.owned(1,'unit')[0];
+  archer.x=foe.x-8;archer.z=foe.z;archer.cooldown=0;
+  s.hit(archer,foe);
+  assert.ok(s.projectiles.length>=1,'in-flight projectile created before checkpoint');
+
+  // Advance timer past stage 0 hold to trigger a mid-mission stage checkpoint
+  s.time=125;
+  s.tick(1.0);
+  assert.equal(s.campaignState.stage,1);
+  const cp=JSON.parse(JSON.stringify(s.campaignCheckpoint));
+  assert.deepEqual(cp.aiStates,s.aiStates);
+  assert.deepEqual(cp.aiStates[1],{openingDone:true,lastAttack:42});
+  assert.deepEqual(cp.teamAlarms,{1:{x:-20,z:12,at:120}});
+  assert.deepEqual(cp.revealedOwners,[2]);
+  assert.equal(cp.shelterClock,1.25);
+  assert.ok(Array.isArray(cp.projectiles)&&cp.nextProjectileId>=1);
+  assert.equal(Object.hasOwn(cp,'campaignCheckpoint'),false);
+
+  const restored=Simulation.restore(cp);
+  assert.deepEqual(restored.aiStates,cp.aiStates);
+  assert.deepEqual(restored.teamAlarms,{1:{x:-20,z:12,at:120}});
+  assert.deepEqual(restored.revealedOwners,[2]);
+  assert.equal(restored.shelterClock,1.25);
+  assert.equal(restored.nextProjectileId,cp.nextProjectileId);
+  assert.equal(restored.projectiles.length,cp.projectiles.length);
+  assert.ok(restored.campaignCheckpoint,'restored checkpoint remains available for another retry');
+});

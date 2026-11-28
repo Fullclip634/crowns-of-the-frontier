@@ -252,3 +252,30 @@ test('Act V missions require wiping out ALL enemy base structures, not just snip
   sim.tick(1.0);
   assert.ok(sim.ended?.won===true,'Act V wins only after ALL four enemy bases are completely wiped out!');
 });
+
+test('Act V warlord elimination removes surviving units and hostile() stays symmetric for defeated kingdoms',()=>{
+  const sim=new Simulation({mode:'campaign15',faction:'alder',difficulty:'normal',seed:4315});
+  const enemyUnitsBefore=sim.owned(1,'unit').length;
+  assert.ok(enemyUnitsBefore>0,'Warlord Vex starts with surviving units');
+
+  const deaths=[];
+  sim.on(e=>{if(e.type==='death'&&e.entity?.owner===1)deaths.push(e.entity.id);});
+  for(const b of sim.owned(1,'building')){
+    if(!['wall','gate','farm'].includes(b.type))b.hp=0;
+  }
+  sim.tick(1.0);
+
+  assert.equal(sim.players[1].defeated,true);
+  assert.equal(sim.owned(1,'building').length,0,'All defeated warlord buildings collapse');
+  assert.equal(sim.owned(1,'unit').length,0,'All defeated warlord units are eliminated so no ghost army remains');
+  assert.ok(deaths.length>=enemyUnitsBefore,'Death events fire for eliminated units and structures');
+  assert.equal(sim.hostile(0,1),false,'Player 0 is not hostile toward defeated kingdom');
+  assert.equal(sim.hostile(1,0),false,'Defeated kingdom is symmetrically not hostile toward Player 0');
+
+  // Even if a unit exists on a defeated owner, symmetric hostile() blocks damage in both directions
+  const stray=sim.addUnit('knight',1,0,0);
+  const victim=sim.addUnit('swordsman',0,1,0);
+  const hpBefore=victim.hp;
+  sim.hurt(victim,50,stray);
+  assert.equal(victim.hp,hpBefore,'Defeated kingdom units cannot damage active players');
+});

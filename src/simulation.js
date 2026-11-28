@@ -159,7 +159,7 @@ export class Simulation {
   }
   faction(owner){return FACTIONS[this.players[owner].faction];}
   allied(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&(this.players[a].team??a)===(this.players[b].team??b);}
-  hostile(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&!this.allied(a,b)&&!this.players[b].defeated;}
+  hostile(a,b){return a>=0&&b>=0&&!!this.players[a]&&!!this.players[b]&&!this.allied(a,b)&&!this.players[a].defeated&&!this.players[b].defeated;}
   difficulty(owner=1){return this.players[owner]?.difficulty||this.options.difficulty;}
   startClearing(x,z){
     if(bridgeFootprint(this.options.map,x,z,8)||ravineRoadAt(this.options.map,x,z))return true;
@@ -793,7 +793,7 @@ export class Simulation {
     }
     const q=e.queue[0];if(!q)return;if(q.kind==='unit'&&this.population(e.owner)>=this.capacity(e.owner))return;const conscriptionBoost=q.kind==='unit'&&['barracks','range','stable','workshop','keep','monastery','dock'].includes(e.type)&&(ownerPlayer?.tech?.conscription||0)>0?1.25:1;q.remaining-=dt*conscriptionBoost*(q.kind==='unit'&&wonderPowerFor(this,e.owner)?.faction==='sun'?1.25:1);
     if(q.remaining<=0){e.queue.shift();const p=this.players[e.owner];
-      if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally)applyRallyOrder(this,unit,e);if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}else if(unit.type==='villager')this.assignWorker(unit);}
+      if(q.kind==='unit'){const unit=this.addUnit(q.type,e.owner,e.x,e.z+e.r+3);const free=this.pathTo(unit,{x:e.x+e.r+5,z:e.z+e.r+5})[0];if(free){unit.x=free.x;unit.z=free.z;}if(e.rally)applyRallyOrder(this,unit,e);if(unit.type==='villager'&&!unit.order)this.assignWorker(unit);if(e.owner===0){this.stats.trained++;this.emit('trained',{entity:unit});}}
       else{if(q.kind==='age'){p.age++;p.agePending=false;}else p.tech[q.type]++;
         // Reaching Castle Age upgrades wooden palisades to stone walls, and
         // Fortified Walls reinforces stone masonry. Bump revision so instanced

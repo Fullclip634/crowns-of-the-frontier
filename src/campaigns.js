@@ -356,6 +356,17 @@ export function campaignObjective(sim){
   return {...stage,marker,progressText,index:q.stage,total:script.stages.length,optional:script.optional.text,cart:q.cartId?sim.get(q.cartId):null,fish:q.fish,elapsed:q.elapsed||0,sideQuest:sq?{id:sq.id,title:sq.title,text:sq.text,rewardText:sq.rewardText,done:!!q.sideQuestDone}:null,boss};
 }
 
+function captureCheckpoint(sim,campaignState){
+  sim._capturingCheckpoint=true;
+  try{
+    const full=sim.serialize();
+    delete full.campaignCheckpoint;
+    return copy({...full,campaignState,checkpointTag:true});
+  }finally{
+    sim._capturingCheckpoint=false;
+  }
+}
+
 export function installCampaigns(Simulation){
   const p=Simulation.prototype,initialize=p.initialize,tick=p.tick,end=p.end,emit=p.emit,serialize=p.serialize,restore=Simulation.restore;
   p.initialize=function(){
@@ -370,7 +381,7 @@ export function installCampaigns(Simulation){
       clearStartingUnitPositions(this);
       this.updateFog();
     }
-    if(this.campaignState)this.campaignCheckpoint=copy({...serialize.call(this),campaignState:this.campaignState,checkpointTag:true});
+    if(this.campaignState)this.campaignCheckpoint=captureCheckpoint(this,this.campaignState);
   };
   p.emit=function(type,data={}){if(type==='gathered'&&data.owner===0&&data.source==='fishingboat'&&this.campaignState&&!this.campaignState.legacy)this.campaignState.fish+=data.amount;emit.call(this,type,data);};
   p.end=function(won,reason){if(won&&this.campaignState&&!this.campaignState.legacy&&!this.campaignState.finished)return;end.call(this,won,reason);};
@@ -438,7 +449,15 @@ export function installCampaigns(Simulation){
         if(structs.length===0){
           pl.defeated=true;
           for(const e of this.entities){
-            if(e.hp>0&&e.owner===owner&&e.kind==='building')e.hp=0;
+            if(e.hp>0&&e.owner===owner&&(e.kind==='building'||e.kind==='unit')){
+              e.hp=0;
+              if(e.queue)e.queue=[];
+              if(e.garrison)e.garrison=[];
+              if(e.passengers)e.passengers=[];
+              e.order=null;
+              if(e.orders)e.orders=[];
+              this.emit('death',{entity:e});
+            }
           }
           this.revision++;
           this.emit('kingdom-defeated',{owner,name:pl.name,reason:'Base completely wiped out'});
@@ -462,10 +481,12 @@ export function installCampaigns(Simulation){
     stage.onDone?.(this,q);
     q.history.push({time:this.time,speaker:script.speaker,text:stage.dialogue});q.stage++;q.stageAt=this.time;q.elapsed=0;this.emit('campaign-stage',{title:stage.title,text:stage.dialogue,stage:q.stage,total:script.stages.length});
     if(q.stage>=script.stages.length){q.finished=true;q.optional=!!script.optional.done(this,q);end.call(this,true,stage.dialogue);return;}
-    this.campaignCheckpoint=copy({...serialize.call(this),campaignState:q,checkpointTag:true});this.emit('campaign-checkpoint',{stage:q.stage});
+    this.campaignCheckpoint=captureCheckpoint(this,q);this.emit('campaign-checkpoint',{stage:q.stage});
   };
-  p.serialize=function(){
-    const save=serialize.call(this),checkpoint=this.campaignCheckpoint;
+  p.serialize=function(options){
+    const save=serialize.call(this,options);
+    if(this._capturingCheckpoint)return {...save,campaignState:this.campaignState||null};
+    const checkpoint=this.campaignCheckpoint;
     let campaignCheckpoint=checkpoint||null;
     // The opening checkpoint and current save usually share the same cliffs.
     // Keep both copies only when a mission has since changed the terrain.

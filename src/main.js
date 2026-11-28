@@ -567,7 +567,7 @@ function onEvent(e){if(['notice','research','sound'].includes(e.type)&&e.owner!=
   if(e.type==='ally-support'&&sim.allied(0,e.ally))toast(`${sim.players[e.owner]?.name||'Your ally'} is sending ${e.count} reinforcements to ${e.ally===0?'your base':sim.players[e.ally]?.name||'an allied base'}.`);
   if(e.type==='donation'&&(e.from===0||e.to===0)){toast(e.from===0?`Sent ${e.amount} ${e.resource} to ${sim.players[e.to].name}.`:`${sim.players[e.from].name} sent you ${e.amount} ${e.resource}.`);audio.play('tribute');renderHUD();refreshAllianceModal(modal==='alliance'?$('#modal-root'):null,sim,allianceRecipient);}
   if(e.type==='complete'){if(e.entity){tacticalAlerts.record(e.entity.x,e.entity.z,'info',`${wallDisplayName(sim,e.entity)} completed`);view?.celebrateBuild?.(e.entity);}toast(`${wallDisplayName(sim,e.entity)} completed.`);audio.play('complete');renderSelection();}
-  if(e.type==='trained'&&e.entity.owner===0){audio.play('complete');if(e.entity.type==='villager'&&!e.entity.order)sim.assignWorker(e.entity);}
+  if(e.type==='trained'&&e.entity.owner===0){audio.play('complete');}
   if(e.type==='research'){if(e.tech==='age')view?.celebrateAgeUp?.(sim.owned(0,'building','towncenter')[0]);toast(e.tech==='age'?(e.age===2?`${AGES[e.age]} reached. Palisades upgraded to stone walls; new troops and buildings unlocked.`:`${AGES[e.age]} reached. New troops and buildings unlocked.`):`${TECHS[e.tech].name} completed.`);audio.play(e.tech==='age'?'age-up':'complete');renderSelection();}
   if(e.type==='order'){audio.play('order');}
   if(e.type==='sound')audio.play(e.name);
