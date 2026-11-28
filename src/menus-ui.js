@@ -57,12 +57,12 @@ export function landingMarkup(latestSave=null){
       <div class="hero-column">
         <div class="eyebrow"><span class="short-rule"></span> REAL-TIME STRATEGY</div>
         <h1>Crowns <em>of the</em><br>Frontier<span class="title-dot">.</span></h1>
-        <p class="intro">From the first timber to the final siege. Raise your kingdom in a living three-dimensional world.</p>
+        <p class="intro">Build a kingdom and command your army.</p>
         ${resumeCard}
         <nav class="hero-nav" aria-label="Main menu">
           <button class="hero-btn primary" data-action="campaign">
             <span class="hero-btn-icon">${uiIcon('crown')}</span>
-            <span class="hero-btn-copy"><strong>Campaign</strong><small>Interactive Frontier World Map · ${chapterCount} handcrafted chapters</small></span>
+            <span class="hero-btn-copy"><strong>Campaign</strong><small>${chapterCount} campaign chapters</small></span>
             ${uiIcon('chevron-right')}
           </button>
           <button class="hero-btn" data-action="skirmish-hub">
@@ -89,10 +89,7 @@ export function landingMarkup(latestSave=null){
         </nav>
       </div>
     </main>
-    <footer class="landing-footer">
-      <span><span class="status-dot"></span> SOLO & MULTIPLAYER · WEBGPU & WEBGL 2</span>
-      <span class="landing-footer-hint">Made for mouse & touch <span class="menu-divider" aria-hidden="true"></span> Best played in landscape</span>
-    </footer>
+    <footer class="landing-footer">For a wider view, turn your phone sideways.</footer>
   `;
 }
 
@@ -176,7 +173,7 @@ export function skirmishHubMarkup({mode='skirmish',faction='alder',difficulty='n
     <div class="mission-brief">
       <span>VICTORY CONDITION</span>
       <p>${esc(activeMode.objective)}</p>
-      <small>${esc(activeMode.time||'Skirmish match')} · Mouse & touch supported</small>
+      <small>${esc(activeMode.time||'Skirmish match')}</small>
     </div>
     <button class="primary full" data-start="${esc(activeMode.id)}">${activeMode.id==='tutorial'?'Start the tutorial':'Launch battle'} ${uiIcon('chevron-right')}</button>`;
 }
@@ -187,8 +184,7 @@ export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,gr
   const pane=id=>`settings-pane ${id===activeTab?'active':''}`;
   const volPct=v=>`${Math.round((v??1)*100)}%`;
 
-  return `<div class="eyebrow">MAKE IT YOURS</div>
-    <h2>Settings</h2>
+  return `<h2>Settings</h2>
     <nav class="settings-tabs" role="tablist" aria-label="Settings categories">${tabsHtml}</nav>
 
     <div class="${pane('graphics')}" data-pane="graphics">
@@ -197,7 +193,7 @@ export function settingsModalMarkup({settings,graphicsMode,rendererStatusText,gr
         <option value="auto" ${graphicsMode==='auto'?'selected':''}>Automatic · adjust to your device</option>
         <option value="high" ${graphicsMode==='high'?'selected':''}>High · detailed models & sharp surfaces</option>
         <option value="medium" ${graphicsMode==='medium'?'selected':''}>Balanced · detailed bases, lighter armies</option>
-        <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft contacts</option>
+        <option value="low" ${graphicsMode==='low'?'selected':''}>Performance · lighter models & soft ground shadows</option>
       </select>
       <p id="graphics-quality-help" class="settings-note">Automatic may lower graphics to keep play smooth. High, Balanced, and Performance stay at your chosen quality.</p>
       <p id="renderer-status" class="settings-note">${esc(rendererStatusText||'')}</p>
@@ -311,8 +307,7 @@ export function saveManagerMarkup(slots,{canSave=false,networkActive=false,repla
     </article>`).join('')}</div>
   </div>`:'';
 
-  return `<div class="eyebrow">CHRONICLES STORED ON THIS DEVICE</div>
-    <h2>Saved kingdoms & replays</h2>
+  return `<h2>Saved kingdoms & replays</h2>
     <p class="modal-intro">${networkActive?'Multiplayer rooms reconnect through the room session. Local save slots and replays are available for solo battles and campaigns.':'Auto-save updates every minute during solo play. Use the three manual slots for separate realms, or replay recent solo battles.'}</p>
     <div class="save-slots-list">${rows}</div>
     ${replayRows}`;

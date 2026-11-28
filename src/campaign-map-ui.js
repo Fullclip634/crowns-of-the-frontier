@@ -165,7 +165,6 @@ export function campaignMapMarkup({progress={},selectedId='campaign1',actFilter=
       <div class="atlas-brand">
         <span class="atlas-crest">${uiVectorIcon('crown')}</span>
         <div>
-          <span class="eyebrow">THE FRONTIER CHRONICLES</span>
           <h2 id="atlas-heading">Campaign World Map</h2>
         </div>
       </div>

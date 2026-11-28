@@ -43,7 +43,6 @@
 .mode-tag .ui-icon{width:14px;height:14px}
 .landing-footer{font-size:9px;letter-spacing:.5px;margin-top:0;gap:12px;flex-wrap:wrap}
 .landing-footer button{font-size:11px;min-height:32px;color:var(--ui-secondary)}
-.menu-divider{display:inline-block;height:9px;border-left:1px solid var(--line);margin:0 8px}
 .modal-backdrop{background:#08150dc4}
 .modal{color:var(--ui-text);background:var(--ui-panel-bg);border:1px solid var(--ui-border);border-radius:7px;box-shadow:0 22px 60px rgba(3,9,7,.75),var(--ui-inset);scrollbar-width:thin;scrollbar-color:#63735c #172c23;max-height:calc(100dvh - 32px)}
 .modal h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(28px,3.3vw,38px);font-weight:600;line-height:1.12;letter-spacing:-.4px;margin:10px 0 14px;padding-right:34px;color:#f5efe0}

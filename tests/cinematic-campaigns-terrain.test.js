@@ -119,7 +119,9 @@ describe('Blender 4.5 LTS Cliffs/Mountains/Bushes, Organic Fortified Valleys & C
     assert.doesNotMatch(html,/data-action="toggle-menu-backdrop"/);
     assert.doesNotMatch(html,/Live 3D Citadel/i);
     assert.doesNotMatch(html,/Fieldcraft/i);
-    assert.match(html,/19 handcrafted chapters/);
+    assert.match(html,/19 campaign chapters/);
+    assert.match(html,/<footer class="landing-footer">For a wider view, turn your phone sideways\.<\/footer>/);
+    assert.doesNotMatch(html,/SOLO & MULTIPLAYER|Made for mouse & touch/);
   });
 
   it('replaces the floating boot bar with a full-screen painted medieval startup loading screen',()=>{

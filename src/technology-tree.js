@@ -35,7 +35,7 @@ export function technologyTreeMarkup(sim,faction){
     }).join('')}</section>`;
   }).join('');
   const wp=WONDER_POWERS[faction];
-  return `<div class="eyebrow">PLAN YOUR KINGDOM</div><h2>Technology tree</h2><p class="modal-intro">${FACTIONS[faction].name} · ${FACTIONS[faction].desc}</p>
+  return `<h2>Technology tree</h2><p class="modal-intro">${FACTIONS[faction].name} · ${FACTIONS[faction].desc}</p>
   ${wp?`<div class="counter-strip" aria-label="Wonder Super-Power"><span>${ICONS.wonder||uiIcon('monument')} <b>World Wonder — ${wp.name}:</b> ${wp.desc}</span></div>`:''}
   <div class="counter-strip" aria-label="Unit counter triangle">
     <span>${ICONS.spearman} <b>Spearmen</b> → Cavalry</span>

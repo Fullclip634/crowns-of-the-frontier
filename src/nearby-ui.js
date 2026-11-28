@@ -40,7 +40,7 @@ export function createNearby({net,showModal,closeModal,toast,getModal,onRoomEnde
     host=room;
     net.useTransport(hostTransport(room));
     invite={status:'idle'};
-    showModal(`<div class="eyebrow">NEARBY · OFFLINE</div><h2>Raising your war room…</h2><p class="modal-intro">This device is becoming the host. No internet connection is needed.</p><div class="nearby-wait">${spinner}<span>Preparing the battlefield</span></div><button class="secondary" data-action="lan-leave">Cancel</button>`,'lan');
+    showModal(`<div class="eyebrow">NEARBY · OFFLINE</div><h2>Starting nearby room…</h2><p class="modal-intro">This device is becoming the host. No internet connection is needed.</p><div class="nearby-wait">${spinner}<span>Preparing the battlefield</span></div><button class="secondary" data-action="lan-leave">Cancel</button>`,'lan');
     net.connect(createMessage);
     acquireWake();
   }
@@ -88,7 +88,7 @@ ${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply
   }
   function showInviteModal(){
     if(!isHosting())return;
-    showModal(`<div class="eyebrow">NEARBY HOST</div><h2>Bring a commander back</h2><p class="modal-intro">A friend who lost connection has two minutes to rejoin their kingdom. Show them an invite and scan their reply.</p><section class="nearby-invite nearby-panel" data-match="true" aria-live="polite"></section><button class="secondary full" data-action="close">Return to battle</button>`,'nearby-invite');
+    showModal(`<div class="eyebrow">NEARBY HOST</div><h2>Help a player reconnect</h2><p class="modal-intro">A friend who lost connection has two minutes to rejoin their kingdom. Show them an invite and scan their reply.</p><section class="nearby-invite nearby-panel" data-match="true" aria-live="polite"></section><button class="secondary full" data-action="close">Return to battle</button>`,'nearby-invite');
     renderInvite();
   }
   async function newInvite(){
@@ -184,7 +184,7 @@ ${cameraAvailable()?`<button class="primary full" data-action="nearby-scan-reply
       join=null;
       net.useTransport(guestTransport(channel,pending.pc));
       const resume=net.session&&net.session.code===pending.room;
-      showModal(`<div class="eyebrow">NEARBY · OFFLINE</div><h2>${resume?'Rejoining your kingdom…':'Entering the war room…'}</h2><div class="nearby-wait">${spinner}<span>Linked with the host. Exchanging orders…</span></div><button class="secondary" data-action="lan-leave">Cancel</button>`,'lan');
+      showModal(`<div class="eyebrow">NEARBY · OFFLINE</div><h2>${resume?'Rejoining the match…':'Joining nearby room…'}</h2><div class="nearby-wait">${spinner}<span>Connected. Syncing with the host…</span></div><button class="secondary" data-action="lan-leave">Cancel</button>`,'lan');
       const {name,faction,slot}=current.profile;
       net.connect(resume?{type:'resume',...net.session}:{type:'join',name,faction,code:pending.room,slot});
       acquireWake();

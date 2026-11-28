@@ -14,7 +14,7 @@ export const STARTUP_TIPS=Object.freeze([
 
 /** Pure HTML generator for the full-screen AAA medieval startup loading screen. */
 export function startupSplashMarkup({
-  status='Preparing your kingdom…',
+  status='Loading game…',
   percent=0,
   tip=STARTUP_TIPS[0],
 }={}){
@@ -96,7 +96,7 @@ export function createStartupSplash(host=document.body){
         if(trackEl)trackEl.setAttribute('aria-valuenow',String(next));
       }
     },
-    resetProgress(label='Preparing your kingdom…'){
+    resetProgress(label='Loading game…'){
       if(dismissed)return;
       currentPercent=4;
       errorBox?.classList.add('hidden');
@@ -122,7 +122,7 @@ export function createStartupSplash(host=document.body){
       if(dismissed)return;
       dismissed=true;
       clearInterval(tipTimer);
-      if(statusEl)statusEl.textContent='Entering the Frontier…';
+      if(statusEl)statusEl.textContent='Starting game…';
       if(fillEl)fillEl.style.width='100%';
       if(percentEl)percentEl.textContent='100%';
       if(trackEl)trackEl.setAttribute('aria-valuenow','100');
