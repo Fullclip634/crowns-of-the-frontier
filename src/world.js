@@ -31,6 +31,7 @@ import {pruneFootPlacements,visualBodyOffset} from './foot-placement.js';
 import {createRigidUnitPart,disposeRigidPart} from './rig-batches.js';
 import {animateSceneDecorations} from './scene-animation.js';
 import {setShadowEnabled,applyRendererQuality,transitionRendererQuality} from './render-quality.js';
+import {warmRuntimePrograms} from './shader-preparation.js';
 import {WallVisuals} from './wall-visuals.js';
 import {scheduleShadows,positionShadowLight} from './shadow-sampling.js';
 import {createGpuFrameTimer,effectiveFrameSeconds} from './gpu-timing.js';
@@ -121,7 +122,7 @@ export class WorldView {
     const pressure=this.frameTimeMs>budgetMs*1.15?Math.min(1.65,this.frameTimeMs/budgetMs):1;
     const distance=Math.hypot(this.camera.position.x-x,this.camera.position.y-y,this.camera.position.z-z);
     const previous=(this.unitLodState??=new Map()).get(e.id);
-    const decision=lodDecision({distance,worldHeight:unitScreenHeight(e.type),viewportHeight:this.container?.clientHeight||globalThis.innerHeight||720,fovDegrees:this.camera.fov,previous,threshold:baseThreshold*pressure,hysteresis:.8,enabled:true});
+    const decision=lodDecision({distance,worldHeight:unitScreenHeight(e.type),viewportHeight:this.frameViewportHeight||this.container?.clientHeight||globalThis.innerHeight||720,fovDegrees:this.camera.fov,previous,threshold:baseThreshold*pressure,hysteresis:.8,enabled:true});
     this.unitLodState.set(e.id,decision);
     return decision.detail;
   }
@@ -149,7 +150,7 @@ export class WorldView {
     this.wallVisuals?.dispose();this.wallVisuals=null;
     if(this.selectionOverlays){this.selectionOverlays.treeForestRef=null;this.selectionOverlays.treeCoords=null;this.selectionOverlays.rangeKey='';}
     this.hoverEntityId=null;
-    this.jointPoseCache=new Map();this.jointPoseEntity=null;this.jointPoseRoot=null;
+    this.jointPoseCache=new Map();this.jointPoseSlots=[];this.jointPoseEntity=null;this.jointPoseRoot=null;
     this.localMotion??=new LocalMotion();this.localMotion.clear();this.localBlend=1;
     this.locomotion??=new UnitLocomotion();this.locomotion.clear();this.locomotionPrunedAt=0;
     this.footPoses=new Map();this.footPoseEntity=null;
@@ -174,7 +175,7 @@ export class WorldView {
         .then(()=>true,error=>{console.warn('Biome surfaces could not load:',error.message);return false;})
         .then(complete=>{
           if(this.sim!==sim||this.renderingReleased||this.graphicsFatal||this.graphicsLoading||this.graphicsRebuilding||this.surfaceMapToken!==surfaceToken)return false;
-          applySurfaceMaterials(this);refreshGroundSurface(this);trimSurfaceAssets(this);return complete;
+          applySurfaceMaterials(this);refreshGroundSurface(this);trimSurfaceAssets(this);this.runtimeProgramsReady=warmRuntimePrograms(this,{force:true});return complete;
         });
     }else{
       this.surfaceMapReady=Promise.resolve(true);
@@ -237,7 +238,7 @@ export class WorldView {
   createNode(e){if(e.kind==='resource'&&e.type==='wood')return;let g;
     if(e.kind==='building')g=this.mergeModel(this.makeBuilding(e));else if(e.kind==='unit')g=this.unitNode(e);else{g=new THREE.Group();if(e.kind==='shrine'){this.cylinder(g,this.materials.stoneDark,0,.25,0,3,.5);for(const x of [-1.5,1.5])for(const z of [-1.5,1.5])this.cylinder(g,this.materials.stone,x,2,z,.35,4);this.roof(g,this.materials.stone,0,4.2,0,3,1.4,3);this.piece(g,this.geo.sphere,this.materials.gold,0,2,0,.8,.8,.8);}else if(e.type==='food'){for(let i=0;i<4;i++){this.piece(g,this.geo.sphere,this.materials.leaf,-.7+i*.45,.75,(i%2)*.6,1,1,1);for(let j=0;j<3;j++)this.piece(g,this.geo.sphere,this.materials.berry,-.8+i*.5,1.2,j*.35-.2,.16,.16,.16);}}else{for(let i=0;i<4;i++)this.piece(g,this.geo.sphere,e.type==='gold'?this.materials.gold:this.materials.stoneDark,(i%2)*1.25-.6,.7,Math.floor(i/2)*1.2-.6,.85,1.1+i*.13,1);}}
     if(e.kind==='resource'||e.kind==='shrine')g=this.mergeModel(g);
-    g.position.set(e.x,0,e.z);g.userData.entity=e.id;g.traverse(child=>child.userData.entity=e.id);this.objects.add(g);this.nodes.set(e.id,g);
+    g.position.set(e.x,0,e.z);g.userData.entity=e.id;g.traverse(child=>child.userData.entity=e.id);if(!g.userData.batch)this.objects.add(g);this.nodes.set(e.id,g);
     if(e.kind==='building'){const r=new THREE.Mesh(this.geo.ring,new THREE.MeshBasicMaterial({color:selectionColorHex(this.sim,e,true),transparent:true,opacity:.92,side:THREE.DoubleSide,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=.13;r.scale.setScalar(e.r+(.6));r.visible=false;r.userData.selection=true;g.add(r);g.userData.ring=r;}
     return g;
   }
@@ -453,6 +454,7 @@ export class WorldView {
     const activeQuality=this.renderQuality||this.settings.quality;
     if(this.battleFog.blur)this.battleFog.blur.value=activeQuality==='low'?0:1;
     this.disableFootPlacement=activeQuality==='low';
+    this.frameViewportHeight=this.container?.clientHeight||globalThis.innerHeight||720;
     beginUnitFrame(this,false);
     const cullMargin=this.renderer?.shadowMap?.enabled?20:10;
     this.buildingDamage?.beginFrame(this.camera);

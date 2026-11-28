@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {animatePart,beginJointPose,endJointPose} from './world-polish.js';
 import {writeRigidPose,finishRigidFrame} from './rig-batches.js';
-import {releasePreparedPrograms} from './shader-preparation.js';
+import {releasePreparedPrograms,warmRuntimePrograms} from './shader-preparation.js';
 import {canSubmitFrame,submittedFrame} from './render-flight.js';
 import {prepareFootPlacement} from './foot-placement.js';
+import {WallVisuals} from './wall-visuals.js';
 
 // Keep allocation slots stable while packing only the current visible poses.
 // Picking uses the packed IDs, never the allocator's potentially empty slots.
@@ -27,7 +28,13 @@ export function beginUnitFrame(view,refreshViewport=true){
 
 // Prepare the camera before any render extension samples contacts or cargo.
 export function installRenderFrame(WorldView){
-  const render=WorldView.prototype.render;
+  const attach=WorldView.prototype.attach,render=WorldView.prototype.render;
+  WorldView.prototype.attach=function(sim){
+    const result=attach.call(this,sim);
+    if(!this.wallVisuals&&this.objects&&this.geo?.box&&this.materials?.stone&&this.materials?.stoneDark)this.wallVisuals=new WallVisuals(this);
+    this.runtimeProgramsReady=warmRuntimePrograms(this,{deferFirstFrame:true});
+    return result;
+  };
   WorldView.prototype.render=function(dt,menu=false){if(this.graphicsLoading||this.graphicsRebuilding||this.graphicsFatal||!canSubmitFrame(this))return false;this.renderFrameAt=performance.now();prepareViewport(this);try{const result=render.call(this,dt,menu);submittedFrame(this);return result;}finally{releasePreparedPrograms(this);}};
 }
 

@@ -91,6 +91,44 @@ export function globalQueueMarkup(items){
   return items.map(item=>`<button class="gq-item ${item.kind==='age'?'gq-age':item.kind==='tech'?'gq-tech':''}" data-production-select="${item.buildingId}" title="${esc(item.label)} (${item.remaining}s) · Click to focus"><span class="gq-icon">${item.icon}</span><span class="gq-time">${item.remaining}s</span>${item.queued>1?`<b class="gq-badge">${item.queued}</b>`:''}<i class="gq-fill" style="transform:scaleX(${(item.percent/100).toFixed(3)})"></i></button>`).join('');
 }
 
+const liveQueueStrips=new WeakMap();
+// Patch countdown, progress bar and stack count in place so the 300 ms HUD tick
+// never reparses SVG icons and button DOM nodes while buildings are training.
+export function updateGlobalQueueStrip(root,items){
+  if(!root)return;
+  if(!items?.length){
+    const prev=liveQueueStrips.get(root);
+    if(prev?.key){root.innerHTML='';liveQueueStrips.set(root,{key:'',rows:[]});}
+    return;
+  }
+  const key=items.map(i=>`${i.buildingId}:${i.kind}:${i.type}`).join('|');
+  let state=liveQueueStrips.get(root);
+  if(!state||state.key!==key||state.rows.length!==items.length||root.firstElementChild!==state.rows[0]?.btn){
+    root.innerHTML=globalQueueMarkup(items);
+    const buttons=[...root.querySelectorAll('.gq-item')];
+    state={key,rows:buttons.map(btn=>({btn,time:btn.querySelector('.gq-time'),fill:btn.querySelector('.gq-fill'),badge:btn.querySelector('.gq-badge'),title:btn.title,timeText:btn.querySelector('.gq-time')?.textContent||'',transform:btn.querySelector('.gq-fill')?.style.transform||'',queued:btn.querySelector('.gq-badge')?.textContent||''}))};
+    liveQueueStrips.set(root,state);
+    return;
+  }
+  for(let idx=0;idx<items.length;idx++){
+    const item=items[idx],row=state.rows[idx];
+    const title=`${item.label} (${item.remaining}s) · Click to focus`;
+    if(row.title!==title){row.title=title;row.btn.title=title;}
+    const timeText=`${item.remaining}s`;
+    if(row.time&&row.timeText!==timeText){row.timeText=timeText;row.time.textContent=timeText;}
+    const transform=`scaleX(${(item.percent/100).toFixed(3)})`;
+    if(row.fill&&row.transform!==transform){row.transform=transform;row.fill.style.transform=transform;}
+    const qText=item.queued>1?String(item.queued):'';
+    if(row.queued!==qText){
+      row.queued=qText;
+      if(qText){
+        if(!row.badge){row.badge=root.ownerDocument.createElement('b');row.badge.className='gq-badge';row.btn.insertBefore(row.badge,row.fill||null);}
+        row.badge.textContent=qText;
+      }else if(row.badge){row.badge.remove();row.badge=null;}
+    }
+  }
+}
+
 /** Compute balanced AoE-style live score for a kingdom (respects fair public metrics). */
 export function kingdomScore(sim,owner){
   const player=sim?.players?.[owner];

@@ -18,45 +18,106 @@ export function cargoGeometry(view,type){
 export class WorldInteractions {
   constructor(view){
     this.view=view;this.group=new THREE.Group();this.group.name='3D world interactions';view.scene.add(this.group);this.dummy=new THREE.Object3D();this.cargo={};this.cargoFeet=[];this.cargoFeetCount=0;this.stumpPoses=new Map();this.stumpSlots=[];this.fell=new Set(view.sim.entities.filter(e=>e.type==='wood'&&e.hp<=0&&!view.sim.resourceMemory?.has(e.id)).map(e=>e.id));view.treeFalls=new Map();
+    this.woodEntities=null;this.oreEntities=null;this.resourceEntitiesRef=null;this.resourceLayoutRevision=null;this.lastStumpKey='';
     for(const type of ['wood','food','gold','stone']){const mesh=new THREE.InstancedMesh(cargoGeometry(view,type),view.materials[type==='food'?'canvas':type],512);mesh.count=0;mesh.frustumCulled=false;mesh.castShadow=true;mesh.userData.model3d={type:'cargo',resource:type,volumetric:true};this.cargo[type]=mesh;this.group.add(mesh);}
     const stumpGeometry=new THREE.CylinderGeometry(.27,.36,.32,8);stumpGeometry.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(stumpGeometry.attributes.position.count*3).fill(1),3));
     this.stumps=new THREE.InstancedMesh(stumpGeometry,view.materials.trunk,4096);this.stumps.count=0;this.stumps.frustumCulled=false;this.stumps.receiveShadow=true;this.stumps.userData.model3d={type:'stump',volumetric:true};this.group.add(this.stumps);
   }
+  _ensureResourceCaches(sim){
+    if(this.resourceEntitiesRef===sim.entities&&this.resourceLayoutRevision===sim.revision)return;
+    const wood=[],ore=[];
+    for(let i=0;i<sim.entities.length;i++){
+      const e=sim.entities[i];
+      if(e.type==='wood')wood.push(e);
+      else if(e.kind==='resource'&&(e.type==='gold'||e.type==='stone'))ore.push(e);
+    }
+    this.woodEntities=wood;this.oreEntities=ore;this.resourceEntitiesRef=sim.entities;this.resourceLayoutRevision=sim.revision;this.lastStumpKey='';
+  }
+  _processVillager(e,dt,menu,counts,counters){
+    const v=this.view;
+    if(e.hp<=0||e.type!=='villager'||e.embarked)return;
+    const shown=menu||e.owner===0||v.sim.isVisible(e.x,e.z);if(!shown)return;
+    if(!e.moving&&['gather','build','repair'].includes(e.order?.type)){const target=v.sim.get(e.order.target);if(target){const face=e.order.type!=='gather'&&target.kind==='building'?constructionFace(e,target):-1;e.heading=face>=0?constructionHeading(target,face):Math.atan2(target.x-e.x,target.z-e.z);}}
+    if(!e.carry||!this.cargo[e.carryType]||counts[e.carryType]>=512)return;
+    const position=renderPosition(v,e),x=position.x,z=position.z,bodyOffset=visualBodyOffset(v,e),ground=v.entityHeight(e,x,z)+bodyOffset;
+    if(!nearViewport(v,x,ground+1.24,z,4)){counters.culledCargo++;return;}
+    const node=v.nodes.get(e.id),heading=node?.userData.headingReady?smoothHeading(node,e.heading,dt):e.heading||0,mesh=this.cargo[e.carryType],slot=counts[e.carryType]++;this.dummy.position.set(x-Math.sin(heading)*.42,ground+1.24,z-Math.cos(heading)*.42);this.dummy.rotation.set(0,heading,0);this.dummy.scale.setScalar(.72+.28*Math.min(1,e.carry/18));this.dummy.updateMatrix();mesh.setMatrixAt(slot,this.dummy.matrix);
+    const cargo=this.cargoFeet[this.cargoFeetCount]??={};cargo.mesh=mesh;cargo.slot=slot;cargo.entity=e;cargo.offset=bodyOffset;this.cargoFeetCount++;
+  }
   update(dt,menu){
     this.cargoFeetCount=0;
-    const v=this.view,counts={wood:0,food:0,gold:0,stone:0};let stumpCount=0,stumpsChanged=false,culledCargo=0;
-    const remembered=menu?null:v.sim.resourceMemory;
-    for(const entity of v.sim.entities){
-      const e=remembered?.get(entity.id)??entity;
-      if(e.type==='wood'&&e.hp<=0){
-        if(!this.fell.has(e.id)){this.fell.add(e.id);v.forestRefresh=undefined;if(!wasFelledOutOfSight(e)&&v.sim.isVisible(e.x,e.z))v.treeFalls.set(e.id,{at:v.clock});}
-        if(stumpCount<4096&&(menu||v.sim.isExplored(e.x,e.z))){
-          let pose=this.stumpPoses.get(e.id),changed=!pose||pose.x!==e.x||pose.z!==e.z;
-          if(changed){this.dummy.position.set(e.x,v.groundHeight(e.x,e.z)+.15,e.z);this.dummy.rotation.set(0,e.id*.7,0);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();pose={x:e.x,z:e.z,matrix:this.dummy.matrix.clone()};this.stumpPoses.set(e.id,pose);if(this.stumpPoses.size>4096)this.stumpPoses.delete(this.stumpPoses.keys().next().value);}
-          if(changed||this.stumpSlots[stumpCount]!==e.id){this.stumps.setMatrixAt(stumpCount,pose.matrix);stumpsChanged=true;}
-          this.stumpSlots[stumpCount++]=e.id;
-        }continue;
+    const v=this.view,sim=v.sim,counts={wood:0,food:0,gold:0,stone:0},counters={culledCargo:0};
+    let stumpCount=0,stumpsChanged=false;
+    const remembered=menu?null:sim.resourceMemory;
+    const fastMode=typeof sim.candidatesFor==='function'&&typeof sim.fogRevision==='number';
+
+    if(fastMode){
+      this._ensureResourceCaches(sim);
+      const stumpKey=`${sim.resourceRevision||0}:${sim.fogRevision}:${v.exploredRevision||0}:${remembered?.size||0}:${menu?1:0}`;
+      if(stumpKey!==this.lastStumpKey){
+        this.lastStumpKey=stumpKey;
+        const wood=this.woodEntities;
+        for(let i=0;i<wood.length;i++){
+          const entity=wood[i],e=remembered?.get(entity.id)??entity;
+          if(e.hp>0)continue;
+          if(!this.fell.has(e.id)){this.fell.add(e.id);v.forestRefresh=undefined;if(!wasFelledOutOfSight(e)&&sim.isVisible(e.x,e.z))v.treeFalls.set(e.id,{at:v.clock});}
+          if(stumpCount<4096&&(menu||sim.isExplored(e.x,e.z))){
+            let pose=this.stumpPoses.get(e.id),changed=!pose||pose.x!==e.x||pose.z!==e.z;
+            if(changed){this.dummy.position.set(e.x,v.groundHeight(e.x,e.z)+.15,e.z);this.dummy.rotation.set(0,e.id*.7,0);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();pose={x:e.x,z:e.z,matrix:this.dummy.matrix.clone()};this.stumpPoses.set(e.id,pose);if(this.stumpPoses.size>4096)this.stumpPoses.delete(this.stumpPoses.keys().next().value);}
+            if(changed||this.stumpSlots[stumpCount]!==e.id){this.stumps.setMatrixAt(stumpCount,pose.matrix);stumpsChanged=true;}
+            this.stumpSlots[stumpCount++]=e.id;
+          }
+        }
+        if(stumpCount!==this.stumpSlots.length)stumpsChanged=true;
+      }else{
+        stumpCount=this.stumps.count;
       }
-      if(e.kind==='resource'&&['gold','stone'].includes(e.type)&&e.hp>0){
+
+      const ore=this.oreEntities;
+      for(let i=0;i<ore.length;i++){
+        const entity=ore[i],e=remembered?.get(entity.id)??entity;
+        if(e.hp<=0)continue;
         const node=v.nodes.get(e.id);
-        // Erode the exposed height, keeping the bedrock footprint aligned with
-        // navigation and the miner's approach throughout the deposit's life.
-        if(node)node.scale.set(1,.85+.15*Math.max(0,Math.min(1,e.amount/(e.initialAmount||Math.max(e.amount,1800)))),1);
+        if(!node)continue;
+        if(node.userData.oreErosionAmount!==e.amount){
+          node.userData.oreErosionAmount=e.amount;
+          node.scale.set(1,.85+.15*Math.max(0,Math.min(1,e.amount/(e.initialAmount||Math.max(e.amount,1800)))),1);
+        }
       }
-      if(e.hp<=0||e.type!=='villager'||e.embarked)continue;
-      const shown=menu||e.owner===0||v.sim.isVisible(e.x,e.z);if(!shown)continue;
-      if(!e.moving&&['gather','build','repair'].includes(e.order?.type)){const target=v.sim.get(e.order.target);if(target){const face=e.order.type!=='gather'&&target.kind==='building'?constructionFace(e,target):-1;e.heading=face>=0?constructionHeading(target,face):Math.atan2(target.x-e.x,target.z-e.z);}}
-      if(!e.carry||!this.cargo[e.carryType]||counts[e.carryType]>=512)continue;
-      const position=renderPosition(v,e),x=position.x,z=position.z,bodyOffset=visualBodyOffset(v,e),ground=v.entityHeight(e,x,z)+bodyOffset;
-      if(!nearViewport(v,x,ground+1.24,z,4)){culledCargo++;continue;}
-      const node=v.nodes.get(e.id),heading=node?.userData.headingReady?smoothHeading(node,e.heading,dt):e.heading||0,mesh=this.cargo[e.carryType],slot=counts[e.carryType]++;this.dummy.position.set(x-Math.sin(heading)*.42,ground+1.24,z-Math.cos(heading)*.42);this.dummy.rotation.set(0,heading,0);this.dummy.scale.setScalar(.72+.28*Math.min(1,e.carry/18));this.dummy.updateMatrix();mesh.setMatrixAt(slot,this.dummy.matrix);
-      const cargo=this.cargoFeet[this.cargoFeetCount]??={};cargo.mesh=mesh;cargo.slot=slot;cargo.entity=e;cargo.offset=bodyOffset;this.cargoFeetCount++;
+
+      const units=sim.candidatesFor('unit');
+      for(let i=0;i<units.length;i++)this._processVillager(units[i],dt,menu,counts,counters);
+    }else{
+      for(const entity of sim.entities){
+        const e=remembered?.get(entity.id)??entity;
+        if(e.type==='wood'&&e.hp<=0){
+          if(!this.fell.has(e.id)){this.fell.add(e.id);v.forestRefresh=undefined;if(!wasFelledOutOfSight(e)&&sim.isVisible(e.x,e.z))v.treeFalls.set(e.id,{at:v.clock});}
+          if(stumpCount<4096&&(menu||sim.isExplored(e.x,e.z))){
+            let pose=this.stumpPoses.get(e.id),changed=!pose||pose.x!==e.x||pose.z!==e.z;
+            if(changed){this.dummy.position.set(e.x,v.groundHeight(e.x,e.z)+.15,e.z);this.dummy.rotation.set(0,e.id*.7,0);this.dummy.scale.setScalar(1);this.dummy.updateMatrix();pose={x:e.x,z:e.z,matrix:this.dummy.matrix.clone()};this.stumpPoses.set(e.id,pose);if(this.stumpPoses.size>4096)this.stumpPoses.delete(this.stumpPoses.keys().next().value);}
+            if(changed||this.stumpSlots[stumpCount]!==e.id){this.stumps.setMatrixAt(stumpCount,pose.matrix);stumpsChanged=true;}
+            this.stumpSlots[stumpCount++]=e.id;
+          }continue;
+        }
+        if(e.kind==='resource'&&['gold','stone'].includes(e.type)&&e.hp>0){
+          const node=v.nodes.get(e.id);
+          // Erode the exposed height, keeping the bedrock footprint aligned with
+          // navigation and the miner's approach throughout the deposit's life.
+          if(node)node.scale.set(1,.85+.15*Math.max(0,Math.min(1,e.amount/(e.initialAmount||Math.max(e.amount,1800)))),1);
+        }
+        this._processVillager(e,dt,menu,counts,counters);
+      }
     }
+
     for(const [id,fall]of v.treeFalls)if(v.clock-fall.at>1.7){v.treeFalls.delete(id);v.forestRefresh=undefined;}
     let matrixUploadBytes=0;for(const type of Object.keys(counts)){this.cargo[type].count=counts[type];markInstancePrefix(this.cargo[type]);matrixUploadBytes+=counts[type]*64;}
     this.stumps.count=stumpCount;this.stumpSlots.length=stumpCount;if(stumpsChanged){markInstancePrefix(this.stumps);matrixUploadBytes+=stumpCount*64;}
-    if(v.clock-(this.prunedAt||0)>2){const present=new Set(v.sim.entities.filter(e=>e.type==='wood').map(e=>e.id));for(const id of this.stumpPoses.keys())if(!present.has(id))this.stumpPoses.delete(id);this.prunedAt=v.clock;}
-    v.interactionDiagnostics={cargo:counts,culledCargo,stumps:stumpCount,fallingTrees:v.treeFalls.size,drawCalls:Object.values(counts).filter(count=>count>0).length+(stumpCount?1:0),matrixUploadBytes,cachedStumps:this.stumpPoses.size};
+    if(v.clock-(this.prunedAt||0)>2){
+      if(sim.index instanceof Map){for(const id of this.stumpPoses.keys())if(!sim.index.has(id))this.stumpPoses.delete(id);}
+      else{const present=new Set(sim.entities.filter(e=>e.type==='wood').map(e=>e.id));for(const id of this.stumpPoses.keys())if(!present.has(id))this.stumpPoses.delete(id);}
+      this.prunedAt=v.clock;
+    }
+    v.interactionDiagnostics={cargo:counts,culledCargo:counters.culledCargo,stumps:stumpCount,fallingTrees:v.treeFalls.size,drawCalls:Object.values(counts).filter(count=>count>0).length+(stumpCount?1:0),matrixUploadBytes,cachedStumps:this.stumpPoses.size};
     this.cargoFeet.length=this.cargoFeetCount;
   }
   alignCargoFeet(){

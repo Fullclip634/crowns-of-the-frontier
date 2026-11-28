@@ -281,7 +281,8 @@ export class GroundCover{
     const sites=this.buildingSites;
     if(force||v.sim.revision===undefined||this.sitesRevision!==v.sim.revision||this.sitesEntities!==v.sim.entities||this.sitesLength!==v.sim.entities.length){
       sites.clear();
-      for(const e of v.sim.entities)if(e.kind==='building'&&e.hp>0){const r=e.r+(e.type==='towncenter'?1.8:1.15),site={x:e.x,z:e.z,radiusSquared:r*r};for(let x=Math.floor((e.x-r)/16);x<=Math.floor((e.x+r)/16);x++)for(let z=Math.floor((e.z-r)/16);z<=Math.floor((e.z+r)/16);z++){const cellKey=buildingCellKey(x,z);let list=sites.get(cellKey);if(!list){list=[];sites.set(cellKey,list);}list.push(site);}}
+      const buildings=typeof v.sim.candidatesFor==='function'?v.sim.candidatesFor('building'):v.sim.entities;
+      for(const e of buildings)if(e.kind==='building'&&e.hp>0){const r=e.r+(e.type==='towncenter'?1.8:1.15),site={x:e.x,z:e.z,radiusSquared:r*r};for(let x=Math.floor((e.x-r)/16);x<=Math.floor((e.x+r)/16);x++)for(let z=Math.floor((e.z-r)/16);z<=Math.floor((e.z+r)/16);z++){const cellKey=buildingCellKey(x,z);let list=sites.get(cellKey);if(!list){list=[];sites.set(cellKey,list);}list.push(site);}}
       this.sitesRevision=v.sim.revision;this.sitesEntities=v.sim.entities;this.sitesLength=v.sim.entities.length;
     }
     const stride=reduced?2:1;

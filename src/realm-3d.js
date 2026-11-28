@@ -13,7 +13,7 @@ import {applySurfaceMaterials} from './surface-assets.js';
 import {attackFlight,updateFlight,FlightEffects} from './battle-effects.js';
 import {fitFarmTerrain,farmSelectionGeometry} from './farm-grounding.js';
 import {groundBuildingFoundation,groundGatePortcullis,updateGatePortcullis,syncFoundationMaterials,fitBuildingSelectionRing} from './building-grounding.js';
-import {wallTier} from './fortified-walls.js';
+import {wallTier,FORTIFIED_WALL_TECH} from './fortified-walls.js';
 import {isWallCorner} from './walls.js';
 import {treePalette,isSnowBiome,isAridBiome} from './terrain-biomes.js';
 import {architectureAge,architectureOutdated} from './architecture-age.js';
@@ -159,8 +159,8 @@ function buildForest(view){
   }
   view.treeIndices.clear();view.forestFog(true);
 }
-function scaffoldMaterials(view,age){
-  const m=view.materials;
+export function scaffoldMaterials(view,age){
+  const m=view.materials||{};
   const map=m.plaster?.map||null,normal=m.wood?.normalMap||null;
   if(!view.scaffoldDriftwoodMat)view.scaffoldDriftwoodMat=standardMaterial({color:0xb2a28a,roughness:.92,metalness:0});
   if(!view.scaffoldOakMat)view.scaffoldOakMat=standardMaterial({color:0x9c7b52,roughness:.90,metalness:0});
@@ -254,9 +254,9 @@ export function installRealm3D(WorldView){
     const sameSimulation=this.sim===sim;
     this.hideGhost();this.ghost.userData.type=null;
     if(this.forestShadow){this.forestShadow.material?.dispose?.();this.forestShadow=null;}
-    this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions,sim.startingSites);this.foundationHeights=new Map();this.forest=[];this.forestLodState=new Map();this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;
+    this.landscape=new Landscape(sim.options.seed,sim.options.map,sim.worldSize,sim.spawnPositions,sim.startingSites);this.foundationHeights=new Map();this.forest=[];this.forestLodState=new Map();this.forestRefresh=undefined;this.waterMeshes=[];this.frameFrustum=null;this.wildlifeEntities=null;this.wildlifeEntitiesRef=null;this.lastArchCheckKey='';this.lastForestFogRev=undefined;this.lastForestResRev=undefined;this.lastForestMenu=undefined;this.lastForestThreshold=undefined;
     while(this.teamMaterials.length<sim.players.length){const material=this.teamMaterials[0].clone();this.teamMaterials.push(material);if(this.roofMaterials){const roof=this.roofMaterials[0].clone();this.roofMaterials.push(roof);this.materials['teamRoof'+(this.roofMaterials.length-1)]=roof;}}
-    attach.call(this,sim);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
+    attach.call(this,sim);if(this.materials)scaffoldMaterials(this,0);this.camera.far=Math.max(400,sim.worldSize*2);this.camera.updateProjectionMatrix();const home=sim.owned(0,'building','towncenter')[0];if(!sameSimulation&&home)this.focus(home.x,home.z);this.scene.fog.near=115;this.scene.fog.far=275;
   };
   p.buildLandscape=function(){
     ensureModels(this);applySurfaceMaterials(this);syncFoundationMaterials(this);
@@ -331,7 +331,7 @@ export function installRealm3D(WorldView){
     node.position.set(e.x,this.entityHeight(e),e.z);node.userData.entity=e.id;node.userData.model3d={...node.userData.model3d,kind:e.kind,type:e.water?'fish':e.type};
     if(e.kind==='building'&&!['farm','dock'].includes(e.type)){if(e.type==='wall'||e.type==='gate')node.rotation.y=e.wallAngle||0;groundBuildingFoundation(node,this.landscape);}
     if(e.type==='gate')groundGatePortcullis(node,this.landscape);
-    node.traverse(child=>child.userData.entity=e.id);this.objects.add(node);this.nodes.set(e.id,node);
+    node.traverse(child=>child.userData.entity=e.id);if(!node.userData.batch)this.objects.add(node);this.nodes.set(e.id,node);
     if(e.kind==='building'){const field=e.type==='farm',geometry=field?(this.geo.farmRing??=farmSelectionGeometry()):(this.geo.buildingRing??=new THREE.RingGeometry(.955,1,64)),ring=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:selectionColorHex(this.sim,e,true),transparent:true,opacity:.94,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;ring.scale.setScalar(e.r+(field?.14:.48));ring.visible=false;node.add(ring);node.userData.ring=ring;}
     if(e.type==='farm'){fitFarmTerrain(node,this.landscape);node.traverse(child=>{if(child.isMesh)child.castShadow=false;});}
     else if(e.kind==='building'&&e.type!=='dock')fitBuildingSelectionRing(node,this.landscape);
@@ -432,17 +432,26 @@ export function installRealm3D(WorldView){
     for(const [id,slot]of this.fallSlots||[]){const fall=this.treeFalls?.get(id);if(!fall)continue;const matrix=forestTransform(this,slot.base,id,false,fall);for(const part of slot.parts){part.setMatrixAt(slot.index,matrix);markInstancePrefix(part);}}
     let landUnits=null;
     const buildings=typeof this.sim?.candidatesFor==='function'?this.sim.candidatesFor('building'):(this.sim?.entities||[]);
+    let archTier=0;
+    const players=this.sim?.players;
+    if(players)for(let i=0;i<players.length;i++)archTier=archTier*64+Math.min(3,players[i]?.age||0)*16+Math.min(15,(players[i]?.tech?.[FORTIFIED_WALL_TECH]||0)+1);
+    const archKey=`${this.sim?.revision??-1}:${archTier}`;
+    const archDirty=archKey!==this.lastArchCheckKey;
+    if(archDirty)this.lastArchCheckKey=archKey;
     for(const e of buildings){
       if(e.kind!=='building')continue;
       let node=this.nodes.get(e.id);if(!node)continue;
-      if(e.hp>0&&(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e))||(e.type==='wall'&&(node.userData.model3d?.wallCorner??false)!==isWallCorner(this.sim,e)))){
-        const previousGate=node.userData.portcullis;
-        const prevOpenLift=previousGate?.userData.terrainGate?.openLift;
-        this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);
-        const upgradedGate=node.userData.portcullis;
-        if(prevOpenLift&&upgradedGate?.userData.terrainGate){
-          upgradedGate.position.y=THREE.MathUtils.clamp(previousGate.position.y/prevOpenLift,0,1)*upgradedGate.userData.terrainGate.openLift;
+      if(e.hp>0&&(archDirty||!node.userData.archChecked)){
+        if(architectureOutdated(this.sim,e,node)||((e.type==='wall'||e.type==='gate')&&(node.userData.model3d?.wallTier??'stone')!==wallTier(this.sim,e))||(e.type==='wall'&&(node.userData.model3d?.wallCorner??false)!==isWallCorner(this.sim,e))){
+          const previousGate=node.userData.portcullis;
+          const prevOpenLift=previousGate?.userData.terrainGate?.openLift;
+          this.releaseNode(node);node.removeFromParent();this.nodes.delete(e.id);node=this.createNode(e);
+          const upgradedGate=node.userData.portcullis;
+          if(prevOpenLift&&upgradedGate?.userData.terrainGate){
+            upgradedGate.position.y=THREE.MathUtils.clamp(previousGate.position.y/prevOpenLift,0,1)*upgradedGate.userData.terrainGate.openLift;
+          }
         }
+        node.userData.archChecked=true;
       }
       const gate=node.userData.portcullis;
       if(node.userData.selectionRingFitted&&(e.type==='wall'||e.type==='gate'))node.userData.ring.rotation.z=-(e.wallAngle||0);
@@ -462,8 +471,14 @@ export function installRealm3D(WorldView){
     }
     // Live grazing & strolling animation for Blender 3D deer herds + shallow ford water splashes!
     if(this.sim?.entities){
-      for(const e of this.sim.entities){
-        if(e.hp<=0||!e.wildlife)continue;
+      if(this.wildlifeEntitiesRef!==this.sim.entities||!this.wildlifeEntities){
+        const list=[];
+        for(let i=0;i<this.sim.entities.length;i++){const e=this.sim.entities[i];if(e.wildlife)list.push(e);}
+        this.wildlifeEntities=list;this.wildlifeEntitiesRef=this.sim.entities;
+      }
+      for(let i=0;i<this.wildlifeEntities.length;i++){
+        const e=this.wildlifeEntities[i];
+        if(e.hp<=0)continue;
         const node=this.nodes.get(e.id);
         if(!node)continue;
         const h=this.entityHeight(e);
@@ -495,12 +510,25 @@ export function installRealm3D(WorldView){
     this.groundCover?.update(menu);
     this.terrainDetails?.update(menu);
     const swayDisabled=!!(this.settings.reducedMotion||this.settings.reduceFoliage);
-    const configChanged=this.lastForestAngle!==this.angle||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight||this.lastForestSwayDisabled!==swayDisabled;
+    const forestSwinging=!swayDisabled&&this.settings.quality!=='low';
+    const fogRev=this.sim?.fogRevision,resRev=this.sim?.resourceRevision||0;
+    const configChanged=this.lastForestAngle!==this.angle||this.lastForestTilt!==this.tilt||this.lastForestQuality!==this.settings.quality||this.lastForestScale!==this.dynamicScale||this.lastForestAspect!==this.camera.aspect||this.lastForestHeight!==this.container.clientHeight||this.lastForestSwayDisabled!==swayDisabled||this.lastForestMenu!==menu;
     const panChanged=Math.hypot((this.target.x||0)-(this.lastForestX??Infinity),(this.target.z||0)-(this.lastForestZ??Infinity))>=2||Math.abs((this.zoom||0)-(this.lastForestZoom??Infinity))>=1.2;
     const cameraMoved=this.lastForestX!==this.target.x||this.lastForestZ!==this.target.z||this.lastForestZoom!==this.zoom;
+    const forestStateChanged=this.lastForestFogRev!==fogRev||this.lastForestResRev!==resRev||Boolean(this.treeFalls?.size);
     const forestInterval=this.settings.quality==='high'?.16:this.settings.quality==='medium'?.26:.45;
     const panInterval=Math.min(forestInterval,.05);
-    if(configChanged||panChanged||this.forestRefresh===undefined||this.clock-this.forestRefresh>(cameraMoved?panInterval:forestInterval)){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;this.lastForestSwayDisabled=swayDisabled;}
+    const due=this.clock-this.forestRefresh>(cameraMoved?panInterval:forestInterval);
+    let needForest=configChanged||panChanged||forestStateChanged||this.forestRefresh===undefined||(forestSwinging&&due)||(cameraMoved&&due);
+    if(!needForest&&!forestSwinging&&due){
+      const budgetMs=1000/targetFrameRate(this.settings);
+      const q=this.settings.quality;
+      const lodOpts=q==='low'?{base:54,maximum:96}:q==='medium'?{base:28,maximum:62}:{base:22,maximum:52};
+      const nextThreshold=treeDetailThreshold(this.frameTimeMs,budgetMs,lodOpts);
+      if(nextThreshold!==this.lastForestThreshold)needForest=true;
+      else this.forestRefresh=this.clock;
+    }
+    if(needForest){this.forestFog(menu);this.forestRefresh=this.clock;this.lastForestAngle=this.angle;this.lastForestZoom=this.zoom;this.lastForestX=this.target.x;this.lastForestZ=this.target.z;this.lastForestTilt=this.tilt;this.lastForestQuality=this.settings.quality;this.lastForestScale=this.dynamicScale;this.lastForestAspect=this.camera.aspect;this.lastForestHeight=this.container.clientHeight;this.lastForestSwayDisabled=swayDisabled;this.lastForestMenu=menu;this.lastForestFogRev=fogRev;this.lastForestResRev=resRev;this.lastForestThreshold=this.forestDetailThreshold;}
     render.call(this,dt,menu);
     if(!menu)renderModelPortrait(this);
   };

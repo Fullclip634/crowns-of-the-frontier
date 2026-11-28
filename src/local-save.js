@@ -68,12 +68,12 @@ export function readSaveSlot(slotId='auto',storage){
   }catch{return null;}
 }
 
-export function writeSaveSlot(slotId='auto',sim,{label='',storage,networkActive=false}={}){
-  if(networkActive||sim?.options?.multiplayer)return 'network';
+export function writeSaveSlot(slotId='auto',sim,{label='',storage,networkActive=false,snapshot}={}){
+  if(networkActive||sim?.options?.multiplayer||snapshot?.options?.multiplayer)return 'network';
   if(!sim)return 'unavailable';
   const spec=slotSpec(slotId);
   try{
-    const serialized=sim.serialize();
+    const serialized=snapshot??sim.serialize();
     const store=storage??globalThis.localStorage;
     store.setItem(spec.key,JSON.stringify(serialized));
     const meta=readMetaMap(store);

@@ -129,6 +129,8 @@ export class WeatherRenderer {
     this.ripples=this.instances(new THREE.PlaneGeometry(1.75,1.75).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:this.rippleTex,color:0xd2e4ec,transparent:true,opacity:.26,depthWrite:false}),60);
     this.clouds=this.instances(cloudClusterGeometry(),standardMaterial({color:0xffffff,vertexColors:true,transparent:true,opacity:.24,depthWrite:false,roughness:1}),36);
     this.cloudTint=new THREE.Color();
+    // Pre-allocate instanceColor before first render so clouds never trigger a mid-match shader recompile.
+    this.clouds.setColorAt(0,this.cloudTint.setHex(0xffffff));
     const rng=seededRandom(this.seed+55131);this.particles=Array.from({length:1400},()=>({x:rng(),z:rng(),phase:rng(),speed:.8+rng()*.4,scale:.7+rng()*.6}));
     this.cloudSeeds=Array.from({length:36},()=>({x:(rng()-.5)*220,z:(rng()-.5)*220,y:62+rng()*24,scale:9+rng()*11}));
     this.daylight=new DayNightLighting(view);

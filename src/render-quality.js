@@ -1,4 +1,4 @@
-import {prepareScenePrograms} from './shader-preparation.js';
+import {prepareScenePrograms,warmRuntimePrograms} from './shader-preparation.js';
 import {graphicsNeedsReload} from './graphics-failure.js';
 
 // Shadow-map presence changes the material program, not just a light uniform.
@@ -13,6 +13,7 @@ export function setShadowEnabled(view,enabled){
   collect(view.teamMaterials);collect(view.roofMaterials);
   view.scene?.traverse(object=>collect(object.material));
   for(const material of materials)material.needsUpdate=true;
+  if(!view.graphicsLoading&&!view.graphicsRebuilding&&view.sim)view.runtimeProgramsReady=warmRuntimePrograms(view);
   return true;
 }
 
@@ -50,6 +51,7 @@ export function applyRendererQuality(view,quality){
   view.buildingDamage?.setQuality?.(quality);
   if(quality==='low'&&view.modelPortrait?.dispose){view.modelPortrait.dispose();view.modelPortrait=null;}
   view.performanceClock=0;view.frameAverage=.016;view.renderQuality=quality;view.updateCamera?.();
+  if(view.sim&&!view.graphicsWarmupError)view.runtimeProgramsReady=warmRuntimePrograms(view);
 }
 
 // Free larger targets before decoding a downgrade. Upgrades wait for their art.

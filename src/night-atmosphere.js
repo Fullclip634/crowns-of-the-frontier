@@ -78,10 +78,11 @@ export class NightAtmosphere {
       blending:THREE.AdditiveBlending,depthWrite:false,
     });
     this.groundGlows=new THREE.InstancedMesh(glowGeo,glowMat,256);
-    this.groundGlows.count=0;this.groundGlows.frustumCulled=false;
+    this.groundGlows.count=0;this.groundGlows.visible=false;this.groundGlows.frustumCulled=false;
     this.groundGlows.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.groundGlows.renderOrder=2;
     this.groundGlows.userData.nightAtmosphere=true;
+    this.groundGlows.setColorAt(0,this.color.setHex(0xffffff));
 
     const smokeGeo=new THREE.PlaneGeometry(1,1);
     const smokeMat=new THREE.MeshBasicMaterial({
@@ -89,10 +90,11 @@ export class NightAtmosphere {
       depthWrite:false,
     });
     this.chimneySmoke=new THREE.InstancedMesh(smokeGeo,smokeMat,192);
-    this.chimneySmoke.count=0;this.chimneySmoke.frustumCulled=false;
+    this.chimneySmoke.count=0;this.chimneySmoke.visible=false;this.chimneySmoke.frustumCulled=false;
     this.chimneySmoke.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.chimneySmoke.renderOrder=3;
     this.chimneySmoke.userData.nightAtmosphere=true;
+    this.chimneySmoke.setColorAt(0,this.color.setHex(0xffffff));
 
     const sparkGeo=new THREE.PlaneGeometry(1,1);
     const sparkMat=new THREE.MeshBasicMaterial({
@@ -100,10 +102,11 @@ export class NightAtmosphere {
       blending:THREE.AdditiveBlending,depthWrite:false,
     });
     this.hearthSparks=new THREE.InstancedMesh(sparkGeo,sparkMat,128);
-    this.hearthSparks.count=0;this.hearthSparks.frustumCulled=false;
+    this.hearthSparks.count=0;this.hearthSparks.visible=false;this.hearthSparks.frustumCulled=false;
     this.hearthSparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.hearthSparks.renderOrder=4;
     this.hearthSparks.userData.nightAtmosphere=true;
+    this.hearthSparks.setColorAt(0,this.color.setHex(0xffffff));
 
     parent.add(this.groundGlows,this.chimneySmoke,this.hearthSparks);
   }

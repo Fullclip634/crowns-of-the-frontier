@@ -7,10 +7,11 @@ export class LocalMotion{
   clear(){this.previous.clear();this.time=-1;this.sequence=0;}
   capture(sim){
     const sequence=++this.sequence;
-    for(const e of sim.entities)if(e.kind==='unit'&&e.hp>0){
+    const list=typeof sim.candidatesFor==='function'?sim.candidatesFor('unit'):sim.entities;
+    for(let i=0;i<list.length;i++){const e=list[i];if(e.kind==='unit'&&e.hp>0){
       let pose=this.previous.get(e.id);if(!pose){pose={};this.previous.set(e.id,pose);}
       pose.x=e.x;pose.z=e.z;pose.sequence=sequence;
-    }
+    }}
     for(const [id,pose]of this.previous)if(pose.sequence!==sequence)this.previous.delete(id);
   }
   commit(sim){this.time=sim.time;}

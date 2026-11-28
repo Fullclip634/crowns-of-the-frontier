@@ -89,6 +89,8 @@ export class BattleRemains{
     this.rubble=createPoolMesh(new THREE.IcosahedronGeometry(1,0),standardMaterial({color:0xffffff,roughness:.96}),this.limit*24,'Solid masonry and timber rubble',quality,this.group);
     this.piers=createPoolMesh(brokenMasonryGeometry(),standardMaterial({color:0xffffff,roughness:.95}),this.limit*8,'Collapsed stone foundations and broken piers',quality,this.group);
     this.timbers=createPoolMesh(new THREE.BoxGeometry(1,.15,.17),standardMaterial({color:0xffffff,roughness:.98}),this.limit*6,'Charred structural timbers',quality,this.group);
+    // Pre-allocate instanceColor so the first building collapse never triggers a mid-match shader recompile.
+    for(const pool of [this.rubble,this.piers,this.timbers]){pool.visible=false;pool.setColorAt(0,this.color.setHex(0xffffff));}
   }
   retire(item){
     if(item?.shell){item.shell.removeFromParent();item.shell=null;}

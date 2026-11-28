@@ -62,28 +62,137 @@ export function contactPose(view,e,x,z,radius,ground){
   const pose={x,z,radius,ground,matrix:dummy.matrix.clone()};cache.set(e.id,pose);return pose;
 }
 
-export function updateContacts(view,menu){
-  const mesh=view.contactShadows,slots=view.contactSlots??=[];let count=0,culled=0,computed=0,reused=0,firstChanged=Infinity,lastChanged=-1;
-  const remembered=menu?null:view.sim.resourceMemory;
-  for(const entity of view.sim.entities){
-    if(count===1024)break;
+function buildStaticContactIndex(view,sim,remembered){
+  const cellMap=new Map(),wildlife=[],constructionIds=[];
+  for(let i=0;i<sim.entities.length;i++){
+    const entity=sim.entities[i];
+    if(entity.kind==='unit')continue;
     const e=remembered?.get(entity.id)??entity;
-    if(e.hp<=0||e.embarked||e.water||UNITS[e.type]?.naval||e.type==='farm'||(e.kind==='building'&&e.progress===0))continue;
-    const shown=menu||e.owner===0||e.kind==='shrine'||view.sim.isVisible(e.x,e.z)||(e.kind==='resource'&&view.sim.isExplored(e.x,e.z));
-    if(!shown)continue;
-    const radius=e.type==='wood'?2.2:e.kind==='unit'?Math.max(.55,e.r||.5):(e.r||1.5)*1.05;
-    const position=renderPosition(view,e),x=position.x,z=position.z,previous=view.contactCache?.get(e.id),unchanged=previous&&previous.x===x&&previous.z===z&&previous.radius===radius;
-    const ground=unchanged?previous.ground:view.groundHeight(x,z);
-    if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){
-      // Keep only height data until the object enters view. Idle offscreen
-      // objects can reuse this without allocating a matrix or sampling normals.
-      if(!unchanged)(view.contactCache??=new Map()).set(e.id,{x,z,radius,ground,matrix:null});
-      culled++;continue;
-    }
-    const ready=unchanged&&previous.matrix,pose=ready?previous:contactPose(view,e,x,z,radius,ground);if(ready)reused++;else computed++;
-    if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}count++;
+    if(e.hp<=0||e.embarked||e.water||e.type==='farm')continue;
+    if(e.kind==='building'&&e.progress<1){constructionIds.push(e.id);continue;}
+    if(e.wildlife){wildlife.push(e);continue;}
+    const radius=e.type==='wood'?2.2:(e.r||1.5)*1.05;
+    const prev=view.contactCache?.get(e.id);
+    const ground=(prev&&prev.x===e.x&&prev.z===e.z)?prev.ground:view.groundHeight(e.x,e.z);
+    if(!prev||prev.x!==e.x||prev.z!==e.z)(view.contactCache??=new Map()).set(e.id,{x:e.x,z:e.z,radius,ground,matrix:null});
+    const cx=Math.floor(e.x/16),cz=Math.floor(e.z/16),key=(cx+4096)*8192+(cz+4096);
+    let cell=cellMap.get(key);
+    if(!cell){cell={x:cx*16+8,z:cz*16+8,low:ground,high:ground,items:[]};cellMap.set(key,cell);}
+    if(ground<cell.low)cell.low=ground;
+    if(ground>cell.high)cell.high=ground;
+    cell.items.push({e,radius,ground});
   }
-  if(view.clock-(view.contactPrunedAt||0)>2){for(const id of view.contactCache?.keys()||[])if(!view.sim.get(id))view.contactCache.delete(id);view.contactPrunedAt=view.clock;}
+  const cells=[];
+  for(const cell of cellMap.values()){
+    cells.push({x:cell.x,y:(cell.low+cell.high)*.5,z:cell.z,radius:Math.hypot(8,8,(cell.high-cell.low)*.5)+6,items:cell.items});
+  }
+  return {cells,wildlife,constructionIds};
+}
+
+export function updateContacts(view,menu){
+  const mesh=view.contactShadows,slots=view.contactSlots??=[];
+  view.contactSlots=slots;
+  const sim=view.sim,remembered=menu?null:sim.resourceMemory;
+  let count=0,culled=0,computed=0,reused=0,firstChanged=Infinity,lastChanged=-1;
+
+  const useSpatial=typeof sim.candidatesFor==='function'&&typeof sim.fogRevision==='number'&&!view.forceFullContactScan;
+  if(useSpatial){
+    const memSize=remembered?.size||0;
+    const gridKey=`${sim.revision||0}:${sim.resourceRevision||0}:${memSize}:${menu?1:0}`;
+    let state=view.contactSpatial;
+    if(!state||state.sim!==sim||state.entities!==sim.entities||state.gridKey!==gridKey){
+      const built=buildStaticContactIndex(view,sim,remembered);
+      state={
+        sim,entities:sim.entities,gridKey,
+        cells:built.cells,wildlife:built.wildlife,constructionIds:built.constructionIds,
+        staticKey:'',staticPoses:[],staticCulled:0,
+      };
+      view.contactSpatial=state;
+    }
+    const camPos=view.camera?.position,camQ=view.camera?.quaternion;
+    const staticKey=camPos&&camQ
+      ?`${sim.fogRevision}:${menu?1:0}:${camPos.x.toFixed(2)}:${camPos.y.toFixed(2)}:${camPos.z.toFixed(2)}:${camQ.x.toFixed(4)}:${camQ.y.toFixed(4)}:${camQ.z.toFixed(4)}:${camQ.w.toFixed(4)}:${view.camera.aspect?.toFixed(3)||0}`
+      :`${sim.fogRevision}:${menu?1:0}:${view.target?.x||0}:${view.target?.z||0}:${view.zoom||0}:${view.angle||0}:${view.tilt||0}`;
+
+    if(state.staticKey!==staticKey){
+      const staticPoses=state.staticPoses;
+      staticPoses.length=0;
+      let sCulled=0;
+      const cells=state.cells;
+      for(let c=0;c<cells.length;c++){
+        const cell=cells[c];
+        if(!nearViewport(view,cell.x,cell.y,cell.z,cell.radius)){sCulled+=cell.items.length;continue;}
+        const items=cell.items;
+        for(let j=0;j<items.length;j++){
+          if(staticPoses.length===1024)break;
+          const item=items[j],e=item.e;
+          const shown=menu||e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||(e.kind==='resource'&&sim.isExplored(e.x,e.z));
+          if(!shown)continue;
+          if(!nearViewport(view,e.x,item.ground,e.z,Math.max(4,item.radius*2))){sCulled++;continue;}
+          const prev=view.contactCache?.get(e.id);
+          const ready=prev&&prev.matrix&&prev.x===e.x&&prev.z===e.z&&prev.radius===item.radius;
+          const pose=ready?prev:contactPose(view,e,e.x,e.z,item.radius,item.ground);
+          if(ready)reused++;else computed++;
+          staticPoses.push(pose);
+        }
+      }
+      state.staticKey=staticKey;
+      state.staticCulled=sCulled;
+    }else{
+      reused+=state.staticPoses.length;
+    }
+
+    culled+=state.staticCulled;
+    const staticPoses=state.staticPoses;
+    for(let i=0;i<staticPoses.length&&count<1024;i++){
+      const pose=staticPoses[i];
+      if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}
+      count++;
+    }
+
+    const pushDynamic=(list,construction=false)=>{
+      for(let i=0;i<list.length;i++){
+        if(count===1024)break;
+        const e=construction?sim.get(list[i]):list[i];
+        if(!e||e.hp<=0||e.embarked||e.water||UNITS[e.type]?.naval||(construction&&e.progress===0))continue;
+        const shown=menu||e.owner===0||sim.isVisible(e.x,e.z)||(e.kind==='resource'&&sim.isExplored(e.x,e.z));
+        if(!shown)continue;
+        const radius=e.kind==='unit'?Math.max(.55,e.r||.5):(e.r||1.5)*1.05;
+        const position=renderPosition(view,e),x=position.x,z=position.z,previous=view.contactCache?.get(e.id),unchanged=previous&&previous.x===x&&previous.z===z&&previous.radius===radius;
+        const ground=unchanged?previous.ground:view.groundHeight(x,z);
+        if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){
+          if(!unchanged)(view.contactCache??=new Map()).set(e.id,{x,z,radius,ground,matrix:null});
+          culled++;continue;
+        }
+        const ready=unchanged&&previous.matrix,pose=ready?previous:contactPose(view,e,x,z,radius,ground);if(ready)reused++;else computed++;
+        if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}
+        count++;
+      }
+    };
+    pushDynamic(sim.candidatesFor('unit'));
+    if(state.constructionIds.length)pushDynamic(state.constructionIds,true);
+    if(state.wildlife.length)pushDynamic(state.wildlife);
+  }else{
+    for(const entity of sim.entities){
+      if(count===1024)break;
+      const e=remembered?.get(entity.id)??entity;
+      if(e.hp<=0||e.embarked||e.water||UNITS[e.type]?.naval||e.type==='farm'||(e.kind==='building'&&e.progress===0))continue;
+      const shown=menu||e.owner===0||e.kind==='shrine'||sim.isVisible(e.x,e.z)||(e.kind==='resource'&&sim.isExplored(e.x,e.z));
+      if(!shown)continue;
+      const radius=e.type==='wood'?2.2:e.kind==='unit'?Math.max(.55,e.r||.5):(e.r||1.5)*1.05;
+      const position=renderPosition(view,e),x=position.x,z=position.z,previous=view.contactCache?.get(e.id),unchanged=previous&&previous.x===x&&previous.z===z&&previous.radius===radius;
+      const ground=unchanged?previous.ground:view.groundHeight(x,z);
+      if(!nearViewport(view,x,ground,z,Math.max(4,radius*2))){
+        // Keep only height data until the object enters view. Idle offscreen
+        // objects can reuse this without allocating a matrix or sampling normals.
+        if(!unchanged)(view.contactCache??=new Map()).set(e.id,{x,z,radius,ground,matrix:null});
+        culled++;continue;
+      }
+      const ready=unchanged&&previous.matrix,pose=ready?previous:contactPose(view,e,x,z,radius,ground);if(ready)reused++;else computed++;
+      if(slots[count]!==pose){mesh.setMatrixAt(count,pose.matrix);slots[count]=pose;firstChanged=Math.min(firstChanged,count);lastChanged=count;}count++;
+    }
+  }
+  if(view.clock-(view.contactPrunedAt||0)>2){for(const id of view.contactCache?.keys()||[])if(!sim.get(id)&&!remembered?.has(id))view.contactCache.delete(id);view.contactPrunedAt=view.clock;}
   mesh.count=count;slots.length=count;let matrixUploadBytes=0;
   if(lastChanged>=0){mesh.instanceMatrix.clearUpdateRanges();mesh.instanceMatrix.addUpdateRange(firstChanged*16,(lastChanged-firstChanged+1)*16);mesh.instanceMatrix.needsUpdate=true;matrixUploadBytes=(lastChanged-firstChanged+1)*64;}
   view.contactDiagnostics={visible:count,culled,computed,reused,cached:view.contactCache?.size||0,matrixUploadBytes};
@@ -93,7 +202,7 @@ export function installVisualDepth(WorldView){
   const p=WorldView.prototype,attach=p.attach,render=p.render,house=p.houseModel,makeUnit=p.makeUnit;
   p.attach=function(sim){
     const sameSimulation=this.sim===sim;
-    this.contactCache=new Map();this.contactPrunedAt=0;
+    this.contactCache=new Map();this.contactSpatial=null;this.contactSlots=[];this.contactPrunedAt=0;
     if(!this.polished){decorateMaterials(this);this.polished=true;}
     if(!this.depthInitialized){initializeDepth(this);this.depthInitialized=true;}
     attach.call(this,sim);

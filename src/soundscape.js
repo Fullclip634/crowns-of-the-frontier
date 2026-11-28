@@ -250,7 +250,8 @@ export function installSoundscape(AudioEngine){
     const listen=this.combatListener;
     if(!listen||!sim?.entities)return;
     let fighters=0,foleyCandidate=null,bestGain=0;
-    for(const e of sim.entities){
+    const buckets=typeof sim.candidatesFor==='function'?[sim.candidatesFor('unit'),sim.candidatesFor('building')]:[sim.entities];
+    for(const list of buckets)for(const e of list){
       if(e.hp<=0||e.embarked)continue;
       const spatial=listen(e);
       if(!spatial||spatial.gain<.08)continue;

@@ -33,7 +33,7 @@ export class WallVisuals{
     const palMat=this.ensurePalisadeMaterial();
     this.palisade=palMat?new THREE.InstancedMesh(this.view.geo.box,palMat,capacity*12):null;
     this.meshes=this.palisade?[this.stone,this.foundation,this.palisade]:[this.stone,this.foundation];
-    for(const mesh of this.meshes){mesh.count=0;mesh.castShadow=mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.wallIds=[];mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.group.add(mesh);}this.lastSignature=null;
+    for(const mesh of this.meshes){mesh.count=0;mesh.castShadow=mesh.receiveShadow=true;mesh.frustumCulled=false;mesh.userData.wallIds=[];mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.setColorAt(0,this.tint.setHex(0xffffff));this.group.add(mesh);}this.lastSignature=null;
   }
   piece(mesh,link,start,end,groundA,groundB,y,height,depth,color){
     const dx=end.x-start.x,dz=end.z-start.z,len=Math.hypot(dx,dz);if(len<.01)return;const index=mesh.count++,cx=(start.x+end.x)/2,cz=(start.z+end.z)/2;

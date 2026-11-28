@@ -75,7 +75,7 @@ export function installWorldPolish(WorldView){const p=WorldView.prototype,base={
 }
 
 function jointAngle(view,m,e){
-  const gait=view.locomotion?.get(e.id),phase=gait?.phase??view.clock*8.5+e.id*.7,blend=gait?.blend??Number(!!e.moving),walk=Math.sin(phase)*(m.side??1)*blend;
+  const gait=view.jointPoseEntity===e?view.jointPoseGait:view.locomotion?.get(e.id),phase=gait?.phase??view.clock*8.5+e.id*.7,blend=gait?.blend??Number(!!e.moving),walk=Math.sin(phase)*(m.side??1)*blend;
   if(m.type==='wheel')return gait?.wheel??(e.moving?view.clock*5:0);
   if(m.type==='horseleg')return Math.sin(phase)*(m.side??1)*blend*.5;
   if(m.type==='knee')return m.riding?Math.sin(phase)*blend*.035:Math.max(0,-walk)*.65;
@@ -86,7 +86,7 @@ function jointAngle(view,m,e){
   if(m.type==='sail')return Math.sin(view.clock*1.5+e.id)*.035;
   if(m.type==='oar')return e.moving?Math.sin(view.clock*3+e.id)*.18*m.side:0;
   if(m.type==='ram')return 0;
-  if(m.type==='siege'||m.type==='siegearm')return siegeArmAngle(e,combatRenderOffset(view));
+  if(m.type==='siege'||m.type==='siegearm')return siegeArmAngle(e,view.jointPoseEntity===e?view.jointPoseCombatOffset:combatRenderOffset(view));
   if(m.type==='forearm'){
     return -.15*blend;
   }
@@ -97,15 +97,37 @@ function jointAngle(view,m,e){
   return 0;
 }
 function jointRotation(view,joint,e,matrix){
-  const combat=view.combatAngles??={x:0,y:0,z:0};if(combatJointRotation(e,joint,combatRenderOffset(view),combat))return matrix.makeRotationFromEuler((view.combatEuler??=new THREE.Euler()).set(combat.x,combat.y,combat.z));
-  const action=view.unitActions?.get(e.id),angles=view.actionAngles??={x:0,y:0,z:0};
-  if(actionJointRotation(action,joint,angles))return matrix.makeRotationFromEuler((view.actionEuler??=new THREE.Euler()).set(angles.x,angles.y,angles.z));
+  const same=view.jointPoseEntity===e;
+  const hasCombat=same?view.jointPoseHasCombat:true;
+  if(hasCombat){
+    const combat=view.combatAngles??={x:0,y:0,z:0};
+    const offset=same?view.jointPoseCombatOffset:combatRenderOffset(view);
+    if(combatJointRotation(e,joint,offset,combat))return matrix.makeRotationFromEuler((view.combatEuler??=new THREE.Euler()).set(combat.x,combat.y,combat.z));
+  }
+  const action=same?view.jointPoseAction:view.unitActions?.get(e.id);
+  if(action){
+    const angles=view.actionAngles??={x:0,y:0,z:0};
+    if(actionJointRotation(action,joint,angles))return matrix.makeRotationFromEuler((view.actionEuler??=new THREE.Euler()).set(angles.x,angles.y,angles.z));
+  }
   return matrix.makeRotationX(jointAngle(view,joint,e));
 }
-export function beginJointPose(view,entity,matrix){
-  view.jointPoseEpoch=(view.jointPoseEpoch||0)+1;view.jointPoseEntity=entity;view.jointPoseRoot=matrix;
+const POSE_SLOT_IDS=new Map();
+function poseSlotForKey(key){
+  let slot=POSE_SLOT_IDS.get(key);
+  if(slot===undefined){slot=POSE_SLOT_IDS.size;POSE_SLOT_IDS.set(key,slot);}
+  return slot;
 }
-export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=null;view.footPoseEntity=null;}
+export function beginJointPose(view,entity,matrix){
+  view.jointPoseEpoch=(view.jointPoseEpoch||0)+1;
+  view.jointPoseEntity=entity;
+  view.jointPoseRoot=matrix;
+  view.jointPoseGait=view.locomotion?.get(entity.id)||null;
+  view.jointPoseAction=view.unitActions?.get(entity.id)||null;
+  view.jointPoseCombatOffset=combatRenderOffset(view);
+  const def=UNITS[entity.type];
+  view.jointPoseHasCombat=Boolean(!entity.moving&&def?.damage&&(entity.cooldown>0||(def.role==='ranged'&&entity.order?.type==='attack')));
+}
+export function endJointPose(view){view.jointPoseEntity=null;view.jointPoseRoot=null;view.jointPoseGait=null;view.jointPoseAction=null;view.footPoseEntity=null;}
 
 function aroundJoint(parent,joint,rotation,output){
   // T(pivot) * R * T(-pivot), with one matrix product instead of three.
@@ -118,17 +140,27 @@ function aroundJoint(parent,joint,rotation,output){
 
 export function animatePart(view,part,e,matrix){
   const m=part.userData.motion;if(!m)return matrix;
-  if(m.type==='bow'){const pose=bowPartPose(view,m,e,matrix,combatRenderOffset(view));if(pose)return pose;}
+  if(m.type==='bow'){const pose=bowPartPose(view,m,e,matrix,view.jointPoseEntity===e?view.jointPoseCombatOffset:combatRenderOffset(view));if(pose)return pose;}
   const feet=footPartPose(view,m,e,matrix);if(feet)return feet;
   const result=view.poseMatrix??=new THREE.Matrix4(),rotation=view.poseRotation??=new THREE.Matrix4();
   if(m.type==='ram'){const translation=part.userData.ramTranslation??=new THREE.Matrix4();translation.makeTranslation(0,0,e.cooldown>0?Math.sin(e.cooldown*8)*.25:0);return result.copy(matrix).multiply(translation);}
-  if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);}part.userData.poseChain=chain;}
+  if(!part.userData.poseChain){const chain=[];for(let joint=m;joint;joint=joint.parent)chain.unshift({joint});let prefix='';for(const pose of chain){const j=pose.joint;pose.key=prefix+=JSON.stringify([j.type,j.pivot,j.side,j.riding||false]);pose.slot=poseSlotForKey(pose.key);}part.userData.poseChain=chain;}
   if(view.jointPoseEntity===e&&view.jointPoseRoot===matrix){
-    const cache=view.jointPoseCache??=new Map();let parent=matrix;
-    for(const pose of part.userData.poseChain){
-      let entry=cache.get(pose.key);if(!entry){entry={epoch:-1,matrix:new THREE.Matrix4()};cache.set(pose.key,entry);}
-      if(entry.epoch!==view.jointPoseEpoch){jointRotation(view,pose.joint,e,rotation);aroundJoint(parent,pose.joint,rotation,entry.matrix);entry.epoch=view.jointPoseEpoch;if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.computed++;}
-      else if(view.jointPoseDiagnostics)view.jointPoseDiagnostics.reused++;
+    const slots=view.jointPoseSlots??=[];
+    const epoch=view.jointPoseEpoch,diag=view.jointPoseDiagnostics;
+    let parent=matrix;
+    const chain=part.userData.poseChain;
+    for(let i=0;i<chain.length;i++){
+      const pose=chain[i];
+      let entry=slots[pose.slot];
+      if(!entry){
+        const cache=view.jointPoseCache??=new Map();
+        entry=cache.get(pose.key);
+        if(!entry){entry={epoch:-1,matrix:new THREE.Matrix4()};cache.set(pose.key,entry);}
+        slots[pose.slot]=entry;
+      }
+      if(entry.epoch!==epoch){jointRotation(view,pose.joint,e,rotation);aroundJoint(parent,pose.joint,rotation,entry.matrix);entry.epoch=epoch;if(diag)diag.computed++;}
+      else if(diag)diag.reused++;
       parent=entry.matrix;
     }
     return parent;

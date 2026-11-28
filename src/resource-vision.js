@@ -17,6 +17,7 @@ export function takeFromResource(sim, site, amount) {
 }
 
 export const wasFelledOutOfSight = site => unseenFelling.has(site);
+export const markFelledOutOfSight = site => { if (site) unseenFelling.add(site); };
 
 export function revealResourceChanges(sim) {
   const memory = sim.resourceMemory;

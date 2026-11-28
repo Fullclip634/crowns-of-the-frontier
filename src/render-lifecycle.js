@@ -1,4 +1,5 @@
 import {disposeSkyDome} from './sky-atmosphere.js';
+import {disposeRuntimePrograms} from './shader-preparation.js';
 
 // Navigation must release GPU contexts before the next document loads its art.
 // Cached back/forward documents keep their live renderer and resume normally.
@@ -7,6 +8,7 @@ export function releaseRenderers(view){
   view.renderingReleased=true;
   view.releaseRendererWatch?.();
   view.gpuTimer?.dispose();
+  disposeRuntimePrograms(view);
   view.impactEffects?.dispose();
   view.buildingDamage?.dispose();
   view.selectionOverlays?.dispose();

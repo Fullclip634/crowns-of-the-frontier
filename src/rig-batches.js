@@ -67,12 +67,17 @@ export function createRigidUnitPart(view,model,batch,renderIds=null){
 
 export function writeRigidPose(mesh,index,e,matrix){
   const rig=mesh.userData.rigidRig;if(index>=rig.rows)allocate(rig,Math.min(mesh.instanceMatrix.count,Math.max(index+1,rig.rows*2)));
-  rig.roots.set(matrix.elements,index*16);const start=index*rig.joints.length*16;let changed=false;
-  for(let joint=0;joint<rig.joints.length;joint++){
-    const pose=animatePart(rig.view,rig.joints[joint],e,matrix).elements,offset=start+joint*16;
+  const rootElems=matrix.elements,roots=rig.roots,rootOff=index*16;
+  for(let c=0;c<16;c++)roots[rootOff+c]=rootElems[c];
+  const joints=rig.joints,jointCount=joints.length,data=rig.data,view=rig.view;
+  const start=index*jointCount*16;let changed=false;
+  for(let joint=0;joint<jointCount;joint++){
+    const part=joints[joint];
+    const pose=part.userData.motion?animatePart(view,part,e,matrix).elements:rootElems;
+    const offset=start+joint*16;
     for(let component=0;component<16;component++){
       const value=Math.fround(pose[component]);
-      if(rig.data[offset+component]!==value){rig.data[offset+component]=value;changed=true;}
+      if(data[offset+component]!==value){data[offset+component]=value;changed=true;}
     }
   }
   if(changed)rig.dirtyRows.add(index);
